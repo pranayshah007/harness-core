@@ -16,8 +16,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.WaitEngineTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.testlib.RealMongo;
 import io.harness.threading.Morpheus;
 import io.harness.waiter.persistence.PersistenceWrapper;

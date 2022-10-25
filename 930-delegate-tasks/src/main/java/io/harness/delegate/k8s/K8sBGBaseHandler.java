@@ -10,7 +10,7 @@ package io.harness.delegate.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;

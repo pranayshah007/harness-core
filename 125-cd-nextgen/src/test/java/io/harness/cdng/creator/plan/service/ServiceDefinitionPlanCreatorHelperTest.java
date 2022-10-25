@@ -46,6 +46,7 @@ import io.harness.cdng.service.steps.ServiceStepOverrideHelper;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
@@ -56,7 +57,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;

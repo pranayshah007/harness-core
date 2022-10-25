@@ -11,7 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.manifest.ObjectYamlUtils.encodeDot;
 
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.service.intfc.datadog.DatadogService;
 import software.wings.sm.states.DatadogState;

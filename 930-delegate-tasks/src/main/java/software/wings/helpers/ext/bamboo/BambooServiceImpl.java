@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
-import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 

@@ -7,7 +7,7 @@
 
 package io.harness.waiter;
 
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.persistence.LogKeyUtils;
 
 public class WaitInstanceLogContext extends AutoLogContext {

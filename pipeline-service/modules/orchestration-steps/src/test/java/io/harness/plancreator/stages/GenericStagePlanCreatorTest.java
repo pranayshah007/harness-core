@@ -17,6 +17,7 @@ import io.harness.OrchestrationStepsTestBase;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.plancreator.approval.ApprovalStagePlanCreatorV2;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -29,7 +30,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.approval.stage.ApprovalStageNode;
 
 import com.google.common.base.Charsets;

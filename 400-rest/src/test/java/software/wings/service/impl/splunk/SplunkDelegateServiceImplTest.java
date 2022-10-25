@@ -34,7 +34,7 @@ import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.delegatetasks.DelegateLogService;
 import software.wings.service.impl.ThirdPartyApiCallLog;

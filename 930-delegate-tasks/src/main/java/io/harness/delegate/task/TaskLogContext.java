@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.DelegateTaskRank;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.List;

@@ -8,7 +8,7 @@
 package io.harness.gitsync.common.events;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.NgEventLogContext;
@@ -18,7 +18,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.FullSyncEventRequest;
 import io.harness.gitsync.core.fullsync.FullSyncAccumulatorService;
 import io.harness.gitsync.fullsync.utils.FullSyncLogContextHelper;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.event.MessageListener;
 
 import com.google.inject.Inject;

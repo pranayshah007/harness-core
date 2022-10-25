@@ -20,11 +20,11 @@ import io.harness.delegate.task.pcf.request.CfInstanceSyncRequest;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfInstanceSyncResponse;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.PcfInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.service.InstanceSyncConstants;
 

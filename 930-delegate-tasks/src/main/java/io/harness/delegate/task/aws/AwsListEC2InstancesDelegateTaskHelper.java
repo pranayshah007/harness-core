@@ -20,7 +20,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
 import io.harness.exception.AwsInstanceException;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 

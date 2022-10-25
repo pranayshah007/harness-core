@@ -15,9 +15,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.PdcInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.HostReachabilityInfo;
 import software.wings.beans.SettingAttribute;

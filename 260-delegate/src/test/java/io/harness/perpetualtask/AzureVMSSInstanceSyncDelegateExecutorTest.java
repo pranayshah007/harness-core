@@ -27,12 +27,12 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.task.azure.response.AzureVMSSListVMDataResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskResponse;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AzureVmssInstanceSyncPerpetualTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AzureConfig;
 import software.wings.delegatetasks.azure.taskhandler.AzureVMSSSyncTaskHandler;

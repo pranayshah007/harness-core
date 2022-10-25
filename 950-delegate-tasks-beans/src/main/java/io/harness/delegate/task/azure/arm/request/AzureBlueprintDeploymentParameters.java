@@ -8,12 +8,12 @@
 package io.harness.delegate.task.azure.arm.request;
 
 import static io.harness.delegate.task.azure.arm.AzureARMTaskType.BLUEPRINT_DEPLOYMENT;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 
 import java.util.Map;
 import lombok.Builder;

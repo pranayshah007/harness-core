@@ -13,10 +13,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoRegistrar;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.Variable;
 import software.wings.beans.VariableType;

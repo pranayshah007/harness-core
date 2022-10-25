@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;

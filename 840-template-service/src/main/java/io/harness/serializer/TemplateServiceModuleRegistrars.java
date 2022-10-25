@@ -13,6 +13,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filter.serializer.FiltersRegistrars;
 import io.harness.gitsync.serializer.GitSyncSdkRegistrar;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.NGTemplateKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;

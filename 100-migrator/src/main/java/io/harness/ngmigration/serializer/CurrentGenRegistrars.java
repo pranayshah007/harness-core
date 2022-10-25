@@ -10,9 +10,9 @@ package io.harness.ngmigration.serializer;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.AccessControlClientRegistrars;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 
 import com.google.common.collect.ImmutableList;

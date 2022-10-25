@@ -30,7 +30,7 @@ import io.harness.beans.SearchFilter.Operator;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.context.ContextElementType;
 import io.harness.ff.FeatureFlagService;
-import io.harness.serializer.MapperUtils;
+import io.harness.serializer.utils.MapperUtils;
 
 import software.wings.api.InstanceElement;
 import software.wings.api.InstanceElementListParam;

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.SSHTaskParams;
 import io.harness.delegate.beans.WinRmTaskParams;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
 import io.harness.ng.core.NGAccessWithEncryptionConsumer;
 import io.harness.ng.core.entities.SampleEncryptableSettingImplementation;
@@ -42,7 +43,6 @@ import io.harness.secretmanagerclient.dto.awssecretmanager.AwsSMStsCredentialCon
 import io.harness.secretmanagerclient.dto.awssecretmanager.BaseAwsSMConfigDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigUpdateDTO;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

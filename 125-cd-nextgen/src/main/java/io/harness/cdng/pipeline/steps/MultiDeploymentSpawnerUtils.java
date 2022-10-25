@@ -15,7 +15,7 @@ import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import java.util.HashMap;
 import java.util.Map;

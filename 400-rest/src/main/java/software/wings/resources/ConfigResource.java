@@ -15,7 +15,7 @@ import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.rest.RestResponse;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.stream.BoundedInputStream;
 import io.harness.validation.PersistenceValidator;
 

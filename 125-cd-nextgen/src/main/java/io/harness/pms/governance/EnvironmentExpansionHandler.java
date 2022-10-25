@@ -24,6 +24,7 @@ import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -37,7 +38,6 @@ import io.harness.pms.sdk.core.governance.ExpandedValue;
 import io.harness.pms.sdk.core.governance.ExpansionResponse;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandler;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.serializer.KryoSerializer;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 

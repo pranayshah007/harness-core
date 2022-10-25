@@ -19,7 +19,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.CauseCollection;
 import io.harness.exception.WingsException;
 import io.harness.globalcontex.PurgeGlobalContextData;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
 import io.harness.manage.GlobalContextManager;
 import io.harness.queue.QueueConsumer;
 import io.harness.queue.QueueListener;

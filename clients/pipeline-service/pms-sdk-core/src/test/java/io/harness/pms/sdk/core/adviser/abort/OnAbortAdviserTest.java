@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -28,7 +29,6 @@ import io.harness.pms.sdk.core.AmbianceTestUtils;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.util.EnumSet;

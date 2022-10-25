@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;

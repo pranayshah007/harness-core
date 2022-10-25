@@ -38,8 +38,8 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.kryo.KryoSerializer;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
 import software.wings.WingsBaseTest;

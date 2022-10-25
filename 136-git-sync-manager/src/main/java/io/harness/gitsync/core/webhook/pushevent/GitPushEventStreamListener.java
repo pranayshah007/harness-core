@@ -7,7 +7,7 @@
 
 package io.harness.gitsync.core.webhook.pushevent;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,8 +16,8 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.core.service.webhookevent.GitPushEventExecutionService;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.WebhookEventAutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
+import io.harness.logging.logcontext.WebhookEventAutoLogContext;
 import io.harness.ng.core.event.MessageListener;
 
 import com.google.inject.Inject;

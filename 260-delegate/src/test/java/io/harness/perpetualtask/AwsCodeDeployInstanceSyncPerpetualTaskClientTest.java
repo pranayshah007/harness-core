@@ -41,9 +41,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.api.DeploymentType;

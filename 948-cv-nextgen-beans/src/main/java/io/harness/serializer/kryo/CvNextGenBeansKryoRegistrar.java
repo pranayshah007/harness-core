@@ -102,7 +102,7 @@ import io.harness.cvng.beans.stackdriver.StackdriverLogDefinition;
 import io.harness.cvng.beans.stackdriver.StackdriverLogSampleDataRequest;
 import io.harness.cvng.beans.stackdriver.StackdriverSampleDataRequest;
 import io.harness.cvng.models.VerificationType;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

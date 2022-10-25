@@ -20,10 +20,10 @@ import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.aws.AwsS3DelegateTaskHelper;
 import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.exception.SshExceptionConstants;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 

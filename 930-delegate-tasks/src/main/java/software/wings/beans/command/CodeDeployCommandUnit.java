@@ -13,8 +13,8 @@ import static java.lang.String.format;
 import static java.lang.String.join;
 
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logging.Misc;

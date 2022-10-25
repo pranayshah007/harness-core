@@ -14,8 +14,8 @@ import static software.wings.delegatetasks.buildsource.BuildSourceParameters.Bui
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidCredentialsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.annotation.EncryptableSetting;

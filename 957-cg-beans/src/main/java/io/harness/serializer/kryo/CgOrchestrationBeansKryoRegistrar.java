@@ -19,7 +19,7 @@ import io.harness.beans.terraform.TerraformPlanParam;
 import io.harness.context.ContextElementType;
 import io.harness.cvng.beans.cvnglog.ApiCallLogDTO;
 import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import software.wings.api.CloudProviderType;
 import software.wings.api.ExecutionDataValue;

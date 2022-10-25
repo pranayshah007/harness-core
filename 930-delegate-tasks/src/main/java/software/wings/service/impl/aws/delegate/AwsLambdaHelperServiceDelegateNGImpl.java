@@ -12,8 +12,8 @@ import static io.harness.serverless.model.AwsLambdaFunctionDetails.AwsLambdaFunc
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.serverless.model.AwsLambdaFunctionDetails;
 
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;

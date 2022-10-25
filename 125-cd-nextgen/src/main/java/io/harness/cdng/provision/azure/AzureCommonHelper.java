@@ -39,6 +39,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
@@ -55,7 +56,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 
 import software.wings.beans.TaskType;

@@ -24,13 +24,13 @@ import io.harness.delegate.task.pcf.CfCommandResponse;
 import io.harness.delegate.task.pcf.request.CfInstanceSyncRequest;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfInstanceSyncResponse;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.PcfInstanceSyncPerpetualTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;

@@ -38,7 +38,7 @@ import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;

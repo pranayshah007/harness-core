@@ -16,9 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CvNextGenCommonsTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.DataCollectionInfo;
-import io.harness.reflection.CodeUtils;
+import io.harness.kryo.KryoSerializer;
+import io.harness.reflection.util.CodeUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;

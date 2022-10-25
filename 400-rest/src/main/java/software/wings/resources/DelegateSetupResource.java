@@ -13,7 +13,7 @@ import static io.harness.delegate.utils.RbacConstants.DELEGATE_DELETE_PERMISSION
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_EDIT_PERMISSION;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_RESOURCE_TYPE;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_VIEW_PERMISSION;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
@@ -45,8 +45,8 @@ import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.k8s.KubernetesConvention;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.LearningEngineAuth;
 import io.harness.security.annotations.PublicApi;

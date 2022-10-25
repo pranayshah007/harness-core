@@ -7,11 +7,11 @@
 
 package io.harness.notifications;
 
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.remote.client.AbstractHttpClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.Provider;
 import com.google.inject.Singleton;

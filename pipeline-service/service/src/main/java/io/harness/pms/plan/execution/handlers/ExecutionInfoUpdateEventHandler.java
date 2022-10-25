@@ -9,7 +9,7 @@ package io.harness.pms.plan.execution.handlers;
 
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;

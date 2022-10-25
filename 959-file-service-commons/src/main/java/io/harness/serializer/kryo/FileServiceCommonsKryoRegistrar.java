@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ChecksumType;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

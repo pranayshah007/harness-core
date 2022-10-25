@@ -27,6 +27,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequest;
 import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -36,7 +37,6 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 

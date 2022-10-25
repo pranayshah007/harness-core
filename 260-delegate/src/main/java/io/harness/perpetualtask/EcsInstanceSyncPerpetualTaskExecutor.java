@@ -23,11 +23,11 @@ import io.harness.delegate.task.ecs.EcsDeploymentReleaseData;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.EcsDeploymentRelease;
 import io.harness.perpetualtask.instancesync.EcsInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.time.Instant;

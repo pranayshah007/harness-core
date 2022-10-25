@@ -17,6 +17,7 @@ import io.harness.advisers.rollback.OnFailRollbackOutput;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -35,7 +36,6 @@ import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;

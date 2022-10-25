@@ -15,7 +15,7 @@ import static io.harness.azure.model.AzureConstants.SKIP_VMSS_DEPLOY;
 import static io.harness.azure.model.AzureConstants.SWAP_ROUTE_FAILURE;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 
 import static software.wings.beans.command.CommandUnitDetails.CommandUnitType.AZURE_VMSS_SWAP;
 

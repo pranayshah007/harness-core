@@ -57,6 +57,7 @@ import io.harness.cdng.provision.terraform.TerraformRollbackStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
 import io.harness.cdng.ssh.CommandStepNode;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.serializer.kryo.NGKryoRegistrar;

@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
-import io.harness.serializer.ProtoUtils;
+import io.harness.serializer.utils.ProtoUtils;
 
 import lombok.experimental.UtilityClass;
 

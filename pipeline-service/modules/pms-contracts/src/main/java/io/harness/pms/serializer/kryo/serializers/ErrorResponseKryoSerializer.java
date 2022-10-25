@@ -7,8 +7,8 @@
 
 package io.harness.pms.serializer.kryo.serializers;
 
+import io.harness.kryo.ProtobufKryoSerializer;
 import io.harness.pms.contracts.plan.ErrorResponse;
-import io.harness.serializer.kryo.ProtobufKryoSerializer;
 
 public class ErrorResponseKryoSerializer extends ProtobufKryoSerializer<ErrorResponse> {
   private static ErrorResponseKryoSerializer instance;

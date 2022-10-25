@@ -8,7 +8,7 @@
 package io.harness.mongo;
 
 import io.harness.exception.UnexpectedException;
-import io.harness.logging.AutoLogRemoveContext;
+import io.harness.logging.logcontext.AutoLogRemoveContext;
 import io.harness.mongo.MorphiaMove.MorphiaMoveKeys;
 import io.harness.morphia.MorphiaRegistrar.NotFoundClass;
 

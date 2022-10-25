@@ -9,7 +9,7 @@ package software.wings.service.impl.yaml;
 
 import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.data.structure.NullSafeImmutableMap.NullSafeBuilder;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import com.google.common.collect.ImmutableMap;
 

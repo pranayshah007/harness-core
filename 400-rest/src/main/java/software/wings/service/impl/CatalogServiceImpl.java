@@ -15,7 +15,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.YamlUtils;
 
 import software.wings.beans.CatalogItem;
 import software.wings.service.intfc.CatalogService;

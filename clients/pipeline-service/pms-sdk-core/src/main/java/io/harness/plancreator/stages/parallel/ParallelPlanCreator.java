@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoSerializer;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -32,7 +33,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.fork.ForkStepParameters;
 import io.harness.steps.fork.NGForkStep;
 

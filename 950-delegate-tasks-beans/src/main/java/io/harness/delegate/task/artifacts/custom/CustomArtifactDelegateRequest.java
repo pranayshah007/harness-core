@@ -8,7 +8,7 @@
 package io.harness.delegate.task.artifacts.custom;
 
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.CUSTOM_ARTIFACT;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,9 +16,9 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.expression.common.Expression;
+import io.harness.reflection.util.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;

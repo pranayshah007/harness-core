@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.repositories.QueryRecordsRepository;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.serviceinfo.ServiceInfoService;
 
 import com.google.inject.Inject;

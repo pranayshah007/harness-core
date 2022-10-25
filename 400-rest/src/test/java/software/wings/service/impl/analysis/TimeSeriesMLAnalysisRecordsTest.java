@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.GEORGE;
 
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.WingsBaseTest;
 

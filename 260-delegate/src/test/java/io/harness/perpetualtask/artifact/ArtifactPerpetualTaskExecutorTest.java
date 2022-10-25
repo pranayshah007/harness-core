@@ -22,6 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
@@ -30,7 +31,6 @@ import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters;

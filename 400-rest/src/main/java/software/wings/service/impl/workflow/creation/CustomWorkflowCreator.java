@@ -14,7 +14,7 @@ import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.serializer.MapperUtils;
+import io.harness.serializer.utils.MapperUtils;
 
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;

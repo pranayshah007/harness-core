@@ -9,7 +9,7 @@ package software.wings.resources.dashboard;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.ResourceType.CUSTOM_DASHBOARD;
@@ -35,8 +35,8 @@ import io.harness.event.timeseries.processor.instanceeventprocessor.instancereco
 import io.harness.event.timeseries.processor.instanceeventprocessor.instancereconservice.InstanceReconConstants;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.rest.RestResponse;
 import io.harness.rest.RestResponse.Builder;
 

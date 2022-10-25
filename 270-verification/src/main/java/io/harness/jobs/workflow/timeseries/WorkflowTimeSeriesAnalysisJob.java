@@ -16,7 +16,7 @@ import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFA
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SortOrder.OrderType;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.managerclient.VerificationManagerClient;
 import io.harness.managerclient.VerificationManagerClientHelper;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;

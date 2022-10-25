@@ -9,9 +9,9 @@ package io.harness.pms.sdk.core.execution.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.pms.contracts.expression.ErrorResponse;
 import io.harness.pms.contracts.expression.ExpressionRequest;
 import io.harness.pms.contracts.expression.ExpressionResponse;

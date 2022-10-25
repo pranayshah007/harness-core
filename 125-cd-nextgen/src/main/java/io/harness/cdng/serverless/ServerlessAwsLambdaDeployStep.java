@@ -30,7 +30,7 @@ import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackDataRequest;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;

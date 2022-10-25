@@ -22,8 +22,8 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.context.ContextElementType;
+import io.harness.kryo.KryoSerializer;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.api.AmiServiceDeployElement;
 import software.wings.api.AmiServiceSetupElement;

@@ -12,7 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 
 import com.google.inject.Inject;
 

@@ -9,7 +9,7 @@ package io.harness.azure.model;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.Collections;

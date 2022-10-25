@@ -8,8 +8,8 @@
 package software.wings.service.impl.aws.manager;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 
 import static software.wings.service.impl.aws.model.AwsConstants.BASE_DELAY_ACCOUNT_VARIABLE;
 import static software.wings.service.impl.aws.model.AwsConstants.MAX_BACKOFF_ACCOUNT_VARIABLE;

@@ -7,7 +7,7 @@
 
 package io.harness.persistence.converters;
 
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

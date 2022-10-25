@@ -20,11 +20,11 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.AwsConfig;

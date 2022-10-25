@@ -14,10 +14,10 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMess
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ArtifactServerException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.NexusRegistryException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.network.Http;
 
 import java.io.IOException;

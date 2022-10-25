@@ -10,7 +10,7 @@ package io.harness.expression.functors;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.ExpressionFunctor;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import java.util.HashMap;
 

@@ -32,12 +32,12 @@ import io.harness.delegate.task.k8s.K8sInstanceSyncRequest;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.K8sDeploymentRelease;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;

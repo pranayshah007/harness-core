@@ -22,7 +22,7 @@ import io.harness.azure.model.AzureAppServiceConfiguration;
 import io.harness.azure.model.AzureAppServiceConnectionString;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.git.model.GitFile;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.Service;
 import software.wings.beans.appmanifest.AppManifestKind;

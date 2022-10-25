@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EventStatus;
 import io.harness.beans.EventType;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

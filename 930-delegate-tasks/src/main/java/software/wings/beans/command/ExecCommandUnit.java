@@ -9,17 +9,17 @@ package software.wings.beans.command;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import static software.wings.beans.command.CommandUnitType.EXEC;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.expression.common.Expression;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.reflection.util.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.shell.ScriptType;
 
 import software.wings.stencils.DefaultValue;

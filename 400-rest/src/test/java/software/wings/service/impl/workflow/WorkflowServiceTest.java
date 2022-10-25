@@ -307,7 +307,7 @@ import io.harness.limits.ActionType;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.CloudProviderType;

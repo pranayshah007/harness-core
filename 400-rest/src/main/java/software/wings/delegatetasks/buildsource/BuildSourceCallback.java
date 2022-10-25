@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.artifact.ArtifactStreamCollectionStatus.STABLE;
@@ -27,9 +27,9 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;
 

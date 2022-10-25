@@ -13,6 +13,7 @@ import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -29,7 +30,6 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.cf.FeatureFlagStageStep;
 import io.harness.steps.common.NGSectionStepParameters;
 

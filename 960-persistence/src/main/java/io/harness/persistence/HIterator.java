@@ -8,11 +8,11 @@
 package io.harness.persistence;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.mongo.CollectionLogContext;
 import io.harness.mongo.ProcessTimeLogContext;
 

@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 
 import static software.wings.delegatetasks.rancher.RancherResolveClustersTask.COMMAND_NAME;
 import static software.wings.delegatetasks.rancher.RancherResolveClustersTask.COMMAND_UNIT_NAME;

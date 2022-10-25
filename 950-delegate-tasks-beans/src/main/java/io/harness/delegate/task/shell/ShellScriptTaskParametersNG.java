@@ -7,7 +7,7 @@
 
 package io.harness.delegate.task.shell;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -15,8 +15,8 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.common.Expression;
 import io.harness.k8s.K8sConstants;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;

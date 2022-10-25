@@ -51,6 +51,7 @@ import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.SecretManagementException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.persistence.HIterator;
 import io.harness.queue.QueuePublisher;
 import io.harness.secretmanagers.SecretManagerConfigService;
@@ -62,7 +63,6 @@ import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.security.encryption.SecretManagerType;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.security.UsageRestrictions;
 

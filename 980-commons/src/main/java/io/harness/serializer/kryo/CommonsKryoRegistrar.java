@@ -7,6 +7,7 @@
 
 package io.harness.serializer.kryo;
 
+import com.esotericsoftware.kryo.Kryo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
@@ -80,6 +81,7 @@ import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErro
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.exception.runtime.serverless.ServerlessAwsLambdaRuntimeException;
 import io.harness.exception.runtime.serverless.ServerlessCommandExecutionException;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.logging.LogLevel;
 import io.harness.rest.RestResponse;
 import io.harness.security.PrincipalContextData;
@@ -88,15 +90,12 @@ import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.PrincipalType;
 import io.harness.security.dto.UserPrincipal;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.FailureResponseData;
-
 import software.wings.beans.NameValuePair;
 import software.wings.beans.NameValuePairWithDefault;
 import software.wings.beans.appmanifest.StoreType;
 
-import com.esotericsoftware.kryo.Kryo;
 import java.net.SocketException;
 import java.time.ZonedDateTime;
 

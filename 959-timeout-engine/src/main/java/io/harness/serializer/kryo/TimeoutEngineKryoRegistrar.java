@@ -7,7 +7,7 @@
 
 package io.harness.serializer.kryo;
 
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutParameters;
 
 import com.esotericsoftware.kryo.Kryo;

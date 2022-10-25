@@ -28,12 +28,12 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsCodeDeployListDeploymentInstancesResponse;

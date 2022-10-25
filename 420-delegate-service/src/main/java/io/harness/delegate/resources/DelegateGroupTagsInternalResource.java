@@ -8,15 +8,15 @@
 package io.harness.delegate.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroupDTO;
 import io.harness.delegate.beans.DelegateGroupTags;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
 import io.harness.service.intfc.DelegateSetupService;

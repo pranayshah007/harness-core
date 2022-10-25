@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorDTO;
 import io.harness.pms.sdk.core.governance.ExpandedValue;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;

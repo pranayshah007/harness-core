@@ -7,7 +7,7 @@
 
 package io.harness.serializer.kryo;
 
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.springdata.exceptions.WingsTransactionFailureException;
 
 import com.esotericsoftware.kryo.Kryo;

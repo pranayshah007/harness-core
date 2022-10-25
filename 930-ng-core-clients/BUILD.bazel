@@ -41,7 +41,7 @@ java_library(
     deps = [
         ":module",
         "//:lombok",
-        "//980-commons:tests",
+        "//980-commons/src/main/java/io/harness/expression:tests",
         "//990-commons-test:module",
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",

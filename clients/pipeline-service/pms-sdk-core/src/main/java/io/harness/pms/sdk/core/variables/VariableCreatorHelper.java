@@ -20,7 +20,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;

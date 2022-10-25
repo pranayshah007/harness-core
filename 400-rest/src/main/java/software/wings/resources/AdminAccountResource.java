@@ -8,7 +8,7 @@
 package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
@@ -29,8 +29,8 @@ import io.harness.limits.ActionType;
 import io.harness.limits.ConfiguredLimit;
 import io.harness.limits.impl.model.RateLimit;
 import io.harness.limits.impl.model.StaticLimit;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.Account;

@@ -59,6 +59,7 @@ import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskParams;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.NGAccess;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
@@ -85,7 +86,6 @@ import io.harness.product.ci.scm.proto.PushHook;
 import io.harness.rule.Owner;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.utils.ConnectorUtils;
 

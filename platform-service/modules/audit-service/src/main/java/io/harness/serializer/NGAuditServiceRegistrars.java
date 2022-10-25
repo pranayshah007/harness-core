@@ -11,7 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filter.serializer.FiltersRegistrars;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.serializer.kryo.CommonsRegistrars;
 import io.harness.serializer.morphia.NGAuditServiceMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;

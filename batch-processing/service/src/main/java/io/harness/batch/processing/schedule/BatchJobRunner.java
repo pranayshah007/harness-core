@@ -7,7 +7,7 @@
 
 package io.harness.batch.processing.schedule;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,7 +20,7 @@ import io.harness.batch.processing.service.intfc.BatchJobScheduledDataService;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.ccm.commons.entities.batch.BatchJobInterval;
 import io.harness.ccm.commons.entities.batch.BatchJobScheduledData;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;

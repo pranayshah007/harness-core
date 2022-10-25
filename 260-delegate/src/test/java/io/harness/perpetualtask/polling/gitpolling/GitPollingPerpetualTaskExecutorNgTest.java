@@ -28,6 +28,7 @@ import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
 import io.harness.delegate.task.gitpolling.response.GitPollingTaskExecutionResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitpolling.github.GitPollingWebhookData;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
@@ -38,7 +39,6 @@ import io.harness.perpetualtask.polling.PollingResponsePublisher;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;

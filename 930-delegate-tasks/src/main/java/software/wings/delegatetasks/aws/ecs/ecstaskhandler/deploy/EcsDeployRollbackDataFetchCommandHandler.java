@@ -14,8 +14,8 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.TimeoutException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.Misc;
 import io.harness.security.encryption.EncryptedDataDetail;

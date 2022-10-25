@@ -8,7 +8,7 @@
 package io.harness.delegate.task.azure.appservice.webapp.ng.request;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -17,8 +17,8 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.common.Expression;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;

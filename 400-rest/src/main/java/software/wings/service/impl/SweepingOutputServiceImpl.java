@@ -22,7 +22,7 @@ import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceBuilder;
 import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceKeys;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.InvalidRequestException;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 
 import software.wings.api.InstanceElement;
 import software.wings.api.instancedetails.InstanceInfoVariables;

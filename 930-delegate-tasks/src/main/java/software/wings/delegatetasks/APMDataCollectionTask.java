@@ -9,7 +9,7 @@ package software.wings.delegatetasks;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.delegatetasks.cv.CVConstants.AZURE_BASE_URL;
@@ -30,7 +30,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.WingsException;
 import io.harness.network.Http;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.time.Timestamp;
 
 import software.wings.beans.TaskType;

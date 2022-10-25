@@ -36,7 +36,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.ServiceNowException;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.servicenow.ServiceNowFieldNG;
 import io.harness.servicenow.ServiceNowImportSetResponseNG;

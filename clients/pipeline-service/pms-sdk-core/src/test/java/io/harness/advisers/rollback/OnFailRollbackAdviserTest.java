@@ -21,6 +21,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
@@ -32,7 +33,6 @@ import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import java.util.Collections;
 import org.junit.Before;

@@ -8,7 +8,7 @@
 package io.harness.exception.sanitizer;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.reflection.ReflectionUtils.getFieldByName;
+import static io.harness.reflection.util.ReflectionUtils.getFieldByName;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

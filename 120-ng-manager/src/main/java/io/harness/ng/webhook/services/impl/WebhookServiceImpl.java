@@ -15,7 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.scm.GitWebhookTaskType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.BaseUrls;
 import io.harness.ng.core.AccountOrgProjectHelper;
 import io.harness.ng.webhook.UpsertWebhookRequestDTO;

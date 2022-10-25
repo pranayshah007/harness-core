@@ -8,7 +8,7 @@
 package io.harness.serializer.kryo;
 
 import io.harness.engine.interrupts.steps.TestTransportEntity;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import software.wings.expression.MapTestSweepingOutput;
 import software.wings.expression.SweepingOutputData;

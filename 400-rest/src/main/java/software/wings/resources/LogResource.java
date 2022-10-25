@@ -9,9 +9,9 @@ package software.wings.resources;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 
+import io.harness.kryo.KryoSerializer;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.Log;
 import software.wings.delegatetasks.DelegateStateType;

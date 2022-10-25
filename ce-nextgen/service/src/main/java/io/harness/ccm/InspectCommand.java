@@ -11,6 +11,7 @@ import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.govern.ProviderModule;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.IndexManager;
 import io.harness.mongo.MongoConfig;
@@ -18,7 +19,6 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.serializer.CENextGenModuleRegistrars;
-import io.harness.serializer.KryoRegistrar;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;

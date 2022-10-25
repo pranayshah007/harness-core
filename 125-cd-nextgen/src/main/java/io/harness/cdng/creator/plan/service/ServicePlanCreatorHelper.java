@@ -26,6 +26,7 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.contracts.plan.Dependencies;
@@ -37,7 +38,6 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;

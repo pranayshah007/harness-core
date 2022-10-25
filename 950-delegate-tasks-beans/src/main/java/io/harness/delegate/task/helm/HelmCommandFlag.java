@@ -7,11 +7,11 @@
 
 package io.harness.delegate.task.helm;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
-import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.expression.common.Expression;
 import io.harness.helm.HelmSubCommandType;
+import io.harness.reflection.util.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import java.util.Map;
 import javax.validation.constraints.NotNull;

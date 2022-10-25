@@ -18,8 +18,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.pms.resume.EngineResumeCallback;
+import io.harness.kryo.KryoSerializer;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.esotericsoftware.kryo.KryoException;
 import com.google.inject.Provider;

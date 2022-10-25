@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.ng.core.Status;
 import io.harness.ng.core.dto.FailureDTO;
 

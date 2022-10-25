@@ -7,8 +7,8 @@
 
 package io.harness.pms.serializer.kryo.serializers;
 
+import io.harness.kryo.ProtobufKryoSerializer;
 import io.harness.pms.contracts.plan.ConsumerConfig;
-import io.harness.serializer.kryo.ProtobufKryoSerializer;
 
 public class ConsumerConfigKryoSerializer extends ProtobufKryoSerializer<ConsumerConfig> {
   private static ConsumerConfigKryoSerializer instance;

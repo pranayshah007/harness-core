@@ -10,6 +10,7 @@ package io.harness.steps.customstage;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.plancreator.stages.AbstractPmsStagePlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.plan.Dependency;
@@ -19,7 +20,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 
 import com.google.common.base.Preconditions;

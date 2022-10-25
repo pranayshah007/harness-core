@@ -12,7 +12,7 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.git.GitClientHelper.isBitBucketSAAS;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.util.stream.Collectors.toList;
 
@@ -29,14 +29,14 @@ import io.harness.constants.Constants;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.git.GitClientHelper;
 import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.logger.RepoBranchLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CompareCommitsRequest;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;

@@ -15,7 +15,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.gitsync.core.fullsync.entity.GitFullSyncJob.SyncStatus.COMPLETED;
 import static io.harness.gitsync.core.fullsync.entity.GitFullSyncJob.SyncStatus.FAILED;
 import static io.harness.gitsync.core.fullsync.entity.GitFullSyncJob.SyncStatus.FAILED_WITH_RETRIES_LEFT;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.util.stream.Collectors.toList;
 
@@ -42,7 +42,7 @@ import io.harness.gitsync.core.fullsync.entity.GitFullSyncJob;
 import io.harness.gitsync.core.fullsync.service.FullSyncJobService;
 import io.harness.gitsync.fullsync.utils.FullSyncLogContextHelper;
 import io.harness.gitsync.scm.ScmGitUtils;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.entitydetail.EntityDetailRestToProtoMapper;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;

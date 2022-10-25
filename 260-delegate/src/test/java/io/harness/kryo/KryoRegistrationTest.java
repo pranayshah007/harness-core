@@ -16,10 +16,7 @@ import static org.assertj.core.api.Assertions.fail;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.serializer.ClassResolver;
 import io.harness.serializer.DelegateRegistrars;
-import io.harness.serializer.HKryo;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.util.IntMap;

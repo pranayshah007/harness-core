@@ -20,7 +20,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.YamlException;
 import io.harness.execution.PlanExecutionMetadata;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pms.async.plan.PartialPlanResponseCallback;
 import io.harness.pms.contracts.plan.CreatePartialPlanEvent;
 import io.harness.pms.contracts.plan.Dependencies;

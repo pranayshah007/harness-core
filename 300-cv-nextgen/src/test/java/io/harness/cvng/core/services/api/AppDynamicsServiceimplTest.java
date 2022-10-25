@@ -45,7 +45,7 @@ import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConne
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.CorrelationContext;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;

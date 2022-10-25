@@ -10,6 +10,7 @@ package io.harness.serializer;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.CgOrchestrationBeansMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;

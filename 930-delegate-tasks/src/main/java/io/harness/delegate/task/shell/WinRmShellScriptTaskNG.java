@@ -25,7 +25,7 @@ import io.harness.delegate.task.shell.winrm.WinRmConfigAuthEnhancer;
 import io.harness.delegate.task.winrm.WinRmExecutorFactoryNG;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.shell.AbstractScriptExecutor;

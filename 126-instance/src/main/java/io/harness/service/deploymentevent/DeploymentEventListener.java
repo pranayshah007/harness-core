@@ -7,7 +7,7 @@
 
 package io.harness.service.deploymentevent;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -24,8 +24,8 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.SshWinrmDeploymentInfoDTO;
 import io.harness.entities.ArtifactDetails;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.models.DeploymentEvent;
 import io.harness.models.constants.InstanceSyncFlow;
 import io.harness.pms.contracts.ambiance.Ambiance;

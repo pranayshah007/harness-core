@@ -9,7 +9,7 @@ package io.harness;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import com.google.common.collect.ImmutableMap;
 

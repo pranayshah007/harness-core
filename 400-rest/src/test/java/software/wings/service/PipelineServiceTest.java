@@ -93,7 +93,7 @@ import io.harness.limits.checker.UsageLimitExceededException;
 import io.harness.persistence.HQuery;
 import io.harness.resource.Loader;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.DeploymentType;

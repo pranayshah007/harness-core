@@ -14,7 +14,7 @@ import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.TaskFailureReason.EXPIRED;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_EXPIRED;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -36,7 +36,7 @@ import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.task.TaskLogContext;
 import io.harness.eraro.FailureType;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;

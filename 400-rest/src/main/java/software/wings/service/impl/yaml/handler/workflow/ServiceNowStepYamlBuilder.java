@@ -18,7 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.servicenow.ServiceNowCreateUpdateParams;

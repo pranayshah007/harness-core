@@ -26,9 +26,9 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.rule.Owner;
 

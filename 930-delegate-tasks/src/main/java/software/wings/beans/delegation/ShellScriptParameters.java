@@ -7,8 +7,8 @@
 
 package software.wings.beans.delegation;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
-import static io.harness.expression.Expression.DISALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.DISALLOW_SECRETS;
 import static io.harness.k8s.K8sConstants.HARNESS_KUBE_CONFIG_PATH;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 
@@ -22,8 +22,8 @@ import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.mixin.ProcessExecutorCapabilityGenerator;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.common.Expression;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.AccessType;
 import io.harness.shell.AuthenticationScheme;

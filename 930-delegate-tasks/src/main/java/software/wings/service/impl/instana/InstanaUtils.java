@@ -7,7 +7,7 @@
 
 package software.wings.service.impl.instana;
 
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.YamlUtils;
 
 import software.wings.metrics.TimeSeriesMetricDefinition;
 

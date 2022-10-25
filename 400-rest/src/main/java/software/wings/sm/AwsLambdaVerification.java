@@ -24,8 +24,8 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.TaskData;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.AwsLambdaContextElement.FunctionMeta;

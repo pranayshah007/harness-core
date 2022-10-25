@@ -14,7 +14,7 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.beans.EmbeddedUser;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.beans.Notification;
 import software.wings.beans.NotificationGroup;

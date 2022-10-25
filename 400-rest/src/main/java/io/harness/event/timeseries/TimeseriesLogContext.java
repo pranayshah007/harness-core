@@ -7,7 +7,7 @@
 
 package io.harness.event.timeseries;
 
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import java.util.UUID;
 

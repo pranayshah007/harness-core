@@ -11,7 +11,7 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.health.HealthMonitor;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.tracing.TraceMode;

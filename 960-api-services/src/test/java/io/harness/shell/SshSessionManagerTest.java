@@ -22,7 +22,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import io.harness.ApiServiceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.logging.LogCallback;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Lists;

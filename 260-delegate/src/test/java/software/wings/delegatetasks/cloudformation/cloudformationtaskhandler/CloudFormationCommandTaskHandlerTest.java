@@ -41,7 +41,7 @@ import io.harness.aws.AwsCloudformationPrintHelper;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 

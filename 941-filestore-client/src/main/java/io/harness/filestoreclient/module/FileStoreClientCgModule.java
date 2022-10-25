@@ -9,8 +9,8 @@ package io.harness.filestoreclient.module;
 
 import io.harness.filestoreclient.remote.FileStoreClient;
 import io.harness.filestoreclient.remote.FileStoreClientFactoryForCg;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;

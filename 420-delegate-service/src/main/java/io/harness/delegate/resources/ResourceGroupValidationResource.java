@@ -11,7 +11,7 @@ import static io.harness.delegate.utils.RbacConstants.DELEGATE_CONFIG_RESOURCE_T
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_CONFIG_VIEW_PERMISSION;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_RESOURCE_TYPE;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_VIEW_PERMISSION;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 
@@ -20,8 +20,8 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.delegate.DelegateConfigResourceValidationResponse;
 import io.harness.ng.core.delegate.DelegateResourceValidationResponse;
 import io.harness.rest.RestResponse;

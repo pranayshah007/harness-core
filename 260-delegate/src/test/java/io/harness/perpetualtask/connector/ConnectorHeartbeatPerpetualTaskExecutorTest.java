@@ -29,13 +29,13 @@ import io.harness.delegate.beans.connector.ConnectorValidationParameterResponse;
 import io.harness.delegate.beans.connector.k8Connector.K8sValidationParams;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.task.k8s.KubernetesValidationHandler;
+import io.harness.kryo.KryoSerializer;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;

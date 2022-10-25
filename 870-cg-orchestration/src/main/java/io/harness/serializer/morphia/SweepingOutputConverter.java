@@ -8,7 +8,7 @@
 package io.harness.serializer.morphia;
 
 import io.harness.beans.SweepingOutput;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

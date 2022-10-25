@@ -10,6 +10,7 @@ package io.harness.exception;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.utils.ExceptionUtils;
 
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;

@@ -20,6 +20,7 @@ import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.exception.ScmException;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.CreateWebhookResponse;
@@ -27,7 +28,6 @@ import io.harness.product.ci.scm.proto.DeleteFileResponse;
 import io.harness.product.ci.scm.proto.DeleteWebhookResponse;
 import io.harness.product.ci.scm.proto.ListWebhooksResponse;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

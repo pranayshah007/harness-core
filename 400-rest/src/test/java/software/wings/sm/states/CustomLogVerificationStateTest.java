@@ -39,7 +39,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.YamlUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.WingsBaseTest;

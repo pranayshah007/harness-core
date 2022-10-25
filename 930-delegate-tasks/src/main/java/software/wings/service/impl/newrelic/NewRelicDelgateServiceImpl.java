@@ -19,7 +19,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.NewRelicConfig;
 import software.wings.beans.NewRelicDeploymentMarkerPayload;

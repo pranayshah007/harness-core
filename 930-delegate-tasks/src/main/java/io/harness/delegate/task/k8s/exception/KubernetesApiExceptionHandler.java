@@ -16,7 +16,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Singleton;

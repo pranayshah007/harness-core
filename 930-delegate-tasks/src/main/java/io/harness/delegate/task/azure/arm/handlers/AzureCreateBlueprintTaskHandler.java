@@ -30,7 +30,7 @@ import io.harness.delegate.task.azure.common.validator.Validators;
 import io.harness.exception.TimeoutException;
 import io.harness.exception.runtime.azure.AzureBPDeploymentException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.delegatetasks.azure.arm.deployment.context.DeploymentBlueprintContext;
 

@@ -9,7 +9,7 @@ package io.harness.gitsync.core.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.gitsync.common.helper.RepoProviderHelper.getRepoProviderType;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,7 +48,7 @@ import io.harness.gitsync.core.service.GitCommitService;
 import io.harness.gitsync.core.service.YamlChangeSetHandler;
 import io.harness.gitsync.gitsyncerror.service.GitSyncErrorService;
 import io.harness.gitsync.logger.GitProcessingLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.utils.FilePathUtils;
 
 import com.google.inject.Inject;

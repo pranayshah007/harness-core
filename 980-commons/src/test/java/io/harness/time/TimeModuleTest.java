@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.concurrent.HTimeLimiter;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.rule.Owner;
 import io.harness.threading.ExecutorModule;
 

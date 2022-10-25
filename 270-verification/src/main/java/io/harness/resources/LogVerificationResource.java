@@ -7,7 +7,7 @@
 
 package io.harness.resources;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.common.VerificationConstants.IS_EXPERIMENTAL;
 

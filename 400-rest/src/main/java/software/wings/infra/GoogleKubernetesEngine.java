@@ -8,7 +8,7 @@
 package software.wings.infra;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.expression.Expression.DISALLOW_SECRETS;
+import static io.harness.expression.common.Expression.DISALLOW_SECRETS;
 import static io.harness.validation.Validator.ensureType;
 
 import static software.wings.beans.GcpKubernetesInfrastructureMapping.Builder.aGcpKubernetesInfrastructureMapping;
@@ -18,7 +18,7 @@ import static software.wings.common.InfrastructureConstants.INFRA_KUBERNETES_INF
 import static java.lang.String.format;
 
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 
 import software.wings.annotation.IncludeFieldMap;
 import software.wings.api.CloudProviderType;

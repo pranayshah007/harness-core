@@ -26,14 +26,14 @@ import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.logging.AccessTokenBean;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.packages.HarnessPackages;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;

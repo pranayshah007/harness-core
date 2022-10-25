@@ -31,14 +31,14 @@ import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
+import io.harness.kryo.KryoRequest;
+import io.harness.kryo.KryoResponse;
 import io.harness.logging.AccessTokenBean;
 import io.harness.perpetualtask.HeartbeatRequest;
 import io.harness.perpetualtask.HeartbeatResponse;
 import io.harness.perpetualtask.PerpetualTaskContextResponse;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
 import io.harness.rest.RestResponse;
-import io.harness.serializer.kryo.KryoRequest;
-import io.harness.serializer.kryo.KryoResponse;
 
 import software.wings.beans.ConfigFileDto;
 

@@ -26,9 +26,9 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceKeys;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.kryo.KryoSerializer;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.HostElement;

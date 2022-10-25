@@ -15,12 +15,12 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.HintException;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.AzureAppServiceTaskException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.rule.Owner;
 
 import com.microsoft.aad.adal4j.AuthenticationException;

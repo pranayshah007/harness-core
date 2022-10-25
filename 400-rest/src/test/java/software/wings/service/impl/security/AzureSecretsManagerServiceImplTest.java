@@ -21,10 +21,10 @@ import io.harness.beans.EncryptedData;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.AzureKeyVaultOperationException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.SecretManagementTestHelper;
 import software.wings.WingsBaseTest;

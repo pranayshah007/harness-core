@@ -33,6 +33,7 @@ import io.harness.delegate.task.HDelegateTask;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.encryption.Scope;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -53,7 +54,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 import io.harness.tasks.Task;
 

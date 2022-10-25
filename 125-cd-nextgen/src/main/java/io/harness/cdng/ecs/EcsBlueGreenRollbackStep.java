@@ -29,7 +29,7 @@ import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest.EcsBlueGreenRollbackRequestBuilder;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
 import io.harness.delegate.task.ecs.response.EcsCommandResponse;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;

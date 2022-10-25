@@ -11,9 +11,9 @@ import static io.harness.network.SafeHttpCall.execute;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.kryo.KryoSerializer;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.rest.RestResponse;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.ConfigFileDto;
 import software.wings.delegatetasks.DelegateConfigService;

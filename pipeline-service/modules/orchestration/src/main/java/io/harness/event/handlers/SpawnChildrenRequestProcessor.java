@@ -20,7 +20,7 @@ import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse.Child;
 import io.harness.pms.contracts.execution.ExecutableResponse;

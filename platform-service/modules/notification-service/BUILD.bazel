@@ -388,7 +388,7 @@ java_library(
         "//970-api-services-beans/src/main/proto:970_api_services_beans_java_proto",
         "//970-ng-commons:module",
         "//980-commons:module",
-        "//980-commons:tests",
+        "//980-commons/src/main/java/io/harness/expression:tests",
         "//990-commons-test:module",
         "//999-annotations:module",
         "//clients/notification:module",

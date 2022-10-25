@@ -7,7 +7,7 @@
 
 package io.harness.grpc.server;
 
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.grpc.exception.GrpcExceptionMapper;
 
 import com.google.inject.Provider;

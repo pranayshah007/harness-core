@@ -13,12 +13,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.execution.facilitator.DefaultFacilitatorParams;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import org.junit.Test;

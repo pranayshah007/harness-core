@@ -43,7 +43,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.CustomDeploymentTypeInfo;

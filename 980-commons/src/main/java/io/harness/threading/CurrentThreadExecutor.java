@@ -7,7 +7,7 @@
 
 package io.harness.threading;
 
-import io.harness.logging.AutoLogRemoveAllContext;
+import io.harness.logging.logcontext.AutoLogRemoveAllContext;
 
 import java.util.Collections;
 import java.util.List;

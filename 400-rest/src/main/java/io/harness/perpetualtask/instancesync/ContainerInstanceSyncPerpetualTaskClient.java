@@ -26,10 +26,10 @@ import io.harness.beans.DelegateTask;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.TaskData;
 import io.harness.ff.FeatureFlagService;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.AzureKubernetesInfrastructureMapping;

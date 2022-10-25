@@ -19,8 +19,8 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.beans.SecretManagerConfig;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.VaultConfig;

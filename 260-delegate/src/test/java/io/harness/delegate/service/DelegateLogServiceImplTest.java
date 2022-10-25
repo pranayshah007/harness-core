@@ -24,12 +24,12 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.managerclient.VerificationServiceClient;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.Log;
 

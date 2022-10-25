@@ -7,7 +7,7 @@
 
 package software.wings.resources.limits;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
@@ -17,8 +17,8 @@ import io.harness.limits.configuration.LimitConfigurationService;
 import io.harness.limits.impl.model.RateLimit;
 import io.harness.limits.impl.model.StaticLimit;
 import io.harness.limits.lib.Limit;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.User;

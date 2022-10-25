@@ -27,11 +27,11 @@ import io.harness.exception.ArtifactServerException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.inject.Inject;

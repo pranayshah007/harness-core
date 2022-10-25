@@ -19,7 +19,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.notification.PipelineEventType;
 import io.harness.notification.PipelineEventTypeConstants;
 import io.harness.notification.bean.NotificationChannelWrapper;

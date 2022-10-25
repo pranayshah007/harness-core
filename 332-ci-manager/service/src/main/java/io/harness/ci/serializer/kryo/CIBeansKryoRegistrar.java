@@ -51,7 +51,7 @@ import io.harness.ci.beans.entities.CITelemetrySentStatus;
 import io.harness.ci.beans.entities.EncryptedDataDetails;
 import io.harness.ci.stdvars.BuildStandardVariables;
 import io.harness.ci.stdvars.GitVariables;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

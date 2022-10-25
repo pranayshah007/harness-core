@@ -7,8 +7,8 @@
 
 package software.wings.service.impl;
 
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.delegatetasks.DelegateStateType;
 

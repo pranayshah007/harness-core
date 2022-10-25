@@ -37,7 +37,7 @@ import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;

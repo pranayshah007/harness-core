@@ -14,7 +14,7 @@ import static software.wings.beans.VariableType.ARTIFACT;
 
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SweepingOutputInstance;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 
 import software.wings.beans.Variable;
 import software.wings.beans.artifact.Artifact;

@@ -10,7 +10,7 @@ package io.harness.perpetualtask.internal;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import static java.lang.String.format;
@@ -38,8 +38,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.kryo.KryoSerializer;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
@@ -50,7 +51,6 @@ import io.harness.perpetualtask.PerpetualTaskServiceClientRegistry;
 import io.harness.perpetualtask.PerpetualTaskState;
 import io.harness.perpetualtask.PerpetualTaskUnassignedReason;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord.PerpetualTaskRecordKeys;
-import io.harness.serializer.KryoSerializer;
 import io.harness.workers.background.CrossEnvironmentAccountStatusBasedEntityProcessController;
 
 import software.wings.beans.Account;

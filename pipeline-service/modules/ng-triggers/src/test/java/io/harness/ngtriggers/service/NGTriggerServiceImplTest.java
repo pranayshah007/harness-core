@@ -30,6 +30,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
@@ -64,7 +65,6 @@ import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.repositories.spring.NGTriggerRepository;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 

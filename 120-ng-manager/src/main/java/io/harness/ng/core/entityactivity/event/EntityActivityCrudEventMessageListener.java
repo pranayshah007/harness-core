@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.entityactivity.event;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.core.activityhistory.NGActivityStatus.SUCCESS;
 import static io.harness.ng.core.activityhistory.NGActivityType.CONNECTIVITY_CHECK;
 
@@ -15,7 +15,7 @@ import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.NgEventLogContext;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.schemas.entityactivity.EntityActivityCreateDTO;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.activityhistory.dto.NGActivityDTO;
 import io.harness.ng.core.activityhistory.service.NGActivityService;
 import io.harness.ng.core.entityactivity.EntityActivityEventHandler;

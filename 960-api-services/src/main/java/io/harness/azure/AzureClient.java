@@ -24,9 +24,9 @@ import io.harness.azure.model.AzureConstants;
 import io.harness.azure.utility.AzureUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.AzureAuthenticationException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.network.Http;
 
 import com.auth0.jwt.JWT;

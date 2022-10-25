@@ -31,7 +31,7 @@ import io.harness.category.element.DeprecatedIntegrationTests;
 import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.sso.LdapGroupResponse;

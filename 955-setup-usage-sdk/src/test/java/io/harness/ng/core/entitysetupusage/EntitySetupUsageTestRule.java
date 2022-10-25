@@ -8,13 +8,13 @@
 package io.harness.ng.core.entitysetupusage;
 
 import io.harness.govern.ProviderModule;
+import io.harness.kryo.KryoModule;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.InjectorRuleMixin;
-import io.harness.serializer.KryoModule;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.SetupUsageRegistrars;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.testlib.module.MongoRuleMixin;

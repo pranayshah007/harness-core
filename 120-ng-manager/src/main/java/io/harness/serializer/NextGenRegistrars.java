@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;

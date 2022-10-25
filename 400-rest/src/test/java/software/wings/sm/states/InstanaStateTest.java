@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.AccountType;
 import software.wings.beans.Application;

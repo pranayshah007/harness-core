@@ -10,7 +10,7 @@ package io.harness.timeout;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.persistence.LogKeyUtils;
 
 @OwnedBy(CDC)

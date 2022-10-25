@@ -26,6 +26,7 @@ import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.exception.HelmClientException;
 import io.harness.helm.HelmCliCommandType;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
@@ -36,7 +37,6 @@ import io.harness.perpetualtask.polling.PollingResponsePublisher;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;

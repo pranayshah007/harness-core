@@ -9,7 +9,7 @@ package io.harness.ci.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import com.google.common.collect.ImmutableMap;
 

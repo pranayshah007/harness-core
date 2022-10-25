@@ -16,7 +16,7 @@ import static io.harness.delegate.message.MessageConstants.WATCHER_HEARTBEAT;
 import static io.harness.delegate.message.MessageConstants.WATCHER_PROCESS;
 import static io.harness.delegate.message.MessageConstants.WATCHER_STARTED;
 import static io.harness.delegate.message.MessageConstants.WATCHER_VERSION;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.utils.MemoryPerformanceUtils.memoryUsage;
 import static io.harness.watcher.app.WatcherApplication.getProcessId;
 
@@ -30,7 +30,7 @@ import io.harness.delegate.message.Message;
 import io.harness.delegate.message.MessageService;
 import io.harness.exception.VersionInfoException;
 import io.harness.filesystem.FileIo;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.managerclient.ManagerClientV2;
 import io.harness.managerclient.SafeHttpCall;
 import io.harness.rest.RestResponse;

@@ -21,7 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.timeout.TimeoutEngine;

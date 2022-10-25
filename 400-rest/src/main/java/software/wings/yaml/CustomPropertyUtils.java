@@ -10,7 +10,7 @@ package software.wings.yaml;
 import static software.wings.beans.yaml.YamlConstants.FIELD_HARNESS_API_VERSION;
 import static software.wings.beans.yaml.YamlConstants.FIELD_TYPE;
 
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 
 import java.io.Serializable;
 import java.util.Collection;

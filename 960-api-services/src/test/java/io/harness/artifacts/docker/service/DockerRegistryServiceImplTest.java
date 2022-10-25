@@ -7,7 +7,7 @@
 
 package io.harness.artifacts.docker.service;
 
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ARCHIT;
@@ -51,7 +51,7 @@ import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.manage.GlobalContextManager;
 import io.harness.network.Http;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;

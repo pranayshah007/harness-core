@@ -35,6 +35,7 @@ import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.datacollection.k8s.ChangeIntelSharedInformerFactory;
@@ -43,7 +44,6 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.delegatetasks.cvng.K8InfoDataService;
 

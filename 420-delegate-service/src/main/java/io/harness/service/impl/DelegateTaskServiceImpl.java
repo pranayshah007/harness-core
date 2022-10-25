@@ -9,7 +9,7 @@ package io.harness.service.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateTaskResponse.ResponseCode;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_RESPONSE;
 
 import static java.lang.System.currentTimeMillis;
@@ -22,15 +22,15 @@ import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.task.TaskLogContext;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.logging.AutoLogContext;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.DelegateDriverLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.ReflectionUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.service.dto.RetryDelegate;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateCallbackService;

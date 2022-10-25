@@ -7,10 +7,10 @@
 
 package io.harness.userng;
 
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 import io.harness.userng.remote.UserNGClient;
 import io.harness.userng.remote.UserNGHttpClientFactory;
 

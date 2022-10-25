@@ -18,7 +18,7 @@ import io.harness.perpetualtask.k8s.informer.ClusterDetails;
 import io.harness.perpetualtask.k8s.watch.K8sObjectReference;
 import io.harness.perpetualtask.k8s.watch.K8sWatchEvent;
 import io.harness.perpetualtask.k8s.watch.K8sWorkloadSpec;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;

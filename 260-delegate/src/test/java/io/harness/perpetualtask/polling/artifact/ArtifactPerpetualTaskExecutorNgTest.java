@@ -30,6 +30,7 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
@@ -40,7 +41,6 @@ import io.harness.perpetualtask.polling.PollingResponsePublisher;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;

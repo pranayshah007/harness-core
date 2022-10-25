@@ -7,12 +7,12 @@
 
 package software.wings.service.impl.yaml;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.beans.yaml.YamlSuccessfulChange.ChangeSource.GIT;
 import static software.wings.beans.yaml.YamlSuccessfulChange.ChangeSource.HARNESS;
 
-import io.harness.logging.AccountLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
 
 import software.wings.beans.yaml.GitFileChange;
 import software.wings.beans.yaml.GitSuccessFulChangeDetail;

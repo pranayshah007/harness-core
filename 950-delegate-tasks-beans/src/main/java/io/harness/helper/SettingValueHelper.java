@@ -13,7 +13,7 @@ import io.harness.beans.Encryptable;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.EncryptionReflectUtils;
 import io.harness.exception.InvalidRequestException;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.settings.SettingValue;

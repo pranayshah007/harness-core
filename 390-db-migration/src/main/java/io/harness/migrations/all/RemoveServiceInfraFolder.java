@@ -13,7 +13,7 @@ import static software.wings.beans.yaml.YamlConstants.INFRA_MAPPING_FOLDER;
 import static software.wings.beans.yaml.YamlConstants.SETUP_FOLDER;
 
 import io.harness.data.structure.HarnessStringUtils;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.git.model.ChangeType;
 import io.harness.migrations.Migration;
 

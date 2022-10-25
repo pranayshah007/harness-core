@@ -11,7 +11,7 @@ import static io.harness.ccm.CcmConstants.CLUSTER_ID_IDENTIFIER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.event.payloads.Lifecycle.EventType.EVENT_TYPE_START;
 import static io.harness.event.payloads.Lifecycle.EventType.EVENT_TYPE_STOP;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
@@ -36,7 +36,8 @@ import io.harness.event.payloads.Lifecycle.EventType;
 import io.harness.event.payloads.ReservedResource;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.grpc.utils.HTimestamps;
-import io.harness.logging.AutoLogContext;
+import io.harness.kryo.KryoSerializer;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
 import io.harness.perpetualtask.PerpetualTaskId;
@@ -44,7 +45,6 @@ import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.ecs.support.EcsMetricClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;

@@ -9,7 +9,7 @@ package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
@@ -29,8 +29,8 @@ import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.common.Expression;
 
 import java.util.ArrayList;
 import java.util.HashMap;

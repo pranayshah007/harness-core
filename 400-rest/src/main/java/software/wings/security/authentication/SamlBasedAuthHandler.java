@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SE
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.saml.SamlClientService.SAML_TRIGGER_TYPE;
 
@@ -31,7 +31,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.persistence.HPersistence;
 import io.harness.security.encryption.EncryptedDataDetail;

@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO.UserGroupFilterDTOBuilder;

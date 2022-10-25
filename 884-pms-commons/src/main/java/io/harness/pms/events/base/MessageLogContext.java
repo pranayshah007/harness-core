@@ -10,7 +10,7 @@ package io.harness.pms.events.base;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import java.util.HashMap;
 import java.util.Map;

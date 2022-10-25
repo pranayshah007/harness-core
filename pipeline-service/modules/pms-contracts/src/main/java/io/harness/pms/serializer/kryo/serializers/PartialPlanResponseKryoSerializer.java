@@ -7,8 +7,8 @@
 
 package io.harness.pms.serializer.kryo.serializers;
 
+import io.harness.kryo.ProtobufKryoSerializer;
 import io.harness.pms.contracts.plan.PartialPlanResponse;
-import io.harness.serializer.kryo.ProtobufKryoSerializer;
 
 public class PartialPlanResponseKryoSerializer extends ProtobufKryoSerializer<PartialPlanResponse> {
   private static PartialPlanResponseKryoSerializer instance;

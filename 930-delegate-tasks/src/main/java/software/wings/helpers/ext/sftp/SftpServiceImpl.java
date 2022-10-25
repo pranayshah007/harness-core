@@ -13,8 +13,8 @@ import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.SftpConfig;

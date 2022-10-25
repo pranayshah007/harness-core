@@ -35,7 +35,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
 import io.harness.rule.Owner;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.yaml.BaseYaml;

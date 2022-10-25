@@ -27,6 +27,7 @@ import io.harness.delegate.task.terraform.TerraformTaskNGParameters.TerraformTas
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.persistence.HIterator;
@@ -50,7 +51,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;

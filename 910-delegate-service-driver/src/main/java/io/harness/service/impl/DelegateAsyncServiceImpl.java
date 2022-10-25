@@ -19,9 +19,9 @@ import io.harness.delegate.beans.DelegateAsyncTaskResponse.DelegateAsyncTaskResp
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.SerializedResponseData;
+import io.harness.kryo.KryoSerializer;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueueController;
-import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;

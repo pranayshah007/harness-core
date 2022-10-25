@@ -56,7 +56,7 @@ import io.harness.exception.TimeoutException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;

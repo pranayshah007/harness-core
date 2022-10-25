@@ -28,7 +28,7 @@ import io.harness.delegate.task.azure.arm.response.AzureBlueprintDeploymentRespo
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.delegatetasks.azure.arm.deployment.context.DeploymentBlueprintContext;
 

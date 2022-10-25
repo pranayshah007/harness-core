@@ -26,9 +26,9 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.PageResponse;
 import io.harness.exception.AzureServiceException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.api.DeploymentType;

@@ -22,7 +22,7 @@ import io.harness.engine.pms.resume.EngineResumeAllCallback;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.engine.pms.resume.EngineWaitRetryCallback;
 import io.harness.engine.progress.EngineProgressCallback;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

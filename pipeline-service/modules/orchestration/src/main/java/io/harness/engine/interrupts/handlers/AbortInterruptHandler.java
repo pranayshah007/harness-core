@@ -22,7 +22,7 @@ import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.interrupts.helpers.AbortHelper;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptType;
 

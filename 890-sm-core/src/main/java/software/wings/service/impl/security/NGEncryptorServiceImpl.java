@@ -11,10 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.reflection.ReflectionUtils.getFieldByName;
+import static io.harness.reflection.util.ReflectionUtils.getFieldByName;
 import static io.harness.security.SimpleEncryption.CHARSET;
-import static io.harness.security.encryption.SecretManagerType.KMS;
-import static io.harness.security.encryption.SecretManagerType.VAULT;
 
 import static java.lang.String.format;
 

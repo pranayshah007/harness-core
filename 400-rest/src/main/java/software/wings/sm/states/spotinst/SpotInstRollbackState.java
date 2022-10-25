@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.delegate.task.spotinst.request.SpotInstDeployTaskParameters;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.spotinst.model.ElastiGroup;
 
 import software.wings.beans.Activity;

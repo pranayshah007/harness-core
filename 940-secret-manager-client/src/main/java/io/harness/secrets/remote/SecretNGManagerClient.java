@@ -13,6 +13,8 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.kryo.KryoRequest;
+import io.harness.kryo.KryoResponse;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
 import io.harness.ng.core.NGAccessWithEncryptionConsumer;
@@ -20,8 +22,6 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.kryo.KryoRequest;
-import io.harness.serializer.kryo.KryoResponse;
 
 import java.util.List;
 import retrofit2.Call;

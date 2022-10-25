@@ -8,7 +8,7 @@
 package io.harness.perpetualtask.k8s.watch;
 
 import static io.harness.ccm.CcmConstants.CLUSTER_ID_IDENTIFIER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -26,7 +26,8 @@ import io.harness.grpc.utils.AnyUtils;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.k8s.apiclient.ApiClientFactoryImpl;
 import io.harness.k8s.model.KubernetesConfig;
-import io.harness.logging.AutoLogContext;
+import io.harness.kryo.KryoSerializer;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
 import io.harness.perpetualtask.PerpetualTaskId;
@@ -36,7 +37,6 @@ import io.harness.perpetualtask.k8s.informer.ClusterDetails;
 import io.harness.perpetualtask.k8s.metrics.client.impl.DefaultK8sMetricsClient;
 import io.harness.perpetualtask.k8s.metrics.collector.K8sMetricCollector;
 import io.harness.perpetualtask.k8s.utils.ApiExceptionLogger;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;

@@ -19,10 +19,10 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.DelegateTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.perpetualtask.k8s.watch.K8sWatchTaskParams;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.threading.Concurrent;
 
 import software.wings.beans.KubernetesClusterConfig;

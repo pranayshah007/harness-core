@@ -18,8 +18,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.logging.AutoLogRemoveContext;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
+import io.harness.logging.logcontext.AutoLogRemoveContext;
 import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;

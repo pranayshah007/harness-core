@@ -18,12 +18,12 @@ import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.runtime.GithubPackagesServerRuntimeException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 

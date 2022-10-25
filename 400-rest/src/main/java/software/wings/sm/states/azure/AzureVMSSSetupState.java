@@ -19,7 +19,7 @@ import static io.harness.azure.model.AzureConstants.DOWN_SCALE_STEADY_STATE_WAIT
 import static io.harness.azure.model.AzureConstants.SETUP_COMMAND_UNIT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.pcf.ResizeStrategy.RESIZE_NEW_FIRST;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 
 import static software.wings.sm.StateType.AZURE_VMSS_SETUP;
 

@@ -7,7 +7,7 @@
 
 package io.harness.cvng.exception;
 
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 
 import com.google.common.collect.Iterables;
 import java.lang.annotation.Annotation;

@@ -33,6 +33,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.govern.Switch;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.CorrelationContext;
 import io.harness.ng.core.NGAccess;
@@ -50,7 +51,6 @@ import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.SyncTaskContext;
 import software.wings.delegatetasks.DelegateProxyFactory;

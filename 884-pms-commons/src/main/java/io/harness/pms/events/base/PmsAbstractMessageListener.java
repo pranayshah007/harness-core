@@ -13,10 +13,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.pms.sdk.execution.events.PmsCommonsBaseEventHandler;
-import io.harness.serializer.ProtoUtils;
+import io.harness.serializer.utils.ProtoUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;

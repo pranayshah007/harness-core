@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.YamlException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.yaml.YAMLFieldNameConstants;

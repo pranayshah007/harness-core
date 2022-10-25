@@ -9,7 +9,7 @@ package software.wings.infra;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 import static io.harness.validation.Validator.ensureType;
 
 import static software.wings.beans.AwsInfrastructureMapping.Builder.anAwsInfrastructureMapping;
@@ -24,7 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 
 import software.wings.annotation.IncludeFieldMap;
 import software.wings.api.CloudProviderType;

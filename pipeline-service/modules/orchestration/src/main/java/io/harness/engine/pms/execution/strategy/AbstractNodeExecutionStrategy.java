@@ -12,7 +12,7 @@ import io.harness.engine.pms.execution.SdkResponseProcessorFactory;
 import io.harness.event.handlers.SdkResponseProcessor;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PmsNodeExecutionMetadata;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.events.InitiateMode;

@@ -10,8 +10,8 @@ package io.harness.serializer.spring.converters.stepparameters;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
-import io.harness.serializer.KryoSerializer;
 import io.harness.serializer.spring.converters.orchestrationMap.OrchestrationMapAbstractReadConverter;
 
 import com.google.inject.Inject;

@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.KeyManagerBuilderException;
 import io.harness.exception.SslContextBuilderException;
+import io.harness.kryo.DelegateKryoConverterFactory;
 import io.harness.managerclient.DelegateAuthInterceptor;
 import io.harness.network.FibonacciBackOff;
 import io.harness.network.Http;
@@ -19,7 +20,6 @@ import io.harness.security.TokenGenerator;
 import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509SslContextBuilder;
 import io.harness.security.X509TrustManagerBuilder;
-import io.harness.serializer.kryo.DelegateKryoConverterFactory;
 import io.harness.version.VersionInfoManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

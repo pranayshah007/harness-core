@@ -7,11 +7,11 @@
 
 package io.harness.pms.sdk.core.events;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;

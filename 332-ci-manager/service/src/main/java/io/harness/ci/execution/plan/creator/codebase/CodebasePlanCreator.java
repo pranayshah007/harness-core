@@ -15,6 +15,7 @@ import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseStepParameters;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStepParameters;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -25,7 +26,6 @@ import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.google.common.annotations.VisibleForTesting;

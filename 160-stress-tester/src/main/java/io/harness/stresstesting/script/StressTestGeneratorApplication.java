@@ -10,9 +10,9 @@ package io.harness.stresstesting.script;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.govern.ProviderModule;
+import io.harness.kryo.KryoModule;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.serializer.DelegateServiceBeansRegistrars;
-import io.harness.serializer.KryoModule;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 
 import com.google.common.collect.ImmutableSet;

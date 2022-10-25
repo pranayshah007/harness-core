@@ -61,11 +61,11 @@ import io.harness.delegateprofile.UpdateProfileSelectorsRequest;
 import io.harness.delegateprofile.UpdateProfileSelectorsResponse;
 import io.harness.delegateprofile.UpdateProfileSelectorsV2Request;
 import io.harness.filter.FilterUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
 import io.harness.owner.OrgIdentifier;
 import io.harness.owner.ProjectIdentifier;
 import io.harness.paging.PageRequestGrpc;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.User;
 import software.wings.security.UserThreadLocal;

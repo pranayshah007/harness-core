@@ -27,7 +27,7 @@ import io.harness.ccm.cluster.entities.EcsCluster;
 import io.harness.ccm.cluster.entities.GcpKubernetesCluster;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import software.wings.beans.Application;
 import software.wings.beans.AzureKubernetesInfrastructureMapping;

@@ -10,9 +10,9 @@ package io.harness.validation;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
 
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.persistence.UuidAccess;
 
 import com.mongodb.DuplicateKeyException;

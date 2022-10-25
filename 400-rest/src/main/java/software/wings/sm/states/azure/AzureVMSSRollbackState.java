@@ -8,7 +8,7 @@
 package software.wings.sm.states.azure;
 
 import static io.harness.azure.model.AzureConstants.SKIP_VMSS_ROLLBACK;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 
 import static software.wings.service.impl.azure.manager.AzureVMSSAllPhaseRollbackData.AZURE_VMSS_ALL_PHASE_ROLLBACK;
 import static software.wings.sm.StateType.AZURE_VMSS_ROLLBACK;

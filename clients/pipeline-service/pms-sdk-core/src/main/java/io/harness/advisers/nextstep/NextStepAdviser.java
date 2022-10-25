@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -22,7 +23,6 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;

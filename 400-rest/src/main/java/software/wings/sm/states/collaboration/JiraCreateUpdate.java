@@ -41,7 +41,7 @@ import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraIssueType;
 import io.harness.jira.JiraProjectData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.jira.JiraExecutionData;

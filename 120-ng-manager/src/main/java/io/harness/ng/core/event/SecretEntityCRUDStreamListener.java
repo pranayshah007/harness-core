@@ -18,7 +18,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJEC
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.RESTORE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.validator.SecretEntityCRUDEventHandler;
@@ -29,7 +29,7 @@ import io.harness.eventsframework.entity_crud.account.AccountEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.api.SecretCrudService;
 
 import com.google.inject.Inject;

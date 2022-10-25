@@ -7,7 +7,7 @@
 
 package io.harness.pms.sdk;
 
-import static io.harness.reflection.CodeUtils.isHarnessClass;
+import static io.harness.reflection.util.CodeUtils.isHarnessClass;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.data.structure.EmptyPredicate;

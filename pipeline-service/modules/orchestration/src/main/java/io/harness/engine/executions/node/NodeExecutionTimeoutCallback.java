@@ -21,7 +21,7 @@ import io.harness.pms.contracts.interrupts.IssuedBy;
 import io.harness.pms.contracts.interrupts.TimeoutIssuer;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.serializer.ProtoUtils;
+import io.harness.serializer.utils.ProtoUtils;
 import io.harness.timeout.TimeoutCallback;
 import io.harness.timeout.TimeoutDetails;
 import io.harness.timeout.TimeoutInstance;

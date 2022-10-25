@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.YamlUtils;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;

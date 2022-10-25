@@ -14,6 +14,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cf.pipeline.FeatureFlagStageNode;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.plancreator.steps.barrier.BarrierStepNode;

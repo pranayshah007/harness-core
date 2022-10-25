@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.lock.PersistentLocker;
 import io.harness.ng.beans.PageRequest;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.resourcegroup.commons.bootstrap.ConfigurationState;
 import io.harness.resourcegroup.commons.bootstrap.ConfigurationStateRepository;
 import io.harness.resourcegroup.framework.v2.service.ResourceGroupService;

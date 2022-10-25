@@ -17,7 +17,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.network.Http;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.apm.Method;
 import software.wings.helpers.ext.apm.APMRestClient;

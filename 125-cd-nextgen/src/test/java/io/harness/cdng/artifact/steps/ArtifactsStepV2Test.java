@@ -65,6 +65,7 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
@@ -83,7 +84,6 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.beans.SerializationFormat;

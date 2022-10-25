@@ -7,7 +7,7 @@
 
 package io.harness.delegate.task.ecs.request;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -15,8 +15,8 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
-import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.expression.common.Expression;
+import io.harness.reflection.util.ExpressionReflectionUtils;
 
 import lombok.Builder;
 import lombok.Value;

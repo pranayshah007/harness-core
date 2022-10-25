@@ -36,7 +36,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.InstanceElement;

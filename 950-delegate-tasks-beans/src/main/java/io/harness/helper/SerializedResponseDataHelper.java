@@ -8,7 +8,7 @@
 package io.harness.helper;
 
 import io.harness.delegate.beans.SerializedResponseData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.SerializationFormat;

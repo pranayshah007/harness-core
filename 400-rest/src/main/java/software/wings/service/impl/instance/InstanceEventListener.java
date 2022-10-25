@@ -9,7 +9,7 @@ package software.wings.service.impl.instance;
 
 import io.harness.event.timeseries.TimeseriesLogContext;
 import io.harness.event.timeseries.processor.instanceeventprocessor.InstanceEventProcessor;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.queue.QueueConsumer;
 import io.harness.queue.QueueListener;
 

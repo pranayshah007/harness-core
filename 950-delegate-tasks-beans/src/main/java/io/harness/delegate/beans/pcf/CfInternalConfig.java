@@ -13,7 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.Encrypted;
 import io.harness.encryption.EncryptionReflectUtils;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.jersey.JsonViews;

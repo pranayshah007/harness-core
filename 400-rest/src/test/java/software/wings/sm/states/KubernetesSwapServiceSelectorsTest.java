@@ -30,8 +30,8 @@ import static org.mockito.Mockito.when;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
 import software.wings.WingsBaseTest;

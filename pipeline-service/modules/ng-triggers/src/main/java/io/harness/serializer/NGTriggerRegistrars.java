@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ngtriggers.beans.config.NgTriggerConfigSchemaWrapper;
 import io.harness.serializer.kryo.NGTriggerKryoRegistrar;

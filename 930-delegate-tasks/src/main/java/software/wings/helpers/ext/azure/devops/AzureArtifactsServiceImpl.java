@@ -30,9 +30,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.ListNotifyResponseData;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.artifact.ArtifactMetadataKeys;

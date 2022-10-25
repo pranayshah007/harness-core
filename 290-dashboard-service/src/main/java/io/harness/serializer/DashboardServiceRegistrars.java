@@ -7,6 +7,8 @@
 
 package io.harness.serializer;
 
+import io.harness.kryo.KryoRegistrar;
+
 import com.google.common.collect.ImmutableSet;
 
 public class DashboardServiceRegistrars {

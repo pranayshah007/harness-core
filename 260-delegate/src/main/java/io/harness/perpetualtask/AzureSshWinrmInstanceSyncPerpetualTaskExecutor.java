@@ -28,11 +28,11 @@ import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceIn
 import io.harness.delegate.task.ssh.AzureInfraDelegateConfig;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 

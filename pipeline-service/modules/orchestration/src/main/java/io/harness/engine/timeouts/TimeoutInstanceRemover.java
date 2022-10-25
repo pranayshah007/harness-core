@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.StatusUtils;

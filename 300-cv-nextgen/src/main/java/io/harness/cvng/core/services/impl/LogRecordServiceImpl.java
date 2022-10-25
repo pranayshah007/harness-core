@@ -19,7 +19,7 @@ import io.harness.cvng.core.services.api.LogRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.demo.CVNGDemoDataIndexService;
 import io.harness.persistence.HPersistence;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;

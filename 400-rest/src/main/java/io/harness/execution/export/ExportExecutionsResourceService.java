@@ -8,7 +8,7 @@
 package io.harness.execution.export;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
 
@@ -27,8 +27,8 @@ import io.harness.limits.ActionType;
 import io.harness.limits.ConfiguredLimit;
 import io.harness.limits.configuration.LimitConfigurationService;
 import io.harness.limits.impl.model.StaticLimit;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.security.UserGroup;

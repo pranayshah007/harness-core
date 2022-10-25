@@ -24,6 +24,7 @@ import io.harness.cdng.utilities.PrimaryArtifactsUtility;
 import io.harness.cdng.utilities.SideCarsListArtifactsUtility;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
@@ -38,7 +39,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse.PlanCrea
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.fork.ForkStepParameters;
 
 import com.google.inject.Inject;

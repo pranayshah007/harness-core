@@ -23,7 +23,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.encryption.EncryptionReflectUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.secrets.setupusage.builders.SecretManagerSetupUsageBuilder;

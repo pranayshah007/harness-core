@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.SAHIL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
@@ -27,7 +28,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.steps.matrix.StrategyStep;

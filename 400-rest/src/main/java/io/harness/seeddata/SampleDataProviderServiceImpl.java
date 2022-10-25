@@ -12,8 +12,8 @@ import static io.harness.seeddata.SampleDataProviderConstants.K8S_SERVICE_INFRA_
 import static io.harness.validation.Validator.notNullCheck;
 
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.KubernetesConvention;
 

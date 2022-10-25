@@ -7,8 +7,8 @@
 
 package software.wings.service.impl;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.logging.Misc.getDurationString;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.alerts.AlertStatus.Closed;
 import static software.wings.alerts.AlertStatus.Open;
@@ -43,7 +43,7 @@ import io.harness.event.model.EventData;
 import io.harness.event.model.EventType;
 import io.harness.event.publisher.EventPublisher;
 import io.harness.exception.WingsException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.persistence.HIterator;
 
 import software.wings.alerts.AlertStatus;

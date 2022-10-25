@@ -19,7 +19,7 @@ import io.harness.exception.WingsException;
 import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistenceIterator.ProcessMode;
 import io.harness.iterator.PersistenceIteratorFactory;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;

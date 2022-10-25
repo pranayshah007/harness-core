@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.gitsync.common.beans.YamlChangeSet.MAX_RETRY_COUNT_EXCEEDED_CODE;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 
 import static java.lang.String.format;
@@ -29,9 +29,9 @@ import io.harness.gitsync.core.dtos.YamlChangeSetDTO;
 import io.harness.gitsync.core.service.YamlChangeSetLifeCycleManagerService;
 import io.harness.gitsync.core.service.YamlChangeSetService;
 import io.harness.lock.PersistentLocker;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.mongo.ProcessTimeLogContext;
 import io.harness.queue.QueueController;
 

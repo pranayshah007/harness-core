@@ -7,11 +7,11 @@
 
 package software.wings.utils;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 
 import lombok.Builder;
 import lombok.Setter;

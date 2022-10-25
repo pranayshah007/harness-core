@@ -9,9 +9,9 @@ package io.harness;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.ChangeDataCaptureRegistrars;
-import io.harness.serializer.KryoRegistrar;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;

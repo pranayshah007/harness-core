@@ -22,10 +22,10 @@ import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
 import io.harness.artifacts.gar.beans.GarTags;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.expression.RegexFunctor;
 import io.harness.network.Http;
 

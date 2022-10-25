@@ -12,9 +12,9 @@ import static io.harness.remote.client.ClientMode.PRIVILEGED;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;

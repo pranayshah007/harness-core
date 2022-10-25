@@ -16,7 +16,7 @@ import io.harness.beans.RepresentationStrategy;
 import io.harness.beans.internal.EdgeListInternal;
 import io.harness.beans.internal.OrchestrationAdjacencyListInternal;
 import io.harness.dto.GraphDelegateSelectionLogParams;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 import org.bson.Document;

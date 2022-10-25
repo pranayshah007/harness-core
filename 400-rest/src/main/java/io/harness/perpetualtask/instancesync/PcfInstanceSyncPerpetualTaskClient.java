@@ -22,10 +22,10 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.pcf.CfInternalConfig;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.request.CfInstanceSyncRequest;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.PcfConfig;
 import software.wings.beans.PcfInfrastructureMapping;

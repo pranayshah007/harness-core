@@ -25,6 +25,7 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.manage.GlobalContextManager;
 import io.harness.security.PmsAuthInterceptor;
 import io.harness.security.SecurityContextBuilder;
@@ -33,7 +34,6 @@ import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.serializer.JsonSubtypeResolver;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import software.wings.jersey.JsonViews;
 

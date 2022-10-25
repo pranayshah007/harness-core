@@ -14,7 +14,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.jira.deserializer.JiraIssueDeserializer;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.servicenow.TicketNG;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

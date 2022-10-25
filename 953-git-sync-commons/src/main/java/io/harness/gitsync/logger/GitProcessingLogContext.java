@@ -11,7 +11,7 @@ import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 
 import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.data.structure.NullSafeImmutableMap.NullSafeBuilder;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import java.util.Map;
 

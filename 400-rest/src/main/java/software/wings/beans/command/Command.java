@@ -9,7 +9,7 @@ package software.wings.beans.command;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import static software.wings.beans.command.Command.Builder.aCommand;
 
@@ -21,15 +21,15 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.expression.common.Expression;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.serializer.MapperUtils;
+import io.harness.reflection.util.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.serializer.utils.MapperUtils;
 
 import software.wings.beans.Base;
 import software.wings.beans.Graph;

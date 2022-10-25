@@ -14,7 +14,7 @@ package io.harness.delegate.task.citasks.cik8handler;
 import static io.harness.connector.SecretSpecBuilder.getSecretName;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
 
@@ -27,8 +27,8 @@ import io.harness.delegate.task.citasks.cik8handler.k8java.CIK8JavaClientHandler
 import io.harness.exception.PodNotFoundException;
 import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.k8s.model.KubernetesConfig;
-import io.harness.logging.AutoLogContext;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import com.google.inject.Inject;
 import io.kubernetes.client.openapi.ApiClient;

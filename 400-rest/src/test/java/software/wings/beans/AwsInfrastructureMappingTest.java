@@ -25,9 +25,9 @@ import static org.assertj.core.api.Assertions.fail;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;

@@ -16,8 +16,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.perpetualtask.PerpetualTaskScheduleConfig;
 import io.harness.delegate.beans.perpetualtask.PerpetualTaskScheduleConfig.PerpetualTaskScheduleConfigKeys;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;

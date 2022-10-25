@@ -7,10 +7,10 @@
 
 package io.harness.beans;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
-import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.expression.common.Expression;
+import io.harness.reflection.util.ExpressionReflectionUtils;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

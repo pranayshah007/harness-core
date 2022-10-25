@@ -13,7 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static freemarker.template.Configuration.VERSION_2_3_23;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.mail.SmtpConfig;

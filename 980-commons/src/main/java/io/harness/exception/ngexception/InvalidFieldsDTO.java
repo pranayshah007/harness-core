@@ -7,6 +7,9 @@
 
 package io.harness.exception.ngexception;
 
+import io.harness.exception.ngexception.metadata.ErrorMetadataConstants;
+import io.harness.exception.ngexception.metadata.ErrorMetadataDTO;
+
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Map;
 import lombok.Builder;

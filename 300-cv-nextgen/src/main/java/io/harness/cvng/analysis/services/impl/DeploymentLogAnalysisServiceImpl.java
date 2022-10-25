@@ -43,7 +43,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.utils.PageUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;

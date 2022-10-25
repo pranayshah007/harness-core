@@ -15,10 +15,10 @@ import static io.harness.network.Http.connectableJenkinsHttpUrl;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
 import io.harness.exception.ArtifactServerException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;

@@ -13,7 +13,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
-import io.harness.reflection.CodeUtils;
+import io.harness.reflection.util.CodeUtils;
 
 import java.util.HashMap;
 import java.util.HashSet;

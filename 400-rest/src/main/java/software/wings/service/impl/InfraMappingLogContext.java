@@ -7,7 +7,7 @@
 
 package software.wings.service.impl;
 
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 public class InfraMappingLogContext extends AutoLogContext {
   public static final String ID = "infraMappingId";

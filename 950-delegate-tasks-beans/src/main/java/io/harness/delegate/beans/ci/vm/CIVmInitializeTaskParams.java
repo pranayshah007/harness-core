@@ -7,7 +7,7 @@
 
 package io.harness.delegate.beans.ci.vm;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -16,8 +16,8 @@ import io.harness.delegate.beans.connector.ConnectorTaskParams;
 import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.common.Expression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Collections;

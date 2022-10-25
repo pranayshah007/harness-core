@@ -10,6 +10,7 @@ package io.harness.steps.email;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.email.EmailStepResponse;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -19,7 +20,6 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.supplier.ThrowingSupplier;
 

@@ -89,7 +89,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
-import io.harness.serializer.ProtoUtils;
+import io.harness.serializer.utils.ProtoUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.annotations.VisibleForTesting;

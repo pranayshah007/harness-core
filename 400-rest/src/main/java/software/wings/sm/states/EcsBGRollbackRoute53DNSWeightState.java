@@ -9,9 +9,9 @@ package software.wings.sm.states;
 
 import static software.wings.sm.StateType.ECS_ROUTE53_DNS_WEIGHT_UPDATE_ROLLBACK;
 
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionResponse;

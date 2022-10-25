@@ -27,9 +27,9 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDT
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.task.gcp.helpers.GkeClusterHelper;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.LogCallback;

@@ -9,11 +9,11 @@ package io.harness.logstreaming;
 
 import io.harness.exception.KeyManagerBuilderException;
 import io.harness.exception.SslContextBuilderException;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.network.Http;
 import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509SslContextBuilder;
 import io.harness.security.X509TrustManagerBuilder;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

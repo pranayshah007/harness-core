@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.beans.FeatureName.SIDE_NAVIGATION;
 import static io.harness.ccm.cluster.entities.ClusterType.DIRECT_KUBERNETES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.cluster.ClusterRecordObserver;
@@ -20,8 +20,8 @@ import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.ccm.config.CCMSettingService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.beans.Account;
 import software.wings.features.CeClusterFeature;

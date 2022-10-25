@@ -9,7 +9,7 @@ package software.wings.service.impl.yaml;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.yaml.GitCommand.GitCommandType.COMMIT_AND_PUSH;
@@ -32,8 +32,8 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.NotifyCallbackWithErrorHandling;
 

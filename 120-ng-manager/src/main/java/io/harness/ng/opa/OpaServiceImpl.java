@@ -26,7 +26,7 @@ import io.harness.opaclient.model.OpaPolicyEvaluationResponse;
 import io.harness.opaclient.model.OpaPolicySetEvaluationResponse;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.UserPrincipal;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;

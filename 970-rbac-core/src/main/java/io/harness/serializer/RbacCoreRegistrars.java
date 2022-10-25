@@ -7,7 +7,9 @@
 
 package io.harness.serializer;
 
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.serializer.kryo.CommonsRegistrars;
 import io.harness.serializer.kryo.RbacCoreKryoRegistrar;
 import io.harness.serializer.morphia.RbacCoreMorphiaRegistrar;
 

@@ -8,7 +8,7 @@
 package io.harness.walktree.visitor.utilities;
 
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.walktree.beans.VisitableChild;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.DummyVisitableElement;

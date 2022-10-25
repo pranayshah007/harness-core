@@ -20,8 +20,8 @@ import io.harness.enforcement.bases.Restriction;
 import io.harness.enforcement.configs.FeatureRestrictionConfig;
 import io.harness.enforcement.interfaces.EnforcementSdkSupportInterface;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.rule.Owner;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import java.util.ArrayList;
 import java.util.List;

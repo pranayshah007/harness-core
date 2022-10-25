@@ -10,6 +10,7 @@ package io.harness;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -19,7 +20,6 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.queue.QueueController;
 import io.harness.serializer.ConnectorBeansRegistrars;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.springdata.SpringPersistenceModule;
 
 import com.google.common.collect.ImmutableList;

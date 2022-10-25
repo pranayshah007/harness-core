@@ -10,7 +10,7 @@ package io.harness.ng.core.exceptionmappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.ng.core.Status;
 import io.harness.ng.core.dto.FailureDTO;
 

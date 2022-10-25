@@ -15,7 +15,7 @@ import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.services.api.DataSourceConnectivityChecker;
 import io.harness.cvng.core.services.api.OnboardingService;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;

@@ -20,6 +20,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.WingsException;
+import io.harness.logging.exception.ExceptionLogger;
 import io.harness.rule.Owner;
 
 import java.util.EnumSet;

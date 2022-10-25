@@ -11,7 +11,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;

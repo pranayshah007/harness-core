@@ -9,7 +9,7 @@ package io.harness.walktree.visitor.inputset;
 
 import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidRequestException;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.walktree.beans.VisitElementResult;
 import io.harness.walktree.registries.visitorfield.VisitableFieldProcessor;
 import io.harness.walktree.registries.visitorfield.VisitorFieldRegistry;

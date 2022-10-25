@@ -17,8 +17,8 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheEntity.CacheEntityKeys;
 import io.harness.govern.IgnoreThrowable;
+import io.harness.kryo.KryoSerializer;
 import io.harness.persistence.HPersistence;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

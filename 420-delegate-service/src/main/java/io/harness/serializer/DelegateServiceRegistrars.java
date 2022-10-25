@@ -8,6 +8,7 @@
 package io.harness.serializer;
 
 import io.harness.filter.serializer.FiltersRegistrars;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;
 import io.harness.serializer.kryo.CommonEntitiesKryoRegistrar;

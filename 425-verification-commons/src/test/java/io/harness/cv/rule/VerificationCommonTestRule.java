@@ -9,12 +9,12 @@ package io.harness.cv.rule;
 
 import io.harness.cv.CVCommonsServiceModule;
 import io.harness.govern.ProviderModule;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueueController;
 import io.harness.rule.InjectorRuleMixin;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.serializer.VerificationCommonsRegistrars;
 import io.harness.testlib.module.MongoRuleMixin;

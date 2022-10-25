@@ -7,6 +7,7 @@
 
 package io.harness.serializer;
 
+import io.harness.kryo.KryoRegistrar;
 import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;
 import io.harness.serializer.kryo.CvNextGenBeansKryoRegistrar;
 

@@ -12,8 +12,8 @@ import static io.harness.gitsync.common.scmerrorhandling.ScmErrorCodeToHttpStatu
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.schemas.entity.EntityScopeInfo;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.gitsync.BranchDetails;
 import io.harness.gitsync.CreateFileRequest;
 import io.harness.gitsync.CreateFileResponse;
@@ -41,14 +41,14 @@ import io.harness.gitsync.common.beans.GitOperation;
 import io.harness.gitsync.common.helper.GitSyncLogContextHelper;
 import io.harness.gitsync.common.helper.ScopeIdentifierMapper;
 import io.harness.gitsync.common.service.HarnessToGitHelperService;
-import io.harness.logging.MdcContextSetter;
+import io.harness.kryo.KryoSerializer;
+import io.harness.logging.logcontext.MdcContextSetter;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.security.Principal;
 import io.harness.security.PrincipalContextData;
 import io.harness.security.PrincipalProtoMapper;
 import io.harness.security.SourcePrincipalContextData;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;

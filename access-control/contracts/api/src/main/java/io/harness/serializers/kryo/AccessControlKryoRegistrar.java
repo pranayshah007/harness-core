@@ -13,7 +13,7 @@ import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

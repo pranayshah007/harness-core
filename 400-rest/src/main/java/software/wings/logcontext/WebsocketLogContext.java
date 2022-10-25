@@ -7,7 +7,7 @@
 
 package software.wings.logcontext;
 
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 public class WebsocketLogContext extends AutoLogContext {
   public static final String WEBSOCKET_ID = "websocketId";

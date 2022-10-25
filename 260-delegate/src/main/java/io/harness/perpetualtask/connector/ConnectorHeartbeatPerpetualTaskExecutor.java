@@ -26,13 +26,13 @@ import io.harness.delegate.beans.connector.ConnectorValidationParameterResponse;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.NoOpConnectorValidationParams;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

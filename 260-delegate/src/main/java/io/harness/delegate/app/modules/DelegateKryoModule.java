@@ -8,8 +8,8 @@
 package io.harness.delegate.app.modules;
 
 import io.harness.govern.ProviderModule;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.serializer.DelegateRegistrars;
-import io.harness.serializer.KryoRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;

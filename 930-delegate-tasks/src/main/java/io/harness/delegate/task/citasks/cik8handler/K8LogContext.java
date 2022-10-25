@@ -8,7 +8,7 @@
 package io.harness.delegate.task.citasks.cik8handler;
 
 import io.harness.data.structure.NullSafeImmutableMap;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 public class K8LogContext extends AutoLogContext {
   public static final String podID = "PodName";

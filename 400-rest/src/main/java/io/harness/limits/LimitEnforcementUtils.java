@@ -8,7 +8,7 @@
 package io.harness.limits;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,8 +19,8 @@ import io.harness.exception.WingsException;
 import io.harness.limits.checker.StaticLimitCheckerWithDecrement;
 import io.harness.limits.checker.UsageLimitExceededException;
 import io.harness.limits.lib.DeploymentErrorType;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.service.impl.StaticLimitActionTypeLogContext;
 

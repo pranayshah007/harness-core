@@ -13,12 +13,12 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
-import io.harness.reflection.CodeUtils;
+import io.harness.kryo.ClassResolver;
+import io.harness.kryo.HKryo;
+import io.harness.kryo.KryoRegistrar;
+import io.harness.kryo.KryoSerializer;
 import io.harness.reflection.HarnessReflections;
-import io.harness.serializer.ClassResolver;
-import io.harness.serializer.HKryo;
-import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.KryoSerializer;
+import io.harness.reflection.util.CodeUtils;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;

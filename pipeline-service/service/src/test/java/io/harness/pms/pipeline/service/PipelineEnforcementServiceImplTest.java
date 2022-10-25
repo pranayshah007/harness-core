@@ -36,7 +36,7 @@ import io.harness.pms.sdk.PmsSdkHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableSet;

@@ -17,7 +17,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.microservice.NotifyEngineTarget.GENERAL;
 import static io.harness.validation.Validator.notNullCheck;
 
@@ -80,14 +80,14 @@ import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.mongo.ProcessTimeLogContext;
 import io.harness.persistence.HIterator;
 import io.harness.rest.RestResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.beans.Account;

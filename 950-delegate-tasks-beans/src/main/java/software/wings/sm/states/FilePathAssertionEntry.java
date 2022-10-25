@@ -7,7 +7,7 @@
 
 package software.wings.sm.states;
 
-import io.harness.serializer.XmlUtils;
+import io.harness.serializer.utils.XmlUtils;
 
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;

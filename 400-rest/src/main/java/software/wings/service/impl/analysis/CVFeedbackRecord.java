@@ -24,7 +24,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.GoogleDataStoreAware;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.security.ThreadLocalUserProvider;
 import software.wings.service.impl.analysis.AnalysisServiceImpl.CLUSTER_TYPE;

@@ -9,7 +9,7 @@ package io.harness.perpetualtask.datacollection.k8s;
 
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1OwnerReference;

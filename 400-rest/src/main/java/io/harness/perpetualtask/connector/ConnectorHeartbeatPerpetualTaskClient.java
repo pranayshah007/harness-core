@@ -30,9 +30,9 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.exception.UnexpectedException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
-import io.harness.serializer.KryoSerializer;
 import io.harness.utils.RestCallToNGManagerClientUtils;
 
 import software.wings.beans.TaskType;

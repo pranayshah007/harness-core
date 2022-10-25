@@ -9,7 +9,7 @@ package io.harness.service.stats.usagemetrics.eventconsumer;
 
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,7 +19,7 @@ import io.harness.eventsframework.schemas.instancestatstimeseriesevent.DataPoint
 import io.harness.eventsframework.schemas.instancestatstimeseriesevent.TimeseriesBatchEventInfo;
 import io.harness.exception.InstanceAggregationException;
 import io.harness.exception.InstanceProcessorException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.models.constants.TimescaleConstants;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.timescaledb.TimeScaleDBService;

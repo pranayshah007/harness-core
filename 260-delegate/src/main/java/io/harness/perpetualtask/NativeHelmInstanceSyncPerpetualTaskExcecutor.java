@@ -30,11 +30,11 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.NativeHelmDeploymentRelease;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.time.Instant;

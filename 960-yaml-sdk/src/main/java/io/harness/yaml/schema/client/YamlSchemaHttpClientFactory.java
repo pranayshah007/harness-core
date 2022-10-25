@@ -10,10 +10,10 @@ package io.harness.yaml.schema.client;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.remote.client.AbstractHttpClientFactory;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;

@@ -31,13 +31,13 @@ import static org.apache.commons.lang3.StringUtils.right;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.managerclient.VerificationServiceClient;
 import io.harness.observer.Subject;
 import io.harness.rest.RestResponse;
-import io.harness.serializer.KryoSerializer;
 import io.harness.verificationclient.CVNextGenServiceClient;
 
 import software.wings.beans.Log;

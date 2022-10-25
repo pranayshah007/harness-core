@@ -17,9 +17,9 @@ import static software.wings.sm.states.AwsAmiSwitchRoutesState.SWAP_AUTO_SCALING
 import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.SpotinstDummyCommandUnit;

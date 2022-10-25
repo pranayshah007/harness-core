@@ -25,6 +25,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -33,7 +34,6 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants;
 
 import java.util.Collections;

@@ -71,7 +71,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.YamlVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;

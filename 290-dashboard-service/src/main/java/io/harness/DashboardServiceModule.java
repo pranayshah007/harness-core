@@ -12,6 +12,7 @@ import static io.harness.AuthorizationServiceHeader.DASHBOAD_AGGREGATION_SERVICE
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.govern.ProviderModule;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.overviewdashboard.dashboardaggregateservice.impl.OverviewDashboardServiceImpl;
 import io.harness.overviewdashboard.dashboardaggregateservice.service.OverviewDashboardService;
@@ -20,7 +21,6 @@ import io.harness.overviewdashboard.rbac.service.DashboardRBACService;
 import io.harness.pipeline.dashboards.PMSLandingDashboardResourceClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.serializer.DashboardServiceRegistrars;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.threading.ExecutorModule;
 import io.harness.token.TokenClientModule;
 

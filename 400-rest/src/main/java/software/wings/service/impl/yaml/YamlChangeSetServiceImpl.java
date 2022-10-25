@@ -32,7 +32,7 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
 
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.Base;

@@ -35,11 +35,11 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthentication
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.beans.GitRepositoryDTO;

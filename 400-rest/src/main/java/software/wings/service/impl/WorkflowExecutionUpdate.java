@@ -49,7 +49,7 @@ import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
 import io.harness.event.usagemetrics.UsageMetricsHelper;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
 import io.harness.queue.QueuePublisher;
 import io.harness.service.EventService;
 import io.harness.waiter.WaitNotifyEngine;

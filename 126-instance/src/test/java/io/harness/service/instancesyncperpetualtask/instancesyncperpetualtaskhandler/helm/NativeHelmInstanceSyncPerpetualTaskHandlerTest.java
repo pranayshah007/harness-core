@@ -35,12 +35,12 @@ import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.NativeHelmDeploymentRelease;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParams;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;

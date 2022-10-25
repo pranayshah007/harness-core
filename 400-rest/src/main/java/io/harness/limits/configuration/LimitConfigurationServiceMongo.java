@@ -8,7 +8,7 @@
 package io.harness.limits.configuration;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -20,8 +20,8 @@ import io.harness.limits.defaults.service.DefaultLimitsService;
 import io.harness.limits.impl.model.RateLimit;
 import io.harness.limits.impl.model.StaticLimit;
 import io.harness.limits.lib.Limit;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountType;

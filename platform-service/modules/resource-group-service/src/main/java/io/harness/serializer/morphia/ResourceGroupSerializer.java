@@ -11,13 +11,13 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.serializer.GitSyncSdkRegistrar;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.AccessControlClientRegistrars;
 import io.harness.serializer.CvNextGenBeansRegistrars;
 import io.harness.serializer.DelegateServiceDriverRegistrars;
 import io.harness.serializer.DelegateTaskRegistrars;
 import io.harness.serializer.FeatureFlagBeansRegistrars;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NGCoreClientRegistrars;
 import io.harness.serializer.OutboxEventRegistrars;
 import io.harness.serializer.SMCoreRegistrars;

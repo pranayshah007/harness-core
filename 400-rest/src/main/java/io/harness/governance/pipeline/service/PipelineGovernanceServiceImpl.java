@@ -7,14 +7,14 @@
 
 package io.harness.governance.pipeline.service;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.governance.pipeline.service.model.PipelineGovernanceConfig;
 import io.harness.governance.pipeline.service.model.PipelineGovernanceConfig.PipelineGovernanceConfigKeys;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.persistence.HQuery;
 
 import software.wings.beans.Event;

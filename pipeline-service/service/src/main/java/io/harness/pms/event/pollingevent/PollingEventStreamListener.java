@@ -9,7 +9,7 @@ package io.harness.pms.event.pollingevent;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.pms.sdk.PmsSdkModuleUtils.CORE_EXECUTOR_NAME;
 import static io.harness.pms.sdk.PmsSdkModuleUtils.SDK_SERVICE_NAME;
 
@@ -17,9 +17,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.NgEventLogContext;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.NgPollingAutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
+import io.harness.logging.logcontext.NgPollingAutoLogContext;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;

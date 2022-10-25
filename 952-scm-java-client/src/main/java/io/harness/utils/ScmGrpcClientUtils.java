@@ -11,9 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ConnectException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;

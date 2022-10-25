@@ -12,13 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.TemplateServiceConfiguration;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.govern.ProviderModule;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.IndexManager;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 
 import com.codahale.metrics.MetricRegistry;

@@ -9,7 +9,7 @@ package software.wings.scheduler;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior;
 import static io.harness.obfuscate.Obfuscator.obfuscate;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -21,7 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.Delegate;
-import io.harness.logging.AccountLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.app.MainConfiguration;

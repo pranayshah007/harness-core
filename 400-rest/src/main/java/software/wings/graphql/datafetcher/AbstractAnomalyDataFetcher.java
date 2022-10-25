@@ -8,16 +8,16 @@
 package software.wings.graphql.datafetcher;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.graphql.schema.type.aggregation.anomaly.QLAnomalyDataList;
 import software.wings.service.impl.FilterLogContext;

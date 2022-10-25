@@ -9,7 +9,7 @@ package io.harness.cvng.exception;
 
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.container.ResourceInfo;

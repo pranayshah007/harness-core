@@ -18,6 +18,7 @@ import io.harness.cdng.infra.InfrastructurePlanCreatorHelper;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -32,7 +33,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;

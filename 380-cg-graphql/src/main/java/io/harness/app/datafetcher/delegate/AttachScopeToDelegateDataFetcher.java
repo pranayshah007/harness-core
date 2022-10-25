@@ -9,7 +9,7 @@ package io.harness.app.datafetcher.delegate;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_DELEGATES;
 
@@ -21,8 +21,8 @@ import io.harness.app.schema.mutation.delegate.payload.QLAttachScopeToDelegatePa
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateScope;
 import io.harness.delegate.task.DelegateLogContext;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.graphql.datafetcher.BaseMutatorDataFetcher;

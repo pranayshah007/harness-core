@@ -9,7 +9,7 @@ package io.harness.pms.pipeline.service.yamlschema.cache;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
 import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
 import io.harness.yaml.schema.beans.YamlSchemaWithDetails;

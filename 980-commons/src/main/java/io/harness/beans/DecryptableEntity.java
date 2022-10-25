@@ -8,7 +8,7 @@
 package io.harness.beans;
 
 import io.harness.encryption.SecretReference;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.SchemaIgnore;

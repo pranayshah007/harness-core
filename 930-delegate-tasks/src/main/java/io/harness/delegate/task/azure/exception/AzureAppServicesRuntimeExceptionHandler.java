@@ -14,7 +14,6 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.FailureType;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
@@ -24,7 +23,8 @@ import io.harness.exception.runtime.azure.AzureAppServicesDeploymentSlotNotFound
 import io.harness.exception.runtime.azure.AzureAppServicesRuntimeException;
 import io.harness.exception.runtime.azure.AzureAppServicesSlotSteadyStateException;
 import io.harness.exception.runtime.azure.AzureAppServicesWebAppNotFoundException;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.exception.utils.ExceptionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.UncheckedTimeoutException;

@@ -57,7 +57,7 @@ import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;

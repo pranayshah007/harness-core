@@ -9,12 +9,12 @@ package io.harness.serializer.kryo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.ServiceAccountConfig;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.user.UserMembershipUpdateMechanism;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.steps.shellscript.ShellType;
 
 import com.esotericsoftware.kryo.Kryo;

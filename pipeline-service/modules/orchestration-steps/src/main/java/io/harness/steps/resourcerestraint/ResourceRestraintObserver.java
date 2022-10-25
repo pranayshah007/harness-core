@@ -12,7 +12,7 @@ import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.execution.NodeExecution;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;

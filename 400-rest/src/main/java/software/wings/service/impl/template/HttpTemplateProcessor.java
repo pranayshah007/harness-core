@@ -13,7 +13,7 @@ import static software.wings.common.TemplateConstants.HTTP_HEALTH_CHECK;
 
 import static java.util.Arrays.asList;
 
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.template.Template;
 import software.wings.beans.template.TemplateType;

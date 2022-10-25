@@ -8,14 +8,14 @@
 package software.wings.security.authentication.oauth;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
 

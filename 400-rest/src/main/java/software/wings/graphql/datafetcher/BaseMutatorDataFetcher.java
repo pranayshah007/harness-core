@@ -9,7 +9,7 @@ package software.wings.graphql.datafetcher;
 
 import static io.harness.exception.WingsException.ReportTarget.GRAPHQL_API;
 import static io.harness.exception.WingsException.USER_SRE;
-import static io.harness.reflection.CodeUtils.isHarnessClass;
+import static io.harness.reflection.util.CodeUtils.isHarnessClass;
 
 import static software.wings.graphql.datafetcher.DataFetcherUtils.EXCEPTION_MSG_DELIMITER;
 import static software.wings.graphql.datafetcher.DataFetcherUtils.GENERIC_EXCEPTION_MSG;
@@ -22,8 +22,8 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.logging.exception.ExceptionLogger;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.serializer.jackson.HarnessJacksonModule;
 import io.harness.utils.RequestField;
 

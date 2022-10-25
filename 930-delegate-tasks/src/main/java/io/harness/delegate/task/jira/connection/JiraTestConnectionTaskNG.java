@@ -22,8 +22,8 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.jira.JiraTaskNGHelper;
 import io.harness.delegate.task.jira.JiraTaskNGParameters;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.jira.JiraActionNG;
 
 import com.google.inject.Inject;

@@ -27,12 +27,12 @@ import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import java.util.Collections;

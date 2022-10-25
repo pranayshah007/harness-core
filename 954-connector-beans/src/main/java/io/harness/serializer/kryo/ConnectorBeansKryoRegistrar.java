@@ -214,7 +214,7 @@ import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
 import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 import java.util.LinkedHashSet;

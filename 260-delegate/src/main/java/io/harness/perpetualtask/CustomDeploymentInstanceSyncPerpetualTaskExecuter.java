@@ -28,7 +28,7 @@ import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;

@@ -26,9 +26,9 @@ import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cv.api.WorkflowVerificationResultService;
 import io.harness.ff.FeatureFlagService;
+import io.harness.kryo.KryoSerializer;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.NotifyResponse;
 

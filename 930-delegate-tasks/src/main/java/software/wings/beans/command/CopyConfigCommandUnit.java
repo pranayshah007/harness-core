@@ -9,7 +9,7 @@ package software.wings.beans.command;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 
@@ -22,9 +22,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.task.shell.ConfigFileMetaData;
-import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.expression.common.Expression;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.reflection.util.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import software.wings.beans.ConfigFileDto;
 import software.wings.beans.Log;

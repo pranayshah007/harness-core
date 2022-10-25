@@ -40,6 +40,7 @@ import io.harness.delegate.task.scm.GitRefType;
 import io.harness.delegate.task.scm.ScmGitRefTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -62,7 +63,6 @@ import io.harness.product.ci.scm.proto.FindPRResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.PullRequest;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 

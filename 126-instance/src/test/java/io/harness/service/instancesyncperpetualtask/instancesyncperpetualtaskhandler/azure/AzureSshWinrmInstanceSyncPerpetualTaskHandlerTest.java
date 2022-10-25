@@ -31,6 +31,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.AzureSshWinrmDeploymentInfoDTO;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
@@ -40,7 +41,6 @@ import io.harness.ng.core.models.SecretSpec;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;

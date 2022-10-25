@@ -13,7 +13,7 @@ import static io.harness.validation.Validator.notNullCheck;
 import static software.wings.beans.EntityType.INFRASTRUCTURE_DEFINITION;
 
 import io.harness.beans.OrchestrationWorkflowType;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.beans.Account;
 import software.wings.beans.CanaryOrchestrationWorkflow;

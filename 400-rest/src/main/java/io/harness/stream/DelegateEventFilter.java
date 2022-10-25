@@ -9,16 +9,16 @@ package io.harness.stream;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.DelegateTaskEvent.DelegateTaskEventBuilder.aDelegateTaskEvent;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.beans.DelegateHeartbeatResponseStreaming;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.task.DelegateLogContext;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
-import io.harness.serializer.JsonUtils;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.DelegateTaskBroadcast;
 import software.wings.beans.PerpetualTaskBroadcastEvent;

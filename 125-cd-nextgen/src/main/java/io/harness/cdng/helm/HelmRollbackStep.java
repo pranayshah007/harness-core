@@ -29,7 +29,7 @@ import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmInstallCmdResponseNG;
 import io.harness.delegate.task.helm.HelmRollbackCommandRequestNG;
 import io.harness.delegate.task.helm.HelmRollbackCommandRequestNG.HelmRollbackCommandRequestNGBuilder;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;

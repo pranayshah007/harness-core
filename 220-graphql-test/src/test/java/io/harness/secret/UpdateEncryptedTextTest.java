@@ -18,7 +18,7 @@ import io.harness.generator.AccountGenerator;
 import io.harness.generator.OwnerManager;
 import io.harness.generator.Randomizer;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.testframework.graphql.QLTestObject;
 
 import software.wings.beans.Account;

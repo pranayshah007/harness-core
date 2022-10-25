@@ -10,7 +10,7 @@ package io.harness.timeout;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.LOOP;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import static java.lang.String.format;

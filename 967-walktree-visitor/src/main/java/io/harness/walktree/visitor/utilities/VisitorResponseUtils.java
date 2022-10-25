@@ -9,7 +9,7 @@ package io.harness.walktree.visitor.utilities;
 
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.walktree.registries.visitorfield.VisitableFieldProcessor;
 import io.harness.walktree.registries.visitorfield.VisitorFieldRegistry;
 import io.harness.walktree.registries.visitorfield.VisitorFieldType;

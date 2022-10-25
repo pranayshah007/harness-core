@@ -7,15 +7,15 @@
 
 package software.wings.delegatetasks.k8s.taskhandler;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.k8s.apiclient.ApiClientFactoryImpl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
-import io.harness.logging.AutoLogContext;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.delegatetasks.k8s.logging.K8sVersionLogContext;

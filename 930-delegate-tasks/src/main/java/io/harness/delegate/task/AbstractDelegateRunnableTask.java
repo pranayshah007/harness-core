@@ -8,7 +8,7 @@
 package io.harness.delegate.task;
 
 import static io.harness.exception.WingsException.ExecutionContext.DELEGATE;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
 
@@ -30,10 +30,10 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.exceptionhandler.DelegateExceptionManager;
 import io.harness.eraro.FailureType;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.globalcontex.ErrorHandlingGlobalContextData;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
+import io.harness.logging.logcontext.AccountLogContext;
 import io.harness.manage.GlobalContextManager;
 import io.harness.secret.SecretSanitizerThreadLocal;
 

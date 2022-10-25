@@ -23,7 +23,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import org.apache.kafka.connect.runtime.WorkerConfig;
 import org.junit.Before;

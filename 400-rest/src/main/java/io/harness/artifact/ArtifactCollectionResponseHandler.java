@@ -9,8 +9,8 @@ package io.harness.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
@@ -19,8 +19,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.PerpetualTaskService;
 

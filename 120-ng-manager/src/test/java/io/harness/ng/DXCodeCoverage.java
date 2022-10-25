@@ -15,7 +15,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.reflection.CodeUtils;
+import io.harness.reflection.util.CodeUtils;
 import io.harness.rule.Owner;
 
 import com.google.common.base.Preconditions;

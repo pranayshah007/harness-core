@@ -19,6 +19,7 @@ import io.harness.delegate.task.http.HttpTaskParametersNg.HttpTaskParametersNgBu
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.http.HttpHeaderConfig;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -37,7 +38,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;

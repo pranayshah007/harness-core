@@ -11,9 +11,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.observer.AbstractRemoteInformer;
 import io.harness.observer.RemoteObserverInformer;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;

@@ -10,9 +10,9 @@ package software.wings.helpers.ext.external.comm.handlers;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.concurrent.HTimeLimiter;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.helpers.ext.external.comm.CollaborationHandler;
 import software.wings.helpers.ext.external.comm.CollaborationProviderRequest;

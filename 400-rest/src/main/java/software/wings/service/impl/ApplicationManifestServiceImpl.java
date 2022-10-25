@@ -64,7 +64,7 @@ import io.harness.observer.Subject;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord.PerpetualTaskRecordKeys;
 import io.harness.queue.QueuePublisher;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.validation.SuppressValidation;
 
 import software.wings.api.DeploymentType;

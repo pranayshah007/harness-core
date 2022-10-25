@@ -8,7 +8,7 @@
 package io.harness.delegate.task.pcf.request;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import static java.lang.String.format;
 
@@ -23,8 +23,8 @@ import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.Cd1ApplicationAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandRequest;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.common.Expression;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.security.encryption.EncryptedDataDetail;
 

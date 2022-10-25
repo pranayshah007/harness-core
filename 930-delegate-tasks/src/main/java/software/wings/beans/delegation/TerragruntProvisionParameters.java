@@ -9,8 +9,8 @@ package software.wings.beans.delegation;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
-import static io.harness.expression.Expression.DISALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.DISALLOW_SECRETS;
 import static io.harness.provision.TfVarSource.TfVarSourceType.GIT;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -24,8 +24,8 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.capability.ProcessExecutionCapabilityHelper;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.common.Expression;
 import io.harness.provision.TfVarSource;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;

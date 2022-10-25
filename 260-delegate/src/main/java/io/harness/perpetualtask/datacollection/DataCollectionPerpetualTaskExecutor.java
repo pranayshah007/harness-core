@@ -12,7 +12,7 @@ import static io.harness.cvng.beans.DataCollectionExecutionStatus.SUCCESS;
 import static io.harness.cvng.core.services.CVNextGenConstants.LOG_RECORD_THRESHOLD;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -35,13 +35,13 @@ import io.harness.delegate.service.HostRecordDataStoreService;
 import io.harness.delegate.service.LogRecordDataStoreService;
 import io.harness.delegate.service.TimeSeriesDataStoreService;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.KryoSerializer;
 import io.harness.verificationclient.CVNextGenServiceClient;
 
 import software.wings.delegatetasks.DelegateLogService;

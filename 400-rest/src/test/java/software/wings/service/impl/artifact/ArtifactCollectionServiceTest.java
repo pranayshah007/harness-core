@@ -58,7 +58,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.annotation.EncryptableSetting;

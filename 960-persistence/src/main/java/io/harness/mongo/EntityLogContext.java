@@ -8,8 +8,8 @@
 package io.harness.mongo;
 
 import io.harness.data.structure.NullSafeImmutableMap;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;

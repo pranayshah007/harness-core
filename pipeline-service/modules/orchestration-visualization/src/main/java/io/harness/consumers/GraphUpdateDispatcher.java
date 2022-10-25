@@ -8,7 +8,7 @@
 package io.harness.consumers;
 
 import io.harness.eventsframework.api.Consumer;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.service.GraphGenerationService;
 
 import com.google.common.collect.ImmutableMap;

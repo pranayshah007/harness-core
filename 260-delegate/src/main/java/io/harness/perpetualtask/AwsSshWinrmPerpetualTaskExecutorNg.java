@@ -26,11 +26,11 @@ import io.harness.delegate.task.aws.AwsListEC2InstancesDelegateTaskHelper;
 import io.harness.delegate.task.ssh.AwsInfraDelegateConfig;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
-import io.harness.serializer.KryoSerializer;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.service.impl.aws.model.AwsEC2Instance;

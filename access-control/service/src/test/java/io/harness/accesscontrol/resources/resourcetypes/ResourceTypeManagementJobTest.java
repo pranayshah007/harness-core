@@ -18,7 +18,7 @@ import io.harness.accesscontrol.commons.bootstrap.ConfigurationState;
 import io.harness.accesscontrol.commons.bootstrap.ConfigurationStateRepository;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;

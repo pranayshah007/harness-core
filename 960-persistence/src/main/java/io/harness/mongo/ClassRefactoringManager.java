@@ -10,7 +10,7 @@ package io.harness.mongo;
 import io.harness.mongo.MorphiaMove.MorphiaMoveKeys;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.CodeUtils;
+import io.harness.reflection.util.CodeUtils;
 
 import com.mongodb.MongoCommandException;
 import java.util.HashMap;

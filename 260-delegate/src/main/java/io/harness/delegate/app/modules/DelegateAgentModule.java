@@ -23,11 +23,11 @@ import io.harness.event.client.impl.appender.AppenderModule;
 import io.harness.event.client.impl.appender.AppenderModule.Config;
 import io.harness.event.client.impl.tailer.DelegateTailerModule;
 import io.harness.grpc.delegateservice.DelegateServiceGrpcAgentClientModule;
+import io.harness.kryo.KryoModule;
 import io.harness.logstreaming.LogStreamingModule;
 import io.harness.managerclient.DelegateManagerClientModule;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.perpetualtask.PerpetualTaskWorkerModule;
-import io.harness.serializer.KryoModule;
 
 import software.wings.delegatetasks.k8s.client.KubernetesClientFactoryModule;
 

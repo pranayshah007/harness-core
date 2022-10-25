@@ -15,8 +15,8 @@ import io.harness.delegate.Capability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;

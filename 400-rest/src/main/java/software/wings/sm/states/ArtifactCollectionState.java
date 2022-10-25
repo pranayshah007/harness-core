@@ -40,14 +40,14 @@ import io.harness.delay.DelayEventHelper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.manifests.request.ManifestCollectionParams;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.AutoLogContext.OverrideBehavior;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.logcontext.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext.OverrideBehavior;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.AppManifestCollectionExecutionData;

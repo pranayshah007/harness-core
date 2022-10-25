@@ -7,8 +7,8 @@
 
 package io.harness.pms.serializer.kryo.serializers;
 
+import io.harness.kryo.ProtobufKryoSerializer;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
-import io.harness.serializer.kryo.ProtobufKryoSerializer;
 
 public class AdviserObtainmentKryoSerializer extends ProtobufKryoSerializer<AdviserObtainment> {
   private static AdviserObtainmentKryoSerializer instance;

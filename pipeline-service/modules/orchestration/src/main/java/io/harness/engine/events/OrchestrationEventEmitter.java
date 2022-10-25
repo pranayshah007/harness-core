@@ -13,7 +13,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.pms.commons.events.PmsEventSender;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.execution.utils.OrchestrationEventUtils;

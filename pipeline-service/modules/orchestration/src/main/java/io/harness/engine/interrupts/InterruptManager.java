@@ -15,7 +15,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.interrupts.Interrupt;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import com.google.inject.Inject;
 import java.time.Duration;

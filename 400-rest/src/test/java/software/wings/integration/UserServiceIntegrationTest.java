@@ -33,7 +33,7 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.app.MainConfiguration;
 import software.wings.app.PortalConfig;

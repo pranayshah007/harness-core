@@ -7,13 +7,13 @@
 
 package io.harness.batch.processing.anomalydetection.helpers;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.batch.processing.anomalydetection.AnomalyDetectionTimeSeries;
 import io.harness.batch.processing.service.impl.AnomalyDetectionLogContext;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.entities.EntityType;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import com.google.common.hash.Hashing;
 import java.nio.charset.StandardCharsets;

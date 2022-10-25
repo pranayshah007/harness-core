@@ -43,6 +43,7 @@ import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.PerpetualTaskId;
@@ -60,7 +61,6 @@ import io.harness.polling.service.impl.artifact.ArtifactPerpetualTaskHelperNg;
 import io.harness.polling.service.impl.gitpolling.GitPollingPerpetualTaskHelperNg;
 import io.harness.polling.service.impl.manifest.ManifestPerpetualTaskHelperNg;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;

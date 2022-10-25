@@ -54,11 +54,11 @@ import io.harness.beans.RepairActionCode;
 import io.harness.beans.WorkflowType;
 import io.harness.context.ContextElementType;
 import io.harness.eraro.FailureType;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.api.PhaseElement;
 import software.wings.beans.FailureStrategy.FailureStrategyBuilder;

@@ -28,7 +28,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.governance.GovernanceMetadata;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.observer.Subject;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.plan.Node;

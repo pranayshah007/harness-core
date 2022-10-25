@@ -10,10 +10,10 @@ package io.harness.usermembership;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 import io.harness.usermembership.remote.UserMembershipClient;
 import io.harness.usermembership.remote.UserMembershipHttpClientFactory;
 

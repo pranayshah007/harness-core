@@ -32,7 +32,7 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.repositories.ResourceRestraintInstanceRepository;

@@ -10,11 +10,11 @@ package io.harness.modules;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.modules.remote.ModulesClient;
 import io.harness.modules.remote.ModulesHttpClientFactory;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;

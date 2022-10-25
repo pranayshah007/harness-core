@@ -12,10 +12,10 @@ import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.rule.Owner;

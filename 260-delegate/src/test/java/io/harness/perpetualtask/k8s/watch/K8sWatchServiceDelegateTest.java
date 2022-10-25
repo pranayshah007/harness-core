@@ -25,12 +25,12 @@ import io.harness.DelegateTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
 import io.harness.perpetualtask.k8s.informer.SharedInformerFactoryFactory;
 import io.harness.perpetualtask.k8s.utils.K8sClusterHelper;
 import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 

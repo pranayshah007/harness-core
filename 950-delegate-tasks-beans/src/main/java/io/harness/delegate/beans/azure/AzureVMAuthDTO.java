@@ -12,6 +12,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretReference;
+import io.harness.expression.ExpressionEvaluator;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -45,8 +46,7 @@ public class AzureVMAuthDTO implements DecryptableEntity, ExecutionCapabilityDem
   }
 
   @Override
-  public List<ExecutionCapability> fetchRequiredExecutionCapabilities(
-      io.harness.expression.ExpressionEvaluator maskingEvaluator) {
+  public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     return new ArrayList<>();
   }
 }

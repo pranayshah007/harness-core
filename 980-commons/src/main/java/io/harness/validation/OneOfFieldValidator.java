@@ -7,7 +7,7 @@
 
 package io.harness.validation;
 
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.util.Collections;

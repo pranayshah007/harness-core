@@ -8,7 +8,7 @@
 package io.harness.eventsframework.impl.redis;
 
 import io.harness.eventsframework.consumer.Message;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import lombok.extern.slf4j.Slf4j;
 

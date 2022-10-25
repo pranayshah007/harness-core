@@ -53,8 +53,8 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.ff.FeatureFlagService;
+import io.harness.kryo.KryoSerializer;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.AmiServiceDeployElement;

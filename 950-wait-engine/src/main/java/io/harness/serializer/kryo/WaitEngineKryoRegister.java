@@ -9,7 +9,7 @@ package io.harness.serializer.kryo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.waiter.StringNotifyProgressData;
 import io.harness.waiter.StringNotifyResponseData;
 import io.harness.waiter.WaitInstanceTimeoutCallback;

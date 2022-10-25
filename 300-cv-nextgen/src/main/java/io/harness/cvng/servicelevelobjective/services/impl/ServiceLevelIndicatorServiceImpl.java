@@ -52,7 +52,7 @@ import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.S
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.persistence.HPersistence;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;

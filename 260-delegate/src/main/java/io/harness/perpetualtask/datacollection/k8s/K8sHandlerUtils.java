@@ -7,7 +7,7 @@
 
 package io.harness.perpetualtask.datacollection.k8s;
 
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;

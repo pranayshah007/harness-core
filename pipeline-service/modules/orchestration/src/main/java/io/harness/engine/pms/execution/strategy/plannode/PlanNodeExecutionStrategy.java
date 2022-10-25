@@ -38,7 +38,8 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
-import io.harness.logging.AutoLogContext;
+import io.harness.kryo.KryoSerializer;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
@@ -55,7 +56,6 @@ import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
-import io.harness.serializer.KryoSerializer;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 

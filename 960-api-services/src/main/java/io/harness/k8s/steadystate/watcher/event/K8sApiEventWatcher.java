@@ -14,8 +14,8 @@ import static io.harness.k8s.steadystate.K8sSteadyStateConstants.WATCH_CALL_TIME
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.steadystate.model.K8sEventWatchDTO;
 import io.harness.logging.LogCallback;

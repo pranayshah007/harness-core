@@ -17,10 +17,10 @@ import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.VerificationOperationException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.ElkConfig;

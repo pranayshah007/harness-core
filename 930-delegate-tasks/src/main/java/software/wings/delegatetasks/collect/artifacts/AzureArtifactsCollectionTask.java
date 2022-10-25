@@ -21,8 +21,8 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.ListNotifyResponseData;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;

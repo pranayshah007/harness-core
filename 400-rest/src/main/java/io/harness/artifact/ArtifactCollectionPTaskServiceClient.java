@@ -11,10 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.perpetualtask.artifact.ArtifactCollectionTaskParams;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;

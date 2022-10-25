@@ -66,10 +66,10 @@ import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.ff.FeatureFlagService;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.security.SimpleEncryption;
-import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ShellExecutionData;
 
 import software.wings.WingsBaseTest;

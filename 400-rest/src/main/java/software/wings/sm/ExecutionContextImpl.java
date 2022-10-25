@@ -20,7 +20,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.k8s.KubernetesConvention.getNormalizedInfraMappingIdLabelValue;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
@@ -59,10 +59,10 @@ import io.harness.expression.SecretString;
 import io.harness.expression.TerraformPlanExpressionFunctor;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.kryo.KryoSerializer;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.security.SimpleEncryption;
-import io.harness.serializer.KryoSerializer;
 import io.harness.terraform.expression.TerraformPlanExpressionInterface;
 
 import software.wings.api.ContextElementParamMapper;

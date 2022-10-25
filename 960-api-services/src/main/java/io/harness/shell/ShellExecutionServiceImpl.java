@@ -11,8 +11,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteFileIfExists;
 
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ShellExecutionException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.shell.ShellExecutionResponse.ShellExecutionResponseBuilder;
 
 import com.google.inject.Singleton;

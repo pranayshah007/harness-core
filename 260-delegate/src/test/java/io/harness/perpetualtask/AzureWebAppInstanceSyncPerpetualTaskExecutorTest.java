@@ -43,6 +43,7 @@ import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploym
 import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureConnectorMapper;
 import io.harness.encryption.SecretRefData;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AzureWebAppDeploymentRelease;
@@ -51,7 +52,6 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;

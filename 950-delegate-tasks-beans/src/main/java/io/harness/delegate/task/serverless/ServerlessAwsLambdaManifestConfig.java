@@ -7,11 +7,11 @@
 
 package io.harness.delegate.task.serverless;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
-import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.expression.common.Expression;
+import io.harness.reflection.util.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import lombok.Builder;
 import lombok.Value;

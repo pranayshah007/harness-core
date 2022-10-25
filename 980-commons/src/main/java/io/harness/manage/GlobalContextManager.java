@@ -8,15 +8,15 @@
 package io.harness.manage;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContext;
 import io.harness.context.GlobalContextData;
 import io.harness.context.MdcGlobalContextData;
-import io.harness.logging.AutoLogContext;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.virtualstack.VirtualStackRequest;
 
 import java.util.Map;

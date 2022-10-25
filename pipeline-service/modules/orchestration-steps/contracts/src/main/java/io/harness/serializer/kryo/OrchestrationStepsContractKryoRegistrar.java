@@ -7,8 +7,8 @@
 
 package io.harness.serializer.kryo;
 
+import io.harness.kryo.KryoRegistrar;
 import io.harness.plancreator.steps.http.HttpStepInfo;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.steps.approval.step.custom.CustomApprovalOutcome;
 import io.harness.steps.approval.step.custom.CustomApprovalStepInfo;
 import io.harness.steps.approval.step.harness.HarnessApprovalOutcome;

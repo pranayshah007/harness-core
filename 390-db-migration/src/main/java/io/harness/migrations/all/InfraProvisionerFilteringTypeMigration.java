@@ -14,7 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static software.wings.beans.InfrastructureMappingBlueprint.NodeFilteringType.AWS_INSTANCE_FILTER;
 
 import io.harness.beans.PageRequest;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.migrations.Migration;
 
 import software.wings.beans.InfrastructureMappingBlueprint;

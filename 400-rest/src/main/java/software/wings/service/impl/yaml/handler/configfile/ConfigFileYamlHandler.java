@@ -18,7 +18,7 @@ import static java.util.stream.Collectors.toList;
 import io.harness.beans.EncryptedData;
 import io.harness.delegate.beans.ChecksumType;
 import io.harness.exception.InvalidRequestException;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.stream.BoundedInputStream;
 
 import software.wings.beans.Application;

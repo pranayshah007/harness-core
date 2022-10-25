@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.data.structure.NullSafeImmutableMap.NullSafeBuilder;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import com.google.common.collect.ImmutableMap;
 

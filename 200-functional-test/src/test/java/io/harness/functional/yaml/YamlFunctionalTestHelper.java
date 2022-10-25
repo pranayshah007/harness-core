@@ -14,8 +14,8 @@ import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.filesystem.FileIo;
 import io.harness.functional.AbstractFunctionalTest;
 import io.harness.resource.Project;

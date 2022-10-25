@@ -20,7 +20,7 @@ import io.harness.commandlibrary.api.dto.CommandStoreDTO;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.app.MainConfiguration;
 

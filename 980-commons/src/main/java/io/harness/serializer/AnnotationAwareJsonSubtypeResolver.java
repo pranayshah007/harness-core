@@ -7,7 +7,7 @@
 
 package io.harness.serializer;
 
-import io.harness.reflection.CodeUtils;
+import io.harness.reflection.util.CodeUtils;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.AnnotationIntrospector;

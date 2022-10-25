@@ -10,9 +10,9 @@ package io.harness.pms.utils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;

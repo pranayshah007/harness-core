@@ -11,7 +11,7 @@ import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY
 import static io.harness.agent.AgentGatewayUtils.isAgentConnectedUsingMtls;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
@@ -44,8 +44,9 @@ import io.harness.delegate.task.TaskLogContext;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.kryo.KryoSerializer;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.managerclient.AccountPreference;
 import io.harness.managerclient.AccountPreferenceQuery;
 import io.harness.managerclient.DelegateVersions;
@@ -63,7 +64,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.Account;
 import software.wings.core.managerConfiguration.ConfigurationController;

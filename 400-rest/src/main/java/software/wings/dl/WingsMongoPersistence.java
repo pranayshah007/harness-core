@@ -43,7 +43,7 @@ import io.harness.persistence.HQuery;
 import io.harness.persistence.HQuery.QueryChecks;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.audit.AuditHeader;

@@ -15,7 +15,7 @@ import static io.harness.eraro.ErrorCode.PASSWORD_EXPIRED;
 import static io.harness.eraro.ErrorCode.USER_DOES_NOT_EXIST;
 import static io.harness.eraro.ErrorCode.USER_LOCKED;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static org.mindrot.jbcrypt.BCrypt.checkpw;
 
@@ -25,7 +25,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.configuration.DeployVariant;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.account.AuthenticationMechanism;
 
 import software.wings.beans.Account;

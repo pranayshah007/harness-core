@@ -25,11 +25,11 @@ import io.harness.delegate.beans.logstreaming.CommandUnitStatusProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.progress.publisher.ProgressEventPublisher;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ProgressData;
 

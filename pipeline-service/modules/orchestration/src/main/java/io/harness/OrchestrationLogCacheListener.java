@@ -10,7 +10,7 @@ package io.harness;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pms.contracts.visualisation.log.OrchestrationLogEvent;
 
 import com.google.common.collect.ImmutableMap;

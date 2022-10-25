@@ -29,12 +29,12 @@ import io.harness.delegate.task.azure.AzureTaskResponse;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppListWebAppInstancesResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AzureWebAppInstanceSyncPerpetualProtoTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AzureConfig;
 import software.wings.delegatetasks.azure.appservice.webapp.taskhandler.AzureWebAppListWebAppInstancesTaskHandler;

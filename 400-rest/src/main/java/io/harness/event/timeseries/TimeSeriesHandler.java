@@ -19,7 +19,7 @@ import io.harness.event.timeseries.processor.DeploymentEventProcessor;
 import io.harness.event.timeseries.processor.ServiceGuardSetupEventProcessor;
 import io.harness.event.timeseries.processor.VerificationEventProcessor;
 import io.harness.event.timeseries.processor.instanceeventprocessor.InstanceEventProcessor;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo;
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;

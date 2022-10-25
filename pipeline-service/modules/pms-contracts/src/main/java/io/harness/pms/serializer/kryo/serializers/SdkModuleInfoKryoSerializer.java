@@ -7,8 +7,8 @@
 
 package io.harness.pms.serializer.kryo.serializers;
 
+import io.harness.kryo.ProtobufKryoSerializer;
 import io.harness.pms.contracts.plan.SdkModuleInfo;
-import io.harness.serializer.kryo.ProtobufKryoSerializer;
 
 public class SdkModuleInfoKryoSerializer extends ProtobufKryoSerializer<SdkModuleInfo> {
   private static SdkModuleInfoKryoSerializer instance;

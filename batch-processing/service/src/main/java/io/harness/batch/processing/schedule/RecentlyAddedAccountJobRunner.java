@@ -7,7 +7,7 @@
 
 package io.harness.batch.processing.schedule;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.ccm.CCMJobConstants;
@@ -17,8 +17,8 @@ import io.harness.batch.processing.service.intfc.BatchJobScheduledDataService;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.ccm.commons.entities.batch.LatestClusterInfo;
 import io.harness.ccm.health.LastReceivedPublishedMessageDao;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

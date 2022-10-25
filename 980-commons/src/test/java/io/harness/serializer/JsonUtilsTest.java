@@ -19,6 +19,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtilsTest.CustomResponse.Result;
 import io.harness.serializer.TestJsonBase.BaseType;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.jayway.jsonpath.DocumentContext;

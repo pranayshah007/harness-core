@@ -31,12 +31,12 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AwsAutoScaleException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.serializer.JsonUtils;
+import io.harness.exception.utils.ExceptionUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.AwsCrossAccountAttributes;

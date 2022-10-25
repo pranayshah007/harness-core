@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.models.constants.InstanceSyncFlow;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.logging.NGProjectLogContext;

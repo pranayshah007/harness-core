@@ -24,7 +24,7 @@ import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.TimeSeriesThresholdService;
 import io.harness.persistence.HPersistence;
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.YamlUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;

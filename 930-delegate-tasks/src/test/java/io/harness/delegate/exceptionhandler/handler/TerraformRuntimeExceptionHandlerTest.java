@@ -23,12 +23,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.WingsException;
 import io.harness.exception.runtime.TerraformCliRuntimeException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;

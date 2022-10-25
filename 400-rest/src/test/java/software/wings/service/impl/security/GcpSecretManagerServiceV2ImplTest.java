@@ -20,9 +20,9 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.SecretManagementException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;

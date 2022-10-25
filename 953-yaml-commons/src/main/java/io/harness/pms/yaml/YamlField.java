@@ -8,7 +8,7 @@
 package io.harness.pms.yaml;
 
 import io.harness.pms.contracts.plan.YamlFieldBlob;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

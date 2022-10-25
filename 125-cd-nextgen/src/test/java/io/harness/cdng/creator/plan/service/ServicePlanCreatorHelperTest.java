@@ -26,6 +26,7 @@ import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
@@ -37,7 +38,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;

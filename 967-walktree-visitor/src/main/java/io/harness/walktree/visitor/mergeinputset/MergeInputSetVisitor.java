@@ -9,7 +9,7 @@ package io.harness.walktree.visitor.mergeinputset;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.walktree.beans.VisitElementResult;
 import io.harness.walktree.registries.visitorfield.VisitorFieldRegistry;
 import io.harness.walktree.registries.visitorfield.VisitorFieldWrapper;

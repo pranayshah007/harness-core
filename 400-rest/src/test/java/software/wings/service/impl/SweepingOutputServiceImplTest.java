@@ -36,8 +36,8 @@ import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceBuilder;
 import io.harness.category.element.UnitTests;
 import io.harness.deployment.InstanceDetails;
+import io.harness.kryo.KryoSerializer;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.ContextElementParamMapper;

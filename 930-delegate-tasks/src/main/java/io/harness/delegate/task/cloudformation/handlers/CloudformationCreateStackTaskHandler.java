@@ -27,8 +27,8 @@ import io.harness.delegate.task.cloudformation.CloudFormationCreateStackNGRespon
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGParameters;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse.CloudformationTaskNGResponseBuilder;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;

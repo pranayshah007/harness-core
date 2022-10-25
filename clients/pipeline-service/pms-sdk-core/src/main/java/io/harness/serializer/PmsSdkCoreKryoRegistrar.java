@@ -16,6 +16,7 @@ import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.async.AsyncResponseCallback;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.pms.sdk.core.adviser.ProceedWithDefaultAdviserParameters;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters;
 import io.harness.pms.sdk.core.adviser.fail.OnFailAdviserParameters;

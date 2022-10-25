@@ -97,9 +97,9 @@ import io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusV
 import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.delegate.task.azure.common.validator.Validators;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.runtime.azure.AzureAppServicesDeployArtifactFileException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.LogCallback;
 
 import software.wings.delegatetasks.azure.AzureTimeLimiter;

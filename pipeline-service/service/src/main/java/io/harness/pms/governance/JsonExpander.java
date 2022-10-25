@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.pms.contracts.governance.ExpansionRequestBatch;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.contracts.governance.ExpansionRequestProto;

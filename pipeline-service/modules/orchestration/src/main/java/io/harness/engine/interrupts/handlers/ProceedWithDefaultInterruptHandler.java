@@ -16,7 +16,7 @@ import io.harness.engine.interrupts.InterruptHandler;
 import io.harness.engine.interrupts.InterruptProcessingFailedException;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.interrupts.Interrupt;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pms.contracts.interrupts.InterruptType;
 
 import com.google.common.annotations.VisibleForTesting;

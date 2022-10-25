@@ -10,9 +10,9 @@ package io.harness.connector;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.delegate.beans.connector.ConnectorValidationParameterResponse;
+import io.harness.kryo.KryoResponse;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.serializer.kryo.KryoResponse;
 
 import java.util.List;
 import java.util.Map;

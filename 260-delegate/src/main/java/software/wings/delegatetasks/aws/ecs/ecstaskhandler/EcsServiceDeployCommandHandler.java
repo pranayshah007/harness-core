@@ -7,7 +7,7 @@
 
 package software.wings.delegatetasks.aws.ecs.ecstaskhandler;
 
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 

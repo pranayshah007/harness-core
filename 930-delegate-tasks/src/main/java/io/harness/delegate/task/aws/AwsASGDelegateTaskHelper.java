@@ -22,7 +22,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskR
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.exception.AwsAutoScaleException;
 import io.harness.exception.AwsInstanceException;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 

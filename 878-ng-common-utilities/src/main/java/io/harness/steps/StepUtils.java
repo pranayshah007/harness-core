@@ -41,6 +41,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -58,7 +59,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.Task;
 import io.harness.yaml.core.StepSpecType;
 

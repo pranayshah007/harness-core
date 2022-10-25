@@ -7,7 +7,7 @@
 
 package io.harness.manage;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.manage.GlobalContextManager.ensureGlobalContextGuard;
 import static io.harness.manage.GlobalContextManager.initGlobalContextGuard;
 import static io.harness.manage.GlobalContextManager.obtainGlobalContext;
@@ -23,8 +23,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.context.GlobalContextData;
 import io.harness.context.MdcGlobalContextData;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.AutoLogRemoveContext;
+import io.harness.logging.logcontext.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogRemoveContext;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
 import io.harness.rule.Owner;
 

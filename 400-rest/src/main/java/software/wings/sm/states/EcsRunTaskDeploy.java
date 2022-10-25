@@ -14,8 +14,8 @@ import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.FailureType.TIMEOUT;
-import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.TaskType.ECS_COMMAND_TASK;

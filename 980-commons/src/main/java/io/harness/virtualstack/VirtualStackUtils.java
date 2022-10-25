@@ -9,8 +9,8 @@ package io.harness.virtualstack;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoSerializer;
 import io.harness.manage.GlobalContextManager;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.protobuf.ByteString;
 import lombok.experimental.UtilityClass;

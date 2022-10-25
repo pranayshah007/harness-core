@@ -9,9 +9,9 @@ package io.harness.licensing;
 
 import io.harness.account.AccountClientModule;
 import io.harness.govern.ProviderModule;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.InjectorRuleMixin;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.telemetry.segment.SegmentConfiguration;

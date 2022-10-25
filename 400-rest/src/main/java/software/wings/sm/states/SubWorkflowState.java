@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.ExecutionStatusResponseData;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.NameValuePair;

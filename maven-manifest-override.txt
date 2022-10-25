@@ -11,6 +11,7 @@ javax.annotation,@maven//:javax_annotation_javax_annotation_api
 javax.validation,@maven//:javax_validation_validation_api
 javax.validation.constraints,@maven//:javax_validation_validation_api
 javax.ws.rs,@maven//:javax_ws_rs_javax_ws_rs_api
+javax.ws.rs.container,@maven//:javax_ws_rs_javax_ws_rs_api
 javax.ws.rs.core,@maven//:javax_ws_rs_javax_ws_rs_api
 javax.ws.rs.ext,@maven//:javax_ws_rs_javax_ws_rs_api
 lombok,//:lombok

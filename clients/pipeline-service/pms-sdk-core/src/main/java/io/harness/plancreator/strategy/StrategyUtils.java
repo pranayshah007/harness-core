@@ -26,6 +26,7 @@ import static io.harness.strategy.StrategyValidationUtils.STRATEGY_IDENTIFIER_PO
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.ambiance.Level;
@@ -43,8 +44,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.JsonUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.strategy.StrategyValidationUtils;

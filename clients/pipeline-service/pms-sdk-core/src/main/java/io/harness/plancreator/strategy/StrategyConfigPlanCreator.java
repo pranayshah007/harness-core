@@ -9,6 +9,7 @@ package io.harness.plancreator.strategy;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -21,7 +22,6 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.steps.matrix.StrategyStep;

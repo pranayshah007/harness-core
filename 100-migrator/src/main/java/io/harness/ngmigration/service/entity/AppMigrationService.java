@@ -35,7 +35,7 @@ import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.importer.TemplateImportService;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.Application;
 import software.wings.beans.EntityType;

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filter.serializer.FiltersRegistrars;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.DelegateServiceBeansKryoRegistrar;
 import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;

@@ -7,7 +7,7 @@
 
 package io.harness.batch.processing.schedule;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
 
@@ -47,8 +47,8 @@ import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.cf.client.api.CfClient;
 import io.harness.cf.client.dto.Target;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 

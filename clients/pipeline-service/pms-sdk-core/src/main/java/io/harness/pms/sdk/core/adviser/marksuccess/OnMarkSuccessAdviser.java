@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -22,7 +23,6 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;

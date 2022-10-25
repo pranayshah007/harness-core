@@ -10,7 +10,7 @@ package software.wings.resources.graphql;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.SRE;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.graphql.utils.GraphQLConstants.GRAPHQL_QUERY_STRING;
 import static software.wings.graphql.utils.GraphQLConstants.HTTP_SERVLET_REQUEST;
@@ -20,10 +20,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.exception.GraphQLException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.secrets.validation.BaseSecretValidator;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.ApiKeyEntry;

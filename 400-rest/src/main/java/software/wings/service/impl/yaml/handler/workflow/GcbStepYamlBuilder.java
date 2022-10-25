@@ -18,7 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.NameValuePair;

@@ -14,7 +14,7 @@ import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;

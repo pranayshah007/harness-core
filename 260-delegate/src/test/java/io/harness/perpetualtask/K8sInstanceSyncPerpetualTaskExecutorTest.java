@@ -32,6 +32,7 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.K8sDeploymentRelease;
@@ -39,7 +40,6 @@ import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Any;

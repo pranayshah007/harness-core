@@ -10,7 +10,7 @@ package software.wings.delegatetasks.k8s.taskhandler;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
 import static io.harness.k8s.K8sCommandUnitConstants.TrafficSplit;
 import static io.harness.k8s.manifest.ObjectYamlUtils.toYaml;

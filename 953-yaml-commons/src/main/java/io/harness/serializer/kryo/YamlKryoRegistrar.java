@@ -10,9 +10,9 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.NumberNGVariable;
 import io.harness.yaml.core.variables.SecretNGVariable;

@@ -24,7 +24,7 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.persistence.NameAccess;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;

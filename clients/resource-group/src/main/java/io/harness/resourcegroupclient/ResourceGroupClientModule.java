@@ -7,12 +7,12 @@
 
 package io.harness.resourcegroupclient;
 
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.remote.ResourceGroupClient;
 import io.harness.resourcegroupclient.remote.ResourceGroupHttpClientFactory;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;

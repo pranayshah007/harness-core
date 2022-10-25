@@ -20,7 +20,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.logging.LogLevel;
 import io.harness.network.Http;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.command.ExecutionLogCallback;
 

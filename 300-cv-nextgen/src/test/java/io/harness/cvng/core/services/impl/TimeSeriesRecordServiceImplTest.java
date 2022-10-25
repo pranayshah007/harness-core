@@ -56,7 +56,7 @@ import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.models.VerificationType;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Lists;

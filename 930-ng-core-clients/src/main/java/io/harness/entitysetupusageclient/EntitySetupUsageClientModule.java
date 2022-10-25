@@ -12,9 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageHttpClientFactory;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;

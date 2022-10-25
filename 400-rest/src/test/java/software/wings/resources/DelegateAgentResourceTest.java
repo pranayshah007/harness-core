@@ -62,6 +62,7 @@ import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.kryo.KryoSerializer;
 import io.harness.managerclient.AccountPreference;
 import io.harness.managerclient.AccountPreferenceQuery;
 import io.harness.managerclient.GetDelegatePropertiesRequest;
@@ -72,7 +73,6 @@ import io.harness.perpetualtask.instancesync.InstanceSyncResponsePublisher;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.beans.Account;

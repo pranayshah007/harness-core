@@ -16,7 +16,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.context.ContextElementType;
 import io.harness.exception.InvalidRequestException;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 
 import software.wings.api.RancherClusterElement;
 import software.wings.api.k8s.K8sElement;

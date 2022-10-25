@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.kryo.KryoSerializer;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -26,7 +27,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;

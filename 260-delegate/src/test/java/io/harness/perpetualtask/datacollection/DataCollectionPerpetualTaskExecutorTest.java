@@ -39,13 +39,13 @@ import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConne
 import io.harness.delegate.service.TimeSeriesDataStoreService;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.KryoSerializer;
 import io.harness.verificationclient.CVNextGenServiceClient;
 
 import com.google.common.collect.Lists;

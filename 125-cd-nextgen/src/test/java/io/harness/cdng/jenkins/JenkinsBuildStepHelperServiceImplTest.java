@@ -31,13 +31,13 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 
 import java.util.Optional;

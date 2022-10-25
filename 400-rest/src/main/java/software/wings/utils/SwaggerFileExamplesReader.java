@@ -9,7 +9,7 @@ package software.wings.utils;
 
 import static org.apache.commons.lang3.StringUtils.removeEnd;
 
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.DeserializationFeature;

@@ -13,13 +13,13 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.kryo.KryoRequest;
 import io.harness.rest.RestResponse;
 import io.harness.secretmanagerclient.dto.EncryptedDataMigrationDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigUpdateDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerMetadataDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerMetadataRequestDTO;
-import io.harness.serializer.kryo.KryoRequest;
 
 import java.util.List;
 import retrofit2.Call;

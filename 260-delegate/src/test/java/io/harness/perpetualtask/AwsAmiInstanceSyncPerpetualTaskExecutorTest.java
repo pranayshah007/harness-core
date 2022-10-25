@@ -25,12 +25,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.kryo.KryoSerializer;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsAmiInstanceSyncPerpetualTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsAsgListInstancesResponse;

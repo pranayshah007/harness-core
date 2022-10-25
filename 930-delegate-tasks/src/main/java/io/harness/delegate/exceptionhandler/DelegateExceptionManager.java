@@ -14,9 +14,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData.ErrorNotifyResponseDataBuilder;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.exception.utils.ExceptionUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

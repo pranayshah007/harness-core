@@ -10,7 +10,7 @@ package software.wings.yaml.gitSync;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 
 import static software.wings.beans.yaml.YamlConstants.GIT_YAML_LOG_PREFIX;
@@ -24,9 +24,9 @@ import static org.mongodb.morphia.aggregation.Group.first;
 import static org.mongodb.morphia.aggregation.Group.grouping;
 
 import io.harness.exception.WingsException;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.mongo.ProcessTimeLogContext;
 
 import software.wings.core.managerConfiguration.ConfigurationController;

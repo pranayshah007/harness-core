@@ -36,7 +36,7 @@ import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.services.NGTemplateServiceHelper;

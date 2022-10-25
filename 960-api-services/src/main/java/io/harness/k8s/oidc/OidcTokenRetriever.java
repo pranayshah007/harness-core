@@ -12,9 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.OidcGrantType;

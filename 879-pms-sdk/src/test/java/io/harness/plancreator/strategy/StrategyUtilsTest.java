@@ -15,13 +15,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.harness.NGCommonUtilitiesTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidYamlException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.strategy.StrategyValidationUtils;
 
 import com.google.common.base.Charsets;

@@ -9,8 +9,8 @@ package io.harness.pms.serializer.kryo.serializers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.ProtobufKryoSerializer;
 import io.harness.pms.contracts.execution.skip.SkipInfo;
-import io.harness.serializer.kryo.ProtobufKryoSerializer;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class SkipInfoKryoSerializer extends ProtobufKryoSerializer<SkipInfo> {

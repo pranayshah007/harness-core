@@ -13,7 +13,7 @@ import static software.wings.common.TemplateExpressionProcessor.checkFieldTempla
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.elk.ElkDataCollectionInfoV2;

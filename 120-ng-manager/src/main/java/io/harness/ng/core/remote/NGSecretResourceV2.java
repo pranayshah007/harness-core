@@ -50,7 +50,7 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.service.impl.security.NGEncryptorService;
 

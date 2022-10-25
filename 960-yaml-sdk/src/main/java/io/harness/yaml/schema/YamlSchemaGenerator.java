@@ -38,7 +38,7 @@ import static io.harness.yaml.schema.beans.SchemaConstants.TYPE_NODE;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
-import io.harness.reflection.CodeUtils;
+import io.harness.reflection.util.CodeUtils;
 import io.harness.yaml.schema.beans.FieldEnumData;
 import io.harness.yaml.schema.beans.FieldSubtypeData;
 import io.harness.yaml.schema.beans.FieldTypesMetadata;

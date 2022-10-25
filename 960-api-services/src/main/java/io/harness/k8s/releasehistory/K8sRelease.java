@@ -19,9 +19,9 @@ import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_L
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;

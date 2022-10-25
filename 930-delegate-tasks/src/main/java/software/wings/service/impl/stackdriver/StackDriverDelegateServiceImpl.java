@@ -9,7 +9,7 @@ package software.wings.service.impl.stackdriver;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.delegatetasks.cv.CVConstants.CV_DATA_COLLECTION_INTERVAL_IN_MINUTE;
@@ -27,7 +27,7 @@ import io.harness.exception.VerificationOperationException;
 import io.harness.exception.WingsException;
 import io.harness.expression.SecretString;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.GcpConfig;
 import software.wings.delegatetasks.CustomDataCollectionUtils;

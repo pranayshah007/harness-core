@@ -14,7 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.beans.ArtifactMetaInfo.ArtifactMetaInfoBuilder;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.HashMap;

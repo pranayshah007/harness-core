@@ -8,10 +8,10 @@
 package io.harness.delegate.task.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 import io.harness.ssh.FileSourceType;
 
 import lombok.Builder;

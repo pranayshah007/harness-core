@@ -26,6 +26,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.encryption.Scope;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
@@ -37,7 +38,6 @@ import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.perpetualtask.k8s.watch.K8sWatchTaskParams;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.RestCallToNGManagerClientUtils;
 

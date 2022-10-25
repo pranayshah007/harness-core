@@ -29,8 +29,8 @@ import io.harness.beans.DelegateTask;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.WingsException;
-import io.harness.serializer.JsonUtils;
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.utils.YamlUtils;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.DatadogConfig;

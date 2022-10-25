@@ -48,8 +48,8 @@ import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResource;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.api.k8s.K8sElement;
 import software.wings.beans.ContainerInfrastructureMapping;

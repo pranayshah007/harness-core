@@ -9,14 +9,14 @@ package io.harness.delegate.task.azure.appservice.webapp.request;
 
 import static io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType.SLOT_SETUP;
 import static io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceType.WEB_APP;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConnectionString;
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;

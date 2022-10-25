@@ -7,7 +7,7 @@
 
 package software.wings.jersey;
 
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;

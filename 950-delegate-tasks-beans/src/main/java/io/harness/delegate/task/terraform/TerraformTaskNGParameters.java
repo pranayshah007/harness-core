@@ -9,8 +9,8 @@ package io.harness.delegate.task.terraform;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
-import static io.harness.expression.Expression.DISALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.DISALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
@@ -24,9 +24,9 @@ import io.harness.delegate.capability.ProcessExecutionCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.filestore.FileStoreFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.expression.common.Expression;
+import io.harness.reflection.util.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 

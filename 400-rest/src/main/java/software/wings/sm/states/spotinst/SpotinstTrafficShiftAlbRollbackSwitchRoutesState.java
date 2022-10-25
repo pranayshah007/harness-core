@@ -22,9 +22,9 @@ import static software.wings.service.impl.aws.model.AwsConstants.MIN_TRAFFIC_SHI
 import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.SpotinstDummyCommandUnit;

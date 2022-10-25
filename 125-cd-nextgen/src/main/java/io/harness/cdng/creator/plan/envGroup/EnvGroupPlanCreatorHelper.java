@@ -26,6 +26,7 @@ import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -38,7 +39,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;

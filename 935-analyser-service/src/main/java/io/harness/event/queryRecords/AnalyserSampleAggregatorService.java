@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.event.QueryRecordEntity;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
 import io.harness.service.QueryRecordsService;
 import io.harness.service.QueryStatsService;
 import io.harness.service.beans.QueryRecordKey;

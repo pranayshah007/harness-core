@@ -10,7 +10,7 @@ package software.wings.sm.states;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.FeatureName.ECS_AUTOSCALAR_REDESIGN;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 
 import static software.wings.api.CommandStateExecutionData.Builder.aCommandStateExecutionData;
 import static software.wings.beans.command.CommandUnitDetails.CommandUnitType.AWS_ECS_SERVICE_DEPLOY;

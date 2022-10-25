@@ -18,7 +18,7 @@ import static io.harness.eraro.ErrorCode.USER_DOES_NOT_EXIST;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.expression.ExpressionEvaluator.matchesVariablePattern;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.app.ManagerCacheRegistrar.AUTH_TOKEN_CACHE;
@@ -52,7 +52,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;

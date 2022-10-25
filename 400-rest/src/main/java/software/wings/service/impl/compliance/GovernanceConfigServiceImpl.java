@@ -10,7 +10,7 @@ package software.wings.service.impl.compliance;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
 
@@ -38,8 +38,8 @@ import io.harness.governance.EnvironmentFilter.EnvironmentFilterType;
 import io.harness.governance.GovernanceFreezeConfig;
 import io.harness.governance.ServiceFilter.ServiceFilterType;
 import io.harness.governance.TimeRangeBasedFreezeConfig;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.validation.Validator;
 
 import software.wings.beans.Event.Type;

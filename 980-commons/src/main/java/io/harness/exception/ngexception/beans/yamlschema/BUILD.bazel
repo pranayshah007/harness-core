@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//980-commons/src/main/java/io/harness/exception/ngexception/metadata:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+    ],
+)
+
+run_analysis_per_module()

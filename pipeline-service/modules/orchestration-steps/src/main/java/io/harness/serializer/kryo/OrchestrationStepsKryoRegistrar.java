@@ -10,7 +10,7 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalResponseData;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalTicketNG;
 import io.harness.steps.approval.step.harness.HarnessApprovalResponseData;

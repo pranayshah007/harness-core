@@ -15,7 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.SpringCacheEntity.SpringCacheEntityKeys;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.springdata.HMongoTemplate;
 
 import com.google.inject.Inject;

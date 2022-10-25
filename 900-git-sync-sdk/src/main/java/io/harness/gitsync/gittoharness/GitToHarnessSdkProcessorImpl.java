@@ -9,11 +9,11 @@ package io.harness.gitsync.gittoharness;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.gitsync.ChangeSet;
 import io.harness.gitsync.ChangeSets;
 import io.harness.gitsync.EntityInfo;
@@ -40,7 +40,7 @@ import io.harness.gitsync.logger.GitProcessingLogContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.manage.GlobalContextManager;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
 import io.harness.ng.core.ValidationError;

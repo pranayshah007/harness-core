@@ -8,12 +8,12 @@
 package io.harness.perpetualtask.datacollection;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.DataCollectionType;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import java.util.HashMap;
 import java.util.Map;

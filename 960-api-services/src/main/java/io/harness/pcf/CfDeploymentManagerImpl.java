@@ -33,7 +33,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;

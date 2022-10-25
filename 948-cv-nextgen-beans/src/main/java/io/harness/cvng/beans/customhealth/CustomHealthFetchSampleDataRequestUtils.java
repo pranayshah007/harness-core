@@ -10,7 +10,7 @@ package io.harness.cvng.beans.customhealth;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import java.time.Instant;
 import java.util.HashMap;

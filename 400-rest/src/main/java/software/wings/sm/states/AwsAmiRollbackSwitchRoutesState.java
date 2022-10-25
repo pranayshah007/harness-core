@@ -10,9 +10,9 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionResponse;

@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.service.intf.CEYamlService.CLOUD_COST_K8S_CLUSTER_SETUP;
 import static io.harness.ccm.service.intf.CEYamlService.CLOUD_COST_K8S_CLUSTER_SETUP_V2;
 import static io.harness.ccm.service.intf.CEYamlService.DOT_YAML;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 
@@ -30,8 +30,8 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;

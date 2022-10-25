@@ -7,7 +7,7 @@
 
 package io.harness.delegate.event.handler;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -17,8 +17,8 @@ import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateProfileObserver;
 

@@ -22,8 +22,8 @@ import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.context.ContextElementType;
 import io.harness.exception.InvalidRequestException;
-import io.harness.serializer.KryoSerializer;
-import io.harness.serializer.MapperUtils;
+import io.harness.kryo.KryoSerializer;
+import io.harness.serializer.utils.MapperUtils;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.ContainerServiceElement;

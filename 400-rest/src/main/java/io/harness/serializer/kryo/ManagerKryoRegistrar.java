@@ -18,7 +18,7 @@ import io.harness.ccm.cluster.entities.EcsCluster;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.ccm.license.CeLicenseType;
 import io.harness.cvng.state.CVNGVerificationTask;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import software.wings.api.ARMStateExecutionData;
 import software.wings.api.AmiStepExecutionSummary;

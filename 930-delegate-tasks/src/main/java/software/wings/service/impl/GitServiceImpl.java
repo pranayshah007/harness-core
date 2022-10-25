@@ -8,7 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshSessionFactory.generateTGTUsingSshConfig;
 import static io.harness.shell.SshSessionFactory.getSSHSession;

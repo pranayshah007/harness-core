@@ -12,9 +12,9 @@ import static io.harness.k8s.steadystate.K8sSteadyStateConstants.WATCH_CALL_TIME
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.configuration.KubernetesCliCommandType;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.steadystate.model.K8ApiResponseDTO;
 import io.harness.k8s.steadystate.model.K8sStatusWatchDTO;

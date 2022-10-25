@@ -13,7 +13,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidYamlException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.EntityDetail;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.FQNMapGenerator;

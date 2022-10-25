@@ -14,8 +14,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;

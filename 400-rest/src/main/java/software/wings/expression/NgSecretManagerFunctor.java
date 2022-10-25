@@ -15,7 +15,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.SECRETS_CACHE_HITS;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.SECRETS_CACHE_INSERTS;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.SECRETS_CACHE_LOOKUPS;
-import static io.harness.reflection.ReflectionUtils.getFieldByName;
+import static io.harness.reflection.util.ReflectionUtils.getFieldByName;
 import static io.harness.security.SimpleEncryption.CHARSET;
 
 import static java.lang.String.format;

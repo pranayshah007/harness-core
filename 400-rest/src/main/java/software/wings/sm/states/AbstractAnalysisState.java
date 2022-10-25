@@ -39,7 +39,7 @@ import io.harness.cv.WorkflowVerificationResult;
 import io.harness.cv.api.WorkflowVerificationResultService;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.time.Timestamp;
 import io.harness.waiter.WaitNotifyEngine;
 

@@ -8,7 +8,7 @@
 package io.harness.perpetualtask.datacollection;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -18,7 +18,8 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDT
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.k8s.model.KubernetesConfig;
-import io.harness.logging.AutoLogContext;
+import io.harness.kryo.KryoSerializer;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
 import io.harness.perpetualtask.PerpetualTaskId;
@@ -27,7 +28,6 @@ import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.datacollection.k8s.ChangeIntelSharedInformerFactory;
 import io.harness.perpetualtask.k8s.watch.K8sWatchServiceDelegate.WatcherGroup;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.delegatetasks.cvng.K8InfoDataService;
 

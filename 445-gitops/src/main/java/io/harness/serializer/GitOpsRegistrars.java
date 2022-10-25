@@ -11,6 +11,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorDTO;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.GitOpsKryoRegistrar;
 import io.harness.serializer.morphia.GitOpsMorphiaClassesRegistrar;

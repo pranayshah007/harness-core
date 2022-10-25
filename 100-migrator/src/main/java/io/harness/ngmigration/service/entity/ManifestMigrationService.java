@@ -48,7 +48,7 @@ import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.manifest.NgManifestFactory;
 import io.harness.ngmigration.service.manifest.NgManifestService;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.Service;

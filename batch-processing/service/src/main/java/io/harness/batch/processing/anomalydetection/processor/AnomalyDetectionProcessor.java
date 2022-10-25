@@ -7,7 +7,7 @@
 
 package io.harness.batch.processing.anomalydetection.processor;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.batch.processing.anomalydetection.AnomalyDetectionConstants;
 import io.harness.batch.processing.anomalydetection.AnomalyDetectionTimeSeries;
@@ -19,7 +19,7 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.service.impl.AnomalyDetectionLogContext;
 import io.harness.ccm.anomaly.entities.Anomaly;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

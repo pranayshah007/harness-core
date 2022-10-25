@@ -13,7 +13,7 @@ import static io.harness.eraro.ErrorCode.INVALID_ARGUMENT;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.eraro.ErrorCode.USER_DOES_NOT_EXIST;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
@@ -28,7 +28,7 @@ import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.encryption.EncryptedDataDetail;

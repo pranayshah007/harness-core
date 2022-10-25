@@ -24,7 +24,7 @@ import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.cloudformation.CloudformationBaseHelper;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;

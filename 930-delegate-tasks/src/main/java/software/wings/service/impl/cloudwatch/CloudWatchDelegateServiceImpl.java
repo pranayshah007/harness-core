@@ -23,7 +23,7 @@ import io.harness.delegate.task.DataCollectionExecutorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.AwsConfig;
 import software.wings.delegatetasks.DelegateLogService;
@@ -171,7 +171,7 @@ public class CloudWatchDelegateServiceImpl implements CloudWatchDelegateService 
           .build();
     } catch (Exception e) {
       log.error("Exception getMetricsWithDataForNode", e);
-      throw new InvalidRequestException(io.harness.exception.ExceptionUtils.getMessage(e), e);
+      throw new InvalidRequestException(io.harness.exception.utils.ExceptionUtils.getMessage(e), e);
     }
   }
 

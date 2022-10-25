@@ -25,12 +25,12 @@ import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo
 import io.harness.delegate.task.aws.AwsASGDelegateTaskHelper;
 import io.harness.delegate.task.aws.AwsListEC2InstancesDelegateTaskHelper;
 import io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig;
+import io.harness.kryo.KryoSerializer;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 

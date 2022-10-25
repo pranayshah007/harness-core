@@ -12,10 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.serializer.JsonUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;

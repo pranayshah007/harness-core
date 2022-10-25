@@ -10,7 +10,7 @@ package software.wings.sm.states.k8s;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 
 import static software.wings.sm.StateType.K8S_TRAFFIC_SPLIT;
 
@@ -23,9 +23,9 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.context.ContextElementType;
 import io.harness.data.validator.Trimmed;
 import io.harness.delegate.task.k8s.K8sTaskType;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.k8s.model.IstioDestinationWeight;

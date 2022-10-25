@@ -22,10 +22,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.jenkins.service.JenkinsRegistryUtils;
 import io.harness.delegate.task.artifacts.mappers.JenkinsRequestResponseMapper;
 import io.harness.exception.ArtifactServerException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.JenkinsConfig;

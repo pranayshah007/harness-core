@@ -9,9 +9,9 @@ package io.harness.notification.remote;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRequest;
+import io.harness.kryo.KryoResponse;
 import io.harness.rest.RestResponse;
-import io.harness.serializer.kryo.KryoRequest;
-import io.harness.serializer.kryo.KryoResponse;
 
 import retrofit2.Call;
 import retrofit2.http.GET;

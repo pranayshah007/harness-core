@@ -33,7 +33,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.beans.EntityType;
 import software.wings.beans.ExecutionArgs;

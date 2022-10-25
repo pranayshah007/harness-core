@@ -9,7 +9,7 @@ package software.wings.service.impl.yaml.gitdiff;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.manage.GlobalContextManager.ensureGlobalContextGuard;
 
 import static software.wings.beans.yaml.YamlConstants.GIT_YAML_LOG_PREFIX;
@@ -19,7 +19,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 
-import io.harness.logging.AccountLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
 import io.harness.mongo.ProcessTimeLogContext;
 

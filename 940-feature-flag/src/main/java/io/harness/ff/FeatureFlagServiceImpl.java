@@ -31,7 +31,7 @@ import io.harness.configuration.DeployMode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Sets;

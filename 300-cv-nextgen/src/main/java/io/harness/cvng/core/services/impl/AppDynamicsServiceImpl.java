@@ -38,7 +38,7 @@ import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.CorrelationContext;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.utils.PageUtils;
 
 import com.google.common.reflect.TypeToken;

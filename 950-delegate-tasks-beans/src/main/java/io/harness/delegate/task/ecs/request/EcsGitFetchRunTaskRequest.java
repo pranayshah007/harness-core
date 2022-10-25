@@ -7,7 +7,7 @@
 
 package io.harness.delegate.task.ecs.request;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,9 +20,9 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.ecs.EcsGitFetchRunTaskFileConfig;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.expression.common.Expression;
+import io.harness.reflection.util.ExpressionReflectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;

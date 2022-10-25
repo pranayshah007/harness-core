@@ -9,6 +9,7 @@ package io.harness.plancreator.steps;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.SkipType;
@@ -21,7 +22,6 @@ import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.NGSpecStep;
 import io.harness.steps.common.NGSectionStepParameters;
 

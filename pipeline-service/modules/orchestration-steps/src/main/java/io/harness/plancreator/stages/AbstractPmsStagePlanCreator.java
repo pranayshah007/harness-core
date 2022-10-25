@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.kryo.KryoSerializer;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
 import io.harness.plancreator.steps.common.StepParametersUtils;
@@ -29,7 +30,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
 import io.harness.when.utils.RunInfoUtils;
 
 import com.google.common.base.Preconditions;

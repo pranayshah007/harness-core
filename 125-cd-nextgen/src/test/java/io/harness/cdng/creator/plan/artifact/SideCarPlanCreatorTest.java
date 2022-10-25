@@ -33,6 +33,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -40,7 +41,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;

@@ -23,11 +23,11 @@ import io.harness.delegate.task.serverless.ServerlessAwsLambdaDeploymentReleaseD
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessTaskHelperBase;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.ServerlessAwsLambdaDeploymentRelease;
 import io.harness.perpetualtask.instancesync.ServerlessAwsLambdaInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.time.Instant;

@@ -16,7 +16,7 @@ import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
 import io.harness.beans.PageRequest;
 import io.harness.data.validator.EntityNameValidator;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.migrations.Migration;
 
 import software.wings.beans.Account;

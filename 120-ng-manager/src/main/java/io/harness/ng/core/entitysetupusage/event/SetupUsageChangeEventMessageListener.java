@@ -17,7 +17,7 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.FILE
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SERVICE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -33,7 +33,7 @@ import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreat
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage;
 import io.harness.ng.core.entitysetupusage.mapper.EntitySetupUsageEventDTOMapper;

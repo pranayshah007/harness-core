@@ -8,7 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.beans.Permit.PERMIT_KEY_ID;
 
@@ -16,7 +16,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactCollectionResponseHandler;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.beans.Permit;
 import software.wings.dl.WingsPersistence;

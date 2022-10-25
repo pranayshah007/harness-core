@@ -13,7 +13,7 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.task.DelegateLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 

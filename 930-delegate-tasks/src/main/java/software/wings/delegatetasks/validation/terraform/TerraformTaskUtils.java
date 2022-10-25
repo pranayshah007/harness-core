@@ -14,7 +14,7 @@ import static io.harness.provision.TerraformConstants.VAR_FILE_FORMAT;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.provision.TfVarScriptRepositorySource;
 import io.harness.provision.TfVarSource;
 import io.harness.provision.TfVarSource.TfVarSourceType;

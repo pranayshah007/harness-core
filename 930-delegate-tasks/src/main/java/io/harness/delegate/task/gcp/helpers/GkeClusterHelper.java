@@ -32,7 +32,7 @@ import io.harness.k8s.model.GcpAccessTokenSupplier;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.TaskType;
 

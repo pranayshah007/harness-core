@@ -14,8 +14,8 @@ import static io.harness.rule.OwnerRule.ABHINAV;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.appmanifest.ApplicationManifest;

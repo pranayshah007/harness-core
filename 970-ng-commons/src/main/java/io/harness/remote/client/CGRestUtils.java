@@ -18,7 +18,7 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.rest.RestResponse;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;

@@ -7,13 +7,13 @@
 
 package software.wings.expression;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.beans.ArtifactMetadata;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.delegatetasks.buildsource.ArtifactStreamLogContext;

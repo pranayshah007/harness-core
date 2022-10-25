@@ -14,6 +14,7 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.IgnoreFailureAdvise;
@@ -23,7 +24,6 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

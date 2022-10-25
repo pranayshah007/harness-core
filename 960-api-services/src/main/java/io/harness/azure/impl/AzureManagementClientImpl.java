@@ -43,7 +43,7 @@ import io.harness.exception.runtime.azure.AzureARMSubscriptionScopeException;
 import io.harness.exception.runtime.azure.AzureARMTenantScopeException;
 import io.harness.exception.runtime.azure.AzureARMValidationException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Singleton;

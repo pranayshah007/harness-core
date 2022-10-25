@@ -28,6 +28,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
 import io.harness.encryption.SecretRefData;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
@@ -38,7 +39,6 @@ import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.rule.Owner;
 import io.harness.secrets.SecretDecryptor;
-import io.harness.serializer.KryoSerializer;
 import io.harness.service.ScmServiceClient;
 import io.harness.tasks.BinaryResponseData;
 

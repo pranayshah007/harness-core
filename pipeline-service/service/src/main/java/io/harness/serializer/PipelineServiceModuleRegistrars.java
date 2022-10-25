@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filter.serializer.morphia.FiltersMorphiaRegistrar;
 import io.harness.gitsync.serializer.GitSyncSdkRegistrar;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.DelegateAgentBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateServiceBeansKryoRegistrar;

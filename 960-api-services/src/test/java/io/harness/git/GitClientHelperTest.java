@@ -49,7 +49,7 @@ import io.harness.filesystem.FileIo;
 import io.harness.git.model.ChangeType;
 import io.harness.git.model.GitBaseRequest;
 import io.harness.git.model.GitFile;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.common.cache.LoadingCache;

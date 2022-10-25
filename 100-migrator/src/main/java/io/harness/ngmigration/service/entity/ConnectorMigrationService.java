@@ -47,7 +47,7 @@ import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgBasicInfo;

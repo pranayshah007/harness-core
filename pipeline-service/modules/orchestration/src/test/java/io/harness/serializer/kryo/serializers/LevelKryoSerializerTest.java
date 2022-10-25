@@ -14,10 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import org.junit.Test;

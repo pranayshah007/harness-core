@@ -9,6 +9,7 @@ package io.harness.serializer;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;
 import io.harness.serializer.kryo.DelegateAgentBeansKryoRegister;
 import io.harness.serializer.kryo.NotificationDelegateTasksKryoRegistrar;

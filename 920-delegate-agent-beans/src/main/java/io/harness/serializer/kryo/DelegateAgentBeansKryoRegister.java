@@ -14,7 +14,7 @@ import io.harness.delegate.beans.DelegateProfileParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

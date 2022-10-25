@@ -30,9 +30,9 @@ import io.harness.exception.SecretManagementException;
 import io.harness.helpers.ext.vault.SSHVaultAuthResult;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.perpetualtask.internal.AssignmentTaskResponse;
-import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.AmiServiceDeployElement;
 import software.wings.api.AmiServiceSetupElement;

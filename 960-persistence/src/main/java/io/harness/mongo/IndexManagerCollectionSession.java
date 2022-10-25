@@ -7,7 +7,7 @@
 
 package io.harness.mongo;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.IndexManagerSession.NAME;
 import static io.harness.mongo.IndexManagerSession.UNIQUE;
 
@@ -16,7 +16,7 @@ import static java.time.Duration.ofDays;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;

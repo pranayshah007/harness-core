@@ -22,7 +22,7 @@ import io.harness.delegate.service.DelegateAgentService;
 import io.harness.event.client.EventPublisher;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.YamlUtils;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 

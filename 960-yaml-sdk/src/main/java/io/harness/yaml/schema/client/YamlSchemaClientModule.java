@@ -10,8 +10,8 @@ package io.harness.yaml.schema.client;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 import io.harness.yaml.schema.client.config.YamlSchemaClientConfig;
 import io.harness.yaml.schema.client.config.YamlSchemaHttpClientConfig;
 

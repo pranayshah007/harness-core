@@ -45,7 +45,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;

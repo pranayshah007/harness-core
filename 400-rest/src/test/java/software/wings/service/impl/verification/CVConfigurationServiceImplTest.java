@@ -40,7 +40,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.limits.impl.model.StaticLimit;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.YamlUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.alerts.AlertStatus;

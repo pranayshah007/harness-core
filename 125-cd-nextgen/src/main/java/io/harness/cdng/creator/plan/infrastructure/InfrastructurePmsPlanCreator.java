@@ -35,6 +35,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.YamlException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -57,7 +58,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.NGSectionStepParameters;
 
 import com.fasterxml.jackson.databind.JsonNode;

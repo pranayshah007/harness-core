@@ -10,7 +10,7 @@ package io.harness.delegate.task;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.NullSafeImmutableMap;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public class DelegateLogContext extends AutoLogContext {

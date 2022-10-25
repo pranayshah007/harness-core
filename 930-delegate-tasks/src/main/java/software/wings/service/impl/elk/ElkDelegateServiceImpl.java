@@ -27,7 +27,7 @@ import io.harness.exception.WingsException;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.ElkConfig;
 import software.wings.delegatetasks.DelegateLogService;

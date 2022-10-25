@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.SRE;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SECRETS;
@@ -31,15 +31,15 @@ import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
 import io.harness.beans.SecretUsageLog;
 import io.harness.exception.SecretManagementException;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.persistence.UuidAware;
 import io.harness.rest.RestResponse;
 import io.harness.secrets.setupusage.SecretSetupUsage;
 import io.harness.secrets.validation.BaseSecretValidator;
 import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.SettingAttribute;

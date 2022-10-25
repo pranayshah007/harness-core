@@ -11,7 +11,7 @@ import static com.google.common.collect.ImmutableSortedMap.of;
 import static java.util.Arrays.asList;
 
 import io.harness.beans.KeyValuePair;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.HttpStateExecutionData;

@@ -19,13 +19,13 @@ import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.wait.WaitStepNode;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 

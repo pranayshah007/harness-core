@@ -10,7 +10,7 @@ package io.harness.pms.sdk.core.execution;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
 import lombok.AllArgsConstructor;

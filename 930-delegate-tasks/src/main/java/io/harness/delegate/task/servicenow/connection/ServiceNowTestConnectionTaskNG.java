@@ -20,8 +20,8 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNgHelper;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.servicenow.ServiceNowActionNG;
 
 import com.google.inject.Inject;

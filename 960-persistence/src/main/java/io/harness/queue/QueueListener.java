@@ -9,7 +9,7 @@ package io.harness.queue;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 import static io.harness.manage.GlobalContextManager.initGlobalContextGuard;
 import static io.harness.threading.Morpheus.sleep;
@@ -18,7 +18,7 @@ import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
 import io.harness.mongo.DelayLogContext;
 import io.harness.mongo.MessageLogContext;

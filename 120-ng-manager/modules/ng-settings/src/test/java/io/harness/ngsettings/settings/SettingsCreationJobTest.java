@@ -21,7 +21,7 @@ import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.entities.SettingConfiguration;
 import io.harness.ngsettings.entities.SettingsConfigurationState;
 import io.harness.ngsettings.services.SettingsService;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.repositories.ngsettings.custom.ConfigurationStateRepository;
 import io.harness.rule.Owner;
 

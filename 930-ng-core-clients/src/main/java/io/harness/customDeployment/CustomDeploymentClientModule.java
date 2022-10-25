@@ -12,9 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.customDeployment.remote.CustomDeploymentClientHttpFactory;
 import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;

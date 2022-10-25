@@ -27,9 +27,9 @@ import io.harness.enforcement.interfaces.EnforcementSdkSupportInterface;
 import io.harness.enforcement.services.FeatureRestrictionLoader;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;

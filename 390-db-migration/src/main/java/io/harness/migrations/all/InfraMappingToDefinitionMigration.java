@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;

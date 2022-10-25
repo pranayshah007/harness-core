@@ -27,6 +27,7 @@ import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -36,7 +37,6 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.io.IOException;

@@ -7,7 +7,7 @@
 
 package io.harness.serializer.kryo;
 
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.utils.DummyForkStepParameters;
 import io.harness.utils.DummySectionStepParameters;
 import io.harness.utils.DummyVisualizationOutcome;

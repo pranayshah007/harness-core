@@ -28,6 +28,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.http.HttpHeaderConfig;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.ng.core.AccountScope;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.OrgScope;
@@ -46,7 +47,6 @@ import io.harness.request.HttpRequestInfo;
 import io.harness.request.RequestContext;
 import io.harness.request.RequestContextData;
 import io.harness.request.RequestMetadata;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.serviceaccount.ServiceAccountDTO;
 import io.harness.yaml.core.timeout.Timeout;
 

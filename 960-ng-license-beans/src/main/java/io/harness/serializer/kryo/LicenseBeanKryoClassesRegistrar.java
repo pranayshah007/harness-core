@@ -7,6 +7,7 @@
 
 package io.harness.serializer.kryo;
 
+import io.harness.kryo.KryoRegistrar;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
@@ -18,7 +19,6 @@ import io.harness.licensing.beans.modules.CVModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ChaosModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

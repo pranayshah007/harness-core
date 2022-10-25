@@ -10,7 +10,7 @@ package software.wings.service.impl.infrastructuredefinition;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMapping.InfrastructureMappingKeys;

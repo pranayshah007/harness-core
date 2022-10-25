@@ -15,7 +15,7 @@ import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 
 import static software.wings.beans.ARMSourceType.GIT;
 import static software.wings.beans.TaskType.AZURE_ARM_TASK;

@@ -87,7 +87,7 @@ import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.telemetry.beans.CdTelemetrySentStatus;
 
 import com.esotericsoftware.kryo.Kryo;

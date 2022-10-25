@@ -16,7 +16,7 @@ import static software.wings.service.impl.workflow.creation.K8V2CanaryWorkflowCr
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.serializer.MapperUtils;
+import io.harness.serializer.utils.MapperUtils;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.OrchestrationWorkflow;

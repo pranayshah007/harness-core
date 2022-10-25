@@ -16,9 +16,9 @@ import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDeta
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AzureConfig;

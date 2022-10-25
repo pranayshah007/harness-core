@@ -20,13 +20,13 @@ import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;

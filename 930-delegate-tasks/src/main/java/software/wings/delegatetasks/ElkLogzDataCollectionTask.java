@@ -19,10 +19,10 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.VerificationOperationException;
-import io.harness.serializer.JsonUtils;
+import io.harness.exception.utils.ExceptionUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.time.Timestamp;
 
 import software.wings.beans.TaskType;

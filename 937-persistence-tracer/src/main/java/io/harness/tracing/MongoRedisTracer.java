@@ -20,7 +20,7 @@ import io.harness.eventsframework.producer.Message;
 import io.harness.mongo.tracing.Tracer;
 import io.harness.ng.persistence.tracer.NgTracer;
 import io.harness.persistence.HQuery;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.tracing.shapedetector.QueryShapeDetector;
 import io.harness.version.VersionInfoManager;
 

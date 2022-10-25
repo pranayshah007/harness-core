@@ -13,7 +13,7 @@ import static io.harness.exception.WingsException.ReportTarget.REST_API;
 
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
 
 import com.google.inject.Singleton;
 import io.grpc.Status;

@@ -14,7 +14,7 @@ import static java.util.stream.Collectors.toCollection;
 
 import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.gitsync.FileChanges;
 import io.harness.gitsync.FullSyncChangeSet;
 import io.harness.gitsync.FullSyncFileResponse;
@@ -24,7 +24,7 @@ import io.harness.gitsync.FullSyncServiceGrpc.FullSyncServiceImplBase;
 import io.harness.gitsync.ScopeDetails;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
-import io.harness.logging.MdcContextSetter;
+import io.harness.logging.logcontext.MdcContextSetter;
 import io.harness.manage.GlobalContextManager;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;

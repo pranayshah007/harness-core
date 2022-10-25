@@ -12,7 +12,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GITOPS_CLUSTER_ENTITY;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -20,8 +20,8 @@ import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.event.MessageListener;
 
 import com.google.inject.Inject;

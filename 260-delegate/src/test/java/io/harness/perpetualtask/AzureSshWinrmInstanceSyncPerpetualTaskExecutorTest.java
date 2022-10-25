@@ -24,12 +24,12 @@ import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.instancesync.SshWinrmInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig;
+import io.harness.kryo.KryoSerializer;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 

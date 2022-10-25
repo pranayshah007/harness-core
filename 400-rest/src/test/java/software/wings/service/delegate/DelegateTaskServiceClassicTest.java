@@ -97,6 +97,7 @@ import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapa
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logstreaming.LogStreamingServiceConfig;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.network.LocalhostUtils;
@@ -104,7 +105,6 @@ import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Cache;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateProfileObserver;
 import io.harness.service.intfc.DelegateSyncService;

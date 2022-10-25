@@ -29,13 +29,13 @@ import io.harness.delegate.task.spotinst.request.SpotInstTaskParameters;
 import io.harness.delegate.task.spotinst.response.SpotInstListElastigroupInstancesResponse;
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.SpotinstAmiInstanceSyncPerpetualTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.AwsConfig;

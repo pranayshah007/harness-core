@@ -21,7 +21,7 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceBuilder;
 import io.harness.beans.WorkflowType;
 import io.harness.context.ContextElementType;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.api.InfraMappingElement;
 import software.wings.api.ServiceElement;

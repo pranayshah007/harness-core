@@ -25,13 +25,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.PcfConfig;

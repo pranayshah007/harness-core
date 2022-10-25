@@ -10,8 +10,8 @@ package io.harness.pms.serializer.kryo.serializers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.ProtobufKryoSerializer;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
-import io.harness.serializer.kryo.ProtobufKryoSerializer;
 
 @OwnedBy(PIPELINE)
 public class JsonExpansionInfoKryoSerializer extends ProtobufKryoSerializer<JsonExpansionInfo> {

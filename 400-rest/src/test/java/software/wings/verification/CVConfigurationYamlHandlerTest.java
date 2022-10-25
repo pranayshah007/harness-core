@@ -18,7 +18,7 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.category.element.UnitTests;
 import io.harness.git.model.ChangeType;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;

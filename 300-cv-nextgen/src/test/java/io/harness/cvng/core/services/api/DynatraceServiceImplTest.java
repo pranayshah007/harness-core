@@ -32,7 +32,7 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.impl.DynatraceServiceImpl;
 import io.harness.delegate.beans.connector.dynatrace.DynatraceConnectorDTO;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;

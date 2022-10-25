@@ -7,12 +7,12 @@
 
 package io.harness.ng.core.entities;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 import static io.harness.notification.NotificationChannelType.SLACK;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;

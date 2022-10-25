@@ -25,7 +25,6 @@ import io.harness.artifacts.gcr.GcrRestClient;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 import io.harness.context.MdcGlobalContextData;
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GcpServerException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.WingsException;
@@ -33,11 +32,12 @@ import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataK
 import io.harness.exception.runtime.GcrConnectRuntimeException;
 import io.harness.exception.runtime.GcrImageNotFoundRuntimeException;
 import io.harness.exception.runtime.GcrInvalidTagRuntimeException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.expression.RegexFunctor;
 import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.manage.GlobalContextManager;
 import io.harness.network.Http;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.google.inject.Singleton;
 import java.io.IOException;

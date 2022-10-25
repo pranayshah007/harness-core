@@ -7,8 +7,8 @@
 
 package io.harness.pms.sdk.core;
 
+import io.harness.kryo.KryoRegistrar;
 import io.harness.pms.sdk.core.execution.events.node.resume.DummyErrorResponseData;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

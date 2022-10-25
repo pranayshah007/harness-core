@@ -17,6 +17,7 @@ import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
 import io.harness.delegate.task.gitpolling.response.GitPollingTaskExecutionResponse;
 import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
@@ -24,7 +25,6 @@ import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.polling.GitPollingTaskParamsNg;
 import io.harness.perpetualtask.polling.PollingResponsePublisher;
-import io.harness.serializer.KryoSerializer;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;

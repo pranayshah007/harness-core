@@ -7,7 +7,7 @@
 
 package software.wings.delegatetasks.cv;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.delegatetasks.cv.CVConstants.MAX_RETRIES;
 import static software.wings.delegatetasks.cv.CVConstants.RETRY_SLEEP_DURATION;

@@ -52,7 +52,7 @@ import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.service.remote.ServiceResourceClient;
 import io.harness.utils.YamlPipelineUtils;
 

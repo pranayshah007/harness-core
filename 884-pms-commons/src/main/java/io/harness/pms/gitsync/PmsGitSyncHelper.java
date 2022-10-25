@@ -17,9 +17,9 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.gitsync.scm.beans.ScmGitMetaDataContext;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.kryo.KryoSerializer;
 import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

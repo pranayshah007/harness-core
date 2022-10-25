@@ -54,13 +54,13 @@ import io.harness.delegate.beans.NoDelegatesException;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.utils.ExceptionUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskClientContext.PerpetualTaskClientContextBuilder;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskService;
-import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateTaskService;
 

@@ -19,7 +19,7 @@ import io.harness.delegate.task.stepstatus.artifact.DockerArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactMetadata;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.task.converters.ResponseDataConverterRegistry;
 import io.harness.task.service.SendTaskProgressRequest;
 import io.harness.task.service.SendTaskProgressResponse;

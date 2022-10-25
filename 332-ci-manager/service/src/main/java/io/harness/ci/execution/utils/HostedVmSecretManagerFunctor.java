@@ -10,7 +10,7 @@ package io.harness.ci.utils;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.reflection.ReflectionUtils.getFieldByName;
+import static io.harness.reflection.util.ReflectionUtils.getFieldByName;
 import static io.harness.security.SimpleEncryption.CHARSET;
 
 import io.harness.annotations.dev.HarnessTeam;

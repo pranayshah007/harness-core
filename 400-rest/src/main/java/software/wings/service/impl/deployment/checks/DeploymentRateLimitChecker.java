@@ -7,7 +7,7 @@
 
 package software.wings.service.impl.deployment.checks;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.configuration.DeployMode;
 import io.harness.eraro.ErrorCode;
@@ -24,8 +24,8 @@ import io.harness.limits.configuration.NoLimitConfiguredException;
 import io.harness.limits.impl.model.RateLimit;
 import io.harness.limits.lib.DeploymentErrorType;
 import io.harness.limits.lib.RateLimitChecker;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.deployment.PreDeploymentChecker;

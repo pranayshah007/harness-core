@@ -14,8 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ServersModule;
+import io.harness.kryo.KryoModule;
 import io.harness.rule.InjectorRuleMixin;
-import io.harness.serializer.KryoModule;
 import io.harness.threading.CurrentThreadExecutor;
 import io.harness.threading.ExecutorModule;
 

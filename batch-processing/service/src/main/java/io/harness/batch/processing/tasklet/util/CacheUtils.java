@@ -7,7 +7,7 @@
 
 package io.harness.batch.processing.tasklet.util;
 
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import java.lang.reflect.Field;

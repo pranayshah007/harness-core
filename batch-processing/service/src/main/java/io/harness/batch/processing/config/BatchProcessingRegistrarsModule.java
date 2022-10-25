@@ -8,8 +8,8 @@
 package io.harness.batch.processing.config;
 
 import io.harness.govern.ProviderModule;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 
 import com.google.inject.Provides;

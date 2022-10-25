@@ -22,7 +22,7 @@ import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
 import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;

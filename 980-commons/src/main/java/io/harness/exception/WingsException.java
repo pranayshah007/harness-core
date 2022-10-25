@@ -20,7 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
-import io.harness.exception.ngexception.ErrorMetadataDTO;
+import io.harness.exception.ngexception.metadata.ErrorMetadataDTO;
 
 import java.util.Collections;
 import java.util.EnumSet;

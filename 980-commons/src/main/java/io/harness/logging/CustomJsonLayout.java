@@ -7,9 +7,13 @@
 
 package io.harness.logging;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+import io.harness.logging.logcontext.AutoLogContext;
+import io.harness.logging.logcontext.MdcKeyLogContext;
+import io.harness.logging.logcontext.MessagePatternLogContext;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;

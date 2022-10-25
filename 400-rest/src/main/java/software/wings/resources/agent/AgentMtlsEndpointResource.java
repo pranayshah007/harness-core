@@ -8,7 +8,7 @@
 package software.wings.resources.agent;
 
 import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
@@ -21,8 +21,8 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.rest.RestResponse;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 

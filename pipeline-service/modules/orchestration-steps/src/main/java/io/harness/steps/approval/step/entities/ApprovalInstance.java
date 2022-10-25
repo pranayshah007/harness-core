@@ -10,14 +10,14 @@ package io.harness.steps.approval.step.entities;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.iterator.PersistentRegularIterable;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;

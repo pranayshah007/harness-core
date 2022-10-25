@@ -8,11 +8,11 @@
 package io.harness.delegate.beans.ci.vm.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 
 import java.util.List;
 import java.util.Map;

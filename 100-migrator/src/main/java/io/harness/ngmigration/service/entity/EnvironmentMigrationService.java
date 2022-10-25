@@ -41,7 +41,7 @@ import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.yaml.core.variables.NGVariable;
 
 import software.wings.beans.Environment;

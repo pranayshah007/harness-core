@@ -9,7 +9,7 @@ package io.harness.waiter;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.tasks.ProgressData;
 import io.harness.waiter.persistence.PersistenceWrapper;
 

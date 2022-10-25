@@ -14,7 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.validation.Validator.notNullCheck;
 
 import io.harness.beans.WorkflowType;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.expression.ExpressionEvaluator;
 
 import software.wings.beans.Account;

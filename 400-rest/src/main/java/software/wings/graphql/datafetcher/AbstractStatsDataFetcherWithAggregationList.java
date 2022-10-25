@@ -8,7 +8,7 @@
 package software.wings.graphql.datafetcher;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
 
@@ -18,9 +18,9 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.beans.instance.dashboard.EntitySummary;
 import software.wings.dl.WingsPersistence;

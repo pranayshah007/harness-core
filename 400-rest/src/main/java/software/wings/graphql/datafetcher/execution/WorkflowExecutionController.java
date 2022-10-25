@@ -25,7 +25,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.WorkflowType;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.persistence.HPersistence;
 
 import software.wings.beans.EntityType;

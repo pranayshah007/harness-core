@@ -8,7 +8,7 @@
 package io.harness.perpetualtask;
 
 import static io.harness.delegate.message.ManagerMessageConstants.UPDATE_PERPETUAL_TASK;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_ASSIGNED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_CREATE;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_DELETE;
@@ -21,17 +21,17 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.perpetualtask.PerpetualTaskScheduleConfig;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.grpc.auth.DelegateAuthServerInterceptor;
 import io.harness.grpc.utils.HTimestamps;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.perpetualtask.internal.PerpetualTaskRecordDao;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.service.intfc.PerpetualTaskStateObserver;
 
 import software.wings.app.MainConfiguration;

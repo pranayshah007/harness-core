@@ -19,7 +19,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.VerificationOperationException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.YamlUtils;
 
 import software.wings.beans.yaml.Change;
 import software.wings.beans.yaml.ChangeContext;

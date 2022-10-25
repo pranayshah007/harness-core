@@ -9,13 +9,13 @@ package io.harness.service;
 
 import static io.harness.annotations.dev.HarnessModule._420_DELEGATE_SERVICE;
 import static io.harness.grpc.auth.DelegateAuthServerInterceptor.ACCOUNT_ID_CTX_KEY;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.grpc.utils.HTimestamps;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pingpong.DelegateServicePingPongGrpc;
 import io.harness.pingpong.PingDelegateService;
 import io.harness.pingpong.PongDelegateService;

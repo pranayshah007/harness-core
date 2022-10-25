@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.steps.resourcerestraint.IResourceRestraintSpecParameters;

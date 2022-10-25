@@ -13,9 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.InterruptEffect;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

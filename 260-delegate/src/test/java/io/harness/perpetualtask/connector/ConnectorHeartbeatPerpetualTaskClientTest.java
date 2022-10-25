@@ -26,12 +26,12 @@ import io.harness.delegate.beans.connector.ConnectorValidationParameterResponse;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmValidationParams;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.WingsBaseTest;
 

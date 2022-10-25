@@ -8,14 +8,14 @@
 package software.wings.resources.secretsmanagement;
 
 import static io.harness.annotations.dev.HarnessModule._360_CG_MANAGER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SECRET_MANAGERS;
 import static software.wings.security.PermissionAttribute.ResourceType.SETTING;
 
 import io.harness.annotations.dev.TargetModule;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.AzureVaultConfig;

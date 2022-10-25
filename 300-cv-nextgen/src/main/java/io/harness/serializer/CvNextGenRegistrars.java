@@ -12,6 +12,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.beans.CVVerifyStepNode;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.serializer.kryo.PmsContractsKryoRegistrar;

@@ -14,10 +14,10 @@ import static java.util.Collections.singletonList;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;

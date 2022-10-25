@@ -15,9 +15,9 @@ import static io.harness.azure.model.AzureConstants.SKIP_VMSS_ROLLBACK;
 import static io.harness.azure.model.AzureConstants.UP_SCALE_COMMAND_UNIT;
 import static io.harness.azure.model.AzureConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.beans.command.AzureVMSSDummyCommandUnit;
 import software.wings.beans.command.CommandUnit;

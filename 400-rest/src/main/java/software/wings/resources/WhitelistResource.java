@@ -7,7 +7,7 @@
 
 package software.wings.resources;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_IP_WHITELIST;
 import static software.wings.security.PermissionAttribute.ResourceType.WHITE_LIST;
@@ -16,8 +16,8 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.User;

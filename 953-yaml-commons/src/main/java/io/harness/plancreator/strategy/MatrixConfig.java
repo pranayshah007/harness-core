@@ -20,7 +20,7 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidYamlException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;

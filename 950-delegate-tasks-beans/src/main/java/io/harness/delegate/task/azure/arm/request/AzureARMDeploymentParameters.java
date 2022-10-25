@@ -8,12 +8,12 @@
 package io.harness.delegate.task.azure.arm.request;
 
 import static io.harness.delegate.task.azure.arm.AzureARMTaskType.ARM_DEPLOYMENT;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.azure.model.ARMScopeType;
 import io.harness.azure.model.AzureDeploymentMode;
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 
 import lombok.Builder;
 import lombok.Data;

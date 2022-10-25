@@ -7,8 +7,8 @@
 
 package io.harness.pms.serializer.kryo.serializers;
 
+import io.harness.kryo.ProtobufKryoSerializer;
 import io.harness.pms.contracts.steps.SdkStep;
-import io.harness.serializer.kryo.ProtobufKryoSerializer;
 
 public class SdkStepKryoSerializer extends ProtobufKryoSerializer<SdkStep> {
   private static SdkStepKryoSerializer instance;

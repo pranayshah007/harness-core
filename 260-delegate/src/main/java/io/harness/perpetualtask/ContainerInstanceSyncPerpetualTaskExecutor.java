@@ -23,12 +23,12 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.kryo.KryoSerializer;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.ContainerInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.ContainerServicePerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.K8sContainerInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;

@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateMetaInfo;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import software.wings.beans.container.ContainerDefinition;
 import software.wings.beans.container.LogConfiguration;

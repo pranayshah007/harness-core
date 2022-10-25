@@ -14,7 +14,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatusResponseData;
 import io.harness.beans.RepairActionCode;
 import io.harness.beans.ShellScriptProvisionOutputVariables;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import software.wings.sm.BarrierStatusData;
 

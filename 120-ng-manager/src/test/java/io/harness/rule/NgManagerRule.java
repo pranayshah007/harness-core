@@ -22,6 +22,8 @@ import io.harness.factory.ClosingFactory;
 import io.harness.gitsync.branching.GitBranchingHelper;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.kryo.KryoModule;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.NextGenConfiguration;
@@ -35,8 +37,6 @@ import io.harness.ng.userprofile.entities.SourceCodeManager.SourceCodeManagerMap
 import io.harness.oas.OASModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
-import io.harness.serializer.KryoModule;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.NextGenRegistrars;
 import io.harness.testlib.module.MongoRuleMixin;

@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.EncryptionReflectUtils;
 import io.harness.exception.UnexpectedException;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import software.wings.settings.SettingVariableTypes;
 

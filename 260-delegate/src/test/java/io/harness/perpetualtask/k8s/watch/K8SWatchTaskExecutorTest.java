@@ -36,6 +36,7 @@ import io.harness.event.client.EventPublisher;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.k8s.apiclient.ApiClientFactoryImpl;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
@@ -46,7 +47,6 @@ import io.harness.perpetualtask.k8s.metrics.client.model.node.NodeMetricsList;
 import io.harness.perpetualtask.k8s.metrics.client.model.pod.PodMetrics;
 import io.harness.perpetualtask.k8s.metrics.client.model.pod.PodMetricsList;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;

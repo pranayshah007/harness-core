@@ -22,9 +22,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.AwsConfig;

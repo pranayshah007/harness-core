@@ -29,13 +29,13 @@ import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploym
 import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureConnectorMapper;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AzureWebAppDeploymentRelease;
 import io.harness.perpetualtask.instancesync.AzureWebAppNGInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.time.Instant;

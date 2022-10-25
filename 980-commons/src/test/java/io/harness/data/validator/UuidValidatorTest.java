@@ -9,14 +9,14 @@ package io.harness.data.validator;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.VIKAS;
-import static io.harness.utils.UuidUtils.base64StrToUuid;
+import static io.harness.utils.uuid.UuidUtils.base64StrToUuid;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.utils.UuidUtils;
+import io.harness.utils.uuid.UuidUtils;
 
 import java.util.UUID;
 import javax.validation.Validation;

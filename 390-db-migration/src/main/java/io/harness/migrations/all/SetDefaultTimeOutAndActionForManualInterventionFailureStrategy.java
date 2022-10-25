@@ -13,7 +13,7 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.RepairActionCode;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.migrations.Migration;
 
 import software.wings.beans.Account;

@@ -7,6 +7,7 @@
 
 package io.harness.advisers.rollback;
 
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -16,7 +17,6 @@ import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.ProceedWithDefaultAdviserParameters;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;

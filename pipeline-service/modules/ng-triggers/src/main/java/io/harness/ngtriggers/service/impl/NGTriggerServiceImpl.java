@@ -35,6 +35,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.kryo.KryoSerializer;
 import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -88,7 +89,6 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.NGTriggerRepository;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.repositories.spring.TriggerWebhookEventRepository;
-import io.harness.serializer.KryoSerializer;
 import io.harness.utils.PmsFeatureFlagService;
 
 import com.cronutils.model.Cron;

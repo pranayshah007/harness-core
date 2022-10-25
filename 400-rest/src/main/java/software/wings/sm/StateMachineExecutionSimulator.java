@@ -28,7 +28,7 @@ import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.shell.AccessType;
 
 import software.wings.api.ForkElement;

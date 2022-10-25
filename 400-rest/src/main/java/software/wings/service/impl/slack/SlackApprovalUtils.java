@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.rest.RestResponse;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.api.ApprovalStateExecutionData;
 import software.wings.beans.ApprovalDetails;

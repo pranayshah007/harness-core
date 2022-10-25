@@ -8,14 +8,14 @@
 package software.wings.infra;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.expression.Expression.DISALLOW_SECRETS;
+import static io.harness.expression.common.Expression.DISALLOW_SECRETS;
 
 import static software.wings.beans.InfrastructureType.PCF_INFRASTRUCTURE;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 
 import software.wings.annotation.IncludeFieldMap;
 import software.wings.api.CloudProviderType;

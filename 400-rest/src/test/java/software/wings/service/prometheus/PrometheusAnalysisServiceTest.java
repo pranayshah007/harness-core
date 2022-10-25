@@ -22,7 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.VerificationOperationException;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.APMValidateCollectorConfig;

@@ -7,7 +7,7 @@
 
 package software.wings.service.impl.notifications;
 
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.beans.Notification;
 import software.wings.beans.NotificationChannelType;

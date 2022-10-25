@@ -8,7 +8,7 @@
 package io.harness.perpetualtask;
 
 import static io.harness.delegate.service.DelegateAgentServiceImpl.getDelegateId;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.System.currentTimeMillis;
 
@@ -16,8 +16,8 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.flow.BackoffScheduler;
-import io.harness.logging.AutoLogContext;
 import io.harness.logging.LoggingListener;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.mongo.DelayLogContext;
 import io.harness.threading.Schedulable;
 

@@ -19,7 +19,7 @@ import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.grpc.DelegateTaskGrpcUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateTaskService;
 import io.harness.service.intfc.TaskProgressService;

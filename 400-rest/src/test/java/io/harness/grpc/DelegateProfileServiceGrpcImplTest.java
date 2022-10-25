@@ -51,11 +51,11 @@ import io.harness.delegateprofile.ProfileSelector;
 import io.harness.delegateprofile.ScopingValues;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.owner.OrgIdentifier;
 import io.harness.owner.ProjectIdentifier;
 import io.harness.paging.PageRequestGrpc;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.User;

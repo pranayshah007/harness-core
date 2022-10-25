@@ -11,10 +11,10 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
 import io.harness.pms.yaml.YamlUtils;
 

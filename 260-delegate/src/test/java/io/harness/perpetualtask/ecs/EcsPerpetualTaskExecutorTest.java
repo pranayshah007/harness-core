@@ -26,13 +26,13 @@ import io.harness.category.element.UnitTests;
 import io.harness.event.client.EventPublisher;
 import io.harness.event.payloads.EcsUtilization;
 import io.harness.grpc.utils.HTimestamps;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.ecs.support.EcsMetricClient;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 import io.harness.time.FakeClock;
 
 import software.wings.beans.AwsConfig;

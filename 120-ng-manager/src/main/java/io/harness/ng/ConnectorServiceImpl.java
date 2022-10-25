@@ -17,7 +17,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.errorhandling.NGErrorHelper.DEFAULT_ERROR_SUMMARY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_IDENTIFIER_METRICS_KEY;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.NextGenModule.SECRET_MANAGER_CONNECTOR_SERVICE;
 
 import static java.lang.String.format;
@@ -67,7 +67,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.governance.GovernanceMetadata;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.ng.opa.entities.connector.OpaConnectorService;

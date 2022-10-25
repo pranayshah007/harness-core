@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.MongoUtils.setUnset;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -26,8 +26,8 @@ import io.harness.beans.FeatureName;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.SyncTaskContext;

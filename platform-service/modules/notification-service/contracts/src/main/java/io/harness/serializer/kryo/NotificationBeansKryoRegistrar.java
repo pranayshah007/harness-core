@@ -7,7 +7,7 @@
 
 package io.harness.serializer.kryo;
 
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import software.wings.beans.NotificationChannelType;
 import software.wings.beans.notification.NotificationSettings;

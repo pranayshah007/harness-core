@@ -14,7 +14,7 @@ import static java.util.Arrays.asList;
 
 import io.harness.beans.EncryptedData;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
+import io.harness.logging.exception.ExceptionLogger;
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 

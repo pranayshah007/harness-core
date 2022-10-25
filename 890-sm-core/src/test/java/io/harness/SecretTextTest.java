@@ -33,6 +33,7 @@ import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
+import io.harness.kryo.KryoSerializer;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueuePublisher;
 import io.harness.rule.Owner;
@@ -51,7 +52,6 @@ import io.harness.secrets.validation.SecretValidatorsRegistry;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.security.encryption.SecretManagerType;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.KmsConfig;
 import software.wings.beans.LocalEncryptionConfig;

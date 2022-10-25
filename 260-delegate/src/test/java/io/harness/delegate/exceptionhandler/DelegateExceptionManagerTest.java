@@ -19,7 +19,6 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.HintException;
@@ -29,6 +28,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.KryoHandlerNotFoundException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.rule.Owner;
 
 import com.amazonaws.services.codedeploy.model.AmazonCodeDeployException;

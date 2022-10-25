@@ -9,7 +9,7 @@ package io.harness.perpetualtask.manifest;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.network.SafeHttpCall.executeWithExceptions;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -17,8 +17,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.manifests.request.ManifestCollectionParams;
 import io.harness.grpc.utils.AnyUtils;
-import io.harness.logging.AutoLogContext;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
@@ -26,7 +27,6 @@ import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.artifact.ArtifactsPublishedCache;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.delegatetasks.helm.ManifestRepoServiceType;

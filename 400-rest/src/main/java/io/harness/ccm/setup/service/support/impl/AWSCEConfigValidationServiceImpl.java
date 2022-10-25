@@ -17,9 +17,9 @@ import io.harness.ccm.setup.service.support.impl.pojo.BucketPolicyJson;
 import io.harness.ccm.setup.service.support.impl.pojo.BucketPolicyStatement;
 import io.harness.ccm.setup.service.support.intfc.AWSCEConfigValidationService;
 import io.harness.ccm.setup.service.support.intfc.AwsEKSHelperService;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.AwsS3BucketDetails;

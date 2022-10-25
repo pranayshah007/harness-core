@@ -68,7 +68,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.SecretManagerRuntimeParameters;

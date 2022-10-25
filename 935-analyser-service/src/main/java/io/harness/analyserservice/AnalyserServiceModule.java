@@ -10,6 +10,7 @@ package io.harness.analyserservice;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -18,7 +19,6 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ParsedQueryReadConverter;
 import io.harness.serializer.ParsedQueryWriteConverter;
 import io.harness.serializer.SortPatternReadConverter;

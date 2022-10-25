@@ -35,7 +35,7 @@ import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppN
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactType;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;

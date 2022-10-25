@@ -22,6 +22,7 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -34,7 +35,6 @@ import io.harness.pms.sdk.core.steps.executables.TaskExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 

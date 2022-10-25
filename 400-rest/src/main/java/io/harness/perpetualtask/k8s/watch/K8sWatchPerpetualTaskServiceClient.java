@@ -16,9 +16,9 @@ import io.harness.ccm.cluster.ClusterRecordService;
 import io.harness.ccm.cluster.entities.Cluster;
 import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.delegate.beans.TaskData;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.TaskType;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;

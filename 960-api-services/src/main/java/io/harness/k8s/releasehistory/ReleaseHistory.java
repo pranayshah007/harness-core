@@ -17,7 +17,7 @@ import io.harness.k8s.manifest.ObjectYamlUtils;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.releasehistory.IK8sRelease.Status;
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.YamlUtils;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import java.io.IOException;

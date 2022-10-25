@@ -8,13 +8,13 @@
 package software.wings.beans.approval;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;

@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.service.impl.ThirdPartyApiCallLog;

@@ -30,6 +30,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -53,7 +54,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;

@@ -17,11 +17,11 @@ import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppListWebAppInstancesParameters;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AzureWebAppInstanceSyncPerpetualProtoTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.delegatetasks.azure.appservice.webapp.taskhandler.AzureWebAppListWebAppInstancesTaskHandler;
 import software.wings.service.intfc.security.EncryptionService;

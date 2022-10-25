@@ -15,7 +15,7 @@ import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.delegate.TaskId;
 import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.taskprogress.ITaskProgressClient;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;

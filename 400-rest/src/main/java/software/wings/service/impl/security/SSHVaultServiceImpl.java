@@ -34,10 +34,10 @@ import io.harness.expression.SecretString;
 import io.harness.helpers.ext.vault.SSHVaultAuthResult;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
+import io.harness.kryo.KryoSerializer;
 import io.harness.persistence.HPersistence;
 import io.harness.security.encryption.AccessType;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.BaseVaultConfig.BaseVaultConfigKeys;

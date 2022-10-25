@@ -15,7 +15,7 @@ import static io.harness.exception.WingsException.USER_SRE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Encryptable;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.util.List;

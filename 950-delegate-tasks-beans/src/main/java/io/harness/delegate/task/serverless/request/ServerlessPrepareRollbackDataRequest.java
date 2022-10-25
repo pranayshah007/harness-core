@@ -7,7 +7,7 @@
 
 package io.harness.delegate.task.serverless.request;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,8 +16,8 @@ import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
-import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.expression.common.Expression;
+import io.harness.reflection.util.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import java.util.Map;
 import lombok.Builder;

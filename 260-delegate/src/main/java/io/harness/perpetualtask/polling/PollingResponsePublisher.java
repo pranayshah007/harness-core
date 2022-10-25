@@ -12,8 +12,8 @@ import static io.harness.network.SafeHttpCall.executeWithExceptions;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.polling.PollingDelegateResponse;
+import io.harness.kryo.KryoSerializer;
 import io.harness.managerclient.DelegateAgentManagerClient;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;

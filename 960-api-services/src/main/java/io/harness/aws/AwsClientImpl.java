@@ -24,11 +24,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.service.impl.AwsApiHelperService;
 

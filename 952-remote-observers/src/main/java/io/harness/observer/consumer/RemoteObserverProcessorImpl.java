@@ -14,13 +14,13 @@ import io.harness.eventsframework.NgEventLogContext;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.AutoLogContext.OverrideBehavior;
+import io.harness.kryo.KryoSerializer;
+import io.harness.logging.logcontext.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext.OverrideBehavior;
 import io.harness.observer.Informant;
 import io.harness.observer.Informant.InformantCase;
 import io.harness.observer.RemoteObserver;
-import io.harness.reflection.ReflectionUtils;
-import io.harness.serializer.KryoSerializer;
+import io.harness.reflection.util.ReflectionUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;

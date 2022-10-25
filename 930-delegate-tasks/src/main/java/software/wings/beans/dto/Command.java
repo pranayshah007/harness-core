@@ -9,13 +9,13 @@ package software.wings.beans.dto;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.expression.common.Expression;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.reflection.util.ExpressionReflectionUtils;
 
 import software.wings.beans.Variable;
 import software.wings.beans.command.CommandExecutionContext;

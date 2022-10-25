@@ -7,7 +7,7 @@
 
 package io.harness.migrations.all;
 
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.migrations.Migration;
 
 import software.wings.beans.Account;

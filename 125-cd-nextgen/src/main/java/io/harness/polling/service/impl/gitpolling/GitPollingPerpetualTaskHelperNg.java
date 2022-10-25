@@ -18,13 +18,13 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.gitpolling.GitPollingSourceDelegateRequest;
 import io.harness.delegate.task.gitpolling.GitPollingTaskType;
 import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.polling.GitPollingTaskParamsNg;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.gitpolling.GitPollingInfo;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

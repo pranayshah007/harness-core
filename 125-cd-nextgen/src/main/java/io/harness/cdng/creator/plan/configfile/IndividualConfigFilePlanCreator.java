@@ -12,6 +12,7 @@ import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -20,7 +21,6 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.util.Collections;

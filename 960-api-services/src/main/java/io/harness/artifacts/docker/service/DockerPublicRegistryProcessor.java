@@ -22,9 +22,9 @@ import io.harness.artifacts.docker.client.DockerRestClientFactory;
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl.DockerRegistryToken;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.expression.RegexFunctor;
 import io.harness.network.Http;
 

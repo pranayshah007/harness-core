@@ -7,7 +7,7 @@
 
 package io.harness.perpetualtask.internal;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.perpetualtask.PerpetualTaskState.TASK_ASSIGNED;
 import static io.harness.perpetualtask.PerpetualTaskState.TASK_INVALID;
 import static io.harness.perpetualtask.PerpetualTaskState.TASK_NON_ASSIGNABLE;

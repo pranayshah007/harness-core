@@ -28,15 +28,15 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidCredentialsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.ExceptionLogger;
 import io.harness.logging.LogLevel;
+import io.harness.logging.exception.ExceptionLogger;
 
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.JenkinsSubTaskType;

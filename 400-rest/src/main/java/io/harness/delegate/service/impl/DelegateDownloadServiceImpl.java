@@ -29,8 +29,8 @@ import io.harness.delegate.beans.K8sPermissionType;
 import io.harness.delegate.service.intfc.DelegateDownloadService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.service.intfc.DelegateService;
 

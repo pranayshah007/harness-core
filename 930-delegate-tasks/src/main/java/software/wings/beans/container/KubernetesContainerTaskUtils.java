@@ -20,8 +20,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.strip;
 
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.k8s.KubernetesConvention;
 
 import io.fabric8.kubernetes.api.KubernetesHelper;

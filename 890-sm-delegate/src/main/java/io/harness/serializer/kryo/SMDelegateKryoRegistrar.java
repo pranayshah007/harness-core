@@ -33,8 +33,8 @@ import io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskParameters
 import io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskResponse;
 import io.harness.delegatetasks.ValidateSecretReferenceTaskParameters;
 import io.harness.delegatetasks.ValidateSecretReferenceTaskResponse;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.ng.core.entities.NGEncryptedData;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

@@ -7,6 +7,8 @@
 
 package io.harness.logging;
 
+import io.harness.logging.logcontext.AutoLogContext;
+
 public class DelegateDriverLogContext extends AutoLogContext {
   public static final String ID = "driverId";
 

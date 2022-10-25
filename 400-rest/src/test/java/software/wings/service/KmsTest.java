@@ -65,6 +65,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.kryo.KryoSerializer;
 import io.harness.queue.QueueConsumer;
 import io.harness.queue.TimerScheduledExecutorService;
 import io.harness.rule.Owner;
@@ -74,7 +75,6 @@ import io.harness.secrets.SecretMigrationEventListener;
 import io.harness.secrets.SecretService;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
 import io.harness.stream.BoundedInputStream;
 import io.harness.testlib.RealMongo;
 

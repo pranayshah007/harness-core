@@ -13,8 +13,8 @@ import static freemarker.template.Configuration.VERSION_2_3_23;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.service.intfc.security.EncryptionService;

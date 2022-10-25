@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package software.wings.scheduler;
 
 import static io.harness.beans.DelegateTask.Status.QUEUED;
@@ -29,6 +36,7 @@ import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapa
 import io.harness.iterator.DelegateDisconnectDetectorIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.ValidationFailedTaskMessageHelper;
+import io.harness.kryo.KryoSerializer;
 import io.harness.network.LocalhostUtils;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
@@ -39,7 +47,6 @@ import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.perpetualtask.internal.PerpetualTaskRecordDao;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.WingsBaseTest;

@@ -42,7 +42,7 @@ import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.YamlUtils;
 
 import software.wings.beans.LogColor;
 

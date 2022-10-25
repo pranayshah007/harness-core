@@ -7,14 +7,15 @@
 
 package io.harness.ng.webhook.resources;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.polling.PollingDelegateResponse;
 import io.harness.dto.PollingResponseDTO;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.kryo.KryoSerializer;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -24,7 +25,6 @@ import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.service.PollingDocument;
 import io.harness.polling.service.intfc.PollingService;
 import io.harness.security.annotations.InternalApi;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;

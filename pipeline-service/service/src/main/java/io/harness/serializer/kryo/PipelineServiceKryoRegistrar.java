@@ -9,6 +9,7 @@ package io.harness.serializer.kryo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.pms.approval.custom.CustomApprovalCallback;
 import io.harness.pms.approval.jira.JiraApprovalCallback;
 import io.harness.pms.approval.servicenow.ServiceNowApprovalCallback;
@@ -18,7 +19,6 @@ import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsWrapperValue;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

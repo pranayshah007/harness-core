@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.expression.LateBindingValue;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 
 import software.wings.service.intfc.sweepingoutput.SweepingOutputInquiry;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;

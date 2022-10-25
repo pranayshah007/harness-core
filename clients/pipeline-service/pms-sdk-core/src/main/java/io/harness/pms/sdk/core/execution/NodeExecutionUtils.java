@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.ExpressionResolveFunctor;
 import io.harness.expression.ResolveObjectResponse;

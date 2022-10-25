@@ -14,7 +14,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;
 

@@ -7,11 +7,11 @@
 
 package io.harness.perpetualtask.example;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.perpetualtask.example.SamplePerpetualTaskServiceClient.COUNTRY_NAME;
 
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.perpetualtask.PerpetualTaskService;

@@ -42,10 +42,10 @@ import io.harness.delegateprofile.UpdateProfileSelectorsRequest;
 import io.harness.delegateprofile.UpdateProfileSelectorsResponse;
 import io.harness.delegateprofile.UpdateProfileSelectorsV2Request;
 import io.harness.exception.DelegateServiceDriverException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.owner.OrgIdentifier;
 import io.harness.owner.ProjectIdentifier;
 import io.harness.paging.PageRequestGrpc;
-import io.harness.serializer.KryoSerializer;
 import io.harness.virtualstack.VirtualStackUtils;
 
 import com.google.inject.Inject;

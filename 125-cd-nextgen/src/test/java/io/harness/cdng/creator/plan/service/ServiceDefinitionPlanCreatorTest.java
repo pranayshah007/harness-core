@@ -20,6 +20,7 @@ import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -27,7 +28,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.io.IOException;

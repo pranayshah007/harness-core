@@ -11,7 +11,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.migrations.TimeScaleDBDataMigration;
 import io.harness.persistence.HIterator;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
 

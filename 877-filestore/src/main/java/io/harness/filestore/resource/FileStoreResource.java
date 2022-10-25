@@ -66,7 +66,7 @@ import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.filestore.dto.FileFilterDTO;
 import io.harness.ng.core.filestore.dto.FileStoreRequest;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.utils.PageUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;

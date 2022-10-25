@@ -14,9 +14,9 @@ import io.harness.enforcement.client.services.EnforcementSdkRegisterService;
 import io.harness.enforcement.client.services.impl.EnforcementClientServiceImpl;
 import io.harness.enforcement.client.services.impl.EnforcementSdkRegisterServiceImpl;
 import io.harness.govern.ProviderMethodInterceptor;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;

@@ -7,7 +7,7 @@
 
 package io.harness.network;
 
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 public class UrlLogContext extends AutoLogContext {
   public static final String URL = "URL";

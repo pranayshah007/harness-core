@@ -9,6 +9,7 @@ package io.harness.pms.serializer.kryo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -52,7 +53,6 @@ import io.harness.pms.serializer.kryo.serializers.RefTypeKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.SkipInfoKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.StepOutcomeRefKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.StepTypeKryoSerializer;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

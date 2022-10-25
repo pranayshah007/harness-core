@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
+import io.harness.serializer.utils.XmlUtils;
 
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;

@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.rule.Owner;
 
 import org.junit.Test;

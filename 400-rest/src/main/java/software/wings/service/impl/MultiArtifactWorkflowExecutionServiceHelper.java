@@ -20,7 +20,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.exception.InvalidRequestException;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 
 import software.wings.beans.ArtifactVariable;
 import software.wings.beans.EntityType;

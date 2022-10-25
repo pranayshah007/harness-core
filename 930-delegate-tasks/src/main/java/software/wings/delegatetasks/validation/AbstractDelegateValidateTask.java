@@ -7,7 +7,7 @@
 
 package software.wings.delegatetasks.validation;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.network.Http.connectableHttpUrl;
 
 import static java.util.Collections.emptyList;

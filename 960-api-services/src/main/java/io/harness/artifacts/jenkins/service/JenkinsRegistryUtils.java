@@ -33,14 +33,14 @@ import io.harness.artifacts.jenkins.client.JenkinsCustomServer;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.exception.ArtifactServerException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
-import io.harness.serializer.JsonUtils;
+import io.harness.exception.utils.ExceptionUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.common.BuildDetailsComparator;
 import software.wings.helpers.ext.jenkins.BuildDetails;

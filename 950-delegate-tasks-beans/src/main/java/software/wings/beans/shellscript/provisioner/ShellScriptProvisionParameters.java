@@ -8,7 +8,7 @@
 package software.wings.beans.shellscript.provisioner;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -18,8 +18,8 @@ import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.common.Expression;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;

@@ -8,8 +8,8 @@
 package software.wings.helpers.ext.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.expression.ExpressionEvaluator.ARTIFACT_FILE_NAME_VARIABLE;
-import static io.harness.expression.ExpressionEvaluator.DEFAULT_ARTIFACT_VARIABLE_NAME;
+import static io.harness.expression.evaluator.ExpressionEvaluator.ARTIFACT_FILE_NAME_VARIABLE;
+import static io.harness.expression.evaluator.ExpressionEvaluator.DEFAULT_ARTIFACT_VARIABLE_NAME;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;

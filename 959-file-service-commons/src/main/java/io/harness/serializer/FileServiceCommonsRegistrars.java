@@ -10,7 +10,9 @@ package io.harness.serializer;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.serializer.kryo.CommonsRegistrars;
 import io.harness.serializer.kryo.FileServiceCommonsKryoRegistrar;
 import io.harness.serializer.morphia.FileServiceCommonsMorphiaRegistrar;
 

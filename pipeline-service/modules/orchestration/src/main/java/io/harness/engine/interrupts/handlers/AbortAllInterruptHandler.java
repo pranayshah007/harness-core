@@ -26,7 +26,7 @@ import io.harness.engine.interrupts.helpers.AbortHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.waiter.WaitNotifyEngine;
 

@@ -14,7 +14,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.expression.LateBindingMap;
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 
 import software.wings.exception.SweepingOutputException;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputInquiry.SweepingOutputInquiryBuilder;

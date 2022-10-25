@@ -13,7 +13,7 @@ import static io.harness.notification.constant.NotificationClientConstants.HARNE
 import static org.apache.commons.lang3.StringUtils.stripToNull;
 
 import io.harness.delegate.beans.NotificationProcessingResponse;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.notification.SmtpConfig;
 
 import com.google.common.collect.ImmutableList;

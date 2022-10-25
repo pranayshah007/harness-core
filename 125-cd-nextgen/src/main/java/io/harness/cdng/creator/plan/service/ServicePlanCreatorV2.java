@@ -20,6 +20,7 @@ import io.harness.cdng.service.steps.ServiceStepParametersV2;
 import io.harness.cdng.service.steps.ServiceStepV2;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -39,7 +40,6 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;

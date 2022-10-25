@@ -14,7 +14,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.govern.Switch.unhandled;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.microservice.NotifyEngineTarget.GENERAL;
 import static io.harness.persistence.HQuery.excludeAuthority;
 

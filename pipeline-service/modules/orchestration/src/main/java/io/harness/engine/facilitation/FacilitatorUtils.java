@@ -7,8 +7,8 @@
 
 package io.harness.engine.facilitation;
 
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.execution.facilitator.DefaultFacilitatorParams;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.time.Duration;

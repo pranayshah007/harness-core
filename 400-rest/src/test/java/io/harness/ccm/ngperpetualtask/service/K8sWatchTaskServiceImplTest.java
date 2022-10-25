@@ -36,6 +36,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesServiceAccountDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.PerpetualTaskState;
@@ -44,7 +45,6 @@ import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.serializer.KryoSerializer;
 
 import java.io.IOException;
 import java.util.Collections;

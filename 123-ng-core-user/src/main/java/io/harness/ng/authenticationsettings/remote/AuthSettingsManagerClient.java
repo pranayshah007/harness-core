@@ -12,11 +12,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
+import io.harness.kryo.KryoRequest;
+import io.harness.kryo.KryoResponse;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
 import io.harness.rest.RestResponse;
-import io.harness.serializer.kryo.KryoRequest;
-import io.harness.serializer.kryo.KryoResponse;
 
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;

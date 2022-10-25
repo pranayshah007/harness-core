@@ -9,7 +9,7 @@ package io.harness.exception.sanitizer;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
-import static io.harness.reflection.ReflectionUtils.getFieldByName;
+import static io.harness.reflection.util.ReflectionUtils.getFieldByName;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.replaceEach;

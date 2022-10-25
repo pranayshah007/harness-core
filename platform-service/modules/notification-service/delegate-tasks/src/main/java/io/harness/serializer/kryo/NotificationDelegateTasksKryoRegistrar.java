@@ -10,7 +10,7 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.github.dikhan.pagerduty.client.events.domain.LinkContext;

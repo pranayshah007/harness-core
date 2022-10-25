@@ -9,7 +9,7 @@ package io.harness.pms.resourceconstraints.service;
 
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,7 +18,7 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.SetupAbstractionUtils;

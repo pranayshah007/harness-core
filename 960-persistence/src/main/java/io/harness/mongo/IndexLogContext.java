@@ -7,7 +7,7 @@
 
 package io.harness.mongo;
 
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 public class IndexLogContext extends AutoLogContext {
   public static final String ID = "indexName";

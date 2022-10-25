@@ -49,7 +49,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.YamlUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.WingsBaseTest;

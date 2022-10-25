@@ -8,14 +8,14 @@
 package software.wings.infra;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.expression.Expression.DISALLOW_SECRETS;
+import static io.harness.expression.common.Expression.DISALLOW_SECRETS;
 
 import static software.wings.beans.InfrastructureType.RANCHER_KUBERNETES;
 import static software.wings.beans.RancherKubernetesInfrastructureMapping.Builder.aRancherKubernetesInfrastructureMapping;
 import static software.wings.common.InfrastructureConstants.INFRA_KUBERNETES_INFRAID_EXPRESSION;
 
 import io.harness.data.validator.Trimmed;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 
 import software.wings.annotation.IncludeFieldMap;
 import software.wings.api.CloudProviderType;

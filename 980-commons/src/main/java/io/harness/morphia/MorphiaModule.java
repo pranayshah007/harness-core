@@ -16,7 +16,7 @@ import io.harness.annotations.StoreInMultiple;
 import io.harness.exception.GeneralException;
 import io.harness.exception.UnexpectedException;
 import io.harness.govern.Switch;
-import io.harness.reflection.CodeUtils;
+import io.harness.reflection.util.CodeUtils;
 import io.harness.testing.TestExecution;
 
 import com.google.inject.AbstractModule;

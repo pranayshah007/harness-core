@@ -20,10 +20,10 @@ import io.harness.delegate.ExecuteTaskResponse;
 import io.harness.delegate.ExpireTaskResponse;
 import io.harness.delegate.QueueTaskResponse;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.perpetualtask.PerpetualTaskService;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 

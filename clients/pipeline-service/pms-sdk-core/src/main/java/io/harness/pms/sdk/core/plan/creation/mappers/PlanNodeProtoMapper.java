@@ -12,12 +12,12 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.plan.PlanNodeProto;
 import io.harness.pms.sdk.PmsSdkModuleUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
-import io.harness.serializer.KryoSerializer;
 import io.harness.timeout.contracts.TimeoutObtainment;
 
 import com.google.inject.Inject;

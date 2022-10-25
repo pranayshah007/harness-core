@@ -21,10 +21,10 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.spotinst.request.SpotInstListElastigroupInstancesParameters;
+import io.harness.kryo.KryoSerializer;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsConfig;

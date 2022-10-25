@@ -10,8 +10,8 @@ package io.harness.engine.observers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.AutoLogContext.OverrideBehavior;
+import io.harness.logging.logcontext.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext.OverrideBehavior;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 

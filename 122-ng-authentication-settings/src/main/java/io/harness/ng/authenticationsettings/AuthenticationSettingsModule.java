@@ -10,13 +10,13 @@ package io.harness.ng.authenticationsettings;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.ng.authenticationsettings.impl.AuthenticationSettingsService;
 import io.harness.ng.authenticationsettings.impl.AuthenticationSettingsServiceImpl;
 import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClientFactory;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;

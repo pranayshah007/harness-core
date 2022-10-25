@@ -7,7 +7,7 @@
 
 package io.harness.eventsframework;
 
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 public class NgEventLogContext extends AutoLogContext {
   private static String MESSAGE_ID = "messageId";

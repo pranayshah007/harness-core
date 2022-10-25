@@ -16,13 +16,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
 import io.harness.exception.UnexpectedException;
+import io.harness.kryo.KryoModule;
 import io.harness.logging.MorphiaLoggerFactory;
 import io.harness.mongo.index.migrator.Migrator;
 import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.mongo.tracing.TracerModule;
 import io.harness.morphia.MorphiaModule;
 import io.harness.persistence.Store;
-import io.harness.serializer.KryoModule;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.AbstractModule;

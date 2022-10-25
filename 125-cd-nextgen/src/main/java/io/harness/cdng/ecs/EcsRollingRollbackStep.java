@@ -26,7 +26,7 @@ import io.harness.delegate.task.ecs.EcsRollingRollbackConfig;
 import io.harness.delegate.task.ecs.request.EcsRollingRollbackRequest;
 import io.harness.delegate.task.ecs.response.EcsCommandResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;

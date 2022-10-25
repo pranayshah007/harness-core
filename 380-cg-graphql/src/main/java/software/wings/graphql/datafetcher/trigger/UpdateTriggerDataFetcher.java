@@ -12,8 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.beans.trigger.Trigger;
 import software.wings.graphql.datafetcher.BaseMutatorDataFetcher;

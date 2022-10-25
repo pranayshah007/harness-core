@@ -8,7 +8,7 @@
 package io.harness.serializer.kryo;
 
 import io.harness.beans.EnvironmentType;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

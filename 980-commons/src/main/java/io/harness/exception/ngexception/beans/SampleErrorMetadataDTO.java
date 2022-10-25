@@ -7,8 +7,8 @@
 
 package io.harness.exception.ngexception.beans;
 
-import io.harness.exception.ngexception.ErrorMetadataConstants;
-import io.harness.exception.ngexception.ErrorMetadataDTO;
+import io.harness.exception.ngexception.metadata.ErrorMetadataConstants;
+import io.harness.exception.ngexception.metadata.ErrorMetadataDTO;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.media.Schema;

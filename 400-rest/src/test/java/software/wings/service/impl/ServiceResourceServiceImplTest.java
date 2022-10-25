@@ -92,7 +92,7 @@ import io.harness.limits.ActionType;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;

@@ -33,7 +33,7 @@ import io.harness.cvng.core.beans.MetricPackValidationResponse.MetricValidationR
 import io.harness.datacollection.exception.DataCollectionException;
 import io.harness.delegate.beans.connector.newrelic.NewRelicConnectorDTO;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;

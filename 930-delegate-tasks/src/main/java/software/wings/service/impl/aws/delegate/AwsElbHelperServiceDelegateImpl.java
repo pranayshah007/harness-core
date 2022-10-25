@@ -42,10 +42,10 @@ import io.harness.delegate.task.aws.AwsLoadBalancerDetails;
 import io.harness.delegate.task.aws.LbDetailsForAlbTrafficShift;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;
 

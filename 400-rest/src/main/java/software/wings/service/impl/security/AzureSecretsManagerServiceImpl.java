@@ -26,8 +26,8 @@ import io.harness.beans.EncryptedDataParent;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.AzureKeyVaultOperationException;
 import io.harness.exception.SecretManagementException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.AzureVaultConfig.AzureVaultConfigKeys;

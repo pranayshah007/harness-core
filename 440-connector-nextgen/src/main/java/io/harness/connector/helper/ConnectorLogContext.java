@@ -9,7 +9,7 @@ package io.harness.connector.helper;
 
 import static io.harness.NGCommonEntityConstants.CONNECTOR_IDENTIFIER_KEY;
 
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 public class ConnectorLogContext extends AutoLogContext {
   public ConnectorLogContext(String connectorIdentifier, OverrideBehavior behavior) {

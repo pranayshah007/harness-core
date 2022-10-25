@@ -8,7 +8,7 @@
 package io.harness.delegate.task.shell;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,8 +17,8 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.common.Expression;
 import io.harness.shell.ScriptType;
 
 import java.util.ArrayList;

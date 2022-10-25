@@ -8,11 +8,11 @@
 package io.harness.delegate.task.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 
 import java.util.Collections;
 import java.util.List;

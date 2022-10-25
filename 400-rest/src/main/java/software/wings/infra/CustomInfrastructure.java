@@ -7,13 +7,13 @@
 
 package software.wings.infra;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 
 import software.wings.annotation.IncludeFieldMap;
 import software.wings.api.CloudProviderType;

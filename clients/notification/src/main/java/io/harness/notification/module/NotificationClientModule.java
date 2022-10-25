@@ -8,6 +8,7 @@
 package io.harness.notification.module;
 
 import io.harness.govern.ProviderModule;
+import io.harness.kryo.KryoConverterFactory;
 import io.harness.mongo.queue.NGMongoQueuePublisher;
 import io.harness.notification.NotificationClientBackendConfiguration;
 import io.harness.notification.NotificationClientConfiguration;
@@ -21,7 +22,6 @@ import io.harness.notification.remote.NotificationHTTPFactory;
 import io.harness.queue.QueuePublisher;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;

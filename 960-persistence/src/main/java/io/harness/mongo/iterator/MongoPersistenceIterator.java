@@ -10,7 +10,7 @@ package io.harness.mongo.iterator;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.PUMP;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_DELAY;
 import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_ERROR;
 import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_PROCESSING_TIME;

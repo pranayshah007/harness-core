@@ -13,7 +13,7 @@ import io.harness.delegate.beans.DelegateScope;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateSizeDetails;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

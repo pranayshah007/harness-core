@@ -147,6 +147,7 @@ import io.harness.cdng.service.beans.StageOverridesConfig;
 import io.harness.cdng.service.beans.WinRmServiceSpec;
 import io.harness.cdng.variables.beans.NGVariableOverrideSetWrapper;
 import io.harness.cdng.variables.beans.NGVariableOverrideSets;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -155,7 +156,6 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

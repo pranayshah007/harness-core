@@ -12,7 +12,7 @@ import static io.harness.agent.AgentGatewayUtils.isAgentConnectedUsingMtls;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.govern.Switch.unhandled;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
@@ -26,10 +26,10 @@ import io.harness.eraro.Level;
 import io.harness.eraro.MessageManager;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.WingsException;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.metrics.impl.CachedMetricsPublisher;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.logcontext.WebsocketLogContext;

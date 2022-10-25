@@ -15,7 +15,7 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 
 import software.wings.beans.Account;
 import software.wings.beans.EntityType;

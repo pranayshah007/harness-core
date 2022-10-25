@@ -8,8 +8,8 @@
 package io.harness.serializer.kryo;
 
 import io.harness.delegate.beans.Delegate;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

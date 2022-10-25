@@ -22,11 +22,11 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.kryo.KryoSerializer;
 import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;

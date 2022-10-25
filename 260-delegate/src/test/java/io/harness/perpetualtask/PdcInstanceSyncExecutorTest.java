@@ -18,11 +18,11 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.DelegateTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.PdcInstanceSyncPerpetualTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.HostReachabilityInfo;
 import software.wings.beans.SettingAttribute;

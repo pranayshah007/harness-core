@@ -17,11 +17,11 @@ import io.harness.delegate.task.spotinst.request.SpotInstListElastigroupInstance
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.SpotinstAmiInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SpotInstConfig;

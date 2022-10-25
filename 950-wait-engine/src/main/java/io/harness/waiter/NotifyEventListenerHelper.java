@@ -7,12 +7,12 @@
 
 package io.harness.waiter;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.UnsupportedOperationException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.persistence.PersistenceWrapper;

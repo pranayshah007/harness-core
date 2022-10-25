@@ -750,6 +750,7 @@ import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
 import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
@@ -770,7 +771,6 @@ import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.WinRmAuthScheme;
-import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.LoadBalancerConfig;
 import software.wings.api.terraform.TfVarGitSource;

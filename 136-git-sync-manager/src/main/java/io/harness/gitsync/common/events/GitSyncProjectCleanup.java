@@ -20,7 +20,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.common.eventhandlers.GitSyncProjectCleanupHandler;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.event.MessageListener;
 
 import com.google.inject.Inject;

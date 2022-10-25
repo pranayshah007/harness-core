@@ -27,7 +27,7 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.beans.StoreType;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plan.Plan;

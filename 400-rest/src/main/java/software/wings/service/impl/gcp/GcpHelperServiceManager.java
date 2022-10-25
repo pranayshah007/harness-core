@@ -10,8 +10,8 @@ package software.wings.service.impl.gcp;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 
 import static software.wings.service.impl.AssignDelegateServiceImpl.SCOPE_WILDCARD;
 

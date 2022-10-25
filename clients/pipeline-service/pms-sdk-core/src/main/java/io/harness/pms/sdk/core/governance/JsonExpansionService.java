@@ -10,10 +10,10 @@ package io.harness.pms.sdk.core.governance;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.pms.contracts.governance.ExpansionRequestBatch;
 import io.harness.pms.contracts.governance.ExpansionRequestProto;
 import io.harness.pms.contracts.governance.ExpansionResponseBatch;

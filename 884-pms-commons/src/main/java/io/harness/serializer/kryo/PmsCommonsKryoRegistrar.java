@@ -9,11 +9,11 @@ package io.harness.serializer.kryo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.pms.data.OrchestrationMap;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.execution.facilitator.DefaultFacilitatorParams;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

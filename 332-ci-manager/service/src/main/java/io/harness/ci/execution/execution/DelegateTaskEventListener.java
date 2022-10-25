@@ -11,11 +11,11 @@ import static software.wings.beans.TaskType.DLITE_CI_VM_INITIALIZE_TASK;
 
 import io.harness.app.beans.dto.CITaskDetails;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.observer.Informant;
 import io.harness.observer.Informant5;
 import io.harness.repositories.CITaskDetailsRepository;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

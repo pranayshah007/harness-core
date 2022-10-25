@@ -14,6 +14,7 @@ import io.harness.beans.stepDetail.StepDetailInstance;
 import io.harness.data.OutcomeInstance;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.State;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.pms.contracts.plan.ConsumerConfig;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.plan.SdkModuleInfo;
@@ -24,7 +25,6 @@ import io.harness.pms.serializer.kryo.serializers.ConsumerConfigKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.JsonExpansionInfoKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.SdkModuleInfoKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.SdkStepKryoSerializer;
-import io.harness.serializer.KryoRegistrar;
 import io.harness.timeout.trackers.active.ActiveTimeoutParameters;
 
 import com.esotericsoftware.kryo.Kryo;

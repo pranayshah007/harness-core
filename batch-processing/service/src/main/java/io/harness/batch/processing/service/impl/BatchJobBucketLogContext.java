@@ -7,7 +7,7 @@
 
 package io.harness.batch.processing.service.impl;
 
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 public class BatchJobBucketLogContext extends AutoLogContext {
   public static final String ID = "batchJobBucket";

@@ -66,6 +66,7 @@ import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
+import io.harness.kryo.KryoSerializer;
 import io.harness.queue.QueueConsumer;
 import io.harness.queue.TimerScheduledExecutorService;
 import io.harness.rule.Owner;
@@ -76,7 +77,6 @@ import io.harness.secrets.SecretService;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.KryoSerializer;
 import io.harness.threading.Morpheus;
 
 import software.wings.EncryptTestUtils;

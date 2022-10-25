@@ -8,7 +8,7 @@
 package io.harness.ng.core.entityactivity.connector;
 
 import static io.harness.NGConstants.CONNECTOR_STRING;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.NextGenModule.CONNECTOR_DECORATOR_SERVICE;
 
 import io.harness.EntityType;
@@ -17,7 +17,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.helper.ConnectorLogContext;
 import io.harness.connector.services.ConnectorService;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.activityhistory.dto.ConnectivityCheckActivityDetailDTO;
 import io.harness.ng.core.activityhistory.dto.EntityUsageActivityDetailDTO;

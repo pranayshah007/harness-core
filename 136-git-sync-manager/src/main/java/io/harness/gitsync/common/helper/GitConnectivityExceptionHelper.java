@@ -13,9 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.DelegateServiceDriverException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ScmException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 
 import lombok.experimental.UtilityClass;
 

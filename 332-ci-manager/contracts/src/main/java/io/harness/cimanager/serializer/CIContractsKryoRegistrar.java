@@ -54,7 +54,7 @@ import io.harness.beans.yaml.extended.volumes.CIVolume;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
 import io.harness.beans.yaml.extended.volumes.HostPathYaml;
 import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

@@ -9,7 +9,7 @@ package software.wings.security.authentication;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -19,7 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.beans.Account;
 import software.wings.beans.User;

@@ -15,11 +15,11 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.delegate.task.azure.request.AzureVMSSListVMDataParameters;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.kryo.KryoSerializer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AzureVmssInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.delegatetasks.azure.taskhandler.AzureVMSSSyncTaskHandler;
 import software.wings.service.intfc.security.EncryptionService;

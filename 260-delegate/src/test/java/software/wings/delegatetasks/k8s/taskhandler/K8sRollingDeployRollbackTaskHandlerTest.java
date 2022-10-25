@@ -8,7 +8,7 @@
 package software.wings.delegatetasks.k8s.taskhandler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.rule.OwnerRule.ABOSII;

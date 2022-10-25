@@ -17,9 +17,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
+import io.harness.kryo.KryoSerializer;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.ConfigFile;
 import software.wings.beans.ConfigFileDto;

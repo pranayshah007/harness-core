@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 @OwnedBy(HarnessTeam.CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

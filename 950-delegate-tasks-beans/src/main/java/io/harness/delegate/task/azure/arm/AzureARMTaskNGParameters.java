@@ -8,7 +8,7 @@
 package io.harness.delegate.task.azure.arm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.expression.common.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.ARMScopeType;
@@ -17,7 +17,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
-import io.harness.expression.Expression;
+import io.harness.expression.common.Expression;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;

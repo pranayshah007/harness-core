@@ -19,7 +19,7 @@ import static io.harness.provision.TerraformConstants.WORKSPACE_STATE_FILE_PATH_
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.filesystem.FileIo;
 import io.harness.terraform.beans.TerraformVersion;
 

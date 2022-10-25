@@ -17,7 +17,7 @@ import static io.harness.azure.model.AzureConstants.UP_SCALE_COMMAND_UNIT;
 import static io.harness.azure.model.AzureConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 
 import static software.wings.beans.InstanceUnitType.PERCENTAGE;
 import static software.wings.sm.StateType.AZURE_VMSS_DEPLOY;

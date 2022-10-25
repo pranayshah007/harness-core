@@ -21,7 +21,7 @@ import static org.apache.commons.io.filefilter.FileFileFilter.FILE;
 
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.exception.GeneralException;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 import io.harness.threading.Schedulable;
 
 import com.google.common.annotations.VisibleForTesting;

@@ -10,7 +10,7 @@ package io.harness.pcf.cfsdk;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfRequestConfig;
 

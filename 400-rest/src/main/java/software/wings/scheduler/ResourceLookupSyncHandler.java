@@ -7,14 +7,14 @@
 
 package software.wings.scheduler;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 
 import io.harness.iterator.PersistenceIteratorFactory;
-import io.harness.logging.AccountLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;

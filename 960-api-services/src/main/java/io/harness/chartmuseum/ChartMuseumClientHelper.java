@@ -26,7 +26,7 @@ import static io.harness.chartmuseum.ChartMuseumConstants.SIGNATURE_DOES_NOT_MAT
 import static io.harness.chartmuseum.ChartMuseumConstants.SIGNATURE_DOES_NOT_MATCH_ERROR_CODE;
 import static io.harness.chartmuseum.ChartMuseumConstants.VERSION;
 import static io.harness.chartmuseum.ChartMuseumConstants.VERSION_PATTERN;
-import static io.harness.exception.ExceptionUtils.getMessage;
+import static io.harness.exception.utils.ExceptionUtils.getMessage;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;

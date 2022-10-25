@@ -29,7 +29,6 @@ import io.harness.context.MdcGlobalContextData;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 import io.harness.exception.ArtifactServerException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
@@ -38,6 +37,7 @@ import io.harness.exception.runtime.DockerHubInvalidImageRuntimeRuntimeException
 import io.harness.exception.runtime.DockerHubInvalidTagRuntimeRuntimeException;
 import io.harness.exception.runtime.DockerHubServerRuntimeException;
 import io.harness.exception.runtime.InvalidDockerHubCredentialsRuntimeException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.expression.RegexFunctor;
 import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.manage.GlobalContextManager;

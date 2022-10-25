@@ -31,6 +31,7 @@ import io.harness.cdng.utilities.ConfigFileUtility;
 import io.harness.cdng.utilities.ManifestsUtility;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.kryo.KryoSerializer;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
@@ -45,7 +46,6 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;

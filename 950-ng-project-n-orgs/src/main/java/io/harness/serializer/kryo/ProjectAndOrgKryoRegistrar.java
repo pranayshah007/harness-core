@@ -10,9 +10,9 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.KryoRegistrar;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
-import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

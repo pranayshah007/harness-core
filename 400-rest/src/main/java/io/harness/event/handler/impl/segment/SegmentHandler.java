@@ -41,7 +41,7 @@ import static io.harness.event.model.EventType.TRIAL_TO_PAID;
 import static io.harness.event.model.EventType.USER_INVITED_FROM_EXISTING_ACCOUNT;
 import static io.harness.event.model.EventType.USER_INVITE_ACCEPTED_FOR_TRIAL_ACCOUNT;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.validation.Validator.notNullCheck;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -55,7 +55,7 @@ import io.harness.event.model.EventType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 
 import software.wings.beans.Account;
 import software.wings.beans.User;

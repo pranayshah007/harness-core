@@ -24,7 +24,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.gcp.helpers.GcpHelperService;
 import io.harness.exception.WingsException;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import software.wings.beans.TaskType;
 import software.wings.service.impl.ThirdPartyApiCallLog;

@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.PlanNodeProto;

@@ -17,6 +17,8 @@ import static org.mockito.Mockito.spy;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.kryo.KryoRegistrar;
+import io.harness.kryo.KryoSerializer;
 import io.harness.observer.Informant;
 import io.harness.observer.Informant0;
 import io.harness.observer.Informant1;
@@ -26,8 +28,6 @@ import io.harness.observer.Informant4;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverConstants;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.KryoSerializer;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.google.common.collect.ImmutableMap;

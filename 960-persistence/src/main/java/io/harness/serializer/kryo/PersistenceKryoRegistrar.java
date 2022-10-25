@@ -10,7 +10,7 @@ package io.harness.serializer.kryo;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.TriggeredBy;
 import io.harness.cache.VersionedKey;
-import io.harness.serializer.KryoRegistrar;
+import io.harness.kryo.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 

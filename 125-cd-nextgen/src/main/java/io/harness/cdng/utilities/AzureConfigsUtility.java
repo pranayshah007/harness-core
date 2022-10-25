@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -20,7 +21,6 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.protobuf.ByteString;

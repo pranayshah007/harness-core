@@ -16,9 +16,9 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceBuilder;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
+import io.harness.kryo.KryoSerializer;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.testlib.RealMongo;
 
 import software.wings.WingsBaseTest;

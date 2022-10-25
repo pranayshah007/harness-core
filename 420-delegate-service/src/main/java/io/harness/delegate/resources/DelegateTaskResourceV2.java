@@ -7,7 +7,7 @@
 
 package io.harness.delegate.resources;
 
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
@@ -16,8 +16,8 @@ import io.harness.delegate.beans.DelegateTaskResponseV2;
 import io.harness.delegate.beans.SerializedResponseData;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.delegate.task.TaskLogContext;
-import io.harness.logging.AccountLogContext;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AccountLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.security.annotations.DelegateAuth;
 import io.harness.service.intfc.DelegateTaskService;
 import io.harness.tasks.ResponseData;

@@ -10,7 +10,7 @@ package io.harness.pms.notification.orchestration.handlers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.observers.OrchestrationEndObserver;
-import io.harness.logging.AutoLogContext;
+import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.notification.PipelineEventType;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;

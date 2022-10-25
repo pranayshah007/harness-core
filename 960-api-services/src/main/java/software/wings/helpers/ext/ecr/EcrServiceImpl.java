@@ -20,10 +20,10 @@ import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.context.MdcGlobalContextData;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.expression.RegexFunctor;
 import io.harness.manage.GlobalContextManager;
 

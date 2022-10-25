@@ -9,7 +9,7 @@ package io.harness;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.serializer.KryoSerializer;
+import io.harness.kryo.KryoSerializer;
 import io.harness.waiter.NotifyCallback;
 
 import com.esotericsoftware.kryo.KryoException;

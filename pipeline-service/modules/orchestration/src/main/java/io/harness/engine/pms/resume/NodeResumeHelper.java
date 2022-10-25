@@ -14,11 +14,11 @@ import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.resume.publisher.NodeResumeEventPublisher;
 import io.harness.engine.pms.resume.publisher.ResumeMetadata;
 import io.harness.execution.NodeExecution;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.data.StepOutcomeRef;
 import io.harness.pms.contracts.execution.ChildChainExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;

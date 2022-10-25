@@ -16,7 +16,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.WingsException;
@@ -25,6 +24,7 @@ import io.harness.exception.runtime.azure.AzureAppServicesDeployArtifactFileExce
 import io.harness.exception.runtime.azure.AzureAppServicesDeploymentSlotNotFoundException;
 import io.harness.exception.runtime.azure.AzureAppServicesSlotSteadyStateException;
 import io.harness.exception.runtime.azure.AzureAppServicesWebAppNotFoundException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.rule.Owner;
 
 import okhttp3.MediaType;

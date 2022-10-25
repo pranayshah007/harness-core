@@ -25,7 +25,7 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.MailTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
-import io.harness.exception.ExceptionUtils;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.SmtpConfig;
@@ -39,7 +39,7 @@ import io.harness.notification.senders.MailSenderImpl;
 import io.harness.notification.service.api.ChannelService;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
-import io.harness.serializer.YamlUtils;
+import io.harness.serializer.utils.YamlUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.userng.remote.UserNGClient;
 

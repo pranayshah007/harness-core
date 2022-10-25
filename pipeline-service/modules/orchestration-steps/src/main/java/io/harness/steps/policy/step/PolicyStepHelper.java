@@ -25,7 +25,7 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.utils.JsonUtils;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;

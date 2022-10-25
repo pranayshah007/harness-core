@@ -19,9 +19,9 @@ import static java.util.stream.Collectors.toList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.gcp.helpers.GcpHelperService;
 import io.harness.exception.ArtifactServerException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.WingsException;
+import io.harness.exception.utils.ExceptionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.GcpConfig;

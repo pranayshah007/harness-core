@@ -69,7 +69,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance.Verifica
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Lists;

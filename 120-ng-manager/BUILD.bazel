@@ -692,7 +692,7 @@ java_library(
     deps = shared_dependencies + [
         "module",
         "//960-persistence:supporter-test",
-        "//980-commons:tests",
+        "//980-commons/src/main/java/io/harness/expression:tests",
         "//990-commons-test:module",
         "@maven//:io_dropwizard_dropwizard_testing",
         "@maven//:io_github_benas_random_beans",

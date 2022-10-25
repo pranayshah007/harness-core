@@ -13,6 +13,7 @@ import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.kryo.KryoSerializer;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.PlanNodeProto;
 import io.harness.pms.contracts.steps.SkipType;
@@ -21,7 +22,6 @@ import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import org.junit.Test;

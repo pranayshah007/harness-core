@@ -10,8 +10,8 @@ package io.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.kryo.ProtobufKryoSerializer;
 import io.harness.polling.contracts.PollingItem;
-import io.harness.serializer.kryo.ProtobufKryoSerializer;
 
 @OwnedBy(PIPELINE)
 public class PollingItemKryoSerializer extends ProtobufKryoSerializer<PollingItem> {
