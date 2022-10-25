@@ -199,14 +199,4 @@ public class PlanCreatorUtils {
     logContextMap.put("sdkPlanCreatorRequestId", UUIDGenerator.generateUuid());
     return new AutoLogContext(logContextMap, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
   }
-
-  public static ParameterField<String> getTimeoutString(ParameterField<Timeout> field) {
-    ParameterField<Timeout> timeout = TimeoutUtils.getTimeout(field);
-    if (timeout.isExpression()) {
-      return ParameterField.createExpressionField(
-          true, timeout.getExpressionValue(), timeout.getInputSetValidator(), true);
-    } else {
-      return ParameterField.createValueField(timeout.getValue().getTimeoutString());
-    }
-  }
 }
