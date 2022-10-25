@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="0e9a45ba-9e0f-4f9d-b531-117f9cd29026" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../../../930-delegate-tasks/src/main/java/io/harness/delegate/task/git/ScmFetchFilesHelperNG.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../../930-delegate-tasks/src/main/java/io/harness/delegate/task/git/ScmFetchFilesHelperNG.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../930-delegate-tasks/src/main/java/software/wings/delegatetasks/ScmFetchFilesHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../../930-delegate-tasks/src/main/java/software/wings/delegatetasks/ScmFetchFilesHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../952-scm-java-client/src/main/java/io/harness/impl/scm/ScmServiceClientImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../../952-scm-java-client/src/main/java/io/harness/impl/scm/ScmServiceClientImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../952-scm-java-client/src/main/java/io/harness/service/ScmServiceClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../../952-scm-java-client/src/main/java/io/harness/service/ScmServiceClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/file/file.go" beforeDir="false" afterPath="$PROJECT_DIR$/file/file.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/grpc/handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/grpc/handler.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proto/scm.proto" beforeDir="false" afterPath="$PROJECT_DIR$/proto/scm.proto" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="GOROOT" url="file:///usr/local/go" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
+  </component>
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="true" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/file/file.go" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/gitclient/BUILD.bazel" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/gitclient/gitclient.go" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/go.mod" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/grpc/handler.go" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/grpc/server.go" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/main.go" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/parser/parser.go" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectId" id="2GP10wjqwOKXGWb2A675SuG7xtP" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.go.format.on.save.advertiser.fired": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
+    "RunOnceActivity.go.watchers.conflict.with.on.save.actions.check.performed": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "configurable..is.expanded": "true",
+    "configurable.GoLibrariesConfigurable.is.expanded": "true",
+    "go.import.settings.migrated": "true",
+    "go.sdk.automatically.set": "true",
+    "last_opened_file_path": "/Users/akhileshpandey/Desktop/Harness/harness-core/product/ci/scm",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.goide.configuration.GoLibrariesConfigurableProvider"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VgoProject">
+    <settings-migrated>true</settings-migrated>
+  </component>
+</project>
