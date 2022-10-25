@@ -89,7 +89,7 @@ public class RESTWrapperCostDetails {
   private final String COST_DETAILS_BODY_DESCRIPTION = "Cost details query parameters.";
   private final String CLUSTER_COST_DETAILS_BODY_DESCRIPTION = "Cluster cost details query parameters.";
   private static final String DATETIME_DESCRIPTION =
-      "Should use org.joda.time.DateTime parsable format. Example, '2022-01-31', '2022-01-31T07:54Z' or '2022-01-31T07:54:51.264Z'. ";
+      "Should use org.joda.time.DateTime parsable format, specified upto seconds. Example, '2022-01-31T23:59:59Z'. ";
 
   @POST
   @Path("tabularformat")
