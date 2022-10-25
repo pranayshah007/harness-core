@@ -487,7 +487,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   public ServiceLevelObjective getFromSLIIdentifier(
       ProjectParams projectParams, String serviceLevelIndicatorIdentifier) {
     try {
-      AbstractServiceLevelObjective serviceLevelObjectiveV2 =
+      SimpleServiceLevelObjective serviceLevelObjectiveV2 =
           serviceLevelObjectiveV2Service.getFromSLIIdentifier(projectParams, serviceLevelIndicatorIdentifier);
       if (serviceLevelObjectiveV2 == null) {
         throw new InvalidRequestException(String.format(

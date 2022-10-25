@@ -163,7 +163,6 @@ public class PcfDataFetchCommandTaskHandler extends PcfCommandTaskHandler {
     return CfRequestConfig.builder()
         .endpointUrl(pcfConfig.getEndpointUrl())
         .limitPcfThreads(cfInfraMappingDataRequest.isLimitPcfThreads())
-        .ignorePcfConnectionContextCache(cfInfraMappingDataRequest.isIgnorePcfConnectionContextCache())
         .orgName(cfInfraMappingDataRequest.getOrganization())
         .spaceName(cfInfraMappingDataRequest.getSpace())
         .userName(String.valueOf(pcfConfig.getUsername()))

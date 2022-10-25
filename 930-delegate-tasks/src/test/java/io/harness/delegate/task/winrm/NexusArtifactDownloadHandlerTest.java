@@ -9,6 +9,7 @@ package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -78,6 +79,18 @@ public class NexusArtifactDownloadHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetBashCommandString_NoCredentials() {
+    NexusArtifactDelegateConfig nexusArtifactDelegateConfig = getNexusArtifactDelegateConfig(NexusAuthType.ANONYMOUS);
+
+    assertThat(
+        nexusArtifactDownloadHandler.getCommandString(nexusArtifactDelegateConfig, "destinationPath", ScriptType.BASH))
+        .isEqualTo(
+            "curl --fail -X GET \"https://nexus3.dev.harness.io/repository/maven-releases/mygroup/myartifact/1.8/myartifact-1.8.war\" -o \"destinationPath/myartifact-1.8.war\"\n");
+  }
+
+  @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testGetPowerShellCommandString() {
@@ -90,6 +103,15 @@ public class NexusArtifactDownloadHandlerTest extends CategoryTest {
             + " [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
             + " $ProgressPreference = 'SilentlyContinue'\n"
             + " Invoke-WebRequest -Uri \"https://nexus3.dev.harness.io/repository/maven-releases/mygroup/myartifact/1.8/myartifact-1.8.war\" -Headers $Headers -OutFile \"destinationPath\\myartifact-1.8.war\"");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetPowerShellCommandString_NoCredentials() {
+    assertThat(nexusArtifactDownloadHandler.getCommandString(
+                   getNexusArtifactDelegateConfig(NexusAuthType.ANONYMOUS), "destinationPath", ScriptType.POWERSHELL))
+        .contains("[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]");
   }
 
   private NexusArtifactDelegateConfig getNexusArtifactDelegateConfig(NexusAuthType nexusAuthType) {

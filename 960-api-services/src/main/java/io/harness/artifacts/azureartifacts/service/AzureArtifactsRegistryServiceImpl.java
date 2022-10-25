@@ -98,7 +98,7 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
       }
     }
 
-    List<AzureArtifactsPackage> packages = listPackages(azureArtifactsInternalConfig, project, feedId, packageType);
+    List<AzureArtifactsPackage> packages = listPackages(azureArtifactsInternalConfig, project, feed, packageType);
 
     String packageId = null;
 
@@ -167,7 +167,7 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
       }
     }
 
-    List<AzureArtifactsPackage> packages = listPackages(azureArtifactsInternalConfig, project, feedId, packageType);
+    List<AzureArtifactsPackage> packages = listPackages(azureArtifactsInternalConfig, project, feed, packageType);
 
     String packageId = null;
 
@@ -236,7 +236,7 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
       }
     }
 
-    List<AzureArtifactsPackage> packages = listPackages(azureArtifactsInternalConfig, project, feedId, packageType);
+    List<AzureArtifactsPackage> packages = listPackages(azureArtifactsInternalConfig, project, feed, packageType);
 
     String packageId = null;
 

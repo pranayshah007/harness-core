@@ -302,6 +302,21 @@ public class YamlNode implements Visitable {
     return null;
   }
 
+  public YamlField previousSiblingFromParentArray(String currentFieldName, List<String> possibleSiblingFieldNames) {
+    if (parentNode == null || parentNode.parentNode == null || parentNode.parentNode.isObject()) {
+      return null;
+    }
+    List<YamlNode> yamlNodes = parentNode.parentNode.asArray();
+    for (int i = 1; i < yamlNodes.size(); i++) {
+      YamlField givenNode = yamlNodes.get(i).getField(currentFieldName);
+      if (givenNode != null && givenNode.getNode().getUuid() != null
+          && givenNode.getNode().getUuid().equals(this.getUuid())) {
+        return getMatchingFieldNameFromParent(yamlNodes.get(i - 1), new HashSet<>(possibleSiblingFieldNames));
+      }
+    }
+    return null;
+  }
+
   public YamlField nextSiblingNodeFromParentObject(String siblingFieldName) {
     if (parentNode == null || parentNode.isArray()) {
       return null;

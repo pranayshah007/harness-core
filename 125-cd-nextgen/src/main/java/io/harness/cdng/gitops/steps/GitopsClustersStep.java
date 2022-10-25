@@ -16,13 +16,11 @@ import static io.harness.pms.execution.utils.AmbianceUtils.getAccountId;
 import static io.harness.pms.execution.utils.AmbianceUtils.getOrgIdentifier;
 import static io.harness.pms.execution.utils.AmbianceUtils.getProjectIdentifier;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.function.Predicate.not;
 
 import io.harness.beans.ScopeLevel;
 import io.harness.beans.common.VariablesSweepingOutput;
-import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.data.structure.CollectionUtils;
@@ -67,7 +65,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -155,21 +152,11 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
   private Map<String, IndividualClusterInternal> validatedClusters(Ambiance ambiance, ClusterStepParameters params) {
     final Collection<EnvClusterRefs> envClusterRefs;
-    if (params.isDeployToAllEnvs()) {
-      checkArgument(
-          isNotEmpty(params.getEnvGroupRef()), "environment group must be provided when deploying to all environments");
-
-      saveExecutionLog(format("Deploying to all gitops clusters in environment group %s", params.getEnvGroupRef()));
-
-      Optional<EnvironmentGroupEntity> egEntity = environmentGroupService.get(getAccountId(ambiance),
-          getOrgIdentifier(ambiance), getProjectIdentifier(ambiance), params.getEnvGroupRef(), false);
-      List<String> envs = egEntity.map(EnvironmentGroupEntity::getEnvIdentifiers).orElse(new ArrayList<>());
-      envClusterRefs = envs.stream()
-                           .map(e -> EnvClusterRefs.builder().envRef(e).deployToAll(true).build())
-                           .collect(Collectors.toList());
-    } else {
-      envClusterRefs = params.getEnvClusterRefs();
+    if (params.getEnvGroupRef() != null) {
+      saveExecutionLog(format("Deploying to gitops clusters in environment group %s", params.getEnvGroupRef()));
     }
+
+    envClusterRefs = params.getEnvClusterRefs();
 
     if (isEmpty(envClusterRefs)) {
       throw new InvalidRequestException("No Gitops Cluster is selected with the current environment configuration");

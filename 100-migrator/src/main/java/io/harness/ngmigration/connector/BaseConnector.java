@@ -20,6 +20,7 @@ import io.harness.secretmanagerclient.SecretType;
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,10 @@ import java.util.Set;
 public interface BaseConnector {
   default boolean isConnectorSupported(SettingAttribute settingAttribute) {
     return true;
+  }
+
+  default List<String> getConnectorIds(SettingAttribute settingAttribute) {
+    return Collections.emptyList();
   }
 
   List<String> getSecretIds(SettingAttribute settingAttribute);

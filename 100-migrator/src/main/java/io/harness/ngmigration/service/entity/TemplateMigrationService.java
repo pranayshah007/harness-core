@@ -7,21 +7,37 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
+
 import io.harness.beans.MigratedEntityMapping;
-import io.harness.exception.InvalidRequestException;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.BaseEntityInput;
+import io.harness.ngmigration.beans.BaseInputDefinition;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
+import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
+import io.harness.ngmigration.service.MigratorMappingService;
+import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.template.NgTemplateService;
+import io.harness.ngmigration.template.TemplateFactory;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.serializer.JsonUtils;
+import io.harness.template.beans.yaml.NGTemplateConfig;
+import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 
 import software.wings.beans.template.Template;
-import software.wings.beans.template.command.HttpTemplate;
-import software.wings.beans.template.command.ShellScriptTemplate;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -30,20 +46,43 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.template.TemplateService;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+import retrofit2.Response;
 
+@Slf4j
 public class TemplateMigrationService extends NgMigrationService {
   @Inject TemplateService templateService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
-    throw new InvalidRequestException("Generate mapping is not supported for templates");
+    CgBasicInfo basicInfo = yamlFile.getCgBasicInfo();
+    NGTemplateInfoConfig templateInfoConfig = ((NGTemplateConfig) yamlFile.getYaml()).getTemplateInfoConfig();
+    String orgIdentifier = yamlFile.getNgEntityDetail().getOrgIdentifier();
+    String projectIdentifier = yamlFile.getNgEntityDetail().getProjectIdentifier();
+    return MigratedEntityMapping.builder()
+        .appId(basicInfo.getAppId())
+        .accountId(basicInfo.getAccountId())
+        .cgEntityId(basicInfo.getId())
+        .entityType(TEMPLATE.name())
+        .accountIdentifier(basicInfo.getAccountId())
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .identifier(templateInfoConfig.getIdentifier())
+        .scope(MigratorMappingService.getScope(orgIdentifier, projectIdentifier))
+        .fullyQualifiedIdentifier(MigratorMappingService.getFullyQualifiedIdentifier(
+            basicInfo.getAccountId(), orgIdentifier, projectIdentifier, templateInfoConfig.getIdentifier()))
+        .build();
   }
 
   @Override
@@ -69,8 +108,8 @@ public class TemplateMigrationService extends NgMigrationService {
   @Override
   public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
     Template template = (Template) entity;
-    if (template.getTemplateObject() instanceof HttpTemplate
-        || template.getTemplateObject() instanceof ShellScriptTemplate) {
+    NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
+    if (ngTemplateService.isMigrationSupported()) {
       return NGMigrationStatus.builder().status(true).build();
     }
     return NGMigrationStatus.builder()
@@ -81,29 +120,93 @@ public class TemplateMigrationService extends NgMigrationService {
 
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
-    throw new InvalidRequestException("Migrate is not supported for templates");
+      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    if (yamlFile.isExists()) {
+      return MigrationImportSummaryDTO.builder()
+          .errors(Collections.singletonList(ImportError.builder()
+                                                .message("Template was not migrated as it was already imported before")
+                                                .entity(yamlFile.getCgBasicInfo())
+                                                .build()))
+          .build();
+    }
+    Response<ResponseDTO<ConnectorResponseDTO>> resp =
+        templateClient
+            .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
+                inputDTO.getProjectIdentifier(),
+                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
+            .execute();
+    log.info("Template creation Response details {} {}", resp.code(), resp.message());
+    return handleResp(yamlFile, resp);
   }
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    throw new InvalidRequestException("Generate yaml is not supported for templates");
+    Template template = (Template) entities.get(entityId).getEntity();
+    String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, template.getName());
+    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
+
+    NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
+    if (ngTemplateService.isMigrationSupported()) {
+      List<NGYamlFile> files = new ArrayList<>();
+      NGYamlFile ngYamlFile =
+          NGYamlFile.builder()
+              .type(TEMPLATE)
+              .filename("template/" + template.getName() + ".yaml")
+              .yaml(
+                  NGTemplateConfig.builder()
+                      .templateInfoConfig(
+                          NGTemplateInfoConfig.builder()
+                              .type(TemplateEntityType.STEP_TEMPLATE)
+                              .identifier(MigratorUtility.generateIdentifier(template.getName()))
+                              .variables(ngTemplateService.getTemplateVariables(template))
+                              .name(template.getName())
+                              .projectIdentifier(projectIdentifier)
+                              .orgIdentifier(orgIdentifier)
+                              .versionLabel("v" + template.getVersion().toString())
+                              .spec(JsonUtils.asTree(ImmutableMap.of("spec",
+                                  ngTemplateService.getNgTemplateConfigSpec(template, orgIdentifier, projectIdentifier),
+                                  "type", ngTemplateService.getNgTemplateStepName(template), "timeout",
+                                  ngTemplateService.getTimeoutString(template))))
+                              .build())
+                      .build())
+              .ngEntityDetail(NgEntityDetail.builder()
+                                  .identifier(identifier)
+                                  .orgIdentifier(orgIdentifier)
+                                  .projectIdentifier(projectIdentifier)
+                                  .build())
+              .cgBasicInfo(template.getCgBasicInfo())
+              .build();
+      files.add(ngYamlFile);
+      migratedEntities.putIfAbsent(entityId, ngYamlFile);
+      return files;
+    }
+    return new ArrayList<>();
   }
 
   @Override
   protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
-    throw new InvalidRequestException("getNGEntity is not supported for templates");
+    return null;
   }
 
   @Override
   protected boolean isNGEntityExists() {
-    throw new InvalidRequestException("isNGEntityExists is not supported for templates");
+    return true;
   }
 
   @Override
   public BaseEntityInput generateInput(
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    throw new InvalidRequestException("generate input is not supported for templates");
+    Template template = (Template) entities.get(entityId).getEntity();
+    return BaseEntityInput.builder()
+        .migrationStatus(MigratorInputType.CREATE_NEW)
+        .identifier(BaseInputDefinition.buildIdentifier(MigratorUtility.generateIdentifier(template.getName())))
+        .name(BaseInputDefinition.buildName(template.getName()))
+        .scope(BaseInputDefinition.buildScope(Scope.PROJECT))
+        .spec(null)
+        .build();
   }
 }

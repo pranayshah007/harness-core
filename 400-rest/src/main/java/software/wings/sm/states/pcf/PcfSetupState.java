@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.CF_ALLOW_SPECIAL_CHARACTERS;
 import static io.harness.beans.FeatureName.CF_APP_NON_VERSIONING_INACTIVE_ROLLBACK;
 import static io.harness.beans.FeatureName.CF_CUSTOM_EXTRACTION;
-import static io.harness.beans.FeatureName.IGNORE_PCF_CONNECTION_CONTEXT_CACHE;
 import static io.harness.beans.FeatureName.LIMIT_PCF_THREADS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -349,8 +348,6 @@ public class PcfSetupState extends State {
             .useAppAutoscalar(useAppAutoscalar)
             .enforceSslValidation(enforceSslValidation)
             .limitPcfThreads(featureFlagService.isEnabled(LIMIT_PCF_THREADS, pcfConfig.getAccountId()))
-            .ignorePcfConnectionContextCache(
-                featureFlagService.isEnabled(IGNORE_PCF_CONNECTION_CONTEXT_CACHE, pcfConfig.getAccountId()))
             .cfCliVersion(pcfStateHelper.getCfCliVersionOrDefault(app.getAppId(), serviceElement.getUuid()))
             .isNonVersioning(nonVersioningInactiveRollbackEnabled && isNonVersioning)
             .nonVersioningInactiveRollbackEnabled(nonVersioningInactiveRollbackEnabled)

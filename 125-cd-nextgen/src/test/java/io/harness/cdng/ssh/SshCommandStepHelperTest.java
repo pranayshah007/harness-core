@@ -31,6 +31,8 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
+import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.ssh.rollback.CommandStepRollbackHelper;
 import io.harness.cdng.ssh.utils.CommandStepUtils;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -81,8 +83,6 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
-import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 
 import com.google.common.collect.Maps;
 import java.util.Arrays;

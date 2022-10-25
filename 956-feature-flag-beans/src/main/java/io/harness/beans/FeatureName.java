@@ -99,7 +99,6 @@ public enum FeatureName {
   HELM_CHART_NAME_SPLIT,
   HELM_MERGE_CAPABILITIES("Add helm merge capabilities", HarnessTeam.CDP),
   INLINE_SSH_COMMAND,
-  IGNORE_PCF_CONNECTION_CONTEXT_CACHE,
   LIMIT_PCF_THREADS,
   OPA_FF_GOVERNANCE,
   OPA_GIT_GOVERNANCE,
@@ -238,7 +237,6 @@ public enum FeatureName {
   CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES,
   CLOUDFORMATION_CHANGE_SET,
   FAIL_WORKFLOW_IF_SECRET_DECRYPTION_FAILS,
-  ERROR_TRACKING_ENABLED,
   DEPLOY_TO_INLINE_HOSTS,
   HONOR_DELEGATE_SCOPING,
   CG_LICENSE_USAGE,
@@ -314,7 +312,6 @@ public enum FeatureName {
   CVNG_TEMPLATE_MONITORED_SERVICE,
   CVNG_TEMPLATE_VERIFY_STEP,
   CVNG_METRIC_THRESHOLD,
-  WORKFLOW_EXECUTION_ZOMBIE_MONITOR,
   USE_PAGINATED_ENCRYPT_SERVICE, // To be only used by UI for safeguarding encrypt component changes in CG
   INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT,
   DEPLOYMENT_SUBFORMIK_PIPELINE_DROPDOWN,
@@ -457,12 +454,18 @@ public enum FeatureName {
   TI_MFE_ENABLED("Migrating TI UI to Microfrontend. This feature flag is needed to test/control the new architecture",
       HarnessTeam.CI),
   CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI),
-  USE_INSTANCES_PURGE_ITERATOR_FW(
-      "Switch to use iterator fw instead of quartz scheduler for InstancesPurgeJob", HarnessTeam.CDP),
+  SPG_ENFORCE_TIME_RANGE_DEPLOYMENTS_WITHOUT_APP_ID(
+      "This feature flag enforces maximum time range for workflow execution queries without appId", HarnessTeam.SPG),
+  SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS(
+      "Gradually reducing the amount of keywords being stored on workflow executions", HarnessTeam.SPG),
   SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR(
       "This feature flag helps in synchronizing the git clone of repo and copying the files then to destination directory",
       HarnessTeam.CDP),
-  CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI);
+  ECS_ROLLBACK_MAX_DESIRED_COUNT("Changes ECS Rollback Desired Count to Max(OldService, NewService)", HarnessTeam.CDP),
+  CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI),
+  SRM_ET_EXPERIMENTAL("Feature flag for SRM only Error Tracking development", HarnessTeam.CV),
+  SRM_ENABLE_HEALTHSOURCE_AWS_PROMETHEUS("UI FF to enable AWS Managed Prometheus healthsource", HarnessTeam.CV),
+  CI_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CI UI", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

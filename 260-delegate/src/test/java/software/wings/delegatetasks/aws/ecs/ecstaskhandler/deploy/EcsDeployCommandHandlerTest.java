@@ -7,6 +7,7 @@
 
 package software.wings.delegatetasks.aws.ecs.ecstaskhandler.deploy;
 
+import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
 import static io.harness.rule.OwnerRule.ARVIND;
 
 import static software.wings.beans.command.EcsResizeParams.EcsResizeParamsBuilder.anEcsResizeParams;
@@ -29,25 +30,27 @@ import static org.mockito.Mockito.verify;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TimeoutException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.ContainerServiceData;
+import software.wings.beans.command.EcsResizeParams;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.cloudprovider.aws.AwsClusterService;
-import software.wings.delegatetasks.DelegateFileManager;
-import software.wings.delegatetasks.DelegateLogService;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
 import software.wings.helpers.ext.ecs.request.EcsServiceDeployRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
 import software.wings.helpers.ext.ecs.response.EcsServiceDeployResponse;
-import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -58,10 +61,31 @@ import org.mockito.Mock;
 public class EcsDeployCommandHandlerTest extends WingsBaseTest {
   @Mock private EcsDeployCommandTaskHelper mockEcsDeployCommandTaskHelper;
   @Mock private AwsClusterService mockAwsClusterService;
-  @Mock private DelegateFileManager mockDelegateFileManager;
-  @Mock private EncryptionService mockEncryptionService;
-  @Mock private DelegateLogService mockDelegateLogService;
   @InjectMocks @Inject private EcsDeployCommandHandler handler;
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testGetECSMaxDesiredRollbackCount() {
+    EcsCommandRequest ecsCommandRequest = mock(EcsCommandRequest.class);
+    EncryptedDataDetail encryptedDataDetail = mock(EncryptedDataDetail.class);
+    ContainerServiceData oldContainerServiceData = mock(ContainerServiceData.class);
+    ContainerServiceData newContainerServiceData = mock(ContainerServiceData.class);
+    EcsResizeParams ecsResizeParams = mock(EcsResizeParams.class);
+
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    List<ContainerServiceData> newInstanceDataList = new ArrayList<>();
+    List<ContainerServiceData> oldInstanceDataList = new ArrayList<>();
+    encryptedDataDetails.add(encryptedDataDetail);
+    newInstanceDataList.add(newContainerServiceData);
+    oldInstanceDataList.add(oldContainerServiceData);
+    try {
+      int value = handler.getECSMaxDesiredRollbackCount(
+          ecsCommandRequest, encryptedDataDetails, ecsResizeParams, newInstanceDataList, oldInstanceDataList);
+    } catch (Exception e) {
+      assertThat(e.getClass().equals(InvalidRequestException.class));
+    }
+  }
 
   @Test
   @Owner(developers = ARVIND)

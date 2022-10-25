@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -18,16 +19,21 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorsTestBase;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -117,13 +123,75 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
     assertThat(pageResponse.get().count()).isEqualTo(2);
   }
 
+  @Test
+  @Owner(developers = OwnerRule.BOJAN)
+  @Category({UnitTests.class})
+  public void testGetPdcConnectorHostsFilterByEmptyHosts() {
+    createConnectorWithHosts(Collections.emptyList());
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(2).build();
+    HostFilterDTO filter =
+        HostFilterDTO.builder().type(HostFilterType.HOST_ATTRIBUTES).filter("region:west\nhostType:DB").build();
+    Page<HostDTO> pageResponse =
+        hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, filter, pageRequest);
+
+    assertThat(pageResponse.getTotalElements()).isEqualTo(0);
+    assertThat(pageResponse.getTotalPages()).isEqualTo(0);
+    assertThat(pageResponse.get().count()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.BOJAN)
+  @Category({UnitTests.class})
+  public void testGetPdcConnectorHostsFilterTypeAll() {
+    createConnectorWithHosts();
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(2).build();
+    HostFilterDTO filter = HostFilterDTO.builder().type(HostFilterType.ALL).filter("region:west\nhostType:DB").build();
+    Page<HostDTO> pageResponse =
+        hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, filter, pageRequest);
+
+    assertThat(pageResponse.getTotalElements()).isEqualTo(8);
+    assertThat(pageResponse.getTotalPages()).isEqualTo(4);
+    assertThat(pageResponse.get().count()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.BOJAN)
+  @Category({UnitTests.class})
+  public void testGetPdcConnectorHostsFilterWithInvalidType() {
+    AwsConnectorDTO connectorDTO =
+        AwsConnectorDTO.builder()
+            .credential(AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.INHERIT_FROM_DELEGATE).build())
+            .build();
+    ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder()
+                                         .name(name)
+                                         .identifier(identifier)
+                                         .connectorType(ConnectorType.AWS)
+                                         .connectorConfig(connectorDTO)
+                                         .build();
+    ConnectorDTO connector = ConnectorDTO.builder().connectorInfo(connectorInfo).build();
+    connectorService.create(connector, accountIdentifier);
+
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(2).build();
+    HostFilterDTO filter = HostFilterDTO.builder().type(HostFilterType.ALL).filter("region:west\nhostType:DB").build();
+
+    assertThatThrownBy(
+        () -> hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, filter, pageRequest))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Filtering of hosts is supported only for PDC type.");
+  }
+
   private void createConnectorWithHosts() {
-    ConnectorDTO connectorRequestDTO = createPdcConnectorRequestDTO();
+    createConnectorWithHosts(null);
+  }
+
+  private void createConnectorWithHosts(List<HostDTO> hosts) {
+    ConnectorDTO connectorRequestDTO = createPdcConnectorRequestDTO(hosts);
     connectorService.create(connectorRequestDTO, accountIdentifier);
   }
 
-  private ConnectorDTO createPdcConnectorRequestDTO() {
-    PhysicalDataCenterConnectorDTO connectorDTO = PhysicalDataCenterConnectorDTO.builder().hosts(createHosts()).build();
+  private ConnectorDTO createPdcConnectorRequestDTO(List<HostDTO> hosts) {
+    PhysicalDataCenterConnectorDTO connectorDTO =
+        PhysicalDataCenterConnectorDTO.builder().hosts(hosts == null ? createHosts() : hosts).build();
     ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder()
                                          .name(name)
                                          .identifier(identifier)

@@ -47,6 +47,7 @@ public class TemplateFilterPropertiesDTO extends FilterPropertiesDTO {
   List<TemplateEntityType> templateEntityTypes;
   List<String> childTypes;
   ListingScope listingScope;
+  String repoName;
 
   @Override
   public FilterType getFilterType() {

@@ -16,8 +16,10 @@ import io.harness.event.grpc.EventPublisherServerImpl;
 import io.harness.event.grpc.MessageProcessor;
 import io.harness.event.metrics.EventServiceMetricsPublisher;
 import io.harness.event.service.impl.EventDataBulkWriteServiceImpl;
+import io.harness.event.service.impl.EventPublisherServiceImpl;
 import io.harness.event.service.impl.LastReceivedPublishedMessageRepositoryImpl;
 import io.harness.event.service.intfc.EventDataBulkWriteService;
+import io.harness.event.service.intfc.EventPublisherService;
 import io.harness.event.service.intfc.LastReceivedPublishedMessageRepository;
 import io.harness.grpc.auth.DelegateAuthServerInterceptor;
 import io.harness.grpc.exception.GrpcExceptionMapper;
@@ -32,6 +34,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.security.DelegateTokenAuthenticator;
 import io.harness.service.impl.AgentMtlsEndpointServiceReadOnlyImpl;
 import io.harness.service.intfc.AgentMtlsEndpointService;
+import io.harness.threading.ExecutorModule;
 
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.dl.WingsPersistence;
@@ -80,6 +83,7 @@ public class EventServiceModule extends AbstractModule {
     bind(EncryptedSettingAttributes.class).to(NoOpSecretManagerImpl.class);
     bind(LastReceivedPublishedMessageRepository.class).to(LastReceivedPublishedMessageRepositoryImpl.class);
     bind(EventDataBulkWriteService.class).to(EventDataBulkWriteServiceImpl.class);
+    bind(EventPublisherService.class).to(EventPublisherServiceImpl.class);
 
     Multibinder<BindableService> bindableServiceMultibinder = Multibinder.newSetBinder(binder(), BindableService.class);
     bindableServiceMultibinder.addBinding().to(EventPublisherServerImpl.class);
@@ -112,6 +116,7 @@ public class EventServiceModule extends AbstractModule {
     install(new RegistrarsModule());
 
     install(new MetricsModule(OPEN_CENSUS_EXPORT_INTERVAL_MINUTES));
+    install(ExecutorModule.getInstance());
     bind(MetricsPublisher.class).to(EventServiceMetricsPublisher.class).in(Scopes.SINGLETON);
   }
 

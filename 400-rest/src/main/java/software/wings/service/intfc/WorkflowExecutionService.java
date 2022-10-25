@@ -343,6 +343,9 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
   List<WorkflowExecution> getLatestSuccessWorkflowExecutions(String appId, String workflowId, List<String> serviceIds,
       int executionsToSkip, int executionsToIncludeInResponse);
 
+  WorkflowExecution getLastWorkflowExecution(
+      String accountId, String appId, String workflowId, String envId, String serviceId, String infraMappingId);
+
   PreviousApprovalDetails getPreviousApprovalDetails(
       String appId, String workflowExecutionId, String pipelineId, String approvalId);
 

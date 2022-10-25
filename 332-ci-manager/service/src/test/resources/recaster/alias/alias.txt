@@ -143,7 +143,7 @@ io.harness.beans.steps.outcome.CIStepArtifactOutcome
 io.harness.beans.steps.nodes.InitializeStepNode
 io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig
 io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo
-io.harness.beans.yaml.extended.cache.CacheOptions
+io.harness.beans.yaml.extended.cache.Caching
 io.harness.yaml.core.failurestrategy.rollback.StepGroupFailureActionConfig
 io.harness.pms.yaml.ParameterFieldValueWrapper
 io.harness.beans.dependencies.ServiceDependency

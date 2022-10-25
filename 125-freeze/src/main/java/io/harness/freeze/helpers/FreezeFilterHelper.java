@@ -21,29 +21,8 @@ import io.harness.ng.core.utils.CoreCriteriaUtils;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Update;
 
 public class FreezeFilterHelper {
-  public static Update getUpdateOperations(FreezeConfigEntity freezeConfigEntity) {
-    Update update = new Update();
-    update.set(FreezeConfigEntityKeys.accountId, freezeConfigEntity.getAccountId());
-    update.set(FreezeConfigEntityKeys.orgIdentifier, freezeConfigEntity.getOrgIdentifier());
-    update.set(FreezeConfigEntityKeys.projectIdentifier, freezeConfigEntity.getProjectIdentifier());
-    update.set(FreezeConfigEntityKeys.identifier, freezeConfigEntity.getIdentifier());
-    update.set(FreezeConfigEntityKeys.freezeScope, freezeConfigEntity.getFreezeScope());
-    update.set(FreezeConfigEntityKeys.createdAt, freezeConfigEntity.getCreatedAt());
-    update.set(FreezeConfigEntityKeys.createdBy, freezeConfigEntity.getCreatedBy());
-    update.set(FreezeConfigEntityKeys.description, freezeConfigEntity.getDescription());
-    update.set(FreezeConfigEntityKeys.lastUpdatedAt, freezeConfigEntity.getLastUpdatedAt());
-    update.set(FreezeConfigEntityKeys.lastUpdatedBy, freezeConfigEntity.getLastUpdatedBy());
-    update.set(FreezeConfigEntityKeys.name, freezeConfigEntity.getName());
-    update.set(FreezeConfigEntityKeys.status, freezeConfigEntity.getStatus());
-    update.set(FreezeConfigEntityKeys.tags, freezeConfigEntity.getTags());
-    update.set(FreezeConfigEntityKeys.type, freezeConfigEntity.getType());
-    update.set(FreezeConfigEntityKeys.yaml, freezeConfigEntity.getYaml());
-    return update;
-  }
-
   public static Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
       String searchTerm, FreezeType type, FreezeStatus freezeStatus, Long startTime, Long endTime) {
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);

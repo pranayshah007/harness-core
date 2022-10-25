@@ -45,6 +45,18 @@ fi
 
 if [[ "" != "$MANAGER_URL" ]]; then
   export MANAGER_URL; yq -i '.managerUrl=env(MANAGER_URL)' $CONFIG_FILE
+
+
+if [[ "" != "$SG_ITERATOR_ENABLED" ]]; then
+  export SG_ITERATOR_ENABLED; yq -i '.serviceGuardIteratorConfig.enabled=env(SG_ITERATOR_ENABLED)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SG_ITERATOR_THREAD_COUNT" ]]; then
+  export SG_ITERATOR_THREAD_COUNT; yq -i '.serviceGuardIteratorConfig.threadPoolCount=env(SG_ITERATOR_THREAD_COUNT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SG_ITERATOR_INTERVAL_SECS" ]]; then
+  export SG_ITERATOR_INTERVAL_SECS; yq -i '.serviceGuardIteratorConfig.targetIntervalInSeconds=env(SG_ITERATOR_INTERVAL_SECS)' $CONFIG_FILE
 fi
 
   yq -i '.server.requestLog.appenders[0].type="console"' $CONFIG_FILE

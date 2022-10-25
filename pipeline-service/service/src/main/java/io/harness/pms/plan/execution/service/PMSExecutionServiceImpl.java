@@ -174,6 +174,12 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
             .and(PlanExecutionSummaryKeys.entityGitDetails + "."
                 + "repoIdentifier")
             .is(entityGitDetails.getRepoIdentifier());
+      } else if (entityGitDetails.getRepoName() != null
+          && !entityGitDetails.getRepoName().equals(GitAwareEntityHelper.DEFAULT)) {
+        gitCriteriaNew
+            .and(PlanExecutionSummaryKeys.entityGitDetails + "."
+                + "repoName")
+            .is(entityGitDetails.getRepoName());
       }
       gitCriteria.orOperator(gitCriteriaDeprecated, gitCriteriaNew);
     }
