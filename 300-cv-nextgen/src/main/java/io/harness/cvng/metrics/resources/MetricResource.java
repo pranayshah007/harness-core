@@ -9,16 +9,16 @@ package io.harness.cvng.metrics.resources;
 
 import static io.harness.cvng.CVConstants.ENVIRONMENT;
 
-import io.harness.beans.ClientType;
 import io.harness.cvng.CVConstants;
 import io.harness.metrics.HarnessMetricRegistry;
-import io.harness.security.annotations.HarnessApiKeyAuth;
+import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.prometheus.client.exporter.common.TextFormat;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashSet;
@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @Path("/metrics")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@HarnessApiKeyAuth(clientTypes = ClientType.PROMETHEUS)
+@PublicApi
 @Slf4j
 public class MetricResource {
   @Inject private HarnessMetricRegistry metricRegistry;
@@ -42,6 +42,7 @@ public class MetricResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ApiOperation(value = "get metrics from metric registry", nickname = "getMetricsFromMetricRegistry", hidden = true)
   public String get() throws IOException {
     final StringWriter writer = new StringWriter();
     Set<String> metrics = new HashSet<>();

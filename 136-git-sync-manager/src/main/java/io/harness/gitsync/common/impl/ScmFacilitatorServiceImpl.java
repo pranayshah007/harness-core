@@ -13,13 +13,13 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.request.GitFileRequest;
 import io.harness.beans.response.GitFileResponse;
-import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -45,6 +45,7 @@ import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
+import io.harness.gitsync.common.helper.GitSyncUtils;
 import io.harness.gitsync.common.scmerrorhandling.ScmApiErrorHandlingHelper;
 import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
@@ -61,16 +62,19 @@ import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.utils.FilePathUtils;
+import io.harness.utils.RetryUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
@@ -119,32 +123,36 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   }
 
   @Override
-  public List<UserRepoResponse> listAllReposByRefConnector(
+  public List<UserRepoResponse> listAllReposForOnboardingFlow(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
     ScmConnector scmConnector =
         gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
+
+    int maxRetries = 1;
+    // Adding retry only on manager as delegate already has retry logic
+    if (!GitSyncUtils.isExecuteOnDelegate(scmConnector)) {
+      maxRetries = 4;
+    }
+
+    RetryPolicy<Object> retryPolicy =
+        RetryUtils.createRetryPolicy("Scm grpc retry attempt: ", Duration.ofMillis(750), maxRetries, log);
     GetUserReposResponse response =
-        scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
-            -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier, projectIdentifier,
-                scmConnector, PageRequestDTO.builder().fetchAll(true).build()),
-            scmConnector);
+        Failsafe.with(retryPolicy)
+            .get(()
+                     -> scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
+                         -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier,
+                             projectIdentifier, scmConnector, PageRequestDTO.builder().fetchAll(true).build()),
+                         scmConnector));
+
     if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES, scmConnector.getConnectorType(),
           scmConnector.getUrl(), response.getStatus(), response.getError(),
           ErrorMetadata.builder().connectorRef(connectorRef).build());
     }
 
-    CompletableFuture.runAsync(() -> {
-      try {
-        ConnectorValidationResult testConnectionResult =
-            connectorService.testConnection(accountIdentifier, null, null, "harnessImage");
-        log.info(
-            format("testConnectionResult for harnessImageConnector: %s, account %s" + testConnectionResult.getStatus(),
-                accountIdentifier));
-      } catch (Exception ex) {
-        log.info("failed to test connection for harnessImageConnector for account " + accountIdentifier, ex);
-      }
-    });
+    // For hosted flow where we are creating a default docker connector
+    gitSyncConnectorHelper.testConnectionAsync(accountIdentifier, null, null, NGCommonEntityConstants.HARNESS_IMAGE);
+
     return convertToUserRepo(response.getReposList());
   }
 

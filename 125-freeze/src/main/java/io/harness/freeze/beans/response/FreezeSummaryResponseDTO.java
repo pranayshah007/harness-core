@@ -14,7 +14,7 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.encryption.Scope;
-import io.harness.freeze.beans.CurrentOrUpcomingActiveWindow;
+import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.FreezeEntityRule;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
@@ -59,7 +59,7 @@ public class FreezeSummaryResponseDTO {
   List<FreezeWindow> windows;
   @JsonIgnore List<FreezeEntityRule> rules;
 
-  CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow;
+  CurrentOrUpcomingWindow currentOrUpcomingWindow;
 
   @With @NotEmpty @EntityIdentifier String identifier;
 

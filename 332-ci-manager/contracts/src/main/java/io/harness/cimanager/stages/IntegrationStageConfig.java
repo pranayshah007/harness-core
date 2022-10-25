@@ -11,7 +11,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.beans.dependencies.DependencyElement;
-import io.harness.beans.yaml.extended.cache.CacheOptions;
+import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.beans.yaml.extended.runtime.Runtime;
@@ -33,5 +33,5 @@ public interface IntegrationStageConfig extends StageInfoConfig {
   ParameterField<Platform> getPlatform();
   Runtime getRuntime();
 
-  CacheOptions getCacheOptions();
+  Caching getCaching();
 }

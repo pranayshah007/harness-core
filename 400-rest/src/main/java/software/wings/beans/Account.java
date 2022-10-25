@@ -157,8 +157,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter private AccountPreferences accountPreferences;
 
-  @FdIndex private Long serviceGuardDataCollectionIteration;
-  @FdIndex private Long serviceGuardDataAnalysisIteration;
   @FdIndex private Long workflowDataCollectionIteration;
   @FdIndex private Long usageMetricsTaskIteration;
   @FdIndex private Long licenseExpiryCheckIteration;
@@ -449,17 +447,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
-    if (AccountKeys.serviceGuardDataCollectionIteration.equals(fieldName)) {
-      this.serviceGuardDataCollectionIteration = nextIteration;
-      return;
-    }
-
-    else if (AccountKeys.serviceGuardDataAnalysisIteration.equals(fieldName)) {
-      this.serviceGuardDataAnalysisIteration = nextIteration;
-      return;
-    }
-
-    else if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
+    if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
       this.workflowDataCollectionIteration = nextIteration;
       return;
     }
@@ -519,15 +507,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Override
   public Long obtainNextIteration(String fieldName) {
-    if (AccountKeys.serviceGuardDataCollectionIteration.equals(fieldName)) {
-      return this.serviceGuardDataCollectionIteration;
-    }
-
-    else if (AccountKeys.serviceGuardDataAnalysisIteration.equals(fieldName)) {
-      return this.serviceGuardDataAnalysisIteration;
-    }
-
-    else if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
+    if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
       return this.workflowDataCollectionIteration;
     }
 

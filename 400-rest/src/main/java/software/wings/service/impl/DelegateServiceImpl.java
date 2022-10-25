@@ -856,11 +856,14 @@ public class DelegateServiceImpl implements DelegateService {
           final long delegateCreationTime = entry.getValue().stream().mapToLong(Delegate::getCreatedAt).min().orElse(0);
           final boolean isImmutable = isNotEmpty(entry.getValue()) && entry.getValue().get(0).isImmutable();
           final long upgraderLastUpdated = delegateGroupMap.getOrDefault(entry.getKey(), 0L);
+          final String version =
+              isNotEmpty(entry.getValue()) ? entry.getValue().stream().findAny().get().getVersion() : null;
           return DelegateScalingGroup.builder()
               .groupName(entry.getKey())
               .upgraderLastUpdated(delegateGroupMap.getOrDefault(entry.getKey(), 0L))
               .immutable(isImmutable)
-              .autoUpgrade(delegateSetupService.setAutoUpgrade(upgraderLastUpdated, isImmutable, delegateCreationTime))
+              .autoUpgrade(
+                  delegateSetupService.setAutoUpgrade(upgraderLastUpdated, isImmutable, delegateCreationTime, version))
               .delegateGroupExpirationTime(setDelegateScalingGroupExpiration(entry.getValue()))
               .delegates(buildInnerDelegates(accountId, entry.getValue(), activeDelegateConnections, true))
               .build();

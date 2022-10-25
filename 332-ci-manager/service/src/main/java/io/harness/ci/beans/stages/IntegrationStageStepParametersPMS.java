@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.steps.CIAbstractStepNode;
-import io.harness.beans.yaml.extended.cache.CacheOptions;
+import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml.DockerInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
@@ -55,7 +55,7 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   BuildStatusUpdateParameter buildStatusUpdateParameter;
   List<String> stepIdentifiers;
   String childNodeID;
-  CacheOptions cacheOptions;
+  Caching caching;
 
   public static IntegrationStageStepParametersPMS getStepParameters(IntegrationStageNode stageNode, String childNodeID,
       BuildStatusUpdateParameter buildStatusUpdateParameter, PlanCreationContext ctx) {
@@ -76,7 +76,7 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
         .sharedPaths(integrationStageConfig.getSharedPaths())
         .enableCloneRepo(integrationStageConfig.getCloneCodebase())
         .stepIdentifiers(stepIdentifiers)
-        .cacheOptions(getCacheOptions(stageNode))
+        .caching(getCaching(stageNode))
         .build();
   }
 
@@ -119,9 +119,9 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
 
     return infrastructure;
   }
-  public static CacheOptions getCacheOptions(IntegrationStageNode stageNode) {
+  public static Caching getCaching(IntegrationStageNode stageNode) {
     IntegrationStageConfig integrationStageConfig = stageNode.getIntegrationStageConfig();
-    return integrationStageConfig.getCacheOptions();
+    return integrationStageConfig.getCaching();
   }
 
   private static IntegrationStageConfig getIntegrationStageConfig(YamlField yamlField, String identifier) {

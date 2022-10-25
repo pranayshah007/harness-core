@@ -37,7 +37,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(name = "File", description = "This is details of the file entity defined in Harness.")
+@Schema(name = "File", description = "This is details of the File or Folder entity defined in Harness.")
 @NoArgsConstructor
 public class FileDTO {
   @ApiModelProperty(required = true)
@@ -48,13 +48,13 @@ public class FileDTO {
 
   @ApiModelProperty(required = true)
   @EntityIdentifier
-  @Schema(description = "Identifier of the File")
+  @Schema(description = "Identifier of the File or Folder")
   @FormDataParam("identifier")
   private String identifier;
 
   @ApiModelProperty(required = true)
   @NotBlank
-  @Schema(description = "Name of the File")
+  @Schema(description = "Name of the File or Folder")
   @FormDataParam("name")
   private String name;
 
@@ -66,32 +66,32 @@ public class FileDTO {
   private NGFileType type;
   @ApiModelProperty(required = true)
   @NotBlank
-  @Schema(description = "This specifies parent identifier")
+  @Schema(description = "This specifies parent directory identifier. The value of Root directory identifier is Root.")
   @FormDataParam("parentIdentifier")
   private String parentIdentifier;
-  @Schema(description = "Description of the File") @FormDataParam("description") private String description;
+  @Schema(description = "Description of the File or Folder") @FormDataParam("description") private String description;
   @Schema(description = "Tags") @Valid private List<NGTag> tags;
   @Schema(description = "Mime type of the File") @FormDataParam("mimeType") private String mimeType;
 
   // read only properties during serialization(java object -> json)
-  @Schema(description = "The path of the File")
+  @Schema(description = "The path of the File or Folder")
   @FormDataParam("path")
   @JsonProperty(access = Access.READ_ONLY)
   private String path;
 
   @Schema(description = "Whether File is draft or not") @JsonProperty(access = Access.READ_ONLY) private Boolean draft;
 
-  @Schema(description = "File created by user")
+  @Schema(description = "Created by user details")
   @FormDataParam("createdBy")
   @JsonProperty(access = Access.READ_ONLY)
   private EmbeddedUserDetailsDTO createdBy;
 
-  @Schema(description = "File updated by user")
+  @Schema(description = "Updated by user details")
   @FormDataParam("lastModifiedBy")
   @JsonProperty(access = Access.READ_ONLY)
   private EmbeddedUserDetailsDTO lastModifiedBy;
 
-  @Schema(description = "Last modified time for the File")
+  @Schema(description = "Last modified time for the File or Folder")
   @FormDataParam("lastModifiedAt")
   @JsonProperty(access = Access.READ_ONLY)
   private Long lastModifiedAt;
