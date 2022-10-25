@@ -5,12 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.plancreator.stages;
+package io.harness.plancreator.stages.v1;
 
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -21,45 +24,67 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
-import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StagesStep;
 import io.harness.steps.common.NGSectionStepParameters;
 
+import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
+  @Inject private KryoSerializer kryoSerializer;
+
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, YamlField config) {
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
-    List<YamlField> stageYamlFields = getStageYamlFields(ctx);
-    for (YamlField stageYamlField : stageYamlFields) {
-      Map<String, YamlField> stageYamlFieldMap = new HashMap<>();
-      stageYamlFieldMap.put(stageYamlField.getNode().getUuid(), stageYamlField);
-      responseMap.put(stageYamlField.getNode().getUuid(),
+    List<YamlField> stages = getStageYamlFields(config);
+
+    if (EmptyPredicate.isEmpty(stages)) {
+      return responseMap;
+    }
+    int i;
+    YamlField curr;
+
+    // TODO : Figure out corresponding failure stages and put that here as well
+    for (i = 0; i < stages.size() - 1; i++) {
+      curr = stages.get(i);
+      responseMap.put(curr.getUuid(),
           PlanCreationResponse.builder()
-              .dependencies(DependenciesUtils.toDependenciesProto(stageYamlFieldMap))
+              .dependencies(Dependencies.newBuilder()
+                                .putDependencies(curr.getUuid(), curr.getYamlPath())
+                                .putDependencyMetadata(curr.getUuid(),
+                                    Dependency.newBuilder()
+                                        .putMetadata("nextId",
+                                            ByteString.copyFrom(kryoSerializer.asBytes(stages.get(i + 1).getUuid())))
+                                        .build())
+                                .build())
               .build());
     }
+
+    curr = stages.get(i);
+    responseMap.put(curr.getUuid(),
+        PlanCreationResponse.builder()
+            .dependencies(Dependencies.newBuilder().putDependencies(curr.getUuid(), curr.getYamlPath()).build())
+            .build());
     return responseMap;
   }
 
   @Override
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext ctx, YamlField config) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
-    List<YamlField> stagesYamlField = getStageYamlFields(ctx);
+    List<YamlField> stagesYamlField = getStageYamlFields(config);
     List<EdgeLayoutList> edgeLayoutLists = new ArrayList<>();
     for (YamlField stageYamlField : stagesYamlField) {
       EdgeLayoutList.Builder stageEdgesBuilder = EdgeLayoutList.newBuilder();
@@ -90,15 +115,14 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
-    StepParameters stepParameters =
-        NGSectionStepParameters.builder().childNodeId(childrenNodeIds.get(0)).logMessage("Stages").build();
     return PlanNode.builder()
         .uuid(ctx.getCurrentField().getNode().getUuid())
         .identifier(YAMLFieldNameConstants.STAGES)
         .stepType(StagesStep.STEP_TYPE)
         .group(StepOutcomeGroup.STAGES.name())
         .name(YAMLFieldNameConstants.STAGES)
-        .stepParameters(stepParameters)
+        .stepParameters(
+            NGSectionStepParameters.builder().childNodeId(childrenNodeIds.get(0)).logMessage("Stages").build())
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
@@ -117,12 +141,8 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     return Collections.singletonMap("stages", Collections.singleton(PlanCreatorUtils.ANY_TYPE));
   }
 
-  private List<YamlField> getStageYamlFields(PlanCreationContext planCreationContext) {
-    List<YamlNode> yamlNodes =
-        Optional.of(planCreationContext.getCurrentField().getNode().asArray()).orElse(Collections.emptyList());
-    List<YamlField> stageFields = new LinkedList<>();
-
-    yamlNodes.forEach(yamlNode -> { stageFields.add(new YamlField(yamlNode)); });
-    return stageFields;
+  private List<YamlField> getStageYamlFields(YamlField yamlField) {
+    List<YamlNode> yamlNodes = Optional.of(yamlField.getNode().asArray()).orElse(Collections.emptyList());
+    return yamlNodes.stream().map(YamlField::new).collect(Collectors.toList());
   }
 }

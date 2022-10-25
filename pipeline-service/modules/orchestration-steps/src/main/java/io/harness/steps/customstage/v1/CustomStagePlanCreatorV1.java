@@ -7,18 +7,21 @@
 
 package io.harness.steps.customstage.v1;
 
-import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
-
+import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.common.StageElementParameters;
-import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
@@ -43,7 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@OwnedBy(HarnessTeam.CDC)
+@OwnedBy(HarnessTeam.PIPELINE)
 public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Inject private KryoSerializer kryoSerializer;
 
@@ -93,20 +96,39 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
     CustomStageSpecParams params = CustomStageSpecParams.builder().childNodeID(childrenNodeIds.get(0)).build();
-    return PlanNode.builder()
-        .uuid(config.getUuid())
-        .identifier(emptyIfNull(config.getNode().getProperty("id")))
-        .stepType(CustomStageStep.STEP_TYPE)
-        .group(StepOutcomeGroup.STAGE.name())
-        .name(emptyIfNull(config.getNode().getProperty("name")))
-        .skipUnresolvedExpressionsCheck(true)
-        .stepParameters(StageElementParameters.builder().specConfig(params).build())
-        .facilitatorObtainment(
-            FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
-                .build())
-        .skipExpressionChain(false)
-        .adviserObtainments(StrategyUtils.getAdviserObtainments(config, kryoSerializer, true))
+    PlanNodeBuilder builder =
+        PlanNode.builder()
+            .uuid(config.getUuid())
+            .identifier(config.getId())
+            .stepType(CustomStageStep.STEP_TYPE)
+            .group(StepOutcomeGroup.STAGE.name())
+            .name(config.getName())
+            .skipUnresolvedExpressionsCheck(true)
+            .stepParameters(StageElementParameters.builder().specConfig(params).build())
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
+                    .build())
+            .skipExpressionChain(false);
+
+    AdviserObtainment adviser = getBuild(ctx.getDependency());
+    if (adviser != null) {
+      builder.adviserObtainment(adviser);
+    }
+    return builder.build();
+  }
+
+  private AdviserObtainment getBuild(Dependency dependency) {
+    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
+        || !dependency.getMetadataMap().containsKey("nextId")) {
+      return null;
+    }
+
+    String nextId = (String) kryoSerializer.asObject(dependency.getMetadataMap().get("nextId").toByteArray());
+    return AdviserObtainment.newBuilder()
+        .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
+        .setParameters(
+            ByteString.copyFrom(kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
         .build();
   }
 

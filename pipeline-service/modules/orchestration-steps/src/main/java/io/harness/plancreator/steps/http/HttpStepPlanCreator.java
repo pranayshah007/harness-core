@@ -32,4 +32,9 @@ public class HttpStepPlanCreator extends PMSStepPlanCreatorV2<HttpStepNode> {
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, HttpStepNode field) {
     return super.createPlanForField(ctx, field);
   }
+
+  @Override
+  public Set<YamlVersion> getSupportedYamlVersions() {
+    return EnumSet.of(YamlVersion.V0);
+  }
 }

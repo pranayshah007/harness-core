@@ -9,8 +9,11 @@ package io.harness.plancreator.steps.v1;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -19,38 +22,62 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlVersion;
+import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.NGSectionStep;
 import io.harness.steps.common.NGSectionStepParameters;
-import io.harness.steps.common.NGSectionStepWithRollbackInfo;
 
+import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
+  @Inject private KryoSerializer kryoSerializer;
+
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, YamlField config) {
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
-    List<YamlNode> yamlNodes = Optional.of(config.getNode().asArray()).orElse(Collections.emptyList());
+    List<YamlField> stages = getStepYamlFields(config);
 
-    for (YamlNode node : yamlNodes) {
-      Map<String, YamlField> stepYamlFieldMap = new HashMap<>();
-      stepYamlFieldMap.put(node.getUuid(), new YamlField(node));
-      responseMap.put(node.getUuid(),
-          PlanCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(stepYamlFieldMap)).build());
+    if (EmptyPredicate.isEmpty(stages)) {
+      return responseMap;
     }
+    int i;
+    YamlField curr;
+
+    // TODO : Figure out corresponding failure stages and put that here as well
+    for (i = 0; i < stages.size() - 1; i++) {
+      curr = stages.get(i);
+      responseMap.put(curr.getUuid(),
+          PlanCreationResponse.builder()
+              .dependencies(Dependencies.newBuilder()
+                                .putDependencies(curr.getUuid(), curr.getYamlPath())
+                                .putDependencyMetadata(curr.getUuid(),
+                                    Dependency.newBuilder()
+                                        .putMetadata("nextId",
+                                            ByteString.copyFrom(kryoSerializer.asBytes(stages.get(i + 1).getUuid())))
+                                        .build())
+                                .build())
+              .build());
+    }
+
+    curr = stages.get(i);
+    responseMap.put(curr.getUuid(),
+        PlanCreationResponse.builder()
+            .dependencies(Dependencies.newBuilder().putDependencies(curr.getUuid(), curr.getYamlPath()).build())
+            .build());
     return responseMap;
   }
 
@@ -84,5 +111,10 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Override
   public Set<YamlVersion> getSupportedYamlVersions() {
     return EnumSet.of(YamlVersion.V1);
+  }
+
+  private List<YamlField> getStepYamlFields(YamlField yamlField) {
+    List<YamlNode> yamlNodes = Optional.of(yamlField.getNode().asArray()).orElse(Collections.emptyList());
+    return yamlNodes.stream().map(YamlField::new).collect(Collectors.toList());
   }
 }
