@@ -32,8 +32,11 @@ import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenPrepareRollbackRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
+import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
+import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.Misc;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -51,8 +54,11 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import lombok.extern.slf4j.Slf4j;
+import software.wings.utils.ServiceVersionConvention;
 
 import java.util.List;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -62,7 +68,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  private final String ELASTIGROUP_SERVICE_COMMAND_NAME = "ElastigroupService";
+  private final String ELASTIGROUP_SETUP_COMMAND_NAME = "ElastigroupSetup";
   private final String ECS_BLUE_GREEN_PREPARE_ROLLBACK_COMMAND_NAME = "EcsBlueGreenPrepareRollback";
 
   @Inject private ElastigroupStepCommonHelper elastigroupStepCommonHelper;
@@ -80,35 +86,22 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     ElastigroupSetupStepParameters ecsBlueGreenCreateServiceStepParameters =
         (ElastigroupSetupStepParameters) stepParameters.getSpec();
 
-    EcsLoadBalancerConfig ecsLoadBalancerConfig =
-        EcsLoadBalancerConfig.builder()
-            .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
-            .prodListenerArn(ecsBlueGreenCreateServiceStepParameters.getProdListener().getValue())
-            .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
-            .stageListenerArn(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
-            .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
-            .prodTargetGroupArn(ecsStepExecutorParams.getProdTargetGroupArn())
-            .stageTargetGroupArn(ecsStepExecutorParams.getStageTargetGroupArn())
-            .build();
+    String elastiGroupNamePrefix = ecsBlueGreenCreateServiceStepParameters.getName().getValue();
 
-    EcsBlueGreenCreateServiceRequest ecsBlueGreenCreateServiceRequest =
-        EcsBlueGreenCreateServiceRequest.builder()
+    ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
+            ElastigroupSetupCommandRequest.builder()
+                    .blueGreen(false)
+                    .elastigroupNamePrefix(elastiGroupNamePrefix)
             .accountId(accountId)
-            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_CREATE_SERVICE)
-            .commandName(ELASTIGROUP_SERVICE_COMMAND_NAME)
+            .ecsCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
+            .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
+            .ecsInfraConfig(elastigroupStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-            .ecsTaskDefinitionManifestContent(ecsStepExecutorParams.getEcsTaskDefinitionManifestContent())
-            .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
-            .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
-            .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
-            .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
-            .targetGroupArnKey(ecsStepExecutorParams.getTargetGroupArnKey())
             .build();
 
-    return ecsStepCommonHelper.queueEcsTask(
-        stepParameters, ecsBlueGreenCreateServiceRequest, ambiance, executionPassThroughData, true);
+    return elastigroupStepCommonHelper.queueElastigroupTask(
+        stepParameters, elastigroupSetupCommandRequest, ambiance, executionPassThroughData, true);
   }
 
   @Override
