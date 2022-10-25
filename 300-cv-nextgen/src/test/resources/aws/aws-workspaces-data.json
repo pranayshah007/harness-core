@@ -1,0 +1,12 @@
+{
+  "workspaces" : [ {
+    "alias" : "cvtest",
+    "arn" : "arn:aws:aps:us-east-1:557171970705:workspace/ws-bd297196-b5ca-48c5-9857-972fe759354f",
+    "createdAt" : 1.659884077972E9,
+    "status" : {
+      "statusCode" : "ACTIVE"
+    },
+    "tags" : { },
+    "workspaceId" : "ws-bd297196-b5ca-48c5-9857-972fe759354f"
+  } ]
+}

@@ -99,6 +99,8 @@ public class PerpetualTaskRecord
   long createdAt;
   long failedExecutionCount;
 
+  String exception;
+
   @Override
   public Long obtainNextIteration(String fieldName) {
     if (PerpetualTaskRecordKeys.assignIteration.equals(fieldName)) {

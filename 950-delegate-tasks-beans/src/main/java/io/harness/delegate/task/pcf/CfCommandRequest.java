@@ -35,7 +35,6 @@ public class CfCommandRequest {
   private boolean enforceSslValidation;
   private boolean useAppAutoscalar;
   private boolean limitPcfThreads;
-  private boolean ignorePcfConnectionContextCache;
   private CfCliVersion cfCliVersion;
 
   public enum PcfCommandType {

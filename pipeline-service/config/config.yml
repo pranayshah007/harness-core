@@ -179,8 +179,8 @@ pipelineServiceClientConfig:
 
 templateServiceClientConfig:
   baseUrl: http://localhost:15001/api/
-  connectTimeOutSeconds: 15
-  readTimeOutSeconds: 15
+  connectTimeOutSeconds: 30
+  readTimeOutSeconds: 30
 
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM

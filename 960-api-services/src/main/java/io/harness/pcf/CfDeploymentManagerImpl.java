@@ -454,8 +454,7 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
   }
 
   @Override
-  public String checkConnectivity(
-      CfConfig pcfConfig, boolean limitPcfThreads, boolean ignorePcfConnectionContextCache) {
+  public String checkConnectivity(CfConfig pcfConfig, boolean limitPcfThreads) {
     try {
       getOrganizations(CfRequestConfig.builder()
                            .endpointUrl(pcfConfig.getEndpointUrl())

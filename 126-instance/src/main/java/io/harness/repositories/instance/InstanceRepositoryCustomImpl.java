@@ -375,20 +375,31 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   */
   private Criteria getCriteriaForActiveInstances(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs) {
-    Criteria baseCriteria = Criteria.where(InstanceKeys.accountIdentifier)
-                                .is(accountIdentifier)
-                                .and(InstanceKeys.orgIdentifier)
-                                .is(orgIdentifier)
-                                .and(InstanceKeys.projectIdentifier)
-                                .is(projectIdentifier);
+    Criteria filterNotDeleted = Criteria.where(InstanceKeys.accountIdentifier)
+                                    .is(accountIdentifier)
+                                    .and(InstanceKeys.orgIdentifier)
+                                    .is(orgIdentifier)
+                                    .and(InstanceKeys.projectIdentifier)
+                                    .is(projectIdentifier)
+                                    .and(InstanceKeys.isDeleted)
+                                    .is(false)
+                                    .and(InstanceKeys.createdAt)
+                                    .lte(timestampInMs);
 
-    Criteria filterCreatedAt = Criteria.where(InstanceKeys.createdAt).lte(timestampInMs);
-    Criteria filterDeletedAt = Criteria.where(InstanceKeys.deletedAt).gte(timestampInMs);
-    Criteria filterDeleted = Criteria.where(InstanceKeys.isDeleted).is(true);
-    Criteria filterNotDeleted = Criteria.where(InstanceKeys.isDeleted).is(false);
+    Criteria filterDeletedAfter = Criteria.where(InstanceKeys.accountIdentifier)
+                                      .is(accountIdentifier)
+                                      .and(InstanceKeys.orgIdentifier)
+                                      .is(orgIdentifier)
+                                      .and(InstanceKeys.projectIdentifier)
+                                      .is(projectIdentifier)
+                                      .and(InstanceKeys.isDeleted)
+                                      .is(true)
+                                      .and(InstanceKeys.createdAt)
+                                      .lte(timestampInMs)
+                                      .and(InstanceKeys.deletedAt)
+                                      .gte(timestampInMs);
 
-    return baseCriteria.orOperator(
-        filterNotDeleted.andOperator(filterCreatedAt), filterDeleted.andOperator(filterCreatedAt, filterDeletedAt));
+    return new Criteria().orOperator(filterNotDeleted, filterDeletedAfter);
   }
 
   private Criteria getCriteriaForActiveInstances(

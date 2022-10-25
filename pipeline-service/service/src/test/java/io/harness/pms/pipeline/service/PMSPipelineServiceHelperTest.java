@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
@@ -93,6 +94,8 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
   String orgIdentifier = "org";
   String projectIdentifier = "project";
   String pipelineIdentifier = "pipeline";
+
+  String repoName = "testRepo";
 
   @Before
   public void setUp() {
@@ -344,6 +347,17 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
         .isEqualTo(true);
     assertThat(form.getCriteriaObject().containsKey("status")).isEqualTo(false);
     assertThat(form.getCriteriaObject().get("deleted")).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFormCriteriaRepoFilter() {
+    PipelineFilterPropertiesDto filterProperties = PipelineFilterPropertiesDto.builder().repoName(repoName).build();
+    Criteria criteria = pmsPipelineServiceHelper.formCriteria(
+        accountIdentifier, orgIdentifier, projectIdentifier, null, filterProperties, false, null, null);
+
+    assertThat(criteria.getCriteriaObject().get(PipelineEntityKeys.repo).toString()).isEqualTo(repoName);
   }
 
   @Test

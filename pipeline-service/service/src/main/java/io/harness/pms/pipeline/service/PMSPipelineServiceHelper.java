@@ -207,6 +207,9 @@ public class PMSPipelineServiceHelper {
       ModuleInfoFilterUtils.processNode(
           JsonUtils.readTree(pipelineFilter.getModuleProperties().toJson()), "filters", criteria);
     }
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getRepoName())) {
+      criteria.and(PipelineEntityKeys.repo).is(pipelineFilter.getRepoName());
+    }
   }
 
   public void validatePipelineFromRemote(PipelineEntity pipelineEntity) {

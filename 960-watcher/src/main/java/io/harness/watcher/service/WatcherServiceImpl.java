@@ -90,7 +90,6 @@ import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.delegate.beans.DelegateScripts;
 import io.harness.delegate.message.Message;
 import io.harness.delegate.message.MessageService;
-import io.harness.event.client.impl.tailer.ChronicleEventTailer;
 import io.harness.exception.VersionInfoException;
 import io.harness.filesystem.FileIo;
 import io.harness.grpc.utils.DelegateGrpcConfigExtractor;
@@ -157,7 +156,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -221,8 +219,6 @@ public class WatcherServiceImpl implements WatcherService {
   @Inject private MessageService messageService;
   @Inject private ManagerClientV2 managerClient;
 
-  @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
-
   private final Object waiter = new Object();
   private final AtomicBoolean working = new AtomicBoolean(false);
   private final List<String> runningDelegates = synchronizedList(new ArrayList<>());
@@ -261,18 +257,6 @@ public class WatcherServiceImpl implements WatcherService {
                                  : "[New] Timed out waiting for go-ahead. Proceeding anyway");
       }
 
-      watchExecutor.submit(() -> {
-        if (chronicleEventTailer != null) {
-          chronicleEventTailer.startAsync().awaitRunning();
-          Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // needed to satisfy infer since chronicleEventTailer is not final and it's nullable so it could be null
-            // technically when the hook is executed.
-            if (chronicleEventTailer != null) {
-              chronicleEventTailer.stopAsync().awaitTerminated();
-            }
-          }));
-        }
-      });
       messageService.removeData(WATCHER_DATA, NEXT_WATCHER);
 
       log.info(upgrade ? "[New] Watcher upgraded" : "Watcher started");
@@ -1459,11 +1443,6 @@ public class WatcherServiceImpl implements WatcherService {
           if (message != null && message.getMessage().equals(WATCHER_STARTED)) {
             log.info(
                 "[Old] Retrieved watcher-started message from new watcher {}. Sending go-ahead", newWatcherProcess);
-            watchExecutor.submit(() -> {
-              if (chronicleEventTailer != null) {
-                chronicleEventTailer.stopAsync().awaitTerminated();
-              }
-            });
             messageService.writeMessageToChannel(WATCHER, newWatcherProcess, WATCHER_GO_AHEAD);
             log.info("[Old] Watcher upgraded. Stopping");
             removeWatcherVersionFromCapsule(version, newVersion);

@@ -10,14 +10,17 @@ package io.harness.service.intfc;
 import software.wings.beans.Account;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.LogMLAnalysisRecord;
+import software.wings.verification.CVConfiguration;
 
 /**
  * Created by rsingh on 10/9/18.
  */
 public interface ContinuousVerificationService {
   boolean shouldPerformServiceGuardTasks(Account account);
-  boolean triggerAPMDataCollection(String accountId);
 
+  boolean triggerAPMDataCollection(String accountId);
+  void triggerAPMDataCollection(CVConfiguration cvConfiguration);
+  void triggerDataCollection(CVConfiguration cvConfiguration);
   /**
    * Creates tasks for Learning Engine
    * @param accountId
@@ -25,6 +28,8 @@ public interface ContinuousVerificationService {
   void triggerServiceGuardTimeSeriesAnalysis(String accountId);
 
   boolean triggerLogDataCollection(String accountId);
+
+  void triggerServiceGuardAnalysis(CVConfiguration cvConfiguration);
 
   void triggerLogsL1Clustering(String accountId);
 

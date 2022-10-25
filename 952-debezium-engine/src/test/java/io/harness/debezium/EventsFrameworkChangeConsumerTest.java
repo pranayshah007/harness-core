@@ -10,6 +10,9 @@ package io.harness.debezium;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -19,6 +22,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cf.client.api.CfClient;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.rule.Owner;
@@ -49,8 +53,9 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
   @Mock Producer producer;
   private static final String collection = "coll";
   @Mock private static DebeziumProducerFactory producerFactory;
+  @Mock private CfClient cfClient;
   private static final EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer =
-      new EventsFrameworkChangeConsumer(60, collection, producerFactory, 1000, 1000);
+      new EventsFrameworkChangeConsumer(60, collection, producerFactory, 1000, 1000, null);
   private static final String key = "key";
   private static final String value = "value";
   ChangeEvent<String, String> testRecord = new EmbeddedEngineChangeEvent<>(key, value, null);
@@ -95,7 +100,7 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleBatch() throws InterruptedException, InvalidProtocolBufferException {
     EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer =
-        new EventsFrameworkChangeConsumer(60, collection, producerFactory, 1000, 1000);
+        new EventsFrameworkChangeConsumer(60, collection, producerFactory, 1000, 1000, cfClient);
     List<ChangeEvent<String, String>> records = new ArrayList<>();
     ConnectHeaders headers = new ConnectHeaders();
     headers.add("__op", "c", Schema.STRING_SCHEMA);
@@ -106,6 +111,7 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
     doReturn(producer).when(producerFactory).get("topic", 1000);
     doNothing().when(recordCommitter).markBatchFinished();
     doNothing().when(recordCommitter).markProcessed(testRecord);
+    doReturn(true).when(cfClient).boolVariation(anyString(), any(), anyBoolean());
     eventsFrameworkChangeConsumer.handleBatch(records, recordCommitter);
     ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
     verify(producer, times(1)).send(captor.capture());

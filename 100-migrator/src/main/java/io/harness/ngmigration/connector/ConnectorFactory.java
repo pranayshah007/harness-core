@@ -7,11 +7,13 @@
 
 package io.harness.ngmigration.connector;
 
+import static software.wings.settings.SettingVariableTypes.AMAZON_S3_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.ARTIFACTORY;
 import static software.wings.settings.SettingVariableTypes.AWS;
 import static software.wings.settings.SettingVariableTypes.AZURE;
 import static software.wings.settings.SettingVariableTypes.DOCKER;
 import static software.wings.settings.SettingVariableTypes.GCP;
+import static software.wings.settings.SettingVariableTypes.GCS_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.GIT;
 import static software.wings.settings.SettingVariableTypes.HOST_CONNECTION_ATTRIBUTES;
 import static software.wings.settings.SettingVariableTypes.HTTP_HELM_REPO;
@@ -52,6 +54,8 @@ public class ConnectorFactory {
   private static final BaseConnector jenkinsConnector = new JenkinsConnectorImpl();
   private static final BaseConnector sshConnector = new SshConnectorImpl();
   private static final BaseConnector winRmConnector = new WinrmConnectorImpl();
+  private static final BaseConnector gcsHelmRepoConnector = new GcsHelmConnectorImpl();
+  private static final BaseConnector awsS3HelmConnector = new AwsS3HelmConnectorImpl();
 
   public static final Map<SettingVariableTypes, BaseConnector> CONNECTOR_FACTORY_MAP =
       ImmutableMap.<SettingVariableTypes, BaseConnector>builder()
@@ -70,6 +74,8 @@ public class ConnectorFactory {
           .put(JENKINS, jenkinsConnector)
           .put(HOST_CONNECTION_ATTRIBUTES, sshConnector)
           .put(WINRM_CONNECTION_ATTRIBUTES, winRmConnector)
+          .put(GCS_HELM_REPO, gcsHelmRepoConnector)
+          .put(AMAZON_S3_HELM_REPO, awsS3HelmConnector)
           .build();
 
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {
