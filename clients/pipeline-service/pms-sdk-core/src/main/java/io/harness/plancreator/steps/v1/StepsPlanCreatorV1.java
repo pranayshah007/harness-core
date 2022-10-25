@@ -116,4 +116,9 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     List<YamlNode> yamlNodes = Optional.of(yamlField.getNode().asArray()).orElse(Collections.emptyList());
     return yamlNodes.stream().map(YamlField::new).collect(Collectors.toList());
   }
+
+  private List<YamlField> getStepYamlFields(YamlField yamlField) {
+    List<YamlNode> yamlNodes = Optional.of(yamlField.getNode().asArray()).orElse(Collections.emptyList());
+    return yamlNodes.stream().map(YamlField::new).collect(Collectors.toList());
+  }
 }
