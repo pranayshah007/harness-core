@@ -64,13 +64,11 @@ public class PolicyPackDAO {
 
   public PolicyPack listid(String accountId, String name, boolean create) {
     try {
-      return hPersistence.createQuery(PolicyPack.class)
-          .field(PolicySetId.accountId)
-          .equal(accountId)
-          .field(PolicySetId.name)
-          .equal(name)
-          .asList()
-          .get(0);
+      List<PolicyPack> policyPacks= hPersistence.createQuery(PolicyPack.class).field(PolicySetId.accountId).equal(accountId)
+          .field(PolicySetId.name).equal(name).asList();
+      policyPacks.addAll(hPersistence.createQuery(PolicyPack.class).field(PolicySetId.accountId).equal("")
+              .field(PolicySetId.name).equal(name).asList());
+      return policyPacks.get(0);
     } catch (IndexOutOfBoundsException e) {
       log.error("No such policy pack exists,{} accountId{} uuid{}", e, accountId, name);
       if (create == true) {
@@ -85,6 +83,8 @@ public class PolicyPackDAO {
     }
   }
   public List<PolicyPack> list(String accountId) {
-    return hPersistence.createQuery(PolicyPack.class).field(PolicySetId.accountId).equal(accountId).asList();
+    List<PolicyPack> policyPacks= hPersistence.createQuery(PolicyPack.class).field(PolicySetId.accountId).equal(accountId).asList();
+     policyPacks.addAll(hPersistence.createQuery(PolicyPack.class).field(PolicySetId.accountId).equal("").asList()) ;
+     return policyPacks;
   }
 }

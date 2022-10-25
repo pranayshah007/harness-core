@@ -148,8 +148,8 @@ public class GovernancePolicyEnforcementResource {
       throw new InvalidRequestException("Policy Enforcement with given name already exits");
     }
     // TODO: Re enable after testing
-    // policyService.check(accountId, policyEnforcement.getPolicyIds());
-    // policyPackService.check(accountId, policyEnforcement.getPolicyPackIDs());
+    policyService.check(accountId, policyEnforcement.getPolicyIds());
+    policyPackService.check(accountId, policyEnforcement.getPolicyPackIDs());
     policyEnforcementService.save(policyEnforcement);
 
     // Insert a record in dkron

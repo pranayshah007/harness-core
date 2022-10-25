@@ -20,8 +20,10 @@ import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.dto.CreatePolicyExecutionDTO;
+import io.harness.ccm.views.dto.CreatePolicyExecutionFilterDTO;
 import io.harness.ccm.views.dto.CreatePolicyPackDTO;
 import io.harness.ccm.views.entities.PolicyExecution;
+import io.harness.ccm.views.entities.PolicyExecutionFilter;
 import io.harness.ccm.views.service.PolicyExecutionService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -124,27 +126,26 @@ public class GovernancePolicyExecutionResource {
     return ResponseDTO.newResponse(policyExecution.toDTO());
   }
 
-  @POST
-  @Path("execution/list")
-  @ApiOperation(value = "Get execution for account", nickname = "getPolicyExecution")
-  @Produces(MediaType.APPLICATION_JSON)
-  @Operation(operationId = "getPolicyExecution", description = "Fetch PolicyExecution ",
-      summary = "Fetch PolicyExecution for account",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns List of PolicyExecution",
-            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-      })
-  public ResponseDTO<List<PolicyExecution>>
-  listPolicyExecution(
-      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true,
-          description = "Request body containing policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
-    // rbacHelper.checkPolicyExecutionPermission(accountId, null, null);
-    // TODO: Implement search support in this api
-    return ResponseDTO.newResponse(policyExecutionService.list(accountId));
-  }
+    @POST
+    @Path("execution/list")
+    @ApiOperation(value = "Get execution for account", nickname = "getPolicyExecution")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getPolicyExecution", description = "Fetch PolicyExecution ", summary = "Fetch PolicyExecution for account",
+            responses =
+                    {
+                            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                                    description = "Returns List of PolicyExecution", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+                    })
+    public ResponseDTO<List<PolicyExecution>>
+    filterPolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+                 @RequestBody(required = true,
+                           description = "Request body containing policy pack object") @Valid CreatePolicyExecutionFilterDTO createPolicyExecutionFilterDTO) {
+        // rbacHelper.checkPolicyExecutionPermission(accountId, null, null);
+        // TODO: Implement search support in this api
+        PolicyExecutionFilter policyExecutionFilter= createPolicyExecutionFilterDTO.getPolicyExecutionFilter();
+        return ResponseDTO.newResponse(policyExecutionService.filterExecution(policyExecutionFilter));
+    }
 
   @GET
   @Path("execution/{policyExecutionId}")

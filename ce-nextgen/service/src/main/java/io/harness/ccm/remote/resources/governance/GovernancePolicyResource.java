@@ -117,10 +117,10 @@ public class GovernancePolicyResource {
     if (governancePolicyService.listid(accountId, policy.getName(), true) != null) {
       throw new InvalidRequestException("Policy  with given name already exits");
     }
-
-      if (governancePolicyService.listid(accountId, policy.getUuid(), true) != null) {
-        throw new InvalidRequestException("Policy with this uuid already exits");
-      }
+//
+//      if (governancePolicyService.listid(accountId, policy.getUuid(), true) != null) {
+//        throw new InvalidRequestException("Policy with this uuid already exits");
+//      }
     // Set accountId only in case of non OOTB policies
     if (!policy.getIsOOTB()) {
       policy.setAccountId(accountId);

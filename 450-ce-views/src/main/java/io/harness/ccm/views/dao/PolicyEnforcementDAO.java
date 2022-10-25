@@ -77,7 +77,7 @@ public class PolicyEnforcementDAO {
       if (create == true) {
         return null;
       }
-      throw new InvalidRequestException("No such policy pack exists");
+      throw new InvalidRequestException("No such pol m icy pack exists");
     }
   }
 

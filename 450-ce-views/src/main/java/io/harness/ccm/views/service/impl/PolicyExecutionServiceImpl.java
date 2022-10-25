@@ -9,26 +9,35 @@ package io.harness.ccm.views.service.impl;
 
 import io.harness.ccm.views.dao.PolicyExecutionDAO;
 import io.harness.ccm.views.entities.PolicyExecution;
+import io.harness.ccm.views.entities.PolicyExecutionFilter;
+import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ccm.views.service.PolicyExecutionService;
 
 import com.google.inject.Inject;
 import java.util.List;
 
 public class PolicyExecutionServiceImpl implements PolicyExecutionService {
-  @Inject private PolicyExecutionDAO policyExecutionDAO;
+    @Inject
+    private PolicyExecutionDAO policyExecutionDAO;
+    private GovernancePolicyService policyService;
 
-  @Override
-  public boolean save(PolicyExecution policyExecution) {
-    return policyExecutionDAO.save(policyExecution);
-  }
+    @Override
+    public boolean save(PolicyExecution policyExecution) {
+        return policyExecutionDAO.save(policyExecution);
+    }
 
   @Override
   public PolicyExecution get(String accountId, String uuid) {
     return policyExecutionDAO.get(accountId, uuid);
   }
+    @Override
+    public List<PolicyExecution> list(String accountId) {
+        return policyExecutionDAO.list(accountId);
+    }
 
-  @Override
-  public List<PolicyExecution> list(String accountId) {
-    return policyExecutionDAO.list(accountId);
-  }
+
+    @Override
+    public List<PolicyExecution> filterExecution(PolicyExecutionFilter policyExecutionFilter) {
+    return policyExecutionDAO.filterExecution(policyExecutionFilter);
+    }
 }

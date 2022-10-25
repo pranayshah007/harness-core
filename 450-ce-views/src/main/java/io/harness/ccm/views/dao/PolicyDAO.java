@@ -14,6 +14,8 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
+import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
@@ -23,6 +25,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @Singleton
 public class PolicyDAO {
   @Inject private HPersistence hPersistence;
+  private List<Policy> policies;
 
   public boolean save(Policy policy) {
     log.info("created: {}", hPersistence.save(policy));
@@ -40,7 +43,9 @@ public class PolicyDAO {
   }
 
   public List<Policy> list(String accountId) {
-    return hPersistence.createQuery(Policy.class).field(PolicyId.accountId).equal(accountId).asList();
+    List<Policy> policies= hPersistence.createQuery(Policy.class).field(PolicyId.accountId).equal(accountId).asList();
+    policies.addAll( hPersistence.createQuery(Policy.class).field(PolicyId.accountId).equal("").asList());
+    return policies;
   }
 
   public List<Policy> findByResource(String resource, String accountId) {
@@ -54,17 +59,17 @@ public class PolicyDAO {
     return query.asList();
   }
 
+
   public Policy listid(String accountId, String name, boolean create) {
     try {
-      return hPersistence.createQuery(Policy.class)
-          .field(PolicyId.accountId)
-          .equal(accountId)
-          .field(PolicyId.name)
-          .equal(name)
-          .asList()
-          .get(0);
-    } catch (IndexOutOfBoundsException e) {
-      log.error("No such policy exists,{} accountId{} uuid{}", e, accountId, name);
+     List<Policy>policies= hPersistence.createQuery(Policy.class).field(PolicyId.accountId)
+              .equal(accountId).field(PolicyId.name).equal(name).asList();
+     policies.addAll(hPersistence.createQuery(Policy.class).field(PolicyId.accountId).equal("")
+             .field(PolicyId.name).equal(name).asList());
+     return policies.get(0);
+    }
+    catch (IndexOutOfBoundsException e) {
+      log.error("No such policy exists,{} accountId {} name {}", e, accountId, name);
       if (create == true) {
         return null;
       }

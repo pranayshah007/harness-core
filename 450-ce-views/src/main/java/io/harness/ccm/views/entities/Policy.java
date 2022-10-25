@@ -46,13 +46,13 @@ public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware
                                      CreatedByAware, UpdatedByAware {
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
-  @Schema(description = "Identifier") String name;
+  @Schema(description = "name") String name;
   @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;
   @Schema(description = NGCommonEntityConstants.POLICY) String policyYaml;
   @Schema(description = NGCommonEntityConstants.TAGS) List<String> tags;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
-  @Schema(description = "cloudProvider") PolicyCloudProviderType cloudProvider;
+ // @Schema(description = "cloudProvider") PolicyCloudProviderType cloudProvider;
   @Schema(description = "versionLabel") String versionLabel;
   @Schema(description = "isStablePolicy") Boolean isStablePolicy;
   @Schema(description = "storeType") PolicyStoreType storeType;
@@ -69,7 +69,7 @@ public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware
                  .name("policy")
                  .field(PolicyId.name)
                  .field(PolicyId.accountId)
-                 .field(PolicyId.cloudProvider)
+                // .field(PolicyId.cloudProvider)
                  .field(PolicyId.orgIdentifier)
                  .field(PolicyId.projectIdentifier)
                  .build())
@@ -84,7 +84,7 @@ public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware
         .name(getName())
         .description(getDescription())
         .policyYaml(getPolicyYaml())
-        .cloudProvider(getCloudProvider())
+       // .cloudProvider(getCloudProvider())
         .versionLabel(getVersionLabel())
         .isStablePolicy(getIsStablePolicy())
         .isOOTB(getIsOOTB())
