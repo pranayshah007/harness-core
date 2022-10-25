@@ -46,14 +46,6 @@ public class EC2RecommendationDAO {
   @Inject private DSLContext dslContext;
 
   @NonNull
-  public Optional<EC2Recommendation> fetchECSRecommendationById(@NonNull String accountIdentifier, @NonNull String id) {
-    return Optional.ofNullable(hPersistence.createQuery(EC2Recommendation.class, excludeValidate)
-                                   .filter(EC2RecommendationKeys.accountId, accountIdentifier)
-                                   .filter(EC2RecommendationKeys.uuid, new ObjectId(id))
-                                   .get());
-  }
-
-  @NonNull
   public EC2Recommendation saveRecommendation(EC2Recommendation ec2Recommendation) {
     Query<EC2Recommendation> query = hPersistence.createQuery(EC2Recommendation.class)
                                          .field(EC2RecommendationKeys.accountId)
