@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
+import io.harness.cdng.creator.plan.rollback.RollbackPlanCreator;
 import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
 import io.harness.cdng.creator.plan.stage.OverridesFromEnvironment.OverridesFromEnvironmentBuilder;
@@ -212,6 +213,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       adviserObtainment.addAll(getAdviserObtainmentFromMetaData(stageField));
     }
     return adviserObtainment;
+  }
+
+  @Override
+  protected PlanCreationResponse createPlanForRollback(PlanCreationContext ctx, DeploymentStageNode config) {
+    return RollbackPlanCreator.createPlanForRollbackFromStageField(ctx.getCurrentField());
   }
 
   public String getIdentifierWithExpression(PlanCreationContext ctx, DeploymentStageNode node, String identifier) {
