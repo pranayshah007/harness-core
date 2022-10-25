@@ -10,7 +10,6 @@ package io.harness.cdng.creator.plan.execution;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.creator.plan.rollback.RollbackPlanCreator;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.execution.ExecutionElementConfig;
@@ -36,7 +35,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 @OwnedBy(CDC)
@@ -57,15 +55,6 @@ public class CDExecutionPMSPlanCreator extends ChildrenPlanCreator<ExecutionElem
           PlanCreationResponse.builder()
               .dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap))
               .build());
-    }
-
-    // TODO: NEED TO CREATE A ROLLBACK PLAN CREATOR
-    // add rollback dependency
-    YamlField executionStepsField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STEPS);
-    PlanCreationResponse planForRollback = RollbackPlanCreator.createPlanForRollback(ctx, ctx.getCurrentField());
-    if (EmptyPredicate.isNotEmpty(planForRollback.getNodes())) {
-      responseMap.put(
-          Objects.requireNonNull(executionStepsField).getNode().getUuid() + "_combinedRollback", planForRollback);
     }
 
     return responseMap;
