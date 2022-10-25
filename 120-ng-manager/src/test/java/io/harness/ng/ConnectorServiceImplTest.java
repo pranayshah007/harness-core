@@ -7,8 +7,12 @@
 
 package io.harness.ng;
 
+import static io.harness.connector.ConnectorCategory.SECRET_MANAGER;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -20,6 +24,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.entities.Connector;
+import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
 import io.harness.connector.helper.HarnessManagedConnectorHelper;
 import io.harness.connector.impl.ConnectorErrorMessagesHelper;
 import io.harness.connector.services.ConnectorActivityService;
@@ -30,14 +36,19 @@ import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.eventsframework.api.Producer;
+import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.opa.entities.connector.OpaConnectorService;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.rule.Owner;
 import io.harness.telemetry.helpers.ConnectorInstrumentationHelper;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,6 +56,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 
 public class ConnectorServiceImplTest extends CategoryTest {
   private ConnectorServiceImpl connectorService;
@@ -129,5 +142,35 @@ public class ConnectorServiceImplTest extends CategoryTest {
     VaultConnectorDTO vaultConnectorDTO =
         (VaultConnectorDTO) argumentCaptor.getValue().getConnectorInfo().getConnectorConfig();
     assertThat(vaultConnectorDTO.isRenewAppRoleToken()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void deleteSecretManagerWhenNoOtherSMPresent() {
+    String accountIdentifier = randomAlphabetic(10);
+    String connectorIdentifier = randomAlphabetic(10);
+    List<ConnectorResponseDTO> connectorsList = new ArrayList();
+    connectorsList.add(ConnectorResponseDTO.builder().build());
+    Page<ConnectorResponseDTO> connectorsPage = new PageImpl(connectorsList);
+    Connector secretManager = VaultConnector.builder().build();
+    secretManager.setType(ConnectorType.VAULT);
+    String fullyQualifiedIdentifier =
+        FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(accountIdentifier, null, null, connectorIdentifier);
+    int page = 0;
+    int size = 2;
+    when(defaultConnectorService.list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null))
+        .thenReturn(connectorsPage);
+    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
+             fullyQualifiedIdentifier, null, null, accountIdentifier, true))
+        .thenReturn(Optional.of(secretManager));
+    try {
+      connectorService.delete(accountIdentifier, null, null, connectorIdentifier);
+      fail("Should fail with InvalidRequestException as no other secret manager is present in the account");
+    } catch (InvalidRequestException ex) {
+      assertEquals(ex.getMessage(),
+          String.format("Cannot delete the connector: %s as no other secret manager is present in the account.",
+              connectorIdentifier));
+    }
   }
 }

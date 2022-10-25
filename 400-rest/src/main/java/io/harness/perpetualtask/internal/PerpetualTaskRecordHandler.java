@@ -7,6 +7,7 @@
 
 package io.harness.perpetualtask.internal;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -108,13 +109,18 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
             .entityProcessController(new CrossEnvironmentAccountStatusBasedEntityProcessController<>(accountService))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProvider)
-            .unsorted(true)
             .redistribute(true));
   }
 
   public void assign(PerpetualTaskRecord taskRecord) {
     try (AutoLogContext ignore0 = new AccountLogContext(taskRecord.getAccountId(), OVERRIDE_ERROR)) {
       String taskId = taskRecord.getUuid();
+      if (!isEmpty(taskRecord.getDelegateId())
+          && delegateService.checkDelegateConnected(taskRecord.getAccountId(), taskRecord.getDelegateId())) {
+        perpetualTaskRecordDao.appointDelegate(taskId, taskRecord.getDelegateId(), System.currentTimeMillis());
+        log.info("Assign perpetual task {} to previously appointed delegate {}.", taskId, taskRecord.getDelegateId());
+        return;
+      }
       log.info("Assigning Delegate to the inactive {} perpetual task with id={}.", taskRecord.getPerpetualTaskType(),
           taskId);
       DelegateTask validationTask = getValidationTask(taskRecord);

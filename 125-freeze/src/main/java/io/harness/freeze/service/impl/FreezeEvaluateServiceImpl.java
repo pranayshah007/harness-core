@@ -8,7 +8,7 @@
 package io.harness.freeze.service.impl;
 
 import io.harness.encryption.Scope;
-import io.harness.freeze.beans.CurrentOrUpcomingActiveWindow;
+import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.EntityConfig;
 import io.harness.freeze.beans.FilterType;
 import io.harness.freeze.beans.FreezeEntityRule;
@@ -56,9 +56,8 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
     Page<FreezeSummaryResponseDTO> result = freezeCRUDService.list(criteria, pageRequest);
     List<FreezeSummaryResponseDTO> configs = result.getContent();
     for (FreezeSummaryResponseDTO freezeSummaryResponseDTO : configs) {
-      CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow =
-          freezeSummaryResponseDTO.getCurrentOrUpcomingActiveWindow();
-      if (FreezeTimeUtils.currentWindowIsActive(currentOrUpcomingActiveWindow)
+      CurrentOrUpcomingWindow currentOrUpcomingWindow = freezeSummaryResponseDTO.getCurrentOrUpcomingWindow();
+      if (FreezeTimeUtils.currentWindowIsActive(currentOrUpcomingWindow)
           && matchesEntities(entityMap, freezeSummaryResponseDTO.getRules())) {
         freezeSummaryResponseDTOList.add(freezeSummaryResponseDTO);
       }
@@ -98,12 +97,11 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
 
   private FreezeSummaryResponseDTO getGlobalFreezeIfActive(
       String accountId, String orgIdentifier, String projectIdentifier) {
-    FreezeSummaryResponseDTO freezeSummaryResponseDTO = NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(
-        freezeCRUDService.getGlobalFreeze(accountId, orgIdentifier, projectIdentifier));
-    CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow =
-        freezeSummaryResponseDTO.getCurrentOrUpcomingActiveWindow();
+    FreezeSummaryResponseDTO freezeSummaryResponseDTO =
+        freezeCRUDService.getGlobalFreezeSummary(accountId, orgIdentifier, projectIdentifier);
+    CurrentOrUpcomingWindow currentOrUpcomingWindow = freezeSummaryResponseDTO.getCurrentOrUpcomingWindow();
     if (FreezeStatus.ENABLED.equals(freezeSummaryResponseDTO.getStatus())
-        && FreezeTimeUtils.currentWindowIsActive(currentOrUpcomingActiveWindow)) {
+        && FreezeTimeUtils.currentWindowIsActive(currentOrUpcomingWindow)) {
       return freezeSummaryResponseDTO;
     }
     return null;
@@ -146,9 +144,7 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
   private boolean matchesEntities(Map<FreezeEntityType, List<String>> entityMap, FreezeEntityRule rules) {
     List<EntityConfig> entities = rules.getEntityConfigList()
                                       .stream()
-                                      .filter(entityConfig
-                                          -> !FilterType.ALL.equals(entityConfig.getFilterType())
-                                              && entityMap.containsKey(entityConfig.getFreezeEntityType()))
+                                      .filter(entityConfig -> !FilterType.ALL.equals(entityConfig.getFilterType()))
                                       .collect(Collectors.toList());
     for (EntityConfig entity : entities) {
       if (!matchesEntities(entityMap, entity)) {
@@ -158,11 +154,15 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
     return true;
   }
 
-  private boolean matchesEntities(Map<FreezeEntityType, List<String>> entityMap, EntityConfig entityConfig) {
-    if (FilterType.NOT_EQUALS.equals(entityConfig.getFilterType())) {
-      return !entityConfig.getEntityReference().contains(entityMap.get(entityConfig.getEntityReference()));
-    } else {
-      return entityConfig.getEntityReference().contains(entityMap.get(entityConfig.getEntityReference()));
+  protected boolean matchesEntities(Map<FreezeEntityType, List<String>> entityMap, EntityConfig entityConfig) {
+    if (!entityMap.containsKey(entityConfig.getFreezeEntityType())) {
+      return false;
     }
+    boolean match = entityConfig.getEntityReference().stream().anyMatch(
+        entityRef -> entityMap.get(entityConfig.getFreezeEntityType()).contains(entityRef));
+    if (FilterType.NOT_EQUALS.equals(entityConfig.getFilterType())) {
+      return !match;
+    }
+    return match;
   }
 }

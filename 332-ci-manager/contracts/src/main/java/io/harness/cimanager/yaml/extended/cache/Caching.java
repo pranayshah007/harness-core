@@ -22,15 +22,15 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonTypeName("cacheOptions")
+@JsonTypeName("caching")
 @TypeAlias("CICacheOptions")
-@RecasterAlias("io.harness.beans.yaml.extended.cache.CacheOptions")
+@RecasterAlias("io.harness.beans.yaml.extended.cache.Caching")
 @OwnedBy(CI)
-public class CacheOptions {
+public class Caching {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> enabled;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  private ParameterField<List<String>> cachedPaths;
+  private ParameterField<List<String>> paths;
 }

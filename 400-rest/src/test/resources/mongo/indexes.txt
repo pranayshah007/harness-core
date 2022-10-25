@@ -21,8 +21,6 @@ accounts {"name": "next_iteration_license_info2", "background": true} {"licenseE
 accounts {"name": "perpetualTaskRebalanceIteration_1", "background": true} {"perpetualTaskRebalanceIteration": 1}
 accounts {"name": "resourceLookupSyncIteration_1", "background": true} {"resourceLookupSyncIteration": 1}
 accounts {"name": "secretManagerValidationIterator_1", "background": true} {"secretManagerValidationIterator": 1}
-accounts {"name": "serviceGuardDataAnalysisIteration_1", "background": true} {"serviceGuardDataAnalysisIteration": 1}
-accounts {"name": "serviceGuardDataCollectionIteration_1", "background": true} {"serviceGuardDataCollectionIteration": 1}
 accounts {"name": "usageMetricsTaskIteration_1", "background": true} {"usageMetricsTaskIteration": 1}
 accounts {"name": "workflowDataCollectionIteration_1", "background": true} {"workflowDataCollectionIteration": 1}
 activities {"name": "accountId_1", "background": true} {"accountId": 1}
@@ -832,6 +830,8 @@ verificationServiceConfigurations {"name": "accountId_1", "background": true} {"
 verificationServiceConfigurations {"name": "appId_1", "background": true} {"appId": 1}
 verificationServiceConfigurations {"name": "createdAt_1", "background": true} {"createdAt": 1}
 verificationServiceConfigurations {"name": "envId_1", "background": true} {"envId": 1}
+verificationServiceConfigurations {"name": "serviceGuardDataAnalysisIteration_1", "background": true} {"serviceGuardDataAnalysisIteration": 1}
+verificationServiceConfigurations {"name": "serviceGuardDataCollectionIteration_1", "background": true} {"serviceGuardDataCollectionIteration": 1}
 verificationServiceConfigurations {"name": "serviceId_1", "background": true} {"serviceId": 1}
 verificationServiceConfigurations {"name": "unique_name", "unique": true} {"appId": 1, "envId": 1, "name": 1}
 verificationServiceConfigurations {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
