@@ -12,7 +12,6 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
 import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
 import static io.harness.persistence.HPersistence.upsertReturnNewOptions;
-import static io.harness.persistence.HQuery.excludeValidate;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -26,11 +25,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
 import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 import org.jooq.DSLContext;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
