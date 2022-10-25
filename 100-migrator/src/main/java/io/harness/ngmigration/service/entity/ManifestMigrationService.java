@@ -335,8 +335,12 @@ public class ManifestMigrationService extends NgMigrationService {
         gitStoreBuilder.paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
       }
     } else {
-      gitStoreBuilder.branch(ParameterField.createValueField(gitFileConfig.getBranch()))
-          .paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
+      gitStoreBuilder.branch(ParameterField.createValueField(gitFileConfig.getBranch()));
+      if (StringUtils.isBlank(gitFileConfig.getFilePath())) {
+        gitStoreBuilder.folderPath(ParameterField.createValueField("/"));
+      } else {
+        gitStoreBuilder.paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
+      }
     }
     return gitStoreBuilder.build();
   }

@@ -1104,31 +1104,9 @@ public class AccountServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testAccountIteration() throws IllegalAccessException {
     final Account account = anAccount().withCompanyName(generateUuid()).build();
-    long serviceGuardDataCollectionIteration = random.nextLong();
-    FieldUtils.writeField(
-        account, AccountKeys.serviceGuardDataCollectionIteration, serviceGuardDataCollectionIteration, true);
-    long serviceGuardDataAnalysisIteration = random.nextLong();
-    FieldUtils.writeField(
-        account, AccountKeys.serviceGuardDataAnalysisIteration, serviceGuardDataAnalysisIteration, true);
+
     long workflowDataCollectionIteration = random.nextLong();
     FieldUtils.writeField(account, AccountKeys.workflowDataCollectionIteration, workflowDataCollectionIteration, true);
-
-    assertThat(account.obtainNextIteration(AccountKeys.serviceGuardDataCollectionIteration))
-        .isEqualTo(serviceGuardDataCollectionIteration);
-    assertThat(account.obtainNextIteration(AccountKeys.serviceGuardDataAnalysisIteration))
-        .isEqualTo(serviceGuardDataAnalysisIteration);
-    assertThat(account.obtainNextIteration(AccountKeys.workflowDataCollectionIteration))
-        .isEqualTo(workflowDataCollectionIteration);
-
-    serviceGuardDataCollectionIteration = random.nextLong();
-    account.updateNextIteration(AccountKeys.serviceGuardDataCollectionIteration, serviceGuardDataCollectionIteration);
-    assertThat(account.obtainNextIteration(AccountKeys.serviceGuardDataCollectionIteration))
-        .isEqualTo(serviceGuardDataCollectionIteration);
-
-    serviceGuardDataAnalysisIteration = random.nextLong();
-    account.updateNextIteration(AccountKeys.serviceGuardDataAnalysisIteration, serviceGuardDataAnalysisIteration);
-    assertThat(account.obtainNextIteration(AccountKeys.serviceGuardDataAnalysisIteration))
-        .isEqualTo(serviceGuardDataAnalysisIteration);
 
     workflowDataCollectionIteration = random.nextLong();
     account.updateNextIteration(AccountKeys.workflowDataCollectionIteration, workflowDataCollectionIteration);

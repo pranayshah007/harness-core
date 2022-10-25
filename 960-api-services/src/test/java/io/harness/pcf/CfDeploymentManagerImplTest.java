@@ -833,13 +833,13 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
   public void testCheckConnectivity() throws Exception {
     CfConfig pcfConfig = CfConfig.builder().username("user".toCharArray()).password("test".toCharArray()).build();
     when(sdkClient.getOrganizations(any())).thenReturn(Collections.emptyList());
-    String message = deploymentManager.checkConnectivity(pcfConfig, false, false);
+    String message = deploymentManager.checkConnectivity(pcfConfig, false);
     verify(sdkClient, times(1)).getOrganizations(any());
     assertThat(message.equalsIgnoreCase("SUCCESS")).isEqualTo(true);
 
     reset(sdkClient);
     doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).getOrganizations(any());
-    message = deploymentManager.checkConnectivity(pcfConfig, false, false);
+    message = deploymentManager.checkConnectivity(pcfConfig, false);
     assertThat(message.equalsIgnoreCase("SUCCESS")).isEqualTo(false);
   }
 

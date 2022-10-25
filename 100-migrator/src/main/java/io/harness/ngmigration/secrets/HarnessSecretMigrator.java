@@ -58,7 +58,12 @@ public class HarnessSecretMigrator implements SecretMigrator {
     if (!SettingVariableTypes.CONFIG_FILE.equals(encryptedData.getType())) {
       return null;
     }
-    return String.valueOf(secretService.fetchSecretValue(encryptedData));
+    try {
+      return String.valueOf(secretService.fetchSecretValue(encryptedData));
+    } catch (IllegalArgumentException e) {
+      log.error(String.format("There was an error processing the secret file %s", encryptedData.getName()));
+      return null;
+    }
   }
 
   @Override

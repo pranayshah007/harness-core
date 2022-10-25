@@ -76,9 +76,6 @@ public class ConnectionContextProvider {
 
   public ConnectionContext getConnectionContext(CfRequestConfig pcfRequestConfig) throws PivotalClientApiException {
     try {
-      if (pcfRequestConfig.isIgnorePcfConnectionContextCache()) {
-        return createNewConnectionContext(pcfRequestConfig);
-      }
       return contextCache.get(pcfRequestConfig.getEndpointUrl());
     } catch (Exception t) {
       throw new PivotalClientApiException(ExceptionUtils.getMessage(t));

@@ -871,4 +871,27 @@ public class NGTemplateResource {
                                        .templateVersion(importedTemplateFromRemote.getVersionLabel())
                                        .build());
   }
+
+  @GET
+  @Path("/list-repo")
+  @Hidden
+  @ApiOperation(value = "Gets all repo list", nickname = "getRepositoryList")
+  @Operation(operationId = "getRepositoryList", summary = "Gets the list of all repositories",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns a list of all the repositories of all Templates")
+      })
+
+  public ResponseDTO<HashSet<String>>
+  listRepos(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Specify true if all accessible Templates are to be included") @QueryParam(
+          INCLUDE_ALL_TEMPLATES_ACCESSIBLE) boolean includeAllTemplatesAccessibleAtScope) {
+    return ResponseDTO.newResponse(new HashSet<>());
+  }
 }

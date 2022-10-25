@@ -803,6 +803,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     Map<String, ResponseData> response = new HashMap<>();
     TerraformExecutionData terraformExecutionData = TerraformExecutionData.builder()
                                                         .executionStatus(ExecutionStatus.SUCCESS)
+                                                        .entityId("entityId")
                                                         .tfPlanJson("")
                                                         .environmentVariables(getTerraformPlanSummaryVariables(true))
                                                         .build();
@@ -815,7 +816,10 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         .prepareSweepingOutputBuilder(any(SweepingOutputInstance.Scope.class));
 
     ExecutionResponse executionResponse = state.handleAsyncResponse(executionContext, response);
+    TerraformProvisionInheritPlanElement terraformProvisionInheritPlanElement =
+        (TerraformProvisionInheritPlanElement) executionResponse.getNotifyElements().get(0);
     assertThat(executionResponse.getStateExecutionData()).isEqualTo(terraformExecutionData);
+    assertThat(terraformProvisionInheritPlanElement.getEntityId()).isEqualTo(terraformExecutionData.getEntityId());
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     assertThat(
         ((TerraformProvisionInheritPlanElement) executionResponse.getContextElements().get(0)).getProvisionerId())

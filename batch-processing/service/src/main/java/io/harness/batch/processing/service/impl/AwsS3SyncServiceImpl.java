@@ -50,10 +50,10 @@ public class AwsS3SyncServiceImpl implements AwsS3SyncService {
         AWS_SECRET_ACCESS_KEY, awsCredentials.getAwsSecretKey(), AWS_DEFAULT_REGION, awsCredentials.getRegion());
     String destinationBucketPath = null;
     try {
-      final ArrayList<String> assumeRoleCmd =
-          Lists.newArrayList("aws", "sts", "assume-role", "--role-arn", s3SyncRecord.getRoleArn(),
-              "--role-session-name", s3SyncRecord.getAccountId(), "--external-id", s3SyncRecord.getExternalId());
-
+      final ArrayList<String> assumeRoleCmd = Lists.newArrayList("aws", "sts", "assume-role", "--role-arn",
+          s3SyncRecord.getRoleArn(), String.format("--role-session-name=%s", s3SyncRecord.getAccountId()),
+          "--external-id", s3SyncRecord.getExternalId());
+      log.info("Running the assume-role command '{}'...", String.join(" ", assumeRoleCmd));
       ProcessResult processResult =
           getProcessExecutor().command(assumeRoleCmd).environment(envVariables).readOutput(true).execute();
       JsonObject credentials =
