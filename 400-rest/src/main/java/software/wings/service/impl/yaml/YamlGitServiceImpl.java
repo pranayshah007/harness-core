@@ -87,7 +87,7 @@ import io.harness.mongo.ProcessTimeLogContext;
 import io.harness.persistence.HIterator;
 import io.harness.rest.RestResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.beans.Account;

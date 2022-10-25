@@ -18,7 +18,7 @@ import io.harness.metrics.beans.MetricConfiguration;
 import io.harness.metrics.beans.MetricGroup;
 import io.harness.metrics.service.api.MetricDefinitionInitializer;
 import io.harness.metrics.service.api.MetricService;
-import io.harness.serializer.utils.YamlUtils;
+import io.harness.serializer.YamlUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;

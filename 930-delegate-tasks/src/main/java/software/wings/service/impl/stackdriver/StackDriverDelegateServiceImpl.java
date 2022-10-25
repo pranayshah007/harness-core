@@ -27,7 +27,7 @@ import io.harness.exception.VerificationOperationException;
 import io.harness.exception.WingsException;
 import io.harness.expression.SecretString;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.GcpConfig;
 import software.wings.delegatetasks.CustomDataCollectionUtils;

@@ -51,7 +51,7 @@ import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.infra.InfraDefMapper;
 import io.harness.ngmigration.service.infra.InfraMapperFactory;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.api.CloudProviderType;
 import software.wings.api.DeploymentType;

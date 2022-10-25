@@ -49,7 +49,7 @@ import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.utils.Functions;
 
 import software.wings.beans.GcpConfig;

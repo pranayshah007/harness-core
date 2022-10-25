@@ -17,7 +17,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.core.services.api.CVNGYamlSchemaService;
 import io.harness.encryption.Scope;
 import io.harness.rule.Owner;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.yaml.YamlSdkConfiguration;
 import io.harness.yaml.YamlSdkInitHelper;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;

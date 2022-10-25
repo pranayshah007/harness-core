@@ -30,7 +30,7 @@ import io.harness.gitsync.core.service.YamlChangeSetService;
 import io.harness.logging.logcontext.AccountLogContext;
 import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.beans.trigger.WebhookSource;

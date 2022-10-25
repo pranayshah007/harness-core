@@ -35,7 +35,7 @@ import io.harness.cvng.core.beans.PrometheusSampleData;
 import io.harness.cvng.core.beans.params.PrometheusConnectionParams;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
 import io.harness.rule.Owner;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;

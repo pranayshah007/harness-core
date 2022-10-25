@@ -9,7 +9,7 @@ package io.harness.debezium;
 
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.nio.ByteBuffer;

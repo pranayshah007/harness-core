@@ -64,7 +64,7 @@ import io.harness.secrets.setupusage.SecretSetupUsage;
 import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.testlib.RealMongo;
 
 import software.wings.EncryptTestUtils;

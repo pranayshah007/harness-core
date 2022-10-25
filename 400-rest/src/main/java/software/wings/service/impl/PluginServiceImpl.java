@@ -25,7 +25,7 @@ import static java.util.stream.Collectors.toMap;
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.APMVerificationConfig;
 import software.wings.beans.AccountPlugin;

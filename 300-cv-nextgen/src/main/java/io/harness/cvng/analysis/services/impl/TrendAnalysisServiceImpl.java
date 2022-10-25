@@ -62,7 +62,7 @@ import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.VerificationOperationException;
 import io.harness.persistence.HPersistence;
-import io.harness.serializer.utils.YamlUtils;
+import io.harness.serializer.YamlUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;

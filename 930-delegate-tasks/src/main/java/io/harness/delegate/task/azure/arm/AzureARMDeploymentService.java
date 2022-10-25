@@ -40,7 +40,7 @@ import io.harness.exception.runtime.azure.AzureARMValidationException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.delegatetasks.azure.arm.deployment.context.DeploymentContext;
 

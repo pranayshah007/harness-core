@@ -9,7 +9,7 @@
  *
  */
 
-package io.harness.serializer.utils;
+package io.harness.serializer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 

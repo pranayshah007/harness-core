@@ -16,8 +16,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.KeyValuePair;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
-import io.harness.serializer.utils.JsonUtils;
-import io.harness.serializer.utils.XmlUtils;
+import io.harness.serializer.JsonUtils;
+import io.harness.serializer.XmlUtils;
 
 import software.wings.sm.ContextElement;
 import software.wings.sm.StateExecutionData;

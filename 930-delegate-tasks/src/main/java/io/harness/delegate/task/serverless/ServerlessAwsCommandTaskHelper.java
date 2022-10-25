@@ -47,7 +47,7 @@ import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
-import io.harness.serializer.utils.YamlUtils;
+import io.harness.serializer.YamlUtils;
 import io.harness.serverless.AbstractExecutable;
 import io.harness.serverless.ConfigCredentialCommand;
 import io.harness.serverless.DeployCommand;

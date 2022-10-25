@@ -15,7 +15,7 @@ import io.harness.beans.KeyValuePair;
 import io.harness.exception.utils.ExceptionUtils;
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Account;
 import software.wings.beans.CanaryOrchestrationWorkflow;

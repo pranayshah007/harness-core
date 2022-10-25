@@ -11,7 +11,7 @@ import static java.lang.String.format;
 
 import io.harness.delegate.task.azure.common.validator.Validator;
 import io.harness.exception.runtime.azure.AzureBPDeploymentException;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import java.util.Map;
 

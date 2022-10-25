@@ -32,7 +32,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.blueprint.ResourceScopeType;
 import io.harness.azure.model.blueprint.assignment.Assignment;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.microsoft.azure.CloudException;

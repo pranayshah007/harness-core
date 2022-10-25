@@ -22,7 +22,7 @@ import io.harness.delegate.beans.connector.azureconnector.outcome.AzureMSIAuthUA
 import io.harness.delegate.beans.connector.gcpconnector.GcpDelegateDetailsDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
-import io.harness.reflection.ReflectionUtils;
+import io.harness.reflection.util.ReflectionUtils;
 import io.harness.rule.Owner;
 import io.harness.yaml.core.VariableExpression;
 

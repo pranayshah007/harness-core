@@ -9,7 +9,6 @@ package io.harness.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.expression.ResolveObjectResponse;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface ExpressionResolveFunctor {

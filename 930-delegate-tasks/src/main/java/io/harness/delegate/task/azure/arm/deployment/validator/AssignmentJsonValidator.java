@@ -21,7 +21,7 @@ import io.harness.azure.model.blueprint.assignment.Assignment;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.delegate.task.azure.common.validator.Validator;
 import io.harness.exception.runtime.azure.AzureBPDeploymentException;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import org.apache.commons.lang3.StringUtils;
 

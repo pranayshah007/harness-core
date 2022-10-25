@@ -12,7 +12,7 @@
 package software.wings.common;
 
 import io.harness.context.ContextElementType;
-import io.harness.serializer.utils.MapperUtils;
+import io.harness.serializer.MapperUtils;
 
 import software.wings.api.HostElement;
 import software.wings.beans.infrastructure.Host;

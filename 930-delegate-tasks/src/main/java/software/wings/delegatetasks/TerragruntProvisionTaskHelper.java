@@ -32,7 +32,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.provision.TfVarSource.TfVarSourceType;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.terraform.TerraformClient;
 import io.harness.terraform.TerraformHelperUtils;
 import io.harness.terraform.beans.TerraformVersion;

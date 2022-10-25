@@ -33,7 +33,7 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.ValidUntilAccess;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.validation.Update;
 
 import software.wings.delegatetasks.DelegateStateType;

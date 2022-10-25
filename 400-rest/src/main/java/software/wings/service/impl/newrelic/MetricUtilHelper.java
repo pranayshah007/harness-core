@@ -10,7 +10,7 @@ package software.wings.service.impl.newrelic;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.exception.WingsException;
-import io.harness.serializer.utils.YamlUtils;
+import io.harness.serializer.YamlUtils;
 
 import software.wings.common.VerificationConstants;
 import software.wings.metrics.TimeSeriesMetricDefinition;

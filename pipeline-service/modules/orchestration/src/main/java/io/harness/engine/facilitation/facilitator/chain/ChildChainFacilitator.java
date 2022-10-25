@@ -17,7 +17,7 @@ import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
-import io.harness.serializer.utils.ProtoUtils;
+import io.harness.serializer.ProtoUtils;
 
 import com.google.inject.Inject;
 import java.time.Duration;

@@ -37,7 +37,7 @@ import io.harness.exception.VerificationOperationException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.persistence.HIterator;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Account;
 import software.wings.beans.ApmMetricCollectionInfo;

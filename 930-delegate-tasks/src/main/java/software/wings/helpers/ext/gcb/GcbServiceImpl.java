@@ -15,7 +15,7 @@ import io.harness.delegate.task.artifacts.gcr.exceptions.GcbClientException;
 import io.harness.delegate.task.gcp.helpers.GcpHelperService;
 import io.harness.network.Http;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.GcpConfig;
 import software.wings.beans.TaskType;

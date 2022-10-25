@@ -22,7 +22,7 @@ import io.harness.scim.ScimMultiValuedObject;
 import io.harness.scim.ScimUser;
 import io.harness.scim.ScimUserValuedObject;
 import io.harness.scim.service.ScimUserService;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.User;
 import software.wings.beans.User.UserKeys;

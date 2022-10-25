@@ -34,7 +34,7 @@ import io.harness.azure.model.blueprint.assignment.operation.AssignmentOperation
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.exception.runtime.azure.AzureBPDeploymentException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.reflect.TypeToken;

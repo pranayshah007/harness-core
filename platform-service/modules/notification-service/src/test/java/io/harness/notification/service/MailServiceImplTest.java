@@ -37,7 +37,7 @@ import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.utils.YamlUtils;
+import io.harness.serializer.YamlUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.userng.remote.UserNGClient;
 

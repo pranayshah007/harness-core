@@ -25,7 +25,7 @@ import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.interrupts.IssuedBy;
 import io.harness.pms.contracts.interrupts.RetryInterruptConfig;
-import io.harness.serializer.utils.ProtoUtils;
+import io.harness.serializer.ProtoUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;

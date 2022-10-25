@@ -38,7 +38,7 @@ import io.harness.ng.core.CorrelationContext;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;

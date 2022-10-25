@@ -44,7 +44,7 @@ import io.harness.limits.LimitCheckerFactory;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.Repeat;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.ApmMetricCollectionInfo;
 import software.wings.beans.ApmResponseMapping;

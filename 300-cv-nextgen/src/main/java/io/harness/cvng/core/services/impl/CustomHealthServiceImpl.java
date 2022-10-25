@@ -14,7 +14,7 @@ import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.services.api.CustomHealthService;
 import io.harness.cvng.core.services.api.OnboardingService;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;

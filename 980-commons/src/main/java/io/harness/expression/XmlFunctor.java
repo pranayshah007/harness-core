@@ -7,7 +7,7 @@
 
 package io.harness.expression;
 
-import io.harness.serializer.utils.XmlUtils;
+import io.harness.serializer.XmlUtils;
 
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;

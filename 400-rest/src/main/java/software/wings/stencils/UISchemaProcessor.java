@@ -13,7 +13,7 @@ import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.artifact.JenkinsArtifactStream;
 

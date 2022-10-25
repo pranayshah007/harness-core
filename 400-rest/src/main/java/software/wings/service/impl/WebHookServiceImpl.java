@@ -41,7 +41,7 @@ import io.harness.exception.utils.ExceptionUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.exception.ExceptionLogger;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Application;

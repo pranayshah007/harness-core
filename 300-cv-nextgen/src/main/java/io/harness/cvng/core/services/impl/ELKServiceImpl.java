@@ -15,7 +15,7 @@ import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.ELKService;
 import io.harness.cvng.core.services.api.OnboardingService;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;

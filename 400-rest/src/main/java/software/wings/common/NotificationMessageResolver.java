@@ -21,7 +21,7 @@ import io.harness.beans.WorkflowType;
 import io.harness.context.ContextElementType;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
-import io.harness.serializer.utils.YamlUtils;
+import io.harness.serializer.YamlUtils;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Application;

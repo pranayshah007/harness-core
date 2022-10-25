@@ -163,7 +163,7 @@ import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueuePublisher;
-import io.harness.serializer.utils.MapperUtils;
+import io.harness.serializer.MapperUtils;
 import io.harness.service.EventService;
 import io.harness.state.inspection.StateInspectionService;
 import io.harness.tasks.ResponseData;

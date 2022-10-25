@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.VersionInfoException;
-import io.harness.serializer.utils.YamlUtils;
+import io.harness.serializer.YamlUtils;
 
 import java.io.IOException;
 import java.io.InputStream;

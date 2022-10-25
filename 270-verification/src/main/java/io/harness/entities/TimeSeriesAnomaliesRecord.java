@@ -17,7 +17,7 @@ import io.harness.exception.EncryptDecryptException;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Base;
 import software.wings.service.impl.analysis.TimeSeriesMLHostSummary;

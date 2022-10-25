@@ -7,8 +7,6 @@
 
 package io.harness.logging.logcontext;
 
-import io.harness.logging.logcontext.AutoLogContext;
-
 public class AccountLogContext extends AutoLogContext {
   public static final String ID = "accountId";
 

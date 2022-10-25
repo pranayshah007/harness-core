@@ -7,8 +7,8 @@
 
 package io.harness.cvng.core.services.impl;
 
-import com.google.common.base.Preconditions;
-import com.google.inject.Inject;
+import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
+
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.DataSourceType;
@@ -27,6 +27,8 @@ import io.harness.cvng.core.services.api.PrometheusService;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.datacollection.exception.DataCollectionException;
 
+import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -36,8 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
 
 public class PrometheusServiceImpl implements PrometheusService {
   @Inject OnboardingService onboardingService;

@@ -35,7 +35,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.rule.Owner;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;

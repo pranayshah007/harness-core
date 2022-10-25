@@ -22,7 +22,7 @@ import io.harness.generator.Randomizer;
 import io.harness.generator.SecretGenerator;
 import io.harness.rule.Owner;
 import io.harness.scm.SecretName;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.testframework.graphql.QLTestObject;
 
 import software.wings.beans.Account;

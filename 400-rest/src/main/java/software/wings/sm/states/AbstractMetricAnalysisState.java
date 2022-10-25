@@ -25,7 +25,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.context.ContextElementType;
 import io.harness.exception.utils.ExceptionUtils;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.time.Timestamp;
 import io.harness.version.VersionInfoManager;

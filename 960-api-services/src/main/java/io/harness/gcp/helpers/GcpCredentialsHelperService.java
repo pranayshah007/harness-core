@@ -8,7 +8,7 @@
 package io.harness.gcp.helpers;
 
 import io.harness.network.Http;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.auth.oauth2.OAuth2Utils;

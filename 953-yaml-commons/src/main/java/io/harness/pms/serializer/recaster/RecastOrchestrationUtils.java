@@ -19,11 +19,11 @@ import io.harness.pms.yaml.ParameterDocumentField;
 import io.harness.pms.yaml.ParameterDocumentFieldMapper;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.reflection.HarnessReflections;
+import io.harness.serializer.JsonUtils;
 import io.harness.serializer.recaster.JsonObjectRecastTransformer;
 import io.harness.serializer.recaster.ParameterFieldRecastTransformer;
 import io.harness.serializer.recaster.proto.ProtoEnumRecastTransformer;
 import io.harness.serializer.recaster.proto.ProtoRecastTransformer;
-import io.harness.serializer.utils.JsonUtils;
 import io.harness.utils.RecastReflectionUtils;
 
 import java.net.URI;

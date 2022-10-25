@@ -13,7 +13,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.delegate.task.azure.common.validator.Validator;
 import io.harness.exception.runtime.azure.AzureBPDeploymentException;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 public class BlueprintJsonValidator implements Validator<String> {
   @Override

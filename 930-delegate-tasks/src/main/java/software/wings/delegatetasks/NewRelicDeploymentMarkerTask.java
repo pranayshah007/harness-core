@@ -19,7 +19,7 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.WingsException;
 import io.harness.exception.utils.ExceptionUtils;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.NewRelicDeploymentMarkerPayload;
 import software.wings.service.impl.ThirdPartyApiCallLog;

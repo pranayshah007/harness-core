@@ -133,7 +133,7 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.governance.TimeRangeBasedFreezeConfig;
 import io.harness.rule.Owner;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.shell.AccessType;
 import io.harness.state.inspection.StateInspection;
 import io.harness.state.inspection.StateInspectionService;

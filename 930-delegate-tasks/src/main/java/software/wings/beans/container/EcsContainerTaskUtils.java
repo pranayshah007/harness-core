@@ -30,7 +30,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.utils.ExceptionUtils;
 import io.harness.expression.RegexFunctor;
 import io.harness.serializer.JsonSubtypeResolver;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.utils.EcsConvention;
 

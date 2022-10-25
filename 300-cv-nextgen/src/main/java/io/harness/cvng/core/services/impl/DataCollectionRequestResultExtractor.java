@@ -13,7 +13,7 @@ import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.google.gson.Gson;
 import java.lang.reflect.Type;

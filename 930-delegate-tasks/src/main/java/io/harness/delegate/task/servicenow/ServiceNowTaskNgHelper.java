@@ -22,7 +22,7 @@ import io.harness.exception.WingsException;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.network.Http;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.servicenow.ServiceNowFieldAllowedValueNG;
 import io.harness.servicenow.ServiceNowFieldNG;
 import io.harness.servicenow.ServiceNowFieldNG.ServiceNowFieldNGBuilder;

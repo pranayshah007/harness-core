@@ -27,7 +27,7 @@ import io.harness.cvng.core.beans.stackdriver.StackdriverDashboardDetail;
 import io.harness.cvng.core.services.impl.StackdriverServiceImpl;
 import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;

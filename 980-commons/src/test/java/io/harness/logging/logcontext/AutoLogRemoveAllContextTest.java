@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.logging;
+package io.harness.logging.logcontext;
 
 import static io.harness.logging.logcontext.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.rule.OwnerRule.GEORGE;
@@ -14,8 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.logging.logcontext.AutoLogContext;
-import io.harness.logging.logcontext.AutoLogRemoveAllContext;
 import io.harness.rule.Owner;
 
 import org.junit.Test;

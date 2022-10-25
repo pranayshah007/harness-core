@@ -8,7 +8,7 @@
 package io.harness.debezium;
 
 import io.harness.redis.RedisConfig;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import java.util.Optional;
 import java.util.Properties;

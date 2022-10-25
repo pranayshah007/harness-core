@@ -33,7 +33,7 @@ import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.exception.OnboardingException;
 import io.harness.delegate.beans.connector.datadog.DatadogConnectorDTO;
 import io.harness.ng.beans.PageResponse;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.utils.PageUtils;
 
 import com.google.common.reflect.TypeToken;

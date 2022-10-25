@@ -34,7 +34,7 @@ import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.exception.runtime.azure.AzureBPDeploymentException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.delegatetasks.azure.arm.deployment.context.DeploymentBlueprintContext;
 

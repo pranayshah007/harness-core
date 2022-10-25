@@ -23,7 +23,7 @@ import io.harness.datacollection.entity.RuntimeParameters;
 import io.harness.perpetualtask.datacollection.DataCollectionLogContext;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.delegatetasks.DelegateLogService;
 import software.wings.delegatetasks.cv.DataCollectionException;

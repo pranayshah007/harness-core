@@ -18,7 +18,7 @@ import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFA
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.persistence.AccountAccess;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Base;
 import software.wings.sm.StateType;

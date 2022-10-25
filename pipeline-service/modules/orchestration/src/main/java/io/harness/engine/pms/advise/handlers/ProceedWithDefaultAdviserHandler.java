@@ -17,7 +17,7 @@ import io.harness.pms.contracts.interrupts.AdviserIssuer;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.interrupts.IssuedBy;
-import io.harness.serializer.utils.ProtoUtils;
+import io.harness.serializer.ProtoUtils;
 
 import com.google.inject.Inject;
 

@@ -18,7 +18,7 @@ import static software.wings.common.VerificationConstants.WORKFLOW_CV_COLLECTION
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.PREDICTIVE;
 
 import io.harness.jobs.workflow.collection.WorkflowDataCollectionJob;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.service.intfc.LearningEngineService;
 import io.harness.version.ServiceApiVersion;
 

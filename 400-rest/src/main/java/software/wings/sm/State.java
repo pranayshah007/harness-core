@@ -20,7 +20,7 @@ import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.reflection.util.ExpressionReflectionUtils;
-import io.harness.serializer.utils.MapperUtils;
+import io.harness.serializer.MapperUtils;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.Activity.ActivityBuilder;

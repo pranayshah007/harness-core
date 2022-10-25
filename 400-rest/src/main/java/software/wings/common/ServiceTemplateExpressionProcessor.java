@@ -11,7 +11,7 @@
 
 package software.wings.common;
 
-import io.harness.serializer.utils.MapperUtils;
+import io.harness.serializer.MapperUtils;
 
 import software.wings.api.ServiceTemplateElement;
 import software.wings.beans.Service;

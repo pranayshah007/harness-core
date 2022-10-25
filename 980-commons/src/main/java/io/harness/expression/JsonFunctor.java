@@ -7,7 +7,7 @@
 
 package io.harness.expression;
 
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import java.util.HashMap;
 import java.util.LinkedList;

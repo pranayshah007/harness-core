@@ -10,7 +10,7 @@ package io.harness.cvng.client;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.rest.RestResponse;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.google.inject.Singleton;
 import java.io.IOException;

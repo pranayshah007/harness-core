@@ -17,7 +17,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.ff.FeatureFlagService;
-import io.harness.serializer.utils.MapperUtils;
+import io.harness.serializer.MapperUtils;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.OrchestrationWorkflow;

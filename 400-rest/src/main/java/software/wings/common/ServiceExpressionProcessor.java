@@ -20,7 +20,7 @@ import io.harness.beans.SearchFilter.Operator;
 import io.harness.context.ContextElementType;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
-import io.harness.serializer.utils.MapperUtils;
+import io.harness.serializer.MapperUtils;
 
 import software.wings.api.ServiceElement;
 import software.wings.beans.Service;

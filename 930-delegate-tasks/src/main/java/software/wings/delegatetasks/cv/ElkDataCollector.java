@@ -19,7 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.ElkConfig;
 import software.wings.helpers.ext.elk.ElkRestClient;

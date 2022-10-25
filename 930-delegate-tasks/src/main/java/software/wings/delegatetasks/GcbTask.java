@@ -34,7 +34,7 @@ import io.harness.delegate.task.artifacts.gcr.exceptions.GcbClientException;
 import io.harness.exception.InterruptedRuntimeException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Log;
 import software.wings.beans.command.GcbTaskParams;

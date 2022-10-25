@@ -39,7 +39,7 @@ import io.harness.secrets.setupusage.SecretSetupUsage;
 import io.harness.secrets.validation.BaseSecretValidator;
 import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptionType;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.SettingAttribute;

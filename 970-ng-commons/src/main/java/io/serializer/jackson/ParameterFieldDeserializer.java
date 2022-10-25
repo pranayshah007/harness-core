@@ -13,7 +13,7 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidator;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.utils.NGRuntimeInputUtils;
 
 import com.fasterxml.jackson.core.JsonParser;

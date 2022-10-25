@@ -18,7 +18,7 @@ import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.logging.logcontext.AccountLogContext;
 import io.harness.logging.logcontext.AutoLogContext;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.DelegateTaskBroadcast;
 import software.wings.beans.PerpetualTaskBroadcastEvent;

@@ -34,7 +34,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UsageRestrictionException;
 import io.harness.exception.WingsException;
 import io.harness.persistence.HIterator;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Application;
 import software.wings.beans.Base;

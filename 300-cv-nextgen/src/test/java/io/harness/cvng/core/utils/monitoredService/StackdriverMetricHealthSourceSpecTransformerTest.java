@@ -27,7 +27,7 @@ import io.harness.cvng.core.entities.AnalysisInfo.SLI;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.rule.Owner;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;

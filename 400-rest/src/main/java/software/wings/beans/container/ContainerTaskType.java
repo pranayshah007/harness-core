@@ -10,7 +10,7 @@ package software.wings.beans.container;
 import static org.joor.Reflect.on;
 
 import io.harness.exception.WingsException;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.OverridingContainerTaskTypeDescriptor;

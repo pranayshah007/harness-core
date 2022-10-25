@@ -23,7 +23,7 @@ import io.harness.delegate.task.DataCollectionExecutorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.AwsConfig;
 import software.wings.delegatetasks.DelegateLogService;

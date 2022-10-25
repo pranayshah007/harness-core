@@ -19,7 +19,7 @@ import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.utils.YamlUtils;
+import io.harness.serializer.YamlUtils;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.AwsConfig;

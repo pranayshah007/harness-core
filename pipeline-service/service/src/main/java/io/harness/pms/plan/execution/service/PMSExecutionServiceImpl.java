@@ -54,8 +54,8 @@ import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterProperties
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
-import io.harness.serializer.utils.JsonUtils;
-import io.harness.serializer.utils.ProtoUtils;
+import io.harness.serializer.JsonUtils;
+import io.harness.serializer.ProtoUtils;
 import io.harness.service.GraphGenerationService;
 
 import com.google.inject.Inject;

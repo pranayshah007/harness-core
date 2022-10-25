@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.serializer.utils;
+package io.harness.serializer;
 
 import lombok.experimental.UtilityClass;
 import org.modelmapper.Conditions;

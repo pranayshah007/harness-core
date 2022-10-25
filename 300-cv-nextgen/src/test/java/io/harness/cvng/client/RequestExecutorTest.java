@@ -22,7 +22,7 @@ import io.harness.eraro.Level;
 import io.harness.eraro.ResponseMessage;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import java.io.IOException;
 import okhttp3.MediaType;

@@ -39,7 +39,7 @@ import io.harness.notification.senders.MailSenderImpl;
 import io.harness.notification.service.api.ChannelService;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
-import io.harness.serializer.utils.YamlUtils;
+import io.harness.serializer.YamlUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.userng.remote.UserNGClient;
 

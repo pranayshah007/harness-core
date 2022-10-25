@@ -110,7 +110,7 @@ import io.harness.provision.TfVarSource.TfVarSourceType;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.PhaseElement;

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.logging;
+package io.harness.logging.exception;
 
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.eraro.ErrorCode.INVALID_ARGUMENT;
@@ -20,7 +20,6 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.WingsException;
-import io.harness.logging.exception.ExceptionLogger;
 import io.harness.rule.Owner;
 
 import java.util.EnumSet;

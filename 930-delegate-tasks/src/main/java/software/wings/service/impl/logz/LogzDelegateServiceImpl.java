@@ -14,7 +14,7 @@ import static software.wings.service.impl.ThirdPartyApiCallLog.PAYLOAD;
 
 import io.harness.exception.WingsException;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.config.LogzConfig;
 import software.wings.delegatetasks.DelegateLogService;

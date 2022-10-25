@@ -31,7 +31,7 @@ import io.harness.pms.contracts.governance.ExpansionPlacementStrategy;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.sdk.core.governance.ExpansionResponse;
 import io.harness.rule.Owner;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;

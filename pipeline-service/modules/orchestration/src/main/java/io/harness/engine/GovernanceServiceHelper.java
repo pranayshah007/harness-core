@@ -22,7 +22,7 @@ import io.harness.opaclient.model.OpaPolicySetEvaluationResponse;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.UserPrincipal;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;

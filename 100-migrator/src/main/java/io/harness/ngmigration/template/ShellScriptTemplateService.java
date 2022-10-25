@@ -9,7 +9,7 @@ package io.harness.ngmigration.template;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;

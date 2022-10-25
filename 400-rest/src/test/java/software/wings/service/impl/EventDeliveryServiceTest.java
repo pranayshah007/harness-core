@@ -40,7 +40,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.service.EventConfigService;
 import io.harness.service.EventService;
 import io.harness.waiter.WaitNotifyEngine;

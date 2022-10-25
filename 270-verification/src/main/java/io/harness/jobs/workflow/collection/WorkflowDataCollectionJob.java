@@ -15,7 +15,7 @@ import io.harness.managerclient.VerificationManagerClient;
 import io.harness.managerclient.VerificationManagerClientHelper;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.scheduler.PersistentScheduler;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.service.intfc.ContinuousVerificationService;
 
 import software.wings.service.impl.analysis.AnalysisContext;

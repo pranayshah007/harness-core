@@ -10,7 +10,7 @@ package software.wings.sm.states.customdeploymentng;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.serializer.JsonSubtypeResolver;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;

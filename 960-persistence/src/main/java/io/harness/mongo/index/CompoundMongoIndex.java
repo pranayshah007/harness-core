@@ -11,7 +11,7 @@ import static org.atmosphere.annotation.AnnotationUtil.logger;
 
 import io.harness.mongo.IndexCreator;
 import io.harness.mongo.IndexCreator.IndexCreatorBuilder;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.mongodb.BasicDBObject;
 import java.util.List;

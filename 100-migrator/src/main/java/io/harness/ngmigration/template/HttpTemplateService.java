@@ -8,7 +8,7 @@
 package io.harness.ngmigration.template;
 
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.steps.StepSpecTypeConstants;
 
 import software.wings.beans.template.Template;

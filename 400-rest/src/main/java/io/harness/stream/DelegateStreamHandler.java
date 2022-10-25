@@ -29,7 +29,7 @@ import io.harness.exception.WingsException;
 import io.harness.logging.logcontext.AccountLogContext;
 import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.metrics.impl.CachedMetricsPublisher;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.logcontext.WebsocketLogContext;

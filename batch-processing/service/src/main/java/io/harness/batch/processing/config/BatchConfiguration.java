@@ -9,7 +9,7 @@ package io.harness.batch.processing.config;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import io.harness.serializer.utils.YamlUtils;
+import io.harness.serializer.YamlUtils;
 
 import java.io.File;
 import java.io.IOException;

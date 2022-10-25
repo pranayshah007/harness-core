@@ -38,7 +38,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secrets.SecretService;
 import io.harness.secrets.remote.SecretNGManagerClient;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;

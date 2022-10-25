@@ -94,7 +94,7 @@ import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.reflection.util.ReflectionUtils;
-import io.harness.serializer.utils.MapperUtils;
+import io.harness.serializer.MapperUtils;
 import io.harness.state.inspection.ExpressionVariableUsage;
 import io.harness.state.inspection.StateInspectionListener;
 import io.harness.state.inspection.StateInspectionService;

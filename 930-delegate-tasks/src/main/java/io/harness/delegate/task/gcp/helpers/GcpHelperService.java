@@ -22,7 +22,7 @@ import io.harness.gcp.helpers.GcpHttpTransportHelperService;
 import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.manage.GlobalContextManager;
 import io.harness.network.Http;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.TaskType;
 

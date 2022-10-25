@@ -15,7 +15,7 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentBasicInfo;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.pms.sdk.core.governance.ExpandedValue;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import lombok.Builder;
 

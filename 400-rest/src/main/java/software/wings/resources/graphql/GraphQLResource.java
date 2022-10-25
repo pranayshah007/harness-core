@@ -23,7 +23,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.logging.logcontext.AccountLogContext;
 import io.harness.logging.logcontext.AutoLogContext;
 import io.harness.secrets.validation.BaseSecretValidator;
-import io.harness.serializer.utils.JsonUtils;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.ApiKeyEntry;
