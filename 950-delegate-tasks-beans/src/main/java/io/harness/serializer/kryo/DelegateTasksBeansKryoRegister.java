@@ -812,6 +812,8 @@ import software.wings.beans.command.JenkinsTaskParams;
 import software.wings.beans.command.KubernetesResizeParams;
 import software.wings.beans.container.AwsAutoScalarConfig;
 import software.wings.beans.infrastructure.instance.info.EcsContainerInfo;
+import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
+import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
 import software.wings.beans.s3.FetchS3FilesCommandParams;
 import software.wings.beans.s3.FetchS3FilesExecutionResponse;
@@ -1887,5 +1889,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(NoAvailableDelegatesException.class, 73990);
     kryo.register(NoDelegatesException.class, 73991);
     kryo.register(DelegateTaskExpiredException.class, 980036);
+    kryo.register(K8sPodInfo.class, 980100);
+    kryo.register(K8sContainerInfo.class, 980101);
   }
 }

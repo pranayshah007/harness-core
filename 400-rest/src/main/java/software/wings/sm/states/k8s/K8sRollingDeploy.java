@@ -247,6 +247,7 @@ public class K8sRollingDeploy extends AbstractK8sState {
 
     stateExecutionData.setNewInstanceStatusSummaries(
         fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
+    stateExecutionData.setPodsList(newPods);
 
     K8sElement k8sElement = k8sStateHelper.fetchK8sElement(context);
     if (k8sElement == null) {

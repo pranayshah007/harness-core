@@ -16,22 +16,23 @@ import static java.util.stream.Collectors.toList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidRequestException;
-import io.harness.k8s.KubernetesContainerService;
-import io.harness.k8s.model.K8sContainer;
+import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
-import io.harness.perpetualtask.PerpetualTaskId;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
+import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
 import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
-import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
+import com.google.protobuf.ByteString;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,13 +41,47 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
-  private final KubernetesContainerService kubernetesContainerService;
   private final ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
+  private final KryoSerializer kryoSerializer;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
 
   @Override
-  public List<InstanceInfo> fetchRunningInstanceDetails(
-      PerpetualTaskId taskId, K8sClusterConfig config, DirectK8sInstanceSyncTaskDetails k8sInstanceSyncTaskDetails) {
+  public InstanceSyncData fetchRunningInstanceDetails(
+      String perpetualTaskId, CgDeploymentReleaseDetails releaseDetails) {
+    DirectK8sInstanceSyncTaskDetails instanceSyncTaskDetails;
+    try {
+      instanceSyncTaskDetails =
+          AnyUtils.unpack(releaseDetails.getReleaseDetails(), DirectK8sInstanceSyncTaskDetails.class);
+    } catch (Exception e) {
+      log.error("Unable to unpack Instance Sync task details for Id: [{}]", releaseDetails.getTaskDetailsId(), e);
+      return InstanceSyncData.newBuilder().setTaskDetailsId(releaseDetails.getTaskDetailsId()).build();
+    }
+    try {
+      K8sClusterConfig config =
+          (K8sClusterConfig) kryoSerializer.asObject(instanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
+      List<InstanceInfo> runningK8sPods = fetchRunningK8sPods(config, instanceSyncTaskDetails);
+      return InstanceSyncData.newBuilder()
+          .setTaskDetailsId(releaseDetails.getTaskDetailsId())
+          .addAllInstanceData(runningK8sPods.parallelStream()
+                                  .map(pod -> ByteString.copyFrom(kryoSerializer.asBytes(pod)))
+                                  .collect(toList()))
+          .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+          .build();
+    } catch (Exception e) {
+      log.error(
+          "Exception while fetching running K8s pods for release details: [{}], infra mapping Id: [{}] of type: [{}]",
+          releaseDetails.getTaskDetailsId(), releaseDetails.getInfraMappingId(), releaseDetails.getInfraMappingType(),
+          e);
+      return InstanceSyncData.newBuilder()
+          .setTaskDetailsId(releaseDetails.getTaskDetailsId())
+          .setErrorMessage("Exception while fetching running K8s pods. Exception message: " + e.getMessage())
+          .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
+          .build();
+    }
+  }
+
+  public List<InstanceInfo> fetchRunningK8sPods(
+      K8sClusterConfig config, DirectK8sInstanceSyncTaskDetails k8sInstanceSyncTaskDetails) {
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
     notNullCheck("KubernetesConfig", kubernetesConfig);
     try {

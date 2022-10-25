@@ -14,8 +14,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.helm.HelmChartInfo;
 
+import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
@@ -34,10 +38,11 @@ public class K8sDeploymentInfo extends DeploymentInfo {
   private HelmChartInfo helmChartInfo;
   private String blueGreenStageColor;
   private String clusterName;
+  private List<K8sPodInfo> k8sPods = new ArrayList<>();
 
   @Builder
   public K8sDeploymentInfo(String namespace, String releaseName, Integer releaseNumber, Set<String> namespaces,
-      HelmChartInfo helmChartInfo, String blueGreenStageColor, String clusterName) {
+      HelmChartInfo helmChartInfo, String blueGreenStageColor, String clusterName, List<K8sPodInfo> k8sPods) {
     this.namespace = namespace;
     this.releaseName = releaseName;
     this.releaseNumber = releaseNumber;
@@ -45,5 +50,6 @@ public class K8sDeploymentInfo extends DeploymentInfo {
     this.helmChartInfo = helmChartInfo;
     this.blueGreenStageColor = blueGreenStageColor;
     this.clusterName = clusterName;
+    this.k8sPods = k8sPods;
   }
 }

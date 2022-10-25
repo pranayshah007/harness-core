@@ -20,4 +20,6 @@ message CgInstanceSyncResponse {
 message InstanceSyncData {
   string task_details_id = 1;
   repeated bytes instance_data = 2;
+  string execution_status = 3;
+  string error_message = 4;
 }

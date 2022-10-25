@@ -19,6 +19,7 @@ import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.api.DeploymentEvent;
 import software.wings.api.DeploymentSummary;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -55,6 +57,7 @@ public class CgInstanceSyncServiceV2 {
   private final CgInstanceSyncTaskDetailsService taskDetailsService;
   private final InfrastructureMappingService infrastructureMappingService;
   private final SettingsServiceImpl cloudProviderService;
+  private final KryoSerializer kryoSerializer;
 
   public static final String INSTANCE_SYNC_V2_DURATION_METRIC = "instance_sync_v2_duration";
 
@@ -168,6 +171,14 @@ public class CgInstanceSyncServiceV2 {
 
   public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
     log.info("Got the result. Starting to process. Perpetual Task Id: [{}]", perpetualTaskId);
+    result.getInstanceDataList().forEach(instanceSyncData -> {
+      log.info("[InstanceSyncV2Tracking]: for PT: [{}], and taskId: [{}], found instances: [{}]", perpetualTaskId,
+          instanceSyncData.getTaskDetailsId(),
+          instanceSyncData.getInstanceDataList()
+              .parallelStream()
+              .map(instance -> kryoSerializer.asObject(instance.toByteArray()))
+              .collect(Collectors.toList()));
+    });
   }
 
   public InstanceSyncTrackedDeploymentDetails fetchTaskDetails(String perpetualTaskId, String accountId) {
@@ -185,7 +196,8 @@ public class CgInstanceSyncServiceV2 {
     });
 
     if (cloudProviders.size() > 1) {
-      log.warn("Multiple cloud providers are being tracked by perpetual task: [{}]. This should not happen.");
+      log.warn("Multiple cloud providers are being tracked by perpetual task: [{}]. This should not happen.",
+          perpetualTaskId);
     }
 
     return InstanceSyncTrackedDeploymentDetails.newBuilder()
