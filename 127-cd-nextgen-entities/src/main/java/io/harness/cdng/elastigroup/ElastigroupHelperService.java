@@ -70,7 +70,7 @@ public class ElastigroupHelperService {
     if (HARNESS_STORE_TYPE.equals(storeKind)) {
       validateSettingsFileRefs((HarnessStore) storeConfig, ambiance, entityType);
     } else if (!storeKind.equals(ManifestStoreType.INLINE)) {
-      validateSettingsConnectorByRef(storeConfig, ambiance, entityType);
+      throw new InvalidRequestException("Only Inline and Harness Store Type are supported as of now");
     }
   }
 
@@ -86,36 +86,44 @@ public class ElastigroupHelperService {
     }
 
     if (!ParameterField.isNull(harnessStore.getFiles())) {
-      if (harnessStore.getFiles().isExpression()) {
-        return;
-      }
-
-      List<String> fileReferences = harnessStore.getFiles().getValue();
-      if (isEmpty(fileReferences)) {
-        throw new InvalidRequestException(
-            format("Cannot find any file for %s, store kind: %s", entityType, harnessStore.getKind()));
-      }
-      if (fileReferences.size() > 1) {
-        throw new InvalidRequestException(
-            format("Only one file should be provided for %s, store kind: %s", entityType, harnessStore.getKind()));
-      }
-
-      validateSettingsFileByPath(harnessStore, ambiance, harnessStore.getFiles().getValue().get(0), entityType);
+      validateSettingsFile(harnessStore, ambiance, entityType);
     }
 
     if (!ParameterField.isNull(harnessStore.getSecretFiles())) {
-      if (harnessStore.getSecretFiles().isExpression()) {
-        return;
-      }
-      List<String> secretFileReferences = harnessStore.getSecretFiles().getValue();
-
-      if (secretFileReferences.size() > 1) {
-        throw new InvalidArgumentsException(Pair.of(entityType,
-            format("Only one secret file reference should be provided for store kind: %s", harnessStore.getKind())));
-      }
-
-      validateSecretFileReference(ambiance, entityType, secretFileReferences.get(0));
+      validateSecretsFile(harnessStore, ambiance, entityType);
     }
+  }
+
+  private void validateSettingsFile(HarnessStore harnessStore, Ambiance ambiance, String entityType) {
+    if (harnessStore.getFiles().isExpression()) {
+      return;
+    }
+
+    List<String> fileReferences = harnessStore.getFiles().getValue();
+    if (isEmpty(fileReferences)) {
+      throw new InvalidRequestException(
+          format("Cannot find any file for %s, store kind: %s", entityType, harnessStore.getKind()));
+    }
+    if (fileReferences.size() > 1) {
+      throw new InvalidRequestException(
+          format("Only one file should be provided for %s, store kind: %s", entityType, harnessStore.getKind()));
+    }
+
+    validateSettingsFileByPath(harnessStore, ambiance, harnessStore.getFiles().getValue().get(0), entityType);
+  }
+
+  private void validateSecretsFile(HarnessStore harnessStore, Ambiance ambiance, String entityType) {
+    if (harnessStore.getSecretFiles().isExpression()) {
+      return;
+    }
+    List<String> secretFileReferences = harnessStore.getSecretFiles().getValue();
+
+    if (secretFileReferences.size() > 1) {
+      throw new InvalidArgumentsException(Pair.of(entityType,
+          format("Only one secret file reference should be provided for store kind: %s", harnessStore.getKind())));
+    }
+
+    validateSecretFileReference(ambiance, entityType, secretFileReferences.get(0));
   }
 
   private void validateSettingsFileByPath(

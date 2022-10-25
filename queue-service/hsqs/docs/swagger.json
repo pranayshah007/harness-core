@@ -97,6 +97,26 @@
                 }
             }
         },
+        "/v1/healthz": {
+            "get": {
+                "description": "Health API for Queue Service",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Health API for Queue Service",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/queue": {
             "post": {
                 "description": "Enqueue the request",

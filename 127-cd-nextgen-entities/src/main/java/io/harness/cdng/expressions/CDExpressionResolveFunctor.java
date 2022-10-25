@@ -14,6 +14,7 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionResolveFunctor;
 import io.harness.expression.ResolveObjectResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.yaml.ParameterField;
 
@@ -30,7 +31,8 @@ public class CDExpressionResolveFunctor implements ExpressionResolveFunctor {
   @Override
   public String processString(String expression) {
     if (EngineExpressionEvaluator.hasExpressions(expression)) {
-      return engineExpressionService.renderExpression(ambiance, expression);
+      return engineExpressionService.renderExpression(
+          ambiance, expression, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
     }
 
     return expression;
@@ -43,6 +45,7 @@ public class CDExpressionResolveFunctor implements ExpressionResolveFunctor {
     }
 
     ParameterField<?> parameterField = (ParameterField<?>) o;
+
     if (!parameterField.isExpression()) {
       return new ResolveObjectResponse(false, null);
     }

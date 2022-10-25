@@ -67,6 +67,7 @@ public class ElastigroupServiceSpec implements ServiceSpec, Visitable {
     }
 
     children.add("artifacts", artifacts);
+    children.add("startupScript", startupScript);
     if (EmptyPredicate.isNotEmpty(manifests)) {
       manifests.forEach(manifest -> children.add("manifests", manifest));
     }

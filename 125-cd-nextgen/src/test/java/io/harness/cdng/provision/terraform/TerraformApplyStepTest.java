@@ -236,9 +236,6 @@ public class TerraformApplyStepTest extends CategoryTest {
     TerraformTaskNGParameters taskParameters =
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
-    verify(terraformStepHelper)
-        .cleanupTfPlanJsonForProvisioner(
-            ambiance, applyStepParameters.getPlanStepsFqn(), applyStepParameters.getProvisionerIdentifier().getValue());
   }
   @Test
   @Owner(developers = NAMAN_TALAYCHA)

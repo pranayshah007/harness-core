@@ -12,6 +12,7 @@ public interface CVVerificationJobConstants {
   String SERVICE_IDENTIFIER_KEY = "serviceIdentifier";
   String ENV_IDENTIFIER_KEY = "envIdentifier";
   String DURATION_KEY = "duration";
+  String FAIL_ON_NO_ANALYSIS_KEY = "failOnNoAnalysis";
   String SENSITIVITY_KEY = "sensitivity";
   String RUNTIME_STRING = "<+input>";
   String TRAFFIC_SPLIT_PERCENTAGE_KEY = "trafficSplitPercentage";

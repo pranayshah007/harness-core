@@ -21,6 +21,7 @@ import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.cdng.provision.terraform.TerraformConfig;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
 import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
@@ -42,6 +43,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(EnvironmentGroupEntity.class);
     set.add(CdTelemetrySentStatus.class);
     set.add(StageExecutionInfo.class);
+    set.add(TerraformPlanExecutionDetails.class);
     set.add(InstanceDeploymentInfo.class);
     set.add(AzureARMConfig.class);
   }
@@ -58,5 +60,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     h.put("io.harness.polling.bean.PollingDocument", PollingDocument.class);
     h.put("io.harness.cdng.execution.StageExecutionInfo", StageExecutionInfo.class);
     h.put("io.harness.cdng.instance.InstanceDeploymentInfo", InstanceDeploymentInfo.class);
+    h.put("io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails",
+        TerraformPlanExecutionDetails.class);
   }
 }

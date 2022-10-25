@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.dsl;
 
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,26 +71,14 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
   @Before
   public void setup() throws IOException {
     super.before();
-    responseMapping = MetricResponseMapping.builder()
-                          .metricValueJsonPath(metricValueJSONPath)
-                          .timestampJsonPath(timestampValueJSONPath)
-                          .serviceInstanceJsonPath(serviceInstanceJsonPath)
-                          .relativeMetricValueJsonPath(relativeMetricValueJsonPath)
-                          .relativeMetricListJsonPath(relativeMetricListJsonPath)
-                          .relativeServiceInstanceValueJsonPath(relativeServiceInstanceValueJsonPath)
-                          .relativeTimestampJsonPath(relativeTimestampJsonPath)
-                          .serviceInstanceListJsonPath(serviceInstanceListJsonPath)
-                          .build();
-    builderFactory = BuilderFactory.getDefault();
-    executorService = Executors.newFixedThreadPool(10);
-    metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),
-        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
   }
 
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testExecute_customAppd() throws IOException {
+    populateAppdPaths();
+    populateResponseMapping();
     DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
     dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
     code = readDSL("300-cv-nextgen/src/main/resources/customhealth/dsl/metric-collection.datacollection");
@@ -111,8 +100,63 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
         .isEqualTo(10);
   }
 
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testExecute_customELK() throws IOException {
+    populateELKPaths();
+    populateResponseMapping();
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    code = readDSL("300-cv-nextgen/src/main/resources/customhealth/dsl/metric-collection.datacollection");
+    Instant instant = Instant.parse("2022-10-12T03:55:00.000Z");
+    String index = "arpit3";
+    RuntimeParameters runtimeParameters = getELKRuntimeParams(instant, index);
+    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
+    Map<String, List<TimeSeriesRecord>> resultMap =
+        timeSeriesRecords.stream().collect(Collectors.groupingBy(TimeSeriesRecord::getHostname));
+    assertThat(resultMap.keySet().size()).isNotZero();
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testExecute_customELKForServiceHealth() throws IOException {
+    populateELKPaths();
+    serviceInstanceJsonPath = null;
+    relativeServiceInstanceValueJsonPath = null;
+    populateResponseMapping();
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    code = readDSL("300-cv-nextgen/src/main/resources/customhealth/dsl/metric-collection.datacollection");
+    Instant instant = Instant.parse("2022-10-12T03:55:00.000Z");
+    String index = "arpit3";
+    RuntimeParameters runtimeParameters = getELKRuntimeParams(instant, index);
+    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
+    assertThat(timeSeriesRecords.size()).isNotZero();
+  }
+
   private String readDSL(String fileName) throws IOException {
     return FileUtils.readFileToString(new File(fileName), StandardCharsets.UTF_8);
+  }
+
+  private void populateResponseMapping() {
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceJsonPath)
+                          .relativeMetricValueJsonPath(relativeMetricValueJsonPath)
+                          .relativeMetricListJsonPath(relativeMetricListJsonPath)
+                          .relativeServiceInstanceValueJsonPath(relativeServiceInstanceValueJsonPath)
+                          .relativeTimestampJsonPath(relativeTimestampJsonPath)
+                          .serviceInstanceListJsonPath(serviceInstanceListJsonPath)
+                          .build();
+    builderFactory = BuilderFactory.getDefault();
+    executorService = Executors.newFixedThreadPool(10);
+    metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
   }
 
   private RuntimeParameters getAppdRuntimeParams(Instant instant) {
@@ -151,5 +195,97 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
         .otherEnvVariables(params)
         .baseUrl("https://harness-test.saas.appdynamics.com/controller/")
         .build();
+  }
+
+  private RuntimeParameters getELKRuntimeParams(Instant instant, String index) {
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        DataSourceType.CUSTOM_HEALTH_METRIC);
+    metricPacks.forEach(
+        metricPack -> metricPackService.populateDataCollectionDsl(DataSourceType.CUSTOM_HEALTH_METRIC, metricPack));
+    CustomHealthMetricCVConfig customHealthMetricCVConfig = builderFactory.customHealthMetricCVConfigBuilderForELK(
+        "CustomHealth Metric", true, false, true, responseMapping, "g1", HealthSourceQueryType.HOST_BASED,
+        CustomHealthMethod.POST, CVMonitoringCategory.PERFORMANCE,
+        "{\n"
+            + "    \"from\" : 0, \n"
+            + "    \"size\" : 100,\n"
+            + "    \"query\" : {\n"
+            + "    \"bool\": {\n"
+            + "      \"filter\": [\n"
+            + "        {\n"
+            + "          \"query_string\":{\n"
+            + "              \"query\": \"*\"\n"
+            + "          }\n"
+            + "        },\n"
+            + "        {\n"
+            + "            \"range\":{\n"
+            + "                \"metricValues.startTimeInMillis\":{\n"
+            + "                    \"gt\":start_time,\n"
+            + "                    \"lte\":end_time\n"
+            + "                }\n"
+            + "            }\n"
+            + "        }\n"
+            + "      ]\n"
+            + "    }\n"
+            + "  }\n"
+            + "}",
+        index);
+    customHealthMetricCVConfig.setMetricPack(metricPacks.get(0));
+    CustomHealthDataCollectionInfo customHealthDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(customHealthMetricCVConfig, VerificationTask.TaskType.DEPLOYMENT);
+    customHealthDataCollectionInfo.setCollectHostData(true);
+    CustomHealthConnectorDTO customHealthConnectorDTO =
+        CustomHealthConnectorDTO.builder()
+            .baseURL("https://arpitelkcloud.es.us-central1.gcp.cloud.es.io/")
+            .method(CustomHealthMethod.GET)
+            .headers(new ArrayList<>())
+            .params(new ArrayList<>())
+            .validationPath("*/_search")
+            .build();
+    customHealthConnectorDTO.getHeaders().add(CustomHealthKeyAndValue.builder()
+                                                  .key("Authorization")
+                                                  .isValueEncrypted(false)
+                                                  .value("Basic ZWxhc3RpYzpFR1JoRXg5SFZHN2ZvQVB6TFpQM3lielY=")
+                                                  .build());
+    customHealthConnectorDTO.getHeaders().add(CustomHealthKeyAndValue.builder()
+                                                  .key("Content-Type")
+                                                  .isValueEncrypted(false)
+                                                  .value("application/json")
+                                                  .build());
+
+    Map<String, Object> params = customHealthDataCollectionInfo.getDslEnvVariables(customHealthConnectorDTO);
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Authorization", "Basic ZWxhc3RpYzpFR1JoRXg5SFZHN2ZvQVB6TFpQM3lielY=");
+    // Replace this with the actual value
+    // when capturing the request.
+    return RuntimeParameters.builder()
+        .startTime(instant.minusSeconds(7200))
+        .endTime(instant)
+        .commonHeaders(headers)
+        .otherEnvVariables(params)
+        .baseUrl("https://arpitelkcloud.es.us-central1.gcp.cloud.es.io/")
+        .build();
+  }
+
+  private void populateAppdPaths() {
+    metricValueJSONPath = "$.[*].metricValues.[*].value";
+    serviceInstanceJsonPath = "$.[*].metricPath";
+    timestampValueJSONPath = "$.[*].metricValues.[*].startTimeInMillis";
+    serviceInstanceListJsonPath = "$";
+    relativeMetricListJsonPath = "metricValues";
+    relativeTimestampJsonPath = "startTimeInMillis";
+    relativeMetricValueJsonPath = "value";
+    relativeServiceInstanceValueJsonPath = "metricPath";
+  }
+
+  private void populateELKPaths() {
+    metricValueJSONPath = "$.hits.hits.[*]._source.metricValues.[*].value";
+    serviceInstanceJsonPath = "$.hits.hits.[*]._source.metricPath";
+    timestampValueJSONPath = "$.hits.hits.[*]._source.metricValues.[*].startTimeInMillis";
+    serviceInstanceListJsonPath = "$.hits.hits";
+    relativeMetricListJsonPath = "_source.metricValues";
+    relativeTimestampJsonPath = "startTimeInMillis";
+    relativeMetricValueJsonPath = "value";
+    relativeServiceInstanceValueJsonPath = "_source.metricPath";
   }
 }

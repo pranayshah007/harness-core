@@ -19,6 +19,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Cluster {
   String identifier;
+  String agentIdentifier;
+
   @JsonProperty("cluster") ClusterInternal clusterInternal;
 
   public Cluster(String identifier, String name) {

@@ -14,6 +14,7 @@ import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -27,4 +28,7 @@ public class AzureWebAppsStageExecutionDetails implements ExecutionDetails {
   String pipelineExecutionId;
   String targetSlot;
   private AzureArtifactConfig artifactConfig;
+  private Set<String> userAddedAppSettingNames;
+  private Set<String> userAddedConnStringNames;
+  private Boolean userChangedStartupCommand;
 }

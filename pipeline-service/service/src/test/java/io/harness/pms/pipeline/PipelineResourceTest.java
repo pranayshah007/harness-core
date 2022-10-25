@@ -9,6 +9,7 @@ package io.harness.pms.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.SATYAM;
 
@@ -55,6 +56,7 @@ import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.variables.VariableCreatorMergeService;
+import io.harness.pms.yaml.YamlVersion;
 import io.harness.rule.Owner;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
@@ -100,9 +102,12 @@ public class PipelineResourceTest extends CategoryTest {
   private final String PROJ_IDENTIFIER = "projId";
   private final String PIPELINE_IDENTIFIER = "basichttpFail";
   private String yaml;
+  private String simplifiedYaml;
 
   PipelineEntity entity;
+  PipelineEntity simplifiedEntity;
   PipelineEntity entityWithVersion;
+  PipelineEntity simplifiedEntityWithVersion;
   PipelineExecutionSummaryEntity executionSummaryEntity;
   OrchestrationGraphDTO orchestrationGraph;
   EntityGitDetails entityGitDetails;
@@ -127,6 +132,20 @@ public class PipelineResourceTest extends CategoryTest {
                  .allowStageExecutions(false)
                  .build();
 
+    filename = "simplified-pipeline.yaml";
+    simplifiedYaml =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    simplifiedEntity = PipelineEntity.builder()
+                           .accountId(ACCOUNT_ID)
+                           .orgIdentifier(ORG_IDENTIFIER)
+                           .projectIdentifier(PROJ_IDENTIFIER)
+                           .identifier(PIPELINE_IDENTIFIER)
+                           .name(PIPELINE_IDENTIFIER)
+                           .yaml(simplifiedYaml)
+                           .isDraft(false)
+                           .harnessVersion(YamlVersion.V1)
+                           .build();
+
     entityGitDetails = EntityGitDetails.builder()
                            .branch("branch")
                            .repoIdentifier("repo")
@@ -146,6 +165,18 @@ public class PipelineResourceTest extends CategoryTest {
                             .version(1L)
                             .allowStageExecutions(false)
                             .build();
+
+    simplifiedEntityWithVersion = PipelineEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .projectIdentifier(PROJ_IDENTIFIER)
+                                      .identifier(PIPELINE_IDENTIFIER)
+                                      .name(PIPELINE_IDENTIFIER)
+                                      .yaml(simplifiedYaml)
+                                      .isDraft(false)
+                                      .harnessVersion(YamlVersion.V1)
+                                      .version(1L)
+                                      .build();
 
     String PLAN_EXECUTION_ID = "planId";
     executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
@@ -624,5 +655,38 @@ public class PipelineResourceTest extends CategoryTest {
     assertThat(pipelineResource.getExecutionNode(null, null, null, null)).isNull();
     ExecutionNode executionNode = pipelineResource.getExecutionNode(null, null, null, "id").getData();
     assertThat(executionNode).isEqualTo(dummyExecutionNode);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testCreateSimplifiedPipeline() {
+    doReturn(YamlVersion.V1).when(pmsPipelineService).pipelineVersion(ACCOUNT_ID, simplifiedYaml);
+    doReturn(PipelineCRUDResult.builder()
+                 .pipelineEntity(simplifiedEntityWithVersion)
+                 .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                 .build())
+        .when(pmsPipelineService)
+        .create(simplifiedEntity);
+    ResponseDTO<PipelineSaveResponse> response = pipelineResource.createPipelineV2(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, null, null, null, simplifiedYaml);
+    assertThat(response.getData().getIdentifier()).isNotEmpty();
+    assertThat(response.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testUpdateSimplifiedPipeline() {
+    doReturn(YamlVersion.V1).when(pmsPipelineService).pipelineVersion(ACCOUNT_ID, simplifiedYaml);
+    GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
+    PipelineCRUDResult pipelineCRUDResult = PipelineCRUDResult.builder()
+                                                .governanceMetadata(governanceMetadata)
+                                                .pipelineEntity(simplifiedEntityWithVersion)
+                                                .build();
+    doReturn(pipelineCRUDResult).when(pmsPipelineService).updatePipelineYaml(simplifiedEntity, ChangeType.MODIFY);
+    ResponseDTO<PipelineSaveResponse> responseDTO = pipelineResource.updatePipelineV2(
+        null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, simplifiedYaml);
+    assertThat(responseDTO.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
   }
 }

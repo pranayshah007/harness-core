@@ -48,6 +48,9 @@ import io.harness.cdng.azure.config.ConnectionStringsOutcome;
 import io.harness.cdng.azure.config.StartupCommandOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.StageExecutionInfo;
+import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -115,6 +118,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -132,6 +136,7 @@ public class AzureWebAppStepHelper {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
 
   public ExecutionInfoKey getExecutionInfoKey(Ambiance ambiance, AzureWebAppInfraDelegateConfig infraDelegateConfig) {
     ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
@@ -489,6 +494,34 @@ public class AzureWebAppStepHelper {
     }
 
     throw new InvalidArgumentsException(Pair.of(settingsType, "Either 'files' or 'secretFiles' is required"));
+  }
+
+  @Nullable
+  public AzureWebAppsStageExecutionDetails findLastSuccessfulStageExecutionDetails(
+      Ambiance ambiance, AzureWebAppInfraDelegateConfig infraDelegateConfig) {
+    ExecutionInfoKey executionInfoKey = getExecutionInfoKey(ambiance, infraDelegateConfig);
+    List<StageExecutionInfo> stageExecutionInfoList = stageExecutionInfoService.listLatestSuccessfulStageExecutionInfo(
+        executionInfoKey, ambiance.getStageExecutionId(), 2);
+
+    if (isNotEmpty(stageExecutionInfoList)) {
+      AzureWebAppsStageExecutionDetails executionDetails =
+          (AzureWebAppsStageExecutionDetails) stageExecutionInfoList.get(0).getExecutionDetails();
+      log.info(
+          "Last successful deployment found with pipeline executionId: {}", executionDetails.getPipelineExecutionId());
+      if (isNotEmpty(executionDetails.getTargetSlot())) {
+        if (stageExecutionInfoList.size() == 2) {
+          executionDetails = (AzureWebAppsStageExecutionDetails) stageExecutionInfoList.get(1).getExecutionDetails();
+          log.info("Pre last successful deployment found with pipeline executionId: {}",
+              executionDetails.getPipelineExecutionId());
+        } else {
+          executionDetails = null;
+        }
+      }
+
+      return executionDetails;
+    }
+
+    return null;
   }
 
   private AppSettingsFile fetchFileContentFromFileStore(Ambiance ambiance, String settingsType, String filePath) {

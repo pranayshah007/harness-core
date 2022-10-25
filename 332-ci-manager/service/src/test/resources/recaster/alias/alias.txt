@@ -202,3 +202,5 @@ io.harness.plancreator.execution.StepsExecutionConfig
 io.harness.beans.yaml.extended.runtime.CloudRuntime
 io.harness.beans.steps.nodes.SecurityNode
 io.harness.beans.steps.nodes.GCSUploadNode
+io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput
+io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput

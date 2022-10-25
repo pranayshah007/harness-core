@@ -33,6 +33,7 @@ import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -722,6 +723,12 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(azureWebAppInfrastructure.getConnectorRef(),
             azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
+        break;
+
+      case InfrastructureKind.ECS:
+        EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            ecsInfrastructure.getConnectorRef(), ecsInfrastructure.getRegion(), ecsInfrastructure.getCluster());
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));

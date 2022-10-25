@@ -8,9 +8,11 @@ package io.harness.cvng.servicelevelobjective.entities;
 
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
@@ -28,14 +30,20 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   public CompositeServiceLevelObjective() {
     super.setType(ServiceLevelObjectiveType.COMPOSITE);
   }
+  private int version;
 
-  @Size(max = 20) List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
+  @Size(min = 2, max = 20) List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
 
   @Data
   @Builder
   public static class ServiceLevelObjectivesDetail {
     String serviceLevelObjectiveRef;
     Double weightagePercentage;
+  }
+
+  @Override
+  public Optional<String> mayBeGetMonitoredServiceIdentifier() {
+    return Optional.empty();
   }
 
   public static class CompositeServiceLevelObjectiveUpdatableEntity
@@ -45,7 +53,9 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
         ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO) {
       setCommonOperations(updateOperations, serviceLevelObjectiveV2DTO);
       updateOperations.set(CompositeServiceLevelObjectiveKeys.serviceLevelObjectivesDetails,
-          serviceLevelObjectiveV2DTO.getServiceLevelObjectivesDetails());
+          ((CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec())
+              .getServiceLevelObjectivesDetails());
+      updateOperations.inc(CompositeServiceLevelObjectiveKeys.version);
     }
   }
 }

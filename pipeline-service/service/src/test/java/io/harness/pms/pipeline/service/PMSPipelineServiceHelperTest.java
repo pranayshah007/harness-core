@@ -49,6 +49,7 @@ import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
+import io.harness.pms.yaml.YamlVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
@@ -138,7 +139,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
             .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
     PipelineEntity entity = PipelineEntity.builder().build();
-    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity);
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity, YamlVersion.V0);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
@@ -151,7 +152,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
                    .stageNames(Collections.singletonList("stage-1"))
                    .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
-    updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(updatedEntity);
+    updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(updatedEntity, YamlVersion.V0);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
@@ -169,7 +170,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
                                                      .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
     PipelineEntity entity = PipelineEntity.builder().build();
-    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity);
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity, YamlVersion.V0);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
@@ -189,7 +190,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
                                                      .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
     PipelineEntity entity = PipelineEntity.builder().build();
-    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity);
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity, YamlVersion.V0);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();

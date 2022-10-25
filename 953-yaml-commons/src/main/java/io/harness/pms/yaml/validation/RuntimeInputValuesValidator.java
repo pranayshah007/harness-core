@@ -34,6 +34,32 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class RuntimeInputValuesValidator {
+  public String validateStaticValues(Object templateObject) {
+    String error = "";
+    String templateValue = ((JsonNode) templateObject).asText();
+
+    if (NGExpressionUtils.matchesInputSetPattern(templateValue)) {
+      try {
+        ParameterField<?> templateField = YamlUtils.read(templateValue, ParameterField.class);
+        if (templateField.getInputSetValidator() == null) {
+          return error;
+        }
+        InputSetValidator inputSetValidator = templateField.getInputSetValidator();
+        if (inputSetValidator.getValidatorType() == REGEX) {
+          error = "The value is not provided and must be a regex pattern";
+        } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
+          error =
+              String.format("The value is not provided and allowed values are [%s]", inputSetValidator.getParameters());
+        }
+      } catch (IOException e) {
+        String msg = String.format("Input set expression %s is not valid", templateValue);
+        log.warn(msg, e);
+        throw new InvalidRequestException(msg);
+      }
+    }
+    return error;
+  }
+
   public String validateStaticValues(Object templateObject, Object inputSetObject) {
     /*
       This if block is to validate static values inside an array of primitive values.

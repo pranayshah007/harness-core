@@ -15,8 +15,6 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.state.StateConstants.DEFAULT_STEADY_STATE_TIMEOUT;
 
-import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
-
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -156,7 +154,7 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
 
     helmTaskHelper.addRepo(repoName, repoDisplayName, httpHelmRepoConfig.getChartRepoUrl(),
         httpHelmRepoConfig.getUsername(), httpHelmRepoConfig.getPassword(), workingDirectory, helmVersion,
-        DEFAULT_TIMEOUT_IN_MILLIS);
+        DEFAULT_TIMEOUT_IN_MILLIS, null);
   }
 
   private void tryAddingAmazonS3HelmRepo(HelmRepoConfig helmRepoConfig, String repoName,
