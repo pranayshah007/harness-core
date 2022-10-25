@@ -33,7 +33,7 @@ java_library(
         "//120-ng-manager/modules/ng-variables/contracts:module",
         "//950-ng-project-n-orgs:module",
         "//960-persistence:tests",
-        "//980-commons/src/main/java/io/harness/expression:tests",
+        "//980-commons:tests",
         "//999-annotations:module",
         "//platform-service/modules/audit-service/contracts:module",
         "@maven//:org_assertj_assertj_core",

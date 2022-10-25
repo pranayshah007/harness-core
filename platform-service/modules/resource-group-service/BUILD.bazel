@@ -87,7 +87,7 @@ java_library(
         "//955-outbox-sdk:module",
         "//960-persistence:supporter-test",
         "//970-ng-commons:module",
-        "//980-commons/src/main/java/io/harness/expression:tests",
+        "//980-commons:tests",
         "//990-commons-test:module",
         "//999-annotations:module",
         "//clients/audit:module",
