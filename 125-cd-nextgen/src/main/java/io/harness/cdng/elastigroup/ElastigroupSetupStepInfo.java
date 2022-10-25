@@ -52,9 +52,9 @@ public class ElastigroupSetupStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public ElastigroupSetupStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                  ParameterField<String> loadBalancer, ParameterField<String> name,
-                                  ParameterField<String> instances) {
-    super(delegateSelectors, loadBalancer, name, instances);
+                                  ParameterField<String> name,
+                                  ParameterField<InstancesSpecAbstractYaml> instances) {
+    super(delegateSelectors, name, instances);
   }
 
   @Override
@@ -71,8 +71,8 @@ public class ElastigroupSetupStepInfo
   public SpecParameters getSpecParameters() {
     return ElastigroupSetupStepParameters.infoBuilder()
         .delegateSelectors(this.getDelegateSelectors())
-        .loadBalancer(this.getLoadBalancer())
-
+            .name(this.getName())
+            .instances(this.getInstances())
         .build();
   }
 

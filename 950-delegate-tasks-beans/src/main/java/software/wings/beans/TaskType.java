@@ -386,6 +386,7 @@ public enum TaskType {
   NG_LDAP_TEST_AUTHENTICATION(TaskGroup.LDAP),
   ECS_GIT_FETCH_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Task"),
   ECS_COMMAND_TASK_NG(TaskGroup.ECS, "ECS Command Task"),
+  ELASTIGROUP_SETUP_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Setup Task"),
   WIN_RM_SHELL_SCRIPT_TASK_NG(TaskGroup.SHELL_SCRIPT_NG, "Shell Script Task"),
   SHELL_SCRIPT_PROVISION(TaskGroup.SHELL_SCRIPT_PROVISION_NG, "Shell Script Provision Task"),
   ECS_GIT_FETCH_RUN_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Run Task"),
