@@ -65,7 +65,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
   private final String ELASTIGROUP_SERVICE_COMMAND_NAME = "ElastigroupService";
   private final String ECS_BLUE_GREEN_PREPARE_ROLLBACK_COMMAND_NAME = "EcsBlueGreenPrepareRollback";
 
-  @Inject private EcsStepCommonHelper ecsStepCommonHelper;
+  @Inject private ElastigroupStepCommonHelper elastigroupStepCommonHelper;
   @Inject private EcsStepHelperImpl ecsStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
@@ -211,6 +211,6 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return ecsStepCommonHelper.startChainLink(this, ambiance, stepParameters, ecsStepHelper);
+    return elastigroupStepCommonHelper.startChainLink(this, ambiance, stepParameters, ecsStepHelper);
   }
 }
