@@ -353,8 +353,10 @@ public class ExecutionHelper {
           currentProcessedYaml = YamlUtils.injectUuidWithName(pipelineYaml, YAMLFieldNameConstants.PIPELINE);
           break;
         case V0:
-        default:
           currentProcessedYaml = YamlUtils.injectUuid(pipelineYaml);
+          break;
+        default:
+          throw new IllegalStateException("version not supported");
       }
 
     } catch (IOException e) {
