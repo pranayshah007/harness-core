@@ -32,7 +32,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.common.NGSectionStep;
+import io.harness.steps.common.noop.NoopStep;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -78,10 +78,10 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
             .uuid(config.getUuid() + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX)
             .name(NGCommonUtilPlanCreationConstants.ROLLBACK_NODE_NAME)
             .identifier(YAMLFieldNameConstants.ROLLBACK_STEPS)
-            .stepType(NGSectionStep.STEP_TYPE)
+            .stepType(NoopStep.STEP_TYPE)
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
                     .build())
             .skipExpressionChain(true)
             .skipGraphType(SkipType.SKIP_NODE)
