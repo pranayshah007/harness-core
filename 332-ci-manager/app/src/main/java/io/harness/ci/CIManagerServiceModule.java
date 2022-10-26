@@ -312,7 +312,7 @@ public class CIManagerServiceModule extends AbstractModule {
     install(new STOServiceClientModule(ciManagerConfiguration.getStoServiceConfig()));
     install(new AccountClientModule(ciManagerConfiguration.getManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.toString()));
-    install(EnforcementClientModule.getInstance(ciManagerConfiguration.getManagerClientConfig(),
+    install(EnforcementClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId(),
         ciManagerConfiguration.getEnforcementClientConfiguration()));
     install(new AbstractTelemetryModule() {
