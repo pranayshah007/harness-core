@@ -204,6 +204,8 @@ public class PerpetualTaskRecordDao {
 
   public List<PerpetualTaskRecord> listAssignedTasks(String delegateId, String accountId) {
     return persistence.createQuery(PerpetualTaskRecord.class)
+        .field(PerpetualTaskRecordKeys.state)
+        .equal(TASK_ASSIGNED)
         .field(PerpetualTaskRecordKeys.accountId)
         .equal(accountId)
         .field(PerpetualTaskRecordKeys.delegateId)
