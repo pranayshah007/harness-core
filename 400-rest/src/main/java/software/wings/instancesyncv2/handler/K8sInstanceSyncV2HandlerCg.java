@@ -8,6 +8,7 @@
 package software.wings.instancesyncv2.handler;
 
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
@@ -219,7 +220,9 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
                                        .setNamespace(namespace)
                                        .setK8SClusterConfig(ByteString.copyFrom(kryoSerializer.asBytes(clusterConfig)))
                                        .setIsHelm(releaseIdentifier.isHelmDeployment())
-                                       .setContainerServiceName(releaseIdentifier.getContainerServiceName())
+                                       .setContainerServiceName(isEmpty(releaseIdentifier.getContainerServiceName())
+                                               ? ""
+                                               : releaseIdentifier.getContainerServiceName())
                                        .build()))
                                .build())
                     .collect(Collectors.toList())));
