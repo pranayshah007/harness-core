@@ -164,6 +164,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
+import io.harness.redis.intc.DelegateCacheService;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
@@ -399,6 +400,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private DelegateTokenService delegateTokenService;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private DelegateTelemetryPublisher delegateTelemetryPublisher;
+  @Inject private DelegateCacheService delegateCacheService;
   @Inject @Named(EventsFrameworkConstants.ENTITY_CRUD) private Producer eventProducer;
 
   @Inject @Named(DelegatesFeature.FEATURE_NAME) private UsageLimitedFeature delegatesFeature;
@@ -2556,9 +2558,11 @@ public class DelegateServiceImpl implements DelegateService {
       log.info("Registering delegate for Hostname: {} IP: {}", delegate.getHostName(), delegate.getIp());
     }
 
+    delegateCacheService.getDelegateTaskCache(delegate.getUuid());
     if (delegate.isImmutable() && delegate.getExpirationTime() == 0) {
       delegate.setExpirationTime(setDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()));
     }
+
     if (ECS.equals(delegate.getDelegateType())) {
       return registerResponseFromDelegate(handleEcsDelegateRequest(delegate));
     } else {

@@ -13,7 +13,6 @@ import static javax.cache.expiry.Duration.THIRTY_MINUTES;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.HarnessCacheManager;
-import io.harness.delegate.beans.DelegateTaskCache;
 import io.harness.version.VersionInfoManager;
 
 import software.wings.beans.ApiKeyEntry;
@@ -50,7 +49,6 @@ public class ManagerCacheRegistrar extends AbstractModule {
   public static final String WHITELIST_CACHE = "whitelistCache";
   public static final String PRIMARY_CACHE_PREFIX = "primary_";
   public static final String SECRET_CACHE = "secretCache";
-  public static final String DELEGATE_TASK_CACHE = "delegateTaskCache";
 
   @Provides
   @Named(AUTH_TOKEN_CACHE)
@@ -131,15 +129,6 @@ public class ManagerCacheRegistrar extends AbstractModule {
         CreatedExpiryPolicy.factoryOf(THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
   }
 
-  @Provides
-  @Named(DELEGATE_TASK_CACHE)
-  @Singleton
-  public Cache<String, AuthToken> getDelegateTaskCache(
-          HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
-    return harnessCacheManager.getCache(DELEGATE_TASK_CACHE, String.class, AuthToken.class,
-            AccessedExpiryPolicy.factoryOf(Duration.TEN_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
-  }
-
   @Override
   protected void configure() {
     registerRequiredBindings();
@@ -168,8 +157,6 @@ public class ManagerCacheRegistrar extends AbstractModule {
     }, Names.named(WHITELIST_CACHE)));
     mapBinder.addBinding(SECRET_CACHE).to(Key.get(new TypeLiteral<Cache<String, EncryptedDataDetails>>() {
     }, Names.named(SECRET_CACHE)));
-    mapBinder.addBinding(DELEGATE_TASK_CACHE).to(Key.get(new TypeLiteral<Cache<String, DelegateTaskCache>>() {
-    }, Names.named(DELEGATE_TASK_CACHE)));
   }
 
   private void registerRequiredBindings() {

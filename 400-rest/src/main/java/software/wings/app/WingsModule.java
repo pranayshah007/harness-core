@@ -195,6 +195,11 @@ import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
 import io.harness.redis.CompatibleFieldSerializerCodec;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
+import io.harness.redis.impl.DelegateCacheServiceImpl;
+import io.harness.redis.impl.DelegateRedissonCacheManagerImpl;
+import io.harness.redis.intc.DelegateCacheService;
+import io.harness.redis.intc.DelegateRedissonCacheManager;
 import io.harness.remote.client.ClientMode;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.scheduler.SchedulerConfig;
@@ -822,6 +827,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.redisson.api.RedissonClient;
 
 /**
  * Guice Module for initializing all beans.
@@ -873,6 +879,13 @@ public class WingsModule extends AbstractModule implements ServersModule {
   RedisConfig redisAtmoshphereConfig() {
     configuration.getRedisAtmosphereConfig().setCodec(CompatibleFieldSerializerCodec.class);
     return configuration.getRedisAtmosphereConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("redissonClient")
+  RedissonClient redissonClient() {
+    return RedissonClientFactory.getClient(configuration.getRedisLockConfig());
   }
 
   @Provides
@@ -1154,6 +1167,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(AccessRequestService.class).to(AccessRequestServiceImpl.class);
     bind(DelegateTaskServiceClassic.class).to(DelegateTaskServiceClassicImpl.class);
     bind(DelegateNgTokenService.class).to(DelegateNgTokenServiceImpl.class);
+    bind(DelegateCacheService.class).to(DelegateCacheServiceImpl.class);
+    bind(DelegateRedissonCacheManager.class).to(DelegateRedissonCacheManagerImpl.class);
 
     bind(CgCdLicenseUsageService.class).to(CgCdLicenseUsageServiceImpl.class);
 
