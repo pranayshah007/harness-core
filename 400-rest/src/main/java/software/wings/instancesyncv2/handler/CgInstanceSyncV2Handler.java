@@ -25,10 +25,12 @@ public interface CgInstanceSyncV2Handler {
   InstanceSyncTaskDetails prepareTaskDetails(
       DeploymentSummary deploymentSummary, String cloudProviderId, String perpetualTaskId);
 
-  Set<? extends CgReleaseIdentifiers> buildReleaseIdentifiers(DeploymentInfo deploymentInfo);
+  Set<CgReleaseIdentifiers> buildReleaseIdentifiers(DeploymentInfo deploymentInfo);
 
   Set<CgReleaseIdentifiers> mergeReleaseIdentifiers(
       Set<CgReleaseIdentifiers> releaseIdentifiers, Set<? extends CgReleaseIdentifiers> buildReleaseIdentifiers);
 
   List<CgDeploymentReleaseDetails> getDeploymentReleaseDetails(InstanceSyncTaskDetails taskDetails);
+
+  boolean isDeploymentInfoTypeSupported(Class<? extends DeploymentInfo> deploymentInfoClazz);
 }

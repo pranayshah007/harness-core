@@ -7,9 +7,12 @@
 
 package software.wings.instancesyncv2.handler;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.Capability;
 import io.harness.exception.InvalidRequestException;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
@@ -18,6 +21,7 @@ import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
 import io.harness.serializer.KryoSerializer;
 
+import software.wings.api.ContainerDeploymentInfoWithLabels;
 import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
 import software.wings.api.K8sDeploymentInfo;
@@ -98,6 +102,9 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
                 .filter(existingIdentifier
                     -> StringUtils.equals(((CgK8sReleaseIdentifier) existingIdentifier).getClusterName(),
                         ((CgK8sReleaseIdentifier) newIdentifier).getClusterName()))
+                .filter(existingIdentifier
+                    -> StringUtils.equals(((CgK8sReleaseIdentifier) existingIdentifier).getContainerServiceName(),
+                        ((CgK8sReleaseIdentifier) newIdentifier).getContainerServiceName()))
                 .findAny();
 
         if (matchingIdentifier.isPresent()) {
@@ -139,7 +146,39 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
                                        .clusterName(k8sDeploymentInfo.getClusterName())
                                        .releaseName(k8sDeploymentInfo.getReleaseName())
                                        .namespaces(namespaces)
+                                       .isHelmDeployment(false)
                                        .build());
+    } else if (deploymentInfo instanceof ContainerDeploymentInfoWithLabels) {
+      ContainerDeploymentInfoWithLabels containerDeploymentInfo = (ContainerDeploymentInfoWithLabels) deploymentInfo;
+      Set<String> namespaces = new HashSet<>(containerDeploymentInfo.getNamespaces());
+      if (StringUtils.isNotBlank(containerDeploymentInfo.getReleaseName())) {
+        namespaces.add(containerDeploymentInfo.getNamespace());
+      }
+
+      Set<String> controllers = emptyIfNull(containerDeploymentInfo.getContainerInfoList())
+                                    .stream()
+                                    .map(io.harness.container.ContainerInfo::getWorkloadName)
+                                    .filter(EmptyPredicate::isNotEmpty)
+                                    .collect(Collectors.toSet());
+      if (isNotEmpty(controllers)) {
+        return controllers.parallelStream()
+            .map(controller
+                -> CgK8sReleaseIdentifier.builder()
+                       .containerServiceName(controller)
+                       .namespaces(namespaces)
+                       .releaseName(containerDeploymentInfo.getReleaseName())
+                       .isHelmDeployment(true)
+                       .build())
+            .collect(Collectors.toSet());
+      } else if (isNotEmpty(containerDeploymentInfo.getContainerInfoList())) {
+        return Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                         .namespaces(namespaces)
+                                         .releaseName(containerDeploymentInfo.getReleaseName())
+                                         .isHelmDeployment(true)
+                                         .build());
+      }
+
+      return Collections.emptySet();
     }
 
     throw new InvalidRequestException("DeploymentInfo of type: [" + deploymentInfo.getClass().getCanonicalName()
@@ -179,10 +218,18 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
                                        .setReleaseName(releaseIdentifier.getReleaseName())
                                        .setNamespace(namespace)
                                        .setK8SClusterConfig(ByteString.copyFrom(kryoSerializer.asBytes(clusterConfig)))
+                                       .setIsHelm(releaseIdentifier.isHelmDeployment())
+                                       .setContainerServiceName(releaseIdentifier.getContainerServiceName())
                                        .build()))
                                .build())
                     .collect(Collectors.toList())));
 
     return releaseDetails;
+  }
+
+  @Override
+  public boolean isDeploymentInfoTypeSupported(Class<? extends DeploymentInfo> deploymentInfoClazz) {
+    return deploymentInfoClazz.equals(K8sDeploymentInfo.class)
+        || deploymentInfoClazz.equals(ContainerDeploymentInfoWithLabels.class);
   }
 }

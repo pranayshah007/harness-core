@@ -85,7 +85,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
     notNullCheck("KubernetesConfig", kubernetesConfig);
 
-    if (isHelm) {
+    if (false) {
+      return null;
     } else {
       try {
         long timeoutMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_STEADY_STATE_TIMEOUT);

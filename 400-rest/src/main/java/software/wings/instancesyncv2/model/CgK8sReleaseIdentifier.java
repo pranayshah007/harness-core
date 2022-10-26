@@ -28,4 +28,6 @@ public class CgK8sReleaseIdentifier implements CgReleaseIdentifiers {
   private Set<String> namespaces;
   private String releaseName;
   private String clusterName;
+  private String containerServiceName;
+  private boolean isHelmDeployment;
 }

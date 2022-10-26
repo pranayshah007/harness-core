@@ -87,6 +87,13 @@ public class CgInstanceSyncServiceV2 {
                 + cloudProvider.getValue().getSettingType() + "] with Instance Sync V2");
           }
 
+          if (!instanceSyncHandler.isDeploymentInfoTypeSupported(deploymentSummary.getDeploymentInfo().getClass())) {
+            log.error("Instance Sync V2 not enabled for deployment info type: [{}]",
+                deploymentSummary.getDeploymentInfo().getClass().getName());
+            throw new InvalidRequestException("Instance Sync V2 not enabled for deployment info type: "
+                + deploymentSummary.getDeploymentInfo().getClass().getName());
+          }
+
           String configuredPerpetualTaskId =
               getConfiguredPerpetualTaskId(deploymentSummary, cloudProvider.getUuid(), instanceSyncHandler);
           if (StringUtils.isEmpty(configuredPerpetualTaskId)) {
