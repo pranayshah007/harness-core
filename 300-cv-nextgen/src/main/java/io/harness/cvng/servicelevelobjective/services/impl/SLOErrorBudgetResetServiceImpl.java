@@ -10,7 +10,6 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveErrorBudgetResetEvent;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
-import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset.SLOErrorBudgetResetKeys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;

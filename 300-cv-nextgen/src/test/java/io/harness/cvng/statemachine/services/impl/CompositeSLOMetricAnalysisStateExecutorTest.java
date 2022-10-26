@@ -69,7 +69,6 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
   private Instant startTime;
   private Instant endTime;
   private String verificationTaskId;
-  private ServiceLevelIndicator serviceLevelIndicator;
   AnalysisStateExecutor sloMetricAnalysisStateExecutor;
   private CompositeSLOMetricAnalysisState sloMetricAnalysisState;
   ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO;
@@ -94,10 +93,6 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
         (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
     simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO1.getIdentifier());
     simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
-    serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        simpleServiceLevelObjectiveSpec1.getServiceLevelIndicators(), simpleServiceLevelObjectiveDTO1.getIdentifier(),
-        simpleServiceLevelObjectiveSpec1.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec1.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1);
     simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
         builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1.getIdentifier());
@@ -115,10 +110,6 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
         (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
     simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO2.getIdentifier());
     simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
-    serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        simpleServiceLevelObjectiveSpec2.getServiceLevelIndicators(), simpleServiceLevelObjectiveDTO2.getIdentifier(),
-        simpleServiceLevelObjectiveSpec2.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec2.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2);
     simpleServiceLevelObjective2 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
         builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2.getIdentifier());

@@ -117,12 +117,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testCreate_Success() {
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
-        (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
     createMonitoredService();
-    serviceLevelIndicatorService.create(projectParams, simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(),
-        sloDTO.getIdentifier(), simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec.getHealthSourceRef());
     ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
@@ -134,12 +129,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   public void testCreate_WithoutTagsSuccess() {
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
     sloDTO.setTags(new HashMap<>());
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
-        (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
     createMonitoredService();
-    serviceLevelIndicatorService.create(projectParams, simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(),
-        sloDTO.getIdentifier(), simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec.getHealthSourceRef());
     ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
@@ -151,12 +141,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   public void testCreate_CalendarSLOTargetSuccess() {
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
     sloDTO.setSloTarget(calendarSloTarget);
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
-        (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
     createMonitoredService();
-    serviceLevelIndicatorService.create(projectParams, simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(),
-        sloDTO.getIdentifier(), simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec.getHealthSourceRef());
     ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
@@ -210,9 +195,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
     createMonitoredService();
-    serviceLevelIndicatorService.create(projectParams, simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(),
-        sloDTO.getIdentifier(), simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     AbstractServiceLevelObjective serviceLevelObjective =
         serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
@@ -231,9 +213,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
     createMonitoredService();
-    List<String> serviceLevelIndicators = serviceLevelIndicatorService.create(projectParams,
-        simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(), sloDTO.getIdentifier(),
-        simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(), simpleServiceLevelObjectiveSpec.getHealthSourceRef());
     ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
@@ -258,12 +237,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testUpdate_UpdateWithSLOTarget() {
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
-        (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
     createMonitoredService();
-    List<String> serviceLevelIndicators = serviceLevelIndicatorService.create(projectParams,
-        simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(), sloDTO.getIdentifier(),
-        simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(), simpleServiceLevelObjectiveSpec.getHealthSourceRef());
     ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
@@ -301,9 +275,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
     createMonitoredService();
-    List<String> serviceLevelIndicators = serviceLevelIndicatorService.create(projectParams,
-        simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(), sloDTO.getIdentifier(),
-        simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(), simpleServiceLevelObjectiveSpec.getHealthSourceRef());
     ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
@@ -322,9 +293,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
     createMonitoredService();
-    List<String> serviceLevelIndicators = serviceLevelIndicatorService.create(projectParams,
-        simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(), sloDTO.getIdentifier(),
-        simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(), simpleServiceLevelObjectiveSpec.getHealthSourceRef());
     ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
@@ -346,12 +314,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testUpdate_FailedWithEntityNotPresent() {
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
-        (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
     createMonitoredService();
-    List<String> serviceLevelIndicators = serviceLevelIndicatorService.create(projectParams,
-        simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(), sloDTO.getIdentifier(),
-        simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(), simpleServiceLevelObjectiveSpec.getHealthSourceRef());
     ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
@@ -360,7 +323,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "[SLOV2 Not Found] SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+            "[SLOV2 Not Found] SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
             sloDTO.getIdentifier(), projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
   }
@@ -371,11 +334,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   public void testGet_IdentifierBasedQuery() {
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
     createMonitoredService();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
-        (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
-    serviceLevelIndicatorService.create(projectParams, simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(),
-        sloDTO.getIdentifier(), simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     ServiceLevelObjectiveV2Response serviceLevelObjectiveV2Response =
         serviceLevelObjectiveV2Service.get(projectParams, sloDTO.getIdentifier());
@@ -388,33 +346,18 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   public void testGet_OnUserJourneyFilter() {
     ServiceLevelObjectiveV2DTO sloDTO1 =
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id1").build();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
-        (SimpleServiceLevelObjectiveSpec) sloDTO1.getSpec();
     createMonitoredService();
     sloDTO1.setUserJourneyRefs(Arrays.asList("Uid1", "Uid2"));
-    serviceLevelIndicatorService.create(projectParams, simpleServiceLevelObjectiveSpec1.getServiceLevelIndicators(),
-        sloDTO1.getIdentifier(), simpleServiceLevelObjectiveSpec1.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec1.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO1);
 
     ServiceLevelObjectiveV2DTO sloDTO2 =
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id2").build();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
-        (SimpleServiceLevelObjectiveSpec) sloDTO2.getSpec();
     sloDTO2.setUserJourneyRefs(Arrays.asList("Uid4", "Uid3"));
-    serviceLevelIndicatorService.create(projectParams, simpleServiceLevelObjectiveSpec2.getServiceLevelIndicators(),
-        sloDTO2.getIdentifier(), simpleServiceLevelObjectiveSpec2.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec2.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO2);
 
     ServiceLevelObjectiveV2DTO sloDTO3 =
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id3").build();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec3 =
-        (SimpleServiceLevelObjectiveSpec) sloDTO3.getSpec();
     sloDTO3.setUserJourneyRefs(Arrays.asList("Uid4", "Uid2"));
-    serviceLevelIndicatorService.create(projectParams, simpleServiceLevelObjectiveSpec3.getServiceLevelIndicators(),
-        sloDTO3.getIdentifier(), simpleServiceLevelObjectiveSpec3.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec3.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO3);
 
     List<ServiceLevelObjectiveV2Response> serviceLevelObjectiveV2ResponseList =
@@ -571,9 +514,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
     createMonitoredService();
-    serviceLevelIndicatorService.create(projectParams, simpleServiceLevelObjectiveSpec.getServiceLevelIndicators(),
-        sloDTO.getIdentifier(), simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     List<String> serviceLevelIndicators = simpleServiceLevelObjectiveSpec.getServiceLevelIndicators()
                                               .stream()
@@ -690,6 +630,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveV2Service mockServiceLevelObjectiveService = spy(serviceLevelObjectiveV2Service);
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByProjectIdentifier(AbstractServiceLevelObjective.class,
@@ -705,6 +646,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveV2Service mockServiceLevelObjectiveService = spy(serviceLevelObjectiveV2Service);
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByOrgIdentifier(
@@ -720,6 +662,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveV2Service mockServiceLevelObjectiveService = spy(serviceLevelObjectiveV2Service);
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(
@@ -733,34 +676,20 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   public void testGetAllSLOs() {
     ServiceLevelObjectiveV2DTO sloDTO1 =
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id1").build();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
-        (SimpleServiceLevelObjectiveSpec) sloDTO1.getSpec();
     createMonitoredService();
     sloDTO1.setUserJourneyRefs(Arrays.asList("Uid1", "Uid2"));
-    serviceLevelIndicatorService.create(projectParams, simpleServiceLevelObjectiveSpec1.getServiceLevelIndicators(),
-        sloDTO1.getIdentifier(), simpleServiceLevelObjectiveSpec1.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec1.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO1);
 
     ServiceLevelObjectiveV2DTO sloDTO2 =
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id2").build();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
-        (SimpleServiceLevelObjectiveSpec) sloDTO2.getSpec();
     sloDTO2.setUserJourneyRefs(Arrays.asList("Uid4", "Uid3"));
-    serviceLevelIndicatorService.create(projectParams, simpleServiceLevelObjectiveSpec2.getServiceLevelIndicators(),
-        sloDTO2.getIdentifier(), simpleServiceLevelObjectiveSpec2.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec2.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO2);
 
     ServiceLevelObjectiveV2DTO sloDTO3 =
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id3").build();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec3 =
-        (SimpleServiceLevelObjectiveSpec) sloDTO3.getSpec();
     sloDTO3.setUserJourneyRefs(Arrays.asList("Uid4", "Uid2"));
-    serviceLevelIndicatorService.create(projectParams, simpleServiceLevelObjectiveSpec3.getServiceLevelIndicators(),
-        sloDTO3.getIdentifier(), simpleServiceLevelObjectiveSpec3.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec3.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO3);
+
     assertThat(serviceLevelObjectiveV2Service.getAllSLOs(projectParams)).hasSize(3);
   }
 
