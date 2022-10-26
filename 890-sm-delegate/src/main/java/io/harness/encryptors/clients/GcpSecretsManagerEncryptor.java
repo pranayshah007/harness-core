@@ -137,7 +137,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     GoogleCredentials googleCredentials = getGoogleCredentials(gcpSecretsManagerConfig);
     String projectId = getProjectId(googleCredentials);
     try (SecretManagerServiceClient gcpSecretsManagerClient = getGcpSecretsManagerClient(googleCredentials)) {
-      SecretVersionName secretVersionName = null;
+      SecretVersionName secretVersionName;
       if (isNotEmpty(encryptedRecord.getPath())) {
         String secretName;
         String version;
