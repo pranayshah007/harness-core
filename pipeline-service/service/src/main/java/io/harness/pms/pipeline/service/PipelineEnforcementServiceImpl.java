@@ -162,6 +162,7 @@ public class PipelineEnforcementServiceImpl implements PipelineEnforcementServic
             FeatureRestrictionName.DEPLOYMENTS_PER_MONTH.name(), DEPLOYMENT_EXCEEDED_KEY);
       } else if (module.equalsIgnoreCase(ModuleType.CI.name())) {
         featureRestrictionToStepNameMap.put(FeatureRestrictionName.BUILDS.name(), BUILD_EXCEEDED_KEY);
+        featureRestrictionToStepNameMap.put(FeatureRestrictionName.DAILY_BUILDS.name(), BUILD_EXCEEDED_KEY);
       }
     }
 
@@ -241,6 +242,10 @@ public class PipelineEnforcementServiceImpl implements PipelineEnforcementServic
         continue;
       }
       if (FeatureRestrictionName.BUILDS.equals(featureRestrictionName)) {
+        buildsExceeded = true;
+        continue;
+      }
+      if (FeatureRestrictionName.DAILY_BUILDS.equals(featureRestrictionName)) {
         buildsExceeded = true;
         continue;
       }

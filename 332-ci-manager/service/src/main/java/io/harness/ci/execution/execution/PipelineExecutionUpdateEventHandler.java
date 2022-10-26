@@ -20,6 +20,7 @@ import io.harness.app.beans.dto.CITaskDetails;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
+import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
@@ -35,6 +36,8 @@ import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.sdk.execution.beans.PipelineModuleInfo;
+import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.repositories.CITaskDetailsRepository;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
@@ -65,6 +68,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject private GitBuildStatusUtility gitBuildStatusUtility;
   @Inject private StageCleanupUtility stageCleanupUtility;
   @Inject private CILogServiceUtils ciLogServiceUtils;
+  @Inject private CIAccountExecutionMetadataRepository ciAccountExecutionMetadataRepository;
 
   @Inject private CITaskDetailsRepository ciTaskDetailsRepository;
 
@@ -78,11 +82,25 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     Ambiance ambiance = event.getAmbiance();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
+    PipelineModuleInfo moduleInfo = event.getModuleInfo();
+    Long endTs = event.getEndTs();
     Status status = event.getStatus();
     executorService.submit(() -> {
+      updateDailyBuildCount(level, status, moduleInfo, accountId, endTs);
       sendGitStatus(level, ambiance, status, event, accountId);
       sendCleanupRequest(level, ambiance, status, accountId);
     });
+  }
+
+  private void updateDailyBuildCount(Level level, Status status, PipelineModuleInfo moduleInfo, String accountId, Long endTs) {
+    if (level != null && level.getStepType().getStepCategory() == StepCategory.STAGE && isFinalStatus(status)) {
+      if (moduleInfo instanceof CIPipelineModuleInfo) {
+        CIPipelineModuleInfo ciModuleInfo = (CIPipelineModuleInfo) moduleInfo;
+        if (ciModuleInfo.getIsPrivateRepo()) {
+          ciAccountExecutionMetadataRepository.updateCIDailyBuilds(accountId, endTs);
+        }
+      }
+    }
   }
 
   private void sendCleanupRequest(Level level, Ambiance ambiance, Status status, String accountId) {

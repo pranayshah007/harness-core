@@ -77,4 +77,20 @@ features:
       ENTERPRISE:
         restrictionType: AVAILABILITY
         enabled: true
+  - name: DAILY_BUILDS
+    description: The restriction on number of builds per day
+    restrictions:
+      FREE:
+        restrictionType: RATE_LIMIT
+        limit: 100
+        timeUnit:
+          unit: DAYS
+          numberOfUnits: 1
+        clientName: cimanager
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
 
