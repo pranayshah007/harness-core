@@ -146,6 +146,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
       serviceLevelObjectiveV2Service.create(projectParams, serviceLevelObjectiveV2DTO);
     } catch (Exception e) {
       log.error("[SLO Data Mismatch]: SLOV2 not created", e);
+      throw e;
     }
     MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
         MonitoredServiceParams.builderWithProjectParams(projectParams)
@@ -154,7 +155,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     SimpleServiceLevelObjective serviceLevelObjectiveV2 =
         (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
             projectParams, serviceLevelObjectiveDTO.getIdentifier());
-    saveServiceLevelObjectiveEntity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled(),
+    ServiceLevelObjective serviceLevelObjective = saveServiceLevelObjectiveEntity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled(),
         serviceLevelObjectiveV2.getServiceLevelIndicators());
     outboxService.save(ServiceLevelObjectiveCreateEvent.builder()
                            .resourceName(serviceLevelObjectiveDTO.getName())
@@ -187,6 +188,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
       serviceLevelObjectiveV2Service.update(projectParams, identifier, serviceLevelObjectiveV2DTO);
     } catch (Exception e) {
       log.error("[SLO Data Mismatch]: SLOV2 not updated", e);
+      throw e;
     }
     ServiceLevelObjectiveDTO existingServiceLevelObjective =
         serviceLevelObjectiveToServiceLevelObjectiveDTO(serviceLevelObjective);
@@ -219,6 +221,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
       serviceLevelObjectiveV2Service.delete(projectParams, identifier);
     } catch (Exception e) {
       log.error("[SLO Data Mismatch]: SLOV2 not deleted", e);
+      throw e;
     }
     ServiceLevelObjectiveDTO serviceLevelObjectiveDTO =
         serviceLevelObjectiveToServiceLevelObjectiveDTO(serviceLevelObjective);
