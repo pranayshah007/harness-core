@@ -138,8 +138,7 @@ public class PerpetualTaskRecordDao {
         persistence.createUpdateOperations(PerpetualTaskRecord.class)
             .set(PerpetualTaskRecordKeys.delegateId, "")
             .set(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
-            .unset(PerpetualTaskRecordKeys.unassignedReason)
-            .unset(PerpetualTaskRecordKeys.assignTryCount);
+            .unset(PerpetualTaskRecordKeys.unassignedReason);
 
     if (taskExecutionBundle != null) {
       updateOperations.set(PerpetualTaskRecordKeys.task_parameters, taskExecutionBundle.toByteArray());
