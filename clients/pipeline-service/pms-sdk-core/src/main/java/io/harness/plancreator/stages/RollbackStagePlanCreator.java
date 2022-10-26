@@ -112,6 +112,7 @@ public class RollbackStagePlanCreator {
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILDREN).build())
                     .build())
+            .adviserObtainments(getAdvisor(kryoSerializer, parallelStageNode))
             .skipExpressionChain(true)
             .build();
     PlanCreationResponse parallelBlockResponse =

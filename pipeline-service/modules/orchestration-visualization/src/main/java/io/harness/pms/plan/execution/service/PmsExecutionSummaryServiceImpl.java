@@ -12,6 +12,7 @@ import static io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrency.ConcurrentChildInstance;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
@@ -170,22 +171,25 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       return;
     }
 
-    // get the node that is the previous node for the current node execution
-    Optional<String> optionalPrevStageID =
-        graphLayoutNodeDTOMap.keySet()
-            .stream()
-            .filter(key
-                -> Objects.equals(graphLayoutNodeDTOMap.get(key).getNodeExecutionId(), nodeExecution.getPreviousId()))
-            .findFirst();
-    if (!optionalPrevStageID.isPresent()) {
-      return;
-    }
     Update update = new Update();
-    String prevStage = optionalPrevStageID.get();
-    // if prev stage is a non rollback stage, then we need to update the next node for this previous stage
-    if (!prevStage.endsWith(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)) {
-      List<String> newNextIdList = Collections.singletonList(planNodeUuid);
-      update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + prevStage + ".edgeLayoutList.nextIds", newNextIdList);
+    // nodeExecution.getPreviousId() will be null for stages inside a parallel block
+    if (EmptyPredicate.isNotEmpty(nodeExecution.getPreviousId())) {
+      // get the node that is the previous node for the current node execution
+      Optional<String> optionalPrevStageID =
+          graphLayoutNodeDTOMap.keySet()
+              .stream()
+              .filter(key
+                  -> Objects.equals(graphLayoutNodeDTOMap.get(key).getNodeExecutionId(), nodeExecution.getPreviousId()))
+              .findFirst();
+      if (!optionalPrevStageID.isPresent()) {
+        return;
+      }
+      String prevStage = optionalPrevStageID.get();
+      // if prev stage is a non rollback stage, then we need to update the next node for this previous stage
+      if (!prevStage.endsWith(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)) {
+        List<String> newNextIdList = Collections.singletonList(planNodeUuid);
+        update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + prevStage + ".edgeLayoutList.nextIds", newNextIdList);
+      }
     }
     update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + planNodeUuid + ".status",
         ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()));
