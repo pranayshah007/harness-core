@@ -53,9 +53,10 @@ public class TimeSeriesAnalysisResource {
       value = "get test timeseries data for a verification job and risk analysis", nickname = "getTimeSeriesRecords")
   public RestResponse<List<TimeSeriesRecordDTO>>
   getTimeSeriesRecords(@QueryParam("verificationTaskId") @NotNull String verificationTaskId,
-      @QueryParam("startTime") @NotNull Long startTime, @QueryParam("endTime") @NotNull Long endTime) {
-    return new RestResponse<>(timeSeriesAnalysisService.getTimeSeriesRecordDTOs(
-        verificationTaskId, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime)));
+      @QueryParam("startTime") @NotNull Long startTime, @QueryParam("endTime") @NotNull Long endTime,
+      @QueryParam("hosts") String commaSeparatedHosts) {
+    return new RestResponse<>(timeSeriesAnalysisService.getDeploymentMetricTimeSeriesRecordDTOs(
+        verificationTaskId, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), commaSeparatedHosts));
   }
 
   @GET

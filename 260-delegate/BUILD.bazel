@@ -22,7 +22,6 @@ java_library(
         "//420-delegate-agent:module",
         "//867-polling-contracts:module",
         "//platform-service/modules/notification-service/delegate-tasks:module",
-        "@maven//:org_apache_commons_commons_math3",
         "@maven//:org_apache_logging_log4j_log4j_api",
         "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
         "@maven//:org_atmosphere_wasync",

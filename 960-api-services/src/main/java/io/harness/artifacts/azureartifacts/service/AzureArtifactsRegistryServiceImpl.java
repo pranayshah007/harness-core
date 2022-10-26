@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
@@ -209,11 +210,28 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
       log.info("No builds found matching project={}, feed={} and packageId={}",
           azureArtifactsInternalConfig.getProject(), azureArtifactsInternalConfig.getFeed(),
           azureArtifactsInternalConfig.getPackageId());
-    } else {
-      log.info("Total builds found = {}", buildDetails.size());
+
+      return null;
     }
 
-    return buildDetails.get(0);
+    Pattern pattern = Pattern.compile(versionRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+
+    List<BuildDetails> builds =
+        buildDetails.stream()
+            .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
+            .collect(Collectors.toList());
+
+    if (builds.isEmpty()) {
+      log.info("No builds found matching project={}, feed={} and packageId={}",
+          azureArtifactsInternalConfig.getProject(), azureArtifactsInternalConfig.getFeed(),
+          azureArtifactsInternalConfig.getPackageId());
+
+      return null;
+    } else {
+      log.info("Total builds found = {}", builds.size());
+    }
+
+    return builds.get(0);
   }
 
   @Override

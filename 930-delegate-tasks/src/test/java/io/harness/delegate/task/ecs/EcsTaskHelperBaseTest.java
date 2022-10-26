@@ -70,8 +70,8 @@ public class EcsTaskHelperBaseTest extends CategoryTest {
         deploymentReleaseData.getServiceName(), ecsInfraConfig.getRegion());
     EcsServerInstanceInfo ecsServerInstanceInfo =
         (EcsServerInstanceInfo) ecsTaskHelperBase.getEcsServerInstanceInfos(deploymentReleaseData).get(0);
-    assertThat(ecsServerInstanceInfo.getClusterArn()).isEqualTo("arn");
-    assertThat(ecsServerInstanceInfo.getRegion()).isEqualTo("us-east-1");
-    assertThat(ecsServerInstanceInfo.getLaunchType()).isEqualTo("FARGATE");
+    assertThat(ecsServerInstanceInfo.getClusterArn()).isEqualTo(ecsTask.getClusterArn());
+    assertThat(ecsServerInstanceInfo.getLaunchType()).isEqualTo(ecsTask.getLaunchType());
+    assertThat(ecsServerInstanceInfo.getRegion()).isEqualTo(ecsInfraConfig.getRegion());
   }
 }

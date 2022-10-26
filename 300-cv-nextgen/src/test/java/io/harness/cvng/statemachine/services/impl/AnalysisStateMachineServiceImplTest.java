@@ -14,11 +14,16 @@ import static io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngin
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.DHRUVX;
+import static io.harness.rule.OwnerRule.NAVEEN;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -33,8 +38,10 @@ import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.services.api.CVConfigService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
@@ -43,6 +50,7 @@ import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.entities.CanaryTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogClusterState;
+import io.harness.cvng.statemachine.entities.HostSamplingState;
 import io.harness.cvng.statemachine.entities.PreDeploymentLogClusterState;
 import io.harness.cvng.statemachine.entities.ServiceGuardLogClusterState;
 import io.harness.cvng.statemachine.entities.ServiceGuardTimeSeriesAnalysisState;
@@ -66,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -603,5 +612,44 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
         builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
     monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testCreateStateMachine_forDeployment_withHostSamplingFFOn() throws IllegalAccessException {
+    FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
+    when(featureFlagService.isFeatureFlagEnabled(
+             eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)))
+        .thenReturn(true);
+    FieldUtils.writeField(stateMachineService, "featureFlagService", featureFlagService, true);
+    String verificationTaskId = generateUuid();
+    String verificationJobInstanceId = generateUuid();
+    VerificationTask verificationTask = VerificationTask.builder()
+                                            .accountId(accountId)
+                                            .taskInfo(DeploymentInfo.builder()
+                                                          .verificationJobInstanceId(verificationJobInstanceId)
+                                                          .cvConfigId(cvConfigId)
+                                                          .build())
+                                            .build();
+    verificationTask.setUuid(verificationTaskId);
+    hPersistence.save(verificationTask);
+    VerificationJobInstance verificationJobInstance =
+        VerificationJobInstance.builder()
+            .deploymentStartTime(Instant.now())
+            .startTime(Instant.now().plus(Duration.ofMinutes(2)))
+            .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
+            .build();
+    verificationJobInstance.setUuid(verificationJobInstanceId);
+    hPersistence.save(verificationJobInstance);
+    AnalysisInput inputs = AnalysisInput.builder()
+                               .verificationTaskId(verificationTaskId)
+                               .startTime(Instant.now().minus(5, ChronoUnit.MINUTES))
+                               .endTime(Instant.now())
+                               .build();
+
+    AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputs);
+    assertEquals(stateMachine.getCurrentState().getClass(), HostSamplingState.class);
+    assertThat(stateMachine).isNotNull();
   }
 }
