@@ -58,7 +58,6 @@ serviceScheduler:
   #mongoUri: mongodb://localhost:27017/service_scheduler
 
 enableIterators: ${ENABLE_ITERATORS:-true}
-iteratorConfigPath: ${ITERATOR_CONFIG_PATH:-""}
 trialRegistrationAllowed: true
 eventsFrameworkAvailableInOnPrem: false
 trialRegistrationAllowedForBugathon: false
@@ -331,7 +330,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: c644a110
+scmVersion: ff17c219
 
 ngAuthUIEnabled: false
 
@@ -702,5 +701,3 @@ useGlobalKMSAsBaseAlgo: false
 cdTsDbRetentionPeriodMonths: 7
 
 enableOpentelemetry: false
-
-disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}
