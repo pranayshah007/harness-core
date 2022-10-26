@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 
 /**
  * This is a generic converter provides the common way of bidirectional conversion between two types of objects.
- * This will be used to convert the entity object to DTOs and vice-versa.
+ * for e.g. this can be used to convert the entity object to DTOs and vice-versa.
  * @param <A>
  * @param <B>
  */

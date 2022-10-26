@@ -57,7 +57,7 @@ public class EC2RecommendationDTOConverter extends Converter<EC2RecommendationDT
   }
 
   private static EC2Recommendation convertToEntity(EC2RecommendationDTO ec2RecommendationDTO) {
-    // this method is not in use
+    // this method is not in use right now.
     return EC2Recommendation.builder().build();
   }
 }
