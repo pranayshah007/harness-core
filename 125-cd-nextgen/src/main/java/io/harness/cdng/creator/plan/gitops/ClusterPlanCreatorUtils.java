@@ -19,9 +19,9 @@ import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.gitops.steps.ClusterStepParameters;
+import io.harness.cdng.gitops.steps.ClusterStepParameters.ClusterStepParametersBuilder;
 import io.harness.cdng.gitops.steps.EnvClusterRefs;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
-import io.harness.cdng.gitops.steps.Metadata;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -92,8 +92,13 @@ public class ClusterPlanCreatorUtils {
   private ClusterStepParameters getStepParams(EnvGroupPlanCreatorConfig config) {
     checkNotNull(config, "environment group must be present");
 
+    ClusterStepParametersBuilder clusterStepParametersBuilder = ClusterStepParameters.builder()
+                                                                    .envGroupRef(config.getIdentifier())
+                                                                    .envGroupName(config.getName())
+                                                                    .deployToAllEnvs(false);
+
     if (config.isDeployToAll()) {
-      return ClusterStepParameters.WithEnvGroup(new Metadata(config.getIdentifier(), config.getName()));
+      clusterStepParametersBuilder.deployToAllEnvs(true);
     }
 
     checkArgument(isNotEmpty(config.getEnvironmentPlanCreatorConfigs()),
@@ -111,7 +116,7 @@ public class ClusterPlanCreatorUtils {
                        .build())
             .collect(Collectors.toList());
 
-    return ClusterStepParameters.builder().envClusterRefs(clusterRefs).build();
+    return clusterStepParametersBuilder.envClusterRefs(clusterRefs).build();
   }
 
   private Set<String> getClusterRefs(EnvironmentPlanCreatorConfig config) {

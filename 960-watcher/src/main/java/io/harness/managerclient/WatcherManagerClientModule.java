@@ -12,9 +12,9 @@ import io.harness.security.TokenGenerator;
 import com.google.inject.AbstractModule;
 
 public class WatcherManagerClientModule extends AbstractModule {
-  private String managerBaseUrl;
-  private String accountId;
-  private String accountSecret;
+  private final String managerBaseUrl;
+  private final String accountId;
+  private final String accountSecret;
 
   public WatcherManagerClientModule(String managerBaseUrl, String accountId, String accountSecret) {
     this.managerBaseUrl = managerBaseUrl;

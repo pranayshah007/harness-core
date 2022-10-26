@@ -108,7 +108,7 @@ public class LogMLResource {
   @ExceptionMetered
   public RestResponse<List<LogMLFeedbackRecord>> getFeedbackForDashboard(
       @QueryParam("accountId") String accountId, @QueryParam("workflowId") String workflowId) {
-    return new RestResponse<>(analysisService.getMLFeedback(accountId, workflowId));
+    return new RestResponse<>(null);
   }
 
   @GET

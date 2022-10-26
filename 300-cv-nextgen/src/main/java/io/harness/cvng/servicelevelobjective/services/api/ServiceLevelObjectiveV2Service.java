@@ -19,6 +19,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
@@ -58,8 +59,7 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
   PageResponse<AbstractServiceLevelObjective> getSLOForListView(
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName);
 
-  AbstractServiceLevelObjective getFromSLIIdentifier(
-      ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
+  SimpleServiceLevelObjective getFromSLIIdentifier(ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
 
   PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String sloIdentifier, PageParams pageParams);

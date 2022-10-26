@@ -7,9 +7,9 @@
 
 package io.harness.pms.wait;
 
-import static io.harness.audit.ResourceTypeConstants.PIPELINE;
 import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_EXECUTE;
 import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_VIEW;
+import static io.harness.pms.utils.PmsConstants.PIPELINE;
 
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;

@@ -28,9 +28,9 @@ public enum DataSourceType {
   DYNATRACE("Dynatrace", VerificationType.TIME_SERIES, "prometheus"),
   CUSTOM_HEALTH_METRIC("CustomHealthMetric", VerificationType.TIME_SERIES, "prometheus"),
   CUSTOM_HEALTH_LOG("CustomHealthLog", VerificationType.LOG, "splunk"),
-
   ELASTICSEARCH("ElasticSearch", VerificationType.LOG, "splunk"),
-  CLOUDWATCH_METRICS("CloudWatchMetrics", VerificationType.TIME_SERIES, "appdynamics");
+  CLOUDWATCH_METRICS("CloudWatchMetrics", VerificationType.TIME_SERIES, "appdynamics"),
+  AWS_PROMETHEUS("AwsPrometheus", VerificationType.TIME_SERIES, "prometheus");
 
   private String displayName;
   private VerificationType verificationType;

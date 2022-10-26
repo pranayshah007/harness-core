@@ -7,6 +7,9 @@
 
 package io.harness.pms.plan.execution;
 
+import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_EXECUTE;
+import static io.harness.pms.utils.PmsConstants.PIPELINE;
+
 import static java.lang.String.format;
 
 import io.harness.accesscontrol.AccountIdentifier;
@@ -19,6 +22,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
@@ -68,6 +72,8 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @Inject private final PMSExecutionService pmsExecutionService;
   @Inject private final OrchestrationEventLogRepository orchestrationEventLogRepository;
   @Inject private final AccessControlClient accessControlClient;
+  @Inject PlanExecutionService planExecutionService;
+
   @Inject private final PreflightService preflightService;
   @Inject private final PMSPipelineService pmsPipelineService;
   @Inject private final RetryExecutionHelper retryExecutionHelper;
@@ -233,6 +239,9 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<InterruptDTO> handleManualInterventionInterrupt(@NotNull String accountId, @NotNull String orgId,
       @NotNull String projectId, @NotNull PlanExecutionInterruptType executionInterruptType,
       @NotNull String planExecutionId, @NotNull String nodeExecutionId) {
+    String pipelineIdentifier = planExecutionService.get(planExecutionId).getMetadata().getPipelineIdentifier();
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, orgId, projectId), Resource.of(PIPELINE, pipelineIdentifier), PIPELINE_EXECUTE);
     return ResponseDTO.newResponse(
         pmsExecutionService.registerInterrupt(executionInterruptType, planExecutionId, nodeExecutionId));
   }

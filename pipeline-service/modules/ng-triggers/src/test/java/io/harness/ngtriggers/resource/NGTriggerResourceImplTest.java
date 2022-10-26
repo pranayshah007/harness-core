@@ -57,8 +57,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -187,6 +189,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
                                              .build())
             .webhookDetails(WebhookDetails.builder().webhookSourceRepo("Github").build())
             .enabled(true)
+            .isPipelineInputOutdated(false)
             .build();
 
     ngTriggerEntity = NGTriggerEntity.builder()
@@ -380,12 +383,127 @@ public class NGTriggerResourceImplTest extends CategoryTest {
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
 
-    when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerResponseDTO);
+    doReturn(Optional.of(ngTriggerEntity))
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
+
+    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false))
+        .thenReturn(ngTriggerDetailsResponseDTO);
+
+    doReturn(triggerDetails)
+        .when(ngTriggerService)
+        .fetchTriggerEntity(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYaml, false);
+
     NGTriggerDetailsResponseDTO responseDTO =
         ngTriggerResource
-            .getTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER)
+            .getTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, IDENTIFIER, PIPELINE_IDENTIFIER)
             .getData();
-    assertThat(responseDTO).isEqualTo(null);
+    assertThat(responseDTO).isEqualTo(ngTriggerDetailsResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetTriggerDetailsPipelineOutdated() {
+    NGTriggerDetailsResponseDTO ngTriggerDetailsResponse =
+        NGTriggerDetailsResponseDTO.builder()
+            .name(NAME)
+            .identifier(IDENTIFIER)
+            .type(NGTriggerType.WEBHOOK)
+            .lastTriggerExecutionDetails(LastTriggerExecutionDetails.builder()
+                                             .lastExecutionTime(1607306091861L)
+                                             .lastExecutionStatus("SUCCESS")
+                                             .lastExecutionSuccessful(false)
+                                             .planExecutionId("PYV86FtaSfes7uPrGYJhBg")
+                                             .message("Pipeline execution was requested successfully")
+                                             .build())
+            .webhookDetails(WebhookDetails.builder().webhookSourceRepo("Github").build())
+            .enabled(true)
+            .isPipelineInputOutdated(true)
+            .build();
+
+    doReturn(Optional.of(ngTriggerEntity))
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+
+    doReturn(Optional.of(ngTriggerEntity))
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, true))
+        .thenReturn(ngTriggerDetailsResponse);
+
+    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
+
+    doReturn(triggerDetails)
+        .when(ngTriggerService)
+        .fetchTriggerEntity(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYaml, false);
+
+    Map<String, Map<String, String>> errorMap = new HashMap<>();
+    Map<String, String> inner = new HashMap<>();
+    inner.put("key", "value");
+    errorMap.put("key", inner);
+
+    doReturn(errorMap).when(ngTriggerService).validatePipelineRef(triggerDetails);
+
+    NGTriggerDetailsResponseDTO responseDTO =
+        ngTriggerResource
+            .getTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, IDENTIFIER, PIPELINE_IDENTIFIER)
+            .getData();
+    assertThat(responseDTO).isEqualTo(ngTriggerDetailsResponse);
+    assertThat(responseDTO.isPipelineInputOutdated()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetTriggerDetailsPipelineOutdatedFalse() {
+    NGTriggerDetailsResponseDTO ngTriggerDetailsResponse =
+        NGTriggerDetailsResponseDTO.builder()
+            .name(NAME)
+            .identifier(IDENTIFIER)
+            .type(NGTriggerType.WEBHOOK)
+            .lastTriggerExecutionDetails(LastTriggerExecutionDetails.builder()
+                                             .lastExecutionTime(1607306091861L)
+                                             .lastExecutionStatus("SUCCESS")
+                                             .lastExecutionSuccessful(false)
+                                             .planExecutionId("PYV86FtaSfes7uPrGYJhBg")
+                                             .message("Pipeline execution was requested successfully")
+                                             .build())
+            .webhookDetails(WebhookDetails.builder().webhookSourceRepo("Github").build())
+            .enabled(true)
+            .isPipelineInputOutdated(false)
+            .build();
+
+    doReturn(Optional.of(ngTriggerEntity))
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+
+    doReturn(Optional.of(ngTriggerEntity))
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false))
+        .thenReturn(ngTriggerDetailsResponse);
+
+    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
+
+    doReturn(triggerDetails)
+        .when(ngTriggerService)
+        .fetchTriggerEntity(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYaml, false);
+
+    Map<String, Map<String, String>> errorMap = new HashMap<>();
+
+    doReturn(errorMap).when(ngTriggerService).validatePipelineRef(triggerDetails);
+
+    NGTriggerDetailsResponseDTO responseDTO =
+        ngTriggerResource
+            .getTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, IDENTIFIER, PIPELINE_IDENTIFIER)
+            .getData();
+    assertThat(responseDTO).isEqualTo(ngTriggerDetailsResponse);
+    assertThat(responseDTO.isPipelineInputOutdated()).isEqualTo(false);
   }
 
   @Test
@@ -560,7 +678,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     final Page<NGTriggerEntity> serviceList = new PageImpl<>(Collections.singletonList(ngTriggerEntity), pageable, 1);
     doReturn(serviceList).when(ngTriggerService).list(criteria, pageable);
 
-    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, false))
+    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, false, false))
         .thenReturn(ngTriggerDetailsResponseDTO);
 
     List<NGTriggerDetailsResponseDTO> content =

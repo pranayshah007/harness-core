@@ -193,6 +193,92 @@ public class AzureArtifactsTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = VED)
   @Category(UnitTests.class)
+  public void testGetBuildsFromRegex() {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig =
+        AzureArtifactsInternalConfig.builder()
+            .authMechanism("PersonalAccessToken")
+            .registryUrl("https://dev.azure.com/automation-cdc/")
+            .packageId(null)
+            .username("")
+            .password("")
+            .token("value")
+            .build();
+
+    SecretRefData tokenRef = SecretRefData.builder().decryptedValue("value".toCharArray()).build();
+
+    AzureArtifactsTokenDTO azureArtifactsTokenDTO = AzureArtifactsTokenDTO.builder().tokenRef(tokenRef).build();
+
+    AzureArtifactsCredentialsDTO azureArtifactsCredentialsDTO =
+        AzureArtifactsCredentialsDTO.builder()
+            .credentialsSpec(azureArtifactsTokenDTO)
+            .type(AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN)
+            .build();
+
+    AzureArtifactsAuthenticationDTO azureArtifactsAuthenticationDTO =
+        AzureArtifactsAuthenticationDTO.builder().credentials(azureArtifactsCredentialsDTO).build();
+
+    AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
+        AzureArtifactsConnectorDTO.builder()
+            .azureArtifactsUrl("https://dev.azure.com/automation-cdc/")
+            .auth(azureArtifactsAuthenticationDTO)
+            .build();
+
+    AzureArtifactsDelegateRequest sourceAttributes = AzureArtifactsDelegateRequest.builder()
+                                                         .project(null)
+                                                         .feed("feed")
+                                                         .packageId(null)
+                                                         .packageName("package")
+                                                         .packageType("maven")
+                                                         .versionRegex("4*")
+                                                         .azureArtifactsConnectorDTO(azureArtifactsConnectorDTO)
+                                                         .build();
+
+    List<BuildDetails> builds = new ArrayList<>();
+
+    BuildDetails build1 = new BuildDetails();
+    build1.setNumber("b1");
+    build1.setUiDisplayName("Version# b1");
+
+    BuildDetails build2 = new BuildDetails();
+    build2.setNumber("b2");
+    build2.setUiDisplayName("Version# b2");
+
+    BuildDetails build3 = new BuildDetails();
+    build3.setNumber("b3");
+    build3.setUiDisplayName("Version# b3");
+
+    BuildDetails build4 = new BuildDetails();
+    build4.setNumber("b4");
+    build4.setUiDisplayName("Version# b4");
+
+    BuildDetails build5 = new BuildDetails();
+    build5.setNumber("b5");
+    build5.setUiDisplayName("Version# b5");
+
+    builds.add(build1);
+    builds.add(build2);
+    builds.add(build3);
+    builds.add(build4);
+    builds.add(build5);
+
+    doReturn(builds)
+        .when(azureArtifactsRegistryService)
+        .listPackageVersions(azureArtifactsInternalConfig, sourceAttributes.getPackageType(),
+            sourceAttributes.getPackageName(), sourceAttributes.getVersionRegex(), sourceAttributes.getFeed(),
+            sourceAttributes.getProject());
+
+    ArtifactTaskExecutionResponse executionResponse = azureArtifactsTaskHandler.getBuilds(sourceAttributes);
+
+    assertThat(executionResponse).isNotNull();
+    assertThat(executionResponse.getBuildDetails()).isNotNull();
+    assertThat(executionResponse.getBuildDetails().size()).isEqualTo(1);
+    assertThat(executionResponse.getBuildDetails().get(0).getNumber()).isEqualTo("b4");
+    assertThat(executionResponse.getBuildDetails().get(0).getUiDisplayName()).isEqualTo("Version# b4");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
   public void testGetLastSuccessfulBuildFromRegex() {
     AzureArtifactsInternalConfig azureArtifactsInternalConfig =
         AzureArtifactsInternalConfig.builder()

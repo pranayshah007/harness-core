@@ -424,7 +424,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(harnessCacheManager.getCache(PRIMARY_CACHE_PREFIX + USER_CACHE, String.class, User.class,
              AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES)))
         .thenReturn(new NoOpCache<>());
-    userServiceImpl.completeNGInvite(inviteDTO, false);
+    userServiceImpl.completeNGInvite(inviteDTO, false, true);
     verify(eventPublishHelper, times(1)).publishUserRegistrationCompletionEvent(anyString(), any());
   }
 
@@ -454,7 +454,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(harnessCacheManager.getCache(PRIMARY_CACHE_PREFIX + USER_CACHE, String.class, User.class,
              AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES)))
         .thenReturn(new NoOpCache<>());
-    userServiceImpl.completeNGInvite(inviteDTO, false);
+    userServiceImpl.completeNGInvite(inviteDTO, false, true);
     verify(totpAuthHandler, times(1)).sendTwoFactorAuthenticationResetEmail(any());
     verify(eventPublishHelper, times(1)).publishUserRegistrationCompletionEvent(anyString(), any());
   }

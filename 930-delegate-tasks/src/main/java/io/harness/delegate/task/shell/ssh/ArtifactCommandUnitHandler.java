@@ -91,8 +91,8 @@ public abstract class ArtifactCommandUnitHandler {
             format(SshExceptionConstants.ARTIFACT_DOWNLOAD_HINT, artifactDelegateConfig.getArtifactType()),
             format(SshExceptionConstants.ARTIFACT_DOWNLOAD_EXPLANATION, artifactDelegateConfig.getIdentifier(),
                 artifactDelegateConfig.getArtifactType()),
-            new SshCommandExecutionException(
-                format(SshExceptionConstants.ARTIFACT_DOWNLOAD_FAILED, artifactDelegateConfig.getArtifactType())));
+            new SshCommandExecutionException(format(SshExceptionConstants.ARTIFACT_DOWNLOAD_FAILED,
+                artifactDelegateConfig.getArtifactType(), artifactDelegateConfig.getIdentifier())));
       }
 
       log.info("Input stream acquired for file:[{}]. Saving locally", key);

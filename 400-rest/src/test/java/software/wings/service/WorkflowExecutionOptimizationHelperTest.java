@@ -8,6 +8,7 @@ import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -17,6 +18,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.PageRequest;
 import io.harness.beans.SearchFilter;
 import io.harness.category.element.UnitTests;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -30,15 +32,25 @@ import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.AbstractMultivaluedMap;
 import javax.ws.rs.core.UriInfo;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class WorkflowExecutionOptimizationHelperTest extends WingsBaseTest {
   @Inject @InjectMocks private WorkflowExecutionOptimizationHelper optimizationHelper;
   @Inject private HPersistence persistence;
+  @Mock private FeatureFlagService featureFlagService;
+
+  @Before
+  public void setup() {
+    MockitoAnnotations.initMocks(this);
+    doReturn(true).when(featureFlagService).isEnabled(any(), any());
+  }
 
   @Test
   @Owner(developers = LUCAS_SALES)
@@ -61,7 +73,7 @@ public class WorkflowExecutionOptimizationHelperTest extends WingsBaseTest {
 
     PageRequest pageRequest = aPageRequest().withUriInfo(uriInfo).build();
 
-    optimizationHelper.enforceAppIdFromChildrenEntities(pageRequest);
+    optimizationHelper.enforceAppIdFromChildrenEntities(pageRequest, "accountId");
 
     assertThat(pageRequest.getFilters().size()).isEqualTo(1);
 

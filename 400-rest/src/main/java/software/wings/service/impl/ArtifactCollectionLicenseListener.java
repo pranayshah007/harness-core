@@ -18,7 +18,7 @@ public class ArtifactCollectionLicenseListener implements AccountLicenseObserver
 
   @Override
   public boolean onLicenseChange(Account account) {
-    if (account.getLicenseInfo() != null && account.getLicenseInfo().getAccountStatus().equals(AccountStatus.ACTIVE)) {
+    if (account.getLicenseInfo() != null && AccountStatus.ACTIVE.equals(account.getLicenseInfo().getAccountStatus())) {
       log.info("Enabling artifact collection for accountId {}", account.getUuid());
       return artifactStreamService.resetStoppedArtifactCollectionForAccount(account.getUuid());
     } else {

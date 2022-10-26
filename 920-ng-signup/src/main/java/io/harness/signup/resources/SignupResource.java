@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static java.lang.Boolean.TRUE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.licensing.NGLicensingEntityConstants;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -89,7 +90,7 @@ public class SignupResource {
   @Path("/complete/{token}")
   @PublicApi
   public RestResponse<UserInfo> completeSignupInvite(@PathParam("token") String token,
-      @QueryParam("referer") String referer, @QueryParam("gaClientId") String gaClientId) {
+      @QueryParam("referer") String referer, @QueryParam(NGLicensingEntityConstants.GA_CLIENT_ID) String gaClientId) {
     return new RestResponse<>(signupService.completeSignupInvite(token, referer, gaClientId));
   }
 

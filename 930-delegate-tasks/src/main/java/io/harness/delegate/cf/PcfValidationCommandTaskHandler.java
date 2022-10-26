@@ -62,7 +62,6 @@ public class PcfValidationCommandTaskHandler extends PcfCommandTaskHandler {
               .password(String.valueOf(pcfConfig.getPassword()))
               .endpointUrl(pcfConfig.getEndpointUrl())
               .limitPcfThreads(cfInfraMappingDataRequest.isLimitPcfThreads())
-              .ignorePcfConnectionContextCache(cfInfraMappingDataRequest.isIgnorePcfConnectionContextCache())
               .timeOutIntervalInMins(cfInfraMappingDataRequest.getTimeoutIntervalInMin())
               .build());
 

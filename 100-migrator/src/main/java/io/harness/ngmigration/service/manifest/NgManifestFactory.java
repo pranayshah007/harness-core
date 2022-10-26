@@ -50,7 +50,7 @@ public class NgManifestFactory {
             return k8sManifestHelmChartRepoStoreService;
           case KustomizeSourceRepo:
             return kustomizeSourceRepoStoreService;
-          case CUSTOM_OPENSHIFT_TEMPLATE:
+          case OC_TEMPLATES:
             return openshiftSourceRepoStoreService;
           default:
             throw new InvalidRequestException(String.format(

@@ -16,6 +16,7 @@ import io.harness.data.validator.EntityIdentifier;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -43,6 +44,7 @@ import org.hibernate.validator.constraints.NotEmpty;
       @JsonSubTypes.Type(value = ELKHealthSourceSpec.class, name = "ElasticSearch"),
       @JsonSubTypes.Type(value = CloudWatchMetricsHealthSourceSpec.class, name = "CloudWatchMetrics")
 })
+@Schema(name = "HealthSource", description = "This is the Health Source entity defined in Harness")
 public abstract class HealthSourceSpec {
   @NotEmpty @EntityIdentifier(allowScoped = true) String connectorRef;
   public abstract CVConfigUpdateResult getCVConfigUpdateResult(String accountId, String orgIdentifier,
