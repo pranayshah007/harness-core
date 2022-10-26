@@ -187,7 +187,9 @@ public class NGVariablesUtils {
   }
 
   public Map<String, String> getStringMapVariables(List<NGVariable> variables, Long expressionFunctorToken) {
-    Map<String, Object> inputVariables = expressionFunctorToken == null? getMapOfVariables(variables): getMapOfVariables(variables, expressionFunctorToken);
+    Map<String, Object> inputVariables = expressionFunctorToken == null
+        ? getMapOfVariables(variables)
+        : getMapOfVariables(variables, expressionFunctorToken);
     if (EmptyPredicate.isEmpty(inputVariables)) {
       return new HashMap<>();
     }
@@ -195,7 +197,8 @@ public class NGVariablesUtils {
     inputVariables.forEach((key, value) -> {
       if (value instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
-        String stringVal = parameterFieldValue.getValue() == null ? parameterFieldValue.getExpressionValue(): parameterFieldValue.getValue().toString();
+        String stringVal = parameterFieldValue.getValue() == null ? parameterFieldValue.getExpressionValue()
+                                                                  : parameterFieldValue.getValue().toString();
         if (stringVal == null) {
           throw new InvalidRequestException(String.format("Variable [%s] value found to be null", key));
         }
