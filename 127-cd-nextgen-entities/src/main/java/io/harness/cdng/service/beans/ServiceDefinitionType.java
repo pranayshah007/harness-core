@@ -59,7 +59,13 @@ public enum ServiceDefinitionType {
   ECS("ECS",
       Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
           ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.ECS);
+      ServiceSpecType.ECS),
+
+  @JsonProperty(ServiceSpecType.ELASTIGROUP)
+  ELASTIGROUP(ServiceSpecType.ELASTIGROUP,
+      Lists.newArrayList(ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.BASIC,
+          ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.ELASTIGROUP);
 
   /*
   //Unsupported for now

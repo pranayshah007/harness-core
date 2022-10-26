@@ -40,6 +40,7 @@ public class OutcomeExpressionConstants {
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_OUTCOME = "serverlessAwsLambdaRollbackOutcome";
   public final String CONFIG_FILES = "configFiles";
   public final String STARTUP_COMMAND = "startupCommand";
+  public final String STARTUP_SCRIPT = "startupScript";
   public final String APPLICATION_SETTINGS = "applicationSettings";
   public final String CONNECTION_STRINGS = "connectionStrings";
   public final String ECS_ROLLING_ROLLBACK_OUTCOME = "ecsRollingRollbackOutcome";
