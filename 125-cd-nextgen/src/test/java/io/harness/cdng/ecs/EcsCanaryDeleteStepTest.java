@@ -13,11 +13,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.account.AccountClient;
 import io.harness.account.services.AccountService;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.ecs.beans.EcsCanaryDeleteDataOutcome;
 import io.harness.cdng.ecs.beans.EcsCanaryDeleteOutcome;
@@ -26,8 +28,11 @@ import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.ecs.EcsCanaryDeleteResult;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
+import io.harness.delegate.task.ecs.request.EcsCanaryDeleteRequest;
 import io.harness.delegate.task.ecs.response.EcsCanaryDeleteResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
@@ -36,6 +41,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -66,6 +72,7 @@ public class EcsCanaryDeleteStepTest extends CategoryTest {
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
                                         .build();
   private final EcsCanaryDeleteStepParameters ecsSpecParameters = EcsCanaryDeleteStepParameters.infoBuilder().build();
+  private final String ECS_CANARY_DELETE_COMMAND_NAME = "EcsCanaryDelete";
 
   @Mock private EcsStepHelperImpl ecsStepHelper;
   @Mock private InstanceInfoService instanceInfoService;
@@ -214,7 +221,23 @@ public class EcsCanaryDeleteStepTest extends CategoryTest {
                                                     .build();
     doReturn(taskChainResponseAssert).when(ecsStepCommonHelper).queueEcsTask(any(), any(), any(), any(), anyBoolean());
 
-    TaskRequest taskRequest = ecsCanaryDeleteStep.obtainTaskAfterRbac(ambiance, stepElementParameters, inputPackage);
-    assertThat(taskRequest).isEqualTo(TaskRequest.newBuilder().build());
+    ecsCanaryDeleteStep.obtainTaskAfterRbac(ambiance, stepElementParameters, inputPackage);
+
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    EcsCanaryDeleteRequest ecsCanaryDeleteRequest =
+        EcsCanaryDeleteRequest.builder()
+            .accountId(accountId)
+            .ecsCommandType(EcsCommandTypeNG.ECS_CANARY_DELETE)
+            .commandName(ECS_CANARY_DELETE_COMMAND_NAME)
+            .commandUnitsProgress(CommandUnitsProgress.builder().build())
+            .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
+            .ecsServiceDefinitionManifestContent(ecsCanaryDeleteDataOutcome.getCreateServiceRequestBuilderString())
+            .ecsServiceNameSuffix(ecsCanaryDeleteDataOutcome.getEcsServiceNameSuffix())
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .build();
+
+    verify(ecsStepCommonHelper)
+        .queueEcsTask(stepElementParameters, ecsCanaryDeleteRequest, ambiance,
+            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true);
   }
 }

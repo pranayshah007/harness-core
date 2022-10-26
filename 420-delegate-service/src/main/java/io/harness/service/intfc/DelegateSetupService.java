@@ -82,6 +82,5 @@ public interface DelegateSetupService {
 
   List<String> listDelegateImplicitSelectors(Delegate delegate);
 
-  AutoUpgrade setAutoUpgrade(
-      long upgraderLastUpdated, boolean immutableDelegate, long delegateCreationTime, String version);
+  AutoUpgrade setAutoUpgrade(long upgraderLastUpdated, boolean immutableDelegate, long delegateCreationTime);
 }
