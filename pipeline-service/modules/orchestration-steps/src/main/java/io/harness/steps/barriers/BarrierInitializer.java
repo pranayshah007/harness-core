@@ -73,6 +73,8 @@ public class BarrierInitializer implements OrchestrationStartObserver {
                   .collect(Collectors.toList());
 
           barrierService.saveAll(barriers);
+        default:
+          throw new IllegalStateException("version not supported");
       }
     } catch (Exception e) {
       log.error("Barrier initialization failed for planExecutionId: [{}]", planExecutionId);
