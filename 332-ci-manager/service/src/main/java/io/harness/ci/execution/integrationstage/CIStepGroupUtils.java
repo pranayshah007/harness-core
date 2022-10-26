@@ -66,6 +66,7 @@ import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
@@ -73,6 +74,7 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;
+import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -377,6 +379,11 @@ public class CIStepGroupUtils {
     envVariables.put(PLUGIN_OVERRIDE, STRING_FALSE);
     envVariables.put(PLUGIN_REBUILD, STRING_TRUE);
 
+    SecretNGVariable secretNGVariable = SecretNGVariable.builder()
+            .name(PLUGIN_JSON_KEY)
+            .value(
+                    ParameterField.createValueField(SecretRefData.builder().decryptedValue(cacheIntelligenceConfig.getServiceKey().toCharArray()).build())
+            ).build();
     PluginStepInfo step = PluginStepInfo.builder()
                               .identifier(SAVE_CACHE_STEP_ID)
                               .image(ParameterField.createValueField(saveCacheImage))
@@ -384,6 +391,7 @@ public class CIStepGroupUtils {
                               .settings(ParameterField.createValueField(settings))
                               .envVariables(envVariables)
                               .entrypoint(ParameterField.createValueField(entrypoint))
+            .secretVariables(secretNGVariable)
                               .harnessManagedImage(true)
                               .build();
 
