@@ -47,10 +47,7 @@ import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -61,6 +58,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -184,6 +182,7 @@ public class ExecutionDetailsResource {
 
   @POST
   @Path("/v2/summary")
+  @ApiModelProperty(hidden = true)
   @ApiOperation(value = "Gets Executions list", nickname = "getListOfExecutions")
   @Operation(operationId = "getListOfExecutions",
           description = "Returns a List of Pipeline Executions with Specific Filters", summary = "List Executions",
@@ -203,7 +202,7 @@ public class ExecutionDetailsResource {
                       @Parameter(description = PipelineResourceConstants.PIPELINE_SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
                               NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
                       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_LIST_PARAM_MESSAGE) @QueryParam(
-                              NGCommonEntityConstants.PIPELINE_KEY) List<String> pipelineIdentifier,
+                              NGCommonEntityConstants.PIPELINE_KEY) @Size(max=20) List<String>  pipelineIdentifier,
                       @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                               NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
                       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(

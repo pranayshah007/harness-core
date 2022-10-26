@@ -7,9 +7,7 @@
 
 package io.harness.pms.plan.execution;
 
-import static io.harness.rule.OwnerRule.NAMAN;
-import static io.harness.rule.OwnerRule.SAMARTH;
-
+import static io.harness.rule.OwnerRule.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -41,7 +39,9 @@ import io.harness.rule.Owner;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,6 +68,8 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
   private final String PIPELINE_IDENTIFIER = "basichttpFail";
+
+  private final List<String> PIPELINE_IDENTIFIER_LIST = Arrays.asList(PIPELINE_IDENTIFIER);
   private final String PLAN_EXECUTION_ID = "planId";
   private final String STAGE_NODE_ID = "stageNodeId";
 
@@ -182,6 +184,40 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
             .getListOfExecutions(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, PIPELINE_IDENTIFIER, 0, 10, null,
                 null, null, null, null, false, GitEntityFindInfoDTO.builder().branch("branchName").build())
             .getData();
+    assertThat(content).isNotEmpty();
+    assertThat(content.getNumberOfElements()).isEqualTo(1);
+
+    PipelineExecutionSummaryDTO responseDTO = content.toList().get(0);
+    assertThat(responseDTO.getPipelineIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
+    assertThat(responseDTO.getPlanExecutionId()).isEqualTo(PLAN_EXECUTION_ID);
+    assertThat(responseDTO.getRunSequence()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testGetListOfExecutionsForRemotePipelines() {
+    ByteString gitSyncBranchContext = ByteString.copyFromUtf8("random byte string");
+    doReturn(gitSyncBranchContext).when(pmsGitSyncHelper).getGitSyncBranchContextBytesThreadLocal();
+
+    Criteria criteria = Criteria.where(   "a").is("b");
+    doReturn(criteria)
+            .when(pmsExecutionService)
+            .formCriteriaV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, null, null, null, null, null,
+                    false, false, gitSyncBranchContext, true);
+
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineEntityKeys.createdAt));
+    Page<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntities =
+            new PageImpl<>(Collections.singletonList(executionSummaryEntity), pageable, 1);
+    doReturn(pipelineExecutionSummaryEntities)
+            .when(pmsExecutionService)
+            .getPipelineExecutionSummaryEntity(criteria, pageable);
+
+    Page<PipelineExecutionSummaryDTO> content =
+            executionDetailsResource
+                    .getListOfExecutionsV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, PIPELINE_IDENTIFIER_LIST, 0, 10, null,
+                            null, null, null, null, false, GitEntityFindInfoDTO.builder().branch("branchName").build())
+                    .getData();
     assertThat(content).isNotEmpty();
     assertThat(content.getNumberOfElements()).isEqualTo(1);
 
