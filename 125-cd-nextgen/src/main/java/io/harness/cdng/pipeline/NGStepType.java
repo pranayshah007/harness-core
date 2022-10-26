@@ -19,6 +19,7 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /*
@@ -170,7 +171,10 @@ public enum NGStepType {
       StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK),
   @JsonProperty(StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
   GITOPS_UPDATE_RELEASE_REPO("Update Release Repo", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
-      StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO);
+      StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO),
+  @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_DEPLOY)
+  ELASTIGROUP_DEPLOY(
+      "Elastigroup Deploy", Collections.emptyList(), "Elastigroup", StepSpecTypeConstants.ELASTIGROUP_DEPLOY);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;
