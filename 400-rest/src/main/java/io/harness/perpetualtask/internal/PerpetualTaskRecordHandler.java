@@ -26,6 +26,7 @@ import io.harness.delegate.Capability;
 import io.harness.delegate.DelegateTaskValidationFailedException;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.DelegateTaskInvalidRequestException;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoInstalledDelegatesException;
@@ -124,7 +125,6 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
       log.info("Assigning Delegate to the inactive {} perpetual task with id={}.", taskRecord.getPerpetualTaskType(),
           taskId);
       DelegateTask validationTask = getValidationTask(taskRecord);
-
       try {
         DelegateResponseData response = delegateService.executeTask(validationTask);
 
@@ -179,6 +179,10 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
         ignoredOnPurpose(exception);
         perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(
             taskRecord, PerpetualTaskUnassignedReason.TASK_VALIDATION_FAILED, PerpetualTaskState.TASK_NON_ASSIGNABLE);
+      } catch (DelegateTaskInvalidRequestException e) {
+        log.error("Invalid task found, perpetual task id{}", taskRecord.getUuid(), e);
+        perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(
+            taskRecord, PerpetualTaskUnassignedReason.PT_TASK_FAILED, PerpetualTaskState.TASK_INVALID);
       } catch (Exception e) {
         log.error("Failed to assign any Delegate to perpetual task {} ", taskId, e);
         perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(
