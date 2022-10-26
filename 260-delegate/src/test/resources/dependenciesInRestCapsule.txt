@@ -14,7 +14,6 @@ com.amazonaws:aws-java-sdk-codecommit:jar:1.11.834
 com.amazonaws:aws-java-sdk-codedeploy:jar:1.11.834
 com.amazonaws:aws-java-sdk-core:jar:1.11.834
 com.amazonaws:aws-java-sdk-costandusagereport:jar:1.11.834
-com.amazonaws:aws-java-sdk-costexplorer:jar:1.11.834
 com.amazonaws:aws-java-sdk-ec2:jar:1.11.834
 com.amazonaws:aws-java-sdk-ecr:jar:1.11.834
 com.amazonaws:aws-java-sdk-ecs:jar:1.11.834
