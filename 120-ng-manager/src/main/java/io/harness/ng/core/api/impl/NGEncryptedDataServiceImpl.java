@@ -7,10 +7,10 @@
 
 package io.harness.ng.core.api.impl;
 
-import static io.harness.ConnectorConstants.LATEST;
-import static io.harness.ConnectorConstants.REGIONS;
-import static io.harness.ConnectorConstants.VERSION;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
+import static io.harness.SecretConstants.LATEST;
+import static io.harness.SecretConstants.REGIONS;
+import static io.harness.SecretConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
