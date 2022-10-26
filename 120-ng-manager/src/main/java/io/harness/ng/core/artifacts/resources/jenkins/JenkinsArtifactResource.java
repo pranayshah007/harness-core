@@ -158,14 +158,14 @@ public class JenkinsArtifactResource {
 
   @POST
   @Hidden
-  @Path("/v2/job/{jobName}/paths")
+  @Path("/v2/jobArtifactPaths")
   @ApiOperation(value = "Gets jenkins Artifact Paths ServiceV2", nickname = "getArtifactPath For Jenkins ServiceV2")
   public ResponseDTO<List<String>> getArtifactPathV2(@QueryParam("connectorRef") String jenkinsConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @PathParam(NGCommonEntityConstants.JOB_NAME) String jobName, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @QueryParam(NGCommonEntityConstants.JOB_NAME) String jobName, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @QueryParam(NGCommonEntityConstants.FQN_PATH) String fqnPath,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, String runtimeInputYaml) {
     if (isNotEmpty(serviceRef)) {
@@ -191,7 +191,7 @@ public class JenkinsArtifactResource {
 
   @POST
   @Hidden
-  @Path("/v2/job/{jobName}/builds")
+  @Path("/v2/jobBuilds")
   @ApiOperation(value = "Gets Jenkins builds ServiceV2", nickname = "getBuilds For Jenkins ServiceV2")
   public ResponseDTO<List<BuildDetails>> getBuildsForJobV2(
       @QueryParam("connectorRef") String jenkinsConnectorIdentifier,
@@ -199,7 +199,7 @@ public class JenkinsArtifactResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @NotNull @PathParam(NGCommonEntityConstants.JOB_NAME) String jobName,
+      @QueryParam(NGCommonEntityConstants.JOB_NAME) String jobName,
       @QueryParam(NGCommonEntityConstants.ARTIFACT_PATH) String artifactPath,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @QueryParam(NGCommonEntityConstants.FQN_PATH) String fqnPath,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, String runtimeInputYaml) {
@@ -230,7 +230,7 @@ public class JenkinsArtifactResource {
 
   @POST
   @Hidden
-  @Path("/v2/job/{jobName}/details")
+  @Path("/v2/jobDetails")
   @ApiOperation(value = "Gets Jenkins Job paramter ServiceV2", nickname = "getJobParameters for Jenkins ServiceV2")
   public ResponseDTO<List<JobParameter>> getJobParametersV2(
       @QueryParam("connectorRef") String jenkinsConnectorIdentifier,
@@ -238,8 +238,8 @@ public class JenkinsArtifactResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @NotNull @PathParam(NGCommonEntityConstants.JOB_NAME) String jobName,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @QueryParam(NGCommonEntityConstants.FQN_PATH) String fqnPath,
+      @QueryParam(NGCommonEntityConstants.JOB_NAME) String jobName, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @QueryParam(NGCommonEntityConstants.FQN_PATH) String fqnPath,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, String runtimeInputYaml) {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(

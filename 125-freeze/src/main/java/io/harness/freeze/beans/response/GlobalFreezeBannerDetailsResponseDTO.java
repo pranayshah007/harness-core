@@ -13,7 +13,6 @@ import lombok.Data;
 
 @Data
 @Builder
-public class GlobalFreezeWithBannerDetailsResponseDTO {
-  FreezeDetailedResponseDTO globalFreezeResponse;
-  List<FreezeBannerDetails> activeOrUpcomingParentGlobalFreezes;
+public class GlobalFreezeBannerDetailsResponseDTO {
+  List<FreezeBannerDetails> activeOrUpcomingGlobalFreezes;
 }

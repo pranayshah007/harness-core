@@ -112,6 +112,12 @@ public class AccountResourceNG {
   }
 
   @GET
+  @Path("/feature-flag-enabled-accounts")
+  public RestResponse<Set<String>> getFeatureFlagEnabledAccountIds(@QueryParam("featureName") String featureName) {
+    return new RestResponse<>(accountService.getFeatureFlagEnabledAccountIds(featureName));
+  }
+
+  @GET
   @Path("/{accountId}/nextgen-enabled")
   public RestResponse<Boolean> isNextGenEnabled(@PathParam("accountId") String accountId) {
     return new RestResponse<>(accountService.isNextGenEnabled(accountId));

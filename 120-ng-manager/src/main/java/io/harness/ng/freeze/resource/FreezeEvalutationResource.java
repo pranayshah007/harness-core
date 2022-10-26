@@ -123,8 +123,11 @@ public class FreezeEvalutationResource {
         freezeEvaluateService.shouldDisableDeployment(accountId, orgId, projectId);
     List<FreezeReference> freezeReferences = new LinkedList<>();
     freezeSummaryResponseDTO.stream().forEach(freeze
-        -> freezeReferences.add(
-            FreezeReference.builder().freezeScope(freeze.getFreezeScope()).identifier(freeze.getIdentifier()).build()));
+        -> freezeReferences.add(FreezeReference.builder()
+                                    .freezeScope(freeze.getFreezeScope())
+                                    .identifier(freeze.getIdentifier())
+                                    .type(freeze.getType())
+                                    .build()));
     boolean shouldDisableDeployment = !EmptyPredicate.isEmpty(freezeSummaryResponseDTO);
     return ResponseDTO.newResponse(ShouldDisableDeploymentFreezeResponseDTO.builder()
                                        .shouldDisable(shouldDisableDeployment)

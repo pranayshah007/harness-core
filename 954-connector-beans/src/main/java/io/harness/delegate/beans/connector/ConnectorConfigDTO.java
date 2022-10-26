@@ -120,4 +120,9 @@ public abstract class ConnectorConfigDTO implements DecryptableEntity {
   public void validate() {
     // no op implementation which base classes can override
   }
+
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    // no op implementation which base classes can override
+    return null;
+  }
 }

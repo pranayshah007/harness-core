@@ -131,6 +131,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.CustomDeploymentServiceSpec;
 import io.harness.cdng.service.beans.EcsServiceSpec;
+import io.harness.cdng.service.beans.ElastigroupServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.beans.ServerlessAwsLambdaServiceSpec;
@@ -317,5 +318,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(EcsInfrastructure.class, 12612);
     kryo.register(CustomDeploymentInfrastructure.class, 12613);
     kryo.register(ServerlessAwsLambdaInfrastructure.class, 12579);
+    kryo.register(ElastigroupServiceSpec.class, 140011);
   }
 }

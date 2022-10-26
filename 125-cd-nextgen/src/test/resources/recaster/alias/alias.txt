@@ -389,7 +389,9 @@ io.harness.cdng.azure.webapp.StartupCommandParameters
 io.harness.cdng.azure.config.ApplicationSettingsOutcome
 io.harness.cdng.azure.config.ConnectionStringsOutcome
 io.harness.cdng.azure.config.StartupCommandOutcome
+io.harness.cdng.elastigroup.config.StartupScriptOutcome
 io.harness.cdng.service.beans.AzureWebAppServiceSpec
+io.harness.cdng.service.beans.ElastigroupServiceSpec
 io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData
 JenkinsBuildStepNode
 JenkinsBuildSpecParameters
@@ -414,6 +416,7 @@ io.harness.cdng.gitpolling.bean.yaml.GitHubPollingConfig
 io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration
 io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration
 io.harness.cdng.azure.config.yaml.StartupCommandConfiguration
+io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration
 io.harness.ngpipeline.artifact.bean.GithubPackagesArtifactOutcome
 io.harness.ngpipeline.pipeline.executions.beans.GithubPackagesArtifactSummary
 io.harness.cdng.artifact.bean.yaml.GithubPackageArtifactConfig

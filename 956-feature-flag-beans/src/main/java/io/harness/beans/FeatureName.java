@@ -386,7 +386,6 @@ public enum FeatureName {
   SORT_ARTIFACTS_IN_UPDATED_ORDER("Sort the collected artifacts by lastUpdatedAt", HarnessTeam.SPG),
   ENABLE_CHECK_STATE_EXECUTION_STARTING(
       "Used to allow create retry state execution when event is status equals to STARTING", HarnessTeam.SPG),
-  NG_DEFAULT_K8S_MANIFESTS("Sample k8s manifests at account level file store", HarnessTeam.CDP, Scope.GLOBAL),
   CI_TI_DASHBOARDS_ENABLED,
   SERVICE_ID_FILTER_FOR_TRIGGERS(
       "Filter last deployed artifacts for triggers using serviceId as well", HarnessTeam.SPG),
@@ -466,6 +465,8 @@ public enum FeatureName {
   CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI),
   SRM_ET_EXPERIMENTAL("Feature flag for SRM only Error Tracking development", HarnessTeam.CV),
   SRM_ENABLE_HEALTHSOURCE_AWS_PROMETHEUS("UI FF to enable AWS Managed Prometheus healthsource", HarnessTeam.CV),
+  DEL_SECRET_EVALUATION_VERBOSE_LOGGING(
+      "FF to enable verbose logging for the manager process when secret gets evaluated", HarnessTeam.DEL),
   CI_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CI UI", HarnessTeam.CI);
 
   @Deprecated
