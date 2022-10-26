@@ -518,6 +518,7 @@ public class DelegateServiceImpl implements DelegateService {
             .field(DelegateKeys.status)
             .notEqual(DelegateInstanceStatus.DELETED)
             .project(DelegateKeys.accountId, true)
+            .project(DelegateKeys.lastHeartBeat, true)
             .project(DelegateKeys.tags, true)
             .project(DelegateKeys.tagsFromYaml, true)
             .project(DelegateKeys.delegateName, true)
@@ -530,7 +531,9 @@ public class DelegateServiceImpl implements DelegateService {
         Set<String> selectors = new HashSet<>();
 
         for (Delegate delegate : delegates) {
-          selectors.addAll(retrieveDelegateSelectors(delegate, false));
+          if (isDelegateConnected(delegate)) {
+            selectors.addAll(retrieveDelegateSelectors(delegate, false));
+          }
         }
         return selectors;
       }
@@ -600,7 +603,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   private boolean isDelegateGroupConnected(List<Delegate> delegateList) {
     if (isNotEmpty(delegateList)) {
-      return delegateList.stream().anyMatch(this::checkHeartBeatExpiration);
+      return delegateList.stream().anyMatch(this::isDelegateConnected);
     } else {
       log.warn("unable to get delegate list for group from cache");
       return false;
@@ -615,7 +618,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
   }
 
-  private boolean checkHeartBeatExpiration(Delegate delegate) {
+  private boolean isDelegateConnected(Delegate delegate) {
     return delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis();
   }
 

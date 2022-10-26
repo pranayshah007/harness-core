@@ -27,7 +27,6 @@ import com.google.common.base.Preconditions;
 import java.util.List;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.simpleframework.xml.transform.InvalidFormatException;
 
 @Slf4j
 public class LogsCVConfigurationYamlHandler
@@ -133,8 +132,8 @@ public class LogsCVConfigurationYamlHandler
     try {
       bean.setAlertPriority(FeedbackPriority.valueOf(yaml.getAlertPriority()));
     } catch (IllegalArgumentException exp) {
-      throw new InvalidFormatException(
-          exp, "Please enter valid Alert Priority value. List of valid values: P0, P1, P2, P3, P4, P5");
+      throw new IllegalArgumentException(
+          "Please enter valid Alert Priority value. List of valid values: P0, P1, P2, P3, P4, P5", exp);
     }
   }
 }

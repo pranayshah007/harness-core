@@ -145,3 +145,12 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${newBranch}"
     git push origin release/${PURPOSE}/${newBranch}
 fi
+
+#creating the fix version
+chmod +x pipeline-service/release/release-branch-create-pie-versions.sh
+pipeline-service/release/release-branch-create-pie-versions.sh
+
+chmod +x pipeline-service/release/release-branch-update-jiras.sh
+pipeline-service/release/release-branch-update-jiras.sh
+
+

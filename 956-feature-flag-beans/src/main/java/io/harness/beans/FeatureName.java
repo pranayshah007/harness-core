@@ -90,7 +90,6 @@ public enum FeatureName {
   GCP_WORKLOAD_IDENTITY,
   GIT_HOST_CONNECTIVITY,
   GLOBAL_COMMAND_LIBRARY,
-  GLOBAL_CV_DASH,
   GLOBAL_DISABLE_HEALTH_CHECK(Scope.GLOBAL),
   GRAPHQL_DEV,
   HARNESS_TAGS,
@@ -445,8 +444,9 @@ public enum FeatureName {
       "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
   CD_SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
-  PL_CONNECTOR_ENCRYPTION_PRIVILEGED_CALL("make the encryption/decryption call as pirvileged call", HarnessTeam.PL),
+  SRM_HOST_SAMPLING_ENABLE("Enables Host Sampling feature for Learning Engine.", HarnessTeam.CV),
   CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS),
+  PL_CONNECTOR_ENCRYPTION_PRIVILEGED_CALL("make the encryption/decryption call as pirvileged call", HarnessTeam.PL),
   SPG_DASHBOARD_STATS_OPTIMIZE_DEPLOYMENTS(
       "Dashboard stats slow api call optimization. Also solves MOM issue in CG.", HarnessTeam.SPG),
   SPG_DASHBOARD_STATS_OPTIMIZE_ACTIVE_SERVICES(
@@ -457,13 +457,18 @@ public enum FeatureName {
   CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI),
   SPG_ENFORCE_TIME_RANGE_DEPLOYMENTS_WITHOUT_APP_ID(
       "This feature flag enforces maximum time range for workflow execution queries without appId", HarnessTeam.SPG),
+  SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS(
+      "Gradually reducing the amount of keywords being stored on workflow executions", HarnessTeam.SPG),
   SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR(
       "This feature flag helps in synchronizing the git clone of repo and copying the files then to destination directory",
       HarnessTeam.CDP),
   ECS_ROLLBACK_MAX_DESIRED_COUNT("Changes ECS Rollback Desired Count to Max(OldService, NewService)", HarnessTeam.CDP),
   CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI),
   SRM_ET_EXPERIMENTAL("Feature flag for SRM only Error Tracking development", HarnessTeam.CV),
-  SRM_ENABLE_HEALTHSOURCE_AWS_PROMETHEUS("UI FF to enable AWS Managed Prometheus healthsource", HarnessTeam.CV);
+  SRM_ENABLE_HEALTHSOURCE_AWS_PROMETHEUS("UI FF to enable AWS Managed Prometheus healthsource", HarnessTeam.CV),
+  DEL_SECRET_EVALUATION_VERBOSE_LOGGING(
+      "FF to enable verbose logging for the manager process when secret gets evaluated", HarnessTeam.DEL),
+  CI_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CI UI", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

@@ -25,9 +25,11 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StagesStep;
 import io.harness.steps.common.NGSectionStepParameters;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +41,8 @@ import java.util.Optional;
 import java.util.Set;
 
 public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
+  @Inject KryoSerializer kryoSerializer;
+
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, StagesConfig config) {
@@ -51,7 +55,8 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
           PlanCreationResponse.builder()
               .dependencies(DependenciesUtils.toDependenciesProto(stageYamlFieldMap))
               .build());
-      PlanCreationResponse planForRollbackStage = RollbackStagePlanCreator.createPlanForRollbackStage(stageYamlField);
+      PlanCreationResponse planForRollbackStage =
+          RollbackStagePlanCreator.createPlanForRollbackStage(stageYamlField, kryoSerializer);
       responseMap.put(stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX,
           planForRollbackStage);
     }

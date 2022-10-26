@@ -491,9 +491,9 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
           serviceLevelObjectiveV2Service.getFromSLIIdentifier(projectParams, serviceLevelIndicatorIdentifier);
       if (serviceLevelObjectiveV2 == null) {
         throw new InvalidRequestException(String.format(
-            "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
-            serviceLevelObjectiveV2.getIdentifier(), projectParams.getAccountIdentifier(),
-            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
+            "SLO  with sli identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+            serviceLevelIndicatorIdentifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+            projectParams.getProjectIdentifier()));
       }
       return getServiceLevelObjectiveFromV2(serviceLevelObjectiveV2);
     } catch (Exception ex) {

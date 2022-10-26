@@ -37,13 +37,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
-import org.simpleframework.xml.Transient;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDP)
 public class PcfRollbackState extends PcfDeployState {
-  @Inject @Transient private SweepingOutputService sweepingOutputService;
-  @Inject @Transient private PcfStateHelper pcfStateHelper;
+  @Inject private SweepingOutputService sweepingOutputService;
+  @Inject private PcfStateHelper pcfStateHelper;
   /**
    * Instantiates a new state.
    *
