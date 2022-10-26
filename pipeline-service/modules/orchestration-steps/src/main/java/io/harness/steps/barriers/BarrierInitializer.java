@@ -36,14 +36,14 @@ public class BarrierInitializer implements OrchestrationStartObserver {
 
   @Override
   public void onStart(OrchestrationStartInfo orchestrationStartInfo) {
-    String version = AmbianceUtils.getYamlVersion(orchestrationStartInfo.getAmbiance());
+    String version = AmbianceUtils.getPipelineVersion(orchestrationStartInfo.getAmbiance());
     String planExecutionId = orchestrationStartInfo.getPlanExecutionId();
     PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();
     try {
       switch (version) {
         case PipelineVersion.V1:
           // TODO: Barrier support
-          return;
+          break;
         case PipelineVersion.V0:
           Map<String, BarrierSetupInfo> barrierIdentifierSetupInfoMap =
               barrierService.getBarrierSetupInfoList(planExecutionMetadata.getProcessedYaml())
@@ -73,6 +73,7 @@ public class BarrierInitializer implements OrchestrationStartObserver {
                   .collect(Collectors.toList());
 
           barrierService.saveAll(barriers);
+          break;
         default:
           throw new IllegalStateException("version not supported");
       }

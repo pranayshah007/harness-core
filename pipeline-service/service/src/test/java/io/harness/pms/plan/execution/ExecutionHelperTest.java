@@ -65,6 +65,7 @@ import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
 import io.harness.rule.Owner;
@@ -665,14 +666,14 @@ public class ExecutionHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testStartExecution() throws IOException {
-    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().build();
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().setHarnessVersion(PipelineVersion.V0).build();
     PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().build();
     String startingNodeId = "startingNodeId";
     PlanCreationBlobResponse planCreationBlobResponse =
         PlanCreationBlobResponse.newBuilder().setStartingNodeId(startingNodeId).build();
     doReturn(planCreationBlobResponse)
         .when(planCreatorMergeService)
-        .createPlan(accountId, orgId, projectId, executionMetadata, planExecutionMetadata);
+        .createPlanVersioned(accountId, orgId, projectId, PipelineVersion.V0, executionMetadata, planExecutionMetadata);
 
     PlanExecution planExecution = PlanExecution.builder().build();
     Plan plan = PlanExecutionUtils.extractPlan(planCreationBlobResponse);
@@ -690,7 +691,7 @@ public class ExecutionHelperTest extends CategoryTest {
         accountId, orgId, projectId, executionMetadata, planExecutionMetadata, false, null, null, null);
     assertThat(createdPlanExecution).isEqualTo(planExecution);
     verify(planCreatorMergeService, times(1))
-        .createPlan(accountId, orgId, projectId, executionMetadata, planExecutionMetadata);
+        .createPlanVersioned(accountId, orgId, projectId, PipelineVersion.V0, executionMetadata, planExecutionMetadata);
     verify(orchestrationService, times(1)).startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
   }
 
@@ -746,7 +747,8 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getInputSetYaml()).isEqualTo(runtimeInputYaml);
     assertThat(planExecutionMetadata.getYaml()).isEqualTo(pipelineYamlWithoutInputSet);
     assertThat(planExecutionMetadata.getStagesExecutionMetadata().isStagesExecution()).isEqualTo(false);
-    assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(pipelineYamlWithoutInputSet));
+    assertThat(planExecutionMetadata.getProcessedYaml())
+        .isEqualTo(YamlUtils.injectUuidWithType(pipelineYamlWithoutInputSet, YAMLFieldNameConstants.PIPELINE));
     verify(pmsPipelineServiceHelper, times(1))
         .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, pipelineYamlWithoutInputSet, true);
     buildExecutionMetadataVerificationsWithV1Version(pipelineEntity);

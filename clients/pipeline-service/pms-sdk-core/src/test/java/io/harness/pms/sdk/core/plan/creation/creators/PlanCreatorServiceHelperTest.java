@@ -144,7 +144,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     YamlField yamlField = YamlUtils.extractPipelineField(YamlUtils.injectUuid(yamlContent));
     Optional<PartialPlanCreator<?>> partialPlanCreatorOptional =
-        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, PipelineVersion.V0);
+        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, PipelineVersion.V1);
     assertThat(partialPlanCreatorOptional.isPresent()).isFalse();
   }
 }

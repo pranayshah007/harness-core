@@ -292,7 +292,7 @@ public class AmbianceUtils {
     return triggeredBy.getExtraInfoOrDefault("email", null);
   }
 
-  public static String getYamlVersion(Ambiance ambiance) {
+  public static String getPipelineVersion(Ambiance ambiance) {
     ExecutionMetadata metadata = ambiance.getMetadata();
     if (EmptyPredicate.isEmpty(metadata.getHarnessVersion())) {
       return PipelineVersion.V0;

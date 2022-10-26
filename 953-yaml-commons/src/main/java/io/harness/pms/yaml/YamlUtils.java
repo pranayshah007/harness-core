@@ -220,7 +220,7 @@ public class YamlUtils {
   }
 
   // TODO (prashant) : Re-evaluate can we do better
-  public String injectUuidWithName(String content, String name) throws IOException {
+  public String injectUuidWithType(String content, String name) throws IOException {
     JsonNode rootJsonNode = mapper.readTree(content);
     if (rootJsonNode == null) {
       return null;

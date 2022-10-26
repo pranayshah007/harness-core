@@ -350,7 +350,7 @@ public class ExecutionHelper {
     try {
       switch (version) {
         case PipelineVersion.V1:
-          currentProcessedYaml = YamlUtils.injectUuidWithName(pipelineYaml, YAMLFieldNameConstants.PIPELINE);
+          currentProcessedYaml = YamlUtils.injectUuidWithType(pipelineYaml, YAMLFieldNameConstants.PIPELINE);
           break;
         case PipelineVersion.V0:
           currentProcessedYaml = YamlUtils.injectUuid(pipelineYaml);

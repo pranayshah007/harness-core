@@ -126,12 +126,6 @@ public class PlanCreatorMergeService {
         Collections.singletonList(notifyId), Duration.ofMinutes(2));
   }
 
-  public PlanCreationBlobResponse createPlan(String accountId, String orgIdentifier, String projectIdentifier,
-      ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) throws IOException {
-    return createPlanVersioned(
-        accountId, orgIdentifier, projectIdentifier, PipelineVersion.V0, metadata, planExecutionMetadata);
-  }
-
   public PlanCreationBlobResponse createPlanVersioned(String accountId, String orgIdentifier, String projectIdentifier,
       String version, ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) throws IOException {
     try (AutoLogContext ignore =
@@ -143,18 +137,16 @@ public class PlanCreatorMergeService {
       switch (version) {
         case PipelineVersion.V1:
           pipelineField = YamlUtils.readTree(planExecutionMetadata.getProcessedYaml());
-          if (pipelineField.getNode().getUuid() == null) {
-            throw new YamlException("Processed pipeline yaml does not have uuid for the pipeline field");
-          }
           break;
         case PipelineVersion.V0:
           pipelineField = YamlUtils.extractPipelineField(planExecutionMetadata.getProcessedYaml());
-          if (pipelineField.getNode().getUuid() == null) {
-            throw new YamlException("Processed pipeline yaml does not have uuid for the pipeline field");
-          }
           break;
         default:
           throw new InvalidYamlException("Invalid version");
+      }
+
+      if (pipelineField.getNode().getUuid() == null) {
+        throw new YamlException("Processed pipeline yaml does not have uuid for the pipeline field");
       }
 
       Dependencies dependencies =
