@@ -84,35 +84,39 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
       K8sClusterConfig config, DirectK8sInstanceSyncTaskDetails k8sInstanceSyncTaskDetails) {
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
     notNullCheck("KubernetesConfig", kubernetesConfig);
-    try {
-      long timeoutMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_STEADY_STATE_TIMEOUT);
-      List<K8sPod> k8sPodList = k8sTaskHelperBase.getPodDetails(
-          kubernetesConfig, config.getNamespace(), k8sInstanceSyncTaskDetails.getReleaseName(), timeoutMillis);
-      return k8sPodList.stream()
-          .map(pod -> {
-            List<K8sContainerInfo> k8sContainerInfos = pod.getContainerList()
-                                                           .stream()
-                                                           .map(container
-                                                               -> K8sContainerInfo.builder()
-                                                                      .containerId(container.getContainerId())
-                                                                      .image(container.getImage())
-                                                                      .name(container.getName())
-                                                                      .build())
-                                                           .collect(toList());
-            return K8sPodInfo.builder()
-                .containers(k8sContainerInfos)
-                .clusterName(config.getClusterName())
-                .podName(pod.getName())
-                .ip(pod.getPodIP())
-                .namespace(k8sInstanceSyncTaskDetails.getNamespace())
-                .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
-                .build();
-          })
-          .collect(toList());
-    } catch (Exception exception) {
-      throw new InvalidRequestException(String.format("Failed to fetch containers info for namespace: [%s] ",
-                                            k8sInstanceSyncTaskDetails.getNamespace()),
-          exception);
+
+    if (isHelm) {
+    } else {
+      try {
+        long timeoutMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_STEADY_STATE_TIMEOUT);
+        List<K8sPod> k8sPodList = k8sTaskHelperBase.getPodDetails(
+            kubernetesConfig, config.getNamespace(), k8sInstanceSyncTaskDetails.getReleaseName(), timeoutMillis);
+        return k8sPodList.stream()
+            .map(pod -> {
+              List<K8sContainerInfo> k8sContainerInfos = pod.getContainerList()
+                                                             .stream()
+                                                             .map(container
+                                                                 -> K8sContainerInfo.builder()
+                                                                        .containerId(container.getContainerId())
+                                                                        .image(container.getImage())
+                                                                        .name(container.getName())
+                                                                        .build())
+                                                             .collect(toList());
+              return K8sPodInfo.builder()
+                  .containers(k8sContainerInfos)
+                  .clusterName(config.getClusterName())
+                  .podName(pod.getName())
+                  .ip(pod.getPodIP())
+                  .namespace(k8sInstanceSyncTaskDetails.getNamespace())
+                  .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
+                  .build();
+            })
+            .collect(toList());
+      } catch (Exception exception) {
+        throw new InvalidRequestException(String.format("Failed to fetch containers info for namespace: [%s] ",
+                                              k8sInstanceSyncTaskDetails.getNamespace()),
+            exception);
+      }
     }
   }
 }
