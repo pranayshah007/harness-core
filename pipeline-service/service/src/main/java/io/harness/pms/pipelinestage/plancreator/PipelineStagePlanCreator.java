@@ -10,6 +10,7 @@ package io.harness.pms.pipelinestage.plancreator;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -17,7 +18,10 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
+import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.pipelinestage.step.PipelineStageStep;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
@@ -34,10 +38,13 @@ import io.harness.when.utils.RunInfoUtils;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStageNode> {
+  @Inject private PipelineStageHelper pipelineStageHelper;
+  @Inject private PMSPipelineService pmsPipelineService;
   @Inject KryoSerializer kryoSerializer;
   @Override
   public Class<PipelineStageNode> getFieldClass() {
@@ -56,12 +63,25 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
         .org(config.getOrg())
         .project(config.getProject())
         .inputSetReferences(config.getInputSetReferences())
-        .pipelineInputs(config.getPipelineInputs())
+        .pipelineInputs(pipelineStageHelper.getInputSetYaml(config))
         .build();
   }
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, PipelineStageNode stageNode) {
+    PipelineStageConfig config = stageNode.getPipelineStageConfig();
+    if (config == null) {
+      throw new InvalidRequestException("Pipeline Stage Yaml does not contain spec");
+    }
+    Optional<PipelineEntity> childPipelineEntity =
+        pmsPipelineService.getPipelineWithoutPerformingValidations(ctx.getMetadata().getAccountIdentifier(),
+            config.getOrg(), config.getProject(), config.getPipeline(), false, false);
+
+    if (!childPipelineEntity.isPresent()) {
+      throw new InvalidRequestException(String.format("Child pipeline does not exists %s ", config.getPipeline()));
+    }
+    pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get());
+
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))

@@ -60,7 +60,8 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
       throw new InvalidRequestException("Pipeline Stage Yaml is empty");
     }
 
-    if (pipelineStageConfig.getPipelineInputs() != null && isNotEmpty(pipelineStageConfig.getInputSetReferences())) {
+    if (pipelineStageConfig.getPipelineInputs() != null && pipelineStageConfig.getPipelineInputs().getValue() != null
+        && isNotEmpty(pipelineStageConfig.getInputSetReferences())) {
       throw new InvalidRequestException("Pipeline Inputs and Pipeline Input Set references are not allowed together");
     }
 
@@ -72,7 +73,6 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
       throw new InvalidRequestException(
           String.format("Child pipeline does not exists %s ", pipelineStageConfig.getPipeline()));
     }
-
     pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get());
 
     return FilterCreationResponse.builder().build();

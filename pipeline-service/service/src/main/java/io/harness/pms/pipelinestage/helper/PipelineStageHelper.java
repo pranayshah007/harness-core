@@ -24,11 +24,16 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.steps.pipelinestage.PipelineStageConfig;
+import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -91,5 +96,23 @@ public class PipelineStageHelper {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(ambiance.getSetupAbstractions().get("accountId"),
                                                   stepParameters.getOrg(), stepParameters.getProject()),
         Resource.of("PIPELINE", stepParameters.getPipeline()), PipelineRbacPermissions.PIPELINE_EXECUTE);
+  }
+
+  public String getInputSetYaml(PipelineStageConfig config) {
+    String inputSetYaml = "";
+    if (config.getPipelineInputs() != null && config.getPipelineInputs().getValue() != null) {
+      Map<String, Object> inputYaml = new HashMap<>();
+      inputYaml.put(YAMLFieldNameConstants.PIPELINE, config.getPipelineInputs().getValue());
+      try {
+        YamlField inputYamlField = YamlUtils.readTree(YamlPipelineUtils.writeYamlString(inputYaml));
+        JsonNode inputJsonNode = inputYamlField.getNode().getCurrJsonNode();
+        YamlUtils.removeUuid(inputJsonNode);
+        inputSetYaml = inputJsonNode.toString();
+      } catch (IOException e) {
+        throw new InvalidRequestException(
+            String.format("Pipeline Inputs is invalid for child % s ", config.getPipeline()));
+      }
+    }
+    return inputSetYaml;
   }
 }
