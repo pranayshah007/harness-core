@@ -91,8 +91,8 @@ public class DeploymentStepReconServiceImpl implements DeploymentReconService {
       for (StateExecutionInstance stateExecutionInstance : iterator) {
         if (isStatusMismatchedInMongoAndTSDB(
                 tsdbRunningWFs, stateExecutionInstance.getUuid(), stateExecutionInstance.getStatus().toString())) {
-          log.info(
-              "Status mismatch in MongoDB and TSDB for StateExecutionInstance: [{}]", stateExecutionInstance.getUuid());
+          log.info("Status mismatch in MongoDB and TSDB for StateExecutionInstance: [{}] accountId: [{}]",
+              stateExecutionInstance.getUuid(), stateExecutionInstance.getAccountId());
           updateRunningWFsFromTSDB(stateExecutionInstance);
           statusMismatch = true;
         }
@@ -105,13 +105,13 @@ public class DeploymentStepReconServiceImpl implements DeploymentReconService {
     DeploymentStepTimeSeriesEvent deploymentStepTimeSeriesEvent =
         usageMetricsEventPublisher.constructDeploymentStepTimeSeriesEvent(
             stateExecutionInstance.getAccountId(), stateExecutionInstance);
-    log.info("UPDATING RECORD for accountID:[{}], [{}]", stateExecutionInstance.getAccountId(),
+    log.info("UPDATING RECORD for StateExecutionInstance accountID:[{}], [{}]", stateExecutionInstance.getAccountId(),
         deploymentStepTimeSeriesEvent.getTimeSeriesEventInfo());
     try {
       deploymentStepEventProcessor.processEvent(deploymentStepTimeSeriesEvent.getTimeSeriesEventInfo());
     } catch (Exception ex) {
-      log.error("Failed to process DeploymentTimeSeriesEvent : [{}]",
-          deploymentStepTimeSeriesEvent.getTimeSeriesEventInfo(), ex);
+      log.error("Failed to process DeploymentStepTimeSeriesEvent : [{}] for accountId: [{}]",
+          deploymentStepTimeSeriesEvent.getTimeSeriesEventInfo(), stateExecutionInstance.getAccountId(), ex);
     }
   }
 
@@ -148,8 +148,8 @@ public class DeploymentStepReconServiceImpl implements DeploymentReconService {
           DeploymentStepTimeSeriesEvent deploymentStepTimeSeriesEvent =
               usageMetricsEventPublisher.constructDeploymentStepTimeSeriesEvent(
                   stateExecutionInstance.getAccountId(), stateExecutionInstance);
-          log.info("ADDING MISSING RECORD for accountID:[{}], [{}]", stateExecutionInstance.getAccountId(),
-              deploymentStepTimeSeriesEvent.getTimeSeriesEventInfo());
+          log.info("ADDING MISSING RECORD for StateExecutionInstance accountID:[{}], [{}]",
+              stateExecutionInstance.getAccountId(), deploymentStepTimeSeriesEvent.getTimeSeriesEventInfo());
           deploymentStepEventProcessor.processEvent(deploymentStepTimeSeriesEvent.getTimeSeriesEventInfo());
           successfulInsert = true;
         }
@@ -157,8 +157,8 @@ public class DeploymentStepReconServiceImpl implements DeploymentReconService {
       } catch (SQLException ex) {
         totalTries++;
         log.warn(
-            "Failed to query stateExecutionInstance from TimescaleDB for stateExecutionInstance:[{}], totalTries:[{}]",
-            stateExecutionInstance.getUuid(), totalTries, ex);
+            "Failed to query StateExecutionInstance from TimescaleDB for stateExecutionInstance:[{}] for accountId: [{}], totalTries:[{}]",
+            stateExecutionInstance.getUuid(), stateExecutionInstance.getAccountId(), totalTries, ex);
       } finally {
         DBUtils.close(resultSet);
       }

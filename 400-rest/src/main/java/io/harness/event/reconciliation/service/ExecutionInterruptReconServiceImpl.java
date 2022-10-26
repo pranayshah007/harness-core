@@ -105,16 +105,17 @@ public class ExecutionInterruptReconServiceImpl implements DeploymentReconServic
           ExecutionInterruptTimeSeriesEvent executionInterruptTimeSeriesEvent =
               usageMetricsEventPublisher.constructExecutionInterruptTimeSeriesEvent(
                   executionInterrupt.getAccountId(), executionInterrupt);
-          log.info("ADDING MISSING RECORD for accountID:[{}], [{}]", executionInterrupt.getAccountId(),
-              executionInterruptTimeSeriesEvent.getTimeSeriesEventInfo());
+          log.info("ADDING MISSING RECORD ExecutionInterrupt for accountID:[{}], [{}]",
+              executionInterrupt.getAccountId(), executionInterruptTimeSeriesEvent.getTimeSeriesEventInfo());
           executionInterruptProcessor.processEvent(executionInterruptTimeSeriesEvent.getTimeSeriesEventInfo());
           successfulInsert = true;
         }
 
       } catch (SQLException ex) {
         totalTries++;
-        log.warn("Failed to query executionInterrupt from TimescaleDB for executionInterrupt:[{}], totalTries:[{}]",
-            executionInterrupt.getUuid(), totalTries, ex);
+        log.warn(
+            "Failed to query ExecutionInterrupt from TimescaleDB for executionInterrupt:[{}] for accountId: [{}], totalTries:[{}]",
+            executionInterrupt.getUuid(), executionInterrupt.getAccountId(), totalTries, ex);
       } finally {
         DBUtils.close(resultSet);
       }

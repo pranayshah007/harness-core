@@ -38,8 +38,8 @@ public class DeploymentReconServiceHelper {
        * This is to prevent a bad record from blocking all further reconciliations
        */
       if (System.currentTimeMillis() - record.getDurationEndTs() > COOL_DOWN_INTERVAL) {
-        log.warn("Found an old record in progress: record: [{}] for accountID:[{}] in duration:[{}-{}]",
-            record.getUuid(), record.getAccountId(), new Date(record.getDurationStartTs()),
+        log.warn("Found an old record in progress: record: [{}] entity: [{}] for accountID:[{}] in duration:[{}-{}]",
+            record.getUuid(), record.getEntityClass(), record.getAccountId(), new Date(record.getDurationStartTs()),
             new Date(record.getDurationEndTs()));
         UpdateOperations updateOperations = persistence.createUpdateOperations(DeploymentReconRecord.class);
         updateOperations.set(
@@ -65,8 +65,8 @@ public class DeploymentReconServiceHelper {
     final long currentTime = System.currentTimeMillis();
     if (((currentTime - record.getReconEndTs()) < COOL_DOWN_INTERVAL)
         && (durationEndTs < currentTime && durationEndTs > (currentTime - COOL_DOWN_INTERVAL))) {
-      log.info("Last recon for accountID:[{}] was run @ [{}], hence not rerunning it again", record.getAccountId(),
-          new Date(record.getReconEndTs()));
+      log.info("Last recon for entity: [{}] accountID:[{}] was run @ [{}], hence not rerunning it again",
+          record.getEntityClass(), record.getAccountId(), new Date(record.getReconEndTs()));
       return false;
     }
 
@@ -104,26 +104,28 @@ public class DeploymentReconServiceHelper {
     String sourceEntityClass = executionEntity.getSourceEntityClass().getCanonicalName();
 
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB is not valid, skipping reconciliation for accountID:[{}] in duration:[{}-{}]", accountId,
-          new Date(durationStartTs), new Date(durationEndTs));
+      log.info("TimeScaleDB is not valid, skipping reconciliation for entity: [{}] accountID:[{}] in duration:[{}-{}]",
+          sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs));
       return ReconciliationStatus.SUCCESS;
     }
 
     DeploymentReconRecord record =
         deploymentReconRecordRepository.getLatestDeploymentReconRecord(accountId, sourceEntityClass);
     if (record == null || shouldPerformReconciliation(record, durationEndTs, persistence)) {
-      try (AcquiredLock ignore = persistentLocker.waitToAcquireLock(
-               DeploymentReconRecord.class, "AccountID-" + accountId, ofMinutes(1), ofMinutes(5))) {
+      try (AcquiredLock ignore = persistentLocker.waitToAcquireLock(DeploymentReconRecord.class,
+               "AccountID-" + accountId + "-Entity-" + sourceEntityClass, ofMinutes(1), ofMinutes(5))) {
         record = deploymentReconRecordRepository.getLatestDeploymentReconRecord(accountId, sourceEntityClass);
 
         if (record != null && !shouldPerformReconciliation(record, durationEndTs, persistence)) {
           if (record.getReconciliationStatus() == ReconciliationStatus.IN_PROGRESS) {
-            log.info("Reconciliation is in progress, not running it again for accountID:[{}] in duration:[{}-{}]",
-                accountId, new Date(durationStartTs), new Date(durationEndTs));
+            log.info(
+                "Reconciliation is in progress, not running it again for entity: [{}] accountID:[{}] in duration:[{}-{}]",
+                sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs));
           } else {
             log.info(
-                "Reconciliation was performed recently at [{}], not running it again for accountID:[{}] in duration:[{}-{}]",
-                accountId, new Date(durationStartTs), new Date(durationEndTs));
+                "Reconciliation was performed recently at [{}], not running it again for entity: [{}] accountID:[{}] in duration:[{}-{}]",
+                record.getReconEndTs(), sourceEntityClass, accountId, new Date(durationStartTs),
+                new Date(durationEndTs));
           }
           return ReconciliationStatus.SUCCESS;
         }
@@ -137,40 +139,41 @@ public class DeploymentReconServiceHelper {
                      .durationEndTs(durationEndTs)
                      .build();
         String id = persistence.save(record);
-        log.info("Inserted new deploymentReconRecord for accountId:[{}],uuid:[{}]", accountId, id);
+        log.info("Inserted new deploymentReconRecord for entity: [{}] accountId:[{}],uuid:[{}]", sourceEntityClass,
+            accountId, id);
         record = fetchRecord(id, persistence);
 
         boolean duplicatesDetected = false;
         boolean missingRecordsDetected = false;
         boolean statusMismatchDetected;
 
-        List<String> executionIDs = checkForDuplicates(
-            accountId, durationStartTs, durationEndTs, timeScaleDBService, executionEntity.getDuplicatesQuery(), utils);
+        List<String> executionIDs = checkForDuplicates(accountId, durationStartTs, durationEndTs, timeScaleDBService,
+            executionEntity.getDuplicatesQuery(), utils, sourceEntityClass);
         if (isNotEmpty(executionIDs)) {
           duplicatesDetected = true;
-          log.warn("Duplicates detected for accountId:[{}] in duration:[{}-{}], executionIDs:[{}]", accountId,
-              new Date(durationStartTs), new Date(durationEndTs), executionIDs);
+          log.warn("Duplicates detected for entity: [{}] accountId:[{}] in duration:[{}-{}], executionIDs:[{}]",
+              sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs), executionIDs);
           deleteDuplicates(accountId, durationStartTs, durationEndTs, executionIDs, timeScaleDBService,
-              executionEntity.getDeleteSetQuery());
+              executionEntity.getDeleteSetQuery(), sourceEntityClass);
         }
 
         long primaryCount =
             executionEntity.getReconService().getWFExecCountFromMongoDB(accountId, durationStartTs, durationEndTs);
         long secondaryCount = getWFExecutionCountFromTSDB(accountId, durationStartTs, durationEndTs, timeScaleDBService,
-            executionEntity.getEntityCountQuery(), utils);
+            executionEntity.getEntityCountQuery(), utils, sourceEntityClass);
         if (primaryCount > secondaryCount) {
           missingRecordsDetected = true;
           executionEntity.getReconService().insertMissingRecords(accountId, durationStartTs, durationEndTs);
         } else if (primaryCount == secondaryCount) {
-          log.info("Everything is fine, no action required for accountID:[{}] in duration:[{}-{}]", accountId,
-              new Date(durationStartTs), new Date(durationEndTs));
+          log.info("Everything is fine, no action required for entity: [{}] accountID:[{}] in duration:[{}-{}]",
+              sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs));
         } else {
-          log.error("Duplicates found again for accountID:[{}] in duration:[{}-{}]", accountId,
-              new Date(durationStartTs), new Date(durationEndTs));
+          log.error("Duplicates found again for entity: [{}] accountID:[{}] in duration:[{}-{}]", sourceEntityClass,
+              accountId, new Date(durationStartTs), new Date(durationEndTs));
         }
 
-        Map<String, String> tsdbRunningWFs = getRunningWFsFromTSDB(
-            accountId, durationStartTs, durationEndTs, timeScaleDBService, executionEntity.getRunningExecutionQuery());
+        Map<String, String> tsdbRunningWFs = getRunningWFsFromTSDB(accountId, durationStartTs, durationEndTs,
+            timeScaleDBService, executionEntity.getRunningExecutionQuery(), sourceEntityClass);
         statusMismatchDetected = executionEntity.getReconService().isStatusMismatchedAndUpdated(tsdbRunningWFs);
 
         DetectionStatus detectionStatus;
@@ -215,8 +218,8 @@ public class DeploymentReconServiceHelper {
         persistence.update(record, updateOperations);
 
       } catch (Exception e) {
-        log.error("Exception occurred while running reconciliation for accountID:[{}] in duration:[{}-{}]", accountId,
-            new Date(durationStartTs), new Date(durationEndTs), e);
+        log.error("Exception occurred while running reconciliation for entity: [{}] accountID:[{}] in duration:[{}-{}]",
+            sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs), e);
         if (record != null) {
           UpdateOperations updateOperations = persistence.createUpdateOperations(DeploymentReconRecord.class);
           updateOperations.set(
@@ -227,8 +230,9 @@ public class DeploymentReconServiceHelper {
         }
       }
     } else {
-      log.info("Reconciliation task not required for accountId:[{}], durationStartTs: [{}], durationEndTs:[{}]",
-          accountId, new Date(durationStartTs), new Date(durationEndTs));
+      log.info(
+          "Reconciliation task not required for entity: [{}] accountId:[{}], durationStartTs: [{}], durationEndTs:[{}]",
+          sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs));
     }
     return ReconciliationStatus.SUCCESS;
   }
@@ -238,7 +242,7 @@ public class DeploymentReconServiceHelper {
   }
 
   public static void deleteDuplicates(String accountId, long durationStartTs, long durationEndTs,
-      List<String> executionIDs, TimeScaleDBService timeScaleDBService, String query) {
+      List<String> executionIDs, TimeScaleDBService timeScaleDBService, String query, String sourceEntityClass) {
     int totalTries = 0;
     String[] executionIdsArray = executionIDs.toArray(new String[executionIDs.size()]);
     while (totalTries <= 3) {
@@ -251,14 +255,15 @@ public class DeploymentReconServiceHelper {
       } catch (SQLException ex) {
         totalTries++;
         log.warn(
-            "Failed to delete duplicates for accountID:[{}] in duration:[{}-{}], executionIDs:[{}], totalTries:[{}]",
-            accountId, new Date(durationStartTs), new Date(durationEndTs), executionIDs, totalTries, ex);
+            "Failed to delete duplicates for entity: [{}] accountID:[{}] in duration:[{}-{}], executionIDs:[{}], totalTries:[{}]",
+            sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs), executionIDs, totalTries,
+            ex);
       }
     }
   }
 
   public static List<String> checkForDuplicates(String accountId, long durationStartTs, long durationEndTs,
-      TimeScaleDBService timeScaleDBService, String query, DataFetcherUtils utils) {
+      TimeScaleDBService timeScaleDBService, String query, DataFetcherUtils utils, String sourceEntityClass) {
     int totalTries = 0;
     List<String> duplicates = new ArrayList<>();
     while (totalTries <= 3) {
@@ -279,8 +284,8 @@ public class DeploymentReconServiceHelper {
       } catch (SQLException ex) {
         totalTries++;
         log.warn(
-            "Failed to check for duplicates from TimeScaleDB for accountID:[{}] in duration:[{}-{}], totalTries:[{}]",
-            accountId, new Date(durationStartTs), new Date(durationEndTs), totalTries, ex);
+            "Failed to check for duplicates from TimeScaleDB for entity: [{}] accountID:[{}] in duration:[{}-{}], totalTries:[{}]",
+            sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs), totalTries, ex);
       } finally {
         DBUtils.close(resultSet);
       }
@@ -289,7 +294,7 @@ public class DeploymentReconServiceHelper {
   }
 
   public static long getWFExecutionCountFromTSDB(String accountId, long durationStartTs, long durationEndTs,
-      TimeScaleDBService timeScaleDBService, String query, DataFetcherUtils utils) {
+      TimeScaleDBService timeScaleDBService, String query, DataFetcherUtils utils, String sourceEntityClass) {
     int totalTries = 0;
     while (totalTries <= 3) {
       ResultSet resultSet = null;
@@ -309,8 +314,8 @@ public class DeploymentReconServiceHelper {
       } catch (SQLException ex) {
         totalTries++;
         log.warn(
-            "Failed to retrieve execution count from TimeScaleDB for accountID:[{}] in duration:[{}-{}], totalTries:[{}]",
-            accountId, new Date(durationStartTs), new Date(durationEndTs), totalTries, ex);
+            "Failed to retrieve execution count from TimeScaleDB for entity: [{}] accountID:[{}] in duration:[{}-{}], totalTries:[{}]",
+            sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs), totalTries, ex);
       } finally {
         DBUtils.close(resultSet);
       }
@@ -318,8 +323,8 @@ public class DeploymentReconServiceHelper {
     return 0;
   }
 
-  public static Map<String, String> getRunningWFsFromTSDB(
-      String accountId, long durationStartTs, long durationEndTs, TimeScaleDBService timeScaleDBService, String query) {
+  public static Map<String, String> getRunningWFsFromTSDB(String accountId, long durationStartTs, long durationEndTs,
+      TimeScaleDBService timeScaleDBService, String query, String sourceEntityClass) {
     Map<String, String> runningWFs = new HashMap<>();
     if (EmptyPredicate.isEmpty(query)) {
       return runningWFs;
@@ -339,8 +344,8 @@ public class DeploymentReconServiceHelper {
       } catch (SQLException ex) {
         totalTries++;
         log.warn(
-            "Failed to retrieve running executions from TimeScaleDB for accountID:[{}] in duration:[{}-{}], totalTries:[{}]",
-            accountId, new Date(durationStartTs), new Date(durationEndTs), totalTries, ex);
+            "Failed to retrieve running executions from TimeScaleDB for entity: [{}] accountID:[{}] in duration:[{}-{}], totalTries:[{}]",
+            sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs), totalTries, ex);
       } finally {
         DBUtils.close(resultSet);
       }

@@ -103,7 +103,8 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
       for (WorkflowExecution workflowExecution : iterator) {
         if (isStatusMismatchedInMongoAndTSDB(
                 tsdbRunningWFs, workflowExecution.getUuid(), workflowExecution.getStatus().toString())) {
-          log.info("Status mismatch in MongoDB and TSDB for WorkflowExecution: [{}]", workflowExecution.getUuid());
+          log.info("Status mismatch in MongoDB and TSDB for WorkflowExecution: [{}] for accountId: [{}]",
+              workflowExecution.getUuid(), workflowExecution.getAccountId());
           updateRunningWFsFromTSDB(workflowExecution);
           statusMismatch = true;
         }
@@ -115,13 +116,13 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
   public void updateRunningWFsFromTSDB(WorkflowExecution workflowExecution) {
     DeploymentTimeSeriesEvent deploymentTimeSeriesEvent = usageMetricsEventPublisher.constructDeploymentTimeSeriesEvent(
         workflowExecution.getAccountId(), workflowExecution);
-    log.info("UPDATING RECORD for accountID:[{}], [{}]", workflowExecution.getAccountId(),
+    log.info("UPDATING RECORD for WorkflowExecution accountID:[{}], [{}]", workflowExecution.getAccountId(),
         deploymentTimeSeriesEvent.getTimeSeriesEventInfo());
     try {
       deploymentEventProcessor.processEvent(deploymentTimeSeriesEvent.getTimeSeriesEventInfo());
     } catch (Exception ex) {
-      log.error(
-          "Failed to process DeploymentTimeSeriesEvent : [{}]", deploymentTimeSeriesEvent.getTimeSeriesEventInfo(), ex);
+      log.error("Failed to process DeploymentTimeSeriesEvent : [{}] for accountId: [{}]",
+          deploymentTimeSeriesEvent.getTimeSeriesEventInfo(), workflowExecution.getAccountId(), ex);
     }
   }
 
@@ -158,7 +159,7 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
           DeploymentTimeSeriesEvent deploymentTimeSeriesEvent =
               usageMetricsEventPublisher.constructDeploymentTimeSeriesEvent(
                   workflowExecution.getAccountId(), workflowExecution);
-          log.info("ADDING MISSING RECORD for accountID:[{}], [{}]", workflowExecution.getAccountId(),
+          log.info("ADDING MISSING RECORD for WorkflowExecution accountID:[{}], [{}]", workflowExecution.getAccountId(),
               deploymentTimeSeriesEvent.getTimeSeriesEventInfo());
           deploymentEventProcessor.processEvent(deploymentTimeSeriesEvent.getTimeSeriesEventInfo());
           successfulInsert = true;
@@ -166,8 +167,9 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
 
       } catch (SQLException ex) {
         totalTries++;
-        log.warn("Failed to query workflowExecution from TimescaleDB for workflowExecution:[{}], totalTries:[{}]",
-            workflowExecution.getUuid(), totalTries, ex);
+        log.warn(
+            "Failed to query WorkflowExecution from TimescaleDB for workflowExecution:[{}] for accountId: [{}], totalTries:[{}]",
+            workflowExecution.getUuid(), workflowExecution.getAccountId(), totalTries, ex);
       } finally {
         DBUtils.close(resultSet);
       }
