@@ -82,12 +82,15 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
     log.info(String.format("Starting Pipeline Stage with child pipeline %s", stepParameters.getPipeline()));
 
     PlanExecutionResponseDto responseDto = null;
+
+    // set the principal for child
     setSourcePrincipal(ambiance);
-    // TODO: pass the runtime yaml
+
     PipelineStageInfo info = prepareParentStageInfo(ambiance, stepParameters);
     responseDto = pipelineExecutor.runPipelineAsChildPipeline(ambiance.getSetupAbstractions().get("accountId"),
         stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
-        ambiance.getMetadata().getModuleType(), "", false, false, stepParameters.getInputSetReferences(), info);
+        ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputs(), false, false,
+        stepParameters.getInputSetReferences(), info);
 
     if (responseDto == null) {
       throw new InvalidRequestException(
