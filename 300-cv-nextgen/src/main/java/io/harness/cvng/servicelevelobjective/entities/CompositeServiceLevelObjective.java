@@ -7,13 +7,10 @@
 package io.harness.cvng.servicelevelobjective.entities;
 
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
-import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
@@ -48,23 +45,14 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   }
 
   public static class CompositeServiceLevelObjectiveUpdatableEntity
-      extends AbstractServiceLevelObjectiveUpdatableEntity<CompositeServiceLevelObjective, ServiceLevelObjectiveV2DTO> {
+      extends AbstractServiceLevelObjectiveUpdatableEntity<CompositeServiceLevelObjective,
+          CompositeServiceLevelObjective> {
     @Override
     public void setUpdateOperations(UpdateOperations<CompositeServiceLevelObjective> updateOperations,
-        ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO) {
-      List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList =
-          ((CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec())
-              .getServiceLevelObjectivesDetails()
-              .stream()
-              .map(serviceLevelObjectiveDetailsDTO
-                  -> CompositeServiceLevelObjective.ServiceLevelObjectivesDetail.builder()
-                         .serviceLevelObjectiveRef(serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef())
-                         .weightagePercentage(serviceLevelObjectiveDetailsDTO.getWeightagePercentage())
-                         .build())
-              .collect(Collectors.toList());
-      setCommonOperations(updateOperations, serviceLevelObjectiveV2DTO);
-      updateOperations.set(
-          CompositeServiceLevelObjectiveKeys.serviceLevelObjectivesDetails, serviceLevelObjectivesDetailList);
+        CompositeServiceLevelObjective compositeServiceLevelObjective) {
+      setCommonOperations(updateOperations, compositeServiceLevelObjective);
+      updateOperations.set(CompositeServiceLevelObjectiveKeys.serviceLevelObjectivesDetails,
+          compositeServiceLevelObjective.getServiceLevelObjectivesDetails());
       updateOperations.inc(CompositeServiceLevelObjectiveKeys.version);
     }
   }

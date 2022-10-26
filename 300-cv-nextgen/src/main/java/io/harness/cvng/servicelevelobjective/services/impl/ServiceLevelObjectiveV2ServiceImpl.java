@@ -109,7 +109,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
               .monitoredServiceIdentifier(
                   ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec()).getMonitoredServiceRef())
               .build());
-
       SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
           (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
       List<String> serviceLevelIndicators = serviceLevelIndicatorService.create(projectParams,
@@ -461,10 +460,23 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   private AbstractServiceLevelObjective updateSLOV2Entity(ProjectParams projectParams,
       AbstractServiceLevelObjective abstractServiceLevelObjective,
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, List<String> serviceLevelIndicators) {
+    boolean isSLOEnabled = true;
+    if (abstractServiceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      isSLOEnabled =
+          monitoredServiceService
+              .getMonitoredService(MonitoredServiceParams.builderWithProjectParams(projectParams)
+                                       .monitoredServiceIdentifier(
+                                           ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec())
+                                               .getMonitoredServiceRef())
+                                       .build())
+              .isEnabled();
+    }
     UpdateOperations<AbstractServiceLevelObjective> updateOperations =
         hPersistence.createUpdateOperations(AbstractServiceLevelObjective.class);
     serviceLevelObjectiveTypeUpdatableEntityTransformerMap.get(serviceLevelObjectiveV2DTO.getType())
-        .setUpdateOperations(updateOperations, serviceLevelObjectiveV2DTO);
+        .setUpdateOperations(updateOperations,
+            serviceLevelObjectiveTypeSLOV2TransformerMap.get(serviceLevelObjectiveV2DTO.getType())
+                .getSLOV2(projectParams, serviceLevelObjectiveV2DTO, isSLOEnabled));
     updateOperations.set(ServiceLevelObjectiveV2Keys.sloTarget,
         sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
             .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec()));

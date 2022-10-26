@@ -84,10 +84,6 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
         (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
     simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO1.getIdentifier());
     simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
-    serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        simpleServiceLevelObjectiveSpec1.getServiceLevelIndicators(), simpleServiceLevelObjectiveDTO1.getIdentifier(),
-        simpleServiceLevelObjectiveSpec1.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec1.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1);
     simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
         builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1.getIdentifier());
@@ -105,10 +101,6 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
         (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
     simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO2.getIdentifier());
     simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
-    serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        simpleServiceLevelObjectiveSpec2.getServiceLevelIndicators(), simpleServiceLevelObjectiveDTO2.getIdentifier(),
-        simpleServiceLevelObjectiveSpec2.getMonitoredServiceRef(),
-        simpleServiceLevelObjectiveSpec2.getHealthSourceRef());
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2);
     simpleServiceLevelObjective2 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
         builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2.getIdentifier());

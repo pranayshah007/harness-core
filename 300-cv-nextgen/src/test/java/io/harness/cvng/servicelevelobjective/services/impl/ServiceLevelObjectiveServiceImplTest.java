@@ -1124,24 +1124,26 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
             "Deleting notification rule is used in SLOs, Please delete the notification rule inside SLOs before deleting notification rule. SLOs : sloName");
   }
 
-  @Test
-  @Owner(developers = KAPIL)
-  @Category(UnitTests.class)
-  public void testCreate_withIncorrectNotificationRule() {
-    NotificationRuleDTO notificationRuleDTO =
-        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
-    NotificationRuleResponse notificationRuleResponseOne =
-        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
-    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
-    sloDTO.setNotificationRuleRefs(
-        Arrays.asList(NotificationRuleRefDTO.builder()
-                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
-                          .enabled(true)
-                          .build()));
-    createMonitoredService();
-    assertThatThrownBy(() -> serviceLevelObjectiveService.create(projectParams, sloDTO))
-        .hasMessage("NotificationRule with identifier rule is of type MONITORED_SERVICE and cannot be added into SLO");
-  }
+  //  not valid now
+  //  @Test
+  //  @Owner(developers = KAPIL)
+  //  @Category(UnitTests.class)
+  //  public void testCreate_withIncorrectNotificationRule() {
+  //    NotificationRuleDTO notificationRuleDTO =
+  //        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+  //    NotificationRuleResponse notificationRuleResponseOne =
+  //        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+  //    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+  //    sloDTO.setNotificationRuleRefs(
+  //        Arrays.asList(NotificationRuleRefDTO.builder()
+  //                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+  //                          .enabled(true)
+  //                          .build()));
+  //    createMonitoredService();
+  //    assertThatThrownBy(() -> serviceLevelObjectiveService.create(projectParams, sloDTO))
+  //        .hasMessage("NotificationRule with identifier rule is of type MONITORED_SERVICE and cannot be added into
+  //        SLO");
+  //  }
 
   @Test
   @Owner(developers = NAVEEN)
@@ -1217,6 +1219,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveService mockServiceLevelObjectiveService = spy(serviceLevelObjectiveService);
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByProjectIdentifier(ServiceLevelObjective.class,
@@ -1232,6 +1235,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveService mockServiceLevelObjectiveService = spy(serviceLevelObjectiveService);
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByOrgIdentifier(
@@ -1247,6 +1251,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveService mockServiceLevelObjectiveService = spy(serviceLevelObjectiveService);
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(

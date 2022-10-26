@@ -146,7 +146,6 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
       serviceLevelObjectiveV2Service.create(projectParams, serviceLevelObjectiveV2DTO);
     } catch (Exception e) {
       log.error("[SLO Data Mismatch]: SLOV2 not created", e);
-      throw e;
     }
     MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
         MonitoredServiceParams.builderWithProjectParams(projectParams)
@@ -188,7 +187,6 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
       serviceLevelObjectiveV2Service.update(projectParams, identifier, serviceLevelObjectiveV2DTO);
     } catch (Exception e) {
       log.error("[SLO Data Mismatch]: SLOV2 not updated", e);
-      throw e;
     }
     ServiceLevelObjectiveDTO existingServiceLevelObjective =
         serviceLevelObjectiveToServiceLevelObjectiveDTO(serviceLevelObjective);
@@ -221,7 +219,6 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
       serviceLevelObjectiveV2Service.delete(projectParams, identifier);
     } catch (Exception e) {
       log.error("[SLO Data Mismatch]: SLOV2 not deleted", e);
-      throw e;
     }
     ServiceLevelObjectiveDTO serviceLevelObjectiveDTO =
         serviceLevelObjectiveToServiceLevelObjectiveDTO(serviceLevelObjective);
@@ -797,7 +794,6 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
 
   private ServiceLevelObjectiveResponse getSLOResponse(String identifier, ProjectParams projectParams) {
     ServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
-
     return sloEntityToSLOResponse(serviceLevelObjective);
   }
 
