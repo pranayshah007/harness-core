@@ -20,29 +20,20 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
-import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNode;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.steps.common.pipeline.PipelineSetupStep;
 import io.harness.steps.common.pipeline.PipelineSetupStepParameters;
-import io.harness.steps.common.pipeline.PipelineStepParameterV1;
-import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
-import io.harness.utils.TimeoutUtils;
 
 import com.google.common.base.Preconditions;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.codehaus.jackson.type.TypeReference;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelinePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
@@ -96,8 +87,8 @@ public class PipelinePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   }
 
   @Override
-  public Set<YamlVersion> getSupportedYamlVersions() {
-    return EnumSet.of(YamlVersion.V1);
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V1);
   }
 
   @Override

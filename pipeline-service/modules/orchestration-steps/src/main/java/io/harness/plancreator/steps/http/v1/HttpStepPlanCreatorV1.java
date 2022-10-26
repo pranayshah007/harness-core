@@ -28,9 +28,9 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
@@ -41,7 +41,6 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
@@ -102,8 +101,8 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
   }
 
   @Override
-  public Set<YamlVersion> getSupportedYamlVersions() {
-    return EnumSet.of(YamlVersion.V1);
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V1);
   }
 
   private AdviserObtainment buildAdviser(Dependency dependency) {

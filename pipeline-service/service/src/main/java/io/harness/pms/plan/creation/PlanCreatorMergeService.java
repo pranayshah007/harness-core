@@ -39,9 +39,9 @@ import io.harness.pms.plan.creation.validator.PlanCreationValidator;
 import io.harness.pms.sdk.PmsSdkHelper;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.utils.PmsGrpcClientUtils;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -129,11 +129,11 @@ public class PlanCreatorMergeService {
   public PlanCreationBlobResponse createPlan(String accountId, String orgIdentifier, String projectIdentifier,
       ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) throws IOException {
     return createPlanVersioned(
-        accountId, orgIdentifier, projectIdentifier, YamlVersion.V0, metadata, planExecutionMetadata);
+        accountId, orgIdentifier, projectIdentifier, PipelineVersion.V0, metadata, planExecutionMetadata);
   }
 
   public PlanCreationBlobResponse createPlanVersioned(String accountId, String orgIdentifier, String projectIdentifier,
-      YamlVersion version, ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) throws IOException {
+      String version, ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) throws IOException {
     try (AutoLogContext ignore =
              PlanCreatorUtils.autoLogContext(metadata, accountId, orgIdentifier, projectIdentifier)) {
       log.info("[PMS_PlanCreatorMergeService] Starting plan creation");
@@ -141,13 +141,13 @@ public class PlanCreatorMergeService {
 
       YamlField pipelineField;
       switch (version) {
-        case V1:
+        case PipelineVersion.V1:
           pipelineField = YamlUtils.readTree(planExecutionMetadata.getProcessedYaml());
           if (pipelineField.getNode().getUuid() == null) {
             throw new YamlException("Processed pipeline yaml does not have uuid for the pipeline field");
           }
           break;
-        case V0:
+        case PipelineVersion.V0:
           pipelineField = YamlUtils.extractPipelineField(planExecutionMetadata.getProcessedYaml());
           if (pipelineField.getNode().getUuid() == null) {
             throw new YamlException("Processed pipeline yaml does not have uuid for the pipeline field");
@@ -207,7 +207,7 @@ public class PlanCreatorMergeService {
     try {
       for (int i = 0; i < MAX_DEPTH && EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap());
            i++) {
-        YamlVersion version = YamlVersion.valueOf(metadata.getHarnessVersion());
+        String version = metadata.getHarnessVersion();
         YamlField fullYamlField = YamlUtils.readTree(finalResponseBuilder.getDeps().getYaml());
         PlanCreationBlobResponse currIterationResponse =
             createPlanForDependencies(services, finalResponseBuilder, fullYamlField, version);
@@ -230,7 +230,7 @@ public class PlanCreatorMergeService {
   }
 
   private PlanCreationBlobResponse createPlanForDependencies(Map<String, PlanCreatorServiceInfo> services,
-      PlanCreationBlobResponse.Builder responseBuilder, YamlField fullYamlField, YamlVersion harnessVersion) {
+      PlanCreationBlobResponse.Builder responseBuilder, YamlField fullYamlField, String harnessVersion) {
     PlanCreationBlobResponse.Builder currIterationResponseBuilder = PlanCreationBlobResponse.newBuilder();
     CompletableFutures<PlanCreationResponse> completableFutures = new CompletableFutures<>(executor);
     PlanCreationContextValue metadata = responseBuilder.getContextMap().get("metadata");
@@ -298,7 +298,7 @@ public class PlanCreatorMergeService {
   private void getServiceToDependenciesMap(Map<String, PlanCreatorServiceInfo> services,
       PlanCreationBlobResponse.Builder responseBuilder, YamlField fullYamlField,
       Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap,
-      YamlVersion harnessVersion) {
+      String harnessVersion) {
     // Initializing the responseMap
     for (Map.Entry<String, PlanCreatorServiceInfo> serviceEntry : services.entrySet()) {
       serviceToDependencyMap.put(serviceEntry, new LinkedList<>());

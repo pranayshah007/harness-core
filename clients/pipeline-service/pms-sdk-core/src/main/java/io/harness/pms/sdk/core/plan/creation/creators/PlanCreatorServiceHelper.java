@@ -18,7 +18,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 
 import java.util.HashMap;
 import java.util.List;
@@ -32,11 +31,11 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class PlanCreatorServiceHelper {
   public Optional<PartialPlanCreator<?>> findPlanCreator(
-      List<PartialPlanCreator<?>> planCreators, YamlField field, YamlVersion yamlVersion) {
+      List<PartialPlanCreator<?>> planCreators, YamlField field, String yamlVersion) {
     return planCreators.stream()
         .filter(planCreator -> {
           Map<String, Set<String>> supportedTypes = planCreator.getSupportedTypes();
-          Set<YamlVersion> supportedVersions = planCreator.getSupportedYamlVersions();
+          Set<String> supportedVersions = planCreator.getSupportedYamlVersions();
           return supportedVersions.contains(yamlVersion)
               && PlanCreatorUtils.supportsField(supportedTypes, field, yamlVersion);
         })

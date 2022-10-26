@@ -10,11 +10,10 @@ package io.harness.plancreator.steps.http;
 import io.harness.plancreator.steps.internal.PMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.YamlVersion;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.steps.StepSpecTypeConstants;
 
 import com.google.common.collect.Sets;
-import java.util.EnumSet;
 import java.util.Set;
 
 public class HttpStepPlanCreator extends PMSStepPlanCreatorV2<HttpStepNode> {
@@ -34,7 +33,7 @@ public class HttpStepPlanCreator extends PMSStepPlanCreatorV2<HttpStepNode> {
   }
 
   @Override
-  public Set<YamlVersion> getSupportedYamlVersions() {
-    return EnumSet.of(YamlVersion.V0);
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V0);
   }
 }

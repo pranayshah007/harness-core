@@ -22,10 +22,10 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.NGSectionStep;
 import io.harness.steps.common.NGSectionStepParameters;
@@ -33,7 +33,6 @@ import io.harness.steps.common.NGSectionStepParameters;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,8 +108,8 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   }
 
   @Override
-  public Set<YamlVersion> getSupportedYamlVersions() {
-    return EnumSet.of(YamlVersion.V1);
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V1);
   }
 
   private List<YamlField> getStepYamlFields(YamlField yamlField) {

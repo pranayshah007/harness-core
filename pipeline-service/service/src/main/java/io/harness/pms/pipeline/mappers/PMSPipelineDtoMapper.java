@@ -40,8 +40,8 @@ import io.harness.pms.pipeline.api.PipelineRequestInfoDTO;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.pipeline.yaml.PipelineYaml;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -135,9 +135,9 @@ public class PMSPipelineDtoMapper {
   }
 
   public PipelineEntity toPipelineEntity(
-      String accountId, String orgId, String projectId, String yaml, Boolean isDraft, YamlVersion pipelineVersion) {
+      String accountId, String orgId, String projectId, String yaml, Boolean isDraft, String pipelineVersion) {
     PipelineEntity pipelineEntity;
-    if (pipelineVersion != null && pipelineVersion != YamlVersion.V0) {
+    if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
       pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, yaml);
     } else {
       pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
@@ -192,7 +192,7 @@ public class PMSPipelineDtoMapper {
   }
 
   public PipelineEntity toPipelineEntityWithVersion(String accountId, String orgId, String projectId, String pipelineId,
-      String yaml, String ifMatch, Boolean isDraft, YamlVersion pipelineVersion) {
+      String yaml, String ifMatch, Boolean isDraft, String pipelineVersion) {
     PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
     PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     if (!Objects.equals(pipelineId, withVersion.getIdentifier())) {

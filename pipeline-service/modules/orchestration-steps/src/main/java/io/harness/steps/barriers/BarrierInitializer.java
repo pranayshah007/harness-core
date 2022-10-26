@@ -16,7 +16,7 @@ import io.harness.engine.observers.OrchestrationStartObserver;
 import io.harness.engine.observers.beans.OrchestrationStartInfo;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.yaml.YamlVersion;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
@@ -36,15 +36,15 @@ public class BarrierInitializer implements OrchestrationStartObserver {
 
   @Override
   public void onStart(OrchestrationStartInfo orchestrationStartInfo) {
-    YamlVersion version = AmbianceUtils.getYamlVersion(orchestrationStartInfo.getAmbiance());
+    String version = AmbianceUtils.getYamlVersion(orchestrationStartInfo.getAmbiance());
     String planExecutionId = orchestrationStartInfo.getPlanExecutionId();
     PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();
     try {
       switch (version) {
-        case V1:
+        case PipelineVersion.V1:
           // TODO: Barrier support
           return;
-        case V0:
+        case PipelineVersion.V0:
           Map<String, BarrierSetupInfo> barrierIdentifierSetupInfoMap =
               barrierService.getBarrierSetupInfoList(planExecutionMetadata.getProcessedYaml())
                   .stream()

@@ -53,7 +53,6 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
 import io.harness.utils.PageUtils;
@@ -101,7 +100,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId, String pipelineIdentifier,
       String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml) {
-    YamlVersion pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
+    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     PipelineEntity pipelineEntity =
         PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
@@ -119,7 +118,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId, String pipelineIdentifier,
       String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml) {
-    YamlVersion pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
+    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     PipelineEntity pipelineEntity =
         PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
@@ -249,7 +248,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
       @ResourceIdentifier String pipelineId, String pipelineName, String pipelineDescription, Boolean isDraft,
       GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) {
-    YamlVersion pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
+    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
@@ -265,7 +264,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgId,
       @NotNull @ProjectIdentifier String projectId, @ResourceIdentifier String pipelineId, String pipelineName,
       String pipelineDescription, Boolean isDraft, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) {
-    YamlVersion pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
+    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(

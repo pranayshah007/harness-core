@@ -15,14 +15,11 @@ import io.harness.exception.YamlException;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.YamlUpdates;
-import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
-import io.harness.utils.TimeoutUtils;
-import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -43,13 +40,13 @@ public class PlanCreatorUtils {
   public final String ANY_TYPE = "__any__";
   public final String TEMPLATE_TYPE = "__template__";
 
-  public boolean supportsField(Map<String, Set<String>> supportedTypes, YamlField field, YamlVersion harnessVersion) {
+  public boolean supportsField(Map<String, Set<String>> supportedTypes, YamlField field, String version) {
     if (EmptyPredicate.isEmpty(supportedTypes)) {
       return false;
     }
 
-    switch (harnessVersion) {
-      case V1:
+    switch (version) {
+      case PipelineVersion.V1:
         Set<String> keys = supportedTypes.keySet();
         String type = field.getNode().getType();
         if (!EmptyPredicate.isEmpty(type)) {
@@ -65,7 +62,7 @@ public class PlanCreatorUtils {
           return false;
         }
         return keys.contains(field.getName());
-      case V0:
+      case PipelineVersion.V0:
         String fieldName = field.getName();
         Set<String> types = supportedTypes.get(fieldName);
         if (EmptyPredicate.isEmpty(types)) {

@@ -9,10 +9,9 @@ package io.harness.pms.sdk.core.plan.creation.creators;
 
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlVersion;
 
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,7 +25,7 @@ public interface PartialPlanCreator<T> {
     return "";
   }
 
-  default Set<YamlVersion> getSupportedYamlVersions() {
-    return EnumSet.allOf(YamlVersion.class);
+  default Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V0, PipelineVersion.V1);
   }
 }

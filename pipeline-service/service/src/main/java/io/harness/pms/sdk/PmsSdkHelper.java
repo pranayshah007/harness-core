@@ -16,9 +16,9 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.PlanCreationServiceGrpc;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -71,7 +71,8 @@ public class PmsSdkHelper {
     return dependencies.getDependenciesMap()
         .entrySet()
         .stream()
-        .filter(entry -> containsSupportedSingleDependencyByYamlPath(serviceInfo, fullYamlField, entry, YamlVersion.V0))
+        .filter(
+            entry -> containsSupportedSingleDependencyByYamlPath(serviceInfo, fullYamlField, entry, PipelineVersion.V0))
         .map(Map.Entry::getKey)
         .findFirst()
         .isPresent();
@@ -81,7 +82,7 @@ public class PmsSdkHelper {
    * Checks if the service supports any of the dependency mentioned.
    */
   public boolean containsSupportedSingleDependencyByYamlPath(PlanCreatorServiceInfo serviceInfo,
-      YamlField fullYamlField, Map.Entry<String, String> dependencyEntry, YamlVersion harnessVersion) {
+      YamlField fullYamlField, Map.Entry<String, String> dependencyEntry, String harnessVersion) {
     if (dependencyEntry == null) {
       return false;
     }

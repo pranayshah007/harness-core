@@ -27,9 +27,9 @@ import io.harness.pms.sdk.core.pipeline.creators.BaseCreatorService;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -130,7 +130,7 @@ public class VariableCreatorService
     return variableCreators.stream()
         .filter(variableCreator -> {
           Map<String, Set<String>> supportedTypes = variableCreator.getSupportedTypes();
-          return supportsField(supportedTypes, yamlField, YamlVersion.V0);
+          return supportsField(supportedTypes, yamlField, PipelineVersion.V0);
         })
         .findFirst();
   }

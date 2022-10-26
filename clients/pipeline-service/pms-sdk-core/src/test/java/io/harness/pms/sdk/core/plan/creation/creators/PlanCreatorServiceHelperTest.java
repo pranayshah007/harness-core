@@ -19,9 +19,9 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.rule.Owner;
 
 import com.google.common.base.Charsets;
@@ -48,7 +48,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     YamlField yamlField = YamlUtils.extractPipelineField(YamlUtils.injectUuid(yamlContent));
     Optional<PartialPlanCreator<?>> partialPlanCreatorOptional =
-        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, YamlVersion.V0);
+        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, PipelineVersion.V0);
     assertThat(partialPlanCreatorOptional.isPresent()).isTrue();
     assertThat(partialPlanCreatorOptional.get().getClass()).isEqualTo(DummyChildrenPlanCreator.class);
   }
@@ -144,7 +144,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     YamlField yamlField = YamlUtils.extractPipelineField(YamlUtils.injectUuid(yamlContent));
     Optional<PartialPlanCreator<?>> partialPlanCreatorOptional =
-        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, YamlVersion.V0);
+        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, PipelineVersion.V0);
     assertThat(partialPlanCreatorOptional.isPresent()).isFalse();
   }
 }

@@ -16,7 +16,6 @@ import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.pms.yaml.YamlVersion;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
@@ -119,7 +118,7 @@ public class PlanCreationContext implements AsyncCreatorContext {
     return stepFields;
   }
 
-  public YamlVersion getYamlVersion() {
-    return YamlVersion.valueOf(getMetadata().getMetadata().getHarnessVersion());
+  public String getYamlVersion() {
+    return getMetadata().getMetadata().getHarnessVersion();
   }
 }

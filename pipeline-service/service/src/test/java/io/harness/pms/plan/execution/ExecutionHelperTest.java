@@ -64,8 +64,8 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.rbac.validator.PipelineRbacService;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -289,7 +289,7 @@ public class ExecutionHelperTest extends CategoryTest {
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
-    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(YamlVersion.V0.toString());
+    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(PipelineVersion.V0);
 
     PlanExecutionMetadata planExecutionMetadata = execArgs.getPlanExecutionMetadata();
     assertThat(planExecutionMetadata.getPlanExecutionId()).isEqualTo(generatedExecutionId);
@@ -323,7 +323,7 @@ public class ExecutionHelperTest extends CategoryTest {
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.INLINE);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
-    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(YamlVersion.V0.toString());
+    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(PipelineVersion.V0);
 
     PlanExecutionMetadata planExecutionMetadata = execArgs.getPlanExecutionMetadata();
     assertThat(planExecutionMetadata.getPlanExecutionId()).isEqualTo(generatedExecutionId);
@@ -357,7 +357,7 @@ public class ExecutionHelperTest extends CategoryTest {
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.REMOTE);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEqualTo("conn");
-    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(YamlVersion.V0.toString());
+    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(PipelineVersion.V0);
 
     PlanExecutionMetadata planExecutionMetadata = execArgs.getPlanExecutionMetadata();
     assertThat(planExecutionMetadata.getPlanExecutionId()).isEqualTo(generatedExecutionId);
@@ -389,7 +389,7 @@ public class ExecutionHelperTest extends CategoryTest {
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
-    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(YamlVersion.V0.toString());
+    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(PipelineVersion.V0);
 
     PlanExecutionMetadata planExecutionMetadata = execArgs.getPlanExecutionMetadata();
     assertThat(planExecutionMetadata.getPlanExecutionId()).isEqualTo(generatedExecutionId);
@@ -430,7 +430,7 @@ public class ExecutionHelperTest extends CategoryTest {
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
-    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(YamlVersion.V0.toString());
+    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(PipelineVersion.V0);
 
     PlanExecutionMetadata planExecutionMetadata = execArgs.getPlanExecutionMetadata();
     assertThat(planExecutionMetadata.getPlanExecutionId()).isEqualTo(generatedExecutionId);
@@ -470,7 +470,7 @@ public class ExecutionHelperTest extends CategoryTest {
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
-    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(YamlVersion.V0.toString());
+    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(PipelineVersion.V0);
 
     PlanExecutionMetadata planExecutionMetadata = execArgs.getPlanExecutionMetadata();
     assertThat(planExecutionMetadata.getPlanExecutionId()).isEqualTo(generatedExecutionId);
@@ -722,7 +722,7 @@ public class ExecutionHelperTest extends CategoryTest {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testBuildExecutionArgsWithV1Version() throws IOException {
-    pipelineEntity.setHarnessVersion(YamlVersion.V1);
+    pipelineEntity.setHarnessVersion(PipelineVersion.V1);
     pipelineEntity.setYaml(pipelineYamlWithoutInputSet);
     buildExecutionArgsMocks();
 
@@ -739,7 +739,7 @@ public class ExecutionHelperTest extends CategoryTest {
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
-    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(YamlVersion.V1.toString());
+    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(PipelineVersion.V1);
 
     PlanExecutionMetadata planExecutionMetadata = execArgs.getPlanExecutionMetadata();
     assertThat(planExecutionMetadata.getPlanExecutionId()).isEqualTo(generatedExecutionId);

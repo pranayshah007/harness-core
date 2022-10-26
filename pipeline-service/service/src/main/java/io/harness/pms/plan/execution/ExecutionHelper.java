@@ -62,9 +62,9 @@ import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.stages.StagesExpressionExtractor;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
@@ -162,18 +162,18 @@ public class ExecutionHelper {
     try (AutoLogContext ignore =
              PlanCreatorUtils.autoLogContext(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
                  pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), executionId)) {
-      YamlVersion version = pipelineEntity.getHarnessVersion();
+      String version = pipelineEntity.getHarnessVersion();
       String pipelineYaml;
       String pipelineYamlWithTemplateRef;
       boolean allowedStageExecution;
       List<NotificationRules> notificationRules = new ArrayList<>();
       switch (version) {
-        case V1:
+        case PipelineVersion.V1:
           allowedStageExecution = false;
           pipelineYaml = pipelineEntity.getYaml();
           pipelineYamlWithTemplateRef = pipelineEntity.getYaml();
           break;
-        case V0:
+        case PipelineVersion.V0:
           TemplateMergeResponseDTO templateMergeResponseDTO =
               getPipelineYamlAndValidate(mergedRuntimeInputYaml, pipelineEntity);
           pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
@@ -241,7 +241,7 @@ public class ExecutionHelper {
             .setRetryInfo(retryExecutionInfo)
             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
             .setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules))
-            .setHarnessVersion(pipelineEntity.getHarnessVersion().toString());
+            .setHarnessVersion(pipelineEntity.getHarnessVersion());
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
     if (gitSyncBranchContext != null) {
@@ -334,7 +334,7 @@ public class ExecutionHelper {
 
   private PlanExecutionMetadata.Builder obtainPlanExecutionMetadata(String mergedRuntimeInputYaml, String executionId,
       StagesExecutionInfo stagesExecutionInfo, String originalExecutionId,
-      RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser, YamlVersion version) {
+      RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser, String version) {
     long start = System.currentTimeMillis();
     boolean isRetry = retryExecutionParameters.isRetry();
     String pipelineYaml = stagesExecutionInfo.getPipelineYamlToRun();
@@ -349,10 +349,10 @@ public class ExecutionHelper {
     String currentProcessedYaml;
     try {
       switch (version) {
-        case V1:
+        case PipelineVersion.V1:
           currentProcessedYaml = YamlUtils.injectUuidWithName(pipelineYaml, YAMLFieldNameConstants.PIPELINE);
           break;
-        case V0:
+        case PipelineVersion.V0:
           currentProcessedYaml = YamlUtils.injectUuid(pipelineYaml);
           break;
         default:
@@ -407,7 +407,7 @@ public class ExecutionHelper {
              PlanCreatorUtils.autoLogContext(executionMetadata, accountId, orgIdentifier, projectIdentifier)) {
       PlanCreationBlobResponse resp;
       try {
-        YamlVersion version = YamlVersion.valueOf(executionMetadata.getHarnessVersion());
+        String version = executionMetadata.getHarnessVersion();
         resp = planCreatorMergeService.createPlanVersioned(
             accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
       } catch (IOException e) {

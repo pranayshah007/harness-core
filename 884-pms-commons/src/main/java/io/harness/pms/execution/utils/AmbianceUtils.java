@@ -24,7 +24,7 @@ import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
-import io.harness.pms.yaml.YamlVersion;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.strategy.StrategyValidationUtils;
 
 import com.cronutils.utils.StringUtils;
@@ -292,11 +292,11 @@ public class AmbianceUtils {
     return triggeredBy.getExtraInfoOrDefault("email", null);
   }
 
-  public static YamlVersion getYamlVersion(Ambiance ambiance) {
+  public static String getYamlVersion(Ambiance ambiance) {
     ExecutionMetadata metadata = ambiance.getMetadata();
     if (EmptyPredicate.isEmpty(metadata.getHarnessVersion())) {
-      return YamlVersion.V0;
+      return PipelineVersion.V0;
     }
-    return YamlVersion.valueOf(metadata.getHarnessVersion());
+    return metadata.getHarnessVersion();
   }
 }
