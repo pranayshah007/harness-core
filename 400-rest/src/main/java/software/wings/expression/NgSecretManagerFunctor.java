@@ -47,9 +47,9 @@ import software.wings.service.intfc.security.SecretManager;
 
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
@@ -75,10 +75,10 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
   private final ExecutorService expressionEvaluatorExecutor;
   private final boolean evaluateSync;
 
-  @Builder.Default Map<String, String> evaluatedSecrets = new HashMap<>();
-  @Builder.Default Map<String, String> evaluatedDelegateSecrets = new HashMap<>();
-  @Builder.Default Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
-  @Builder.Default Map<String, SecretDetail> secretDetails = new HashMap<>();
+  @Builder.Default Map<String, String> evaluatedSecrets = new ConcurrentHashMap<>();
+  @Builder.Default Map<String, String> evaluatedDelegateSecrets = new ConcurrentHashMap<>();
+  @Builder.Default Map<String, EncryptionConfig> encryptionConfigs = new ConcurrentHashMap<>();
+  @Builder.Default Map<String, SecretDetail> secretDetails = new ConcurrentHashMap<>();
 
   DelegateMetricsService delegateMetricsService;
 

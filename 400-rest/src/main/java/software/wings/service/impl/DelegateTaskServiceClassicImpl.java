@@ -13,6 +13,7 @@ import static io.harness.beans.DelegateTask.Status.ERROR;
 import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
+import static io.harness.beans.FeatureName.DEL_SECRET_EVALUATION_VERBOSE_LOGGING;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -972,8 +973,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         return null;
       }
 
-      addSecretManagerFunctorConfigs(
-          delegateTaskPackageBuilder, secretManagerFunctor, ngSecretManagerFunctor, sweepingOutputSecretFunctor);
+      addSecretManagerFunctorConfigs(delegateTaskPackageBuilder, secretManagerFunctor, ngSecretManagerFunctor,
+          sweepingOutputSecretFunctor, delegateTask.getAccountId());
 
       return delegateTaskPackageBuilder.build();
     } catch (CriticalExpressionEvaluationException exception) {
@@ -998,7 +999,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   private void addSecretManagerFunctorConfigs(DelegateTaskPackageBuilder delegateTaskPackageBuilder,
       SecretManagerFunctor secretManagerFunctor, NgSecretManagerFunctor ngSecretManagerFunctor,
-      SweepingOutputSecretFunctor sweepingOutputSecretFunctor) {
+      SweepingOutputSecretFunctor sweepingOutputSecretFunctor, String accountID) {
     Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
     Map<String, SecretDetail> secretDetails = new HashMap<>();
     Set<String> secrets = new HashSet<>();
@@ -1023,6 +1024,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       if (isNotEmpty(sweepingOutputSecretFunctor.getEvaluatedSecrets())) {
         secrets.addAll(sweepingOutputSecretFunctor.getEvaluatedSecrets());
       }
+    }
+
+    if (featureFlagService.isEnabled(DEL_SECRET_EVALUATION_VERBOSE_LOGGING, accountID)) {
+      ArrayList<String> secretUuids = new ArrayList<>();
+      secretDetails.forEach((key, value) -> { secretUuids.add(key); });
+      log.info("SecretDetails being sent in DelegateTaskPackage {} ", secretUuids.toString());
     }
 
     delegateTaskPackageBuilder.encryptionConfigs(encryptionConfigs);

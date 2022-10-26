@@ -8,6 +8,8 @@
 package io.harness.delegate.beans.connector.scm.genericgitconnector;
 
 import io.harness.delegate.beans.connector.scm.GitConfigConstants;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitAuthenticationOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitHTTPAuthenticationOutcomeDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretReference;
 import io.harness.validation.OneOfField;
@@ -31,4 +33,12 @@ public class GitHTTPAuthenticationDTO extends GitAuthenticationDTO {
   String username;
   @SecretReference @ApiModelProperty(dataType = "string") SecretRefData usernameRef;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;
+  @Override
+  public GitAuthenticationOutcomeDTO toOutcome() {
+    return GitHTTPAuthenticationOutcomeDTO.builder()
+        .username(this.username)
+        .usernameRef(this.usernameRef)
+        .passwordRef(this.passwordRef)
+        .build();
+  }
 }

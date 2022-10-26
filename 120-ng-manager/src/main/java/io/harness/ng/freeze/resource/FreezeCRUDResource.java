@@ -29,7 +29,7 @@ import io.harness.freeze.beans.response.FreezeDetailedResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseWrapperDTO;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
-import io.harness.freeze.beans.response.GlobalFreezeWithBannerDetailsResponseDTO;
+import io.harness.freeze.beans.response.GlobalFreezeBannerDetailsResponseDTO;
 import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.helpers.FreezeRBACHelper;
@@ -317,30 +317,30 @@ public class FreezeCRUDResource {
         ApiResponse(responseCode = "default", description = "Get Global Freeze Yaml")
       })
   @Hidden
-  public ResponseDTO<GlobalFreezeWithBannerDetailsResponseDTO>
+  public ResponseDTO<GlobalFreezeBannerDetailsResponseDTO>
   getGlobalFreezeWithBannerDetails(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull
                                    @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
-    List<FreezeBannerDetails> activeOrUpcomingParentGlobalFreezes =
-        freezeCRUDService.getParentGlobalFreezeSummary(accountId, orgId, projectId)
-            .stream()
+    List<FreezeResponseDTO> freezeResponseDTOS =
+        freezeCRUDService.getParentGlobalFreezeSummary(accountId, orgId, projectId);
+    freezeResponseDTOS.add(freezeCRUDService.getGlobalFreeze(accountId, orgId, projectId));
+    List<FreezeBannerDetails> activeOrUpcomingGlobalFreezes =
+        freezeResponseDTOS.stream()
             .filter(freezeResponseDTO -> FreezeStatus.ENABLED.equals(freezeResponseDTO.getStatus()))
             .map(NGFreezeDtoMapper::prepareBanner)
             .collect(Collectors.toList());
-    activeOrUpcomingParentGlobalFreezes =
-        activeOrUpcomingParentGlobalFreezes.stream()
+    activeOrUpcomingGlobalFreezes =
+        activeOrUpcomingGlobalFreezes.stream()
             .filter(activeOrUpcomingParentGlobalFreeze -> activeOrUpcomingParentGlobalFreeze.getWindow() != null)
             .collect(Collectors.toList());
-    GlobalFreezeWithBannerDetailsResponseDTO globalFreezeWithBannerDetailsResponseDTO =
-        GlobalFreezeWithBannerDetailsResponseDTO.builder()
-            .globalFreezeResponse(NGFreezeDtoMapper.prepareDetailedFreezeResponseDto(
-                freezeCRUDService.getGlobalFreeze(accountId, orgId, projectId)))
-            .activeOrUpcomingParentGlobalFreezes(activeOrUpcomingParentGlobalFreezes)
+    GlobalFreezeBannerDetailsResponseDTO globalFreezeBannerDetailsResponseDTO =
+        GlobalFreezeBannerDetailsResponseDTO.builder()
+            .activeOrUpcomingGlobalFreezes(activeOrUpcomingGlobalFreezes)
             .build();
-    return ResponseDTO.newResponse(globalFreezeWithBannerDetailsResponseDTO);
+    return ResponseDTO.newResponse(globalFreezeBannerDetailsResponseDTO);
   }
 
   @POST

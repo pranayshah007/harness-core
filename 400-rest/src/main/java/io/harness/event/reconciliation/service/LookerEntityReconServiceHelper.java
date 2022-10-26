@@ -39,6 +39,9 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class LookerEntityReconServiceHelper {
   private static final long COOL_DOWN_INTERVAL = 15 * 60 * 1000; /* 15 MINS COOL DOWN INTERVAL */
   private static final String FETCH_IDS = "SELECT ID FROM %s WHERE ACCOUNT_ID=? AND CREATED_AT>=? AND CREATED_AT<=?;";
+  private static final String FETCH_CG_USER_IDS =
+      "SELECT ID FROM %s WHERE ? = ANY (ACCOUNT_IDS) AND CREATED_AT>=? AND CREATED_AT<=?;";
+  private static final String CG_USERS = "CG_USERS";
 
   public static void deleteRecords(Set<String> idsToBeDeletedFromTSDB, TimeScaleEntity timeScaleEntity) {
     for (String idToDelete : idsToBeDeletedFromTSDB) {
@@ -88,7 +91,8 @@ public class LookerEntityReconServiceHelper {
   public static Set<String> getEntityIdsFromTSDB(String accountId, long durationStartTs, long durationEndTs,
       String sourceEntityClass, TimeScaleEntity timeScaleEntity, TimeScaleDBService timeScaleDBService) {
     String tableName = timeScaleEntity.getMigrationClassName();
-    String query = String.format(FETCH_IDS, tableName);
+    String query = CG_USERS.equals(tableName) ? FETCH_CG_USER_IDS : FETCH_IDS;
+    query = String.format(query, tableName);
     Set<String> EntityIds = new HashSet<>();
     int totalTries = 0;
     while (totalTries <= 3) {

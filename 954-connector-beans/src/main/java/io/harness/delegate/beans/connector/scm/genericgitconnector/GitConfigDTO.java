@@ -13,10 +13,12 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitConfigOutcomeDTO;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 
@@ -105,5 +107,19 @@ public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, De
   @Override
   public void validate() {
     GitClientHelper.validateURL(url);
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return GitConfigOutcomeDTO.builder()
+        .type(this.gitAuthType)
+        .connectionType(this.gitConnectionType)
+        .url(this.url)
+        .validationRepo(this.validationRepo)
+        .branchName(this.branchName)
+        .delegateSelectors(this.delegateSelectors)
+        .executeOnDelegate(this.executeOnDelegate)
+        .spec(this.gitAuth.toOutcome())
+        .build();
   }
 }

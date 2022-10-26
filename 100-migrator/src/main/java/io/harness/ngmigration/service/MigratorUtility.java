@@ -253,6 +253,6 @@ public class MigratorUtility {
       return ParameterField.ofNull();
     }
     return ParameterField.createValueField(
-        files.stream().map(file -> "/" + ((FileYamlDTO) file.getYaml()).getIdentifier()).collect(Collectors.toList()));
+        files.stream().map(file -> "/" + ((FileYamlDTO) file.getYaml()).getName()).collect(Collectors.toList()));
   }
 }
