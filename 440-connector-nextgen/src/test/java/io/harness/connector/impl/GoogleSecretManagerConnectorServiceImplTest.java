@@ -21,7 +21,7 @@ import org.mockito.InjectMocks;
 @OwnedBy(HarnessTeam.PL)
 public class GoogleSecretManagerConnectorServiceImplTest extends ConnectorsTestBase {
   @Inject @InjectMocks GoogleSecretManagerConnectorServiceImpl googleSecretManagerConnectorService;
-  private final List<String> gcpRegions =
+  private final List<String> expectedGcpRegions =
       Stream
           .of("us-east1", "us-east2", "us-east4", "us-west1", "us-west2", "us-west3", "us-west4", "us-central1",
               "us-central2", "us-central3", "us-central4", "eu-west1", "eu-west2", "eu-west3", "eu-west4", "eu-west6",
@@ -35,6 +35,6 @@ public class GoogleSecretManagerConnectorServiceImplTest extends ConnectorsTestB
   @Category(UnitTests.class)
   public void testGcpRegions() {
     List<String> gcpRegions = googleSecretManagerConnectorService.getGcpRegions();
-    assertThat(gcpRegions).isEqualTo(gcpRegions);
+    assertThat(gcpRegions).isEqualTo(expectedGcpRegions);
   }
 }
