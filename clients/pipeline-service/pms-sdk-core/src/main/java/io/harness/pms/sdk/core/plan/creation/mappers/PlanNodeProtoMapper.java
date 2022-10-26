@@ -38,7 +38,6 @@ public class PlanNodeProtoMapper {
   @Inject private KryoSerializer kryoSerializer;
 
   public PlanNodeProto toPlanNodeProtoWithDecoratedFields(PlanNode node) {
-    log.info(node.getStepType().getType());
     PlanNodeProto.Builder builder =
         PlanNodeProto.newBuilder()
             .setUuid(node.getUuid())
