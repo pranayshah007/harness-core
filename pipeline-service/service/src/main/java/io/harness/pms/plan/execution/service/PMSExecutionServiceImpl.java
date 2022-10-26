@@ -189,12 +189,11 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     return criteria;
   }
 
-
   @Override
   public Criteria formCriteriaV2(String accountId, String orgId, String projectId, List<String> pipelineIdentifier,
-                               String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
-                               String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
-                               ByteString gitSyncBranchContext, boolean isLatest) {
+      String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
+      String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
+      ByteString gitSyncBranchContext, boolean isLatest) {
     Criteria criteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(accountId)) {
       criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
@@ -225,32 +224,32 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
     if (myDeployments) {
       criteria.and(PlanExecutionSummaryKeys.triggerType)
-              .is(MANUAL)
-              .and(PlanExecutionSummaryKeys.triggeredBy)
-              .is(triggeredByHelper.getFromSecurityContext());
+          .is(MANUAL)
+          .and(PlanExecutionSummaryKeys.triggeredBy)
+          .is(triggeredByHelper.getFromSecurityContext());
     }
 
     Criteria moduleCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(moduleName)) {
       // Check for pipeline with no filters also - empty pipeline or pipelines with only approval stage
       moduleCriteria.orOperator(Criteria.where(PlanExecutionSummaryKeys.modules).is(Collections.emptyList()),
-              // This is here just for backward compatibility should be removed
-              Criteria.where(PlanExecutionSummaryKeys.modules)
-                      .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
-              Criteria.where(PlanExecutionSummaryKeys.modules).in(moduleName));
+          // This is here just for backward compatibility should be removed
+          Criteria.where(PlanExecutionSummaryKeys.modules)
+              .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
+          Criteria.where(PlanExecutionSummaryKeys.modules).in(moduleName));
     }
 
     Criteria searchCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(searchTerm)) {
       try {
         searchCriteria.orOperator(where(PlanExecutionSummaryKeys.pipelineIdentifier)
-                        .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-                where(PlanExecutionSummaryKeys.name)
-                        .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-                where(PlanExecutionSummaryKeys.tags + "." + NGTagKeys.key)
-                        .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-                where(PlanExecutionSummaryKeys.tags + "." + NGTagKeys.value)
-                        .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+                                      .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+            where(PlanExecutionSummaryKeys.name)
+                .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+            where(PlanExecutionSummaryKeys.tags + "." + NGTagKeys.key)
+                .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+            where(PlanExecutionSummaryKeys.tags + "." + NGTagKeys.value)
+                .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
       } catch (PatternSyntaxException pex) {
         throw new InvalidRequestException(pex.getMessage() + " Use \\\\ for special character", pex);
       }
@@ -259,25 +258,25 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     Criteria gitCriteria = new Criteria();
     if (gitSyncBranchContext != null) {
       Criteria gitCriteriaDeprecated =
-              Criteria.where(PlanExecutionSummaryKeys.gitSyncBranchContext).is(gitSyncBranchContext);
+          Criteria.where(PlanExecutionSummaryKeys.gitSyncBranchContext).is(gitSyncBranchContext);
 
       EntityGitDetails entityGitDetails = pmsGitSyncHelper.getEntityGitDetailsFromBytes(gitSyncBranchContext);
       Criteria gitCriteriaNew = Criteria
-              .where(PlanExecutionSummaryKeys.entityGitDetails + "."
-                      + "branch")
-              .is(entityGitDetails.getBranch());
+                                    .where(PlanExecutionSummaryKeys.entityGitDetails + "."
+                                        + "branch")
+                                    .is(entityGitDetails.getBranch());
       if (entityGitDetails.getRepoIdentifier() != null
-              && !entityGitDetails.getRepoIdentifier().equals(GitAwareEntityHelper.DEFAULT)) {
+          && !entityGitDetails.getRepoIdentifier().equals(GitAwareEntityHelper.DEFAULT)) {
         gitCriteriaNew
-                .and(PlanExecutionSummaryKeys.entityGitDetails + "."
-                        + "repoIdentifier")
-                .is(entityGitDetails.getRepoIdentifier());
+            .and(PlanExecutionSummaryKeys.entityGitDetails + "."
+                + "repoIdentifier")
+            .is(entityGitDetails.getRepoIdentifier());
       } else if (entityGitDetails.getRepoName() != null
-              && !entityGitDetails.getRepoName().equals(GitAwareEntityHelper.DEFAULT)) {
+          && !entityGitDetails.getRepoName().equals(GitAwareEntityHelper.DEFAULT)) {
         gitCriteriaNew
-                .and(PlanExecutionSummaryKeys.entityGitDetails + "."
-                        + "repoName")
-                .is(entityGitDetails.getRepoName());
+            .and(PlanExecutionSummaryKeys.entityGitDetails + "."
+                + "repoName")
+            .is(entityGitDetails.getRepoName());
       }
       gitCriteria.orOperator(gitCriteriaDeprecated, gitCriteriaNew);
     }

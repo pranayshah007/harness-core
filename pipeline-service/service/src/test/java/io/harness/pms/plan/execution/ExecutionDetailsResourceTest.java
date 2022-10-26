@@ -8,6 +8,7 @@
 package io.harness.pms.plan.execution;
 
 import static io.harness.rule.OwnerRule.*;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -200,24 +201,24 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
     ByteString gitSyncBranchContext = ByteString.copyFromUtf8("random byte string");
     doReturn(gitSyncBranchContext).when(pmsGitSyncHelper).getGitSyncBranchContextBytesThreadLocal();
 
-    Criteria criteria = Criteria.where(   "a").is("b");
+    Criteria criteria = Criteria.where("a").is("b");
     doReturn(criteria)
-            .when(pmsExecutionService)
-            .formCriteriaV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, null, null, null, null, null,
-                    false, false, gitSyncBranchContext, true);
+        .when(pmsExecutionService)
+        .formCriteriaV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, null, null, null, null,
+            null, false, false, gitSyncBranchContext, true);
 
     Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineEntityKeys.createdAt));
     Page<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntities =
-            new PageImpl<>(Collections.singletonList(executionSummaryEntity), pageable, 1);
+        new PageImpl<>(Collections.singletonList(executionSummaryEntity), pageable, 1);
     doReturn(pipelineExecutionSummaryEntities)
-            .when(pmsExecutionService)
-            .getPipelineExecutionSummaryEntity(criteria, pageable);
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(criteria, pageable);
 
     Page<PipelineExecutionSummaryDTO> content =
-            executionDetailsResource
-                    .getListOfExecutionsV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, PIPELINE_IDENTIFIER_LIST, 0, 10, null,
-                            null, null, null, null, false, GitEntityFindInfoDTO.builder().branch("branchName").build())
-                    .getData();
+        executionDetailsResource
+            .getListOfExecutionsV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, PIPELINE_IDENTIFIER_LIST, 0, 10,
+                null, null, null, null, null, false, GitEntityFindInfoDTO.builder().branch("branchName").build())
+            .getData();
     assertThat(content).isNotEmpty();
     assertThat(content.getNumberOfElements()).isEqualTo(1);
 
