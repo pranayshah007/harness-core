@@ -8,6 +8,12 @@
 package io.harness.elastigroup;
 
 public enum ElastigroupCommandUnitConstants {
+  createSetup {
+    @Override
+    public String toString() {
+      return "Create Setup";
+    }
+  },
   fetchManifests {
     @Override
     public String toString() {
