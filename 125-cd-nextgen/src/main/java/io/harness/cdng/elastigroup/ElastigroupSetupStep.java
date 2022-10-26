@@ -20,6 +20,7 @@ import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
+import io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -77,16 +78,16 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
   @Inject private InstanceInfoService instanceInfoService;
 
   @Override
-  public TaskChainResponse executeEcsTask(Ambiance ambiance, StepElementParameters stepParameters,
-      EcsExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
-      EcsStepExecutorParams ecsStepExecutorParams) {
+  public TaskChainResponse executeElastigroupTask(Ambiance ambiance, StepElementParameters stepParameters,
+                                                  ElastigroupExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
+                                                  EcsStepExecutorParams ecsStepExecutorParams) {
     InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
-    ElastigroupSetupStepParameters ecsBlueGreenCreateServiceStepParameters =
+    ElastigroupSetupStepParameters elastigroupSetupStepParameters =
         (ElastigroupSetupStepParameters) stepParameters.getSpec();
 
-    String elastiGroupNamePrefix = ecsBlueGreenCreateServiceStepParameters.getName().getValue();
+    String elastiGroupNamePrefix = elastigroupSetupStepParameters.getName().getValue();
 
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
             ElastigroupSetupCommandRequest.builder()
@@ -96,7 +97,6 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .ecsCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .ecsInfraConfig(elastigroupStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .build();
 
@@ -130,7 +130,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
             .build();
-    return ecsStepCommonHelper.queueEcsTask(
+    return elastigroupStepCommonHelper.queueEcsTask(
         stepParameters, ecsBlueGreenPrepareRollbackRequest, ambiance, ecsStepPassThroughData, false);
   }
 
