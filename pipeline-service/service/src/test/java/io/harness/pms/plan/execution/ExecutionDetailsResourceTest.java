@@ -7,7 +7,9 @@
 
 package io.harness.pms.plan.execution;
 
-import static io.harness.rule.OwnerRule.*;
+import static io.harness.rule.OwnerRule.DEVESH;
+import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SAMARTH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
