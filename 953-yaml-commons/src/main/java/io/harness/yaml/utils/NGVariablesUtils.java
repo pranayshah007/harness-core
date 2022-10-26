@@ -195,10 +195,11 @@ public class NGVariablesUtils {
     inputVariables.forEach((key, value) -> {
       if (value instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
-        if (parameterFieldValue.getValue() == null) {
+        String stringVal = parameterFieldValue.getValue() == null ? parameterFieldValue.getExpressionValue(): parameterFieldValue.getValue().toString();
+        if (stringVal == null) {
           throw new InvalidRequestException(String.format("Variable [%s] value found to be null", key));
         }
-        res.put(key, parameterFieldValue.getValue().toString());
+        res.put(key, stringVal);
       } else if (value instanceof String) {
         res.put(key, (String) value);
       } else {
