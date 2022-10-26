@@ -155,7 +155,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     SimpleServiceLevelObjective serviceLevelObjectiveV2 =
         (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
             projectParams, serviceLevelObjectiveDTO.getIdentifier());
-    ServiceLevelObjective serviceLevelObjective = saveServiceLevelObjectiveEntity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled(),
+    saveServiceLevelObjectiveEntity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled(),
         serviceLevelObjectiveV2.getServiceLevelIndicators());
     outboxService.save(ServiceLevelObjectiveCreateEvent.builder()
                            .resourceName(serviceLevelObjectiveDTO.getName())
