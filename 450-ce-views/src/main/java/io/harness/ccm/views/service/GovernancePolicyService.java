@@ -6,6 +6,7 @@
  */
 
 package io.harness.ccm.views.service;
+import io.harness.ccm.views.entities.GovernancePolicyFilter;
 import io.harness.ccm.views.entities.Policy;
 
 import java.util.List;
@@ -14,7 +15,7 @@ public interface GovernancePolicyService {
   boolean save(Policy policy);
   boolean delete(String accountId, String uuid);
   Policy update(Policy policy);
-  List<Policy> list(String accountId);
+  List<Policy> list(GovernancePolicyFilter governancePolicyFilter);
   List<Policy> findByResource(String resource, String accountId);
   List<Policy> findByTag(String tag, String accountId);
   Policy listid(String accountId, String name, boolean create);

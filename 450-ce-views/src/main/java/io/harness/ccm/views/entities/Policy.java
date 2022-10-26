@@ -52,7 +52,7 @@ public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware
   @Schema(description = NGCommonEntityConstants.TAGS) List<String> tags;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
- // @Schema(description = "cloudProvider") PolicyCloudProviderType cloudProvider;
+  //@Schema(description = "cloudProvider") PolicyCloudProviderType cloudProvider;
   @Schema(description = "versionLabel") String versionLabel;
   @Schema(description = "isStablePolicy") Boolean isStablePolicy;
   @Schema(description = "storeType") PolicyStoreType storeType;

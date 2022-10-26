@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.PolicyDAO;
+import io.harness.ccm.views.entities.GovernancePolicyFilter;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.service.GovernancePolicyService;
 
@@ -41,8 +42,8 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
   }
 
   @Override
-  public List<Policy> list(String accountId) {
-    return policyDao.list(accountId);
+  public List<Policy> list( GovernancePolicyFilter governancePolicyFilter) {
+    return policyDao.list(governancePolicyFilter);
   }
 
   @Override

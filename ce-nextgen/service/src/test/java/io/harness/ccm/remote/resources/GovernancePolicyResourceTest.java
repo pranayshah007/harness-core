@@ -20,7 +20,6 @@ import io.harness.ccm.remote.resources.governance.*;
 import io.harness.ccm.views.dto.CreatePolicyDTO;
 import io.harness.ccm.views.dto.ListDTO;
 import io.harness.ccm.views.entities.Policy;
-import io.harness.ccm.views.entities.PolicyRequest;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
@@ -52,10 +51,8 @@ public class GovernancePolicyResourceTest extends CategoryTest {
   private final String PROJECT_PARAM_MESSAGE = "PROJECT_PARAM_MESSAGE";
   private List<Policy> Policies = new ArrayList<>();
   private Policy policy;
-  private PolicyRequest policyRequest;
   private Policy createPolicyDTO;
   private GovernancePolicyResource policymanagement;
-  private ListDTO listDTO;
 
   @Before
   public void setUp() throws IllegalAccessException, IOException {
@@ -63,7 +60,6 @@ public class GovernancePolicyResourceTest extends CategoryTest {
                  .uuid(UNIQUE_ID)
                  .accountId(ACCOUNT_ID)
                  .name(NAME)
-                 .resource(RESOURCE)
                  .description(DESCRIPTION)
                  .policyYaml(POLICY)
                  .tags(TAGS)

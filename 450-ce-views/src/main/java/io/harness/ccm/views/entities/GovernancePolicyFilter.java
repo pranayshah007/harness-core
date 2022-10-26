@@ -22,28 +22,22 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(name = "PolicyRequest", description = "This has the query to list the policies")
-public class PolicyRequest {
-  @Schema(description = "name") String name;
+public class GovernancePolicyFilter {
   @Schema(description = "account id") String accountId;
+  @Schema(description = "isOOTBPolicy") String isOOTB;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @Schema(description = NGCommonEntityConstants.RESOURCE) String resource;
   @Schema(description = NGCommonEntityConstants.TAGS) String tags;
   @Schema(description = "cloudProvider") String cloudProvider;
-  @Schema(description = "isStablePolicy") String isStablePolicy;
-  @Schema(description = "isOOTBPolicy") String isOOTBPolicy;
+  @Schema(description = "isStablePolicy")boolean  isStablePolicy;
+
 
   @Builder
-  public PolicyRequest(String name, String accountId, String orgIdentifier, String projectIdentifier, String resource,
-      String tags, String cloudProvider, String isStablePolicy, String isOOTBPolicy) {
-    this.name = name;
+  public GovernancePolicyFilter(String accountId, String cloudProvider, String isOOTB, String resource) {
     this.accountId = accountId;
-    this.orgIdentifier = orgIdentifier;
-    this.projectIdentifier = projectIdentifier;
-    this.resource = resource;
-    this.tags = tags;
     this.cloudProvider = cloudProvider;
-    this.isStablePolicy = isStablePolicy;
-    this.isOOTBPolicy = isOOTBPolicy;
+    this.isOOTB = isOOTB;
+    this.resource=resource;
   }
 }

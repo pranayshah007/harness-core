@@ -3,6 +3,7 @@ package io.harness.ccm.views.dao;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyEnforcement;
 import io.harness.ccm.views.entities.PolicyEnforcement.PolicyEnforcementId;
+import io.harness.ccm.views.entities.PolicyExecution;
 import io.harness.ccm.views.entities.PolicyPack;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ccm.views.service.PolicyPackService;
@@ -14,6 +15,7 @@ import com.google.inject.Singleton;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
@@ -74,10 +76,10 @@ public class PolicyEnforcementDAO {
           .get(0);
     } catch (IndexOutOfBoundsException e) {
       log.error("No such policy pack exists,{} accountId{} uuid{}", e, accountId, name);
-      if (create == true) {
+      if (create) {
         return null;
       }
-      throw new InvalidRequestException("No such pol m icy pack exists");
+      throw new InvalidRequestException("No such policy pack exists");
     }
   }
 
@@ -85,6 +87,7 @@ public class PolicyEnforcementDAO {
     return hPersistence.createQuery(PolicyEnforcement.class)
         .field(PolicyEnforcementId.accountId)
         .equal(accountId)
+        .order(Sort.descending(PolicyEnforcementId.lastUpdatedAt))
         .asList();
   }
 }

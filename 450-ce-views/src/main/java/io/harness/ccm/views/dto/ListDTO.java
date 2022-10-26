@@ -7,7 +7,7 @@
 
 package io.harness.ccm.views.dto;
 
-import io.harness.ccm.views.entities.PolicyRequest;
+import io.harness.ccm.views.entities.GovernancePolicyFilter;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.Valid;
@@ -20,5 +20,5 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ListDTO {
-  @JsonProperty("query") @Valid PolicyRequest policyRequest;
+  @JsonProperty("query") @Valid GovernancePolicyFilter governancePolicyFilter;
 }

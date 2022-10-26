@@ -7,18 +7,20 @@
 
 package io.harness.ccm.views.dao;
 
+import io.harness.ccm.views.entities.GovernancePolicyFilter;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.Policy.PolicyId;
+import io.harness.ccm.views.entities.PolicyExecution;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
@@ -42,9 +44,28 @@ public class PolicyDAO {
     return hPersistence.delete(query);
   }
 
-  public List<Policy> list(String accountId) {
-    List<Policy> policies= hPersistence.createQuery(Policy.class).field(PolicyId.accountId).equal(accountId).asList();
-    policies.addAll( hPersistence.createQuery(Policy.class).field(PolicyId.accountId).equal("").asList());
+  public List<Policy> list( GovernancePolicyFilter governancePolicyFilter) {
+    Query<Policy> policiesCustom = hPersistence.createQuery(Policy.class)
+                                       .field(PolicyId.accountId)
+                                       .equal(governancePolicyFilter.getAccountId())
+                                       .order(Sort.descending(PolicyExecution.PolicyExecutionKeys.lastUpdatedAt));
+    Query<Policy> policiesOOTB = hPersistence.createQuery(Policy.class)
+                                     .field(PolicyId.accountId)
+                                     .equal("")
+                                     .order(Sort.descending(PolicyExecution.PolicyExecutionKeys.lastUpdatedAt));
+
+    log.info("OOTB POLICY {} {} {}", governancePolicyFilter.getIsOOTB(),governancePolicyFilter.getAccountId());
+    if (governancePolicyFilter.getIsOOTB()=="true") {
+      log.info("OOTB POLICY");
+      return policiesOOTB.asList();
+    }
+//    if (policyRequest.getCloudProvider() != null) {
+//      policiesOOTB.field(PolicyId.cloudProvider).equal(policyRequest.getCloudProvider());
+//      policiesCustom.field(PolicyId.cloudProvider).equal(policyRequest.getCloudProvider());
+//    }
+    log.info("Adding all available policies");
+    List<Policy> policies = policiesOOTB.asList();
+    policies.addAll(policiesCustom.asList());
     return policies;
   }
 
@@ -59,18 +80,24 @@ public class PolicyDAO {
     return query.asList();
   }
 
-
   public Policy listid(String accountId, String name, boolean create) {
     try {
-     List<Policy>policies= hPersistence.createQuery(Policy.class).field(PolicyId.accountId)
-              .equal(accountId).field(PolicyId.name).equal(name).asList();
-     policies.addAll(hPersistence.createQuery(Policy.class).field(PolicyId.accountId).equal("")
-             .field(PolicyId.name).equal(name).asList());
-     return policies.get(0);
-    }
-    catch (IndexOutOfBoundsException e) {
+      List<Policy> policies = hPersistence.createQuery(Policy.class)
+                                  .field(PolicyId.accountId)
+                                  .equal(accountId)
+                                  .field(PolicyId.name)
+                                  .equal(name)
+                                  .asList();
+      policies.addAll(hPersistence.createQuery(Policy.class)
+                          .field(PolicyId.accountId)
+                          .equal("")
+                          .field(PolicyId.name)
+                          .equal(name)
+                          .asList());
+      return policies.get(0);
+    } catch (IndexOutOfBoundsException e) {
       log.error("No such policy exists,{} accountId {} name {}", e, accountId, name);
-      if (create == true) {
+      if (create) {
         return null;
       }
       throw new InvalidRequestException("No such policy exists");

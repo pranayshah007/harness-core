@@ -8,6 +8,7 @@
 package io.harness.ccm.views.dao;
 
 import io.harness.ccm.views.entities.Policy;
+import io.harness.ccm.views.entities.PolicyEnforcement;
 import io.harness.ccm.views.entities.PolicyPack;
 import io.harness.ccm.views.entities.PolicyPack.PolicySetId;
 import io.harness.exception.InvalidRequestException;
@@ -18,6 +19,7 @@ import com.google.inject.Singleton;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
@@ -64,14 +66,23 @@ public class PolicyPackDAO {
 
   public PolicyPack listid(String accountId, String name, boolean create) {
     try {
-      List<PolicyPack> policyPacks= hPersistence.createQuery(PolicyPack.class).field(PolicySetId.accountId).equal(accountId)
-          .field(PolicySetId.name).equal(name).asList();
-      policyPacks.addAll(hPersistence.createQuery(PolicyPack.class).field(PolicySetId.accountId).equal("")
-              .field(PolicySetId.name).equal(name).asList());
+      List<PolicyPack> policyPacks = hPersistence.createQuery(PolicyPack.class)
+                                         .field(PolicySetId.accountId)
+                                         .equal(accountId)
+                                         .field(PolicySetId.name)
+                                         .equal(name)
+                                         .asList();
+      policyPacks.addAll(hPersistence.createQuery(PolicyPack.class)
+                             .field(PolicySetId.accountId)
+                             .equal("")
+                             .field(PolicySetId.name)
+                             .equal(name)
+                             .asList());
       return policyPacks.get(0);
     } catch (IndexOutOfBoundsException e) {
-      log.error("No such policy pack exists,{} accountId{} uuid{}", e, accountId, name);
-      if (create == true) {
+      log.error("No such policy pack exists,{} accountId{} name {} {}", e, accountId, name, create);
+      if (create) {
+        log.info("returning null");
         return null;
       }
       throw new InvalidRequestException("No such policy pack exists");
@@ -83,8 +94,17 @@ public class PolicyPackDAO {
     }
   }
   public List<PolicyPack> list(String accountId) {
-    List<PolicyPack> policyPacks= hPersistence.createQuery(PolicyPack.class).field(PolicySetId.accountId).equal(accountId).asList();
-     policyPacks.addAll(hPersistence.createQuery(PolicyPack.class).field(PolicySetId.accountId).equal("").asList()) ;
-     return policyPacks;
+    List<PolicyPack> policyPacks = hPersistence.createQuery(PolicyPack.class)
+                                       .field(PolicySetId.accountId)
+                                       .equal(accountId)
+                                       .order(Sort.descending(PolicyEnforcement.PolicyEnforcementId.lastUpdatedAt))
+                                       .asList();
+    policyPacks.addAll(hPersistence.createQuery(PolicyPack.class)
+                           .field(PolicySetId.accountId)
+                           .equal("")
+                           .order(Sort.descending(PolicyEnforcement.PolicyEnforcementId.lastUpdatedAt))
+                           .asList());
+    log.info("list size {}", policyPacks.size());
+    return policyPacks;
   }
 }

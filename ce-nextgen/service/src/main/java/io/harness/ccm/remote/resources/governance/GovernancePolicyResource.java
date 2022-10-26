@@ -7,9 +7,8 @@
 
 package io.harness.ccm.remote.resources.governance;
 
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.inject.Inject;
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,8 +19,8 @@ import io.harness.ccm.views.dto.CreatePolicyDTO;
 import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.dto.ListDTO;
+import io.harness.ccm.views.entities.GovernancePolicyFilter;
 import io.harness.ccm.views.entities.Policy;
-import io.harness.ccm.views.entities.PolicyRequest;
 import io.harness.ccm.views.entities.PolicyStoreType;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.exception.InvalidRequestException;
@@ -29,6 +28,10 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.PublicApi;
+
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -40,9 +43,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -54,11 +57,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static io.harness.annotations.dev.HarnessTeam.CE;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -117,10 +117,10 @@ public class GovernancePolicyResource {
     if (governancePolicyService.listid(accountId, policy.getName(), true) != null) {
       throw new InvalidRequestException("Policy  with given name already exits");
     }
-//
-//      if (governancePolicyService.listid(accountId, policy.getUuid(), true) != null) {
-//        throw new InvalidRequestException("Policy with this uuid already exits");
-//      }
+    //
+    //      if (governancePolicyService.listid(accountId, policy.getUuid(), true) != null) {
+    //        throw new InvalidRequestException("Policy with this uuid already exits");
+    //      }
     // Set accountId only in case of non OOTB policies
     if (!policy.getIsOOTB()) {
       policy.setAccountId(accountId);
@@ -186,7 +186,8 @@ public class GovernancePolicyResource {
       @PathParam("policyId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String name) {
     // rbacHelper.checkPolicyDeletePermission(accountId, null, null);
-    boolean result = governancePolicyService.delete(accountId, governancePolicyService.listid(accountId, name, false).getUuid());
+    boolean result =
+        governancePolicyService.delete(accountId, governancePolicyService.listid(accountId, name, false).getUuid());
     return ResponseDTO.newResponse(result);
   }
 
@@ -207,39 +208,11 @@ public class GovernancePolicyResource {
   listPolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
-          required = true, description = "Request body containing ceViewFolder object") @Valid ListDTO listDTO) {
+          required = true, description = "Request body containing policy object") @Valid ListDTO listDTO) {
     // rbacHelper.checkPolicyViewPermission(accountId, null, null);
-    PolicyRequest query = listDTO.getPolicyRequest();
-    List<Policy> Policies = new ArrayList<>();
-    query.setAccountId(accountId);
-    String name = query.getName();
-    String isStablePolicy = query.getIsStablePolicy();
-    String resource = query.getResource();
-    String tags = query.getTags();
-    if (name != null) {
-      Policy policy = governancePolicyService.listid(accountId, name, false);
-      Policies.add(policy);
-      return ResponseDTO.newResponse(Policies);
-    }
-    if (isStablePolicy != null) {
-      Policies = governancePolicyService.findByStability(isStablePolicy, accountId);
-      return ResponseDTO.newResponse(Policies);
-    }
-    if (resource != null && tags == null) {
-      Policies = governancePolicyService.findByResource(resource, accountId);
-      return ResponseDTO.newResponse(Policies);
-    }
-    if (resource == null && tags != null) {
-      Policies = governancePolicyService.findByTag(tags, accountId);
-      return ResponseDTO.newResponse(Policies);
-    }
-    if (resource != null && tags != null) {
-      Policies = governancePolicyService.findByTagAndResource(resource, tags, accountId);
-      return ResponseDTO.newResponse(Policies);
-    }
-
-    Policies = governancePolicyService.list(accountId);
-    return ResponseDTO.newResponse(Policies);
+    GovernancePolicyFilter query = listDTO.getGovernancePolicyFilter();
+    log.info("assigned {} {} {}",query.getAccountId(), query.getIsOOTB(),query.getResource());
+    return ResponseDTO.newResponse(governancePolicyService.list(query));
   }
 
   @POST
