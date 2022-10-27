@@ -46,7 +46,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @EqualsAndHashCode(callSuper = false)
 @OwnedBy(CDP)
 @TargetModule(_957_CG_BEANS)
-public class SpotInstConfig extends SettingValue implements EncryptableSetting, ExecutionCapabilityDemander {
+public class  SpotInstConfig extends SettingValue implements EncryptableSetting, ExecutionCapabilityDemander {
   @NotEmpty @SchemaIgnore private String accountId;
   @Encrypted(fieldName = "spot_instance_token") private char[] spotInstToken;
   private String spotInstAccountId;
