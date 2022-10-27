@@ -101,13 +101,19 @@ public class MigratorUtility {
 
   public static Scope getDefaultScope(MigrationInputDTO inputDTO, CgEntityId entityId, Scope defaultScope) {
     NGMigrationEntityType entityType = entityId.getType();
+    return getDefaultScope(inputDTO, entityId, defaultScope, entityType);
+  }
+
+  public static Scope getDefaultScope(MigrationInputDTO inputDTO, CgEntityId entityId, Scope defaultScope,
+      NGMigrationEntityType destinationEntityType) {
     if (inputDTO == null) {
       return defaultScope;
     }
     Scope scope = defaultScope;
     Map<NGMigrationEntityType, InputDefaults> defaults = inputDTO.getDefaults();
-    if (defaults != null && defaults.containsKey(entityType) && defaults.get(entityType).getScope() != null) {
-      scope = defaults.get(entityType).getScope();
+    if (defaults != null && defaults.containsKey(destinationEntityType)
+        && defaults.get(destinationEntityType).getScope() != null) {
+      scope = defaults.get(destinationEntityType).getScope();
     }
     Map<CgEntityId, BaseProvidedInput> inputs = inputDTO.getOverrides();
     if (inputs != null && inputs.containsKey(entityId) && inputs.get(entityId).getScope() != null) {

@@ -43,36 +43,38 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
         .spec(CustomArtifactConfig.builder()
                   .timeout(ParameterField.createValueField(Timeout.fromString(primaryScript.getTimeout() + "s")))
                   .primaryArtifact(true)
-                  .scripts(
-                      CustomArtifactScripts.builder()
-                          .fetchAllArtifacts(FetchAllArtifacts.builder()
-                                                 .artifactsArrayPath(ParameterField.createValueField(
-                                                     primaryScript.getCustomRepositoryMapping().getArtifactRoot()))
-                                                 .versionPath(ParameterField.createValueField(
-                                                     primaryScript.getCustomRepositoryMapping().getBuildNoPath()))
-                                                 .attributes(primaryScript.getCustomRepositoryMapping()
-                                                                 .getArtifactAttributes()
-                                                                 .stream()
-                                                                 .map(attribute
-                                                                     -> StringNGVariable.builder()
-                                                                            .name(attribute.getMappedAttribute())
-                                                                            .value(ParameterField.createValueField(
-                                                                                attribute.getRelativePath()))
-                                                                            .build())
-                                                                 .collect(Collectors.toList()))
-                                                 .shellScriptBaseStepInfo(
-                                                     CustomArtifactScriptInfo.builder()
-                                                         .shell(ShellType.Bash)
-                                                         .source(CustomArtifactScriptSourceWrapper.builder()
-                                                                     .type("Inline")
-                                                                     .spec(CustomScriptInlineSource.builder()
-                                                                               .script(ParameterField.createValueField(
-                                                                                   primaryScript.getScriptString()))
-                                                                               .build())
+                  .scripts(CustomArtifactScripts.builder()
+                               .fetchAllArtifacts(
+                                   FetchAllArtifacts.builder()
+                                       .artifactsArrayPath(ParameterField.createValueField(
+                                           primaryScript.getCustomRepositoryMapping().getArtifactRoot()))
+                                       .versionPath(ParameterField.createValueField(
+                                           primaryScript.getCustomRepositoryMapping().getBuildNoPath()))
+                                       .attributes(primaryScript.getCustomRepositoryMapping()
+                                                       .getArtifactAttributes()
+                                                       .stream()
+                                                       .map(attribute
+                                                           -> StringNGVariable.builder()
+                                                                  .name(attribute.getMappedAttribute())
+                                                                  .value(ParameterField.createValueField(
+                                                                      attribute.getRelativePath()))
+                                                                  .build())
+                                                       .collect(Collectors.toList()))
+                                       .shellScriptBaseStepInfo(
+                                           CustomArtifactScriptInfo.builder()
+                                               .shell(ShellType.Bash)
+                                               .source(CustomArtifactScriptSourceWrapper.builder()
+                                                           .type("Inline")
+                                                           .spec(CustomScriptInlineSource.builder()
+                                                                     .script(ParameterField.createValueField(
+                                                                         primaryScript.getScriptString().replace(
+                                                                             "${ARTIFACT_RESULT_PATH}",
+                                                                             "$HARNESS_ARTIFACT_RESULT_PATH")))
                                                                      .build())
-                                                         .build())
-                                                 .build())
-                          .build())
+                                                           .build())
+                                               .build())
+                                       .build())
+                               .build())
                   .version(ParameterField.createValueField("<+input>"))
                   .build())
         .build();

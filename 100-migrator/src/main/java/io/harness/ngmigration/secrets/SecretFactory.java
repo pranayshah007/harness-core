@@ -97,8 +97,7 @@ public class SecretFactory {
       return null;
     }
     SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(secretManagerId).getEntity();
-    String secretManagerIdentifier =
-        MigratorUtility.getIdentifierWithScope(migratedEntities.get(secretManagerId).getNgEntityDetail());
+    String secretManagerIdentifier = migratedEntities.get(secretManagerId).getNgEntityDetail().getIdentifier();
     // Support secret file
     if (encryptedData.getType().equals(SettingVariableTypes.CONFIG_FILE)) {
       return SecretDTOV2.builder()

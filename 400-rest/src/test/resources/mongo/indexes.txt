@@ -380,6 +380,7 @@ helmCharts {"name": "appId_appManifestId", "background": true} {"appId": 1, "app
 helmCharts {"name": "appId_serviceId", "background": true} {"appId": 1, "serviceId": 1}
 helmCharts {"name": "applicationManifestId_1", "background": true} {"applicationManifestId": 1}
 hosts {"name": "appId_1", "background": true} {"appId": 1}
+hosts {"name": "appId_envId_inframappingId_hostName", "background": true} {"appId": 1, "envId": 1, "infraMappingId": 1, "hostName": 1}
 hosts {"name": "app_inframappingid", "background": true} {"appId": 1, "infraMappingId": 1}
 hosts {"name": "createdAt_1", "background": true} {"createdAt": 1}
 hosts {"name": "hostName_1", "background": true} {"hostName": 1}

@@ -187,7 +187,7 @@ public class CustomDeploymentInfrastructureHelper {
     return attributes;
   }
 
-  public ObjectNode getInfra(String yaml) {
+  private ObjectNode getInfra(String yaml) {
     try {
       if (isEmpty(yaml)) {
         throw new InvalidRequestException("Template yaml to create template inputs cannot be empty");

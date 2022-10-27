@@ -32,6 +32,8 @@ import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplateDTO;
+import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
+import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineResourceConstants;
 import io.harness.pms.pipeline.mappers.ExecutionGraphMapper;
@@ -357,5 +359,53 @@ public class ExecutionDetailsResource {
           required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId) {
     return ResponseDTO.newResponse(pmsExecutionService.getInputSetYamlWithTemplate(
         accountId, orgId, projectId, planExecutionId, false, resolveExpressions));
+  }
+
+  @GET
+  @Path("/list-repositories")
+  @ApiOperation(value = "Gets execution repositories list", nickname = "getExecutionRepositoriesList")
+  @Operation(operationId = "getExecutionRepositoriesList", description = "Returns a list of repositories branches",
+      summary = "List repositories",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Returns a list of all the repositories for Pipeline created in this scope")
+      })
+  @Hidden
+  public ResponseDTO<PMSPipelineListRepoResponse>
+  getListOfRepos(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull
+                 @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_ID_LIST_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier) {
+    return ResponseDTO.newResponse(PMSPipelineListRepoResponse.builder().build());
+  }
+
+  @GET
+  @Path("/list-branches")
+  @ApiOperation(value = "Gets execution branches list", nickname = "getExecutionBranchesList")
+  @Operation(operationId = "getExecutionBranchesList",
+      description = "Returns a list of branches the pipeline was executed from", summary = "List Branches",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns a list of branches the pipeline was executed from")
+      })
+  @Hidden
+  public ResponseDTO<PMSPipelineListBranchesResponse>
+  getListOfBranches(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull
+                    @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_ID_LIST_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_ID_LIST_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.REPO_NAME) String repoName) {
+    return ResponseDTO.newResponse(PMSPipelineListBranchesResponse.builder().build());
   }
 }

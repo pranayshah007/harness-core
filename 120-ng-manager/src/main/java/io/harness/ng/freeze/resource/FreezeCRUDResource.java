@@ -30,15 +30,18 @@ import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseWrapperDTO;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.response.GlobalFreezeBannerDetailsResponseDTO;
+import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
+import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeCRUDService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.repositories.FreezeConfigRepository;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
 
@@ -53,7 +56,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -111,6 +116,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class FreezeCRUDResource {
   private final FreezeCRUDService freezeCRUDService;
   private final AccessControlClient accessControlClient;
+  private final FreezeConfigRepository freezeConfigRepository;
+  private final NotificationHelper notificationHelper;
   private static final String DEPLOYMENTFREEZE = "DEPLOYMENTFREEZE";
 
   @POST
@@ -284,6 +291,36 @@ public class FreezeCRUDResource {
           "freezeIdentifier") @ResourceIdentifier String freezeIdentifier) {
     return ResponseDTO.newResponse(NGFreezeDtoMapper.prepareDetailedFreezeResponseDto(
         freezeCRUDService.getFreezeConfig(freezeIdentifier, accountId, orgId, projectId)));
+  }
+
+  @POST
+  @Path("notification/{freezeIdentifier}")
+  @ApiOperation(value = "Send Notification", nickname = "sendNotification")
+  @Operation(operationId = "sendNotification", summary = "send Notification",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Send Notification")
+      })
+  @Hidden
+  public boolean
+  sendNotification(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = "Freeze Identifier.") @PathParam(
+          "freezeIdentifier") @ResourceIdentifier String freezeIdentifier) throws IOException {
+    Optional<FreezeConfigEntity> freezeConfigEntityOptional =
+        freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            accountId, orgId, projectId, freezeIdentifier);
+    FreezeConfigEntity freezeConfigEntity = null;
+    if (freezeConfigEntityOptional.isPresent()) {
+      freezeConfigEntity = freezeConfigEntityOptional.get();
+    }
+    notificationHelper.sendNotification(freezeConfigEntity);
+    return true;
   }
 
   @GET
