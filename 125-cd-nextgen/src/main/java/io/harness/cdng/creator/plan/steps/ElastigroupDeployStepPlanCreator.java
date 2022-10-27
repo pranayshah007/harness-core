@@ -38,7 +38,6 @@ public class ElastigroupDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<Ela
 
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, ElastigroupDeployStepNode stepElement) {
-    final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
-    return stepParameters;
+    return super.getStepParameters(ctx, stepElement);
   }
 }
