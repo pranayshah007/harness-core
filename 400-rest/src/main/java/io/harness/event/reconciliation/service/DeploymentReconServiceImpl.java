@@ -51,7 +51,6 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
   @Inject private DeploymentEventProcessor deploymentEventProcessor;
   @Inject private DataFetcherUtils utils;
   @Inject private DeploymentReconRecordRepository deploymentReconRecordRepository;
-  @Inject private DeploymentReconServiceImpl deploymentReconService;
 
   private static final String FIND_DEPLOYMENT_IN_TSDB =
       "SELECT EXECUTIONID,STARTTIME FROM DEPLOYMENT WHERE EXECUTIONID=?";

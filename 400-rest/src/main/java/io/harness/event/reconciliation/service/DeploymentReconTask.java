@@ -60,13 +60,14 @@ public class DeploymentReconTask implements Runnable {
               ReconciliationStatus reconciliationStatus = executionEntity.getReconService().performReconciliation(
                   account.getUuid(), durationStartTs, durationEndTs, executionEntity);
               log.info(
-                  "Completed reconciliation for accountID:[{}],accountName:[{}] durationStart:[{}],durationEnd:[{}],status:[{}]",
+                  "Completed reconciliation for accountID:[{}],accountName:[{}] durationStart:[{}],durationEnd:[{}],status:[{}],entity[{}]",
                   account.getUuid(), account.getAccountName(), new Date(durationStartTs), new Date(durationEndTs),
-                  reconciliationStatus);
+                  reconciliationStatus, executionEntity);
             } catch (Exception e) {
               log.error(
-                  "Error while performing reconciliation for accountID:[{}],accountName:[{}] durationStart:[{}],durationEnd:[{}]",
-                  account.getUuid(), account.getAccountName(), new Date(durationStartTs), new Date(durationEndTs), e);
+                  "Error while performing reconciliation for accountID:[{}],accountName:[{}] durationStart:[{}],durationEnd:[{}],entity[{}]",
+                  account.getUuid(), account.getAccountName(), new Date(durationStartTs), new Date(durationEndTs),
+                  executionEntity, e);
             }
 
             if (WorkflowExecution.class.equals(executionEntity.getSourceEntityClass())) {
