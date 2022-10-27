@@ -34,7 +34,6 @@ import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.k8s.watch.K8sWatchPerpetualTaskServiceClient;
 import io.harness.rule.Owner;
 
-import software.wings.beans.Account;
 import software.wings.service.intfc.DelegateService;
 
 import java.util.HashMap;
