@@ -65,6 +65,7 @@ import io.harness.connector.events.ConnectorCreateEvent;
 import io.harness.connector.events.ConnectorDeleteEvent;
 import io.harness.connector.events.ConnectorUpdateEvent;
 import io.harness.connector.helper.CatalogueHelper;
+import io.harness.connector.helper.ConnectorRbacHelper;
 import io.harness.connector.helper.HarnessManagedConnectorHelper;
 import io.harness.connector.mappers.ConnectorMapper;
 import io.harness.connector.services.ConnectorFilterService;
@@ -134,7 +135,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -146,9 +146,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -180,7 +177,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   ConnectorHeartbeatService connectorHeartbeatService;
   private final HarnessManagedConnectorHelper harnessManagedConnectorHelper;
   private final ConnectorEntityReferenceHelper connectorEntityReferenceHelper;
-  private final AccessControlClient accessControlClient;
+  private final ConnectorRbacHelper connectorRbacHelper;
   GitSyncSdkService gitSyncSdkService;
   OutboxService outboxService;
   YamlGitConfigClient yamlGitConfigClient;
@@ -260,13 +257,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     } else {
       connectors = connectorRepository.findAll(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier).getContent();
     }
-    if(!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
-      connectors = getPermitted(connectors);
-      if (isEmpty(connectors)) {
-        return Page.empty();
-      }
-    }
+    connectors = connectorRbacHelper.getPermitted(connectors, accountIdentifier, orgIdentifier, projectIdentifier);
     populateInFilter(criteria, ConnectorKeys.identifier, connectors.stream().map(Connector::getIdentifier).collect(toList()));
     Pageable pageable = getPageRequest(
             PageRequest.builder()
@@ -286,69 +277,6 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       filteredConnectors = connectorRepository.findAll(criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier);
     }
     return filteredConnectors;
-  }
-
-  private List<Connector> getPermitted(List<Connector> connectors) {
-    return Streams.stream(Iterables.partition(connectors, 10000))
-            .map(this::checkAccess)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
-  }
-
-  private Collection<Connector> checkAccess(List<Connector> connectors) {
-    Map<ConnectorResource, List<Connector>> connectorsMap = connectors.stream().collect(groupingBy(ConnectorResource::fromConnector));
-    List<PermissionCheckDTO> permissionChecks =
-            connectors.stream()
-                    .map(connector
-                            -> PermissionCheckDTO.builder()
-                            .permission(VIEW_CONNECTOR_PERMISSION)
-                            .resourceIdentifier(connector.getIdentifier())
-                            .resourceScope(ResourceScope.of(
-                                    connector.getAccountIdentifier(), connector.getOrgIdentifier(), connector.getProjectIdentifier()))
-                            .resourceType(ResourceTypes.CONNECTOR)
-                            .build())
-                    .collect(Collectors.toList());
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionChecks);
-
-    Collection<Connector> permittedConnectors = new ArrayList<>();
-    for(AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
-      if (accessControlDTO.isPermitted()) {
-        permittedConnectors.add(connectorsMap.get(ConnectorResource.fromAccessControlDTO(accessControlDTO)).get(0));
-      }
-    }
-    return permittedConnectors;
-  }
-
-  @Value
-  @Data
-  @Builder
-  private static class ConnectorResource {
-    String accountIdentifier;
-    String orgIdentifier;
-    String projectIdentifier;
-    String identifier;
-
-    static ConnectorResource fromConnector(Connector connector) {
-      return ConnectorResource.builder()
-              .accountIdentifier(connector.getAccountIdentifier())
-              .orgIdentifier(isBlank(connector.getOrgIdentifier()) ? null : connector.getOrgIdentifier())
-              .projectIdentifier(isBlank(connector.getProjectIdentifier()) ? null : connector.getProjectIdentifier())
-              .identifier(connector.getIdentifier())
-              .build();
-    }
-
-    static ConnectorResource fromAccessControlDTO(AccessControlDTO accessControlDTO) {
-      return ConnectorResource.builder()
-              .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
-              .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())
-                      ? null
-                      : accessControlDTO.getResourceScope().getOrgIdentifier())
-              .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
-                      ? null
-                      : accessControlDTO.getResourceScope().getProjectIdentifier())
-              .identifier(accessControlDTO.getResourceIdentifier())
-              .build();
-    }
   }
 
   private ConnectorResponseDTO getResponse(
@@ -457,13 +385,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         projectIdentifier, searchTerm, type, category, sourceCategory, isBuiltInSMDisabled);
     List<Connector> connectors =
             connectorRepository.findAll(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier).getContent();
-    if(!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
-      connectors = getPermitted(connectors);
-      if (isEmpty(connectors)) {
-        return Page.empty();
-      }
-    }
+    connectors = connectorRbacHelper.getPermitted(connectors, accountIdentifier, orgIdentifier, projectIdentifier);
     populateInFilter(criteria, ConnectorKeys.identifier, connectors.stream().map(Connector::getIdentifier).collect(toList()));
     Pageable pageable = getPageRequest(
         PageRequest.builder()

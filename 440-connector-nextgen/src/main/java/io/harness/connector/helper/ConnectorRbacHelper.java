@@ -8,12 +8,20 @@
 package io.harness.connector.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.secrets.SecretPermissions.SECRET_ACCESS_PERMISSION;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 
+import static java.util.stream.Collectors.groupingBy;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -21,6 +29,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.accesscontrol.ResourceTypes;
+import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
@@ -33,7 +43,15 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import lombok.Builder;
+import lombok.Data;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -101,6 +119,74 @@ public class ConnectorRbacHelper {
         throw new InvalidRequestException(String.format(
             "The %s level secret cannot be used at account level", secretRefData.getScope().getYamlRepresentation()));
       }
+    }
+  }
+
+  public List<Connector> getPermitted(List<Connector> connectors, String accountIdentifier,
+                                      String orgIdentifier, String projectIdentifier) {
+    if(!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
+      return Streams.stream(Iterables.partition(connectors, 1000))
+              .map(this::checkAccess)
+              .flatMap(Collection::stream)
+              .collect(Collectors.toList());
+    }
+    return connectors;
+  }
+
+  private Collection<Connector> checkAccess(List<Connector> connectors) {
+    Map<ConnectorResource, List<Connector>> connectorsMap = connectors.stream().collect(groupingBy(ConnectorResource::fromConnector));
+    List<PermissionCheckDTO> permissionChecks =
+            connectors.stream()
+                    .map(connector
+                            -> PermissionCheckDTO.builder()
+                            .permission(VIEW_CONNECTOR_PERMISSION)
+                            .resourceIdentifier(connector.getIdentifier())
+                            .resourceScope(ResourceScope.of(
+                                    connector.getAccountIdentifier(), connector.getOrgIdentifier(), connector.getProjectIdentifier()))
+                            .resourceType(ResourceTypes.CONNECTOR)
+                            .build())
+                    .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionChecks);
+
+    Collection<Connector> permittedConnectors = new ArrayList<>();
+    for(AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedConnectors.add(connectorsMap.get(ConnectorResource.fromAccessControlDTO(accessControlDTO)).get(0));
+      }
+    }
+    return permittedConnectors;
+  }
+
+  @Value
+  @Data
+  @Builder
+  private static class ConnectorResource {
+    String accountIdentifier;
+    String orgIdentifier;
+    String projectIdentifier;
+    String identifier;
+
+    static ConnectorResource fromConnector(Connector connector) {
+      return ConnectorResource.builder()
+              .accountIdentifier(connector.getAccountIdentifier())
+              .orgIdentifier(isBlank(connector.getOrgIdentifier()) ? null : connector.getOrgIdentifier())
+              .projectIdentifier(isBlank(connector.getProjectIdentifier()) ? null : connector.getProjectIdentifier())
+              .identifier(connector.getIdentifier())
+              .build();
+    }
+
+    static ConnectorResource fromAccessControlDTO(AccessControlDTO accessControlDTO) {
+      return ConnectorResource.builder()
+              .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
+              .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())
+                      ? null
+                      : accessControlDTO.getResourceScope().getOrgIdentifier())
+              .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
+                      ? null
+                      : accessControlDTO.getResourceScope().getProjectIdentifier())
+              .identifier(accessControlDTO.getResourceIdentifier())
+              .build();
     }
   }
 }
