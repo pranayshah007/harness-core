@@ -189,6 +189,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     }
     ServiceLevelObjectiveDTO existingServiceLevelObjective =
         serviceLevelObjectiveToServiceLevelObjectiveDTO(serviceLevelObjective);
+    validate(serviceLevelObjectiveDTO, projectParams);
     SimpleServiceLevelObjective updatedSimpleServiceLevelObjective =
         (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, identifier);
     updateSLOEntity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO,

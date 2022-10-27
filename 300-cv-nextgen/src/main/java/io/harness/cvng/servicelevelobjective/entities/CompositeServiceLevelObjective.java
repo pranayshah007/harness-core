@@ -35,6 +35,9 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   @Data
   @Builder
   public static class ServiceLevelObjectivesDetail {
+    String accountId;
+    String orgIdentifier;
+    String projectIdentifier;
     String serviceLevelObjectiveRef;
     Double weightagePercentage;
   }

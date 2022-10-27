@@ -126,7 +126,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       sloHealthIndicatorService.upsert(simpleServiceLevelObjective);
       return getSLOResponse(simpleServiceLevelObjective.getIdentifier(), projectParams);
     } else {
-      validateCompositeSLO(serviceLevelObjectiveDTO, projectParams);
+      validateCompositeSLO(serviceLevelObjectiveDTO);
       CompositeServiceLevelObjective compositeServiceLevelObjective =
           (CompositeServiceLevelObjective) saveServiceLevelObjectiveV2Entity(
               projectParams, serviceLevelObjectiveDTO, true);
@@ -169,7 +169,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           simpleServiceLevelObjectiveSpec.getMonitoredServiceRef(),
           simpleServiceLevelObjectiveSpec.getHealthSourceRef(), timePeriod, currentTimePeriod);
     } else {
-      validateCompositeSLO(serviceLevelObjectiveDTO, projectParams);
+      validateCompositeSLO(serviceLevelObjectiveDTO);
     }
     serviceLevelObjective =
         updateSLOV2Entity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO, serviceLevelIndicators);
@@ -535,16 +535,14 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     return serviceLevelObjectiveV2;
   }
 
-  private void validateCompositeSLO(ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO, ProjectParams projectParams) {
+  private void validateCompositeSLO(ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
     CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
         (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
-    double sum =
-        compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
-            .stream()
-            .peek(serviceLevelObjectiveDetailsDTO
-                -> checkIfSLOPresent(serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef(), projectParams))
-            .mapToDouble(ServiceLevelObjectiveDetailsDTO::getWeightagePercentage)
-            .sum();
+    double sum = compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
+                     .stream()
+                     .peek(serviceLevelObjectiveDetailsDTO -> checkIfSLOPresent(serviceLevelObjectiveDetailsDTO))
+                     .mapToDouble(ServiceLevelObjectiveDetailsDTO::getWeightagePercentage)
+                     .sum();
 
     if (sum != 100) {
       throw new InvalidRequestException(String.format(
@@ -553,13 +551,19 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     }
   }
 
-  private void checkIfSLOPresent(String sloId, ProjectParams projectParams) {
-    AbstractServiceLevelObjective serviceLevelObjective = get(sloId);
+  private void checkIfSLOPresent(ServiceLevelObjectiveDetailsDTO serviceLevelObjectiveDetailsDTO) {
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(serviceLevelObjectiveDetailsDTO.getAccountId())
+                                      .projectIdentifier(serviceLevelObjectiveDetailsDTO.getProjectIdentifier())
+                                      .orgIdentifier(serviceLevelObjectiveDetailsDTO.getOrgIdentifier())
+                                      .build();
+    SimpleServiceLevelObjective serviceLevelObjective = (SimpleServiceLevelObjective) getEntity(
+        projectParams, serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef());
     if (serviceLevelObjective == null) {
       throw new InvalidRequestException(String.format(
           "[SLOV2 Not Found] SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
-          sloId, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
-          projectParams.getProjectIdentifier()));
+          serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef(), projectParams.getAccountIdentifier(),
+          projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
     }
   }
 

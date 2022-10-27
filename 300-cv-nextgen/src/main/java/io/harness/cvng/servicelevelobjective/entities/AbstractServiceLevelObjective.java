@@ -166,6 +166,7 @@ public abstract class AbstractServiceLevelObjective
   }
 
   public abstract Optional<String> mayBeGetMonitoredServiceIdentifier();
+
   public abstract static class AbstractServiceLevelObjectiveUpdatableEntity<T extends AbstractServiceLevelObjective, D
                                                                                 extends AbstractServiceLevelObjective>
       implements UpdatableEntity<T, D> {
