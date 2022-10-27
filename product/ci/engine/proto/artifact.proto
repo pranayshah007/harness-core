@@ -21,6 +21,7 @@ message DockerArtifactMetadata {
   string registry_type = 1;
   string registry_url = 2;
   repeated DockerImageMetadata docker_images = 3;
+  string metadata = 4;
 }
 message DockerImageMetadata {
   string image = 1;

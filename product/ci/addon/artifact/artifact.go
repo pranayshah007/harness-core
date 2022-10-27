@@ -93,6 +93,7 @@ func (o *Artifact) ToArtifactProto() (*pb.Artifact, error) {
 		dockerArtifactMetadata := &pb.DockerArtifactMetadata{
 			RegistryType: o.DockerArtifactV1.Data.RegistryType,
 			RegistryUrl:  o.DockerArtifactV1.Data.RegistryUrl,
+			Metadata: o.DockerArtifactV1.Data.Metadata,
 			DockerImages: imageMetadataList,
 		}
 		return &pb.Artifact{
