@@ -186,8 +186,8 @@ public class ExecutionDetailsResource {
   @POST
   @Path("/v2/summary")
   @ApiModelProperty(hidden = true)
-  @ApiOperation(value = "Gets Executions list", nickname = "getListOfExecutions")
-  @Operation(operationId = "getListOfExecutions",
+  @ApiOperation(value = "Gets Executions list for multiple pipeline filters", nickname = "getListOfExecutionsForMultiplePipelinesIdentifiers")
+  @Operation(operationId = "getListOfExecutionsForMultiplePipelinesIdentifiers",
       description = "Returns a List of Pipeline Executions with Specific Filters", summary = "List Executions",
       responses =
       {
