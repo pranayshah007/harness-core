@@ -435,3 +435,12 @@ jsonExpansionPoolConfig:
 jsonExpansionRequestBatchSize: ${JSON_EXPANSION_BATCH_SIZE:-50}
 
 #############################################################
+
+orchestrationRestrictionConfiguration:
+  useRestrictionForFree: ${USE_RESTRICTION_FOR_FREE:-false}
+  useRestrictionForTeam: ${USE_RESTRICTION_FOR_TEAM:-false}
+  useRestrictionForEnterprise: ${USE_RESTRICTION_FOR_ENTERPRISE:-false}
+  planExecutionRestriction:
+     free: ${PLAN_EXECUTION_RESTRICTION_FREE:-1}
+     team: ${USE_RESTRICTION_FOR_TEAM:-5000}
+     enterprise: ${USE_RESTRICTION_FOR_ENTERPRISE:-10000}
