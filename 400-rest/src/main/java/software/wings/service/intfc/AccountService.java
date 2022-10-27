@@ -255,4 +255,7 @@ public interface AccountService {
   AuthenticationInfo getAuthenticationInfo(String accountId);
 
   boolean isAccountActivelyUsed(String accountId);
+
+  boolean isImmutableDelegateEnabled(String accountId);
+
 }
