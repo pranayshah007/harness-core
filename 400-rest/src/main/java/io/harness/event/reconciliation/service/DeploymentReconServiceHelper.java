@@ -9,6 +9,7 @@ import io.harness.event.reconciliation.DetectionStatus;
 import io.harness.event.reconciliation.ReconcilationAction;
 import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
+import io.harness.event.reconciliation.deployment.DeploymentReconRecord.DeploymentReconRecordKeys;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecordRepository;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -19,12 +20,23 @@ import io.harness.timescaledb.TimeScaleDBService;
 import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.search.framework.ExecutionEntity;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Array;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.*;
+import org.mongodb.morphia.query.Criteria;
+import org.mongodb.morphia.query.CriteriaContainer;
+import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class DeploymentReconServiceHelper {
@@ -42,9 +54,8 @@ public class DeploymentReconServiceHelper {
             record.getUuid(), record.getEntityClass(), record.getAccountId(), new Date(record.getDurationStartTs()),
             new Date(record.getDurationEndTs()));
         UpdateOperations updateOperations = persistence.createUpdateOperations(DeploymentReconRecord.class);
-        updateOperations.set(
-            DeploymentReconRecord.DeploymentReconRecordKeys.reconciliationStatus, ReconciliationStatus.FAILED);
-        updateOperations.set(DeploymentReconRecord.DeploymentReconRecordKeys.reconEndTs, System.currentTimeMillis());
+        updateOperations.set(DeploymentReconRecordKeys.reconciliationStatus, ReconciliationStatus.FAILED);
+        updateOperations.set(DeploymentReconRecordKeys.reconEndTs, System.currentTimeMillis());
         persistence.update(record, updateOperations);
         return true;
       }
@@ -210,11 +221,10 @@ public class DeploymentReconServiceHelper {
         }
 
         UpdateOperations updateOperations = persistence.createUpdateOperations(DeploymentReconRecord.class);
-        updateOperations.set(DeploymentReconRecord.DeploymentReconRecordKeys.detectionStatus, detectionStatus);
-        updateOperations.set(
-            DeploymentReconRecord.DeploymentReconRecordKeys.reconciliationStatus, ReconciliationStatus.SUCCESS);
-        updateOperations.set(DeploymentReconRecord.DeploymentReconRecordKeys.reconcilationAction, action);
-        updateOperations.set(DeploymentReconRecord.DeploymentReconRecordKeys.reconEndTs, System.currentTimeMillis());
+        updateOperations.set(DeploymentReconRecordKeys.detectionStatus, detectionStatus);
+        updateOperations.set(DeploymentReconRecordKeys.reconciliationStatus, ReconciliationStatus.SUCCESS);
+        updateOperations.set(DeploymentReconRecordKeys.reconcilationAction, action);
+        updateOperations.set(DeploymentReconRecordKeys.reconEndTs, System.currentTimeMillis());
         persistence.update(record, updateOperations);
 
       } catch (Exception e) {
@@ -222,9 +232,8 @@ public class DeploymentReconServiceHelper {
             sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs), e);
         if (record != null) {
           UpdateOperations updateOperations = persistence.createUpdateOperations(DeploymentReconRecord.class);
-          updateOperations.set(
-              DeploymentReconRecord.DeploymentReconRecordKeys.reconciliationStatus, ReconciliationStatus.FAILED);
-          updateOperations.set(DeploymentReconRecord.DeploymentReconRecordKeys.reconEndTs, System.currentTimeMillis());
+          updateOperations.set(DeploymentReconRecordKeys.reconciliationStatus, ReconciliationStatus.FAILED);
+          updateOperations.set(DeploymentReconRecordKeys.reconEndTs, System.currentTimeMillis());
           persistence.update(record, updateOperations);
           return ReconciliationStatus.FAILED;
         }

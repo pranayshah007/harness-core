@@ -1,5 +1,6 @@
 package io.harness.event.reconciliation.deployment;
 
+import io.harness.event.reconciliation.deployment.DeploymentReconRecord.DeploymentReconRecordKeys;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
@@ -17,11 +18,11 @@ public class DeploymentReconRecordRepository {
   public DeploymentReconRecord getLatestDeploymentReconRecord(@NotNull String accountId, String entityClass) {
     try (HIterator<DeploymentReconRecord> iterator =
              new HIterator<>(persistence.createQuery(DeploymentReconRecord.class)
-                                 .field(DeploymentReconRecord.DeploymentReconRecordKeys.accountId)
+                                 .field(DeploymentReconRecordKeys.accountId)
                                  .equal(accountId)
-                                 .field(DeploymentReconRecord.DeploymentReconRecordKeys.entityClass)
+                                 .field(DeploymentReconRecordKeys.entityClass)
                                  .equal(entityClass)
-                                 .order(Sort.descending(DeploymentReconRecord.DeploymentReconRecordKeys.durationEndTs))
+                                 .order(Sort.descending(DeploymentReconRecordKeys.durationEndTs))
                                  .fetch())) {
       if (!iterator.hasNext()) {
         return null;

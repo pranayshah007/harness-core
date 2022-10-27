@@ -7,7 +7,9 @@
 
 package io.harness.event.reconciliation.service;
 
-import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.*;
+import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.addTimeQuery;
+import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.isStatusMismatchedInMongoAndTSDB;
+import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.performReconciliationHelper;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.beans.ExecutionStatus;
@@ -127,13 +129,12 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
   }
 
   public void insertMissingRecords(String accountId, long durationStartTs, long durationEndTs) {
-    Query<WorkflowExecution> query =
-        persistence.createQuery(WorkflowExecution.class, excludeAuthority)
-            .order(Sort.descending(WorkflowExecution.WorkflowExecutionKeys.createdAt))
-            .filter(WorkflowExecution.WorkflowExecutionKeys.accountId, accountId)
-            .field(WorkflowExecution.WorkflowExecutionKeys.startTs)
-            .exists()
-            .project(WorkflowExecution.WorkflowExecutionKeys.serviceExecutionSummaries, false);
+    Query<WorkflowExecution> query = persistence.createQuery(WorkflowExecution.class, excludeAuthority)
+                                         .order(Sort.descending(WorkflowExecutionKeys.createdAt))
+                                         .filter(WorkflowExecutionKeys.accountId, accountId)
+                                         .field(WorkflowExecutionKeys.startTs)
+                                         .exists()
+                                         .project(WorkflowExecutionKeys.serviceExecutionSummaries, false);
 
     addTimeQuery(query, durationStartTs, durationEndTs, WorkflowExecutionKeys.startTs, WorkflowExecutionKeys.endTs);
 

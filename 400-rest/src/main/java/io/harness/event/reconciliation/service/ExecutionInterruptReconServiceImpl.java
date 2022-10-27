@@ -1,6 +1,7 @@
 package io.harness.event.reconciliation.service;
 
-import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.*;
+import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.addTimeQuery;
+import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.performReconciliationHelper;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.event.reconciliation.ReconciliationStatus;
@@ -54,17 +55,16 @@ public class ExecutionInterruptReconServiceImpl implements DeploymentReconServic
 
   @Override
   public long getWFExecCountFromMongoDB(String accountId, long durationStartTs, long durationEndTs) {
-    long finishedWFExecutionCount = persistence.createQuery(ExecutionInterrupt.class)
-                                        .field(ExecutionInterruptKeys.accountId)
-                                        .equal(accountId)
-                                        .field(ExecutionInterruptKeys.createdAt)
-                                        .exists()
-                                        .field(ExecutionInterruptKeys.lastUpdatedAt)
-                                        .greaterThanOrEq(durationStartTs)
-                                        .field(ExecutionInterruptKeys.lastUpdatedAt)
-                                        .lessThanOrEq(durationEndTs)
-                                        .count();
-    return finishedWFExecutionCount;
+    return persistence.createQuery(ExecutionInterrupt.class)
+        .field(ExecutionInterruptKeys.accountId)
+        .equal(accountId)
+        .field(ExecutionInterruptKeys.createdAt)
+        .exists()
+        .field(ExecutionInterruptKeys.lastUpdatedAt)
+        .greaterThanOrEq(durationStartTs)
+        .field(ExecutionInterruptKeys.lastUpdatedAt)
+        .lessThanOrEq(durationEndTs)
+        .count();
   }
 
   @Override
