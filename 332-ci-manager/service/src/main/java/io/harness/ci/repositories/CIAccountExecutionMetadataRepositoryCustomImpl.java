@@ -140,6 +140,7 @@ public class CIAccountExecutionMetadataRepositoryCustomImpl implements CIAccount
         accountExecutionInfo.setCountPerDay(countPerDay);
         accountExecutionMetadata.setAccountExecutionInfo(accountExecutionInfo);
       }
+      mongoTemplate.save(accountExecutionMetadata);
     }
   }
 }
