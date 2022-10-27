@@ -84,19 +84,18 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     String accountId = AmbianceUtils.getAccountId(ambiance);
     Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
     String serviceName = event.getServiceName();
-    Long endTs = event.getEndTs();
     Status status = event.getStatus();
     executorService.submit(() -> {
-      updateDailyBuildCount(level, status, serviceName, accountId, endTs);
+      updateDailyBuildCount(level, status, serviceName, accountId);
       sendGitStatus(level, ambiance, status, event, accountId);
       sendCleanupRequest(level, ambiance, status, accountId);
     });
   }
 
-  private void updateDailyBuildCount(Level level, Status status, String serviceName, String accountId, Long endTs) {
+  private void updateDailyBuildCount(Level level, Status status, String serviceName, String accountId) {
     if (level != null && serviceName.equalsIgnoreCase(SERVICE_NAME_CI)
         && level.getStepType().getStepCategory() == StepCategory.STAGE && isFinalStatus(status)) {
-      ciAccountExecutionMetadataRepository.updateCIDailyBuilds(accountId, endTs);
+      ciAccountExecutionMetadataRepository.updateCIDailyBuilds(accountId, level.getStartTs());
     }
   }
 
