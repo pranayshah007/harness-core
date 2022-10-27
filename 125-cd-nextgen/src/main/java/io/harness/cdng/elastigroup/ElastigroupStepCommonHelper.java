@@ -143,7 +143,7 @@ import static java.lang.String.format;
 @Slf4j
 public class ElastigroupStepCommonHelper extends EcsStepUtils {
   @Inject private EngineExpressionService engineExpressionService;
-  @Inject private EcsEntityHelper ecsEntityHelper;
+  @Inject private ElastigroupEntityHelper elastigroupEntityHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;

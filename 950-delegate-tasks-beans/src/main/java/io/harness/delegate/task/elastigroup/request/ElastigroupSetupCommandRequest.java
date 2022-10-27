@@ -45,27 +45,17 @@ public class ElastigroupSetupCommandRequest implements ElastigroupCommandRequest
   ElastigroupCommandTypeNG ecsCommandType;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  String awsRegion;
   String elastiGroupJson;
   String elastigroupNamePrefix;
   boolean blueGreen;
-  String image;
-  String resizeStrategy;
-  String userData;
-  @NonFinal
-  @Expression(ALLOW_SECRETS)
-  EcsInfraConfig ecsInfraConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig ecsInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
-  @NonFinal @Expression(ALLOW_SECRETS) AwsConfig awsConfig;
   @NonFinal @Expression(ALLOW_SECRETS) SpotInstConfig spotInstConfig;
-  @NonFinal @Expression(ALLOW_SECRETS) List<EncryptedDataDetail> awsEncryptionDetails;
   @NonFinal @Expression(ALLOW_SECRETS) List<EncryptedDataDetail> spotinstEncryptionDetails;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     Set<ExecutionCapability> executionCapabilities = new HashSet<>();
-    executionCapabilities.addAll(
-        CapabilityHelper.generateDelegateCapabilities(awsConfig, awsEncryptionDetails, maskingEvaluator));
     executionCapabilities.addAll(
         CapabilityHelper.generateDelegateCapabilities(spotInstConfig, spotinstEncryptionDetails, maskingEvaluator));
     return new ArrayList<>(executionCapabilities);
