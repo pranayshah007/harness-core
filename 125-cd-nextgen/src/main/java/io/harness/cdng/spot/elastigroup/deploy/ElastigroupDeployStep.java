@@ -51,11 +51,11 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Com
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<CommandTaskResponse> responseDataSupplier) throws Exception {
-    CommandTaskResponse taskResponse;
+    CommandTaskResponse taskResponse; // TODO: Placeholder until delegate changes are made
     try {
       taskResponse = responseDataSupplier.get();
     } catch (Exception ex) {
-      log.error("Error while processing Command Task response: {}", ex.getMessage(), ex);
+      log.error("Error while processing Elastigroup Deploy Step response: {}", ex.getMessage(), ex);
       // TODO throw exception or return error response
     }
     throw new IllegalStateException("Not implemented");
