@@ -224,7 +224,7 @@ public enum FeatureName {
   CLOSE_TIME_SCALE_SYNC_PROCESSING_ON_FAILURE(Scope.GLOBAL),
   RESOURCE_CENTER_ENABLED,
   USE_IMMUTABLE_DELEGATE("Use immutable delegate on download delegate from UI", HarnessTeam.DEL),
-  DONT_USE_IMMUTABLE_DELEGATE("Do not use immutable delegate on download delegate from UI", HarnessTeam.DEL),
+  USE_LEGACY_DELEGATE("Do not use immutable delegate on download delegate from UI", HarnessTeam.DEL),
   ACTIVE_MIGRATION_FROM_LOCAL_TO_GCP_KMS,
   TERRAFORM_AWS_CP_AUTHENTICATION,
   CI_DOCKER_INFRASTRUCTURE,
