@@ -13,13 +13,10 @@ import java.util.List;
 
 public interface GovernancePolicyService {
   boolean save(Policy policy);
+  boolean deleteOOTB(String uuid);
   boolean delete(String accountId, String uuid);
   Policy update(Policy policy);
   List<Policy> list(GovernancePolicyFilter governancePolicyFilter);
-  List<Policy> findByResource(String resource, String accountId);
-  List<Policy> findByTag(String tag, String accountId);
   Policy listid(String accountId, String name, boolean create);
-  List<Policy> findByTagAndResource(String resource, String tag, String accountId);
-  List<Policy> findByStability(String isStablePolicy, String accountId);
   void check(String accountId, List<String> policiesIdentifier);
 }

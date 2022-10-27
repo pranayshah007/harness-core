@@ -32,9 +32,15 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
   }
 
   @Override
-  public boolean delete(String accountId, String uuid) {
-    return policyDao.delete(accountId, uuid);
+  public boolean deleteOOTB( String uuid) {
+    return policyDao.deleteOOTB( uuid);
   }
+
+  @Override
+  public boolean delete(String accountId, String uuid) {
+    return policyDao.delete( accountId, uuid );
+  }
+
 
   @Override
   public Policy update(Policy policy) {
@@ -47,28 +53,8 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
   }
 
   @Override
-  public List<Policy> findByResource(String resource, String accountId) {
-    return policyDao.findByResource(resource, accountId);
-  }
-
-  @Override
-  public List<Policy> findByTag(String tag, String accountId) {
-    return policyDao.findByTag(tag, accountId);
-  }
-
-  @Override
   public Policy listid(String accountId, String name, boolean create) {
     return policyDao.listid(accountId, name, create);
-  }
-
-  @Override
-  public List<Policy> findByTagAndResource(String resource, String tag, String accountId) {
-    return policyDao.findByTagAndResource(resource, tag, accountId);
-  }
-
-  @Override
-  public List<Policy> findByStability(String isStablePolicy, String accountId) {
-    return policyDao.findByStability(isStablePolicy, accountId);
   }
 
   @Override

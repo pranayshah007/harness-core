@@ -34,6 +34,11 @@ public class PolicyDAO {
     return hPersistence.save(policy) != null;
   }
 
+  public boolean deleteOOTB(String uuid) {
+    Query<Policy> query = hPersistence.createQuery(Policy.class).field(PolicyId.uuid).equal(uuid);
+    log.info("deleted policy: {}", uuid);
+    return hPersistence.delete(query);
+  }
   public boolean delete(String accountId, String uuid) {
     Query<Policy> query = hPersistence.createQuery(Policy.class)
                               .field(PolicyId.accountId)
@@ -44,7 +49,7 @@ public class PolicyDAO {
     return hPersistence.delete(query);
   }
 
-  public List<Policy> list( GovernancePolicyFilter governancePolicyFilter) {
+  public List<Policy> list(GovernancePolicyFilter governancePolicyFilter) {
     Query<Policy> policiesCustom = hPersistence.createQuery(Policy.class)
                                        .field(PolicyId.accountId)
                                        .equal(governancePolicyFilter.getAccountId())
@@ -54,31 +59,24 @@ public class PolicyDAO {
                                      .equal("")
                                      .order(Sort.descending(PolicyExecution.PolicyExecutionKeys.lastUpdatedAt));
 
-    log.info("OOTB POLICY {} {} {}", governancePolicyFilter.getIsOOTB(),governancePolicyFilter.getAccountId());
-    if (governancePolicyFilter.getIsOOTB()=="true") {
-      log.info("OOTB POLICY");
-      return policiesOOTB.asList();
+    if (governancePolicyFilter.getCloudProvider() != null) {
+      policiesOOTB.field(PolicyId.cloudProvider).equal(governancePolicyFilter.getCloudProvider());
+      policiesCustom.field(PolicyId.cloudProvider).equal(governancePolicyFilter.getCloudProvider());
+
     }
-//    if (policyRequest.getCloudProvider() != null) {
-//      policiesOOTB.field(PolicyId.cloudProvider).equal(policyRequest.getCloudProvider());
-//      policiesCustom.field(PolicyId.cloudProvider).equal(policyRequest.getCloudProvider());
-//    }
-    log.info("Adding all available policies");
-    List<Policy> policies = policiesOOTB.asList();
-    policies.addAll(policiesCustom.asList());
-    return policies;
-  }
+    if(governancePolicyFilter.getIsOOTB()!=null) {
+      if(governancePolicyFilter.getIsOOTB()) {
+        return policiesOOTB.asList();
+      }
+      return policiesCustom.asList();
+    }
 
-  public List<Policy> findByResource(String resource, String accountId) {
-    Query<Policy> query = hPersistence.createQuery(Policy.class).filter(PolicyId.accountId, accountId);
-    return query.asList();
-  }
+      log.info("Adding all available policies");
+      List<Policy> policies = policiesOOTB.asList();
+      policies.addAll(policiesCustom.asList());
+      return policies;
+    }
 
-  public List<Policy> findByTag(String tag, String accountId) {
-    Query<Policy> query =
-        hPersistence.createQuery(Policy.class).filter(PolicyId.tags, tag).filter(PolicyId.accountId, accountId);
-    return query.asList();
-  }
 
   public Policy listid(String accountId, String name, boolean create) {
     try {
@@ -104,13 +102,6 @@ public class PolicyDAO {
     }
   }
 
-  public List<Policy> findByTagAndResource(String resource, String tag, String accountId) {
-    Query<Policy> query =
-        hPersistence.createQuery(Policy.class).filter(PolicyId.tags, tag).filter(PolicyId.accountId, accountId);
-    log.info("Query: {}", query);
-    return query.asList();
-  }
-
   public Policy update(Policy policy) {
     Query query = hPersistence.createQuery(Policy.class)
                       .field(PolicyId.accountId)
@@ -131,12 +122,6 @@ public class PolicyDAO {
     return policy;
   }
 
-  public List<Policy> findByStability(String isStablePolicy, String accountId) {
-    Query<Policy> query = hPersistence.createQuery(Policy.class)
-                              .filter(PolicyId.isStablePolicy, isStablePolicy)
-                              .filter(PolicyId.accountId, accountId);
-    return query.asList();
-  }
   public void check(String accountId, List<String> policiesIdentifier) {
     for (String identifiers : policiesIdentifier) {
       listid(accountId, identifiers, false);

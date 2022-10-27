@@ -24,17 +24,17 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "PolicyRequest", description = "This has the query to list the policies")
 public class GovernancePolicyFilter {
   @Schema(description = "account id") String accountId;
-  @Schema(description = "isOOTBPolicy") String isOOTB;
+  @Schema(description = "isOOTBPolicy") Boolean isOOTB;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @Schema(description = NGCommonEntityConstants.RESOURCE) String resource;
   @Schema(description = NGCommonEntityConstants.TAGS) String tags;
   @Schema(description = "cloudProvider") String cloudProvider;
-  @Schema(description = "isStablePolicy")boolean  isStablePolicy;
+  @Schema(description = "isStablePolicy")Boolean  isStablePolicy;
 
 
   @Builder
-  public GovernancePolicyFilter(String accountId, String cloudProvider, String isOOTB, String resource) {
+  public GovernancePolicyFilter(String accountId, String cloudProvider, Boolean isOOTB, String resource) {
     this.accountId = accountId;
     this.cloudProvider = cloudProvider;
     this.isOOTB = isOOTB;

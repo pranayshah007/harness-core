@@ -117,11 +117,6 @@ public class GovernancePolicyResource {
     if (governancePolicyService.listid(accountId, policy.getName(), true) != null) {
       throw new InvalidRequestException("Policy  with given name already exits");
     }
-    //
-    //      if (governancePolicyService.listid(accountId, policy.getUuid(), true) != null) {
-    //        throw new InvalidRequestException("Policy with this uuid already exits");
-    //      }
-    // Set accountId only in case of non OOTB policies
     if (!policy.getIsOOTB()) {
       policy.setAccountId(accountId);
     } else {
@@ -167,8 +162,33 @@ public class GovernancePolicyResource {
 
   @DELETE
   @Hidden
-  @Path("policy/{policyId}")
+  @Path("{policyId}")
   @Timed
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ExceptionMetered
+  @ApiOperation(value = "Delete a policy", nickname = "deletePolicy")
+  @LogAccountIdentifier
+  @Operation(operationId = "deletePolicy", description = "Delete a Policy for the given a ID.",
+      summary = "Delete a policy",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "A boolean whether the delete was successful or not",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Boolean>
+  deleteOOTB(@PathParam("policyId") @Parameter(
+      required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
+    boolean result = governancePolicyService.deleteOOTB(uuid);
+    return ResponseDTO.newResponse(result);
+  }
+
+  @DELETE
+  @Path("policy/{policyName}")
+  @Timed
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
   @ExceptionMetered
   @ApiOperation(value = "Delete a policy", nickname = "deletePolicy")
   @LogAccountIdentifier
@@ -183,9 +203,10 @@ public class GovernancePolicyResource {
   public ResponseDTO<Boolean>
   delete(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @PathParam("policyId") @Parameter(
+      @PathParam("policyName") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String name) {
     // rbacHelper.checkPolicyDeletePermission(accountId, null, null);
+
     boolean result =
         governancePolicyService.delete(accountId, governancePolicyService.listid(accountId, name, false).getUuid());
     return ResponseDTO.newResponse(result);
@@ -207,11 +228,11 @@ public class GovernancePolicyResource {
   public ResponseDTO<List<Policy>>
   listPolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(
-          required = true, description = "Request body containing policy object") @Valid ListDTO listDTO) {
+      @RequestBody(required = true, description = "Request body containing policy object") @Valid ListDTO listDTO) {
     // rbacHelper.checkPolicyViewPermission(accountId, null, null);
     GovernancePolicyFilter query = listDTO.getGovernancePolicyFilter();
-    log.info("assigned {} {} {}",query.getAccountId(), query.getIsOOTB(),query.getResource());
+    query.setAccountId(accountId);
+    log.info("assigned {} {}", query.getAccountId(), query.getIsOOTB());
     return ResponseDTO.newResponse(governancePolicyService.list(query));
   }
 
