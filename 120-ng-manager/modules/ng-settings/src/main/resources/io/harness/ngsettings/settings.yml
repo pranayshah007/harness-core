@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 4
+version : 5
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers_CD
     name: Mandate Webhook Secrets for Github Triggers - CD
@@ -27,5 +27,86 @@ settings :
     category : CORE
     defaultValue: false
     valueType : BOOLEAN
+    allowedScopes :
+      - ACCOUNT
+
+  - identifier: max_concurrent_pipelines_free_plan
+    name: Max Concurrent Pipelines
+    category : PMS
+    defaultValue: 5
+    groupIdentifier: pipeline_settings_free
+    valueType : NUMBER
+    allowedScopes :
+      - ACCOUNT
+  - identifier: max_concurrent_pipelines_team_plan
+    name: Max Concurrent Pipelines
+    category : PMS
+    groupIdentifier: pipeline_settings_team
+    defaultValue: 10
+    valueType : NUMBER
+    allowOverrides: true
+    allowedScopes :
+      - ACCOUNT
+  - identifier: max_concurrent_pipelines_enterprise_plan
+    name: Max Concurrent Pipelines
+    category : PMS
+    groupIdentifier: pipeline_settings_enterprise
+    defaultValue: 10
+    valueType : NUMBER
+    allowOverrides: true
+    allowedScopes :
+      - ACCOUNT
+
+  - identifier: max_parallel_stages_free_plan
+    name: Max Parallel Stages
+    category : PMS
+    groupIdentifier: pipeline_settings_free
+    defaultValue: 5
+    valueType : NUMBER
+    allowedScopes :
+      - ACCOUNT
+  - identifier: max_parallel_stages_team_plan
+    name: Max Parallel Stages
+    category : PMS
+    groupIdentifier: pipeline_settings_team
+    defaultValue: 10
+    valueType : NUMBER
+    allowOverrides: true
+    allowedScopes :
+      - ACCOUNT
+  - identifier: max_parallel_stages_enterprise_plan
+    name: Max Parallel Stages
+    category : PMS
+    groupIdentifier: pipeline_settings_enterprise
+    defaultValue: 20
+    valueType : NUMBER
+    allowOverrides: true
+    allowedScopes :
+      - ACCOUNT
+
+  - identifier: max_parallel_steps_free_plan
+    name: Max Parallel Steps
+    category : PMS
+    groupIdentifier: pipeline_settings_free
+    defaultValue: 5
+    valueType : NUMBER
+    allowedScopes :
+      - ACCOUNT
+  - identifier: max_parallel_steps_team_plan
+    name: Max Parallel Steps
+    category : PMS
+    groupIdentifier: pipeline_settings_team
+    defaultValue: 10
+    valueType : NUMBER
+    allowOverrides: true
+    allowedScopes :
+      - ACCOUNT
+  - identifier: max_parallel_steps_enterprise_plan
+    name: Max Parallel Steps
+    category : PMS
+    groupIdentifier: pipeline_settings_enterprise
+    defaultValue: 20
+    allowOverrides: true
+    valueType : NUMBER
     allowedScopes :
       - ACCOUNT
