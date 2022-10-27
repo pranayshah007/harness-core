@@ -187,7 +187,7 @@ public class ServiceAllInOnePlanCreatorUtils {
                       .build())
               .skipExpressionChain(true)
               .build();
-      nodeIds.add(configFilesNode.getUuid());
+      nodeIds.add(azureSettingsNode.getUuid());
       planCreationResponseMap.put(
           azureSettingsNode.getUuid(), PlanCreationResponse.builder().planNode(azureSettingsNode).build());
     }

@@ -126,6 +126,8 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     // Handle vault Agent Properties
     updateVaultAgentConfiguration(vaultConfig, savedVaultConfig);
     updateNameSpace(accountId, vaultConfig, savedVaultConfig);
+    // Handle vault k8s Auth Properties
+    updateK8sAuthConfig(vaultConfig, savedVaultConfig);
     // PL-3237: Audit secret manager config changes.
     if (auditChanges) {
       generateAuditForSecretManager(accountId, oldConfigForAudit, savedVaultConfig);
@@ -150,6 +152,27 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     } else {
       savedVaultConfig.setUseVaultAgent(false);
       savedVaultConfig.setSinkPath(null);
+    }
+  }
+
+  private void updateK8sAuthConfig(VaultConfig vaultConfig, VaultConfig savedVaultConfig) {
+    if (vaultConfig.isUseK8sAuth()) {
+      Preconditions.checkNotNull(vaultConfig.getVaultK8sAuthRole());
+      Preconditions.checkNotNull(vaultConfig.getServiceAccountTokenPath());
+      Preconditions.checkNotNull(vaultConfig.getDelegateSelectors());
+      // set all set credentials to null
+      savedVaultConfig.setAppRoleId(null);
+      savedVaultConfig.setAuthToken(null);
+      savedVaultConfig.setSecretId(null);
+      savedVaultConfig.setUseK8sAuth(vaultConfig.isUseK8sAuth());
+      savedVaultConfig.setVaultK8sAuthRole(vaultConfig.getVaultK8sAuthRole());
+      savedVaultConfig.setServiceAccountTokenPath(vaultConfig.getServiceAccountTokenPath());
+      savedVaultConfig.setK8sAuthEndpoint(vaultConfig.getK8sAuthEndpoint());
+    } else {
+      savedVaultConfig.setUseK8sAuth(false);
+      savedVaultConfig.setVaultK8sAuthRole(null);
+      savedVaultConfig.setServiceAccountTokenPath(null);
+      savedVaultConfig.setK8sAuthEndpoint(null);
     }
   }
 

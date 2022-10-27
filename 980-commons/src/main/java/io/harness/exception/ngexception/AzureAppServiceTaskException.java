@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.eraro.ErrorCode.AZURE_APP_SERVICES_TASK_EXCEPTION;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
-import io.harness.exception.FailureType;
 import io.harness.exception.WingsException;
 
 import java.util.EnumSet;

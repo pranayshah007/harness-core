@@ -14,7 +14,6 @@ java_library(
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:io_dropwizard_dropwizard_jersey",
         "@maven//:jakarta_validation_jakarta_validation_api",
-        "@maven//:javax_javaee_api",
         "@maven//:javax_ws_rs_javax_ws_rs_api",
     ],
 )

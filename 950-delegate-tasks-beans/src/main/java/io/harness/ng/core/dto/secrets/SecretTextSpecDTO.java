@@ -11,6 +11,7 @@ import io.harness.SecretConstants;
 import io.harness.ng.core.models.SecretSpec;
 import io.harness.ng.core.models.SecretTextSpec;
 import io.harness.secretmanagerclient.ValueType;
+import io.harness.security.encryption.AdditionalMetadata;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -34,6 +35,7 @@ public class SecretTextSpecDTO extends SecretSpecDTO {
   @NotNull
   private ValueType valueType;
   @Schema(description = "Value of the Secret") private String value;
+  @Schema(description = "Additional metadata for the secret") private AdditionalMetadata additionalMetadata;
 
   @Override
   @JsonIgnore
@@ -52,6 +54,7 @@ public class SecretTextSpecDTO extends SecretSpecDTO {
     return SecretTextSpec.builder()
         .secretManagerIdentifier(getSecretManagerIdentifier())
         .valueType(getValueType())
+        .additionalMetadata(getAdditionalMetadata())
         .build();
   }
 }

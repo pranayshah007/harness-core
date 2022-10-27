@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.azureconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -44,5 +45,9 @@ public class AzureCredentialDTO {
   public AzureCredentialDTO(AzureCredentialType azureCredentialType, AzureCredentialSpecDTO config) {
     this.azureCredentialType = azureCredentialType;
     this.config = config;
+  }
+
+  public AzureCredentialOutcomeDTO toOutcome() {
+    return AzureCredentialOutcomeDTO.builder().type(this.azureCredentialType).spec(this.config.toOutcome()).build();
   }
 }

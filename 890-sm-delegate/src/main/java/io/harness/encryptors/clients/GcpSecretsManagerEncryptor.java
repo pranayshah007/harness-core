@@ -7,6 +7,7 @@
 
 package io.harness.encryptors.clients;
 
+import static io.harness.SecretConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -138,15 +139,23 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     try (SecretManagerServiceClient gcpSecretsManagerClient = getGcpSecretsManagerClient(googleCredentials)) {
       SecretVersionName secretVersionName = null;
       if (isNotEmpty(encryptedRecord.getPath())) {
-        String secretName =
-            encryptedRecord.getEncryptionKey() != null ? encryptedRecord.getEncryptionKey() : encryptedRecord.getName();
-        if (secretName == null || isEmpty(secretName)) {
+        String secretName;
+        String version;
+        if (encryptedRecord.getAdditionalMetadata() != null) {
+          secretName = encryptedRecord.getPath();
+          version = encryptedRecord.getAdditionalMetadata().getValues().get(VERSION).toString();
+        } else {
+          secretName = encryptedRecord.getEncryptionKey() != null ? encryptedRecord.getEncryptionKey()
+                                                                  : encryptedRecord.getName();
+          version = encryptedRecord.getPath();
+        }
+        if (isEmpty(secretName)) {
           throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
               "Secret Referencing Failed - Cannot Reference Secret in Gcp Secret Manager Without Name",
               WingsException.USER);
         }
         // referenced secret
-        secretVersionName = SecretVersionName.of(projectId, secretName, encryptedRecord.getPath());
+        secretVersionName = SecretVersionName.of(projectId, secretName, version);
       } else if (isNotEmpty(encryptedRecord.getEncryptedValue())) {
         SecretVersionName latestVersionName =
             SecretVersionName.parse(String.valueOf(encryptedRecord.getEncryptedValue()));

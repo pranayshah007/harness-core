@@ -10,8 +10,8 @@ package software.wings.sm.states;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
+import static io.harness.eraro.FailureType.TIMEOUT;
 import static io.harness.exception.ExceptionUtils.getMessage;
-import static io.harness.exception.FailureType.TIMEOUT;
 import static io.harness.state.StateConstants.DEFAULT_STEADY_STATE_TIMEOUT;
 
 import static java.util.Collections.singletonList;

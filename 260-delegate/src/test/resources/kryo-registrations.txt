@@ -139,7 +139,7 @@
 1202:io.harness.context.GlobalContext
 1203:io.harness.context.GlobalContextData
 1204:java.net.SocketException
-1205:io.harness.exception.FailureType
+1205:io.harness.eraro.FailureType
 1206:io.harness.context.MdcGlobalContextData
 1207:java.util.HashMap.KeySet
 1401:io.harness.security.encryption.EncryptedRecordData
