@@ -22,5 +22,5 @@ public class FeatureFlagNames {
 
   public static final String SERVICE_LEVEL_OBJECTIVE_V2 = "SERVICE_LEVEL_OBJECTIVE_V2";
 
-  public static final String CVNG_COMPOSITE_SLO = "CVNG_COMPOSITE_SLO";
+  public static final String SRM_COMPOSITE_SLO = "SRM_COMPOSITE_SLO";
 }
