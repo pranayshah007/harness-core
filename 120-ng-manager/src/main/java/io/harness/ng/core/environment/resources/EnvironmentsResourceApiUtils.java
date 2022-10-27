@@ -265,9 +265,15 @@ public class EnvironmentsResourceApiUtils {
 
   public String mapSort(String sort, String order) {
     String property;
-    if (isEmpty(sort)) {
+    if (isEmpty(sort) && isEmpty(order)) {
+      property = EnvironmentKeys.lastModifiedAt;
+      order = "DESC";
+      return property + ',' + order;
+    } else if (isEmpty(sort)) {
       property = EnvironmentKeys.lastModifiedAt;
       return property + ',' + order;
+    } else if (isEmpty(order)) {
+      order = "DESC";
     }
     switch (sort) {
       case "slug":
