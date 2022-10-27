@@ -70,7 +70,7 @@ import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.task.DelegateRunnableTask;
-import io.harness.eraro.FailureType;
+import io.harness.exception.FailureType;
 import io.harness.ff.FeatureFlagService;
 import io.harness.http.HttpServiceImpl;
 import io.harness.rule.Owner;
