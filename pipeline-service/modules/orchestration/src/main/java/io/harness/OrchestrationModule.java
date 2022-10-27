@@ -144,6 +144,8 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
     bind(ExecutionInputService.class).to(ExecutionInputServiceImpl.class);
 
     bind(PlanService.class).to(PlanServiceImpl.class).in(Singleton.class);
+    bind(PipelineSettingsService.class).to(PipelineSettingsServiceImpl.class).in(Singleton.class);
+
     bind(InterruptService.class).to(InterruptServiceImpl.class).in(Singleton.class);
     bind(OrchestrationService.class).to(OrchestrationServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionMetadataService.class).to(PlanExecutionMetadataServiceImpl.class).in(Singleton.class);
@@ -241,5 +243,11 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
   @Singleton
   public OrchestrationLogConfiguration orchestrationLogConfiguration() {
     return config.getOrchestrationLogConfiguration();
+  }
+
+  @Provides
+  @Singleton
+  public OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration() {
+    return config.getOrchestrationRestrictionConfiguration();
   }
 }

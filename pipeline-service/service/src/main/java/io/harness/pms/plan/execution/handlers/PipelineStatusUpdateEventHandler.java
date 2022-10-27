@@ -101,11 +101,12 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
                 pipelineExecutionSummaryUpdatedEntity.getEndTs()));
       }
 
+      // Todo (sahil): Commenting this as this might cause issues, will fix it next week.
       // Wait notify is for Pipeline Chain Parent Node.
-      waitNotifyEngine.doneWith(pipelineExecutionSummaryUpdatedEntity.getPlanExecutionId(),
-          PipelineStageResponseData.builder()
-              .status(pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus())
-              .build());
+      //      waitNotifyEngine.doneWith(pipelineExecutionSummaryUpdatedEntity.getPlanExecutionId(),
+      //          PipelineStageResponseData.builder()
+      //              .status(pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus())
+      //              .build());
     }
   }
 

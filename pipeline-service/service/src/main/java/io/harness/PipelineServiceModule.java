@@ -286,6 +286,7 @@ public class PipelineServiceModule extends AbstractModule {
             .useFeatureFlagService(true)
             .orchestrationRedisEventsConfig(configuration.getOrchestrationRedisEventsConfig())
             .orchestrationLogConfiguration(configuration.getOrchestrationLogConfiguration())
+            .orchestrationRestrictionConfiguration(configuration.getOrchestrationRestrictionConfiguration())
             .build()));
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),

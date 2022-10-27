@@ -47,4 +47,7 @@ public class OrchestrationModuleConfig {
   OrchestrationRedisEventsConfig orchestrationRedisEventsConfig = OrchestrationRedisEventsConfig.builder().build();
   @Default
   OrchestrationLogConfiguration orchestrationLogConfiguration = OrchestrationLogConfiguration.builder().build();
+  @Default
+  OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration =
+      OrchestrationRestrictionConfiguration.builder().build();
 }
