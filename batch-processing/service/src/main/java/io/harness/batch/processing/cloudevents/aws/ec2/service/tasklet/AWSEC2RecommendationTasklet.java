@@ -49,7 +49,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Singleton
 public class AWSEC2RecommendationTasklet implements Tasklet {
   @Autowired private EC2MetricHelper ec2MetricHelper;
-  @Autowired private AWSEC2RecommendationService awsec2RecommendationService;
+  @Autowired private AWSEC2RecommendationService awsEc2RecommendationService;
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
   @Autowired private UtilizationDataServiceImpl utilizationDataService;
   @Autowired private EC2RecommendationDAO ec2RecommendationDAO;
@@ -72,7 +72,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
       for (Map.Entry<String, AwsCrossAccountAttributes> infraAccCrossArn : infraAccCrossArnMap.entrySet()) {
         Instant now = Instant.now().truncatedTo(ChronoUnit.DAYS);
         // fetching the aws ec2 recommendations
-        EC2RecommendationResponse ec2RecommendationResponse = awsec2RecommendationService.getRecommendations(
+        EC2RecommendationResponse ec2RecommendationResponse = awsEc2RecommendationService.getRecommendations(
             EC2RecommendationRequest.builder().awsCrossAccountAttributes(infraAccCrossArn.getValue()).build());
         Map<String, List<EC2InstanceRecommendationInfo>> instanceLevelRecommendations = new HashMap<>();
         log.info("Ec2RecommendationResponse = {}", ec2RecommendationResponse);
@@ -107,7 +107,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               recommendation.setLastUpdatedTime(startTime);
               // Save the ec2 recommendation to mongo and timescale
               EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
-              log.info("EC2Recommendation saved to mongoDB = {}", ec2Recommendation);
+              log.debug("EC2Recommendation saved to mongoDB = {}", ec2Recommendation);
               saveRecommendationInTimeScaleDB(ec2Recommendation);
             }
           }
@@ -213,10 +213,10 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
   }
 
   private List<AWSEC2Details> extractEC2InstanceDetails(EC2RecommendationResponse response) {
-    List<AWSEC2Details> awsec2Details = new ArrayList<>();
+    List<AWSEC2Details> awsEC2Details = new ArrayList<>();
     for (Map.Entry<RecommendationTarget, List<RightsizingRecommendation>> rightsizingRecommendations :
         response.getRecommendationMap().entrySet()) {
-      awsec2Details.addAll(rightsizingRecommendations.getValue()
+      awsEC2Details.addAll(rightsizingRecommendations.getValue()
                                .stream()
                                .map(rightsizingRecommendation -> {
                                  String instanceId = rightsizingRecommendation.getCurrentInstance().getResourceId();
@@ -229,7 +229,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
                                })
                                .collect(Collectors.toList()));
     }
-    return awsec2Details;
+    return awsEC2Details;
   }
 
   private EC2Recommendation buildRecommendationObjectFromModifyType(

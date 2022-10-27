@@ -40,19 +40,19 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
   public EC2RecommendationResponse getRecommendations(EC2RecommendationRequest request) {
     Map<RecommendationTarget, List<RightsizingRecommendation>> recommendationTargetListMap = new HashMap<>();
     List<RightsizingRecommendation> recommendationsOnCrossFamilyType =
-        getRecommendationsBasedRecommendationOnType(RecommendationTarget.CROSS_INSTANCE_FAMILY, request);
+        getRecommendationsBasedOnRecommendationTarget(RecommendationTarget.CROSS_INSTANCE_FAMILY, request);
     if (!recommendationsOnCrossFamilyType.isEmpty()) {
       recommendationTargetListMap.put(RecommendationTarget.CROSS_INSTANCE_FAMILY, recommendationsOnCrossFamilyType);
     }
     List<RightsizingRecommendation> recommendationsOnSameFamilyType =
-        getRecommendationsBasedRecommendationOnType(RecommendationTarget.SAME_INSTANCE_FAMILY, request);
+        getRecommendationsBasedOnRecommendationTarget(RecommendationTarget.SAME_INSTANCE_FAMILY, request);
     if (!recommendationsOnSameFamilyType.isEmpty()) {
       recommendationTargetListMap.put(RecommendationTarget.SAME_INSTANCE_FAMILY, recommendationsOnSameFamilyType);
     }
     return EC2RecommendationResponse.builder().recommendationMap(recommendationTargetListMap).build();
   }
 
-  List<RightsizingRecommendation> getRecommendationsBasedRecommendationOnType(
+  List<RightsizingRecommendation> getRecommendationsBasedOnRecommendationTarget(
       RecommendationTarget recommendationTarget, EC2RecommendationRequest request) {
     GetRightsizingRecommendationRequest recommendationRequest =
         new GetRightsizingRecommendationRequest()

@@ -107,7 +107,7 @@ public class EC2MetricHelper {
                                      .collect(Collectors.toMap(MetricDataResult::getId, Function.identity())));
     });
 
-    log.info("metricDataResultMap = {}", metricDataResultMap);
+    log.debug("metricDataResultMap = {}", metricDataResultMap);
     List<Ec2UtilzationData> utilizationMetrics = new ArrayList<>();
     for (AWSEC2Details instance : uniqueInstances) {
       utilizationMetrics.add(extractMetricResult(metricDataResultMap, instance.getInstanceId()));

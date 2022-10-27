@@ -35,20 +35,7 @@ public class CEAWSConfigHelper {
   @Autowired private NGConnectorHelper ngConnectorHelper;
 
   public Map<String, AwsCrossAccountAttributes> getCrossAccountAttributes(String accountId) {
-    List<SettingAttribute> ceConnectorsList =
-        cloudToHarnessMappingService.listSettingAttributesCreatedInDuration(accountId, CE_CONNECTOR, CE_AWS);
     Map<String, AwsCrossAccountAttributes> crossAccountAttributesMap = new HashMap<>();
-    if (!CollectionUtils.isEmpty(ceConnectorsList)) {
-      List<CECloudAccount> ceCloudAccountList =
-          ceCloudAccountDao.getBySettingId(accountId, ceConnectorsList.get(0).getUuid());
-      ceCloudAccountList.forEach(ceCloudAccount
-          -> crossAccountAttributesMap.put(
-              ceCloudAccount.getInfraAccountId(), ceCloudAccount.getAwsCrossAccountAttributes()));
-      ceConnectorsList.forEach(ceConnector -> {
-        CEAwsConfig ceAwsConfig = (CEAwsConfig) ceConnector.getValue();
-        crossAccountAttributesMap.put(ceAwsConfig.getAwsMasterAccountId(), ceAwsConfig.getAwsCrossAccountAttributes());
-      });
-    }
     List<ConnectorResponseDTO> nextGenConnectors =
         ngConnectorHelper.getNextGenConnectors(accountId, Arrays.asList(ConnectorType.CE_AWS),
             Arrays.asList(CEFeatures.VISIBILITY), Arrays.asList(ConnectivityStatus.SUCCESS));
