@@ -239,7 +239,7 @@ com.squareup.okio:okio:jar:1.11.0
 com.squareup.retrofit2:adapter-rxjava:jar:2.7.2
 com.squareup.retrofit2:converter-gson:jar:2.3.0
 com.squareup.retrofit2:converter-jackson:jar:2.2.0
-com.squareup.retrofit2:converter-simplexml:jar:2.1.0
+com.squareup.retrofit2:converter-jaxb:jar:2.9.0
 com.squareup.retrofit2:retrofit:jar:2.2.0
 com.squareup.retrofit:retrofit:jar:1.9.0
 com.squareup.wire:wire-runtime:jar:2.2.0
@@ -629,7 +629,6 @@ org.quartz-scheduler:quartz:jar:2.3.2
 org.reactivestreams:reactive-streams:jar:1.0.2
 org.redisson:redisson:jar:3.13.3
 org.reflections:reflections:jar:0.9.12-SNAPSHOT
-org.simpleframework:simple-xml:jar:2.7.1
 org.slf4j:jcl-over-slf4j:jar:1.7.29
 org.slf4j:jul-to-slf4j:jar:1.7.29
 org.slf4j:log4j-over-slf4j:jar:1.7.29

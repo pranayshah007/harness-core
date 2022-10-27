@@ -9,6 +9,7 @@ package io.harness.exception;
 
 import static io.harness.eraro.ErrorCode.KUBERNETES_API_TASK_EXCEPTION;
 
+import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
 
 import java.util.EnumSet;

@@ -8,7 +8,6 @@
 package io.harness.pcf.cfsdk;
 
 import static io.harness.rule.OwnerRule.ADWAIT;
-import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,31 +46,5 @@ public class ConnectionContextProviderTest extends CategoryTest {
     Optional<Duration> connectTimeout = ((DefaultConnectionContext) connectionContext).getConnectTimeout();
     assertThat(connectTimeout.isPresent()).isTrue();
     assertThat(connectTimeout.get().getSeconds()).isEqualTo(300);
-  }
-
-  @Test
-  @Owner(developers = TMACARI)
-  @Category(UnitTests.class)
-  public void testIgnoringConnectionContextCache() throws PivotalClientApiException {
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder().endpointUrl("test").ignorePcfConnectionContextCache(true).build();
-
-    ConnectionContext firstConnectionContext = connectionContextProvider.getConnectionContext(cfRequestConfig);
-    ConnectionContext secondConnectionContext = connectionContextProvider.getConnectionContext(cfRequestConfig);
-
-    assertThat(firstConnectionContext).isNotSameAs(secondConnectionContext);
-  }
-
-  @Test
-  @Owner(developers = TMACARI)
-  @Category(UnitTests.class)
-  public void testNotIgnoringConnectionContextCache() throws PivotalClientApiException {
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder().endpointUrl("test").ignorePcfConnectionContextCache(false).build();
-
-    ConnectionContext firstConnectionContext = connectionContextProvider.getConnectionContext(cfRequestConfig);
-    ConnectionContext secondConnectionContext = connectionContextProvider.getConnectionContext(cfRequestConfig);
-
-    assertThat(firstConnectionContext).isSameAs(secondConnectionContext);
   }
 }

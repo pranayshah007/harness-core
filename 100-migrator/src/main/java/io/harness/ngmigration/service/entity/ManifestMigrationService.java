@@ -39,6 +39,7 @@ import io.harness.ngmigration.beans.summary.AppManifestSummary;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -169,7 +170,7 @@ public class ManifestMigrationService extends NgMigrationService {
 
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     FileYamlDTO fileYamlDTO = (FileYamlDTO) yamlFile.getYaml();
     RequestBody identifier = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getIdentifier());
     RequestBody name = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getName());
@@ -334,8 +335,12 @@ public class ManifestMigrationService extends NgMigrationService {
         gitStoreBuilder.paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
       }
     } else {
-      gitStoreBuilder.branch(ParameterField.createValueField(gitFileConfig.getBranch()))
-          .paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
+      gitStoreBuilder.branch(ParameterField.createValueField(gitFileConfig.getBranch()));
+      if (StringUtils.isBlank(gitFileConfig.getFilePath())) {
+        gitStoreBuilder.folderPath(ParameterField.createValueField("/"));
+      } else {
+        gitStoreBuilder.paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
+      }
     }
     return gitStoreBuilder.build();
   }

@@ -55,17 +55,17 @@ public class FailureInfoDTOConverterTest extends OrchestrationVisualizationTestB
                                                       .build())
                                   .build();
 
-    FailureInfoDTO failureInfoDTO = FailureInfoDTO.builder()
-                                        .message(errorMessage)
-                                        .failureTypeList(EnumSet.of(io.harness.exception.FailureType.APPLICATION_ERROR))
-                                        .responseMessages(ImmutableList.of(
-                                            ResponseMessage.builder()
-                                                .code(ErrorCode.ACCESS_DENIED)
-                                                .level(Level.ERROR)
-                                                .failureTypes(EnumSet.of(io.harness.exception.FailureType.CONNECTIVITY))
-                                                .message("message")
-                                                .build()))
-                                        .build();
+    FailureInfoDTO failureInfoDTO =
+        FailureInfoDTO.builder()
+            .message(errorMessage)
+            .failureTypeList(EnumSet.of(io.harness.eraro.FailureType.APPLICATION_ERROR))
+            .responseMessages(ImmutableList.of(ResponseMessage.builder()
+                                                   .code(ErrorCode.ACCESS_DENIED)
+                                                   .level(Level.ERROR)
+                                                   .failureTypes(EnumSet.of(io.harness.eraro.FailureType.CONNECTIVITY))
+                                                   .message("message")
+                                                   .build()))
+            .build();
 
     assertThat(FailureInfoDTOConverter.toFailureInfoDTO(failureInfo)).isEqualTo(failureInfoDTO);
   }

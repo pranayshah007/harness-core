@@ -518,6 +518,7 @@ public class DelegateServiceImpl implements DelegateService {
             .field(DelegateKeys.status)
             .notEqual(DelegateInstanceStatus.DELETED)
             .project(DelegateKeys.accountId, true)
+            .project(DelegateKeys.lastHeartBeat, true)
             .project(DelegateKeys.tags, true)
             .project(DelegateKeys.tagsFromYaml, true)
             .project(DelegateKeys.delegateName, true)
@@ -530,7 +531,9 @@ public class DelegateServiceImpl implements DelegateService {
         Set<String> selectors = new HashSet<>();
 
         for (Delegate delegate : delegates) {
-          selectors.addAll(retrieveDelegateSelectors(delegate, false));
+          if (isDelegateConnected(delegate)) {
+            selectors.addAll(retrieveDelegateSelectors(delegate, false));
+          }
         }
         return selectors;
       }
@@ -600,7 +603,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   private boolean isDelegateGroupConnected(List<Delegate> delegateList) {
     if (isNotEmpty(delegateList)) {
-      return delegateList.stream().anyMatch(this::checkHeartBeatExpiration);
+      return delegateList.stream().anyMatch(this::isDelegateConnected);
     } else {
       log.warn("unable to get delegate list for group from cache");
       return false;
@@ -615,7 +618,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
   }
 
-  private boolean checkHeartBeatExpiration(Delegate delegate) {
+  private boolean isDelegateConnected(Delegate delegate) {
     return delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis();
   }
 
@@ -2342,6 +2345,7 @@ public class DelegateServiceImpl implements DelegateService {
                            .filter(DelegateKeys.accountId, accountId)
                            .filter(DelegateKeys.uuid, delegateId));
     sendDelegateDeleteAuditEvent(existingDelegate, accountId);
+    onDelegateDisconnected(accountId, delegateId);
     log.info("Delegate: {} deleted.", delegateId);
   }
 
@@ -2555,7 +2559,6 @@ public class DelegateServiceImpl implements DelegateService {
     if (delegate.isImmutable() && delegate.getExpirationTime() == 0) {
       delegate.setExpirationTime(setDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()));
     }
-
     if (ECS.equals(delegate.getDelegateType())) {
       return registerResponseFromDelegate(handleEcsDelegateRequest(delegate));
     } else {
@@ -2753,7 +2756,7 @@ public class DelegateServiceImpl implements DelegateService {
   public void unregister(final String accountId, final DelegateUnregisterRequest request) {
     final Delegate existingDelegate = getExistingDelegate(
         accountId, request.getHostName(), request.isNg(), request.getDelegateType(), request.getIpAddress());
-
+    String delegateId = existingDelegate.getUuid();
     if (existingDelegate != null) {
       log.info("Removing delegate instance {} from delegate {}", request.getHostName(), request.getDelegateId());
       persistence.delete(existingDelegate);
@@ -2764,6 +2767,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
     delegateConnectionDao.list(accountId, request.getDelegateId())
         .forEach(connection -> delegateDisconnected(accountId, request.getDelegateId(), connection.getUuid()));
+    onDelegateDisconnected(accountId, delegateId);
   }
 
   @VisibleForTesting
@@ -2780,6 +2784,7 @@ public class DelegateServiceImpl implements DelegateService {
     if (skew > TimeUnit.MINUTES.toMillis(2L)) {
       log.debug("Delegate {} has clock skew of {}", delegate.getUuid(), Misc.getDurationString(skew));
     }
+
     delegate.setLastHeartBeat(now);
     delegate.setValidUntil(Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()));
 
@@ -2825,6 +2830,15 @@ public class DelegateServiceImpl implements DelegateService {
         broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(message.toString());
       }
     }
+
+    // for new delegate and delegate reconnecting long pause, trigger delegateObserver::onAdded event
+    if (registeredDelegate != null) {
+      boolean isDelegateReconnectingAfterLongPause = now > (delegateHeartbeat + HEARTBEAT_EXPIRY_TIME.toMillis());
+      if (existingDelegate == null || isDelegateReconnectingAfterLongPause) {
+        subject.fireInform(DelegateObserver::onAdded, delegate);
+      }
+    }
+
     return registeredDelegate;
   }
 
@@ -3062,6 +3076,22 @@ public class DelegateServiceImpl implements DelegateService {
     }
   }
 
+  @Override
+  public List<Delegate> obtainDelegatesUsingName(String accountId, String delegateName) {
+    try {
+      return persistence.createQuery(Delegate.class)
+          .filter(DelegateKeys.accountId, accountId)
+          .filter(DelegateKeys.delegateName, delegateName)
+          .filter(DelegateKeys.ng, true)
+          .project(DelegateKeys.uuid, true)
+          .project(DelegateKeys.immutable, true)
+          .asList();
+    } catch (Exception e) {
+      log.error("Could not get delegates from DB.", e);
+      return null;
+    }
+  }
+
   @VisibleForTesting
   public List<CapabilityRequirement> createCapabilityRequirementInstances(
       String accountId, List<ExecutionCapability> agentCapabilities) {
@@ -3105,6 +3135,10 @@ public class DelegateServiceImpl implements DelegateService {
   public void delegateDisconnected(String accountId, String delegateId, String delegateConnectionId) {
     log.info("Delegate connection {} disconnected for delegate {}", delegateConnectionId, delegateId);
     delegateConnectionDao.delegateDisconnected(accountId, delegateConnectionId);
+  }
+
+  @Override
+  public void onDelegateDisconnected(String accountId, String delegateId) {
     subject.fireInform(DelegateObserver::onDisconnected, accountId, delegateId);
     Delegate delegate = delegateCache.get(accountId, delegateId, false);
     delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_DISCONNECTED);
@@ -3898,10 +3932,14 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public List<String> getConnectedDelegates(String accountId, List<String> delegateIds) {
-    return delegateIds.stream()
-        .filter(
-            delegateId -> delegateConnectionDao.checkDelegateConnected(accountId, delegateId, getVersion(accountId)))
+  public List<Delegate> getConnectedDelegates(String accountId, List<Delegate> delegates) {
+    return delegates.stream()
+        .filter(delegate -> {
+          // Ignore version from ring while checking heartbeat for immutable delegate because client can use any version
+          // which might be different from immutable delegate version in ring.
+          String version = delegate.isImmutable() ? null : getVersion(accountId);
+          return delegateConnectionDao.checkDelegateConnected(accountId, delegate.getUuid(), version);
+        })
         .collect(toList());
   }
 

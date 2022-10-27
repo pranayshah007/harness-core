@@ -9,7 +9,7 @@ package io.harness.tasks;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.exception.FailureType;
+import io.harness.eraro.FailureType;
 import io.harness.exception.WingsException;
 
 import java.util.EnumSet;

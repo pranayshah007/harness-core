@@ -24,7 +24,6 @@ import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
-import static org.mongodb.morphia.aggregation.Group.addToSet;
 import static org.mongodb.morphia.aggregation.Group.grouping;
 import static org.mongodb.morphia.aggregation.Projection.expression;
 import static org.mongodb.morphia.aggregation.Projection.projection;
@@ -74,7 +73,6 @@ import org.jetbrains.annotations.NotNull;
 import org.mongodb.morphia.AdvancedDatastore;
 import org.mongodb.morphia.aggregation.AggregationPipeline;
 import org.mongodb.morphia.aggregation.Group;
-import org.mongodb.morphia.aggregation.Projection;
 import org.mongodb.morphia.query.Query;
 
 @Singleton
@@ -327,18 +325,24 @@ public class StatisticsServiceImpl implements StatisticsService {
 
   private void addInstanceDeployedAggregationInternal(AggregationPipeline workflowInstancesDeployedAggregation) {
     workflowInstancesDeployedAggregation
-        .project(projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
+        .project(projection("day", expression("$add", new Date(0), "$createdAt")),
             projection(
                 WorkflowExecutionKeys.serviceExecutionSummaries, WorkflowExecutionKeys.serviceExecutionSummaries),
             projection("createdAt", "createdAt"))
+        .project(
+            projection("date",
+                expression("$dayOfYear", new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
+            projection("createdAt", "createdAt"), projection("serviceExecutionSummaries", "serviceExecutionSummaries"))
         .unwind("serviceExecutionSummaries")
-        .group(Group.id(grouping("day"), grouping("serviceExecutionSummaries"), grouping("createdAt")),
-            grouping("instanceIds", addToSet("serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid")))
-        .unwind("instanceIds")
-        .project(projection("date",
-                     Projection.expression("$dayOfYear",
-                         new BasicDBObject("date", "$_id.day").append("timezone", "America/Los_Angeles"))),
-            projection("createdAt", "_id.createdAt"),
+        .project(projection("date"), projection("createdAt"),
+            projection("instanceIds", "serviceExecutionSummaries.instanceStatusSummaries.instanceElement.uuid"))
+        .project(projection("createdAt"), projection("date"),
+            projection("instanceIds", expression("$setUnion", "$instanceIds", new ArrayList<>())))
+        .match(wingsPersistence.createQuery(WorkflowExecution.class)
+                   .disableValidation()
+                   .field("instanceIds")
+                   .notEqual(null))
+        .project(projection("date", "date"), projection("createdAt", "createdAt"),
             expression("instanceCount", new BasicDBObject("$size", "$instanceIds")))
         .group(Group.id(grouping("date")), grouping("createdAt", Group.first("createdAt")),
             grouping("count", accumulator("$sum", "instanceCount")));
@@ -353,10 +357,10 @@ public class StatisticsServiceImpl implements StatisticsService {
     AggregationPipeline totalFailedExecutionAggregation =
         datastore.createAggregation(WorkflowExecution.class)
             .match(totalFailedExecutions)
-            .project(projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
+            .project(projection("day", expression("$add", new Date(0), "$createdAt")),
                 projection("createdAt", "createdAt"), projection("createdAt", "createdAt"))
             .project(projection("date",
-                         Projection.expression("$dayOfYear",
+                         expression("$dayOfYear",
                              new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
                 projection("createdAt", "createdAt"))
             .group(Group.id(grouping("date")), grouping("createdAt", Group.first("createdAt")),
@@ -377,10 +381,10 @@ public class StatisticsServiceImpl implements StatisticsService {
     AggregationPipeline totalExecutionAggregation =
         datastore.createAggregation(WorkflowExecution.class)
             .match(baseQuery)
-            .project(projection("day", Projection.expression("$add", new Date(0), "$createdAt")),
-                projection("createdAt", "createdAt"))
+            .project(
+                projection("day", expression("$add", new Date(0), "$createdAt")), projection("createdAt", "createdAt"))
             .project(projection("date",
-                         Projection.expression("$dayOfYear",
+                         expression("$dayOfYear",
                              new BasicDBObject("date", "$day").append("timezone", "America/Los_Angeles"))),
                 projection("createdAt", "createdAt"))
             .group(Group.id(grouping("date")), grouping("createdAt", Group.first("createdAt")),
@@ -527,7 +531,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             projection("createdAt", "createdAt"),
             projection(WorkflowExecutionKeys.status, WorkflowExecutionKeys.status),
             projection("originalStatus",
-                Projection.expression("$cond",
+                expression("$cond",
                     new BasicDBObject(
                         "if", new BasicDBObject("$eq", Arrays.asList("$serviceExecutionSummaries.status", null)))
                         .append("then", "$status")
@@ -538,7 +542,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             projection("createdAt", "createdAt"),
             projection(WorkflowExecutionKeys.status, WorkflowExecutionKeys.status),
             projection("finalStatus",
-                Projection.expression("$cond",
+                expression("$cond",
                     new BasicDBObject("if", new BasicDBObject("$eq", Arrays.asList("$originalStatus", "SUCCESS")))
                         .append("then", "SUCCESS")
                         .append("else", "FAILED"))),

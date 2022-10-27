@@ -52,6 +52,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String PERPETUAL_TASK_PAUSE = "perpetual_task_pause";
   public static final String PERPETUAL_TASK_ASSIGNED = "perpetual_task_assigned";
   public static final String PERPETUAL_TASK_UNASSIGNED = "perpetual_task_unassigned";
+  public static final String PERPETUAL_TASK_NONASSIGNABLE = "perpetual_task_nonassignable";
   public static final String TASK_TYPE_SUFFIX = "_by_type";
 
   public static final String DELEGATE_JWT_CACHE_HIT = "delegate_auth_cache_hit";
@@ -66,8 +67,9 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String PERPETUAL_TASKS = "perpetual_tasks_num";
   public static final String PERPETUAL_TASKS_ASSIGNED = "perpetual_tasks_assigned_num";
   public static final String PERPETUAL_TASKS_UNASSIGNED = "perpetual_tasks_unassigned_num";
-  public static final String PERPETUAL_TASKS_TO_REBALANCE = "perpetual_tasks_to_rebalance_num";
   public static final String PERPETUAL_TASKS_PAUSED = "perpetual_tasks_paused_num";
+  public static final String PERPETUAL_TASKS_NON_ASSIGNABLE = "perpetual_tasks_non_assignable_num";
+  public static final String PERPETUAL_TASKS_INVALID = "perpetual_invalid_tasks";
 
   private final MetricService metricService;
   private final DelegateTaskMetricContextBuilder metricContextBuilder;

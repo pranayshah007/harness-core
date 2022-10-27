@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
-import io.harness.exception.FailureType;
+import io.harness.eraro.FailureType;
 
 import java.util.EnumSet;
 import java.util.List;

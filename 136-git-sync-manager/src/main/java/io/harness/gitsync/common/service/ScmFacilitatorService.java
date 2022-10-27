@@ -41,7 +41,7 @@ public interface ScmFacilitatorService {
 
   ScmGetFileResponseDTO getFileByBranch(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO);
 
-  List<UserRepoResponse> listAllReposByRefConnector(
+  List<UserRepoResponse> listAllReposForOnboardingFlow(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef);
 
   ScmGetFileResponseDTO getFileByCommitId(ScmGetFileByCommitIdRequestDTO scmGetFileByCommitIdRequestDTO);

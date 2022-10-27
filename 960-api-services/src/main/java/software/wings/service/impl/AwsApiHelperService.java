@@ -197,6 +197,10 @@ public class AwsApiHelperService {
       }
       return buckets.stream().map(Bucket::getName).collect(toList());
     } catch (AmazonServiceException amazonServiceException) {
+      if (amazonServiceException.getStatusCode() == 403) {
+        throw new InvalidRequestException("Please provide the correct region corresponding to the AWS access key.");
+      }
+
       handleAmazonServiceException(amazonServiceException);
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);

@@ -71,7 +71,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.WorkflowType;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.FailureType;
+import io.harness.eraro.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.limits.LimitEnforcementUtils;

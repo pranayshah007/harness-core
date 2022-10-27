@@ -344,9 +344,9 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   }
 
   @Override
-  public AbstractServiceLevelObjective getFromSLIIdentifier(
+  public SimpleServiceLevelObjective getFromSLIIdentifier(
       ProjectParams projectParams, String serviceLevelIndicatorIdentifier) {
-    return hPersistence.createQuery(AbstractServiceLevelObjective.class)
+    return hPersistence.createQuery(SimpleServiceLevelObjective.class)
         .filter(
             AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.accountId, projectParams.getAccountIdentifier())
         .filter(

@@ -9,11 +9,13 @@ package io.harness.cdng.customDeployment.eventlistener;
 
 import static software.wings.beans.AccountType.log;
 
+import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
 import io.harness.EntityType;
 import io.harness.beans.InfraDefReference;
 import io.harness.beans.Scope;
+import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -21,9 +23,7 @@ import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
-import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pms.merger.YamlConfig;
-import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -41,7 +41,9 @@ public class CustomDeploymentEntityCRUDEventHandler {
   @Inject EntitySetupUsageService entitySetupUsageService;
   @Inject InfrastructureEntityService infrastructureEntityService;
   @Inject TemplateResourceClient templateResourceClient;
+  @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   public static final String STABLE_VERSION = "__STABLE__";
+
   public boolean updateInfraAsObsolete(
       String accountRef, String orgRef, String projectRef, String identifier, String versionLabel) {
     Scope scope =
@@ -55,30 +57,30 @@ public class CustomDeploymentEntityCRUDEventHandler {
         scope, entityFQN, EntityType.TEMPLATE, EntityType.INFRASTRUCTURE, null, null);
     if (entitySetupUsages.isEmpty()) {
       log.info("No infra Update for  Deployment Template with id :{}, for AccountId : {}", identifier, accountRef);
+      return true;
     }
-    Map<String, List<String>> envMap = new HashMap<>();
-    List<String> infraIdsList = new ArrayList();
+    Map<String, List<String>> envToOrgProjectIdMap = new HashMap<>();
     Map<String, List<String>> envToInfraMap = new HashMap<>();
 
     for (EntitySetupUsageDTO entitySetupUsage : entitySetupUsages) {
-      String infraId = entitySetupUsage.getReferredByEntity().getEntityRef().getIdentifier();
-      String environment =
-          ((InfraDefReference) entitySetupUsage.getReferredByEntity().getEntityRef()).getEnvIdentifier();
-      String orgIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getOrgIdentifier();
-      String projectIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getProjectIdentifier();
-      infraIdsList.add(infraId);
-      envMap.put(environment, Arrays.asList(orgIdentifierEnv, projectIdentifierEnv));
-      envToInfraMap.computeIfAbsent(environment, k -> new ArrayList<>()).add(infraId);
+      if (entitySetupUsage != null && entitySetupUsage.getReferredByEntity() != null
+          && entitySetupUsage.getReferredByEntity().getEntityRef() instanceof InfraDefReference) {
+        String infraId = entitySetupUsage.getReferredByEntity().getEntityRef().getIdentifier();
+        String environment =
+            ((InfraDefReference) entitySetupUsage.getReferredByEntity().getEntityRef()).getEnvIdentifier();
+        String orgIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getOrgIdentifier();
+        String projectIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getProjectIdentifier();
+        envToOrgProjectIdMap.put(environment, Arrays.asList(orgIdentifierEnv, projectIdentifierEnv));
+        envToInfraMap.computeIfAbsent(environment, k -> new ArrayList<>()).add(infraId);
+      }
     }
-    if (infraIdsList.isEmpty() || entitySetupUsages.isEmpty()) {
-      log.info("No infra found  in Db for given Deployment Template with id: {}", identifier);
-      return false;
-    }
+
     String infraYaml = getInfraYaml(entitySetupUsages.get(0), accountRef);
-    String templateYaml = getTemplateYaml(accountRef, orgRef, projectRef, identifier, versionLabel);
+    String templateYaml =
+        customDeploymentInfrastructureHelper.getTemplateYaml(accountRef, orgRef, projectRef, identifier, versionLabel);
     boolean updateRequired = checkIfUpdateRequired(infraYaml, templateYaml, accountRef);
     if (updateRequired) {
-      updateInfrasAsObsolete(envToInfraMap, accountRef, envMap);
+      updateInfrasAsObsolete(envToInfraMap, accountRef, envToOrgProjectIdMap);
     }
     return true;
   }
@@ -98,17 +100,9 @@ public class CustomDeploymentEntityCRUDEventHandler {
     InfrastructureEntity infrastructure = infrastructureOptional.get();
     return infrastructure.getYaml();
   }
-  public String getTemplateYaml(
-      String accountRef, String orgRef, String projectRef, String identifier, String versionLabel) {
-    if (versionLabel.equals(STABLE_VERSION)) {
-      versionLabel = null;
-    }
-    TemplateResponseDTO response = NGRestUtils.getResponse(
-        templateResourceClient.get(identifier, accountRef, orgRef, projectRef, versionLabel, false));
-    return response.getYaml();
-  }
   public boolean checkIfUpdateRequired(String infraYaml, String templateYaml, String accId) {
     try {
+      // for template
       YamlConfig templateConfig = new YamlConfig(templateYaml);
       JsonNode templateNode = templateConfig.getYamlMap().get("template");
       if (isNull(templateNode)) {
@@ -127,6 +121,7 @@ public class CustomDeploymentEntityCRUDEventHandler {
       }
       JsonNode templateVariableNode = templateInfraNode.get("variables");
 
+      // For infra
       YamlConfig infraYamlConfig = new YamlConfig(infraYaml);
       JsonNode infraNode = infraYamlConfig.getYamlMap().get("infrastructureDefinition");
       if (isNull(infraNode)) {
@@ -142,39 +137,43 @@ public class CustomDeploymentEntityCRUDEventHandler {
       JsonNode infraVariableNode = infraSpecNode.get("variables");
       Map<String, JsonNode> templateVariables = new HashMap<>();
       Map<String, JsonNode> infraVariables = new HashMap<>();
-      boolean isObsolete = false;
+
       for (JsonNode variable : templateVariableNode) {
         templateVariables.put(variable.get("name").asText(), variable);
       }
       for (JsonNode variable : infraVariableNode) {
         if (!templateVariables.containsKey(variable.get("name").asText())) {
-          isObsolete = true;
+          // variable names are different
+          // or a variable gets deleted
+          return true;
         } else if (!templateVariables.get(variable.get("name").asText())
                         .get("type")
                         .asText()
                         .equals(variable.get("type").asText())) {
-          isObsolete = true;
+          // If variable types are different
+          return true;
         }
         infraVariables.put(variable.get("name").asText(), variable);
       }
       for (JsonNode variable : templateVariableNode) {
         if (!infraVariables.containsKey(variable.get("name").asText())) {
-          isObsolete = true;
+          // variable gets added
+          return true;
         }
       }
-      return isObsolete;
+      return false;
     } catch (Exception e) {
       log.error(
-          "Error Encountered in infra updation while reading yamls for template ans Infra for acc Id :{} ", accId);
+          "Error Encountered in infra updation while reading yamls for template and Infra for acc Id :{} ", accId);
       throw new InvalidRequestException(
-          "Error Encountered in infra updation while reading yamls for template ans Infra");
+          "Error Encountered in infra updation while reading yamls for template and Infra");
     }
   }
 
-  public void updateInfrasAsObsolete(
-      Map<String, List<String>> envToInfraMap, String accountIdentifier, Map<String, List<String>> envMap) {
+  public void updateInfrasAsObsolete(Map<String, List<String>> envToInfraMap, String accountIdentifier,
+      Map<String, List<String>> envToOrgProjectIdMap) {
     for (String environment : envToInfraMap.keySet()) {
-      updateInfras(envToInfraMap.get(environment), environment, accountIdentifier, envMap);
+      updateInfras(envToInfraMap.get(environment), environment, accountIdentifier, envToOrgProjectIdMap);
     }
   }
   public void updateInfras(
@@ -194,12 +193,12 @@ public class CustomDeploymentEntityCRUDEventHandler {
     if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
       validateOrgIdentifier(orgIdentifier);
       validateAccountIdentifier(accountId);
-      return String.format("%s/%s/%s/%s", accountId, orgIdentifier, projectIdentifier, identifier);
+      return format("%s/%s/%s/%s", accountId, orgIdentifier, projectIdentifier, identifier);
     } else if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
       validateAccountIdentifier(accountId);
-      return String.format("%s/%s/%s", accountId, orgIdentifier, identifier);
+      return format("%s/%s/%s", accountId, orgIdentifier, identifier);
     } else if (EmptyPredicate.isNotEmpty(accountId)) {
-      return String.format("%s/%s", accountId, identifier);
+      return format("%s/%s", accountId, identifier);
     }
     throw new InvalidRequestException("No account ID provided.");
   }

@@ -122,9 +122,6 @@ io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig
 io.harness.cdng.artifact.bean.yaml.ami.AMITag
 io.harness.cdng.artifact.bean.yaml.ami.AMIFilter
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
-io.harness.steps.shellscript.SshInfraDelegateConfigOutput
-io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput
-io.harness.steps.shellscript.HostsOutput
 io.harness.cdng.infra.beans.K8sGcpInfraMapping
 io.harness.cdng.infra.beans.K8sAzureInfraMapping
 io.harness.cdng.infra.beans.PdcInfraMapping
@@ -392,7 +389,9 @@ io.harness.cdng.azure.webapp.StartupCommandParameters
 io.harness.cdng.azure.config.ApplicationSettingsOutcome
 io.harness.cdng.azure.config.ConnectionStringsOutcome
 io.harness.cdng.azure.config.StartupCommandOutcome
+io.harness.cdng.elastigroup.config.StartupScriptOutcome
 io.harness.cdng.service.beans.AzureWebAppServiceSpec
+io.harness.cdng.service.beans.ElastigroupServiceSpec
 io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData
 JenkinsBuildStepNode
 JenkinsBuildSpecParameters
@@ -417,6 +416,7 @@ io.harness.cdng.gitpolling.bean.yaml.GitHubPollingConfig
 io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration
 io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration
 io.harness.cdng.azure.config.yaml.StartupCommandConfiguration
+io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration
 io.harness.ngpipeline.artifact.bean.GithubPackagesArtifactOutcome
 io.harness.ngpipeline.pipeline.executions.beans.GithubPackagesArtifactSummary
 io.harness.cdng.artifact.bean.yaml.GithubPackageArtifactConfig
@@ -527,3 +527,6 @@ io.harness.cdng.gitops.UpdateReleaseRepoOutcome
 io.harness.cdng.instance.outcome.InstancesOutcome
 io.harness.cdng.instance.outcome.InstanceOutcome
 io.harness.cdng.instance.outcome.HostOutcome
+io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput
+io.harness.steps.shellscript.SshInfraDelegateConfigOutput
+io.harness.steps.shellscript.HostsOutput

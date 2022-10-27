@@ -8,8 +8,8 @@
 package software.wings.security.authentication.totp;
 
 import static io.harness.eraro.ErrorCode.USAGE_LIMITS_EXCEEDED;
+import static io.harness.eraro.FailureType.AUTHENTICATION;
 import static io.harness.eraro.Level.ERROR;
-import static io.harness.exception.FailureType.AUTHENTICATION;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

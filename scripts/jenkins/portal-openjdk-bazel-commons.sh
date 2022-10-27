@@ -57,6 +57,7 @@ function copy_event_server_jars(){
 	cd dist/event-server
 
 	cp ${BAZEL_BIN}/350-event-server/module_deploy.jar event-server-capsule.jar
+	cp ../../350-event-server/keystore.jks .
 	cp ../../350-event-server/key.pem .
 	cp ../../350-event-server/cert.pem .
 	cp ../../350-event-server/event-service-config.yml .
@@ -81,6 +82,8 @@ function copy_ng_manager_jars(){
 	cp ../../120-ng-manager/cert.pem .
 	cp ../../120-ng-manager/src/main/resources/redisson-jcache.yaml .
 	cp ../../120-ng-manager/src/main/resources/enterprise-redisson-jcache.yaml .
+	cp ../../120-ng-manager/src/main/resources/jfr/default.jfc .
+  cp ../../120-ng-manager/src/main/resources/jfr/profile.jfc .
 
 	cp ../../dockerization/ng-manager/Dockerfile-ng-manager-cie-jdk ./Dockerfile-cie-jdk
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .

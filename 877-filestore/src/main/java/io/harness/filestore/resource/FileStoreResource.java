@@ -11,9 +11,17 @@ import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE;
 import static io.harness.NGCommonEntityConstants.ENTITY_TYPE;
+import static io.harness.NGCommonEntityConstants.ENTITY_TYPE_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FILE_CONTENT_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FILE_FILTER_PROPERTIES_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_LIST_IDENTIFIERS_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_SEARCH_TERM_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FILE_TAGS_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FILE_YAML_DEFINITION_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FILTER_IDENTIFIER_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FOLDER_DETAILS_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FOLDER_NODE_MESSAGE;
 import static io.harness.NGCommonEntityConstants.IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
@@ -130,15 +138,16 @@ public class FileStoreResource {
 
   @POST
   @Consumes(MULTIPART_FORM_DATA)
-  @ApiOperation(value = "Create file or folder", nickname = "create")
-  @Operation(operationId = "create", summary = "Creates file or folder",
+  @ApiOperation(value = "Create Folder or File including content", nickname = "create")
+  @Operation(operationId = "create", summary = "Create Folder or File including content",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns create response") })
   public ResponseDTO<FileDTO>
   create(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = "The file tags") @FormDataParam("tags") String tagsJson,
-      @FormDataParam("content") InputStream content, @NotNull @BeanParam FileDTO file) {
+      @Parameter(description = FILE_TAGS_MESSAGE) @FormDataParam("tags") String tagsJson,
+      @Parameter(description = FILE_CONTENT_MESSAGE) @FormDataParam("content") InputStream content,
+      @NotNull @BeanParam FileDTO file) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, file.getIdentifier()), FILE_EDIT_PERMISSION);
 
@@ -155,16 +164,17 @@ public class FileStoreResource {
   @PUT
   @Consumes(MULTIPART_FORM_DATA)
   @Path("{identifier}")
-  @ApiOperation(value = "Update file or folder", nickname = "update")
-  @Operation(operationId = "update", summary = "Updates file or folder",
+  @ApiOperation(value = "Update Folder or File including content", nickname = "update")
+  @Operation(operationId = "update", summary = "Update Folder or File including content",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns update response") })
   public ResponseDTO<FileDTO>
   update(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
       @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier @PathParam(IDENTIFIER_KEY)
-      String identifier, @Parameter(description = "The file tags") @FormDataParam("tags") String tagsJson,
-      @NotNull @BeanParam FileDTO file, @FormDataParam("content") InputStream content) {
+      String identifier, @Parameter(description = FILE_TAGS_MESSAGE) @FormDataParam("tags") String tagsJson,
+      @NotNull @BeanParam FileDTO file,
+      @Parameter(description = FILE_CONTENT_MESSAGE) @FormDataParam("content") InputStream content) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, file.getIdentifier()), FILE_EDIT_PERMISSION);
 
@@ -181,10 +191,13 @@ public class FileStoreResource {
 
   @GET
   @Path("{identifier}")
-  @ApiOperation(value = "Get file", nickname = "getFile")
-  @Operation(operationId = "getFile", summary = "Get File",
+  @ApiOperation(value = "Get the Folder or File metadata", nickname = "getFile")
+  @Operation(operationId = "getFile", summary = "Get the Folder or File metadata",
       responses =
-      { @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default", description = "Get the file") })
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Get the Folder or File metadata")
+      })
   public ResponseDTO<FileDTO>
   getFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
               IDENTIFIER_KEY) @NotBlank @EntityIdentifier String identifier,
@@ -208,12 +221,12 @@ public class FileStoreResource {
 
   @GET
   @Path("files/{identifier}/download")
-  @ApiOperation(value = "Download file", nickname = "downloadFile")
+  @ApiOperation(value = "Download File content", nickname = "downloadFile")
   @Operation(operationId = "downloadFile", summary = "Download File",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Download the file with content")
+        ApiResponse(responseCode = "default", description = "Download File content")
       })
   public Response
   downloadFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
@@ -231,12 +244,12 @@ public class FileStoreResource {
   }
 
   @GET
-  @ApiOperation(value = "List files and folders", nickname = "listFilesAndFolders")
-  @Operation(operationId = "listFilesAndFolders", summary = "List files and folders",
+  @ApiOperation(value = "List Files and Folders metadata", nickname = "listFilesAndFolders")
+  @Operation(operationId = "listFilesAndFolders", summary = "List Files and Folders metadata",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "List files and folders")
+        ApiResponse(responseCode = "default", description = "List Files and Folders metadata")
       })
   public ResponseDTO<Page<FileDTO>>
   list(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
@@ -256,8 +269,8 @@ public class FileStoreResource {
   @DELETE
   @Path("{identifier}")
   @Consumes({"application/json"})
-  @ApiOperation(value = "Delete file or folder by identifier", nickname = "deleteFile")
-  @Operation(operationId = "deleteFile", summary = "Delete file or folder by identifier",
+  @ApiOperation(value = "Delete File or Folder by identifier", nickname = "deleteFile")
+  @Operation(operationId = "deleteFile", summary = "Delete File or Folder by identifier",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -279,8 +292,8 @@ public class FileStoreResource {
   @POST
   @Consumes({"application/json"})
   @Path("folder")
-  @ApiOperation(value = "Get folder nodes", nickname = "getFolderNodes")
-  @Operation(operationId = "getFolderNodes", summary = "Get Folder nodes.",
+  @ApiOperation(value = "Get folder nodes at first level, not including sub-nodes", nickname = "getFolderNodes")
+  @Operation(operationId = "getFolderNodes", summary = "Get folder nodes at first level, not including sub-nodes",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -291,8 +304,9 @@ public class FileStoreResource {
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @RequestBody(required = true, description = "Folder node for which to return the list of nodes") @Valid
-      @NotNull FolderNodeDTO folderNodeDTO, @BeanParam FileStoreNodesFilterQueryPropertiesDTO filterQueryParams) {
+      @RequestBody(required = true, description = FOLDER_NODE_MESSAGE) @Valid @Parameter(
+          description = FOLDER_DETAILS_MESSAGE) @NotNull FolderNodeDTO folderNodeDTO,
+      @BeanParam FileStoreNodesFilterQueryPropertiesDTO filterQueryParams) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, null), FILE_VIEW_PERMISSION);
 
@@ -303,8 +317,8 @@ public class FileStoreResource {
   @POST
   @Path("yaml")
   @Consumes({APPLICATION_YAML_MEDIA_TYPE})
-  @ApiOperation(value = "Create file or folder via YAML", nickname = "createViaYAML")
-  @Operation(operationId = "createViaYAML", summary = "Creates file or folder via YAML",
+  @ApiOperation(value = "Create File or Folder metadata via YAML", nickname = "createViaYAML")
+  @Operation(operationId = "createViaYAML", summary = "Creates File or Folder metadata via YAML",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns create response") })
   public ResponseDTO<FileDTO>
   createViaYaml(
@@ -312,7 +326,7 @@ public class FileStoreResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
       @RequestBody(required = true,
-          description = "YAML definition of file or folder") @NotNull @Valid FileStoreRequest fileStoreRequest) {
+          description = FILE_YAML_DEFINITION_MESSAGE) @NotNull @Valid FileStoreRequest fileStoreRequest) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, fileStoreRequest.getFile().getIdentifier()), FILE_EDIT_PERMISSION);
 
@@ -328,8 +342,8 @@ public class FileStoreResource {
   @PUT
   @Path("yaml/{identifier}")
   @Consumes({APPLICATION_YAML_MEDIA_TYPE})
-  @ApiOperation(value = "Update file or folder via YAML", nickname = "updateViaYAML")
-  @Operation(operationId = "updateViaYAML", summary = "Updates file or folder via YAML",
+  @ApiOperation(value = "Update File or Folder metadata via YAML", nickname = "updateViaYAML")
+  @Operation(operationId = "updateViaYAML", summary = "Update File or Folder metadata via YAML",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns update response") })
   public ResponseDTO<FileDTO>
   updateViaYaml(
@@ -338,7 +352,7 @@ public class FileStoreResource {
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
       @Parameter(description = FILE_PARAM_MESSAGE) @PathParam(IDENTIFIER_KEY) @EntityIdentifier String identifier,
       @RequestBody(required = true,
-          description = "YAML definition of file or folder") @NotNull @Valid FileStoreRequest fileStoreRequest) {
+          description = FILE_YAML_DEFINITION_MESSAGE) @NotNull @Valid FileStoreRequest fileStoreRequest) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, fileStoreRequest.getFile().getIdentifier()), FILE_EDIT_PERMISSION);
 
@@ -355,12 +369,14 @@ public class FileStoreResource {
   @GET
   @Consumes({"application/json"})
   @Path("{identifier}/referenced-by")
-  @ApiOperation(value = "Get referenced by entities", nickname = "getReferencedBy")
-  @Operation(operationId = "getReferencedBy", summary = "Get Referenced by Entities.",
+  @ApiOperation(
+      value = "Get list of entities where file is referenced by queried entity type", nickname = "getReferencedBy")
+  @Operation(operationId = "getReferencedBy",
+      summary = "Get list of entities where file is referenced by queried entity type",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the list of entities file is referenced by")
+        ApiResponse(responseCode = "default", description = "Returns the list of entities where file is referenced by")
       })
   public ResponseDTO<Page<EntitySetupUsageDTO>>
   getReferencedBy(@Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
@@ -371,7 +387,7 @@ public class FileStoreResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
       @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier @PathParam(IDENTIFIER_KEY)
-      String identifier, @Parameter(description = "Entity type") @QueryParam(ENTITY_TYPE) EntityType entityType,
+      String identifier, @Parameter(description = ENTITY_TYPE_MESSAGE) @QueryParam(ENTITY_TYPE) EntityType entityType,
       @QueryParam(SEARCH_TERM_KEY) String searchTerm) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, identifier), FILE_VIEW_PERMISSION);
@@ -384,11 +400,12 @@ public class FileStoreResource {
   @GET
   @Consumes({"application/json"})
   @Path("supported-entity-types")
-  @ApiOperation(value = "Get entity types", nickname = "getEntityTypes")
-  @Operation(operationId = "getEntityTypes", summary = "Get entity types.",
+  @ApiOperation(value = "Get the list of supported entity types for files", nickname = "getEntityTypes")
+  @Operation(operationId = "getEntityTypes", summary = "Get the list of supported entity types for files",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of supported entity types")
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of supported entity types for file")
       })
   public ResponseDTO<List<EntityType>>
   getSupportedEntityTypes(
@@ -401,19 +418,21 @@ public class FileStoreResource {
   @POST
   @Consumes({"application/json"})
   @Path("files/filter")
-  @ApiOperation(value = "Gets the filtered list of files", nickname = "listFilesWithFilter")
-  @Operation(operationId = "listFilesWithFilter", summary = "Get filtered list of files.",
+  @ApiOperation(value = "Get filtered list of Files or Folders", nickname = "listFilesWithFilter")
+  @Operation(operationId = "listFilesWithFilter", summary = "Get filtered list of Files or Folders",
       responses =
-      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns filtered list of files.") })
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns filtered list of Files or Folder")
+      })
   public ResponseDTO<Page<FileDTO>>
   listFilesWithFilter(
       @RequestBody(description = "Details of Page including: size, index, sort") @BeanParam PageRequest pageRequest,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @QueryParam(FILTER_KEY) String filterIdentifier, @QueryParam(SEARCH_TERM_KEY) String searchTerm,
-      @RequestBody(description = "Details of the File filter properties to be applied")
-      FilesFilterPropertiesDTO filesFilterPropertiesDTO) {
+      @Parameter(description = FILTER_IDENTIFIER_MESSAGE) @QueryParam(FILTER_KEY) String filterIdentifier,
+      @Parameter(description = FILE_SEARCH_TERM_PARAM_MESSAGE) @QueryParam(SEARCH_TERM_KEY) String searchTerm,
+      @RequestBody(description = FILE_FILTER_PROPERTIES_MESSAGE) FilesFilterPropertiesDTO filesFilterPropertiesDTO) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, null), FILE_VIEW_PERMISSION);
 
@@ -425,11 +444,12 @@ public class FileStoreResource {
   @GET
   @Consumes({"application/json"})
   @Path("files/createdBy")
-  @ApiOperation(value = "Get list of created by usernames", nickname = "getCreatedByList")
-  @Operation(operationId = "getCreatedByList", summary = "Get list of created by usernames.",
+  @ApiOperation(value = "Get list of created by user details", nickname = "getCreatedByList")
+  @Operation(operationId = "getCreatedByList", summary = "Get list of created by user details",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of created by usernames")
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of created by user details")
       })
   public ResponseDTO<Set<EmbeddedUserDetailsDTO>>
   getCreatedByList(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) String accountIdentifier,

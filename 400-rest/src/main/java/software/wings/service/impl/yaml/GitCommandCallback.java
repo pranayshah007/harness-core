@@ -28,6 +28,7 @@ import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
@@ -432,14 +433,23 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
         log.error("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
             changeSetId, accountId, response);
         log.error("Delegate not available or installed, retrying.", e);
-        yamlChangeSetService.updateStatusAndIncrementRetryCountForYamlChangeSets(accountId, Status.QUEUED,
-            Collections.singletonList(Status.RUNNING), Collections.singletonList(changeSetId));
+        log.error("Delegate not available or installed, retrying.", e);
+        yamlGitService.raiseAlertForGitFailure(accountId, GLOBAL_APP_ID,
+            GitSyncFailureAlertDetails.builder()
+                .branchName(branchName)
+                .repositoryName(repositoryName)
+                .errorMessage(ExceptionUtils.getMessage(e))
+                .gitConnectorId(gitConnectorId)
+                .errorCode(e.getCode())
+                .build());
+        updateChangeSetFailureStatusSafely();
+        updateGitCommitFailureSafely();
       } catch (Exception e) {
         log.error("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
             changeSetId, accountId, response);
         log.error("Failure in git command execution", e);
-        updateChangeSetFailureStatusSafely();
-        updateGitCommitFailureSafely();
+        yamlChangeSetService.updateStatusAndIncrementRetryCountForYamlChangeSets(accountId, Status.QUEUED,
+            Collections.singletonList(Status.RUNNING), Collections.singletonList(changeSetId));
       }
     }
   }

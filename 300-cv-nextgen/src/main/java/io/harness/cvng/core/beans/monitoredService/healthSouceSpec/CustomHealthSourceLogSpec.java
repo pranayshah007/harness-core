@@ -19,6 +19,7 @@ import io.harness.cvng.core.services.api.MetricPackService;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +37,8 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(
+    name = "CustomHealthSourceLog", description = "This is the Custom Log Health Source spec entity defined in Harness")
 public class CustomHealthSourceLogSpec extends HealthSourceSpec {
   List<CustomHealthLogDefinition> logDefinitions = new ArrayList<>();
 

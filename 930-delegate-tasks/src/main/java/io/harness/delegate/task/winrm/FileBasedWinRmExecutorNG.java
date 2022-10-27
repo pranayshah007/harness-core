@@ -86,7 +86,7 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
     return commandExecutionStatus;
   }
 
-  private CommandExecutionStatus splitFileAndTransfer(ConfigFileParameters configFileParameters, WinRmSession session,
+  CommandExecutionStatus splitFileAndTransfer(ConfigFileParameters configFileParameters, WinRmSession session,
       ExecutionLogWriter outputWriter, ExecutionLogWriter errorWriter) throws IOException {
     final List<List<Byte>> partitions =
         Lists.partition(Bytes.asList(configFileParameters.getFileContent().getBytes()), BATCH_SIZE_BYTES);

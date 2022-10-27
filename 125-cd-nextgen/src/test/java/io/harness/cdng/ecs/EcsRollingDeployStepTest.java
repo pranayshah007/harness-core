@@ -13,11 +13,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
@@ -31,7 +33,12 @@ import io.harness.delegate.beans.ecs.EcsRollingDeployResult;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
+import io.harness.delegate.task.ecs.request.EcsPrepareRollbackDataRequest;
+import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest;
+import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest.EcsRollingDeployRequestBuilder;
 import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.delegate.task.git.TaskStatus;
@@ -44,6 +51,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -210,7 +218,8 @@ public class EcsRollingDeployStepTest extends CategoryTest {
         ambiance, stepElementParameters, ecsExecutionPassThroughData, () -> responseData);
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
-    assertThat(stepResponse.getFailureInfo().getErrorMessage()).isEqualTo("error");
+    assertThat(stepResponse.getFailureInfo().getErrorMessage())
+        .isEqualTo(((EcsRollingDeployResponse) responseData).getErrorMessage());
   }
 
   @Test
@@ -239,13 +248,32 @@ public class EcsRollingDeployStepTest extends CategoryTest {
                                                .build();
 
     doReturn(taskChainResponse1).when(ecsStepCommonHelper).queueEcsTask(any(), any(), any(), any(), anyBoolean());
-    TaskChainResponse taskChainResponse = ecsRollingDeployStep.executeEcsTask(
+    ecsRollingDeployStep.executeEcsTask(
         ambiance, stepElementParameters, ecsExecutionPassThroughData, unitProgressData, ecsStepExecutorParams);
 
-    assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
-    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(EcsPrepareRollbackDataPassThroughData.class);
-    assertThat(taskChainResponse.getPassThroughData()).isEqualTo(ecsPrepareRollbackDataPassThroughData);
-    assertThat(taskChainResponse.getTaskRequest()).isEqualTo(TaskRequest.newBuilder().build());
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String ECS_ROLLING_DEPLOY_COMMAND_NAME = "EcsRollingDeploy";
+    EcsRollingDeployRequestBuilder ecsRollingDeployRequestBuilder =
+        EcsRollingDeployRequest.builder()
+            .accountId(accountId)
+            .ecsCommandType(EcsCommandTypeNG.ECS_ROLLING_DEPLOY)
+            .commandName(ECS_ROLLING_DEPLOY_COMMAND_NAME)
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+            .ecsInfraConfig(ecsInfraConfig)
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .ecsTaskDefinitionManifestContent(ecsStepExecutorParams.getEcsTaskDefinitionManifestContent())
+            .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
+            .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
+            .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList());
+    EcsRollingDeployStepParameters ecsRollingDeployStepParameters =
+        (EcsRollingDeployStepParameters) stepElementParameters.getSpec();
+    ecsRollingDeployRequestBuilder.sameAsAlreadyRunningInstances(
+        ecsRollingDeployStepParameters.getSameAsAlreadyRunningInstances().getValue().booleanValue());
+    ecsRollingDeployRequestBuilder.forceNewDeployment(
+        ecsRollingDeployStepParameters.getForceNewDeployment().getValue().booleanValue());
+    EcsRollingDeployRequest ecsRollingDeployRequest = ecsRollingDeployRequestBuilder.build();
+    verify(ecsStepCommonHelper)
+        .queueEcsTask(stepElementParameters, ecsRollingDeployRequest, ambiance, ecsExecutionPassThroughData, true);
   }
 
   @Test
@@ -268,12 +296,25 @@ public class EcsRollingDeployStepTest extends CategoryTest {
                                                .build();
 
     doReturn(taskChainResponse1).when(ecsStepCommonHelper).queueEcsTask(any(), any(), any(), any(), anyBoolean());
-    TaskChainResponse taskChainResponse = ecsRollingDeployStep.executeEcsPrepareRollbackTask(
+    ecsRollingDeployStep.executeEcsPrepareRollbackTask(
         ambiance, stepElementParameters, ecsPrepareRollbackDataPassThroughData, unitProgressData);
 
-    assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
-    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(EcsPrepareRollbackDataPassThroughData.class);
-    assertThat(taskChainResponse.getPassThroughData()).isEqualTo(ecsPrepareRollbackDataPassThroughData);
-    assertThat(taskChainResponse.getTaskRequest()).isEqualTo(TaskRequest.newBuilder().build());
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String ECS_PREPARE_ROLLBACK_COMMAND_NAME = "EcsPrepareRollback";
+
+    EcsPrepareRollbackDataRequest ecsPrepareRollbackDataRequest =
+        EcsPrepareRollbackDataRequest.builder()
+            .commandName(ECS_PREPARE_ROLLBACK_COMMAND_NAME)
+            .accountId(accountId)
+            .ecsCommandType(EcsCommandTypeNG.ECS_PREPARE_ROLLBACK_DATA)
+            .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
+            .ecsServiceDefinitionManifestContent(
+                ecsPrepareRollbackDataPassThroughData.getEcsServiceDefinitionManifestContent())
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .build();
+    verify(ecsStepCommonHelper)
+        .queueEcsTask(stepElementParameters, ecsPrepareRollbackDataRequest, ambiance,
+            ecsPrepareRollbackDataPassThroughData, false);
   }
 }

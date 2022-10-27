@@ -8,6 +8,9 @@
 package io.harness.ng.core.api.impl;
 
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
+import static io.harness.SecretConstants.LATEST;
+import static io.harness.SecretConstants.REGIONS;
+import static io.harness.SecretConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
@@ -87,6 +90,7 @@ import software.wings.service.impl.security.GlobalEncryptDecryptClient;
 import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -157,6 +161,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
 
+    validateAdditionalMetadata(secretManager, secret);
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
 
     switch (secret.getValueType()) {
@@ -177,6 +182,68 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         throw new RuntimeException("Secret value type is unknown");
     }
     return encryptedDataDao.save(encryptedData);
+  }
+
+  private void validateAdditionalMetadata(SecretManagerConfigDTO secretManager, SecretTextSpecDTO secret) {
+    switch (secretManager.getEncryptionType()) {
+      case GCP_SECRETS_MANAGER:
+        validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(secret);
+        return;
+      default:
+        return;
+    }
+  }
+
+  @VisibleForTesting
+  void validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(SecretTextSpecDTO secretTextSpecDTO) {
+    if (Inline.equals(secretTextSpecDTO.getValueType())) {
+      validateInlineSecretAdditionalMetadataForGcpSecretManager(secretTextSpecDTO);
+    } else {
+      validateReferenceSecretAdditionalMetadataForGcpSecretManager(secretTextSpecDTO);
+    }
+  }
+
+  private void validateReferenceSecretAdditionalMetadataForGcpSecretManager(SecretTextSpecDTO secretTextSpecDTO) {
+    if (secretTextSpecDTO.getAdditionalMetadata() == null
+        || secretTextSpecDTO.getAdditionalMetadata().getValues() == null) {
+      throw new InvalidRequestException("Version information in additional metadata values field is missing.");
+    }
+    Map<String, Object> values = secretTextSpecDTO.getAdditionalMetadata().getValues();
+    if (values.size() != 1 || !values.containsKey(VERSION)) {
+      throw new InvalidRequestException("Additional metadata values field should have only one field - version");
+    }
+    validateVersionInformation(values.get(VERSION));
+  }
+  private void validateVersionInformation(Object version) {
+    if (version == null) {
+      throw new InvalidRequestException("Version can not be null");
+    }
+    String versionString = String.valueOf(version);
+    if (isEmpty(versionString)) {
+      throw new InvalidRequestException("Version can not be empty");
+    }
+    if (version.equals(LATEST)) {
+      return;
+    }
+    try {
+      Integer.parseInt(versionString);
+    } catch (NumberFormatException numberFormatException) {
+      throw new InvalidRequestException("Version should be either latest or an integer.");
+    }
+  }
+
+  private void validateInlineSecretAdditionalMetadataForGcpSecretManager(SecretTextSpecDTO secretTextSpecDTO) {
+    if (secretTextSpecDTO.getAdditionalMetadata() != null
+        && !isEmpty(secretTextSpecDTO.getAdditionalMetadata().getValues())) {
+      Map<String, Object> values = secretTextSpecDTO.getAdditionalMetadata().getValues();
+      if (values.size() != 1 || !values.containsKey(REGIONS)) {
+        throw new InvalidRequestException(
+            String.format("Additional metadata values expect only one key - %s", REGIONS));
+      }
+      if (values.get(REGIONS) == null || isEmpty(String.valueOf(values.get(REGIONS)))) {
+        throw new InvalidRequestException(String.format("%s should not be empty", REGIONS));
+      }
+    }
   }
 
   private void validateCustomSecretManagerPathValue(
@@ -257,6 +324,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         builder.path(secret.getValue());
       }
       builder.type(SettingVariableTypes.SECRET_TEXT);
+      builder.additionalMetadata(secret.getAdditionalMetadata());
     } else if (SecretFile.equals(dto.getType())) {
       builder.type(SettingVariableTypes.CONFIG_FILE);
     }
@@ -280,9 +348,14 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
               encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
         ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
       }
-      encryptedRecord =
-          vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-              .createSecret(encryptedData.getAccountIdentifier(), encryptedData.getName(), value, secretManagerConfig);
+      encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
+                            .createSecret(encryptedData.getAccountIdentifier(),
+                                io.harness.beans.SecretText.builder()
+                                    .name(encryptedData.getName())
+                                    .value(value)
+                                    .additionalMetadata(encryptedData.getAdditionalMetadata())
+                                    .build(),
+                                secretManagerConfig);
       validateEncryptedRecord(encryptedRecord);
     } else {
       throw new UnsupportedOperationException("Secret Manager type not supported: " + secretManagerType);
@@ -320,13 +393,23 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
             encryptedRecord = existingEncryptedData;
           } else {
             encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-                                  .renameSecret(encryptedData.getAccountIdentifier(), encryptedData.getName(),
+                                  .renameSecret(encryptedData.getAccountIdentifier(),
+                                      io.harness.beans.SecretText.builder()
+                                          .name(encryptedData.getName())
+                                          .value(value)
+                                          .additionalMetadata(encryptedData.getAdditionalMetadata())
+                                          .build(),
                                       existingEncryptedData, secretManagerConfig);
             validateEncryptedRecord(encryptedRecord);
           }
         } else {
           encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-                                .updateSecret(encryptedData.getAccountIdentifier(), encryptedData.getName(), value,
+                                .updateSecret(encryptedData.getAccountIdentifier(),
+                                    io.harness.beans.SecretText.builder()
+                                        .name(encryptedData.getName())
+                                        .value(value)
+                                        .additionalMetadata(encryptedData.getAdditionalMetadata())
+                                        .build(),
                                     existingEncryptedData, secretManagerConfig);
           validateEncryptedRecord(encryptedRecord);
         }
@@ -334,7 +417,12 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         // Existing one is Reference Secret
         if (isNotEmpty(value)) {
           encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-                                .createSecret(encryptedData.getAccountIdentifier(), encryptedData.getName(), value,
+                                .createSecret(encryptedData.getAccountIdentifier(),
+                                    io.harness.beans.SecretText.builder()
+                                        .name(encryptedData.getName())
+                                        .value(value)
+                                        .additionalMetadata(encryptedData.getAdditionalMetadata())
+                                        .build(),
                                     secretManagerConfig);
           validateEncryptedRecord(encryptedRecord);
         } else {
@@ -755,6 +843,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         .kmsId(encryptedData.getKmsId())
         .encryptionType(encryptedData.getEncryptionType())
         .base64Encoded(encryptedData.isBase64Encoded())
+        .additionalMetadata(encryptedData.getAdditionalMetadata())
         .build();
   }
 

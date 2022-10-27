@@ -31,10 +31,10 @@ public class CfCommandRouteUpdateRequest extends CfCommandRequest {
       PcfCommandType pcfCommandType, String organization, String space, CfInternalConfig pcfConfig,
       String workflowExecutionId, Integer timeoutIntervalInMin, CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData,
       boolean useCfCLI, boolean useAppAutoscalar, boolean enforceSslValidation, boolean limitPcfThreads,
-      boolean ignorePcfConnectionContextCache, CfCliVersion cfCliVersion) {
+      CfCliVersion cfCliVersion) {
     super(accountId, appId, commandName, activityId, pcfCommandType, organization, space, pcfConfig,
         workflowExecutionId, timeoutIntervalInMin, useCfCLI, enforceSslValidation, useAppAutoscalar, limitPcfThreads,
-        ignorePcfConnectionContextCache, cfCliVersion);
+        cfCliVersion);
     this.pcfRouteUpdateConfigData = pcfRouteUpdateConfigData;
   }
 }

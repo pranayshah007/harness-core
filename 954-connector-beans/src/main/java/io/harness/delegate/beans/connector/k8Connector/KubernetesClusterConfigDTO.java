@@ -13,6 +13,13 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.k8Connector.outcome.KubernetesAuthOutcomeDTO;
+import io.harness.delegate.beans.connector.k8Connector.outcome.KubernetesClusterConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.k8Connector.outcome.KubernetesClusterDetailsOutcomeDTO;
+import io.harness.delegate.beans.connector.k8Connector.outcome.KubernetesCredentialOutcomeDTO;
+import io.harness.delegate.beans.connector.k8Connector.outcome.KubernetesCredentialSpecOutcomeDTO;
+import io.harness.delegate.beans.connector.k8Connector.outcome.KubernetesDelegateDetailsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -50,5 +57,29 @@ public class KubernetesClusterConfigDTO extends ConnectorConfigDTO implements De
         && isEmpty(delegateSelectors)) {
       throw new InvalidRequestException(INHERIT_FROM_DELEGATE_TYPE_ERROR_MSG);
     }
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    KubernetesCredentialSpecOutcomeDTO spec = null;
+    if (this.credential.getConfig() instanceof KubernetesClusterDetailsDTO) {
+      KubernetesAuthDTO auth = ((KubernetesClusterDetailsDTO) this.credential.getConfig()).getAuth();
+      KubernetesAuthOutcomeDTO authOutcomeDTO =
+          KubernetesAuthOutcomeDTO.builder().authType(auth.getAuthType()).credentials(auth.getCredentials()).build();
+      spec = KubernetesClusterDetailsOutcomeDTO.builder()
+                 .masterUrl(((KubernetesClusterDetailsDTO) this.credential.getConfig()).getMasterUrl())
+                 .auth(authOutcomeDTO)
+                 .build();
+    } else if (this.credential.getConfig() instanceof KubernetesDelegateDetailsDTO) {
+      spec = KubernetesDelegateDetailsOutcomeDTO.builder().build();
+    }
+
+    return KubernetesClusterConfigOutcomeDTO.builder()
+        .credential(KubernetesCredentialOutcomeDTO.builder()
+                        .kubernetesCredentialType(this.credential.getKubernetesCredentialType())
+                        .config(spec)
+                        .build())
+        .delegateSelectors(delegateSelectors)
+        .build();
   }
 }

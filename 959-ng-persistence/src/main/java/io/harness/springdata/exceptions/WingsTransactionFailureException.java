@@ -7,7 +7,7 @@
 
 package io.harness.springdata.exceptions;
 
-import static io.harness.exception.FailureType.APPLICATION_ERROR;
+import static io.harness.eraro.FailureType.APPLICATION_ERROR;
 
 import io.harness.eraro.Level;
 import io.harness.exception.WingsException;

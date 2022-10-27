@@ -8,6 +8,7 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +59,8 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   private final String PROJ_IDENTIFIER = "projId";
   private final String TEMPLATE_IDENTIFIER = "template1";
   private final String TEMPLATE_VERSION_LABEL = "version1";
+
+  private final String REPO_NAME = "testRepo";
 
   @Before
   public void setUp() {
@@ -178,6 +181,17 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
     assertThat(((Document) ((List<?>) ((Document) ((List<?>) criteriaObject.get("$and")).get(0)).get("$or")).get(0))
                    .get("templateScope"))
         .isEqualTo(Scope.PROJECT);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFilterByRepo() {
+    TemplateFilterPropertiesDTO filterPropertiesDTO = TemplateFilterPropertiesDTO.builder().repoName(REPO_NAME).build();
+    Criteria criteria = templateServiceHelper.formCriteria(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "", filterPropertiesDTO, false, TEMPLATE_IDENTIFIER, false);
+    Document criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.get(TemplateEntityKeys.repo)).isEqualTo(REPO_NAME);
   }
 
   @Test

@@ -990,6 +990,20 @@ public class TemplateServiceImpl implements TemplateService {
         .asList();
   }
 
+  @Override
+  public List<Template> listAccountLevelTemplates(String accountId) {
+    Query<Template> templateQuery = wingsPersistence.createQuery(Template.class)
+                                        .filter(TemplateKeys.accountId, accountId)
+                                        .filter(TemplateKeys.appId, GLOBAL_APP_ID);
+    List<Template> templates = templateQuery.asList();
+    if (isNotEmpty(templates)) {
+      for (Template template : templates) {
+        setDetailsOfTemplate(template, null);
+      }
+    }
+    return templates;
+  }
+
   private String getImportedTemplateVersion(ImportedTemplateDetails importedTemplateDetails, String accountId) {
     if (HarnessImportedTemplateDetails.class.equals(getImportedCommandDetailClass(importedTemplateDetails))) {
       HarnessImportedTemplateDetails templateDetails = (HarnessImportedTemplateDetails) importedTemplateDetails;

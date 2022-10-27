@@ -11,7 +11,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.FailureType;
+import io.harness.eraro.FailureType;
 import io.harness.exception.GeneralException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;

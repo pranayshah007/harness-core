@@ -128,11 +128,11 @@ if [[ "" != "$VM_SECURITY_IMAGE" ]]; then
 fi
 
 if [[ "" != "$CACHE_BUCKET" ]]; then
-  export $CACHE_BUCKET; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.bucket=env($CACHE_BUCKET)' $CONFIG_FILE
+  export CACHE_BUCKET; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.bucket=env(CACHE_BUCKET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CACHE_SERVICE_KEY" ]]; then
-  export $CACHE_SERVICE_KEY; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.serviceKey=env($CACHE_SERVICE_KEY)' $CONFIG_FILE
+  export CACHE_SERVICE_KEY; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.serviceKey=env(CACHE_SERVICE_KEY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
@@ -417,3 +417,4 @@ replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAME
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
