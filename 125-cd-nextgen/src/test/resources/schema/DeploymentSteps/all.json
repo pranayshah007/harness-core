@@ -1326,6 +1326,33 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CountElastigroupDeployServiceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ElastigroupDeployServiceSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CountInstanceSelection": {
       "allOf": [
         {
@@ -2025,6 +2052,99 @@
             },
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupDeployServiceSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupDeployServiceWrapper": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Count"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CountElastigroupDeployServiceSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Percentage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/PercentageElastigroupDeployServiceSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ElastigroupDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "newService": {
+              "$ref": "#/definitions/ElastigroupDeployServiceWrapper"
+            },
+            "oldService": {
+              "$ref": "#/definitions/ElastigroupDeployServiceWrapper"
             }
           }
         }
@@ -4115,6 +4235,33 @@
           "type": "string"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PercentageElastigroupDeployServiceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ElastigroupDeployServiceSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "percentage": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "PercentageInstanceSelection": {
