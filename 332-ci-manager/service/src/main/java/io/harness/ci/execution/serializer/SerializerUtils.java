@@ -9,8 +9,10 @@ package io.harness.ci.serializer;
 
 import static java.lang.String.format;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.yaml.extended.CIShellType;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
@@ -87,24 +89,29 @@ public class SerializerUtils {
     return true;
   }
 
-  public static String getSafeGitDirectoryCmd(CIShellType shellType) {
-    // This adds the safe directory to the end of .gitconfig file
-    String safeDirScript;
-    if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
-      safeDirScript = "set +x\n"
-          + "if [ -x \"$(command -v git)\" ]; then\n"
-          + "  git config --global --add safe.directory '*' || true \n"
-          + "fi\n"
-          + "set -x\n";
+  public static String getSafeGitDirectoryCmd(
+      CIShellType shellType, String accountId, CIFeatureFlagService featureFlagService) {
+    // This adds the safe directory to the end of .gitconfig file based on FF
+    if (featureFlagService.isEnabled(FeatureName.CI_DISABLE_GIT_SAFEDIR, accountId)) {
+      return "";
     } else {
-      safeDirScript = "try\n"
-          + "{\n"
-          + "    git config --global --add safe.directory '*' | Out-Null\n"
-          + "}\n"
-          + "catch [System.Management.Automation.CommandNotFoundException]\n"
-          + "{\n }";
+      String safeDirScript;
+      if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
+        safeDirScript = "set +x\n"
+            + "if [ -x \"$(command -v git)\" ]; then\n"
+            + "  git config --global --add safe.directory '*' || true \n"
+            + "fi\n"
+            + "set -x\n";
+      } else {
+        safeDirScript = "try\n"
+            + "{\n"
+            + "    git config --global --add safe.directory '*' | Out-Null\n"
+            + "}\n"
+            + "catch [System.Management.Automation.CommandNotFoundException]\n"
+            + "{\n }";
+      }
+      return safeDirScript;
     }
-    return safeDirScript;
   }
 
   public static String getTestSplitStrategy(String splitStrategy) {

@@ -81,7 +81,6 @@ spec:
         </#if>
         resources:
           limits:
-            cpu: "${delegateCpu}"
             memory: "${delegateRam}Mi"
           requests:
             cpu: "${delegateRequestsCpu}"

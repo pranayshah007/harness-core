@@ -247,7 +247,7 @@ public class ServiceMigrationService extends NgMigrationService {
     Set<CgEntityId> manifests =
         graph.get(entityId).stream().filter(cgEntityId -> cgEntityId.getType() == MANIFEST).collect(Collectors.toSet());
     List<ManifestConfigWrapper> manifestConfigWrapperList =
-        manifestMigrationService.getManifests(manifests, inputDTO, entities, graph, migratedEntities);
+        manifestMigrationService.getManifests(manifests, inputDTO, entities, migratedEntities);
 
     ServiceDefinition serviceDefinition = ServiceV2Factory.getService2Mapper(service).getServiceDefinition(
         inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList);

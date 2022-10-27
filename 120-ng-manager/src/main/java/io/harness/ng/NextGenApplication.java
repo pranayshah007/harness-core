@@ -70,6 +70,7 @@ import io.harness.enforcement.executions.InitialDeploymentRestrictionUsageImpl;
 import io.harness.enforcement.services.FeatureRestrictionLoader;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
+import io.harness.freeze.FreezeNotificationTemplateRegistrar;
 import io.harness.gitsync.AbstractGitSyncModule;
 import io.harness.gitsync.AbstractGitSyncSdkModule;
 import io.harness.gitsync.GitSdkConfiguration;
@@ -241,6 +242,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -427,6 +429,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerIterators(appConfig.getNgIteratorsConfig(), injector);
     registerJobs(injector);
     registerQueueListeners(injector);
+    registerNotificationTemplates(injector);
     registerPmsSdkEvents(appConfig, injector);
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);
@@ -455,6 +458,12 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     } else {
       log.info("NextGenApplication DEPLOY_VERSION is not COMMUNITY");
     }
+  }
+
+  private void registerNotificationTemplates(Injector injector) {
+    ExecutorService executorService =
+        injector.getInstance(Key.get(ExecutorService.class, Names.named("freezeTemplateRegistrationExecutorService")));
+    executorService.submit(injector.getInstance(FreezeNotificationTemplateRegistrar.class));
   }
 
   private void initializeNGMonitoring(NextGenConfiguration appConfig, Injector injector) {

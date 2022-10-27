@@ -479,4 +479,10 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
             .build();
     return ResponseDTO.newResponse(templatesResolvedPipelineResponseDTO);
   }
+
+  @Override
+  public ResponseDTO<PMSPipelineListRepoResponse> getListRepos(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return ResponseDTO.newResponse(PMSPipelineListRepoResponse.builder().build());
+  }
 }

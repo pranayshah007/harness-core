@@ -16,9 +16,7 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 
@@ -48,12 +46,7 @@ public interface SecretMigrator {
         .projectIdentifier(inputDTO.getProjectIdentifier())
         .type(SecretType.SecretText)
         .spec(SecretTextSpecDTO.builder()
-                  .secretManagerIdentifier(
-                      MigratorUtility.getIdentifierWithScope(NgEntityDetail.builder()
-                                                                 .projectIdentifier(inputDTO.getProjectIdentifier())
-                                                                 .orgIdentifier(inputDTO.getOrgIdentifier())
-                                                                 .identifier("harnessSecretManager")
-                                                                 .build()))
+                  .secretManagerIdentifier("harnessSecretManager")
                   .value(actualSecret)
                   .valueType(ValueType.Inline)
                   .build())

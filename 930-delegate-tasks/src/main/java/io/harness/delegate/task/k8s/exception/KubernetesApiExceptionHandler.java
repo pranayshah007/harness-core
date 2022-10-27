@@ -9,7 +9,7 @@ package io.harness.delegate.task.k8s.exception;
 
 import static java.lang.String.format;
 
-import io.harness.exception.FailureType;
+import io.harness.eraro.FailureType;
 import io.harness.exception.KubernetesApiTaskException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;

@@ -139,7 +139,7 @@
 1202:io.harness.context.GlobalContext
 1203:io.harness.context.GlobalContextData
 1204:java.net.SocketException
-1205:io.harness.exception.FailureType
+1205:io.harness.eraro.FailureType
 1206:io.harness.context.MdcGlobalContextData
 1207:java.util.HashMap.KeySet
 1401:io.harness.security.encryption.EncryptedRecordData
@@ -1597,7 +1597,7 @@
 21002:io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO
 21003:io.harness.delegate.beans.connector.spotconnector.SpotCredentialSpecDTO
 21004:io.harness.delegate.beans.connector.spotconnector.SpotCredentialType
-21005:io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO
+21005:io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO
 21006:io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse
 21007:io.harness.delegate.beans.connector.spotconnector.SpotTaskParams
 21008:io.harness.delegate.beans.connector.spotconnector.SpotTaskType

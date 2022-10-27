@@ -61,6 +61,13 @@ public class PhysicalDataCenterConnectorValidator implements ConnectionValidator
 
   private ConnectorValidationResult buildConnectorValidationResult(
       List<HostValidationDTO> hostValidationDTOs, long startTestingAt) {
+    if (hostValidationDTOs.isEmpty()) {
+      return ConnectorValidationResult.builder()
+          .status(ConnectivityStatus.FAILURE)
+          .errorSummary("No hosts provided")
+          .testedAt(startTestingAt)
+          .build();
+    }
     ConnectivityStatus connectivityStatus = hostValidationDTOs.stream().anyMatch(isHostValidationStatusFailed())
         ? ConnectivityStatus.FAILURE
         : ConnectivityStatus.SUCCESS;

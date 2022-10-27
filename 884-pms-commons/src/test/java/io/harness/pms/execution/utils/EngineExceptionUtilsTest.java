@@ -51,13 +51,13 @@ public class EngineExceptionUtilsTest extends CategoryTest {
                              .code(ErrorCode.INVALID_CREDENTIAL)
                              .level(Level.ERROR)
                              .message("m1")
-                             .failureTypes(EnumSet.of(io.harness.exception.FailureType.AUTHENTICATION))
+                             .failureTypes(EnumSet.of(io.harness.eraro.FailureType.AUTHENTICATION))
                              .build(),
             ResponseMessage.builder()
                 .code(ErrorCode.JIRA_ERROR)
                 .level(Level.ERROR)
                 .message("m2")
-                .failureTypes(EnumSet.of(io.harness.exception.FailureType.APPLICATION_ERROR))
+                .failureTypes(EnumSet.of(io.harness.eraro.FailureType.APPLICATION_ERROR))
                 .build()));
 
     assertThat(failureInfo).isNotNull();
@@ -76,7 +76,7 @@ public class EngineExceptionUtilsTest extends CategoryTest {
     assertThat(EngineExceptionUtils.transformToWingsFailureTypes(
                    EnumSet.of(FailureType.APPLICATION_FAILURE, FailureType.TIMEOUT_FAILURE)))
         .containsExactlyInAnyOrder(
-            io.harness.exception.FailureType.APPLICATION_ERROR, io.harness.exception.FailureType.EXPIRED);
+            io.harness.eraro.FailureType.APPLICATION_ERROR, io.harness.eraro.FailureType.EXPIRED);
   }
 
   @Test
@@ -85,8 +85,8 @@ public class EngineExceptionUtilsTest extends CategoryTest {
   public void testTransformToOrchestrationFailureTypes() {
     assertThat(EngineExceptionUtils.transformToOrchestrationFailureTypes(null)).isEmpty();
     assertThat(EngineExceptionUtils.transformToOrchestrationFailureTypes(Collections.emptySet())).isEmpty();
-    assertThat(EngineExceptionUtils.transformToOrchestrationFailureTypes(EnumSet.of(
-                   io.harness.exception.FailureType.APPLICATION_ERROR, io.harness.exception.FailureType.EXPIRED)))
+    assertThat(EngineExceptionUtils.transformToOrchestrationFailureTypes(
+                   EnumSet.of(io.harness.eraro.FailureType.APPLICATION_ERROR, io.harness.eraro.FailureType.EXPIRED)))
         .containsExactlyInAnyOrder(FailureType.APPLICATION_FAILURE, FailureType.TIMEOUT_FAILURE);
   }
 
@@ -95,7 +95,7 @@ public class EngineExceptionUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testMapToWingsFailureType() {
     for (FailureType failureType : FailureType.values()) {
-      io.harness.exception.FailureType wingsFailureType = EngineExceptionUtils.mapToWingsFailureType(failureType);
+      io.harness.eraro.FailureType wingsFailureType = EngineExceptionUtils.mapToWingsFailureType(failureType);
       assertThat(wingsFailureType).isNotNull();
     }
   }
@@ -104,7 +104,7 @@ public class EngineExceptionUtilsTest extends CategoryTest {
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void testMapToOrchestrationFailureType() {
-    for (io.harness.exception.FailureType failureType : io.harness.exception.FailureType.values()) {
+    for (io.harness.eraro.FailureType failureType : io.harness.eraro.FailureType.values()) {
       FailureType orchestrationFailureType = EngineExceptionUtils.mapToOrchestrationFailureType(failureType);
       assertThat(orchestrationFailureType).isNotNull();
     }

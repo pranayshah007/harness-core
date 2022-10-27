@@ -192,14 +192,16 @@ public class CIManagerServiceModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return MONGO;
+    return ciManagerConfiguration.getDistributedLockImplementation() == null
+        ? MONGO
+        : ciManagerConfiguration.getDistributedLockImplementation();
   }
 
   @Provides
   @Named("lock")
   @Singleton
   RedisConfig redisConfig() {
-    return ciManagerConfiguration.getEventsFrameworkConfiguration().getRedisConfig();
+    return ciManagerConfiguration.getRedisLockConfig();
   }
 
   @Override
@@ -312,7 +314,7 @@ public class CIManagerServiceModule extends AbstractModule {
     install(new STOServiceClientModule(ciManagerConfiguration.getStoServiceConfig()));
     install(new AccountClientModule(ciManagerConfiguration.getManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.toString()));
-    install(EnforcementClientModule.getInstance(ciManagerConfiguration.getManagerClientConfig(),
+    install(EnforcementClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId(),
         ciManagerConfiguration.getEnforcementClientConfiguration()));
     install(new AbstractTelemetryModule() {

@@ -18,7 +18,6 @@ import io.harness.dtos.deploymentinfo.CustomDeploymentNGDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.CustomDeploymentNGInstanceSyncPerpetualTaskParams;
-import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.InstanceSyncPerpetualTaskHandler;
 
 import com.google.inject.Inject;
@@ -35,7 +34,6 @@ import lombok.AllArgsConstructor;
 @OwnedBy(HarnessTeam.CDP)
 public class CustomDeploymentInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTaskHandler {
   public static final String OUTPUT_PATH_KEY = "INSTANCE_OUTPUT_PATH";
-  @Inject private SecretManagerClientService secretManagerClientService;
   @Override
   public PerpetualTaskExecutionBundle getExecutionBundle(InfrastructureMappingDTO infrastructureMappingDTO,
       List<DeploymentInfoDTO> deploymentInfoDTOList, InfrastructureOutcome infrastructureOutcome) {

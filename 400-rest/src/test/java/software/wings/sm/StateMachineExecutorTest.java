@@ -68,7 +68,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EventType;
 import io.harness.beans.WorkflowType;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.FailureType;
+import io.harness.eraro.FailureType;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.testlib.RealMongo;

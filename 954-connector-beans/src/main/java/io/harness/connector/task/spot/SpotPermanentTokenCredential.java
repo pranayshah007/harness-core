@@ -17,7 +17,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class SpotManualCredential {
-  String accountId;
+public class SpotPermanentTokenCredential {
+  String spotAccountId;
   String appTokenId;
 }

@@ -20,7 +20,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.pcf.ResizeStrategy.RESIZE_NEW_FIRST;
 import static io.harness.deployment.InstanceDetails.InstanceType.AWS;
-import static io.harness.exception.FailureType.TIMEOUT;
+import static io.harness.eraro.FailureType.TIMEOUT;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.state.StateConstants.DEFAULT_STEADY_STATE_TIMEOUT;

@@ -22,12 +22,12 @@ import lombok.Value;
 
 @Value
 @Builder
-@JsonTypeName(SpotConstants.MANUAL_CONFIG)
-@ApiModel("SpotManualConfigSpec")
-@OneOfField(fields = {"accountId", "accountIdRef"})
-@Schema(name = "SpotManualConfigSpec", description = "This contains Spot manual credentials connector spec")
-public class SpotManualConfigSpecDTO implements SpotCredentialSpecDTO, DecryptableEntity {
-  String accountId;
-  @ApiModelProperty(dataType = "string") @SecretReference SecretRefData accountIdRef;
+@JsonTypeName(SpotConstants.PERMANENT_TOKEN_CONFIG)
+@ApiModel("SpotPermanentTokenConfigSpec")
+@OneOfField(fields = {"spotAccountId", "spotAccountIdRef"})
+@Schema(name = "SpotPermanentTokenConfigSpec", description = "This contains Spot permanent token connector spec")
+public class SpotPermanentTokenConfigSpecDTO implements SpotCredentialSpecDTO, DecryptableEntity {
+  String spotAccountId;
+  @ApiModelProperty(dataType = "string") @SecretReference SecretRefData spotAccountIdRef;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData apiTokenRef;
 }
