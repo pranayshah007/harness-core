@@ -7,7 +7,6 @@
 
 package io.harness.ci.enforcement;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.execution.CIAccountExecutionMetadata;
@@ -15,6 +14,7 @@ import io.harness.enforcement.beans.metadata.RateLimitRestrictionMetadataDTO;
 import io.harness.enforcement.client.usage.RestrictionUsageInterface;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
 
+import com.google.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -35,7 +35,6 @@ public class BuildsPerDayRestrictionUsageImpl implements RestrictionUsageInterfa
     LocalDate startDate = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate();
     YearMonth yearMonth = YearMonth.of(startDate.getYear(), startDate.getMonth());
     String day = yearMonth + "-" + startDate.getDayOfMonth();
-    return accountExecutionMetadata.get().getAccountExecutionInfo().getCountPerDay().getOrDefault(
-            day, 0L);
+    return accountExecutionMetadata.get().getAccountExecutionInfo().getCountPerDay().getOrDefault(day, 0L);
   }
 }

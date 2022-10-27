@@ -25,7 +25,6 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -98,24 +97,24 @@ public class CIAccountExecutionMetadataRepositoryCustomImpl implements CIAccount
     Criteria criteria = Criteria.where(CIAccountExecutionMetadataKeys.accountId).is(accountId);
     Query query = new Query(criteria);
     // Since there can be parallel executions for a given account, update after taking a lock
-    try (
-            AcquiredLock<?> lock = persistentLocker.tryToAcquireLock(LOCK_NAME_PREFIX_DAILY + accountId, Duration.ofMinutes(2))) {
+    try (AcquiredLock<?> lock =
+             persistentLocker.tryToAcquireLock(LOCK_NAME_PREFIX_DAILY + accountId, Duration.ofMinutes(2))) {
       if (lock == null) {
         throw new InvalidRequestException("Could not acquire lock");
       }
       CIAccountExecutionMetadata accountExecutionMetadata =
-              mongoTemplate.findOne(query, CIAccountExecutionMetadata.class);
+          mongoTemplate.findOne(query, CIAccountExecutionMetadata.class);
       // If there is no entry, then create an entry in the db for the given account
       LocalDate startDate = Instant.ofEpochMilli(startTS).atZone(ZoneId.systemDefault()).toLocalDate();
       if (accountExecutionMetadata == null) {
         Map<String, Long> countPerDay = new HashMap<>();
         countPerDay.put(YearMonth.of(startDate.getYear(), startDate.getMonth()) + "-" + startDate.getDayOfMonth(), 1L);
         CIAccountExecutionMetadata newAccountExecutionMetadata =
-                CIAccountExecutionMetadata.builder()
-                        .accountId(accountId)
-                        .executionCount(1L)
-                        .accountExecutionInfo(AccountExecutionInfo.builder().countPerDay(countPerDay).build())
-                        .build();
+            CIAccountExecutionMetadata.builder()
+                .accountId(accountId)
+                .executionCount(1L)
+                .accountExecutionInfo(AccountExecutionInfo.builder().countPerDay(countPerDay).build())
+                .build();
         mongoTemplate.save(newAccountExecutionMetadata);
         return;
       }
@@ -130,10 +129,10 @@ public class CIAccountExecutionMetadataRepositoryCustomImpl implements CIAccount
       Long countOfDay;
       if (accountExecutionInfo.getCountPerDay() != null) {
         countOfDay = accountExecutionInfo.getCountPerDay().getOrDefault(
-                YearMonth.of(startDate.getYear(), startDate.getMonth()).toString(), 0L);
+            YearMonth.of(startDate.getYear(), startDate.getMonth()).toString(), 0L);
         countOfDay = countOfDay + 1;
         accountExecutionInfo.getCountPerDay().put(
-                YearMonth.of(startDate.getYear(), startDate.getMonth()) + "-" + startDate.getDayOfMonth(), countOfDay);
+            YearMonth.of(startDate.getYear(), startDate.getMonth()) + "-" + startDate.getDayOfMonth(), countOfDay);
         accountExecutionMetadata.setAccountExecutionInfo(accountExecutionInfo);
       } else {
         Map<String, Long> countPerDay = new HashMap<>();

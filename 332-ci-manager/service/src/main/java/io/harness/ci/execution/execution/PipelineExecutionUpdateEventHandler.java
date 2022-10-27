@@ -74,6 +74,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
 
   private final int MAX_ATTEMPTS = 3;
   private final int WAIT_TIME_IN_SECOND = 30;
+  private final String SERVICE_NAME_CI = "ci";
   @Inject @Named("ciEventHandlerExecutor") private ExecutorService executorService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
@@ -82,24 +83,20 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     Ambiance ambiance = event.getAmbiance();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
-    PipelineModuleInfo moduleInfo = event.getModuleInfo();
+    String serviceName = event.getServiceName();
     Long endTs = event.getEndTs();
     Status status = event.getStatus();
     executorService.submit(() -> {
-      updateDailyBuildCount(level, status, moduleInfo, accountId, endTs);
+      updateDailyBuildCount(level, status, serviceName, accountId, endTs);
       sendGitStatus(level, ambiance, status, event, accountId);
       sendCleanupRequest(level, ambiance, status, accountId);
     });
   }
 
-  private void updateDailyBuildCount(Level level, Status status, PipelineModuleInfo moduleInfo, String accountId, Long endTs) {
-    if (level != null && level.getStepType().getStepCategory() == StepCategory.STAGE && isFinalStatus(status)) {
-      if (moduleInfo instanceof CIPipelineModuleInfo) {
-        CIPipelineModuleInfo ciModuleInfo = (CIPipelineModuleInfo) moduleInfo;
-        if (ciModuleInfo.getIsPrivateRepo()) {
-          ciAccountExecutionMetadataRepository.updateCIDailyBuilds(accountId, endTs);
-        }
-      }
+  private void updateDailyBuildCount(Level level, Status status, String serviceName, String accountId, Long endTs) {
+    if (level != null && serviceName.equalsIgnoreCase(SERVICE_NAME_CI)
+        && level.getStepType().getStepCategory() == StepCategory.STAGE && isFinalStatus(status)) {
+      ciAccountExecutionMetadataRepository.updateCIDailyBuilds(accountId, endTs);
     }
   }
 
