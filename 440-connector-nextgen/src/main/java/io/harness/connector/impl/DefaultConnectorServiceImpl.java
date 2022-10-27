@@ -263,6 +263,9 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     if(!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
             Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
       connectors = getPermitted(connectors);
+      if (isEmpty(connectors)) {
+        return Page.empty();
+      }
     }
     populateInFilter(criteria, ConnectorKeys.identifier, connectors.stream().map(Connector::getIdentifier).collect(toList()));
     Pageable pageable = getPageRequest(
@@ -457,6 +460,9 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     if(!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
             Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
       connectors = getPermitted(connectors);
+      if (isEmpty(connectors)) {
+        return Page.empty();
+      }
     }
     populateInFilter(criteria, ConnectorKeys.identifier, connectors.stream().map(Connector::getIdentifier).collect(toList()));
     Pageable pageable = getPageRequest(
