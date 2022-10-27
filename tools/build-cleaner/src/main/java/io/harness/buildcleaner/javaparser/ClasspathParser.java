@@ -20,12 +20,14 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.resolution.UnsolvedSymbolException;
 import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -65,6 +67,18 @@ public class ClasspathParser {
 
   public Set<ClassMetadata> getFullyQualifiedClassNames() {
     return classMetadatas;
+  }
+
+  public void parseClasses(File directory, Set<String> assumedPackagePrefixesWithBuildFile) throws IOException {
+    File[] files = directory.listFiles();
+    if (files.length == 0) {
+      return;
+    }
+    Arrays.stream(files).forEach(file -> {
+      if (file.toPath().toString().endsWith(".java")) {
+        parseFileGatherDependencies(file.toPath(), assumedPackagePrefixesWithBuildFile);
+      }
+    });
   }
 
   public void parseClasses(String srcs, Set<String> assumedPackagePrefixesWithBuildFile) throws IOException {

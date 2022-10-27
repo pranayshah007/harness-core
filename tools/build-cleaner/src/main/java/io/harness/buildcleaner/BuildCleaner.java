@@ -18,15 +18,21 @@ import io.harness.buildcleaner.proto.ProtoBuildMapper;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -43,6 +49,7 @@ import org.slf4j.LoggerFactory;
 
 public class BuildCleaner {
   private static final String DEFAULT_VISIBILITY = "//visibility:public";
+  private static final String BUILD_CLEANER_LAST_UPDATED = ".build-cleaner-time";
   private static final String BUILD_CLEANER_INDEX_FILE_NAME = ".build-cleaner-index";
   private static final String DEFAULT_JAVA_LIBRARY_NAME = "module";
 
@@ -116,6 +123,74 @@ public class BuildCleaner {
           }
         });
   }
+  /**
+   * Returns last modified date of the directory
+   */
+  @VisibleForTesting
+  protected Date getLastModified(File directory) {
+    File[] files = directory.listFiles();
+    if (files.length == 0)
+      return new Date(directory.lastModified());
+    Optional<File> maxFile =
+        Arrays.stream(files).max((i, j) -> Long.valueOf(i.lastModified()).compareTo(j.lastModified()));
+    return new Date(maxFile.get().lastModified());
+  }
+
+  /**
+   * Updates the time in BUILD_CLEANER_LAST_UPDATED
+   * @throws FileNotFoundException
+   */
+  @VisibleForTesting
+  public void updateLastRunTime() throws FileNotFoundException {
+    try (FileOutputStream fos = new FileOutputStream(workspace().resolve(BUILD_CLEANER_LAST_UPDATED).toString());
+         ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+      oos.writeLong(Instant.now().getEpochSecond());
+      oos.flush();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  /**
+   * Reads and returns the time from BUILD_CLEANER_LAST_UPDATED
+   */
+  @VisibleForTesting
+  protected long getLastRunTime() {
+    try (FileInputStream fos = new FileInputStream(workspace().resolve(BUILD_CLEANER_LAST_UPDATED).toString());
+         ObjectInputStream oos = new ObjectInputStream(fos)) {
+      logger.info("Updating the build cleaner run time", Instant.now().getEpochSecond());
+      return oos.readLong();
+    } catch (IOException e) {
+      return Long.valueOf(Integer.MIN_VALUE);
+    }
+  }
+
+  /**
+   * Updates the indexes of changed files since the last run
+   * @throws IOException
+   */
+  @VisibleForTesting
+  protected SymbolDependencyMap updateSymbolDependencies(SymbolDependencyMap harnessSymbolMap) throws IOException {
+    Date lastModified = Date.from(Instant.ofEpochSecond(getLastRunTime()));
+    Files.find(workspace(), Integer.MAX_VALUE, (filePath, fileAttr) -> fileAttr.isDirectory()).forEach(path -> {
+      File directory = new File(path.toString());
+      if (getLastModified(directory).after(lastModified)) {
+        try {
+          ClasspathParser classpathParser = packageParser.getClassPathParser();
+          classpathParser.parseClasses(directory, assumedPackagePrefixesWithBuildFile());
+
+          // Update symbol dependency map with the parsed java code.
+          Set<ClassMetadata> fullyQualifiedClassNames = classpathParser.getFullyQualifiedClassNames();
+          for (ClassMetadata metadata : fullyQualifiedClassNames) {
+            harnessSymbolMap.addSymbolTarget(metadata.getFullyQualifiedClassName(), metadata.getBuildModulePath());
+          }
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+    });
+    return harnessSymbolMap;
+  }
 
   /**
    * Creates symbol to package path index using package parser. If an index file already exists, directly
@@ -127,7 +202,9 @@ public class BuildCleaner {
   protected SymbolDependencyMap buildHarnessSymbolMap() throws IOException, ClassNotFoundException {
     if (indexFileExists() && !options.hasOption("overrideIndex")) {
       logger.info("Loading the already existing index file: " + indexFilePath().toString());
-      return SymbolDependencyMap.deserializeFromFile(indexFilePath().toString());
+      SymbolDependencyMap harnessSymbolMap = SymbolDependencyMap.deserializeFromFile(indexFilePath().toString());
+      updateSymbolDependencies(harnessSymbolMap);
+      return harnessSymbolMap;
     }
     logger.info("Creating index using sources matching: " + indexSourceGlob());
 
