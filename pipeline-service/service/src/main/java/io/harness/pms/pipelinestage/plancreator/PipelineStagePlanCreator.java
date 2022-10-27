@@ -7,7 +7,6 @@
 
 package io.harness.pms.pipelinestage.plancreator;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -37,6 +36,7 @@ import io.harness.steps.pipelinestage.PipelineStageConfig;
 import io.harness.steps.pipelinestage.PipelineStageNode;
 import io.harness.when.utils.RunInfoUtils;
 
+import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
