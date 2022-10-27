@@ -16,6 +16,7 @@ import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.SecretFilter;
+import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.encryption.EncryptionType;
@@ -48,19 +49,17 @@ public class SecretsImportService implements ImportService {
       switch (filter.getImportType()) {
         case ALL:
           // Note: All here means all the connectors we support today
-          List<String> secretManagerIds =
-              secretManager.listSecretManagers(accountId)
-                  .stream()
-                  .filter(secretManagerConfig -> {
-                    EncryptionType type = secretManagerConfig.getEncryptionType();
-                    if (SUPPORTED_SECRET_MANAGERS.contains(type)) {
-                      return true;
-                    }
-                    return EncryptionType.GCP_KMS.equals(type)
-                        && "Harness Secrets Manager".equals(secretManagerConfig.getName().trim());
-                  })
-                  .map(SecretManagerConfig::getUuid)
-                  .collect(Collectors.toList());
+          List<String> secretManagerIds = secretManager.listSecretManagers(accountId)
+                                              .stream()
+                                              .filter(secretManagerConfig -> {
+                                                EncryptionType type = secretManagerConfig.getEncryptionType();
+                                                if (SUPPORTED_SECRET_MANAGERS.contains(type)) {
+                                                  return true;
+                                                }
+                                                return SecretFactory.isHarnessSecretManager(secretManagerConfig);
+                                              })
+                                              .map(SecretManagerConfig::getUuid)
+                                              .collect(Collectors.toList());
           List<EncryptedData> encryptedDataList =
               secretManager
                   .listSecrets(accountId,

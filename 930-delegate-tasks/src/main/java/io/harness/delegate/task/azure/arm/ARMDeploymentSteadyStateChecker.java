@@ -33,7 +33,7 @@ import io.harness.azure.model.blueprint.assignment.operation.AssignmentOperation
 import io.harness.azure.model.blueprint.assignment.operation.AzureResourceManagerError;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentBlueprintSteadyStateContext;
-import io.harness.exception.FailureType;
+import io.harness.eraro.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.AzureARMTaskException;
 import io.harness.exception.runtime.azure.AzureARMDeploymentException;

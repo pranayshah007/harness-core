@@ -265,19 +265,6 @@ public class AnalysisServiceImpl implements AnalysisService {
   }
 
   @Override
-  public List<LogMLFeedbackRecord> getMLFeedback(String accountId, String workflowId) {
-    List<LogMLFeedbackRecord> feedbackRecords = null;
-    if (accountResource.isFeatureEnabled(FeatureName.GLOBAL_CV_DASH.name(), accountId).getResource()) {
-      PageRequest<LogMLFeedbackRecord> feedbackPageRequest = PageRequestBuilder.aPageRequest()
-                                                                 .withLimit(UNLIMITED)
-                                                                 .addFilter("workflowId", Operator.EQ, workflowId)
-                                                                 .build();
-      feedbackRecords = dataStoreService.list(LogMLFeedbackRecord.class, feedbackPageRequest);
-    }
-    return feedbackRecords;
-  }
-
-  @Override
   public boolean saveFeedback(LogMLFeedback feedback, StateType stateType) {
     if (!isEmpty(feedback.getLogMLFeedbackId())) {
       deleteFeedbackHelper(feedback.getLogMLFeedbackId());

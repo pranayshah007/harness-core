@@ -9,7 +9,7 @@ package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
-import static io.harness.exception.FailureType.TIMEOUT;
+import static io.harness.eraro.FailureType.TIMEOUT;
 
 import static software.wings.sm.StateExecutionData.StateExecutionDataBuilder.aStateExecutionData;
 

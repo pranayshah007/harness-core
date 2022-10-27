@@ -70,10 +70,12 @@ public class PipelineDashboardServiceImpl implements PipelineDashboardService {
 
   public String selectTableFromModuleInfo(String moduleInfo) {
     String tableName = tableName_default;
-    if (moduleInfo.equalsIgnoreCase("CI")) {
-      tableName = CI_TableName;
-    } else if (moduleInfo.equalsIgnoreCase("CD")) {
-      tableName = CD_TableName;
+    if (moduleInfo != null) {
+      if (moduleInfo.equalsIgnoreCase("CI")) {
+        tableName = CI_TableName;
+      } else if (moduleInfo.equalsIgnoreCase("CD")) {
+        tableName = CD_TableName;
+      }
     }
     return tableName;
   }

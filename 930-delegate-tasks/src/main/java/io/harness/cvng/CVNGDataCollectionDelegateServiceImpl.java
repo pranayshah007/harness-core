@@ -115,10 +115,21 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
         log.info("Returning DSL result of length : " + response.length());
         return response;
       } catch (Exception exception) {
-        String errorMessage = exception.getMessage();
+        String errorMessage = parseDSLExceptionMessage(exception.getMessage());
         log.error(errorMessage);
         throw new DataCollectionException(errorMessage);
       }
     }
+  }
+
+  private String parseDSLExceptionMessage(String message) {
+    String[] dslExceptionMsgs = new String[] {"io.harness.datacollection.exception.DataCollectionDSLException:",
+        "io.harness.datacollection.exception.DataCollectionException:",
+        "io.harness.datacollection.exception.DataCollectionRuntimeException:",
+        "io.harness.datacollection.exception.RateLimitExceededException:"};
+    for (String exceptionMsg : dslExceptionMsgs) {
+      message.replace(exceptionMsg, "");
+    }
+    return message.stripTrailing();
   }
 }

@@ -1576,6 +1576,19 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Set<String> getFeatureFlagEnabledAccountIds(String featureFlagName) {
+    FeatureName featureName;
+    try {
+      featureName = FeatureName.valueOf(featureFlagName);
+    } catch (IllegalArgumentException ex) {
+      String errMsg = String.format("Invalid feature flag name received: %s", featureFlagName);
+      log.error(errMsg, ex);
+      throw new InvalidRequestException(errMsg);
+    }
+    return featureFlagService.getAccountIds(featureName);
+  }
+
+  @Override
   public List<Service> getServicesBreadCrumb(String accountId, User user) {
     PageRequest<String> request = aPageRequest().withOffset("0").withLimit(UNLIMITED_PAGE_SIZE).build();
     PageResponse<CVEnabledService> response = getServices(accountId, user, request, null);

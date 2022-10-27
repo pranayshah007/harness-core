@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.network.Http;
 
 import software.wings.beans.artifact.ArtifactMetadataKeys;
@@ -72,8 +73,12 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
 
     try {
       projectResponse = azureArtifactsDevopsRestClient.listProjects(authHeader).execute();
-    } catch (IOException e) {
-      throw new HintException("Connector test connection failed.");
+    } catch (Exception e) {
+      throw new InvalidRequestException("Azure Artifacts Connector test failed");
+    }
+
+    if (projectResponse.code() != 200) {
+      throw new InvalidRequestException("Azure Artifacts Connector test failed");
     }
 
     return true;

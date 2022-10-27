@@ -559,7 +559,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       isEntityReferenced =
           execute(entitySetupUsageClient.isEntityReferenced(accountId, referredEntityFQN, EntityType.TEMPLATE));
     } catch (Exception ex) {
-      log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception",
+      log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception.",
           templateId, ex);
       throw new UnexpectedException(
           String.format("Error while checking references for template %s with version label: %s : %s", templateId,

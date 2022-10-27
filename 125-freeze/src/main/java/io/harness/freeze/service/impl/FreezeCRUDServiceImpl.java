@@ -23,6 +23,7 @@ import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeCRUDService;
 import io.harness.freeze.service.FreezeSchemaService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.repositories.FreezeConfigRepository;
 
 import com.google.inject.Inject;
@@ -299,13 +300,15 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   }
 
   private String createGlobalFreezeConfigYaml() {
-    FreezeConfig freezeConfig = FreezeConfig.builder()
-                                    .freezeInfoConfig(FreezeInfoConfig.builder()
-                                                          .identifier("_GLOBAL_")
-                                                          .name("Global Freeze")
-                                                          .status(FreezeStatus.DISABLED)
-                                                          .build())
-                                    .build();
+    FreezeConfig freezeConfig =
+        FreezeConfig.builder()
+            .freezeInfoConfig(FreezeInfoConfig.builder()
+                                  .identifier("_GLOBAL_")
+                                  .name("Global Freeze")
+                                  .description(ParameterField.<String>builder().value("Descrito").build())
+                                  .status(FreezeStatus.DISABLED)
+                                  .build())
+            .build();
     return NGFreezeDtoMapper.toYaml(freezeConfig);
   }
 

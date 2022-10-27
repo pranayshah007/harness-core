@@ -14,6 +14,7 @@ import static java.util.stream.Collectors.joining;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
+import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.runtime.HashiCorpVaultRuntimeException;

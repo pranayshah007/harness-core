@@ -193,6 +193,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -237,7 +238,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.math3.util.Precision;
 import org.apache.http.client.utils.URIBuilder;
 import org.asynchttpclient.AsyncHttpClient;
 import org.atmosphere.wasync.Client;
@@ -1087,6 +1087,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.warn(
           "Unable to check/start delegate profile, shouldContactManager :{}, currently executing profile :{}, isLocked :{}, frozen :{}.",
           shouldContactManager(), executingProfile.get(), isLocked(new File("profile")), frozen.get());
+      File profileLock = new File("profile.lock");
+      if (profileLock.lastModified() > TimeUnit.MINUTES.toMillis(10)) {
+        releaseLock(profileLock);
+      }
     }
   }
 
@@ -1869,8 +1873,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     builder.put("maxExecutingFuturesCount", Integer.toString(maxExecutingFuturesCount.getAndSet(0)));
 
     OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
-    builder.put("cpu-process", Double.toString(Precision.round(osBean.getProcessCpuLoad() * 100, 2)));
-    builder.put("cpu-system", Double.toString(Precision.round(osBean.getSystemCpuLoad() * 100, 2)));
+    builder.put("cpu-process",
+        BigDecimal.valueOf(osBean.getProcessCpuLoad() * 100).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
+    builder.put("cpu-system",
+        BigDecimal.valueOf(osBean.getSystemCpuLoad() * 100).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
 
     for (Entry<String, ThreadPoolExecutor> executorEntry : getLogExecutors().entrySet()) {
       builder.put(executorEntry.getKey(), Integer.toString(executorEntry.getValue().getActiveCount()));
