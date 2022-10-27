@@ -390,7 +390,8 @@ public enum TaskType {
   SHELL_SCRIPT_PROVISION(TaskGroup.SHELL_SCRIPT_PROVISION_NG, "Shell Script Provision Task"),
   ECS_GIT_FETCH_RUN_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Run Task"),
   TRIGGER_AUTHENTICATION_TASK(TaskGroup.TRIGGER),
-  SPOT_TASK_NG(TaskGroup.SPOTINST, "Spot NG Task");
+  SPOT_TASK_NG(TaskGroup.SPOTINST, "Spot NG Task"),
+  NOOP_TASK_CLEANUP_POV(TaskGroup.CUSTOM, "Noop Task Cleanup POV");
 
   private final TaskGroup taskGroup;
   private final String displayName;

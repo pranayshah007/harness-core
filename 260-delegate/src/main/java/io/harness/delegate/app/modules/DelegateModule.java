@@ -340,6 +340,7 @@ import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terraform.TerraformBaseHelperImpl;
 import io.harness.delegate.task.terraform.TerraformTaskNG;
+import io.harness.delegate.task.terraform.cleanup.NoopTaskCleanupPOV;
 import io.harness.delegate.task.terraform.handlers.TerraformAbstractTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformApplyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformDestroyTaskHandler;
@@ -1921,6 +1922,7 @@ public class DelegateModule extends AbstractModule {
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
     mapBinder.addBinding(TaskType.AZURE_NG_ARM).toInstance(AzureResourceCreationTaskNG.class);
     mapBinder.addBinding(TaskType.SHELL_SCRIPT_PROVISION).toInstance(ShellScriptProvisionTaskNG.class);
+    mapBinder.addBinding(TaskType.NOOP_TASK_CLEANUP_POV).toInstance(NoopTaskCleanupPOV.class);
   }
 
   private void registerSecretManagementBindings() {

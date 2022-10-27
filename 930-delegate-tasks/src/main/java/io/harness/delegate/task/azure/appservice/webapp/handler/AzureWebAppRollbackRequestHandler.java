@@ -118,10 +118,13 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
     log.info("Rollback using package artifact");
     AzureWebClientContext azureWebClientContext =
         buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
-    AzureAppServicePackageDeploymentContext deploymentContext =
-        toAzureAppServicePackageDeploymentContext(taskRequest, azureWebClientContext, logCallbackProvider);
+    try (AutoCloseableWorkingDirectory autoCloseableWorkingDirectory =
+             new AutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_APP_SVC_ARTIFACT_DOWNLOAD_DIR_PATH)) {
+      AzureAppServicePackageDeploymentContext deploymentContext = toAzureAppServicePackageDeploymentContext(
+          taskRequest, azureWebClientContext, logCallbackProvider, autoCloseableWorkingDirectory);
 
-    performRollback(logCallbackProvider, taskRequest, azureWebClientContext, deploymentContext, azureConfig);
+      performRollback(logCallbackProvider, taskRequest, azureWebClientContext, deploymentContext, azureConfig);
+    }
 
     List<AzureAppDeploymentData> azureAppDeploymentData =
         getAppServiceDeploymentData(taskRequest, azureWebClientContext);

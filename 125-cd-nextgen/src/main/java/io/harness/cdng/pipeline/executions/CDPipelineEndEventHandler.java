@@ -7,20 +7,33 @@
 
 package io.harness.cdng.pipeline.executions;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
+
 import io.harness.account.services.AccountService;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.pipeline.executions.pov.TaskCleanupNotifyCallback;
 import io.harness.cdng.pipeline.helpers.CDPipelineInstrumentationHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
+import io.harness.delegate.task.terraform.cleanup.NoopTaskCleanupParameters;
 import io.harness.dtos.InstanceDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.repositories.executions.CDAccountExecutionMetadataRepository;
+import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.waiter.WaitNotifyEngine;
 
+import software.wings.beans.TaskType;
+
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,6 +46,9 @@ public class CDPipelineEndEventHandler implements OrchestrationEventHandler {
   @Inject private CDFeatureFlagHelper featureFlagHelper;
   @Inject AccountService accountService;
 
+  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject private WaitNotifyEngine waitNotifyEngine;
+
   @Override
   public void handleEvent(OrchestrationEvent event) {
     Ambiance ambiance = event.getAmbiance();
@@ -44,6 +60,7 @@ public class CDPipelineEndEventHandler implements OrchestrationEventHandler {
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
     String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
     String identity = ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getExtraInfoMap().get("email");
+    testTaskNoResponse(ambiance);
 
     try {
       if (featureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.EXPORT_TF_PLAN_JSON_NG)) {
@@ -69,5 +86,23 @@ public class CDPipelineEndEventHandler implements OrchestrationEventHandler {
 
     cdPipelineInstrumentationHelper.sendCountOfDistinctActiveServicesEvent(
         pipelineId, identity, accountId, accountName, orgId, projectId, serviceInstances);
+  }
+
+  private void testTaskNoResponse(Ambiance ambiance) {
+    String cleanupUuid = generateUuid();
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .taskParameters(NoopTaskCleanupParameters.builder().dummyUuid(cleanupUuid).build())
+            .taskType(TaskType.NOOP_TASK_CLEANUP_POV.name())
+            .executionTimeout(Duration.ofMinutes(10))
+            .taskSetupAbstraction("ng", "true")
+            .logStreamingAbstractions(
+                new LinkedHashMap<>(ImmutableMap.of("accountId", AmbianceUtils.getAccountId(ambiance))))
+            .build();
+
+    String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+    log.info("Task Successfully queued with taskId: {}", taskId);
+    waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION, new TaskCleanupNotifyCallback(), taskId);
   }
 }
