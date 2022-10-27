@@ -1,10 +1,6 @@
 package io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.aws;
 
-import static software.wings.beans.SettingAttribute.SettingCategory.CE_CONNECTOR;
-import static software.wings.settings.SettingVariableTypes.CE_AWS;
-
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
-import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.ccm.setup.CECloudAccountDao;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorInfoDTO;
@@ -14,8 +10,6 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 
 import software.wings.beans.AwsCrossAccountAttributes;
-import software.wings.beans.SettingAttribute;
-import software.wings.beans.ce.CEAwsConfig;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import java.util.Arrays;
@@ -25,7 +19,6 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
 @Component
 @Slf4j
