@@ -20,9 +20,9 @@ import org.springframework.data.mongodb.core.query.Update;
 public interface PmsExecutionSummaryService {
   void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions);
   void update(String planExecutionId, Update update);
-  void updateStageOfIdentityType(String planExecutionId, Update update);
-  void addStageNodeInGraphIfUnderStrategy(String planExecutionId, NodeExecution nodeExecution, Update update);
-  void updateStrategyNode(String planExecutionId, NodeExecution nodeExecution, Update update);
+  boolean updateStageOfIdentityType(String planExecutionId, Update update);
+  boolean addStageNodeInGraphIfUnderStrategy(String planExecutionId, NodeExecution nodeExecution, Update update);
+  boolean updateStrategyNode(String planExecutionId, NodeExecution nodeExecution, Update update);
   Optional<PipelineExecutionSummaryEntity> getPipelineExecutionSummary(
       String accountId, String orgId, String projectId, String planExecutionId);
 }

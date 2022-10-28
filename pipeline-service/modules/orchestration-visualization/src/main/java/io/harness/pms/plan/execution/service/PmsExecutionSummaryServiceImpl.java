@@ -7,8 +7,6 @@
 
 package io.harness.pms.plan.execution.service;
 
-import static io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrency.ConcurrentChildInstance;
@@ -24,6 +22,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
@@ -50,7 +49,8 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
    * Updates all the fields in the stage graph from nodeExecutions.
    * @param planExecutionId
    */
-  public void updateStageOfIdentityType(String planExecutionId, Update update) {
+  public boolean updateStageOfIdentityType(String planExecutionId, Update update) {
+    boolean updateApplied = false;
     List<NodeExecution> nodeExecutions =
         nodeExecutionService.fetchStageExecutionsWithEndTsAndStatusProjection(planExecutionId);
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = null;
@@ -66,6 +66,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + graphNodeId + ".status",
             ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()));
         update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + graphNodeId + ".endTs", nodeExecution.getEndTs());
+        updateApplied = true;
       } else {
         if (!AmbianceUtils.isCurrentStrategyLevelAtStage(nodeExecution.getAmbiance())) {
           continue;
@@ -96,7 +97,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
                  .get(nodeExecution.getNodeId())
                  .getNodeType()
                  .equals(StrategyType.PARALLELISM.name())) {
-          updateStrategyNodeFields(nodeExecution, update, true);
+          updateApplied = updateApplied || updateStrategyNodeFields(nodeExecution, update, true);
         }
 
         String stageSetupId = getStageSetupId(childrenNodeExecution, graphLayoutNode, nodeExecution);
@@ -106,12 +107,15 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
                    .getEdgeLayoutList()
                    .getCurrentNodeChildren()
                    .contains(childNodeExecution.getUuid())) {
-            addStageIdentityNodeInGraphIfUnderStrategy(planExecutionId, childNodeExecution, update,
-                graphLayoutNode.get(stageSetupId), nodeExecution.getNodeId(), stageSetupId);
+            updateApplied = updateApplied
+                || addStageIdentityNodeInGraphIfUnderStrategy(planExecutionId, childNodeExecution, update,
+                    graphLayoutNode.get(stageSetupId), nodeExecution.getNodeId(), stageSetupId);
           }
         }
       }
     }
+
+    return updateApplied;
   }
 
   @Override
@@ -127,68 +131,72 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   }
 
   @Override
-  public void addStageNodeInGraphIfUnderStrategy(
+  public boolean addStageNodeInGraphIfUnderStrategy(
       String planExecutionId, NodeExecution nodeExecution, Update summaryUpdate) {
-    if (OrchestrationUtils.isStageNode(nodeExecution)
-        && AmbianceUtils.getStrategyLevelFromAmbiance(nodeExecution.getAmbiance()).isPresent()
-        && nodeExecution.getNode().getNodeType() != NodeType.IDENTITY_PLAN_NODE) {
-      String stageSetupId = nodeExecution.getNodeId();
-      Update update = new Update();
-      Ambiance ambiance = nodeExecution.getAmbiance();
-      Optional<PipelineExecutionSummaryEntity> entity =
-          getPipelineExecutionSummary(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-              AmbianceUtils.getProjectIdentifier(ambiance), planExecutionId);
-      if (!entity.isPresent()) {
-        return;
-      }
-      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = entity.get();
-      Map<String, GraphLayoutNodeDTO> graphLayoutNodeDTOMap = pipelineExecutionSummaryEntity.getLayoutNodeMap();
-      if (graphLayoutNodeDTOMap.containsKey(nodeExecution.getUuid())
-          && graphLayoutNodeDTOMap.get(nodeExecution.getUuid()).getNodeExecutionId() != null) {
-        return;
-      }
-      GraphLayoutNodeDTO graphLayoutNodeDTO = graphLayoutNodeDTOMap.get(stageSetupId);
-      cloneGraphLayoutNodeDtoWithModifications(graphLayoutNodeDTO, nodeExecution, update);
-      String strategyNodeId = AmbianceUtils.getStrategyLevelFromAmbiance(ambiance).get().getSetupId();
-      update.addToSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId
-              + ".edgeLayoutList.currentNodeChildren",
-          nodeExecution.getUuid());
-      summaryUpdate.pull(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId
-              + ".edgeLayoutList.currentNodeChildren",
-          stageSetupId);
-      summaryUpdate.set(
-          PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageSetupId + ".hidden", true);
-      update(planExecutionId, update);
+    if (!OrchestrationUtils.isStageNode(nodeExecution)
+        || AmbianceUtils.getStrategyLevelFromAmbiance(nodeExecution.getAmbiance()).isEmpty()
+        || nodeExecution.getNode().getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
+      return false;
     }
+
+    String stageSetupId = nodeExecution.getNodeId();
+    Update update = new Update();
+    Ambiance ambiance = nodeExecution.getAmbiance();
+    Optional<PipelineExecutionSummaryEntity> entity = getPipelineExecutionSummary(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), planExecutionId);
+    if (!entity.isPresent()) {
+      return false;
+    }
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = entity.get();
+    Map<String, GraphLayoutNodeDTO> graphLayoutNodeDTOMap = pipelineExecutionSummaryEntity.getLayoutNodeMap();
+    if (graphLayoutNodeDTOMap.containsKey(nodeExecution.getUuid())
+        && graphLayoutNodeDTOMap.get(nodeExecution.getUuid()).getNodeExecutionId() != null) {
+      return false;
+    }
+    GraphLayoutNodeDTO graphLayoutNodeDTO = graphLayoutNodeDTOMap.get(stageSetupId);
+    cloneGraphLayoutNodeDtoWithModifications(graphLayoutNodeDTO, nodeExecution, update);
+    String strategyNodeId = AmbianceUtils.getStrategyLevelFromAmbiance(ambiance).get().getSetupId();
+    update.addToSet(
+        PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId + ".edgeLayoutList.currentNodeChildren",
+        nodeExecution.getUuid());
+    summaryUpdate.pull(
+        PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId + ".edgeLayoutList.currentNodeChildren",
+        stageSetupId);
+    summaryUpdate.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageSetupId + ".hidden", true);
+    update(planExecutionId, update);
+    return true;
   }
 
   @Override
-  public void updateStrategyNode(String planExecutionId, NodeExecution nodeExecution, Update update) {
+  public boolean updateStrategyNode(String planExecutionId, NodeExecution nodeExecution, Update update) {
     if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY
         && AmbianceUtils.isCurrentStrategyLevelAtStage(nodeExecution.getAmbiance())
         && nodeExecution.getNode().getNodeType() != NodeType.IDENTITY_PLAN_NODE) {
       updateStrategyNodeFields(nodeExecution, update, false);
+      return true;
     }
+
+    return false;
   }
 
   @VisibleForTesting
-  void updateStrategyNodeFields(NodeExecution nodeExecution, Update update, boolean isStrategyTypeAlreadyChecked) {
+  boolean updateStrategyNodeFields(NodeExecution nodeExecution, Update update, boolean isStrategyTypeAlreadyChecked) {
     ConcurrentChildInstance concurrentChildInstance =
         pmsGraphStepDetailsService.fetchConcurrentChildInstance(nodeExecution.getUuid());
-    if (concurrentChildInstance != null) {
-      if (!nodeExecution.getExecutableResponses().isEmpty()) {
-        if (isStrategyTypeAlreadyChecked
-            || nodeExecution.getNode().getStepParameters().containsKey("strategyType")
-                && !nodeExecution.getNode()
-                        .getStepParameters()
-                        .get("strategyType")
-                        .equals(StrategyType.PARALLELISM.name())) {
-          update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "."
-                  + nodeExecution.getNodeId() + ".moduleInfo.maxConcurrency.value",
-              nodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
-        }
+    if (concurrentChildInstance != null && !nodeExecution.getExecutableResponses().isEmpty()) {
+      if (isStrategyTypeAlreadyChecked
+          || nodeExecution.getNode().getStepParameters().containsKey("strategyType")
+              && !nodeExecution.getNode()
+                      .getStepParameters()
+                      .get("strategyType")
+                      .equals(StrategyType.PARALLELISM.name())) {
+        update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId()
+                + ".moduleInfo.maxConcurrency.value",
+            nodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
+        return true;
       }
     }
+    return false;
   }
 
   @Override
@@ -205,23 +213,25 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     pmsExecutionSummaryRepository.update(query, update);
   }
 
-  public void addStageIdentityNodeInGraphIfUnderStrategy(String planExecutionId, NodeExecution nodeExecution,
+  public boolean addStageIdentityNodeInGraphIfUnderStrategy(String planExecutionId, NodeExecution nodeExecution,
       Update summaryUpdate, GraphLayoutNodeDTO graphLayoutNodeDTO, String strategyNodeId, String stageSetupId) {
     if (AmbianceUtils.getStrategyLevelFromAmbiance(nodeExecution.getAmbiance()).isPresent()) {
       Update update = new Update();
 
       cloneGraphLayoutNodeDtoWithModifications(graphLayoutNodeDTO, nodeExecution, update);
-      update.addToSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId
-              + ".edgeLayoutList.currentNodeChildren",
+      update.addToSet(
+          PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId + ".edgeLayoutList.currentNodeChildren",
           nodeExecution.getUuid());
-      summaryUpdate.pull(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId
-              + ".edgeLayoutList.currentNodeChildren",
+      summaryUpdate.pull(
+          PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId + ".edgeLayoutList.currentNodeChildren",
           stageSetupId);
-      summaryUpdate.set(
-          PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageSetupId + ".hidden", true);
+      summaryUpdate.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageSetupId + ".hidden", true);
       // fire only one update.
       update(planExecutionId, update);
+      return true;
     }
+
+    return false;
   }
 
   /**
@@ -231,8 +241,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
    */
   private void cloneGraphLayoutNodeDtoWithModifications(
       GraphLayoutNodeDTO graphLayoutNodeDTO, NodeExecution nodeExecution, Update update) {
-    String baseKey =
-        PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getUuid() + ".";
+    String baseKey = PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getUuid() + ".";
     update.set(baseKey + GraphLayoutNodeDTOKeys.nodeType, graphLayoutNodeDTO.getNodeType());
     update.set(baseKey + GraphLayoutNodeDTOKeys.nodeGroup, graphLayoutNodeDTO.getNodeGroup());
     update.set(baseKey + GraphLayoutNodeDTOKeys.module, graphLayoutNodeDTO.getModule());

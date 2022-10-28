@@ -27,17 +27,12 @@ public class OrchestrationEventLogRepositoryCustomImpl implements OrchestrationE
   private final MongoTemplate mongoTemplate;
 
   @Override
-  public List<OrchestrationEventLog> findUnprocessedEvents(String planExecutionId, long lastUpdatedAt) {
+  public List<OrchestrationEventLog> findUnprocessedEvents(
+      String planExecutionId, long lastUpdatedAt, int thresholdLog) {
     Criteria criteria = Criteria.where(OrchestrationEventLogKeys.planExecutionId).is(planExecutionId);
     criteria.andOperator(Criteria.where(OrchestrationEventLogKeys.createdAt).gt(lastUpdatedAt));
-    Query query = new Query(criteria).with(Sort.by(Sort.Order.asc("createdAt")));
+    Query query = new Query(criteria).with(Sort.by(Sort.Order.asc("createdAt"))).limit(thresholdLog);
     return mongoTemplate.find(query, OrchestrationEventLog.class);
-  }
-
-  @Override
-  public void deleteLogsForGivenPlanExecutionId(String planExecutionId) {
-    Criteria criteria = Criteria.where(OrchestrationEventLogKeys.planExecutionId).is(planExecutionId);
-    mongoTemplate.remove(new Query(criteria), OrchestrationEventLog.class);
   }
 
   @Override
