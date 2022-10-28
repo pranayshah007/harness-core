@@ -2395,6 +2395,7 @@
 980035:io.harness.exception.ngexception.AzureARMTaskException
 980036:io.harness.delegate.beans.DelegateTaskExpiredException
 980037:io.harness.exception.ngexception.AzureBPTaskException
+1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
 9800001:io.harness.beans.RecasterMap
