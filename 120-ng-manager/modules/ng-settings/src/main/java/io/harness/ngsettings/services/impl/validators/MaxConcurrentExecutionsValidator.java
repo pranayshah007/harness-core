@@ -20,8 +20,10 @@ public class MaxConcurrentExecutionsValidator implements SettingValidator {
     MaxConcurrencyConfig maxConcurrencyConfig;
     if (SettingGroupIdentifiers.MAX_CONCURRENT_NODES.equals(oldSettingDTO.getGroupIdentifier())) {
       maxConcurrencyConfig = maxConcurrentExecutionsConfig.getMaxConcurrentNodesConfig();
-    } else {
+    } else if(SettingGroupIdentifiers.MAX_CONCURRENT_PIPELINE.equals(oldSettingDTO.getGroupIdentifier())){
       maxConcurrencyConfig = maxConcurrentExecutionsConfig.getMaxConcurrentPipelinesConfig();
+    } else {
+      return;
     }
     int minLimit = 1;
     int value = Integer.parseInt(newSettingDTO.getValue());
