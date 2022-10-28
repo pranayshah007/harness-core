@@ -10,12 +10,23 @@ package software.wings.instancesyncv2.handler;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
+import static io.harness.validation.Validator.notNullCheck;
+
+import static software.wings.instancesyncv2.CgInstanceSyncServiceV2.AUTO_SCALE;
+
+import static java.util.Collections.singletonList;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.Capability;
+import io.harness.delegate.task.helm.HelmChartInfo;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.ExpressionEvaluator;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
@@ -26,30 +37,57 @@ import software.wings.api.ContainerDeploymentInfoWithLabels;
 import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
 import software.wings.api.K8sDeploymentInfo;
+import software.wings.beans.Application;
 import software.wings.beans.ContainerInfrastructureMapping;
+import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
+import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.artifact.Artifact;
+import software.wings.beans.infrastructure.instance.Instance;
+import software.wings.beans.infrastructure.instance.Instance.InstanceBuilder;
+import software.wings.beans.infrastructure.instance.info.ContainerInfo;
+import software.wings.beans.infrastructure.instance.info.InstanceInfo;
+import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
+import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
+import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
+import software.wings.beans.infrastructure.instance.key.ContainerInstanceKey;
+import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
+import software.wings.dl.WingsMongoPersistence;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
+import software.wings.service.impl.ContainerMetadata;
+import software.wings.service.impl.instance.InstanceUtils;
+import software.wings.service.impl.instance.sync.ContainerSync;
+import software.wings.service.impl.instance.sync.response.ContainerSyncResponse;
+import software.wings.service.intfc.AppService;
+import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureMappingService;
+import software.wings.service.intfc.ServiceResourceService;
 import software.wings.settings.SettingVariableTypes;
 
+import com.google.common.collect.Sets;
+import com.google.common.collect.Sets.SetView;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.groovy.util.Maps;
 
@@ -60,6 +98,12 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   private final ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   private final InfrastructureMappingService infrastructureMappingService;
   private final KryoSerializer kryoSerializer;
+  private final InstanceUtils instanceUtil;
+  private final ServiceResourceService serviceResourceService;
+  private final EnvironmentService environmentService;
+  private final AppService appService;
+  private final WingsMongoPersistence wingsPersistence;
+  private final ContainerSync containerSync;
 
   @Override
   public PerpetualTaskExecutionBundle fetchInfraConnectorDetails(SettingAttribute cloudProvider) {
@@ -234,5 +278,429 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   public boolean isDeploymentInfoTypeSupported(Class<? extends DeploymentInfo> deploymentInfoClazz) {
     return deploymentInfoClazz.equals(K8sDeploymentInfo.class)
         || deploymentInfoClazz.equals(ContainerDeploymentInfoWithLabels.class);
+  }
+
+  @Override
+  public List<Instance> difference(List<Instance> list1, List<Instance> list2) {
+    Map<String, Instance> instanceKeyMapList1 = getInstanceKeyMap(list1);
+    Map<String, Instance> instanceKeyMapList2 = getInstanceKeyMap(list2);
+
+    SetView<String> difference = Sets.difference(instanceKeyMapList1.keySet(), instanceKeyMapList2.keySet());
+
+    return difference.parallelStream().map(instanceKeyMapList1::get).collect(Collectors.toList());
+  }
+
+  private Map<String, Instance> getInstanceKeyMap(List<Instance> instanceList) {
+    Map<String, Instance> instanceKeyMap = new HashMap<>();
+    for (Instance instance : instanceList) {
+      if (Objects.nonNull(instance.getPodInstanceKey())) {
+        instanceKeyMap.put(instance.getPodInstanceKey().getPodName() + instance.getPodInstanceKey().getNamespace()
+                + getImageInStringFormat(instance),
+            instance);
+      } else if (Objects.nonNull(instance.getContainerInstanceKey())) {
+        KubernetesContainerInfo k8sInfo = (KubernetesContainerInfo) instance.getInstanceInfo();
+        String namespace = isNotBlank(k8sInfo.getNamespace()) ? k8sInfo.getNamespace() : "";
+        String releaseName = k8sInfo.getReleaseName();
+        instanceKeyMap.put(k8sInfo.getPodName() + namespace + releaseName, instance);
+      }
+    }
+
+    return instanceKeyMap;
+  }
+
+  private String getImageInStringFormat(Instance instance) {
+    if (instance.getInstanceInfo() instanceof K8sPodInfo) {
+      return emptyIfNull(((K8sPodInfo) instance.getInstanceInfo()).getContainers())
+          .stream()
+          .map(K8sContainerInfo::getImage)
+          .collect(Collectors.joining());
+    }
+    return EMPTY;
+  }
+
+  @Override
+  public List<Instance> instancesToUpdate(List<Instance> instances, List<Instance> instancesInDb) {
+    Map<String, Instance> instancesKeyMap = getInstanceKeyMap(instances);
+    Map<String, Instance> instancesInDbKeyMap = getInstanceKeyMap(instancesInDb);
+
+    SetView<String> intersection = Sets.intersection(instancesKeyMap.keySet(), instancesInDbKeyMap.keySet());
+    List<Instance> instancesToUpdate = new ArrayList<>();
+    for (String instanceKey : intersection) {
+      if (!instancesKeyMap.get(instanceKey)
+               .getInstanceInfo()
+               .equals(instancesInDbKeyMap.get(instanceKey).getInstanceInfo())) {
+        Instance instance = instancesInDbKeyMap.get(instanceKey);
+        instance.setInstanceInfo(instancesKeyMap.get(instanceKey).getInstanceInfo());
+        instancesToUpdate.add(instance);
+      }
+    }
+
+    return instancesToUpdate;
+  }
+
+  @Override
+  public List<Instance> getDeployedInstances(List<InstanceInfo> instanceInfos, Instance lastDiscoveredInstance) {
+    DeploymentSummary deploymentSummary = generateDeploymentSummaryFromInstance(lastDiscoveredInstance);
+    if (lastDiscoveredInstance.getInstanceInfo() instanceof K8sPodInfo) {
+      K8sPodInfo instanceInfo = (K8sPodInfo) lastDiscoveredInstance.getInstanceInfo();
+      deploymentSummary.setDeploymentInfo(K8sDeploymentInfo.builder()
+                                              .clusterName(instanceInfo.getClusterName())
+                                              .releaseName(instanceInfo.getReleaseName())
+                                              .namespace(instanceInfo.getNamespace())
+                                              .blueGreenStageColor(instanceInfo.getBlueGreenColor())
+                                              .helmChartInfo(instanceInfo.getHelmChartInfo())
+                                              .build());
+      InfrastructureMapping infrastructureMapping =
+          infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
+      return getInstancesForK8sPods(deploymentSummary, infrastructureMapping,
+          instanceInfos.parallelStream().map(K8sPodInfo.class ::cast).collect(Collectors.toList()));
+    } else if (lastDiscoveredInstance.getInstanceInfo() instanceof KubernetesContainerInfo) {
+      KubernetesContainerInfo containerInfo = (KubernetesContainerInfo) lastDiscoveredInstance.getInstanceInfo();
+      deploymentSummary.setDeploymentInfo(ContainerDeploymentInfoWithLabels.builder()
+                                              .namespace(containerInfo.getNamespace())
+                                              .helmChartInfo(containerInfo.getHelmChartInfo())
+                                              .build());
+      InfrastructureMapping infrastructureMapping =
+          infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
+      ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
+      return getInstancesForContainerPods(deploymentSummary, containerInfraMapping,
+          instanceInfos.parallelStream().map(ContainerInfo.class ::cast).collect(Collectors.toList()));
+    }
+
+    log.error("Unknown instance info type: [{}] found. Doing nothing.",
+        lastDiscoveredInstance.getInstanceInfo().getClass().getName());
+    return Collections.emptyList();
+  }
+
+  @Override
+  public List<Instance> getDeployedInstances(DeploymentSummary deploymentSummary) {
+    if (Objects.isNull(deploymentSummary)) {
+      log.error("Null deployment summary passed. Nothing to do here.");
+      return Collections.emptyList();
+    }
+
+    if (deploymentSummary.getDeploymentInfo() instanceof K8sDeploymentInfo) {
+      InfrastructureMapping infrastructureMapping =
+          infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
+      List<K8sPodInfo> pods = ((K8sDeploymentInfo) deploymentSummary.getDeploymentInfo()).getK8sPods();
+      return getInstancesForK8sPods(deploymentSummary, infrastructureMapping, pods);
+    } else if (deploymentSummary.getDeploymentInfo() instanceof ContainerDeploymentInfoWithLabels) {
+      InfrastructureMapping infrastructureMapping =
+          infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
+      ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
+      for (ContainerMetadata containerMetadata : getContainerMetadata(deploymentSummary, containerInfraMapping)) {
+        ContainerSyncResponse instanceSyncResponse =
+            containerSync.getInstances(containerInfraMapping, singletonList(containerMetadata));
+        if (instanceSyncResponse != null && CollectionUtils.isNotEmpty(instanceSyncResponse.getContainerInfoList())) {
+          return getInstancesForContainerPods(
+              deploymentSummary, containerInfraMapping, instanceSyncResponse.getContainerInfoList());
+        }
+      }
+    }
+
+    log.error("Unknown deployment info type: [{}] found in deployment summary. Doing nothing.",
+        deploymentSummary.getDeploymentInfo().getClass().getName());
+    return Collections.emptyList();
+  }
+
+  private DeploymentSummary generateDeploymentSummaryFromInstance(Instance instance) {
+    DeploymentSummary deploymentSummary = DeploymentSummary.builder().build();
+    deploymentSummary.setAppId(instance.getAppId());
+    deploymentSummary.setAccountId(instance.getAccountId());
+    deploymentSummary.setInfraMappingId(instance.getInfraMappingId());
+    deploymentSummary.setWorkflowExecutionId(instance.getLastWorkflowExecutionId());
+    deploymentSummary.setWorkflowExecutionName(instance.getLastWorkflowExecutionName());
+    deploymentSummary.setWorkflowId(instance.getLastWorkflowExecutionId());
+
+    deploymentSummary.setArtifactId(instance.getLastArtifactId());
+    deploymentSummary.setArtifactName(instance.getLastArtifactName());
+    deploymentSummary.setArtifactStreamId(instance.getLastArtifactStreamId());
+    deploymentSummary.setArtifactSourceName(instance.getLastArtifactSourceName());
+    deploymentSummary.setArtifactBuildNum(instance.getLastArtifactBuildNum());
+
+    deploymentSummary.setPipelineExecutionId(instance.getLastPipelineExecutionId());
+    deploymentSummary.setPipelineExecutionName(instance.getLastPipelineExecutionName());
+
+    // Commented this out, so we can distinguish between autoscales instances and instances we deployed
+    deploymentSummary.setDeployedById(AUTO_SCALE);
+    deploymentSummary.setDeployedByName(AUTO_SCALE);
+    deploymentSummary.setDeployedAt(System.currentTimeMillis());
+    deploymentSummary.setArtifactBuildNum(instance.getLastArtifactBuildNum());
+
+    return deploymentSummary;
+  }
+
+  private List<Instance> getInstancesForContainerPods(DeploymentSummary deploymentSummary,
+      ContainerInfrastructureMapping containerInfraMapping, List<ContainerInfo> containerInfoList) {
+    List<Instance> instances = new ArrayList<>();
+    for (ContainerInfo containerInfo : containerInfoList) {
+      setHelmChartInfoToContainerInfo(
+          ((ContainerDeploymentInfoWithLabels) deploymentSummary.getDeploymentInfo()).getHelmChartInfo(),
+          containerInfo);
+      Instance instance = buildInstanceFromContainerInfo(containerInfraMapping, containerInfo, deploymentSummary);
+      instances.add(instance);
+    }
+
+    return instances;
+  }
+
+  private List<Instance> getInstancesForK8sPods(
+      DeploymentSummary deploymentSummary, InfrastructureMapping infrastructureMapping, List<K8sPodInfo> pods) {
+    List<Instance> instances = new ArrayList<>();
+    for (K8sPodInfo pod : pods) {
+      HelmChartInfo helmChartInfo =
+          getK8sPodHelmChartInfo((K8sDeploymentInfo) deploymentSummary.getDeploymentInfo(), pod);
+      Instance instance = buildInstanceFromPodInfo(infrastructureMapping, pod, deploymentSummary);
+      ContainerInfo containerInfo = (ContainerInfo) instance.getInstanceInfo();
+      setHelmChartInfoToContainerInfo(helmChartInfo, containerInfo);
+      instances.add(instance);
+    }
+
+    return instances;
+  }
+
+  private List<ContainerMetadata> getContainerMetadata(
+      DeploymentSummary deploymentSummary, ContainerInfrastructureMapping containerInfraMapping) {
+    ContainerDeploymentInfoWithLabels containerDeploymentInfo =
+        (ContainerDeploymentInfoWithLabels) deploymentSummary.getDeploymentInfo();
+    List<ContainerMetadata> containerMetadataList = new ArrayList<>();
+    Map<String, String> labelMap = new HashMap<>();
+    containerDeploymentInfo.getLabels().forEach(
+        labelEntry -> labelMap.put(labelEntry.getName(), labelEntry.getValue()));
+
+    String namespace = containerInfraMapping.getNamespace();
+    if (ExpressionEvaluator.containsVariablePattern(namespace)) {
+      namespace = containerDeploymentInfo.getNamespace();
+    }
+
+    final List<String> namespaces = containerDeploymentInfo.getNamespaces();
+
+    boolean isControllerNamesRetrievable = emptyIfNull(containerDeploymentInfo.getContainerInfoList())
+                                               .stream()
+                                               .map(io.harness.container.ContainerInfo::getWorkloadName)
+                                               .anyMatch(EmptyPredicate::isNotEmpty);
+    /*
+     We need controller names only if release name is not set
+     */
+    if (isControllerNamesRetrievable || isEmpty(containerDeploymentInfo.getContainerInfoList())) {
+      Set<String> controllerNames = containerSync.getControllerNames(containerInfraMapping, labelMap, namespace);
+
+      for (String controllerName : controllerNames) {
+        ContainerMetadata containerMetadata = ContainerMetadata.builder()
+                                                  .containerServiceName(controllerName)
+                                                  .namespace(namespace)
+                                                  .releaseName(containerDeploymentInfo.getReleaseName())
+                                                  .build();
+        containerMetadataList.add(containerMetadata);
+      }
+    } else {
+      if (isNotEmpty(namespaces)) {
+        namespaces.stream()
+            .map(ns
+                -> ContainerMetadata.builder()
+                       .releaseName(containerDeploymentInfo.getReleaseName())
+                       .namespace(ns)
+                       .build())
+            .forEach(containerMetadataList::add);
+      } else {
+        ContainerMetadata containerMetadata = ContainerMetadata.builder()
+                                                  .namespace(namespace)
+                                                  .releaseName(containerDeploymentInfo.getReleaseName())
+                                                  .build();
+        containerMetadataList.add(containerMetadata);
+      }
+    }
+
+    return containerMetadataList;
+  }
+
+  private Instance buildInstanceFromContainerInfo(
+      InfrastructureMapping infraMapping, ContainerInfo containerInfo, DeploymentSummary deploymentSummary) {
+    InstanceBuilder builder = buildInstanceBase(infraMapping, deploymentSummary);
+    builder.containerInstanceKey(generateInstanceKeyForContainer(containerInfo));
+    builder.instanceInfo(containerInfo);
+
+    return builder.build();
+  }
+
+  private ContainerInstanceKey generateInstanceKeyForContainer(ContainerInfo containerInfo) {
+    ContainerInstanceKey containerInstanceKey;
+
+    if (containerInfo instanceof KubernetesContainerInfo) {
+      KubernetesContainerInfo kubernetesContainerInfo = (KubernetesContainerInfo) containerInfo;
+      containerInstanceKey = ContainerInstanceKey.builder()
+                                 .containerId(kubernetesContainerInfo.getPodName())
+                                 .namespace(((KubernetesContainerInfo) containerInfo).getNamespace())
+                                 .build();
+    } else {
+      String msg = "Unsupported container instance type:" + containerInfo;
+      log.error(msg);
+      throw new GeneralException(msg);
+    }
+
+    return containerInstanceKey;
+  }
+
+  private boolean updateHelmChartInfoForContainerInstances(
+      ContainerDeploymentInfoWithLabels deploymentInfo, Instance instance) {
+    if (!(instance.getInstanceInfo() instanceof KubernetesContainerInfo)) {
+      return false;
+    }
+
+    KubernetesContainerInfo containerInfo = (KubernetesContainerInfo) instance.getInstanceInfo();
+    if (deploymentInfo.getHelmChartInfo() != null
+        && !deploymentInfo.getHelmChartInfo().equals(containerInfo.getHelmChartInfo())) {
+      containerInfo.setHelmChartInfo(deploymentInfo.getHelmChartInfo());
+      return true;
+    }
+
+    return false;
+  }
+
+  void setHelmChartInfoToContainerInfo(HelmChartInfo helmChartInfo, ContainerInfo k8sInfo) {
+    Optional.ofNullable(helmChartInfo).ifPresent(chartInfo -> {
+      if (KubernetesContainerInfo.class == k8sInfo.getClass()) {
+        ((KubernetesContainerInfo) k8sInfo).setHelmChartInfo(helmChartInfo);
+      } else if (K8sPodInfo.class == k8sInfo.getClass()) {
+        ((K8sPodInfo) k8sInfo).setHelmChartInfo(helmChartInfo);
+      }
+    });
+  }
+
+  private Instance buildInstanceFromPodInfo(
+      InfrastructureMapping infraMapping, K8sPodInfo pod, DeploymentSummary deploymentSummary) {
+    Instance.InstanceBuilder builder = buildInstanceBase(infraMapping, deploymentSummary);
+    builder.podInstanceKey(PodInstanceKey.builder().podName(pod.getPodName()).namespace(pod.getNamespace()).build());
+    builder.instanceInfo(pod);
+
+    if (deploymentSummary != null && deploymentSummary.getArtifactStreamId() != null) {
+      return populateArtifactInInstanceBuilder(builder, deploymentSummary, infraMapping, pod).build();
+    }
+
+    return builder.build();
+  }
+
+  private Artifact findArtifactForImage(String artifactStreamId, String appId, String image) {
+    return wingsPersistence.createQuery(Artifact.class)
+        .filter(Artifact.ArtifactKeys.artifactStreamId, artifactStreamId)
+        .filter(Artifact.ArtifactKeys.appId, appId)
+        .filter("metadata.image", image)
+        .disableValidation()
+        .get();
+  }
+
+  private void updateInstanceWithArtifactSourceAndBuildNum(Instance.InstanceBuilder builder, String image) {
+    String artifactSource;
+    String tag;
+    String[] splitArray = image.split(":");
+    if (splitArray.length == 2) {
+      artifactSource = splitArray[0];
+      tag = splitArray[1];
+    } else if (splitArray.length == 1) {
+      artifactSource = splitArray[0];
+      tag = "latest";
+    } else {
+      artifactSource = image;
+      tag = image;
+    }
+
+    builder.lastArtifactName(image);
+    builder.lastArtifactSourceName(artifactSource);
+    builder.lastArtifactBuildNum(tag);
+  }
+
+  private boolean isBuildNumSame(String build1, String build2) {
+    if (isEmpty(build1) || isEmpty(build2)) {
+      return false;
+    }
+    return build1.equals(build2);
+  }
+
+  private Instance.InstanceBuilder populateArtifactInInstanceBuilder(Instance.InstanceBuilder builder,
+      DeploymentSummary deploymentSummary, InfrastructureMapping infraMapping, K8sPodInfo pod) {
+    boolean instanceBuilderUpdated = false;
+    Artifact firstValidArtifact = null;
+    String firstValidImage = "";
+    for (K8sContainerInfo k8sContainer : pod.getContainers()) {
+      String image = k8sContainer.getImage();
+      Artifact artifact = findArtifactForImage(deploymentSummary.getArtifactStreamId(), infraMapping.getAppId(), image);
+
+      if (artifact != null) {
+        if (firstValidArtifact == null) {
+          firstValidArtifact = artifact;
+          firstValidImage = image;
+        }
+        // update only if buildNumber also matches
+        if (isBuildNumSame(deploymentSummary.getArtifactBuildNum(), artifact.getBuildNo())) {
+          builder.lastArtifactId(artifact.getUuid());
+          updateInstanceWithArtifactSourceAndBuildNum(builder, image);
+          instanceBuilderUpdated = true;
+          break;
+        }
+      }
+    }
+
+    if (!instanceBuilderUpdated && firstValidArtifact != null) {
+      builder.lastArtifactId(firstValidArtifact.getUuid());
+      updateInstanceWithArtifactSourceAndBuildNum(builder, firstValidImage);
+      instanceBuilderUpdated = true;
+    }
+
+    if (!instanceBuilderUpdated) {
+      updateInstanceWithArtifactSourceAndBuildNum(builder, pod.getContainers().get(0).getImage());
+    }
+
+    return builder;
+  }
+
+  private HelmChartInfo getK8sPodHelmChartInfo(K8sDeploymentInfo deploymentInfo, K8sPodInfo pod) {
+    if (deploymentInfo != null) {
+      if (StringUtils.equals(pod.getBlueGreenColor(), deploymentInfo.getBlueGreenStageColor())) {
+        return deploymentInfo.getHelmChartInfo();
+      }
+    }
+
+    return null;
+  }
+
+  protected Instance.InstanceBuilder buildInstanceBase(
+      InfrastructureMapping infraMapping, DeploymentSummary deploymentSummary) {
+    String appId = infraMapping.getAppId();
+    Application application = appService.get(appId);
+    notNullCheck("Application is null for the given appId: " + appId, application);
+    Environment environment = environmentService.get(appId, infraMapping.getEnvId(), false);
+    notNullCheck("Environment is null for the given id: " + infraMapping.getEnvId(), environment);
+    Service service = serviceResourceService.getWithDetails(appId, infraMapping.getServiceId());
+    notNullCheck("Service is null for the given id: " + infraMapping.getServiceId(), service);
+    String infraMappingType = infraMapping.getInfraMappingType();
+
+    return Instance.builder()
+        .uuid(generateUuid())
+        .accountId(application.getAccountId())
+        .appId(appId)
+        .appName(application.getName())
+        .envName(environment.getName())
+        .envId(infraMapping.getEnvId())
+        .envType(environment.getEnvironmentType())
+        .computeProviderId(infraMapping.getComputeProviderSettingId())
+        .computeProviderName(infraMapping.getComputeProviderName())
+        .infraMappingId(infraMapping.getUuid())
+        .infraMappingName(infraMapping.getDisplayName())
+        .infraMappingType(infraMappingType)
+        .serviceId(infraMapping.getServiceId())
+        .serviceName(service.getName())
+        .instanceType(instanceUtil.getInstanceType(infraMappingType))
+        .lastDeployedAt(deploymentSummary.getDeployedAt())
+        .lastDeployedById(deploymentSummary.getDeployedById())
+        .lastDeployedByName(deploymentSummary.getDeployedByName())
+        .lastWorkflowExecutionId(deploymentSummary.getWorkflowExecutionId())
+        .lastWorkflowExecutionName(deploymentSummary.getWorkflowExecutionName())
+        .lastPipelineExecutionId(deploymentSummary.getPipelineExecutionId())
+        .lastPipelineExecutionName(deploymentSummary.getPipelineExecutionName())
+        .lastArtifactId(deploymentSummary.getArtifactId())
+        .lastArtifactName(deploymentSummary.getArtifactName())
+        .lastArtifactStreamId(deploymentSummary.getArtifactStreamId())
+        .lastArtifactSourceName(deploymentSummary.getArtifactSourceName())
+        .lastArtifactBuildNum(deploymentSummary.getArtifactBuildNum());
   }
 }

@@ -38,6 +38,10 @@ public class CgInstanceSyncTaskDetailsService {
     mongoPersistence.save(taskDetails);
   }
 
+  public InstanceSyncTaskDetails getForId(String taskDetailsId) {
+    return mongoPersistence.get(InstanceSyncTaskDetails.class, taskDetailsId);
+  }
+
   public InstanceSyncTaskDetails getForInfraMapping(String accountId, String infraMappingId) {
     Query<InstanceSyncTaskDetails> query = mongoPersistence.createQuery(InstanceSyncTaskDetails.class)
                                                .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
@@ -59,5 +63,11 @@ public class CgInstanceSyncTaskDetailsService {
                                                .filter(InstanceSyncTaskDetailsKeys.perpetualTaskId, perpetualTaskId);
 
     return query.asList();
+  }
+
+  public void updateLastRun(String taskDetailsId) {
+    InstanceSyncTaskDetails taskDetails = getForId(taskDetailsId);
+    taskDetails.setLastSuccessfulRun(System.currentTimeMillis());
+    save(taskDetails);
   }
 }
