@@ -138,7 +138,8 @@ public class PerpetualTaskRecordDao {
         persistence.createUpdateOperations(PerpetualTaskRecord.class)
             .set(PerpetualTaskRecordKeys.delegateId, "")
             .set(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
-            .unset(PerpetualTaskRecordKeys.unassignedReason);
+            .unset(PerpetualTaskRecordKeys.unassignedReason)
+            .unset(PerpetualTaskRecordKeys.assignTryCount);
 
     if (taskExecutionBundle != null) {
       updateOperations.set(PerpetualTaskRecordKeys.task_parameters, taskExecutionBundle.toByteArray());
@@ -203,6 +204,8 @@ public class PerpetualTaskRecordDao {
 
   public List<PerpetualTaskRecord> listAssignedTasks(String delegateId, String accountId) {
     return persistence.createQuery(PerpetualTaskRecord.class)
+        .field(PerpetualTaskRecordKeys.state)
+        .equal(TASK_ASSIGNED)
         .field(PerpetualTaskRecordKeys.accountId)
         .equal(accountId)
         .field(PerpetualTaskRecordKeys.delegateId)
