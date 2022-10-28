@@ -9,6 +9,7 @@ package io.harness.cdng.customdeploymentng;
 
 import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.ccm.anomaly.graphql.AnomaliesFilter.log;
+import static io.harness.cdng.customDeployment.eventlistener.CustomDeploymentEntityCRUDEventHandler.STABLE_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
@@ -196,6 +197,9 @@ public class CustomDeploymentInfrastructureHelper {
   public String getTemplateYaml(
       String accRef, String orgRef, String projectRef, String templateRef, String versionLabel) {
     TemplateResponseDTO response;
+    if (versionLabel.equals(STABLE_VERSION)) {
+      versionLabel = null;
+    }
     SecurityContextBuilder.setContext(new ServicePrincipal(TEMPLATE_SERVICE.getServiceId()));
     if (templateRef.contains(ACCOUNT_IDENTIFIER)) {
       response = NGRestUtils.getResponse(templateResourceClient.get(

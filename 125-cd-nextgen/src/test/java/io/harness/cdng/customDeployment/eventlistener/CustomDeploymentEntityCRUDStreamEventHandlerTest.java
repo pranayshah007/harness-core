@@ -17,6 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.beans.IdentifierRef;
 import io.harness.beans.InfraDefReference;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
@@ -32,7 +33,9 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.junit.Before;
@@ -198,6 +201,37 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
         EntitySetupUsageDTO.builder()
             .referredByEntity(EntityDetail.builder().entityRef(infraDefReference).build())
             .build();
+    entityList.add(entitySetupUsageDTO);
+    String infraYaml = readFile("infrastructureWithDiffVarType.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    InfrastructureEntity infrastructure = InfrastructureEntity.builder().accountId(ACCOUNT).yaml(infraYaml).build();
+    when(infrastructureEntityService.get(any(), any(), any(), any(), any())).thenReturn(Optional.of(infrastructure));
+    when(customDeploymentInfrastructureHelper.getTemplateYaml(any(), any(), any(), any(), any()))
+        .thenReturn(templateYaml);
+    when(entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any(), any()))
+        .thenReturn(entityList);
+    boolean isObsolete = customDeploymentEntityCRUDEventHandler.updateInfraAsObsolete(ACCOUNT, ORG, null, TEMP, null);
+    ArgumentCaptor<ArrayList<String>> infraArgumentCaptor = ArgumentCaptor.forClass((Class) List.class);
+    verify(customDeploymentEntityCRUDEventHandler, times(0))
+        .updateInfras(infraArgumentCaptor.capture(), any(), any(), any());
+    assertThat(isObsolete).isEqualTo(true);
+  }
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testUpdateInfraAsObsoleteNoUpdateRequiredForIdentifierRefInfra() {
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("envID", ENV);
+    String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .identifier(INFRA)
+                                      .accountIdentifier(ACCOUNT)
+                                      .orgIdentifier(ORG)
+                                      .projectIdentifier(PROJECT)
+                                      .metadata(metadata)
+                                      .build();
+    List<EntitySetupUsageDTO> entityList = new ArrayList<>();
+    EntitySetupUsageDTO entitySetupUsageDTO =
+        EntitySetupUsageDTO.builder().referredByEntity(EntityDetail.builder().entityRef(identifierRef).build()).build();
     entityList.add(entitySetupUsageDTO);
     String infraYaml = readFile("infrastructureWithDiffVarType.yaml", INFRA_RESOURCE_PATH_PREFIX);
     InfrastructureEntity infrastructure = InfrastructureEntity.builder().accountId(ACCOUNT).yaml(infraYaml).build();
