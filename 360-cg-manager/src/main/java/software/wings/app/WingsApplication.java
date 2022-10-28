@@ -758,7 +758,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     log.info("The value for enableIterators is : {} ", configuration.isEnableIterators());
     if (configuration.isEnableIterators()) {
       if (isManager()) {
-        registerIteratorsManager(configuration.getIteratorsConfig(), injector);
+        registerIteratorsManager(
+            configuration.getIteratorsConfig(), injector, configuration.getDisableInstanceSyncIterator());
       }
       if (shouldEnableDelegateMgmt) {
         registerIteratorsDelegateService(configuration.getIteratorsConfig(), injector);
@@ -1460,7 +1461,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(DelegateTelemetryPublisher.class).registerIterators();
   }
 
-  public static void registerIteratorsManager(IteratorsConfig iteratorsConfig, Injector injector) {
+  public static void registerIteratorsManager(
+      IteratorsConfig iteratorsConfig, Injector injector, Boolean disableInstanceSyncIterator) {
     final ScheduledThreadPoolExecutor artifactCollectionExecutor =
         new ScheduledThreadPoolExecutor(iteratorsConfig.getArtifactCollectionIteratorConfig().getThreadPoolSize(),
             new ThreadFactoryBuilder().setNameFormat("Iterator-ArtifactCollection").build());
@@ -1474,8 +1476,10 @@ public class WingsApplication extends Application<MainConfiguration> {
             artifactCollectionExecutor, iteratorsConfig.getArtifactCollectionIteratorConfig().getThreadPoolSize());
     injector.getInstance(ArtifactCleanupHandler.class).registerIterators(artifactCollectionExecutor);
     injector.getInstance(EventDeliveryHandler.class).registerIterators(eventDeliveryExecutor);
-    injector.getInstance(InstanceSyncHandler.class)
-        .registerIterators(iteratorsConfig.getInstanceSyncIteratorConfig().getThreadPoolSize());
+    if (!Boolean.TRUE.equals(disableInstanceSyncIterator)) {
+      injector.getInstance(InstanceSyncHandler.class)
+          .registerIterators(iteratorsConfig.getInstanceSyncIteratorConfig().getThreadPoolSize());
+    }
     injector.getInstance(LicenseCheckHandler.class).registerIterators();
     injector.getInstance(ApprovalPollingHandler.class).registerIterators();
     injector.getInstance(GCPBillingHandler.class).registerIterators();
