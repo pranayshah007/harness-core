@@ -38,7 +38,6 @@ import io.harness.pms.contracts.service.VariablesServiceGrpc;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.rule.Owner;
-import io.harness.spec.server.template.model.TemplateFilterProperties;
 import io.harness.spec.server.template.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.model.TemplateResponse;
 import io.harness.spec.server.template.model.TemplateUpdateStableResponse;
@@ -358,7 +357,6 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     //        doReturn(responseBuilder).when(templateResourceApiMapper).addLinksHeader(any(),any(),any(),any(),any());
     //        when(templateResourceApiMapper.addLinksHeader(any(ResponseBuilder.class),any(),any(),any(),any())).thenReturn(responseBuilder);
     doReturn(templateEntities).when(templateService).listTemplateMetadata(any(), any(), any(), any(), any());
-    TemplateFilterProperties templateFilterProperties = new TemplateFilterProperties();
     Response response = templateResourceApiUtils.getTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, 0, 25, null,
         null, null, TemplateListType.ALL_TEMPLATE_TYPE.toString(), false, null, null, null,
         Collections.singletonList("Stage"), null);
