@@ -5108,7 +5108,7 @@ plain_artifacts = [
     "org.modelmapper:modelmapper:0.7.5",
     "org.mongodb.morphia:morphia-logging-slf4j:1.3.2",
     "org.mongodb.morphia:morphia:1.3.2",
-    "org.mongodb:mongo-java-driver:3.12.2",
+    "org.mongodb:mongo-java-driver:3.12.11",
     "org.mortbay.jetty.alpn:alpn-boot:8.1.13.v20181017",
     "org.mozilla:rhino:1.7R4",
     "org.objenesis:objenesis:2.6",
