@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.AUTO_ACCEPT_SAML_ACCOUNT_INVITES;
 import static io.harness.beans.FeatureName.CG_LICENSE_USAGE;
+import static io.harness.beans.FeatureName.USE_LEGACY_DELEGATE;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -2146,7 +2147,7 @@ public class AccountServiceImpl implements AccountService {
   @Override
   public boolean isImmutableDelegateEnabled(String accountId) {
     Account account = getFromCacheWithFallback(accountId);
-    return account != null && account.isImmutableDelegateEnabled();
+    return account != null && account.isImmutableDelegateEnabled() && !featureFlagService.isEnabled(USE_LEGACY_DELEGATE, accountId);
   }
 
   @Override

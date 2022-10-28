@@ -2233,7 +2233,7 @@ public class DelegateServiceTest extends WingsBaseTest {
   public void shouldDownloadKubernetesImmutable() throws IOException {
     when(delegateVersionService.getDelegateImageTag(ACCOUNT_ID, true)).thenReturn(DELEGATE_IMAGE_TAG);
     when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, true)).thenReturn(UPGRADER_IMAGE_TAG);
-    featureTestHelper.enableFeatureFlag(USE_IMMUTABLE_DELEGATE);
+    when(accountService.isImmutableDelegateEnabled(ACCOUNT_ID)).thenReturn(Boolean.TRUE);
     File gzipFile = delegateService.downloadKubernetes(
         "https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, "harness-delegate", "", TOKEN_NAME, runAsRoot);
     File tarFile = File.createTempFile(DELEGATE_DIR, ".tar");
@@ -2262,7 +2262,7 @@ public class DelegateServiceTest extends WingsBaseTest {
   public void shouldDownloadKubernetesImmutableWithNonRootAccess() throws IOException {
     when(delegateVersionService.getDelegateImageTag(ACCOUNT_ID, true)).thenReturn(DELEGATE_IMAGE_TAG);
     when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, true)).thenReturn(UPGRADER_IMAGE_TAG);
-    featureTestHelper.enableFeatureFlag(USE_IMMUTABLE_DELEGATE);
+    when(accountService.isImmutableDelegateEnabled(ACCOUNT_ID)).thenReturn(Boolean.TRUE);
     File gzipFile = delegateService.downloadKubernetes(
         "https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, "harness-delegate", "", TOKEN_NAME, false);
     File tarFile = File.createTempFile(DELEGATE_DIR, ".tar");
@@ -2321,7 +2321,7 @@ public class DelegateServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldDownloadKubernetesImmutableWithCiEnabled() throws IOException {
     Account account = anAccount().withAccountKey("ACCOUNT_KEY").withUuid(ACCOUNT_ID).withNextGenEnabled(true).build();
-    featureTestHelper.enableFeatureFlag(USE_IMMUTABLE_DELEGATE);
+    when(accountService.isImmutableDelegateEnabled(ACCOUNT_ID)).thenReturn(Boolean.TRUE);
     when(delegateVersionService.getDelegateImageTag(ACCOUNT_ID, true)).thenReturn(DELEGATE_IMAGE_TAG);
     when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, true)).thenReturn(UPGRADER_IMAGE_TAG);
     when(accountService.get(ACCOUNT_ID)).thenReturn(account);
@@ -2672,7 +2672,7 @@ public class DelegateServiceTest extends WingsBaseTest {
             .tokenName(TOKEN_NAME)
             .build();
     when(delegateProfileService.get(ACCOUNT_ID, "delConfigId")).thenReturn(DelegateProfile.builder().build());
-    featureTestHelper.enableFeatureFlag(USE_IMMUTABLE_DELEGATE);
+    when(accountService.isImmutableDelegateEnabled(ACCOUNT_ID)).thenReturn(Boolean.TRUE);
 
     File gzipFile = delegateService.generateKubernetesYaml(ACCOUNT_ID, setupDetails, "https://localhost:9090",
         "https://localhost:7070", MediaType.MULTIPART_FORM_DATA_TYPE);
@@ -2706,7 +2706,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(delegateVersionService.getDelegateImageTag(ACCOUNT_ID, true)).thenReturn(DELEGATE_IMAGE_TAG);
     when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, true)).thenReturn(UPGRADER_IMAGE_TAG);
     when(delegateProfileService.get(ACCOUNT_ID, "delConfigId")).thenReturn(DelegateProfile.builder().build());
-    featureTestHelper.enableFeatureFlag(USE_IMMUTABLE_DELEGATE);
+    when(accountService.isImmutableDelegateEnabled(ACCOUNT_ID)).thenReturn(Boolean.TRUE);
     DelegateSetupDetails setupDetails =
         DelegateSetupDetails.builder()
             .orgIdentifier("9S5HMP0xROugl3_QgO62rQO")
@@ -2753,7 +2753,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(delegateVersionService.getDelegateImageTag(ACCOUNT_ID, true)).thenReturn(DELEGATE_IMAGE_TAG);
     when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, true)).thenReturn(UPGRADER_IMAGE_TAG);
     when(delegateProfileService.get(ACCOUNT_ID, "delConfigId")).thenReturn(DelegateProfile.builder().build());
-    featureTestHelper.enableFeatureFlag(USE_IMMUTABLE_DELEGATE);
+    when(accountService.isImmutableDelegateEnabled(ACCOUNT_ID)).thenReturn(Boolean.TRUE);
     DelegateSetupDetails setupDetails = DelegateSetupDetails.builder()
                                             .orgIdentifier("9S5HMP0xROugl3_QgO62rQO")
                                             .projectIdentifier("9S5HMP0xROugl3_QgO62rQP")

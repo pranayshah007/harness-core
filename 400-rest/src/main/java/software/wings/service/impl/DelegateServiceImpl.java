@@ -9,9 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.beans.FeatureName.DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST;
-import static io.harness.beans.FeatureName.USE_LEGACY_DELEGATE;
 import static io.harness.beans.FeatureName.REDUCE_DELEGATE_MEMORY_SIZE;
-import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -1495,14 +1493,12 @@ public class DelegateServiceImpl implements DelegateService {
     // Ng helm delegates always use immutable image irrespective of FF
     final String delegateDockerImage = (isNgDelegate && HELM_DELEGATE.equals(templateParameters.getDelegateType()))
         ? delegateVersionService.getImmutableDelegateImageTag(templateParameters.getAccountId())
-        : delegateVersionService.getDelegateImageTag(
-            templateParameters.getAccountId(), immutableDelegateEnabled);
+        : delegateVersionService.getDelegateImageTag(templateParameters.getAccountId(), immutableDelegateEnabled);
     ImmutableMap.Builder<String, String> params =
         ImmutableMap.<String, String>builder()
             .put("delegateDockerImage", delegateDockerImage)
             .put("upgraderDockerImage",
-                delegateVersionService.getUpgraderImageTag(
-                    templateParameters.getAccountId(), immutableDelegateEnabled))
+                delegateVersionService.getUpgraderImageTag(templateParameters.getAccountId(), immutableDelegateEnabled))
             .put("accountId", templateParameters.getAccountId())
             .put("delegateToken", accountSecret)
             .put("base64Secret", base64Secret)
@@ -3289,13 +3285,6 @@ public class DelegateServiceImpl implements DelegateService {
 
   private boolean isImmutableDelegate(final String accountId, final String delegateType) {
     if (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType)) {
-      if (featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, accountId)) {
-        return true;
-      } else if (featureFlagService.isEnabled(USE_LEGACY_DELEGATE, accountId)) {
-        return false;
-      }
-      // If ImmutableDelegateEnabled is false then use legacy delegate else use immutable delegate as
-      // DONT_USE_IMMUTABLE_DELEGATE will be false here.
       return accountService.isImmutableDelegateEnabled(accountId);
     }
     return false;

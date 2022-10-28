@@ -37,6 +37,7 @@ import io.harness.migrations.all.AddDuplicateFieldToCVFeedbacks;
 import io.harness.migrations.all.AddEnableIteratorsToTriggers;
 import io.harness.migrations.all.AddHarnessCommandLibraryToAccount;
 import io.harness.migrations.all.AddHarnessGroupAccessFlagToAccount;
+import io.harness.migrations.all.AddImmutableDelegateEnabledFieldToAccountCollection;
 import io.harness.migrations.all.AddInstanceStatsCollectionJobToAllAccounts;
 import io.harness.migrations.all.AddIsProductLedToAccount;
 import io.harness.migrations.all.AddLimitVicinityCheckJobToAllAccounts;
@@ -455,6 +456,7 @@ public class MigrationList {
         .add(Pair.of(373, AddRingDetailsToDelegateRing.class))
         .add(Pair.of(374, AddIsProductLedToAccount.class))
         .add(Pair.of(376, UpdateRebalanceStateToTaskUnAssigned.class))
+        .add(Pair.of(377, AddImmutableDelegateEnabledFieldToAccountCollection.class))
         .build();
   }
 }
