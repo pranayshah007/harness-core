@@ -39,7 +39,7 @@ import org.eclipse.jetty.server.Response;
 @OwnedBy(CDP)
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
-  private final DelegateAgentManagerClient delegateAgentManagerClient;
+  @Inject private final DelegateAgentManagerClient delegateAgentManagerClient;
   private final InstanceDetailsFetcherFactory instanceDetailsFetcherFactory;
 
   private static final int INSTANCE_COUNT_LIMIT = 500;
