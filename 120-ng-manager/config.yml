@@ -471,3 +471,13 @@ debeziumConsumerConfigs:
 cdTsDbRetentionPeriodMonths: 7
 
 enableOpentelemetry: false
+
+maxConcurrentExecutionsConfig:
+  maxConcurrentPipelinesConfig:
+    free: ${MAX_CONCURRENT_PIPELINES_FREE:-5}
+    team: ${MAX_CONCURRENT_PIPELINES_TEAM:-500}
+    enterprise: ${MAX_CONCURRENT_PIPELINES_ENTERPRISE:-1000}
+  maxConcurrentNodesConfig:
+    free: ${MAX_CONCURRENT_NODES_FREE:-5}
+    team: ${MAX_CONCURRENT_NODES_TEAM:-5000}
+    enterprise: ${MAX_CONCURRENT_NODES_ENTERPRISE:-10000}

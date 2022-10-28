@@ -42,6 +42,7 @@ import static java.lang.Boolean.TRUE;
 
 import io.harness.AccessControlClientModule;
 import io.harness.GitopsModule;
+import io.harness.MaxConcurrentExecutionsConfig;
 import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
 import io.harness.YamlBaseUrlServiceImpl;
@@ -363,6 +364,12 @@ public class NextGenModule extends AbstractModule {
   @Singleton
   CiDefaultEntityConfiguration getCiDefaultConfiguration() {
     return appConfig.getCiDefaultEntityConfiguration();
+  }
+
+  @Provides
+  @Singleton
+  MaxConcurrentExecutionsConfig getMaxConcurrentExecutionsConfig() {
+    return appConfig.getMaxConcurrentExecutionsConfig();
   }
 
   @Provides

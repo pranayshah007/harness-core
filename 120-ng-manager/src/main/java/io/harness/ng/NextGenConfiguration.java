@@ -12,6 +12,7 @@ import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerB
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.AccessControlClientConfiguration;
+import io.harness.MaxConcurrentExecutionsConfig;
 import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
@@ -236,7 +237,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("debeziumConsumerConfigs") List<DebeziumConsumerConfig> debeziumConsumerConfigs;
   @JsonProperty(value = "cdTsDbRetentionPeriodMonths") private String cdTsDbRetentionPeriodMonths;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
-
+  @JsonProperty(value = "maxConcurrentExecutionsConfig") MaxConcurrentExecutionsConfig maxConcurrentExecutionsConfig;
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;
 
