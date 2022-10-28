@@ -480,6 +480,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .taskType(TaskType.NG_AZURE_TASK.name())
             .timeout(StepUtils.getTimeoutMillis(ParameterField.createValueField("10m"), DEFAULT_TIMEOUT))
             .parameters(new Object[] {azureTaskParamsTaskParams})
+            .expressionFunctorToken((int) ambiance.getExpressionFunctorToken())
             .build();
 
     List<TaskSelectorYaml> taskSelectorYamlList =
@@ -524,6 +525,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .taskType(TaskType.NG_AWS_TASK.name())
             .timeout(StepUtils.getTimeoutMillis(ParameterField.createValueField("10m"), DEFAULT_TIMEOUT))
             .parameters(new Object[] {awsTaskParams})
+            .expressionFunctorToken((int) ambiance.getExpressionFunctorToken())
             .build();
 
     List<TaskSelectorYaml> taskSelectorYamlList = awsInfraDelegateConfig.getAwsConnectorDTO()
