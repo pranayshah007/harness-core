@@ -38,7 +38,6 @@ import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -66,7 +65,6 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   @Inject private NodeStatusUpdateHandlerFactory nodeStatusUpdateHandlerFactory;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
-  @Inject private PlanExecutionServiceReadHelper planExecutionServiceReadHelper;
 
   @Getter private final Subject<PlanStatusUpdateObserver> planStatusUpdateSubject = new Subject<>();
 
@@ -234,13 +232,35 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   @Override
   public long findRunningExecutionsForGivenPipeline(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    return planExecutionServiceReadHelper.findRunningExecutionsForGivenPipeline(
-        accountId, orgId, projectId, pipelineIdentifier);
+    Criteria criteria = new Criteria()
+                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
+                            .is(accountId)
+                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
+                            .is(orgId)
+                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
+                            .is(projectId)
+                            .and(PlanExecutionKeys.metadata + ".pipelineIdentifier")
+                            .is(pipelineIdentifier)
+                            .and(PlanExecutionKeys.status)
+                            .in(StatusUtils.activeStatuses());
+    return mongoTemplate.count(new Query(criteria), PlanExecution.class);
   }
 
   @Override
   public PlanExecution findNextExecutionToRun(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    return planExecutionServiceReadHelper.findNextExecutionToRun(accountId, orgId, projectId, pipelineIdentifier);
+    Criteria criteria = new Criteria()
+                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
+                            .is(accountId)
+                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
+                            .is(orgId)
+                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
+                            .is(projectId)
+                            .and(PlanExecutionKeys.metadata + ".pipelineIdentifier")
+                            .is(pipelineIdentifier)
+                            .and(PlanExecutionKeys.status)
+                            .is(Status.QUEUED);
+    return mongoTemplate.findOne(
+        new Query(criteria).with(Sort.by(Sort.Direction.ASC, PlanExecutionKeys.createdAt)), PlanExecution.class);
   }
 }
