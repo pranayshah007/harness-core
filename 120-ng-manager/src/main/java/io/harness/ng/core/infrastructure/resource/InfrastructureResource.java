@@ -28,6 +28,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.mapper.InfrastructureMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
@@ -139,6 +140,7 @@ public class InfrastructureResource {
   @Inject private final EnvironmentValidationHelper environmentValidationHelper;
   @Inject private final AccessControlClient accessControlClient;
   @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
+  @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
 
   public static final String INFRA_PARAM_MESSAGE = "Infrastructure Identifier for the entity";
 
@@ -210,7 +212,10 @@ public class InfrastructureResource {
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
     if (infrastructureEntity.getDeploymentType() == ServiceDefinitionType.CUSTOM_DEPLOYMENT
         && infrastructureEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
-      customDeploymentYamlHelper.validateInfrastructureYaml(infrastructureEntity);
+      if (customDeploymentInfrastructureHelper.validateInfrastructureYaml(infrastructureEntity)) {
+        throw new InvalidRequestException(
+            "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
+      }
     }
     InfrastructureEntity createdInfrastructure = infrastructureEntityService.create(infrastructureEntity);
     return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(createdInfrastructure));
@@ -302,6 +307,13 @@ public class InfrastructureResource {
 
     InfrastructureEntity requestInfrastructure =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
+    if (requestInfrastructure.getDeploymentType() == ServiceDefinitionType.CUSTOM_DEPLOYMENT
+        && requestInfrastructure.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
+      if (customDeploymentInfrastructureHelper.validateInfrastructureYaml(requestInfrastructure)) {
+        throw new InvalidRequestException(
+            "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
+      }
+    }
     InfrastructureEntity updatedInfra = infrastructureEntityService.update(requestInfrastructure);
     return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(updatedInfra));
   }
@@ -331,6 +343,13 @@ public class InfrastructureResource {
 
     InfrastructureEntity requestInfra =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
+    if (requestInfra.getDeploymentType() == ServiceDefinitionType.CUSTOM_DEPLOYMENT
+        && requestInfra.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
+      if (customDeploymentInfrastructureHelper.validateInfrastructureYaml(requestInfra)) {
+        throw new InvalidRequestException(
+            "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
+      }
+    }
     InfrastructureEntity upsertInfra = infrastructureEntityService.upsert(requestInfra, UpsertOptions.DEFAULT);
     return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(upsertInfra));
   }
