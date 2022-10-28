@@ -86,6 +86,35 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     return PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
   }
 
+  @Override
+  public long getMaxPipelineCreationCount(String accountId) {
+    try {
+      Edition edition = getEdition(accountId);
+      switch (edition) {
+        case FREE:
+          if (orchestrationRestrictionConfiguration.isUseRestrictionForFree()) {
+            return orchestrationRestrictionConfiguration.getPipelineCreationRestriction().getFree();
+          }
+          break;
+        case ENTERPRISE:
+          if (orchestrationRestrictionConfiguration.isUseRestrictionForEnterprise()) {
+            return orchestrationRestrictionConfiguration.getPipelineCreationRestriction().getEnterprise();
+          }
+          break;
+        case TEAM:
+          if (orchestrationRestrictionConfiguration.isUseRestrictionForTeam()) {
+            return orchestrationRestrictionConfiguration.getPipelineCreationRestriction().getTeam();
+          }
+          break;
+        default:
+          PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
+      }
+    } catch (Exception ex) {
+      return Long.MAX_VALUE;
+    }
+    return Long.MAX_VALUE;
+  }
+
   private PlanExecutionSettingResponse shouldQueueInternal(
       String accountId, String orgId, String projectId, String pipelineIdentifier, long count) {
     long runningExecutionsForGivenPipeline =
