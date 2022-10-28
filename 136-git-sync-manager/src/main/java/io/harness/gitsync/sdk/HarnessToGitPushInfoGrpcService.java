@@ -21,6 +21,8 @@ import io.harness.gitsync.CreatePRRequest;
 import io.harness.gitsync.CreatePRResponse;
 import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileInfo;
+import io.harness.gitsync.GetBranchHeadCommitRequest;
+import io.harness.gitsync.GetBranchHeadCommitResponse;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.GetRepoUrlRequest;
@@ -264,6 +266,30 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         request.getEntityScopeInfo(), request.getIsNotFFModule());
     responseObserver.onNext(
         IsOldGitSyncEnabledResponse.newBuilder().setIsEnabled(isOldGitSyncEnabledForModule).build());
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void getBranchHeadCommitDetails(
+      GetBranchHeadCommitRequest request, StreamObserver<GetBranchHeadCommitResponse> responseObserver) {
+    GetBranchHeadCommitResponse showBranchResponse;
+    Map<String, String> contextMap = GitSyncLogContextHelper.setContextMap(
+        ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()), request.getRepoName(),
+        request.getBranchName(), "", GitOperation.GET_BRANCH_HEAD_COMMIT, request.getContextMapMap());
+    try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
+         MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
+      showBranchResponse = harnessToGitHelperService.getBranchHeadCommitDetails(request);
+      log.info(String.format(
+          "%s %s ops response : %s", GIT_SERVICE, GitOperation.GET_BRANCH_HEAD_COMMIT, showBranchResponse));
+    } catch (Exception ex) {
+      final String errorMessage = getErrorMessageForRuntimeExceptions(GitOperation.GET_BRANCH_HEAD_COMMIT);
+      log.error(errorMessage, ex);
+      showBranchResponse = GetBranchHeadCommitResponse.newBuilder()
+                               .setStatusCode(HTTP_500)
+                               .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
+                               .build();
+    }
+    responseObserver.onNext(showBranchResponse);
     responseObserver.onCompleted();
   }
 

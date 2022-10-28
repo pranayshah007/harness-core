@@ -37,6 +37,8 @@ import io.harness.gitsync.CreatePRRequest;
 import io.harness.gitsync.CreatePRResponse;
 import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileInfo;
+import io.harness.gitsync.GetBranchHeadCommitRequest;
+import io.harness.gitsync.GetBranchHeadCommitResponse;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.GetRepoUrlRequest;
@@ -57,6 +59,8 @@ import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
@@ -517,6 +521,34 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
         entityScopeInfo.getOrgId().getValue(), entityScopeInfo.getProjectId().getValue(), isNotForFFModule);
   }
 
+  @Override
+  public GetBranchHeadCommitResponse getBranchHeadCommitDetails(GetBranchHeadCommitRequest getBranchHeadCommitRequest) {
+    try {
+      Scope scope =
+          ScopeIdentifierMapper.getScopeFromScopeIdentifiers(getBranchHeadCommitRequest.getScopeIdentifiers());
+      ScmGetBranchHeadCommitResponseDTO branchHeadCommitDetails = scmFacilitatorService.getBranchHeadCommitDetails(
+          ScmGetBranchHeadCommitRequestDTO.builder()
+              .scope(scope)
+              .repoName(getBranchHeadCommitRequest.getRepoName())
+              .branchName(getBranchHeadCommitRequest.getBranchName())
+              .connectorRef(getBranchHeadCommitRequest.getConnectorRef())
+              .build());
+      return prepareShowBranchResponse(branchHeadCommitDetails);
+    } catch (WingsException ex) {
+      ScmException scmException = ScmExceptionUtils.getScmException(ex);
+      if (scmException == null) {
+        return GetBranchHeadCommitResponse.newBuilder()
+            .setStatusCode(ex.getCode().getStatus().getCode())
+            .setError(prepareDefaultErrorDetails(ex))
+            .build();
+      }
+      return GetBranchHeadCommitResponse.newBuilder()
+          .setStatusCode(ScmErrorCodeToHttpStatusCodeMapping.getHttpStatusCode(scmException.getCode()))
+          .setError(prepareDefaultErrorDetails(ex))
+          .build();
+    }
+  }
+
   private InfoForGitPush getInfoForGitPush(
       FileInfo request, EntityDetail entityDetailDTO, String accountId, YamlGitConfigDTO yamlGitConfig) {
     Principal principal = request.getPrincipal();
@@ -623,6 +655,16 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                             .setFileUrl(gitFilePathHelper.getFileUrl(scope, updateFileRequest.getConnectorRef(),
                                 updateFileRequest.getBranchName(), updateFileRequest.getFilePath(), gitRepositoryDTO))
                             .build())
+        .build();
+  }
+
+  private GetBranchHeadCommitResponse prepareShowBranchResponse(
+      ScmGetBranchHeadCommitResponseDTO scmGetBranchHeadCommitResponseDTO) {
+    return GetBranchHeadCommitResponse.newBuilder()
+        .setStatusCode(HTTP_200)
+        .setSha(scmGetBranchHeadCommitResponseDTO.getCommitId())
+        .setMessage(scmGetBranchHeadCommitResponseDTO.getMessage())
+        .setLink(scmGetBranchHeadCommitResponseDTO.getCommitLink())
         .build();
   }
 
