@@ -5,18 +5,24 @@ import io.harness.MaxConcurrentExecutionsConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.services.LicenseService;
+import io.harness.ngsettings.SettingGroupIdentifiers;
 import io.harness.ngsettings.dto.SettingDTO;
 import io.harness.ngsettings.services.SettingValidator;
 
 import com.google.inject.Inject;
 
-public class MaxConcurrentNodesValidator implements SettingValidator {
+public class MaxConcurrentExecutionsValidator implements SettingValidator {
   @Inject private LicenseService licenseService;
   @Inject private MaxConcurrentExecutionsConfig maxConcurrentExecutionsConfig;
 
   @Override
   public void validate(String accountIdentifier, SettingDTO oldSettingDTO, SettingDTO newSettingDTO) {
-    MaxConcurrencyConfig maxConcurrentNodesConfig = maxConcurrentExecutionsConfig.getMaxConcurrentNodesConfig();
+    MaxConcurrencyConfig maxConcurrencyConfig;
+    if (SettingGroupIdentifiers.MAX_CONCURRENT_NODES.equals(oldSettingDTO.getGroupIdentifier())) {
+      maxConcurrencyConfig = maxConcurrentExecutionsConfig.getMaxConcurrentNodesConfig();
+    } else {
+      maxConcurrencyConfig = maxConcurrentExecutionsConfig.getMaxConcurrentPipelinesConfig();
+    }
     int minLimit = 1;
     int value = Integer.parseInt(newSettingDTO.getValue());
     if (value < minLimit) {
@@ -26,13 +32,13 @@ public class MaxConcurrentNodesValidator implements SettingValidator {
     int maxLimit;
     switch (edition) {
       case TEAM:
-        maxLimit = maxConcurrentNodesConfig.getTeam();
+        maxLimit = maxConcurrencyConfig.getTeam();
         break;
       case ENTERPRISE:
-        maxLimit = maxConcurrentNodesConfig.getEnterprise();
+        maxLimit = maxConcurrencyConfig.getEnterprise();
         break;
       default:
-        maxLimit = maxConcurrentNodesConfig.getFree();
+        maxLimit = maxConcurrencyConfig.getFree();
     }
     if (value > maxLimit) {
       throw new InvalidRequestException(String.format(

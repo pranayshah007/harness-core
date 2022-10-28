@@ -13,8 +13,7 @@ import io.harness.ngsettings.services.SettingValidator;
 import io.harness.ngsettings.services.SettingsService;
 import io.harness.ngsettings.services.impl.SettingsServiceImpl;
 import io.harness.ngsettings.services.impl.validators.DisableBuiltInHarnessSMValidator;
-import io.harness.ngsettings.services.impl.validators.MaxConcurrentNodesValidator;
-import io.harness.ngsettings.services.impl.validators.MaxConcurrentPipelinesValidator;
+import io.harness.ngsettings.services.impl.validators.MaxConcurrentExecutionsValidator;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
@@ -40,8 +39,8 @@ public class NGSettingModule extends AbstractModule {
 
     // Binding the settingValidator implementations with GroupIdentifiers.
     settingValidatorMapBinder.addBinding(SettingGroupIdentifiers.MAX_CONCURRENT_PIPELINE)
-        .to(MaxConcurrentPipelinesValidator.class);
+        .to(MaxConcurrentExecutionsValidator.class);
     settingValidatorMapBinder.addBinding(SettingGroupIdentifiers.MAX_CONCURRENT_NODES)
-        .to(MaxConcurrentNodesValidator.class);
+        .to(MaxConcurrentExecutionsValidator.class);
   }
 }
