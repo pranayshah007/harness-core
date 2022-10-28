@@ -6964,6 +6964,22 @@
           }
         },
         {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "raw"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryRawConfig"
+              }
+            }
+          }
+        },
+        {
           "oneOf": [
             {
               "required": [
@@ -7011,7 +7027,8 @@
                 "docker",
                 "maven",
                 "npm",
-                "nuget"
+                "nuget",
+                "raw"
               ]
             },
             "repositoryPort": {
@@ -7095,6 +7112,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/NexusRegistryNugetConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "raw"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryRawConfig"
               }
             }
           }
@@ -7226,6 +7259,25 @@
           ],
           "properties": {
             "packageName": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NexusRegistryRawConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/NexusRegistryConfigSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "group"
+          ],
+          "properties": {
+            "group": {
               "type": "string"
             }
           }

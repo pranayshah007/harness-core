@@ -5,18 +5,21 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.artifact.bean.yaml.nexusartifact;
+package software.wings.helpers.ext.nexus;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Builder;
+import lombok.Data;
+
 @OwnedBy(CDC)
-public class NexusConstant {
-  // auth types
-  public static final String MAVEN = "maven";
-  public static final String NPM = "npm";
-  public static final String NUGET = "nuget";
-  public static final String DOCKER = "docker";
-  public static final String RAW = "raw";
+@Data
+@Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class NexusRepositories {
+  private String repositoryName;
+  private String repositoryId;
 }
