@@ -556,35 +556,15 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
         .when(connectorUtils)
         .getConnectorDetails(any(NGAccess.class), eq("account.conn"));
 
-    when(scmFilePathEvaluatorOnDelegate.getScmPathFilterEvaluationTaskParams(any(), any(), any(), any()))
+    when(scmFilePathEvaluatorOnManager.execute(any(), any(), any(), any())).thenCallRealMethod();
+    when(scmFilePathEvaluatorOnManager.getScmPathFilterEvaluationTaskParams(any(), any(), any(), any()))
         .thenCallRealMethod();
-    when(scmFilePathEvaluatorOnDelegate.execute(any(), any(), any(), any())).thenCallRealMethod();
+    when(scmFilePathEvaluatorOnManager.getChangedFileset(any(), any(), any()))
+        .thenReturn(new HashSet<>(Collections.singletonList("file")));
 
-    byte[] data = new byte[0];
-    when(taskExecutionUtils.executeSyncTask(any(DelegateTaskRequest.class)))
-        .thenReturn(BinaryResponseData.builder().data(data).build());
-    doReturn(ScmPathFilterEvaluationTaskResponse.builder().matched(true).build())
-        .when(kryoSerializer)
-        .asInflatedObject(data);
-
-    ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    PowerMockito.mockStatic(ConditionEvaluator.class);
+    when(ConditionEvaluator.evaluate(any(), any(), any())).thenReturn(true);
     assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
-    verify(taskExecutionUtils, times(1)).executeSyncTask(argumentCaptor.capture());
-
-    // Assert Delegate Task request object generated
-    DelegateTaskRequest delegateTaskRequest = argumentCaptor.getValue();
-    assertThat(delegateTaskRequest.getAccountId()).isEqualTo("acc");
-    assertThat(delegateTaskRequest.getTaskType()).isEqualTo(SCM_PATH_FILTER_EVALUATION_TASK.toString());
-
-    assertThat(delegateTaskRequest.getTaskParameters()).isNotNull();
-
-    TaskParameters taskParameters = delegateTaskRequest.getTaskParameters();
-    assertThat(ScmPathFilterEvaluationTaskParams.class.isAssignableFrom(taskParameters.getClass()));
-    ScmPathFilterEvaluationTaskParams params = (ScmPathFilterEvaluationTaskParams) taskParameters;
-    assertThat(params.getScmConnector()).isEqualTo(githubConnectorDTO);
-    assertThat(params.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
-    assertThat(params.getOperator()).isEqualTo(EQUALS.getValue());
-    assertThat(params.getStandard()).isEqualTo("test");
   }
 
   @Test
