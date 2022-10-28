@@ -55,9 +55,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
   private final ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
-  @Inject private KubernetesContainerService kubernetesContainerService;
+  private final KubernetesContainerService kubernetesContainerService;
   private final KryoSerializer kryoSerializer;
-  @Inject private K8sTaskHelperBase k8sTaskHelperBase;
+  private final K8sTaskHelperBase k8sTaskHelperBase;
 
   @Override
   public InstanceSyncData fetchRunningInstanceDetails(
