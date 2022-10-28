@@ -62,7 +62,7 @@ public class PolicyExecutionDAO {
       log.info("Added target account filter");
     }
     if (policyExecutionFilter.getPolicyName() != null) {
-      query.field(PolicyExecutionKeys.policyIdentifier).in(policyExecutionFilter.getAccountName());
+      query.field(PolicyExecutionKeys.policyIdentifier).in(policyExecutionFilter.getPolicyName());
       log.info("Added policy Identifier filter");
     }
     if (policyExecutionFilter.getRegion() != null) {

@@ -46,31 +46,47 @@ public class PolicyEnforcementDAO {
   }
 
   public PolicyEnforcement update(PolicyEnforcement policy) {
-    Query query = hPersistence.createQuery(Policy.class)
+    Query<PolicyEnforcement> query = hPersistence.createQuery(PolicyEnforcement.class)
                       .field(PolicyEnforcementId.accountId)
                       .equal(policy.getAccountId())
                       .field(PolicyEnforcementId.uuid)
                       .equal(policy.getUuid());
-    UpdateOperations<PolicyEnforcement> updateOperations =
-        hPersistence.createUpdateOperations(PolicyEnforcement.class)
-            .set(PolicyEnforcementId.name, policy.getName())
-            .set(PolicyEnforcementId.policyIds, policy.getPolicyIds())
-            .set(PolicyEnforcementId.policyPackIDs, policy.getPolicyPackIDs())
-            .set(PolicyEnforcementId.executionSchedule, policy.getExecutionSchedule())
-            .set(PolicyEnforcementId.executionTimezone, policy.getExecutionTimezone())
-            .set(PolicyEnforcementId.targetAccounts, policy.getTargetAccounts())
-            .set(PolicyEnforcementId.targetRegions, policy.getTargetRegions())
-            .set(PolicyEnforcementId.executionTimezone, policy.getIsDryRun())
-            .set(PolicyEnforcementId.deleted, policy.getDeleted())
-            .set(PolicyEnforcementId.isEnabled, policy.getIsEnabled())
-            .set(PolicyEnforcementId.lastUpdatedAt, policy.getLastUpdatedAt());
+    UpdateOperations<PolicyEnforcement> updateOperations = hPersistence.createUpdateOperations(PolicyEnforcement.class);
+    if (policy.getName() != null) {
+      updateOperations.set(PolicyEnforcementId.name, policy.getName());
+    }
+    if (policy.getPolicyIds() != null) {
+      updateOperations.set(PolicyEnforcementId.policyIds, policy.getPolicyIds());
+    }
+    if (policy.getPolicyPackIDs() != null) {
+      updateOperations.set(PolicyEnforcementId.policyPackIDs, policy.getPolicyPackIDs());
+    }
+    if (policy.getExecutionSchedule() != null) {
+      updateOperations.set(PolicyEnforcementId.executionSchedule, policy.getExecutionSchedule());
+    }
+    if (policy.getExecutionTimezone() != null) {
+      updateOperations.set(PolicyEnforcementId.executionTimezone, policy.getExecutionTimezone());
+    }
+    if (policy.getTargetAccounts() != null) {
+      updateOperations.set(PolicyEnforcementId.targetAccounts, policy.getTargetAccounts());
+    }
+    if (policy.getTargetRegions() != null) {
+      updateOperations.set(PolicyEnforcementId.targetRegions, policy.getTargetRegions());
+    }
+    if (policy.getIsDryRun() != null) {
+      updateOperations.set(PolicyEnforcementId.executionTimezone, policy.getIsDryRun());
+    }
+    if (policy.getIsEnabled() != null) {
+      updateOperations.set(PolicyEnforcementId.isEnabled, policy.getIsEnabled());
+    }
 
     hPersistence.update(query, updateOperations);
     log.info("Updated policy: {}", policy.getUuid());
-    return policy;
+
+    return query.asList().get(0);
   }
 
-  public PolicyEnforcement listid(String accountId, String name, boolean create) {
+  public PolicyEnforcement listName(String accountId, String name, boolean create) {
     try {
       return hPersistence.createQuery(PolicyEnforcement.class)
           .field(PolicyEnforcementId.accountId)

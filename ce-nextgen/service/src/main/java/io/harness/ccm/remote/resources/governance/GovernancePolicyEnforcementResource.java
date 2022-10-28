@@ -139,18 +139,18 @@ public class GovernancePolicyEnforcementResource {
 
     try {
       CronSequenceGenerator cronSequenceGenerator = new CronSequenceGenerator(
-          policyEnforcement.getExecutionSchedule(), TimeZone.getTimeZone(policyEnforcement.getExecutionTimezone()));
-      CronSequenceGenerator.isValidExpression(String.valueOf(cronSequenceGenerator));
-      // Todo Timezone validtaion needs to be added
+              policyEnforcement.getExecutionSchedule(), TimeZone.getTimeZone(policyEnforcement.getExecutionTimezone()));
+        CronSequenceGenerator.isValidExpression(String.valueOf(cronSequenceGenerator));
+        //Todo Timezone validtaion needs to be added
     } catch (Exception e) {
       throw new InvalidRequestException("cron is not valid");
     }
-    if (policyEnforcementService.listid(accountId, policyEnforcement.getName(), true) != null) {
+    if (policyEnforcementService.listName(accountId, policyEnforcement.getName(), true) != null) {
       throw new InvalidRequestException("Policy Enforcement with given name already exits");
     }
-
-    policyService.check(accountId, policyEnforcement.getPolicyIds());
-    policyPackService.check(accountId, policyEnforcement.getPolicyPackIDs());
+    // TODO: Re enable after testing
+    policyService.check(policyEnforcement.getPolicyIds());
+    policyPackService.check(policyEnforcement.getPolicyPackIDs());
     policyEnforcementService.save(policyEnforcement);
 
     // Insert a record in dkron
@@ -218,7 +218,7 @@ public class GovernancePolicyEnforcementResource {
           required = true, description = "Unique identifier for the policy enforcement") @NotNull @Valid String name) {
     // rbacHelper.checkPolicyEnforcementDeletePermission(accountId, null, null);
     boolean result =
-        policyEnforcementService.delete(accountId, policyEnforcementService.listid(accountId, name, false).getUuid());
+        policyEnforcementService.delete(accountId, policyEnforcementService.listName(accountId, name, false).getUuid());
     // TODO: Delete the record from dkron as well.
     return ResponseDTO.newResponse(result);
   }
@@ -244,12 +244,15 @@ public class GovernancePolicyEnforcementResource {
     //  rbacHelper.checkPolicyEnforcementEditPermission(accountId, null, null);
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
     policyEnforcement.setAccountId(accountId);
-    policyEnforcementService.listid(accountId, policyEnforcement.getName(), false);
-    policyService.check(accountId, policyEnforcement.getPolicyIds());
-    policyPackService.check(accountId, policyEnforcement.getPolicyPackIDs());
-    policyEnforcementService.update(policyEnforcement);
+    policyEnforcementService.listName(accountId, policyEnforcement.getName(), false);
+    if(policyEnforcement.getPolicyIds()!=null) {
+      policyService.check(policyEnforcement.getPolicyIds());
+    }
+    if(policyEnforcement.getPolicyPackIDs()!=null) {
+      policyPackService.check(policyEnforcement.getPolicyPackIDs());
+    }
     // TODO: Update the record in dkron as well.
-    return ResponseDTO.newResponse(policyEnforcement.toDTO());
+    return ResponseDTO.newResponse( policyEnforcementService.update(policyEnforcement));
   }
 
   @POST

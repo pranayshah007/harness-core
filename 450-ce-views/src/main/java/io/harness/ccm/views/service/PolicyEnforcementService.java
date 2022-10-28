@@ -16,6 +16,7 @@ public interface PolicyEnforcementService {
   boolean save(PolicyEnforcement policyEnforcement);
   boolean delete(String accountId, String uuid);
   PolicyEnforcement update(PolicyEnforcement policyEnforcement);
-  PolicyEnforcement listid(String accountId, String name, boolean create);
+  PolicyEnforcement listName(String accountId, String name, boolean create);
   List<PolicyEnforcement> list(String accountId);
+
 }

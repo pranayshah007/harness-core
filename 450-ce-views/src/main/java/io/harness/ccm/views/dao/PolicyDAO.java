@@ -62,7 +62,9 @@ public class PolicyDAO {
       policiesOOTB.field(PolicyId.cloudProvider).equal(governancePolicyFilter.getCloudProvider());
       policiesCustom.field(PolicyId.cloudProvider).equal(governancePolicyFilter.getCloudProvider());
     }
+
     if (governancePolicyFilter.getIsOOTB() != null) {
+      log.info("IsOOTB IS NOT NULL");
       if (governancePolicyFilter.getIsOOTB()) {
         return policiesOOTB.asList();
       }
@@ -75,23 +77,23 @@ public class PolicyDAO {
     return policies;
   }
 
-  public Policy listid(String accountId, String uuid, boolean create) {
+  public Policy listName(String accountId, String name, boolean create) {
     try {
       List<Policy> policies = hPersistence.createQuery(Policy.class)
                                   .field(PolicyId.accountId)
                                   .equal(accountId)
-                                  .field(PolicyId.uuid)
-                                  .equal(uuid)
+                                  .field(PolicyId.name)
+                                  .equal(name)
                                   .asList();
       policies.addAll(hPersistence.createQuery(Policy.class)
                           .field(PolicyId.accountId)
                           .equal("")
-                          .field(PolicyId.uuid)
-                          .equal(uuid)
+                          .field(PolicyId.name)
+                          .equal(name)
                           .asList());
       return policies.get(0);
     } catch (IndexOutOfBoundsException e) {
-      log.error("No such policy exists,{} accountId {} uuid {}", e, accountId, uuid);
+      log.error("No such policy exists,{} accountId {} name {}", e, accountId, name);
       if (create) {
         return null;
       }
@@ -99,29 +101,43 @@ public class PolicyDAO {
     }
   }
 
-  public Policy update(Policy policy) {
-    Query query = hPersistence.createQuery(Policy.class)
-                      .field(PolicyId.accountId)
-                      .equal(policy.getAccountId())
-                      .field(PolicyId.uuid)
-                      .equal(policy.getUuid());
-    UpdateOperations<Policy> updateOperations = hPersistence.createUpdateOperations(Policy.class)
-                                                    .set(PolicyId.name, policy.getName())
-                                                    .set(PolicyId.description, policy.getDescription())
-                                                    .set(PolicyId.policyYaml, policy.getPolicyYaml())
-                                                    .set(PolicyId.isStablePolicy, policy.getIsStablePolicy())
-                                                    .set(PolicyId.isOOTB, policy.getIsOOTB())
-                                                    .set(PolicyId.tags, policy.getTags())
-                                                    .set(PolicyId.lastUpdatedAt, policy.getLastUpdatedAt());
+  public Policy update(Policy policy, String accountId) {
+    Query<Policy> query = hPersistence.createQuery(Policy.class)
+                              .field(PolicyId.accountId)
+                              .equal(accountId)
+                              .field(PolicyId.uuid)
+                              .equal(policy.getUuid());
+    UpdateOperations<Policy> updateOperations = hPersistence.createUpdateOperations(Policy.class);
 
+    if(policy.getName()!=null) {
+      updateOperations.set(PolicyId.name, policy.getName());
+    }
+    if (policy.getDescription() != null) {
+      updateOperations.set(PolicyId.description, policy.getDescription());
+    }
+    if (policy.getPolicyYaml() != null) {
+      updateOperations.set(PolicyId.policyYaml, policy.getPolicyYaml());
+    }
+    if (policy.getTags() != null) {
+      updateOperations.set(PolicyId.tags, policy.getTags());
+    }
+    log.info("Updated policy: {} {} {}", policy.getUuid(), hPersistence.update(query, updateOperations), query);
     hPersistence.update(query, updateOperations);
-    log.info("Updated policy: {}", policy.getUuid());
-    return policy;
+    //    return query.asList().get(0);
+    return query.asList().get(0);
   }
 
-  public void check(String accountId, List<String> policiesIdentifier) {
-    for (String identifiers : policiesIdentifier) {
-      listid(accountId, identifiers, false);
+
+  public void check( List<String> policiesIdentifier) {
+    try {
+      List<Policy> policies = hPersistence.createQuery(Policy.class)
+                                  .field(PolicyId.uuid)
+                                  .hasAnyOf(policiesIdentifier)
+                                  .asList();
+      log.info("{} ",policies);
+      policies.get(policiesIdentifier.size()-1);
+    } catch (IndexOutOfBoundsException e) {
+      throw new InvalidRequestException("A policy entered in the list doesn't exist");
     }
   }
 }

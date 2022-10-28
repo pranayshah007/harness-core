@@ -43,8 +43,8 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
 
 
   @Override
-  public Policy update(Policy policy) {
-    return policyDao.update(policy);
+  public Policy update(Policy policy, String accountId) {
+    return policyDao.update(policy, accountId);
   }
 
   @Override
@@ -53,12 +53,12 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
   }
 
   @Override
-  public Policy listid(String accountId, String name, boolean create) {
-    return policyDao.listid(accountId, name, create);
+  public Policy listName(String accountId, String name, boolean create) {
+    return policyDao.listName(accountId, name, create);
   }
 
   @Override
-  public void check(String accountId, List<String> policiesIdentifier) {
-    policyDao.check(accountId, policiesIdentifier);
+  public void check( List<String> policiesIdentifier) {
+    policyDao.check( policiesIdentifier);
   }
 }

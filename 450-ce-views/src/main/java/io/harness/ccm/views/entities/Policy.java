@@ -41,7 +41,7 @@ import org.mongodb.morphia.annotations.Id;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity(value = "governancePolicy", noClassnameStored = true)
 @Schema(description = "This object will contain the complete definition of a Cloud Cost Policies")
-
+//TODO add index with accid + name
 public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
                                      CreatedByAware, UpdatedByAware {
   @Id @Schema(description = "unique id") String uuid;

@@ -145,7 +145,7 @@ public class GovernancePolicyResource {
           description = "Request body containing Policy store object") @Valid CreatePolicyDTO createPolicyDTO) {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
-    if (governancePolicyService.listid(accountId, policy.getName(), true) != null) {
+    if (governancePolicyService.listName(accountId, policy.getName(), true) != null) {
       throw new InvalidRequestException("Policy  with given name already exits");
     }
     if (!policy.getIsOOTB()) {
@@ -163,7 +163,6 @@ public class GovernancePolicyResource {
 
   // Update a policy already made
   @PUT
-  @Hidden
   @Path("policy")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
@@ -183,12 +182,32 @@ public class GovernancePolicyResource {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
-    policy.setAccountId(accountId);
-    governancePolicyService.listid(accountId, policy.getName(), false);
-    governancePolicyService.update(policy);
-    return ResponseDTO.newResponse(policy);
+    governancePolicyService.listName(accountId, policy.getName(), false);
+    return ResponseDTO.newResponse(governancePolicyService.update(policy, accountId));
   }
 
+  @PUT
+  @Hidden
+  @Path("policyOOTB")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Update a existing OOTB Policy", nickname = "updatePolicy")
+  @LogAccountIdentifier
+  @Operation(operationId = "updatePolicy", description = "Update a Policy", summary = "Update a Policy",
+          responses =
+                  {
+                          @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update a existing OOTB Policy",
+                                  content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+                  })
+  public ResponseDTO<Policy>
+  updatePolicy(@RequestBody(required = true,
+                       description = "Request body containing policy object") @Valid CreatePolicyDTO createPolicyDTO) {
+    // rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    Policy policy = createPolicyDTO.getPolicy();
+    policy.toDTO();
+    governancePolicyService.listName("", policy.getName(), false);
+    return ResponseDTO.newResponse(governancePolicyService.update(policy, ""));
+  }
   // Internal API for deletion of OOTB policies
 
   @DELETE
@@ -239,7 +258,7 @@ public class GovernancePolicyResource {
     // rbacHelper.checkPolicyDeletePermission(accountId, null, null);
 
     boolean result =
-        governancePolicyService.delete(accountId, governancePolicyService.listid(accountId, name, false).getUuid());
+        governancePolicyService.delete(accountId, governancePolicyService.listName(accountId, name, false).getUuid());
     return ResponseDTO.newResponse(result);
   }
 

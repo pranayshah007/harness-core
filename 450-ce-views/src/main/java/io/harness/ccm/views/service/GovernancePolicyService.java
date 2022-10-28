@@ -15,8 +15,8 @@ public interface GovernancePolicyService {
   boolean save(Policy policy);
   boolean deleteOOTB(String uuid);
   boolean delete(String accountId, String uuid);
-  Policy update(Policy policy);
+  Policy update(Policy policy, String accountId);
   List<Policy> list(GovernancePolicyFilter governancePolicyFilter);
-  Policy listid(String accountId, String name, boolean create);
-  void check(String accountId, List<String> policiesIdentifier);
+  Policy listName(String accountId, String name, boolean create);
+  void check(List<String> policiesIdentifier);
 }

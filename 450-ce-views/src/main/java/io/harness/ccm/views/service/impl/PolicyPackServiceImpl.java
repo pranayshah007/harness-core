@@ -42,8 +42,9 @@ public class PolicyPackServiceImpl implements PolicyPackService {
   }
 
   @Override
-  public PolicyPack listid(String accountId, String name, boolean create) {
-    { return policyPackDAO.listid(accountId, name, create); }
+  public PolicyPack listName(String accountId, String name, boolean create) {
+    {
+      return policyPackDAO.listName(accountId, name, create); }
   }
 
   @Override
@@ -52,12 +53,12 @@ public class PolicyPackServiceImpl implements PolicyPackService {
   }
 
   @Override
-  public List<PolicyPack> listPacks(String accountId, List<String> packIds) {
-    { return policyPackDAO.listPacks(accountId, packIds); }
+  public void check( List<String> policyPackIdentifier) {
+    { policyPackDAO.check( policyPackIdentifier); }
   }
 
   @Override
-  public void check(String accountId, List<String> policyPackIdentifiers) {
-    { policyPackDAO.check(accountId, policyPackIdentifiers); }
+  public boolean deleteOOTB(String uuid) {
+    return policyPackDAO.deleteOOTB(uuid);
   }
 }
