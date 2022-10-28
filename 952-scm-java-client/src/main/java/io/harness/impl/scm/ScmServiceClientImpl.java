@@ -246,6 +246,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
   private FileBatchContentResponse getContentOfFilesBase64(
       List<String> filePaths, String slug, Provider gitProvider, String ref, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    log.info("Calling SCM for base64 response for files");
     GetBatchFileRequest batchFileRequest = createBatchFileRequest(filePaths, slug, ref, gitProvider, true);
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getBatchFileBase64, batchFileRequest);
   }
@@ -582,6 +583,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   @Override
   public FileContentBatchResponse listFilesBase64(
       ScmConnector connector, Set<String> foldersList, String branchName, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    log.info("Fetching files as base64");
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(connector);
     String slug = scmGitProviderHelper.getSlug(connector);
     final GetLatestCommitResponse latestCommitResponse =
@@ -612,7 +614,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       List<String> getFilesWhichArePartOfHarness =
           getFileNames(foldersList, slug, gitProvider, null, commitId, scmBlockingStub);
       final FileBatchContentResponse contentOfFiles =
-          getContentOfFiles(getFilesWhichArePartOfHarness, slug, gitProvider, commitId, scmBlockingStub);
+          getContentOfFilesBase64(getFilesWhichArePartOfHarness, slug, gitProvider, commitId, scmBlockingStub);
       return FileContentBatchResponse.builder().fileBatchContentResponse(contentOfFiles).commitId(commitId).build();
     }
   }
