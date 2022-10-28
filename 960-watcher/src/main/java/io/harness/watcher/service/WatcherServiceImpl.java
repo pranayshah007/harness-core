@@ -67,6 +67,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.synchronizedList;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.io.filefilter.FileFilterUtils.falseFileFilter;
@@ -287,9 +288,7 @@ public class WatcherServiceImpl implements WatcherService {
       synchronized (waiter) {
         waiter.wait();
       }
-
-      messageService.closeChannel(WATCHER, getProcessId());
-
+      log.info("Got stop message, shutting down now");
     } catch (InterruptedException e) {
       log.error("Interrupted while running watcher", e);
     }
@@ -1450,6 +1449,9 @@ public class WatcherServiceImpl implements WatcherService {
             success = true;
             stop();
           }
+        } else {
+          message =  messageService.readMessage(SECONDS.toMillis(2));
+          log.error("Failed to get message from new watcher, current message {}", message.getMessage());
         }
       }
       if (!success) {

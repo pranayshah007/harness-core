@@ -186,6 +186,9 @@ public class WatcherApplication {
     injector.getInstance(ExecutorService.class).awaitTermination(5, TimeUnit.MINUTES);
     log.info("Flushing logs");
     LogManager.shutdown();
+    log.info("Closing channel for [old] watcher");
+    MessageService messageService = injector.getInstance(MessageService.class);
+    messageService.closeChannel(WATCHER, getProcessId());
     System.exit(0);
   }
 }
