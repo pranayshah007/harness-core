@@ -1733,12 +1733,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
     } else {
       getUrlBuilder.addParameter("analysisMinute", String.valueOf(logsCVConfiguration.getBaselineEndMinute()));
     }
-    getUrlBuilder.addParameter("compressed",
-        verificationManagerClientHelper
-            .callManagerWithRetry(verificationManagerClient.isFeatureEnabled(
-                FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, logsCVConfiguration.getAccountId()))
-            .getResource()
-            .toString());
+    getUrlBuilder.addParameter("compressed", Boolean.FALSE.toString());
 
     final String logAnalysisGetUrl = getUriString(getUrlBuilder);
 
@@ -1958,12 +1953,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
     getUrlBuilder.addParameter("cvConfigId", logsCVConfiguration.getUuid());
     getUrlBuilder.addParameter("appId", logsCVConfiguration.getAppId());
     getUrlBuilder.addParameter("analysisMinute", String.valueOf(logsCVConfiguration.getBaselineEndMinute()));
-    getUrlBuilder.addParameter("compressed",
-        verificationManagerClientHelper
-            .callManagerWithRetry(verificationManagerClient.isFeatureEnabled(
-                FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, logsCVConfiguration.getAccountId()))
-            .getResource()
-            .toString());
+    getUrlBuilder.addParameter("compressed", Boolean.FALSE.toString());
     final String logAnalysisGetUrl = getUriString(getUrlBuilder);
 
     LearningEngineExperimentalAnalysisTask expTask =

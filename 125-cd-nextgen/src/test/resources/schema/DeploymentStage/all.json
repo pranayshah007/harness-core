@@ -3017,7 +3017,8 @@
             "ServerlessAwsLambda",
             "AzureWebApp",
             "CustomDeployment",
-            "ECS"
+            "ECS",
+            "Elastigroup"
           ]
         },
         "environment": {
@@ -3662,6 +3663,22 @@
             },
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupServiceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ServiceSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "startupScript": {
+              "$ref": "#/definitions/StartupScriptConfiguration"
             }
           }
         }
@@ -8660,7 +8677,8 @@
             "ServerlessAwsLambda",
             "AzureWebApp",
             "CustomDeployment",
-            "ECS"
+            "ECS",
+            "Elastigroup"
           ]
         }
       },
@@ -8710,6 +8728,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/EcsServiceSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Elastigroup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupServiceSpec"
               }
             }
           }
@@ -9559,6 +9593,21 @@
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "StartupCommandConfiguration": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "StartupScriptConfiguration": {
       "type": "object",
       "required": [
         "store"

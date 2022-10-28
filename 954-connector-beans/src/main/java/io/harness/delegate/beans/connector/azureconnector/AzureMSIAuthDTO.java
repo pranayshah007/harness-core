@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.azureconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureMSIAuthOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
@@ -18,4 +19,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("AzureMSIAuth")
 @Schema(name = "AzureMSIAuth", description = "This contains azure MSI auth details")
-public interface AzureMSIAuthDTO {}
+public interface AzureMSIAuthDTO {
+  default AzureMSIAuthOutcomeDTO toOutcome() {
+    return null;
+  }
+}

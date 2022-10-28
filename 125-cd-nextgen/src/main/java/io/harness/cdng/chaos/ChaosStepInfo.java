@@ -45,7 +45,7 @@ public class ChaosStepInfo implements CDStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> assertion;
 
   @Builder
-  @ConstructorProperties({"experimentRef", "expectedResilienceScore"})
+  @ConstructorProperties({"experimentRef", "expectedResilienceScore", "assertion"})
   public ChaosStepInfo(String experimentRef, Double expectedResilienceScore, ParameterField<String> assertion) {
     this.experimentRef = experimentRef;
     this.expectedResilienceScore = expectedResilienceScore;

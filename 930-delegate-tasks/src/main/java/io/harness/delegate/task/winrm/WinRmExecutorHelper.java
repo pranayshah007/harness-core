@@ -98,15 +98,33 @@ public class WinRmExecutorHelper {
       partOfCommand = partOfCommand.replace("$", "`$");
       // This is to escape quotes
       partOfCommand = partOfCommand.replaceAll("\"", "`\\\\\"");
+      // Replace pipe only if part of a string, else skip
+      partOfCommand = escapePipe(partOfCommand);
+      // Replace ampersand only if part of a string, else skip
+      partOfCommand = escapeAmpersand(partOfCommand);
       partOfCommand = escapeWordBreakChars(escapeLineBreakChars(partOfCommand));
       String appendTextToFileCommand = powershell + " Invoke-Command " + commandParametersString
           + " -command {[IO.File]::AppendAllText(\\\"" + psScriptFile + "\\\", \\\"" + partOfCommand + "\\\" ) }";
 
-      // Append each command with PS Invoke command which is write command to file and also add the PS newline character
-      // for correct escaping
       commandList.add(appendTextToFileCommand);
     }
     return commandList;
+  }
+
+  private static String escapePipe(String partOfCommand) {
+    Pattern patternForPipeWithinAString = Pattern.compile("[a-zA-Z]+\\|");
+    if (patternForPipeWithinAString.matcher(partOfCommand).find()) {
+      partOfCommand = partOfCommand.replaceAll("\\|", "`\\\"|`\\\"");
+    }
+    return partOfCommand;
+  }
+
+  private static String escapeAmpersand(String partOfCommand) {
+    Pattern patternForAmpersandWithinString = Pattern.compile("[a-zA-Z0-9]+&");
+    if (patternForAmpersandWithinString.matcher(partOfCommand).find()) {
+      partOfCommand = partOfCommand.replaceAll("&", "^&");
+    }
+    return partOfCommand;
   }
 
   private static String buildCommandParameters(List<WinRmCommandParameter> commandParameters) {

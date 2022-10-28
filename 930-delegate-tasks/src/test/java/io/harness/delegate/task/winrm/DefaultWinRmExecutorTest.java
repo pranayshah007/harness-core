@@ -136,6 +136,18 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testCharacterEscaping() {
+    String command = "a!a@a#a$a%a^a&a*a(a)a_a+a-a=a[a]a{a}a;a'a\\a:a\"a|a,a.a/a<a>a?a\r\na";
+    String commandWithEscapedCharacters =
+        "a!a@a#a`$a%a^a^&a*a(a)a_a+a-a=a[a]a{a}a;a'a\\a:a`\\\"a`\"|`\"a,a.a/a<a>a?a`r`na";
+    List<String> result1 =
+        WinRmExecutorHelper.constructCommandsList(command, "tempPSScript.ps1", DefaultWinRmExecutor.POWERSHELL, null);
+    assertThat(result1.get(0)).contains(commandWithEscapedCharacters);
+  }
+
+  @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testConstructPSScriptWithCommandsWithoutProfile() {

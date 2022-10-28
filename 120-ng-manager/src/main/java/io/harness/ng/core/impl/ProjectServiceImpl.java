@@ -177,7 +177,7 @@ public class ProjectServiceImpl implements ProjectService {
       return createdProject;
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
-          String.format("A project with identifier %s and orgIdentifier %s is already present or was deleted",
+          String.format("A project with identifier [%s] and orgIdentifier [%s] is already present or was deleted",
               project.getIdentifier(), orgIdentifier),
           USER_SRE, ex);
     }

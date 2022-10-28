@@ -57,4 +57,4 @@ secretsConfiguration:
 
 eventDataBatchQueryConfig:
   queryBatchSize: 4000
-  enableBatchWrite: true
+  enableBatchWrite: false

@@ -12,6 +12,7 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMP
 
 import static software.wings.beans.AccountType.log;
 
+import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -50,9 +51,9 @@ public class CustomDeploymentEntitySetupHelper {
   public static final String STABLE_VERSION = "__STABLE__";
 
   public void addReferencesInEntitySetupUsage(@NotNull InfrastructureEntity infraEntity) {
-    EntityDetailProtoDTO entityDetailProtoDTO = getEntityProto(infraEntity);
-    if (!isNull(entityDetailProtoDTO)) {
-      publishSetupUsageEvent(infraEntity, entityDetailProtoDTO);
+    EntityDetailProtoDTO templateEntityDTO = getTemplateDTOFromInfraEntity(infraEntity);
+    if (!isNull(templateEntityDTO)) {
+      publishSetupUsageEvent(infraEntity, templateEntityDTO);
     }
   }
   public void deleteReferencesInEntitySetupUsage(@NotNull InfrastructureEntity infraEntity) {
@@ -75,13 +76,12 @@ public class CustomDeploymentEntitySetupHelper {
     }
   }
   public void publishSetupUsageEvent(
-      @NotNull InfrastructureEntity infraEntity, EntityDetailProtoDTO entityDetailProtoDTO) {
-    Map<String, List<EntityDetailProtoDTO>> referredEntityTypeToReferredEntities = new HashMap<>();
-    List<EntityDetailProtoDTO> entityDetailProtoDTOS =
-        referredEntityTypeToReferredEntities.getOrDefault(entityDetailProtoDTO.getType().name(), new ArrayList<>());
-    entityDetailProtoDTOS.add(entityDetailProtoDTO);
-    referredEntityTypeToReferredEntities.put(entityDetailProtoDTO.getType().name(), entityDetailProtoDTOS);
-    EntityDetailProtoDTO referredByEntity =
+      @NotNull InfrastructureEntity infraEntity, EntityDetailProtoDTO templateEntityDTO) {
+    Map<String, List<EntityDetailProtoDTO>> templateEntityTypeToTemplateEntities = new HashMap<>();
+    List<EntityDetailProtoDTO> templateEntityDTOS = new ArrayList<>();
+    templateEntityDTOS.add(templateEntityDTO);
+    templateEntityTypeToTemplateEntities.put(templateEntityDTO.getType().name(), templateEntityDTOS);
+    EntityDetailProtoDTO infraEntityDTO =
         EntityDetailProtoDTO.newBuilder()
             .setInfraDefRef(InfraDefinitionReferenceProtoDTO.newBuilder()
                                 .setIdentifier(StringValue.of(infraEntity.getIdentifier()))
@@ -93,11 +93,11 @@ public class CustomDeploymentEntitySetupHelper {
             .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
             .setName(infraEntity.getName())
             .build();
-    for (Map.Entry<String, List<EntityDetailProtoDTO>> entry : referredEntityTypeToReferredEntities.entrySet()) {
+    for (Map.Entry<String, List<EntityDetailProtoDTO>> entry : templateEntityTypeToTemplateEntities.entrySet()) {
       List<EntityDetailProtoDTO> entityDetailProtoDTOs = entry.getValue();
       EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
                                                            .setAccountIdentifier(infraEntity.getAccountId())
-                                                           .setReferredByEntity(referredByEntity)
+                                                           .setReferredByEntity(infraEntityDTO)
                                                            .addAllReferredEntities(entityDetailProtoDTOs)
                                                            .setDeleteOldReferredByRecords(true)
                                                            .build();
@@ -116,17 +116,17 @@ public class CustomDeploymentEntitySetupHelper {
     JsonNode yamlMap = yamlConfig.getYamlMap();
     JsonNode infraDef = yamlMap.get("infrastructureDefinition");
     try {
-      if (infraDef.isNull()) {
+      if (isNull(infraDef)) {
         log.error("Infra definition is null in yaml for account id :{}", infraEntity.getAccountId());
         throw new InvalidRequestException("Infra definition is null in yaml");
       }
       JsonNode spec = infraDef.get("spec");
-      if (spec.isNull()) {
+      if (isNull(spec)) {
         log.error("spec is null in yaml for account id :{}", infraEntity.getAccountId());
         throw new InvalidRequestException("Infra definition spec is null in yaml");
       }
       JsonNode customDeploymentRef = spec.get("customDeploymentRef");
-      if (customDeploymentRef.isNull()) {
+      if (isNull(customDeploymentRef)) {
         log.error("customDeploymentRef is null in yaml for account id :{}", infraEntity.getAccountId());
         throw new InvalidRequestException("customDeploymentRef is null in yaml");
       }
@@ -139,19 +139,18 @@ public class CustomDeploymentEntitySetupHelper {
     } catch (Exception e) {
       log.error("Could not fetch the template reference from yaml for acc :{}, project :{}, infraRef:{}: {}",
           infraEntity.getAccountId(), infraEntity.getProjectIdentifier(), infraEntity.getIdentifier(), e);
-      throw new InvalidRequestException("Could not fetch the template reference from yaml " + e.getMessage());
+      throw new InvalidRequestException(
+          format("Could not fetch the template reference from yaml for infraRef : [%s]", infraEntity.getIdentifier()));
     }
   }
 
-  private EntityDetailProtoDTO getEntityProto(@NotNull InfrastructureEntity infraEntity) {
+  private EntityDetailProtoDTO getTemplateDTOFromInfraEntity(@NotNull InfrastructureEntity infraEntity) {
     try {
-      StepTemplateRef stepTemplateRef = getStepTemplateRefFromYaml(infraEntity);
-      String templateRef = stepTemplateRef.getTemplateRef();
-      String versionLabel = stepTemplateRef.getVersionLabel();
-      if (isNull(versionLabel)) {
-        log.error("Empty versionLabel while trying to add entity setup usage for acc :{}, project :{}, infraRef:{}",
-            infraEntity.getAccountId(), infraEntity.getProjectIdentifier(), infraEntity.getIdentifier());
-        return null;
+      StepTemplateRef customDeploymentRef = getStepTemplateRefFromYaml(infraEntity);
+      String templateRef = customDeploymentRef.getTemplateRef();
+      String versionLabel = customDeploymentRef.getVersionLabel();
+      if (isEmpty(versionLabel)) {
+        versionLabel = STABLE_VERSION;
       }
       TemplateReferenceProtoDTO.Builder templateReferenceProtoDTO =
           TemplateReferenceProtoDTO.newBuilder().setAccountIdentifier(StringValue.of(infraEntity.getAccountId()));
@@ -168,18 +167,17 @@ public class CustomDeploymentEntitySetupHelper {
             .setProjectIdentifier(StringValue.of(infraEntity.getProjectIdentifier()))
             .setIdentifier(StringValue.of(templateRef));
       }
-      if (versionLabel.isEmpty()) {
-        versionLabel = STABLE_VERSION;
-      }
       templateReferenceProtoDTO.setVersionLabel(StringValue.of(versionLabel));
       return EntityDetailProtoDTO.newBuilder()
           .setType(TEMPLATE)
           .setTemplateRef(templateReferenceProtoDTO.build())
           .build();
     } catch (Exception e) {
-      log.error("Could not delete the reference in entity setup usage for acc :{}, project :{}, infraRef:{}: {}",
+      log.error("Could not add the reference in entity setup usage for acc :{}, project :{}, infraRef:{}: {}",
           infraEntity.getAccountId(), infraEntity.getProjectIdentifier(), infraEntity.getIdentifier(), e);
-      throw new InvalidRequestException("Could not delete the reference in entity setup usage " + e.getMessage());
+      throw new InvalidRequestException(
+          format("Could not add the reference in entity setup usage for infraRef :[%s] and [%s] ",
+              infraEntity.getIdentifier(), e.getMessage()));
     }
   }
   private EntityDetailProtoDTO getEntityProtoForDelete(@NotNull InfrastructureEntity infraEntity) {

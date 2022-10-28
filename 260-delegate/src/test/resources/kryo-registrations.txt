@@ -1597,7 +1597,7 @@
 21002:io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO
 21003:io.harness.delegate.beans.connector.spotconnector.SpotCredentialSpecDTO
 21004:io.harness.delegate.beans.connector.spotconnector.SpotCredentialType
-21005:io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO
+21005:io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO
 21006:io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse
 21007:io.harness.delegate.beans.connector.spotconnector.SpotTaskParams
 21008:io.harness.delegate.beans.connector.spotconnector.SpotTaskType

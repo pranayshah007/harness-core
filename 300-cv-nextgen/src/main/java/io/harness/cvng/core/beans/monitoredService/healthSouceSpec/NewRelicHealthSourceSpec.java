@@ -21,6 +21,7 @@ import io.harness.cvng.core.validators.UniqueIdentifierCheck;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +41,8 @@ import org.apache.commons.collections4.CollectionUtils;
 @SuperBuilder
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "NewRelicHealthSource",
+    description = "This is the NewRelic Metric Health Source spec entity defined in Harness")
 public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
   String applicationName;
   String applicationId;
