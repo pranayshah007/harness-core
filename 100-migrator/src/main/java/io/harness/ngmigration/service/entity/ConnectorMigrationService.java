@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.entity;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
+import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -202,6 +203,16 @@ public class ConnectorMigrationService extends NgMigrationService {
     NGYamlFile yamlFile = null;
     try {
       if (connectorImpl.getSecretType() != null) {
+        // We are overriding this because these are connectors in CG but in NG they are secrets.
+        // So when we migrate we should infer them as secrets
+        scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT, SECRET);
+        projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
+        orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
+        ngEntityDetail = NgEntityDetail.builder()
+                             .identifier(identifier)
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .build();
         SecretSpecDTO secretSpecDTO = connectorImpl.getSecretSpecDTO(settingAttribute, migratedEntities);
         yamlFile = NGYamlFile.builder()
                        .type(NGMigrationEntityType.SECRET)

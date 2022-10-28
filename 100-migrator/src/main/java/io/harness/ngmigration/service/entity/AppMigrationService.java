@@ -7,13 +7,16 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.encryption.Scope.PROJECT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
+import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.beans.SearchFilter.Operator;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
@@ -36,7 +39,13 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Application;
+import software.wings.beans.Application.ApplicationKeys;
+import software.wings.beans.EntityType;
 import software.wings.beans.Service;
+import software.wings.beans.ServiceVariable;
+import software.wings.beans.ServiceVariable.ServiceVariableKeys;
+import software.wings.beans.appmanifest.ApplicationManifest;
+import software.wings.beans.appmanifest.ApplicationManifest.ApplicationManifestKeys;
 import software.wings.beans.template.Template;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -47,6 +56,7 @@ import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.ServiceResourceService;
+import software.wings.service.intfc.ServiceVariableService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -68,7 +78,7 @@ public class AppMigrationService extends NgMigrationService {
   @Inject private HPersistence hPersistence;
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceResourceService serviceResourceService;
-
+  @Inject private ServiceVariableService serviceVariableService;
   @Inject private TemplateImportService templateService;
 
   @Inject private MigratorExpressionUtils migratorExpressionUtils;
@@ -124,6 +134,38 @@ public class AppMigrationService extends NgMigrationService {
               .distinct()
               .map(template -> CgEntityId.builder().id(template.getUuid()).type(NGMigrationEntityType.TEMPLATE).build())
               .collect(Collectors.toSet()));
+    }
+    // We are filtering based on service template because service variables & environment types are handled with
+    // Environment migration. These variables depend on both service & environment to be migrated.
+    List<ServiceVariable> serviceVariables = serviceVariableService.list(
+        aPageRequest()
+            .addFilter(ServiceVariableKeys.appId, Operator.EQ, appId)
+            .addFilter(ServiceVariableKeys.entityType, Operator.EQ, EntityType.SERVICE_TEMPLATE.name())
+            .build());
+    if (EmptyPredicate.isNotEmpty(serviceVariables)) {
+      children.addAll(serviceVariables.stream()
+                          .distinct()
+                          .map(serviceVariable
+                              -> CgEntityId.builder()
+                                     .id(serviceVariable.getUuid())
+                                     .type(NGMigrationEntityType.SERVICE_VARIABLE)
+                                     .build())
+                          .collect(Collectors.toList()));
+    }
+
+    List<ApplicationManifest> applicationManifests = hPersistence.createQuery(ApplicationManifest.class)
+                                                         .filter(ApplicationKeys.appId, appId)
+                                                         .field(ApplicationManifestKeys.serviceId)
+                                                         .notEqual(null)
+                                                         .field(ApplicationManifestKeys.envId)
+                                                         .notEqual(null)
+                                                         .asList();
+
+    if (EmptyPredicate.isNotEmpty(applicationManifests)) {
+      children.addAll(applicationManifests.stream()
+                          .distinct()
+                          .map(manifest -> CgEntityId.builder().id(manifest.getUuid()).type(MANIFEST).build())
+                          .collect(Collectors.toList()));
     }
 
     return DiscoveryNode.builder()

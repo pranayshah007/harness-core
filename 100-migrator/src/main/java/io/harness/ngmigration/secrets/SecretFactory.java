@@ -75,11 +75,18 @@ public class SecretFactory {
       return awsSecretMigrator;
     }
     // Handle special case for Harness Secret managers
-    if (secretManagerConfig instanceof GcpKmsConfig
-        && "Harness Secrets Manager".equals(secretManagerConfig.getName().trim())) {
+    if (secretManagerConfig instanceof GcpKmsConfig && isHarnessSecretManager(secretManagerConfig)) {
       return harnessSecretMigrator;
     }
     throw new InvalidRequestException("Unsupported secret manager");
+  }
+
+  public static boolean isHarnessSecretManager(SecretManagerConfig secretManagerConfig) {
+    if (secretManagerConfig instanceof LocalEncryptionConfig) {
+      return true;
+    }
+    return "Harness Secrets Manager".equals(secretManagerConfig.getName().trim())
+        || "__GLOBAL_ACCOUNT_ID__".equals(secretManagerConfig.getAccountId());
   }
 
   public SecretDTOV2Builder getSecret(EncryptedData encryptedData, Map<CgEntityId, CgEntityNode> entities,
@@ -90,8 +97,7 @@ public class SecretFactory {
       return null;
     }
     SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(secretManagerId).getEntity();
-    String secretManagerIdentifier =
-        MigratorUtility.getIdentifierWithScope(migratedEntities.get(secretManagerId).getNgEntityDetail());
+    String secretManagerIdentifier = migratedEntities.get(secretManagerId).getNgEntityDetail().getIdentifier();
     // Support secret file
     if (encryptedData.getType().equals(SettingVariableTypes.CONFIG_FILE)) {
       return SecretDTOV2.builder()

@@ -20,6 +20,7 @@ import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.services.LicenseService;
 import io.harness.repositories.SubscriptionDetailRepository;
 import io.harness.subscription.entities.SubscriptionDetail;
+import io.harness.subscription.enums.SubscriptionStatus;
 import io.harness.subscription.helpers.StripeHelper;
 import io.harness.subscription.params.SubscriptionParams;
 
@@ -85,6 +86,8 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
       updateLicense.setId(existingLicense.getId());
       licenseService.updateModuleLicense(updateLicense);
     }
+    subscriptionDetail.setStatus(SubscriptionStatus.ACTIVE.toString());
+    subscriptionDetailRepository.save(subscriptionDetail);
   }
 
   private void updatePaymentIntentForFirstPayment(Invoice invoice) {

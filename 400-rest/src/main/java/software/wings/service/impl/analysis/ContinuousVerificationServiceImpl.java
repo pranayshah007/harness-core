@@ -432,33 +432,8 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
   public PageResponse<ContinuousVerificationExecutionMetaData> getAllCVExecutionsForTime(final String accountId,
       long beginEpochTs, long endEpochTs, boolean isTimeSeries,
       PageRequest<ContinuousVerificationExecutionMetaData> pageRequestFromUI) {
-    // TODO: Move this accountId check to Rbac
-    if (!featureFlagService.isEnabled(FeatureName.GLOBAL_CV_DASH, accountId)) {
-      return new PageResponse<>();
-    }
-    PageRequest<ContinuousVerificationExecutionMetaData> pageRequest =
-        PageRequestBuilder.aPageRequest().withOffset(pageRequestFromUI.getOffset()).build();
-    if (beginEpochTs < 0 || endEpochTs < 0) {
-      // if there's no start/end, we will default to 7 days
-      beginEpochTs = Timestamp.currentMinuteBoundary() - TimeUnit.DAYS.toMillis(7);
-      endEpochTs = Timestamp.currentMinuteBoundary();
-    }
-    List<StateType> stateTypeList;
-    if (isTimeSeries) {
-      stateTypeList = getMetricAnalysisStates();
-    } else {
-      stateTypeList = getLogAnalysisStates();
-    }
-
-    pageRequest.addFilter("stateType", Operator.IN, stateTypeList.toArray());
-    pageRequest.addFilter("workflowStartTs", Operator.GE, beginEpochTs);
-    pageRequest.addFilter("workflowStartTs", Operator.LT, endEpochTs);
-    pageRequest.setFieldsIncluded(Arrays.asList("stateExecutionId", "workflowExecutionId", "envId", "serviceId",
-        "accountId", "executionStatus", "applicationId", "workflowStartTs", "stateType"));
-    pageRequest.addOrder("workflowStartTs", OrderType.DESC);
-    pageRequest.addOrder("stateStartTs", OrderType.DESC);
-
-    return wingsPersistence.query(ContinuousVerificationExecutionMetaData.class, pageRequest, excludeAuthority);
+    // TODO: Clean this up fully after UI code is removed.
+    return new PageResponse<>();
   }
 
   @Override

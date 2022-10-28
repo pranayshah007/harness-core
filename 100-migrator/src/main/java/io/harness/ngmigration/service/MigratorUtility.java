@@ -90,6 +90,8 @@ public class MigratorUtility {
         return 25;
       case INFRA:
         return 35;
+      case SERVICE_VARIABLE:
+        return 40;
       case PIPELINE:
         return 50;
       default:
@@ -99,13 +101,19 @@ public class MigratorUtility {
 
   public static Scope getDefaultScope(MigrationInputDTO inputDTO, CgEntityId entityId, Scope defaultScope) {
     NGMigrationEntityType entityType = entityId.getType();
+    return getDefaultScope(inputDTO, entityId, defaultScope, entityType);
+  }
+
+  public static Scope getDefaultScope(MigrationInputDTO inputDTO, CgEntityId entityId, Scope defaultScope,
+      NGMigrationEntityType destinationEntityType) {
     if (inputDTO == null) {
       return defaultScope;
     }
     Scope scope = defaultScope;
     Map<NGMigrationEntityType, InputDefaults> defaults = inputDTO.getDefaults();
-    if (defaults != null && defaults.containsKey(entityType) && defaults.get(entityType).getScope() != null) {
-      scope = defaults.get(entityType).getScope();
+    if (defaults != null && defaults.containsKey(destinationEntityType)
+        && defaults.get(destinationEntityType).getScope() != null) {
+      scope = defaults.get(destinationEntityType).getScope();
     }
     Map<CgEntityId, BaseProvidedInput> inputs = inputDTO.getOverrides();
     if (inputs != null && inputs.containsKey(entityId) && inputs.get(entityId).getScope() != null) {
@@ -144,6 +152,13 @@ public class MigratorUtility {
         .identifier(migratedSecret.getIdentifier())
         .scope(MigratorUtility.getScope(migratedSecret))
         .build();
+  }
+
+  public static String getIdentifierWithScope(
+      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    NgEntityDetail detail =
+        migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build()).getNgEntityDetail();
+    return getIdentifierWithScope(detail);
   }
 
   public static String getIdentifierWithScope(NgEntityDetail entityDetail) {
@@ -244,6 +259,6 @@ public class MigratorUtility {
       return ParameterField.ofNull();
     }
     return ParameterField.createValueField(
-        files.stream().map(file -> "/" + ((FileYamlDTO) file.getYaml()).getIdentifier()).collect(Collectors.toList()));
+        files.stream().map(file -> "/" + ((FileYamlDTO) file.getYaml()).getName()).collect(Collectors.toList()));
   }
 }

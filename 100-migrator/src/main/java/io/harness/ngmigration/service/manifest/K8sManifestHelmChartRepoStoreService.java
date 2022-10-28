@@ -31,6 +31,7 @@ import io.harness.ngmigration.service.entity.ManifestMigrationService;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.HelmChartConfig;
+import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
@@ -60,14 +61,23 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
             .getEntity();
     String name = StringUtils.isBlank(applicationManifest.getName()) ? applicationManifest.getUuid()
                                                                      : applicationManifest.getName();
+
+    Service service =
+        (Service) entities
+            .get(
+                CgEntityId.builder().type(NGMigrationEntityType.SERVICE).id(applicationManifest.getServiceId()).build())
+            .getEntity();
     String identifier = MigratorUtility.generateIdentifier(name);
     HelmChartManifestBuilder helmChartManifest =
         HelmChartManifest.builder()
             .identifier(identifier)
+            .helmVersion(service.getHelmVersion())
             .skipResourceVersioning(
                 ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
             .chartName(ParameterField.createValueField(helmChartConfig.getChartName()))
             .chartVersion(ParameterField.createValueField("<+input>"));
+
+    helmChartManifest.commandFlags(getCommandFlags(applicationManifest));
 
     if (HTTP_HELM_REPO.equals(settingAttribute.getValue().getSettingType())) {
       NGYamlFile connectorYamlFile = migratedEntities.get(

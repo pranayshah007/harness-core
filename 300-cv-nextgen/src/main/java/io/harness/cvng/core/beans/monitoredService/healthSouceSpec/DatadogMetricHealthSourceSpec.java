@@ -19,6 +19,7 @@ import io.harness.cvng.core.validators.UniqueIdentifierCheck;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +44,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "DatadogMetricHealthSource",
+    description = "This is the Datadog Metric Health Source spec entity defined in Harness")
 public class DatadogMetricHealthSourceSpec extends MetricHealthSourceSpec {
   @NotNull private String feature;
   @UniqueIdentifierCheck @Valid private List<DatadogMetricHealthDefinition> metricDefinitions;

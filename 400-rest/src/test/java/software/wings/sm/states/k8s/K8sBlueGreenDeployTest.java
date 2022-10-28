@@ -167,7 +167,6 @@ public class K8sBlueGreenDeployTest extends CategoryTest {
     List<KubernetesResource> kubernetesResources = new ArrayList<>();
     kubernetesResources.add(KubernetesResource.builder().build());
 
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
     when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());
@@ -213,7 +212,6 @@ public class K8sBlueGreenDeployTest extends CategoryTest {
     k8sBlueGreenDeploy.setInheritManifests(true);
     List<KubernetesResource> kubernetesResources = new ArrayList<>();
 
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
     when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());
@@ -239,7 +237,6 @@ public class K8sBlueGreenDeployTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteWhenInheritManifests() {
     k8sBlueGreenDeploy.setInheritManifests(true);
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     doReturn(Activity.builder().build()).when(k8sBlueGreenDeploy).createK8sActivity(any(), any(), any(), any(), any());
     doReturn(ExecutionResponse.builder().build()).when(k8sBlueGreenDeploy).executeK8sTask(any(), any());
     k8sBlueGreenDeploy.execute(context);
@@ -361,7 +358,6 @@ public class K8sBlueGreenDeployTest extends CategoryTest {
 
     stateExecutionInstance.setStateExecutionMap(
         ImmutableMap.of(stateExecutionInstance.getDisplayName(), stateExecutionData));
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     doReturn(ACTIVITY_ID).when(k8sBlueGreenDeploy).fetchActivityId(context);
     doReturn(APP_ID).when(k8sBlueGreenDeploy).fetchAppId(context);
 

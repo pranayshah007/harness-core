@@ -7,7 +7,10 @@
 
 package io.harness.cvng.core.resources;
 
+import static io.harness.annotations.dev.HarnessTeam.CV;
+
 import io.harness.annotations.ExposeInternalException;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.beans.aws.AwsPrometheusWorkspaceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.AwsService;
@@ -42,6 +45,7 @@ import javax.ws.rs.QueryParam;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
+@OwnedBy(CV)
 public class AwsResource {
   @Inject private AwsService awsService;
 

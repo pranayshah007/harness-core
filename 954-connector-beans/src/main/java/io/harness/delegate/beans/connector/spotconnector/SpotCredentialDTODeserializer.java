@@ -38,8 +38,8 @@ public class SpotCredentialDTODeserializer extends StdDeserializer<SpotCredentia
     SpotCredentialSpecDTO spotCredentialSpecDTO = null;
     ObjectMapper mapper = (ObjectMapper) jp.getCodec();
 
-    if (type == SpotCredentialType.MANUAL_CREDENTIALS) {
-      spotCredentialSpecDTO = mapper.readValue(authSpec.toString(), SpotManualConfigSpecDTO.class);
+    if (type == SpotCredentialType.PERMANENT_TOKEN) {
+      spotCredentialSpecDTO = mapper.readValue(authSpec.toString(), SpotPermanentTokenConfigSpecDTO.class);
     }
 
     return SpotCredentialDTO.builder().spotCredentialType(type).config(spotCredentialSpecDTO).build();

@@ -367,10 +367,11 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testValidateHostsConnectivityEmptyHosts() {
-    List<HostValidationDTO> result = hostValidationService.validateHostsConnectivity(
-        Collections.emptyList(), ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, Collections.emptySet());
-
-    assertThat(result).isEmpty();
+    assertThatThrownBy(()
+                           -> hostValidationService.validateHostsConnectivity(Collections.emptyList(),
+                               ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, Collections.emptySet()))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("No hosts to test");
   }
 
   @Test

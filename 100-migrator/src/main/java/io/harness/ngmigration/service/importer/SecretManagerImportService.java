@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SecretManagerImportService implements ImportService {
   @Inject private SecretManagerConfigService secretManagerConfigService;
   @Inject DiscoveryService discoveryService;
+  @Inject private SecretFactory secretFactory;
 
   public DiscoveryResult discover(String authToken, ImportDTO importConnectorDTO) {
     SecretManagerFilter filter = (SecretManagerFilter) importConnectorDTO.getFilter();
@@ -44,7 +45,7 @@ public class SecretManagerImportService implements ImportService {
                                .stream()
                                .filter(secretManagerConfig -> {
                                  try {
-                                   SecretFactory.getConnectorType(secretManagerConfig);
+                                   secretFactory.getSecretMigrator(secretManagerConfig);
                                    return true;
                                  } catch (Exception e) {
                                    log.warn("Unsupported secret manager", e);

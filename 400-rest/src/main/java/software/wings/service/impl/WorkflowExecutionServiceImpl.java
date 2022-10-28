@@ -36,6 +36,7 @@ import static io.harness.beans.FeatureName.INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT
 import static io.harness.beans.FeatureName.NEW_DEPLOYMENT_FREEZE;
 import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
 import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
+import static io.harness.beans.FeatureName.SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.FeatureName.WORKFLOW_EXECUTION_REFRESH_STATUS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -2653,7 +2654,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   public void populateArtifactsAndServices(WorkflowExecution workflowExecution, WorkflowStandardParams stdParams,
       Set<String> keywords, ExecutionArgs executionArgs, String accountId) {
-    if (featureFlagService.isEnabled(HELM_CHART_AS_ARTIFACT, accountId)) {
+    boolean shouldReduceKeywords =
+        featureFlagService.isEnabled(SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS, accountId);
+    if (!shouldReduceKeywords && featureFlagService.isEnabled(HELM_CHART_AS_ARTIFACT, accountId)) {
       populateHelmChartsInWorkflowExecution(workflowExecution, keywords, executionArgs, accountId);
     }
 
@@ -2704,10 +2707,12 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       artifact.setArtifactFiles(null);
       artifact.setCreatedBy(null);
       artifact.setLastUpdatedBy(null);
-      keywords.add(artifact.getArtifactSourceName());
-      keywords.add(artifact.getDescription());
-      keywords.add(artifact.getRevision());
-      keywords.addAll(artifact.getMetadata().values());
+      if (!shouldReduceKeywords) {
+        keywords.add(artifact.getArtifactSourceName());
+        keywords.add(artifact.getDescription());
+        keywords.add(artifact.getRevision());
+        keywords.addAll(artifact.getMetadata().values());
+      }
     });
 
     executionArgs.setArtifacts(artifacts);

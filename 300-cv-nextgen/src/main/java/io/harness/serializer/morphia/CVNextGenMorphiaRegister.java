@@ -29,6 +29,7 @@ import io.harness.cvng.analysis.entities.ServiceGuardLogAnalysisTask;
 import io.harness.cvng.analysis.entities.TestLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesAnomalousPatterns;
 import io.harness.cvng.analysis.entities.TimeSeriesCanaryLearningEngineTask;
+import io.harness.cvng.analysis.entities.TimeSeriesCanaryLearningEngineTask_v2;
 import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums;
 import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesLoadTestLearningEngineTask;
@@ -99,6 +100,7 @@ import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndic
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
+import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
@@ -220,6 +222,8 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(CompositeServiceLevelObjective.class);
     set.add(ELKCVConfig.class);
     set.add(CompositeSLORecord.class);
+    set.add(AutoVerificationJob.class);
+    set.add(TimeSeriesCanaryLearningEngineTask_v2.class);
   }
 
   @Override

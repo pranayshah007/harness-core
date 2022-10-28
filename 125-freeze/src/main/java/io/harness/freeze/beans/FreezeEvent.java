@@ -2,9 +2,11 @@ package io.harness.freeze.beans;
 
 import io.harness.notification.FreezeEventType;
 
-import java.util.List;
+import lombok.Builder;
+import lombok.Data;
 
+@Data
+@Builder
 public class FreezeEvent {
   FreezeEventType type;
-  List<String> forStages;
 }

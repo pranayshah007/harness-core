@@ -96,7 +96,7 @@ public class AWSConnectorImpl implements BaseConnector {
           AwsManualConfigSpecDTO.builder().accessKeyRef(accessRefData).secretKeyRef(secretRefData).build();
     } else {
       awsManualConfigSpecDTO = AwsManualConfigSpecDTO.builder()
-                                   .accessKey(new String(clusterConfig.getAccessKey()))
+                                   .accessKey(String.valueOf(clusterConfig.getAccessKey()))
                                    .secretKeyRef(secretRefData)
                                    .build();
     }

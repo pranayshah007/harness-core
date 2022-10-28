@@ -7,6 +7,7 @@
 
 package io.harness.perpetualtask.internal;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -25,6 +26,7 @@ import io.harness.delegate.Capability;
 import io.harness.delegate.DelegateTaskValidationFailedException;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.DelegateTaskInvalidRequestException;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoInstalledDelegatesException;
@@ -108,17 +110,24 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
             .entityProcessController(new CrossEnvironmentAccountStatusBasedEntityProcessController<>(accountService))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProvider)
-            .unsorted(true)
             .redistribute(true));
   }
 
   public void assign(PerpetualTaskRecord taskRecord) {
     try (AutoLogContext ignore0 = new AccountLogContext(taskRecord.getAccountId(), OVERRIDE_ERROR)) {
       String taskId = taskRecord.getUuid();
-      log.info("Assigning Delegate to the inactive {} perpetual task with id={}.", taskRecord.getPerpetualTaskType(),
-          taskId);
+      if (!isEmpty(taskRecord.getDelegateId())
+          && delegateService.checkDelegateConnected(taskRecord.getAccountId(), taskRecord.getDelegateId())) {
+        perpetualTaskRecordDao.appointDelegate(taskId, taskRecord.getDelegateId(), System.currentTimeMillis());
+        log.info(
+            "Assign perpetual task {} to previously appointed delegate id {}.", taskId, taskRecord.getDelegateId());
+        return;
+      }
+      log.info("Start assigning perpetual task id:{} type:{} to delegate.", taskId, taskRecord.getPerpetualTaskType());
       DelegateTask validationTask = getValidationTask(taskRecord);
-
+      if (validationTask == null) {
+        log.info("Getting validation task null for perpetual task id {}.", taskId);
+      }
       try {
         DelegateResponseData response = delegateService.executeTask(validationTask);
 
@@ -173,8 +182,12 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
         ignoredOnPurpose(exception);
         perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(
             taskRecord, PerpetualTaskUnassignedReason.TASK_VALIDATION_FAILED, PerpetualTaskState.TASK_NON_ASSIGNABLE);
+      } catch (DelegateTaskInvalidRequestException e) {
+        log.error("Invalid task found, perpetual task id {}", taskRecord.getUuid(), e);
+        perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(
+            taskRecord, PerpetualTaskUnassignedReason.PT_TASK_FAILED, PerpetualTaskState.TASK_INVALID);
       } catch (Exception e) {
-        log.error("Failed to assign any Delegate to perpetual task {} ", taskId, e);
+        log.error("Failed to assign to any delegate, perpetual task {} ", taskId, e);
         perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(
             taskRecord, PerpetualTaskUnassignedReason.PT_TASK_FAILED, PerpetualTaskState.TASK_NON_ASSIGNABLE);
       }
@@ -182,19 +195,6 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
       log.error("Unexpected error occurred during assigning perpetual task {}", taskRecord.getUuid(), e);
       perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(
           taskRecord, PerpetualTaskUnassignedReason.PT_TASK_FAILED, PerpetualTaskState.TASK_INVALID);
-    }
-  }
-
-  public void rebalance(Account account) {
-    List<PerpetualTaskRecord> perpetualTaskRecordList =
-        perpetualTaskRecordDao.listBatchOfPerpetualTasksToRebalanceForAccount(account.getUuid());
-    for (PerpetualTaskRecord taskRecord : perpetualTaskRecordList) {
-      if (delegateService.checkDelegateConnected(taskRecord.getAccountId(), taskRecord.getDelegateId())) {
-        perpetualTaskService.appointDelegate(
-            taskRecord.getAccountId(), taskRecord.getUuid(), taskRecord.getDelegateId(), System.currentTimeMillis());
-        continue;
-      }
-      assign(taskRecord);
     }
   }
 

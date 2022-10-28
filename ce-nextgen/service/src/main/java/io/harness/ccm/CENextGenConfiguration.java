@@ -112,6 +112,7 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty(value = "ceGcpSetupConfig") @ConfigSecret private CEGcpSetupConfig ceGcpSetupConfig;
   @JsonProperty(value = "awsConfig") @ConfigSecret private AwsConfig awsConfig;
   @JsonProperty(value = "awsGovCloudConfig") @ConfigSecret private AwsGovCloudConfig awsGovCloudConfig;
+  @JsonProperty(value = "awsGovCloudCftUrl") @ConfigSecret private String awsGovCloudCftUrl;
 
   @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
 

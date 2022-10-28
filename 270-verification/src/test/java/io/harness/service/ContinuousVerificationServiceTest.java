@@ -2614,8 +2614,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     // save some L2 records
     for (long time = logConfig.getBaselineStartMinute(); time <= logConfig.getBaselineEndMinute(); time++) {
@@ -2663,8 +2661,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     LogMLAnalysisRecord analysisRecord = LogMLAnalysisRecord.builder()
                                              .cvConfigId(sumoConfig.getUuid())
@@ -2746,8 +2742,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     // save some L2 records
     for (long time = logConfig.getBaselineStartMinute(); time < currentMinute; time++) {
@@ -2796,8 +2790,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     LogMLAnalysisRecord analysisRecord = LogMLAnalysisRecord.builder()
                                              .cvConfigId(sumoConfig.getUuid())
@@ -2853,8 +2845,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     LogMLAnalysisRecord analysisRecord = LogMLAnalysisRecord.builder()
                                              .cvConfigId(sumoConfig.getUuid())
@@ -2906,8 +2896,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     LogMLAnalysisRecord analysisRecord = LogMLAnalysisRecord.builder()
                                              .cvConfigId(sumoConfig.getUuid())
@@ -2963,8 +2951,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     LogMLAnalysisRecord analysisRecord = LogMLAnalysisRecord.builder()
                                              .cvConfigId(sumoConfig.getUuid())
@@ -3030,8 +3016,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     // save some L2 records
     long baselineEnd = logConfig.getBaselineEndMinute();
@@ -3082,8 +3066,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     LogMLAnalysisRecord analysisRecord = LogMLAnalysisRecord.builder()
                                              .cvConfigId(sumoConfig.getUuid())
@@ -3136,8 +3118,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     // save some L2 records
     for (long time = logConfig.getBaselineStartMinute(); time <= logConfig.getBaselineStartMinute() + 15; time++) {
@@ -3574,8 +3554,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     LogMLAnalysisRecord analysisRecord = LogMLAnalysisRecord.builder()
                                              .cvConfigId(sumoConfig.getUuid())
@@ -3636,8 +3614,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     LogMLAnalysisRecord analysisRecord = LogMLAnalysisRecord.builder()
                                              .cvConfigId(sumoConfig.getUuid())
@@ -3698,8 +3674,6 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     Call<RestResponse<Boolean>> managerFeatureFlagCall = mock(Call.class);
     when(managerFeatureFlagCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
     when(managerFeatureFlagCall.clone()).thenReturn(managerFeatureFlagCall);
-    when(verificationManagerClient.isFeatureEnabled(FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, accountId))
-        .thenReturn(managerFeatureFlagCall);
 
     LogMLAnalysisRecord analysisRecord = LogMLAnalysisRecord.builder()
                                              .cvConfigId(sumoConfig.getUuid())

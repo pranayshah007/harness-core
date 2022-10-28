@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.azureconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureMSIAuthUAOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,5 +38,13 @@ public class AzureMSIAuthUADTO implements AzureMSIAuthDTO {
   public AzureMSIAuthUADTO(AzureManagedIdentityType azureManagedIdentityType, AzureUserAssignedMSIAuthDTO credentials) {
     this.azureManagedIdentityType = azureManagedIdentityType;
     this.credentials = credentials;
+  }
+
+  @Override
+  public AzureMSIAuthUAOutcomeDTO toOutcome() {
+    return AzureMSIAuthUAOutcomeDTO.builder()
+        .type(this.azureManagedIdentityType)
+        .spec(this.credentials.toOutcome())
+        .build();
   }
 }

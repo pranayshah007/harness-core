@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnknownEnumTypeException;
+import io.harness.exception.UnsupportedOperationException;
 import io.harness.ng.core.variable.VariableValueType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -62,11 +63,9 @@ public class StringVariableConfigDTO extends VariableConfigDTO {
         validateForFixedValueType();
         break;
       case FIXED_SET:
-        validateForFixedSetValueType();
-        break;
       case REGEX:
-        validateForRegexValueType();
-        break;
+        throw new UnsupportedOperationException(
+            String.format("Value Type [%s] is not supported", getValueType().name()));
       default:
         throw new UnknownEnumTypeException("variableValueType", getValueType().name());
     }
