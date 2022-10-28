@@ -22,4 +22,6 @@ public class OrchestrationRestrictionConfiguration {
   @JsonProperty("useRestrictionForEnterprise") boolean useRestrictionForEnterprise;
   @JsonProperty("planExecutionRestriction") PlanExecutionRestrictionConfig planExecutionRestriction;
   @JsonProperty("pipelineCreationRestriction") PlanExecutionRestrictionConfig pipelineCreationRestriction;
+  @JsonProperty("maxConcurrencyRestriction") PlanExecutionRestrictionConfig maxConcurrencyRestriction;
+  @JsonProperty("totalParallelismStopRestriction") PlanExecutionRestrictionConfig totalParallelismStopRestriction;
 }

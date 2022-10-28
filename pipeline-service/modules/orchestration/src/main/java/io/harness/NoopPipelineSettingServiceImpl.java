@@ -22,4 +22,9 @@ public class NoopPipelineSettingServiceImpl implements PipelineSettingsService {
   public long getMaxPipelineCreationCount(String accountId) {
     return Long.MAX_VALUE;
   }
+
+  @Override
+  public int getMaxConcurrencyBasedOnEdition(String accountId, long childCount) {
+    return Integer.MAX_VALUE;
+  }
 }
