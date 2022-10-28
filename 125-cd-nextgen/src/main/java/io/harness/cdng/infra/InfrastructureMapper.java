@@ -320,6 +320,7 @@ public class InfrastructureMapper {
       InfrastructureOutcomeAbstract infrastructureOutcome, String infraIdentifier, String infraName) {
     infrastructureOutcome.setInfraIdentifier(infraIdentifier);
     infrastructureOutcome.setInfraName(infraName);
+    infrastructureOutcome.setName(infraName);
   }
 
   private String getValueOrExpression(ParameterField<String> parameterField) {

@@ -101,6 +101,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                           .namespace(ParameterField.createValueField("namespace"))
                                                           .releaseName(ParameterField.createValueField("release"))
                                                           .build();
+    k8SDirectInfrastructure.setInfraName("infraName");
 
     K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome =
         K8sDirectInfrastructureOutcome.builder()
@@ -113,6 +114,8 @@ public class InfrastructureMapperTest extends CategoryTest {
 
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
         k8SDirectInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcomeAbstract infrastructureOutcomeAbstract = (InfrastructureOutcomeAbstract) infrastructureOutcome;
+    assertThat(infrastructureOutcomeAbstract.getName()).isEqualTo("infraName");
     assertThat(infrastructureOutcome).isEqualTo(k8sDirectInfrastructureOutcome);
   }
 
