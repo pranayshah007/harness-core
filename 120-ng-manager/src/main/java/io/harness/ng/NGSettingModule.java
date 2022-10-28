@@ -14,6 +14,7 @@ import io.harness.ngsettings.services.SettingsService;
 import io.harness.ngsettings.services.impl.SettingsServiceImpl;
 import io.harness.ngsettings.services.impl.validators.DisableBuiltInHarnessSMValidator;
 import io.harness.ngsettings.services.impl.validators.MaxConcurrentExecutionsValidator;
+import io.harness.ngsettings.services.impl.validators.PipelineLevelTimeoutValidator;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
@@ -36,6 +37,8 @@ public class NGSettingModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, SettingValidator.class);
     settingValidatorMapBinder.addBinding(SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER)
         .to(DisableBuiltInHarnessSMValidator.class);
+    settingValidatorMapBinder.addBinding(SettingIdentifiers.PIPELINE_LEVEL_TIMEOUT_FREE_PLAN)
+        .to(PipelineLevelTimeoutValidator.class);
 
     // Binding the settingValidator implementations with GroupIdentifiers.
     settingValidatorMapBinder.addBinding(SettingGroupIdentifiers.MAX_CONCURRENT_PIPELINE)

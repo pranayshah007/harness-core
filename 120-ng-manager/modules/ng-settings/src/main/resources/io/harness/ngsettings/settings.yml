@@ -30,6 +30,16 @@ settings :
     allowedScopes :
       - ACCOUNT
 
+  - identifier: pipeline_level_timeout_free_plan
+    name: Pipeline Level Timeout
+    category : PMS
+    defaultValue: 1h
+    valueType : STRING
+    allowedScopes :
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+
   - identifier: max_concurrent_pipelines_free_plan
     name: Max Concurrent Pipelines
     category : PMS
