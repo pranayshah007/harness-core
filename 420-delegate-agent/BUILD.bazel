@@ -11,6 +11,9 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//420-delegate-agent/src/main/java/io/harness/delegate/service:module",
+        "//420-delegate-agent/src/main/java/io/harness/grpc/util:module",
+        "//420-delegate-agent/src/main/java/io/harness/managerclient:module",
         "//890-sm-delegate:module",
         "//910-delegate-task-grpc-service:module",
         "//920-delegate-agent-beans:module",
