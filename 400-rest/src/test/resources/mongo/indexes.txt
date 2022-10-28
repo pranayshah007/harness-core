@@ -59,7 +59,7 @@ approvalPollingJob {"name": "nextIteration_1", "background": true} {"nextIterati
 artifactStream {"name": "accountId_1", "background": true} {"accountId": 1}
 artifactStream {"name": "appId_1", "background": true} {"appId": 1}
 artifactStream {"name": "artifactStream_cleanup", "background": true} {"artifactStreamType": 1, "collectionEnabled": 1, "nextCleanupIteration": 1}
-artifactStream {"name": "artifactStream_collection", "background": true} {"collectionEnabled": 1, "nextIteration": 1}
+artifactStream {"name": "artifactStream_collection", "background": true} {"collectionEnabled": 1, "collectionStatus": 1, "nextIteration": 1}
 artifactStream {"name": "createdAt_1", "background": true} {"createdAt": 1}
 artifactStream {"name": "nextCleanupIteration_1", "background": true} {"nextCleanupIteration": 1}
 artifactStream {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
