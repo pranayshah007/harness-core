@@ -19,7 +19,6 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PmsExecutionSummaryService {
   void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions);
-  void updateEndTs(String planExecutionId, NodeExecution nodeExecution);
   void update(String planExecutionId, Update update);
   void updateStageOfIdentityType(String planExecutionId, Update update);
   void addStageNodeInGraphIfUnderStrategy(String planExecutionId, NodeExecution nodeExecution, Update update);

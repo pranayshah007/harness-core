@@ -127,34 +127,6 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   }
 
   @Override
-  public void updateEndTs(String planExecutionId, NodeExecution nodeExecution) {
-    Update update = new Update();
-    boolean updated = false;
-
-    // Update endTs at pipeline level
-    if (OrchestrationUtils.isPipelineNode(nodeExecution)) {
-      if (nodeExecution.getEndTs() != null) {
-        updated = true;
-        update.set(PlanExecutionSummaryKeys.endTs, nodeExecution.getEndTs());
-      }
-    }
-
-    // Update endTs at stage level
-    if (OrchestrationUtils.isStageNode(nodeExecution)) {
-      String stageUuid = AmbianceUtils.obtainCurrentSetupId(nodeExecution.getAmbiance());
-      if (nodeExecution.getEndTs() != null) {
-        updated = true;
-        update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".endTs", nodeExecution.getEndTs());
-      }
-    }
-    if (updated) {
-      Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
-      Query query = new Query(criteria);
-      pmsExecutionSummaryRepository.update(query, update);
-    }
-  }
-
-  @Override
   public void addStageNodeInGraphIfUnderStrategy(
       String planExecutionId, NodeExecution nodeExecution, Update summaryUpdate) {
     if (OrchestrationUtils.isStageNode(nodeExecution)
