@@ -55,4 +55,5 @@ public class OutcomeExpressionConstants {
   public final String ECS_BLUE_GREEN_ROLLBACK_OUTCOME = "ecsBlueGreenRollbackOutcome";
   public final String UPDATE_RELEASE_REPO_OUTCOME = "updateReleaseRepoOutcome";
   public final String INSTANCES = "instances";
+  public final String ELASTIGROUP_CONFIGURATION_OUTPUT = "elastigroupConfigurationOutput";
 }

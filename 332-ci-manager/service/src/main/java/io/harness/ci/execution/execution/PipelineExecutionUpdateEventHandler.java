@@ -9,6 +9,7 @@ package io.harness.ci.execution;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIGGER;
+import static io.harness.pms.contracts.execution.Status.QUEUED;
 import static io.harness.pms.execution.utils.StatusUtils.isFinalStatus;
 import static io.harness.steps.StepUtils.buildAbstractions;
 
@@ -19,11 +20,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.beans.dto.CITaskDetails;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.outcomes.VmDetailsOutcome;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.encryption.Scope;
+import io.harness.licensing.Edition;
+import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -35,6 +39,7 @@ import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.repositories.CITaskDetailsRepository;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
@@ -65,12 +70,14 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject private GitBuildStatusUtility gitBuildStatusUtility;
   @Inject private StageCleanupUtility stageCleanupUtility;
   @Inject private CILogServiceUtils ciLogServiceUtils;
-
+  @Inject private CILicenseService ciLicenseService;
   @Inject private CITaskDetailsRepository ciTaskDetailsRepository;
-
+  @Inject private CIAccountExecutionMetadataRepository ciAccountExecutionMetadataRepository;
+  private final String SERVICE_NAME_CI = "ci";
   private final int MAX_ATTEMPTS = 3;
   private final int WAIT_TIME_IN_SECOND = 30;
   @Inject @Named("ciEventHandlerExecutor") private ExecutorService executorService;
+  @Inject @Named("ciRatelimitHandlerExecutor") private ExecutorService ciRatelimitHandlerExecutor;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
   @Override
@@ -78,7 +85,9 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     Ambiance ambiance = event.getAmbiance();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
+    String serviceName = event.getServiceName();
     Status status = event.getStatus();
+    ciRatelimitHandlerExecutor.submit(() -> { updateDailyBuildCount(level, status, serviceName, accountId); });
     executorService.submit(() -> {
       sendGitStatus(level, ambiance, status, event, accountId);
       sendCleanupRequest(level, ambiance, status, accountId);
@@ -247,6 +256,16 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     }
 
     return isAutoAbort;
+  }
+
+  private void updateDailyBuildCount(Level level, Status status, String serviceName, String accountId) {
+    LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+      if (level != null && serviceName.equalsIgnoreCase(SERVICE_NAME_CI)
+          && level.getStepType().getStepCategory() == StepCategory.STAGE && (status == QUEUED)) {
+        ciAccountExecutionMetadataRepository.updateCIDailyBuilds(accountId, level.getStartTs());
+      }
+    }
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

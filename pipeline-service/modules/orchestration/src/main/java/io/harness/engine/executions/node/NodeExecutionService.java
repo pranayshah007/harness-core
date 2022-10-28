@@ -33,6 +33,8 @@ import org.springframework.data.mongodb.core.query.Update;
 public interface NodeExecutionService {
   NodeExecution get(String nodeExecutionId);
 
+  List<NodeExecution> getAll(Set<String> nodeExecutionIds);
+
   NodeExecution getWithFieldsIncluded(String nodeExecutionId, Set<String> fieldsToInclude);
 
   NodeExecution getByPlanNodeUuid(String planNodeUuid, String planExecutionId);
@@ -50,8 +52,6 @@ public interface NodeExecutionService {
 
   List<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(String planExecutionId, EnumSet<Status> statuses,
       boolean shouldUseProjections, Set<String> fieldsToBeIncluded, Set<String> fieldsToBeExcluded);
-
-  List<NodeExecution> fetchChildrenNodeExecutions(String planExecutionId, String parentId);
 
   List<NodeExecution> fetchChildrenNodeExecutions(
       String planExecutionId, String parentId, Set<String> fieldsToBeIncluded);

@@ -39,6 +39,7 @@ import io.harness.ng.opa.OpaService;
 import io.harness.ng.opa.OpaServiceImpl;
 import io.harness.ng.opa.entities.secret.OpaSecretService;
 import io.harness.ng.opa.entities.secret.OpaSecretServiceImpl;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.redisConsumer.DebeziumConsumerConfig;
@@ -263,6 +264,13 @@ public class SecretManagementModuleTest extends CategoryTest {
       @Singleton
       TemplateResourceClient getTemplateResourceClient() {
         return mock(TemplateResourceClient.class);
+      }
+    });
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      NGSettingsClient getNGSettingsClient() {
+        return mock(NGSettingsClient.class);
       }
     });
 

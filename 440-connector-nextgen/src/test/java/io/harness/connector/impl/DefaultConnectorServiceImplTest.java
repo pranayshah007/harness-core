@@ -22,11 +22,13 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.EntityType;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
@@ -55,9 +57,12 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.gitsync.clients.YamlGitConfigClient;
 import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.ng.core.accountsetting.dto.AccountSettingType;
-import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -95,8 +100,10 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Mock ConnectorEntityReferenceHelper connectorEntityReferenceHelper;
   @Mock GitSyncSdkService gitSyncSdkService;
   @Mock YamlGitConfigClient yamlGitConfigClient;
-  @Mock NGAccountSettingService accountSettingService;
-  @Inject @InjectMocks DefaultConnectorServiceImpl connectorService;
+  @Mock NGSettingsClient settingsClient;
+  @Mock Call<ResponseDTO<SettingValueResponseDTO>> request;
+  @Mock AccountClient accountClient;
+  @Inject @InjectMocks private DefaultConnectorServiceImpl connectorService;
   @Inject MongoTemplate mongoTemplate;
 
   String userName = "userName";
@@ -116,7 +123,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   String updatedPasswordIdentifier = "updatedPasswordIdentifier";
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
     secretRefDataCACert = SecretRefData.builder().identifier(cacertIdentifier).scope(Scope.ACCOUNT).build();
     passwordSecretRef = SecretRefData.builder().identifier(passwordIdentifier).scope(Scope.ACCOUNT).build();
@@ -254,7 +261,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category({UnitTests.class})
-  public void testList() {
+  public void testList() throws IOException {
     String connectorIdentifier1 = "connectorIdentifier1";
     String connectorIdentifier2 = "connectorIdentifier2";
     String connectorIdentifier3 = "connectorIdentifier3";
@@ -262,6 +269,14 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     createConnector(connectorIdentifier2, name + "2");
     createConnector(connectorIdentifier3, name + "3");
     ArgumentCaptor<Page> connectorsListArgumentCaptor = ArgumentCaptor.forClass(Page.class);
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
         connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, false);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(3);
@@ -476,7 +491,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Test
   @Owner(developers = OwnerRule.ABHINAV)
   @Category({UnitTests.class})
-  public void testListWithBranchesFlag() {
+  public void testListWithBranchesFlag() throws IOException {
     String connectorIdentifier1 = "connectorIdentifier1";
     String connectorIdentifier2 = "connectorIdentifier2";
     String connectorIdentifier3 = "connectorIdentifier3";
@@ -484,6 +499,14 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     createConnector(connectorIdentifier2, name + "2");
     createConnector(connectorIdentifier3, name + "3");
     doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(anyString(), anyString(), anyString());
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
         connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, true);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(3);
@@ -505,13 +528,17 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Test
   @Owner(developers = OwnerRule.MEENAKSHI)
   @Category({UnitTests.class})
-  public void testListWhenDefaultSMIsDisabled() {
-    doReturn(true)
-        .when(accountSettingService)
-        .getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
+  public void testListWhenDefaultSMIsDisabled() throws IOException {
     String connectorIdentifier1 = "harnessSecretManger";
     String connectorIdentifier2 = "connectorIdentifier2";
     String connectorIdentifier3 = "connectorIdentifier3";
+
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
 
     final Connector connector = LocalConnector.builder().harnessManaged(true).isDefault(false).build();
     connector.setAccountIdentifier(accountIdentifier);
@@ -524,6 +551,8 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     mongoTemplate.save(connector);
     createConnector(connectorIdentifier2, name + "2");
     createConnector(connectorIdentifier3, name + "3");
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
         connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, false);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(2);
@@ -539,10 +568,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Test
   @Owner(developers = OwnerRule.MEENAKSHI)
   @Category({UnitTests.class})
-  public void testListWhenDefaultSMIsEnabled() {
-    doReturn(false)
-        .when(accountSettingService)
-        .getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
+  public void testListWhenDefaultSMIsEnabled() throws IOException {
     String connectorIdentifier1 = "harnessSecretManger";
     String connectorIdentifier2 = "connectorIdentifier2";
     String connectorIdentifier3 = "connectorIdentifier3";
@@ -557,6 +583,14 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     mongoTemplate.save(connector);
     createConnector(connectorIdentifier2, name + "2");
     createConnector(connectorIdentifier3, name + "3");
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
         connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, false);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(3);

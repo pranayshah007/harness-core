@@ -61,6 +61,7 @@ import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.govern.ServersModule;
 import io.harness.graph.stepDetail.PmsGraphStepDetailsServiceImpl;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.pms.NoopFeatureFlagServiceImpl;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.expression.EngineExpressionService;
@@ -132,10 +133,16 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
     install(OrchestrationBeansModule.getInstance());
     if (!config.isUseFeatureFlagService()) {
       bind(PmsFeatureFlagService.class).to(NoopFeatureFlagServiceImpl.class);
+      bind(PipelineSettingsService.class).to(NoopPipelineSettingServiceImpl.class).in(Singleton.class);
+
     } else {
       install(new AccountClientModule(
           config.getAccountServiceHttpClientConfig(), config.getAccountServiceSecret(), config.getAccountClientId()));
+      // ng-license dependencies
+      install(NgLicenseHttpClientModule.getInstance(
+          config.getLicenseClientConfig(), config.getLicenseClientServiceSecret(), config.getAccountClientId()));
       bind(PmsFeatureFlagService.class).to(PmsFeatureFlagHelper.class);
+      bind(PipelineSettingsService.class).to(PipelineSettingsServiceImpl.class).in(Singleton.class);
     }
     bind(NodeExecutionService.class).to(NodeExecutionServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionService.class).to(PlanExecutionServiceImpl.class).in(Singleton.class);
@@ -144,6 +151,7 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
     bind(ExecutionInputService.class).to(ExecutionInputServiceImpl.class);
 
     bind(PlanService.class).to(PlanServiceImpl.class).in(Singleton.class);
+
     bind(InterruptService.class).to(InterruptServiceImpl.class).in(Singleton.class);
     bind(OrchestrationService.class).to(OrchestrationServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionMetadataService.class).to(PlanExecutionMetadataServiceImpl.class).in(Singleton.class);
@@ -241,5 +249,11 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
   @Singleton
   public OrchestrationLogConfiguration orchestrationLogConfiguration() {
     return config.getOrchestrationLogConfiguration();
+  }
+
+  @Provides
+  @Singleton
+  public OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration() {
+    return config.getOrchestrationRestrictionConfiguration();
   }
 }

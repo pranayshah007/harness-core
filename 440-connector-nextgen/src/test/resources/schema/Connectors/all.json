@@ -5444,7 +5444,7 @@
         "type": {
           "type": "string",
           "enum": [
-            "ManualConfig"
+            "PermanentTokenConfig"
           ]
         }
       },
@@ -5454,14 +5454,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "ManualConfig"
+                "const": "PermanentTokenConfig"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/SpotManualConfigSpec"
+                "$ref": "#/definitions/SpotPermanentTokenConfigSpec"
               }
             }
           }
@@ -5472,7 +5472,7 @@
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "SpotManualConfigSpec": {
+    "SpotPermanentTokenConfigSpec": {
       "allOf": [
         {
           "$ref": "#/definitions/SpotCredentialSpec"
@@ -5483,13 +5483,13 @@
             "apiTokenRef"
           ],
           "properties": {
-            "accountId": {
-              "type": "string"
-            },
-            "accountIdRef": {
-              "type": "string"
-            },
             "apiTokenRef": {
+              "type": "string"
+            },
+            "spotAccountId": {
+              "type": "string"
+            },
+            "spotAccountIdRef": {
               "type": "string"
             }
           }
@@ -5498,12 +5498,12 @@
           "oneOf": [
             {
               "required": [
-                "accountId"
+                "spotAccountId"
               ]
             },
             {
               "required": [
-                "accountIdRef"
+                "spotAccountIdRef"
               ]
             }
           ]

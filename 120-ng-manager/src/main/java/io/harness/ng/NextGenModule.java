@@ -136,8 +136,6 @@ import io.harness.ng.core.DelegateServiceModule;
 import io.harness.ng.core.InviteModule;
 import io.harness.ng.core.NGAggregateModule;
 import io.harness.ng.core.SecretManagementModule;
-import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
-import io.harness.ng.core.accountsetting.services.NGAccountSettingServiceImpl;
 import io.harness.ng.core.agent.client.AgentNgManagerCgManagerClientModule;
 import io.harness.ng.core.api.ApiKeyService;
 import io.harness.ng.core.api.DefaultUserGroupService;
@@ -237,6 +235,7 @@ import io.harness.ng.webhook.services.api.WebhookEventService;
 import io.harness.ng.webhook.services.api.WebhookService;
 import io.harness.ng.webhook.services.impl.WebhookEventProcessingServiceImpl;
 import io.harness.ng.webhook.services.impl.WebhookServiceImpl;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.ngsettings.outbox.SettingEventHandler;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.opaclient.OpaClientModule;
@@ -277,6 +276,7 @@ import io.harness.subscription.SubscriptionModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.TemplateResourceClientModule;
+import io.harness.threading.ThreadPool;
 import io.harness.time.TimeModule;
 import io.harness.timescaledb.JooqModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -318,8 +318,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
@@ -357,6 +359,14 @@ public class NextGenModule extends AbstractModule {
   @Named("PSQLExecuteListener")
   ExecuteListener executeListener() {
     return HExecuteListener.getInstance();
+  }
+
+  @Provides
+  @Singleton
+  @Named("freezeTemplateRegistrationExecutorService")
+  public ExecutorService templateRegistrationExecutionServiceThreadPool() {
+    return ThreadPool.create(1, 1, 10, TimeUnit.SECONDS,
+        new ThreadFactoryBuilder().setNameFormat("FreezeTemplateRegistrationService-%d").build());
   }
 
   @Provides
@@ -740,7 +750,6 @@ public class NextGenModule extends AbstractModule {
     bind(ProjectService.class).to(ProjectServiceImpl.class);
     bind(OrganizationService.class).to(OrganizationServiceImpl.class);
     bind(NGModulesService.class).to(NGModulesServiceImpl.class);
-    bind(NGAccountSettingService.class).to(NGAccountSettingServiceImpl.class);
     bind(NGSecretServiceV2.class).to(NGSecretServiceV2Impl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
@@ -773,6 +782,8 @@ public class NextGenModule extends AbstractModule {
     bind(DecryptionHelper.class).to(DecryptionHelperViaManager.class);
     install(new NgSMTPSettingsHttpClientModule(
         this.appConfig.getManagerClientConfig(), this.appConfig.getNextGenConfig().getManagerServiceSecret()));
+    install(new NGSettingsClientModule(this.appConfig.getNgManagerClientConfig(),
+        this.appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
     bind(SourceCodeManagerService.class).to(SourceCodeManagerServiceImpl.class);
     bind(SmtpNgService.class).to(SmtpNgServiceImpl.class);
     bind(ApiKeyService.class).to(ApiKeyServiceImpl.class);

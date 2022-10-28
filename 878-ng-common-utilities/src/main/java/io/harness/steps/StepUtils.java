@@ -41,6 +41,8 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.MaskingExpressionEvaluator;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -144,7 +146,7 @@ public class StepUtils {
       Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer, List<TaskSelector> selectors) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
         Collections.emptyList(), true, null, selectors, Scope.PROJECT, EnvironmentType.ALL, false,
-        Collections.emptyList(), false, null);
+        Collections.emptyList(), false, null, new MaskingExpressionEvaluator());
   }
 
   public static TaskRequest prepareTaskRequestWithTaskSelector(Ambiance ambiance, TaskData taskData,
@@ -170,7 +172,7 @@ public class StepUtils {
       List<String> keys, List<String> units, String taskName, List<TaskSelector> selectors,
       EnvironmentType environmentType) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, keys, units, true,
-        taskName, selectors, Scope.PROJECT, environmentType, false, Collections.emptyList(), false, null);
+        taskName, selectors, Scope.PROJECT, environmentType, false, Collections.emptyList(), false, null, null);
   }
 
   public static TaskRequest prepareTaskRequestWithoutLogs(
@@ -209,20 +211,34 @@ public class StepUtils {
         withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory,
         CollectionUtils.emptyIfNull(generateLogKeys(logAbstractionMap, units)), units, withLogs, taskName, selectors,
-        taskScope, environmentType, executeOnHarnessHostedDelegates, eligibleToExecuteDelegateIds, emitEvent, stageId);
+        taskScope, environmentType, executeOnHarnessHostedDelegates, eligibleToExecuteDelegateIds, emitEvent, stageId,
+        null);
+  }
+
+  public static TaskRequest prepareTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
+      TaskCategory taskCategory, List<String> units, boolean withLogs, String taskName, List<TaskSelector> selectors,
+      Scope taskScope, EnvironmentType environmentType, boolean executeOnHarnessHostedDelegates,
+      List<String> eligibleToExecuteDelegateIds, boolean emitEvent, String stageId,
+      ExpressionEvaluator maskingEvaluator) {
+    LinkedHashMap<String, String> logAbstractionMap =
+        withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();
+    return prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory,
+        CollectionUtils.emptyIfNull(generateLogKeys(logAbstractionMap, units)), units, withLogs, taskName, selectors,
+        taskScope, environmentType, executeOnHarnessHostedDelegates, eligibleToExecuteDelegateIds, emitEvent, stageId,
+        maskingEvaluator);
   }
 
   public static TaskRequest prepareTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
       TaskCategory taskCategory, List<String> keys, List<String> units, boolean withLogs, String taskName,
       List<TaskSelector> selectors, Scope taskScope, EnvironmentType environmentType,
       boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds, boolean emitEvent,
-      String stageId) {
+      String stageId, ExpressionEvaluator maskingEvaluator) {
     String accountId = Preconditions.checkNotNull(ambiance.getSetupAbstractionsMap().get("accountId"));
     TaskParameters taskParameters = (TaskParameters) taskData.getParameters()[0];
     List<ExecutionCapability> capabilities = new ArrayList<>();
     if (taskParameters instanceof ExecutionCapabilityDemander) {
       capabilities = ListUtils.emptyIfNull(
-          ((ExecutionCapabilityDemander) taskParameters).fetchRequiredExecutionCapabilities(null));
+          ((ExecutionCapabilityDemander) taskParameters).fetchRequiredExecutionCapabilities(maskingEvaluator));
     }
     LinkedHashMap<String, String> logAbstractionMap =
         withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();

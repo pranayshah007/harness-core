@@ -21,7 +21,7 @@ public final class CIConstants {
   public static final String PVC_READ_WRITE_ONCE = "ReadWriteOnce";
   public static final String RESTART_POLICY = "Never";
   public static final long STAGE_MAX_TTL_SECS = 86400L; // 1 day
-  public static final long STAGE_MAX_TTL_SECS_HOSTED_FREE = 3600L; // 1 hour
+  public static final long STAGE_MAX_TTL_SECS_HOSTED_FREE = 1800L; // 30 mins
 
   public static final long POD_MAX_TTL_SECS = 86400L; // 1 day
   public static final long POD_MAX_TTL_SECS_HOSTED_FREE = 3600L; // 1 hour

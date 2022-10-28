@@ -71,9 +71,7 @@ import java.util.regex.PatternSyntaxException;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -322,10 +320,6 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     return pmsExecutionSummaryRespository.findAll(criteria, pageable);
   }
 
-  public PipelineExecutionSummaryEntity findFirst(Criteria criteria) {
-    return pmsExecutionSummaryRespository.findFirst(criteria);
-  }
-
   @Override
   public void sendGraphUpdateEvent(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
     graphGenerationService.sendUpdateEventIfAny(pipelineExecutionSummaryEntity);
@@ -409,8 +403,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
   @Override
   public long getCountOfExecutions(Criteria criteria) {
-    Pageable pageRequest = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, PlanExecutionSummaryKeys.startTs));
-    return pmsExecutionSummaryRespository.findAll(criteria, pageRequest).getTotalElements();
+    return pmsExecutionSummaryRespository.getCountOfExecutionSummary(criteria);
   }
 
   @Override

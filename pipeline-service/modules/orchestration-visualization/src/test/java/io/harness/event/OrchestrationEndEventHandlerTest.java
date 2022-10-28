@@ -11,8 +11,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 
 import io.harness.OrchestrationVisualizationTestBase;
@@ -61,7 +59,6 @@ public class OrchestrationEndEventHandlerTest extends OrchestrationVisualization
   public void setUp() {
     ExecutorService executorService = Mockito.mock(ExecutorService.class);
     OrchestrationEventLogRepository orchestrationEventLogRepository = mock(OrchestrationEventLogRepository.class);
-    doNothing().when(orchestrationEventLogRepository).deleteLogsForGivenPlanExecutionId(any());
     orchestrationEndEventHandler = new OrchestrationEndGraphHandler(
         executorService, planExecutionService, graphGenerationService, orchestrationEventLogRepository);
   }

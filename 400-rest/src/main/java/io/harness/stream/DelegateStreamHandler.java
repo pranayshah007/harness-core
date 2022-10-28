@@ -17,8 +17,8 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
-import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateParams;
+import io.harness.delegate.heartbeat.stream.DelegateStreamHeartbeatService;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ErrorCodeName;
@@ -68,6 +68,7 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
   private final DelegateService delegateService;
   private final DelegateCache delegateCache;
   private final CachedMetricsPublisher cachedMetrics;
+  private final DelegateStreamHeartbeatService delegateStreamHeartbeatService;
 
   @Override
   public void onRequest(AtmosphereResource resource) throws IOException {
@@ -94,25 +95,6 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
              AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
              AutoLogContext ignore3 = new WebsocketLogContext(websocketId, OVERRIDE_ERROR)) {
           log.info("delegate socket connected");
-          String delegateVersion = req.getParameter("version");
-
-          // These 2 will be sent by ECS delegate only
-          String sequenceNum = req.getParameter("sequenceNum");
-          String delegateToken = req.getParameter("delegateToken");
-
-          Delegate delegate = delegateCache.get(accountId, delegateId, true);
-          delegate.setMtls(isConnectedUsingMtls);
-          delegate.setStatus(DelegateInstanceStatus.ENABLED);
-
-          updateIfEcsDelegate(delegate, sequenceNum, delegateToken);
-
-          delegateService.register(delegate);
-          delegateService.registerHeartbeat(accountId, delegateId,
-              DelegateConnectionHeartbeat.builder()
-                  .delegateConnectionId(delegateConnectionId)
-                  .version(delegateVersion)
-                  .build(),
-              ConnectionMode.STREAMING);
 
           resource.addEventListener(new AtmosphereResourceEventListenerAdapter() {
             @Override
@@ -120,9 +102,8 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
               try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
                    AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
                    AutoLogContext ignore3 = new WebsocketLogContext(event.getResource().uuid(), OVERRIDE_ERROR)) {
-                log.info("delegate socket disconnected {}", event);
+                log.error("delegate socket disconnected {}", event);
                 Delegate delegate = delegateCache.get(accountId, delegateId, true);
-                delegateService.register(delegate);
                 delegateService.delegateDisconnected(accountId, delegateId, delegateConnectionId);
               }
             }
@@ -167,10 +148,13 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
           authService.validateDelegateToken(accountId, delegateParams.getToken(), delegateId,
               delegateParams.getTokenName(), agentMtlsAuthority, false);
         }
-        Delegate delegate = Delegate.getDelegateFromParams(delegateParams, isConnectedUsingMtls);
-        delegate.setUuid(delegateId);
-
-        delegateService.register(delegate);
+        if ("ECS".equals(delegateParams.getDelegateType())) {
+          Delegate delegate = Delegate.getDelegateFromParams(delegateParams, isConnectedUsingMtls);
+          delegate.setUuid(delegateId);
+          delegateService.register(delegate);
+        } else {
+          delegateStreamHeartbeatService.process(delegateParams.toBuilder().delegateId(delegateId).build());
+        }
         delegateService.registerHeartbeat(accountId, delegateId,
             DelegateConnectionHeartbeat.builder()
                 .delegateConnectionId(delegateConnectionId)
@@ -246,11 +230,9 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
    * So need to strip seqNum off from hostName before its sent to register().
    */
   private void updateIfEcsDelegate(Delegate delegate, String sequenceNum, String delegateToken) {
-    if ("ECS".equals(delegate.getDelegateType())) {
-      delegate.setSequenceNum(sequenceNum);
-      delegate.setDelegateRandomToken(delegateToken);
-      String hostName = delegate.getHostName();
-      delegate.setHostName(hostName.substring(0, hostName.lastIndexOf('_')));
-    }
+    delegate.setSequenceNum(sequenceNum);
+    delegate.setDelegateRandomToken(delegateToken);
+    String hostName = delegate.getHostName();
+    delegate.setHostName(hostName.substring(0, hostName.lastIndexOf('_')));
   }
 }

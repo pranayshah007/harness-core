@@ -9,6 +9,7 @@ package io.harness.ng.core.models;
 
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
+import io.harness.security.encryption.AdditionalMetadata;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -23,9 +24,13 @@ import lombok.EqualsAndHashCode;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SecretFileSpec extends SecretSpec {
   private String secretManagerIdentifier;
+  private AdditionalMetadata additionalMetadata;
 
   @Override
   public SecretSpecDTO toDTO() {
-    return SecretFileSpecDTO.builder().secretManagerIdentifier(getSecretManagerIdentifier()).build();
+    return SecretFileSpecDTO.builder()
+        .secretManagerIdentifier(getSecretManagerIdentifier())
+        .additionalMetadata(getAdditionalMetadata())
+        .build();
   }
 }

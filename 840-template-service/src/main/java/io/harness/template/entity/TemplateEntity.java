@@ -112,6 +112,9 @@ public class TemplateEntity
   @Wither @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
 
+  // icon support for templates
+  @Wither @Setter @NonFinal String icon;
+
   @Override
   public String getAccountIdentifier() {
     return accountId;

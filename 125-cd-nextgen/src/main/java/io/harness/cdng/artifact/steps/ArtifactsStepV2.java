@@ -319,6 +319,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
                                   .async(true)
                                   .taskType(artifactStepHelper.getArtifactStepTaskType(artifactConfig).name())
                                   .parameters(new Object[] {taskParameters})
+                                  .expressionFunctorToken((int) ambiance.getExpressionFunctorToken())
                                   .timeout(DEFAULT_TIMEOUT)
                                   .build();
 

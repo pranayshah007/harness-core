@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.customDeployment.helper;
 
+import static io.harness.cdng.customDeployment.CustomDeploymentConstants.VARIABLES;
 import static io.harness.common.EntityYamlRootNames.INFRASTRUCTURE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -18,6 +19,7 @@ import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.customDeployment.CustomDeploymentConstants;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
@@ -31,7 +33,6 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateResponseDTO;
-import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -42,7 +43,6 @@ import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -73,39 +73,7 @@ public class CustomDeploymentYamlHelper {
   private static final String INPUT_STRING = "<+input>";
   private static final String ORG_IDENTIFIER = "org.";
   private static final String STEP_TEMPLATE_REFS = "stepTemplateRefs";
-  @JsonIgnore private final ObjectMapper jsonObjectMapper = new ObjectMapper();
   @Inject TemplateResourceClient templateResourceClient;
-
-  public StepTemplateRef getStepTemplateRefFromYaml(String infrastructureYaml, String accountId) {
-    YamlConfig yamlConfig = new YamlConfig(infrastructureYaml);
-    JsonNode yamlMap = yamlConfig.getYamlMap();
-    JsonNode infraDef = yamlMap.get("infrastructureDefinition");
-    try {
-      if (isNull(infraDef)) {
-        log.error("Infra definition is null in yaml for account id :{}", accountId);
-        throw new InvalidRequestException("Infra definition is null in yaml");
-      }
-      JsonNode spec = infraDef.get("spec");
-      if (isNull(spec)) {
-        log.error("spec is null in yaml for account id :{}", accountId);
-        throw new InvalidRequestException("Infra definition spec is null in yaml");
-      }
-      JsonNode customDeploymentRef = spec.get("customDeploymentRef");
-      if (isNull(customDeploymentRef)) {
-        log.error("customDeploymentRef is null in yaml for account id :{}", accountId);
-        throw new InvalidRequestException("customDeploymentRef is null in yaml");
-      }
-      StepTemplateRef stepTemplateRef = jsonObjectMapper.treeToValue(customDeploymentRef, StepTemplateRef.class);
-      if (isEmpty(stepTemplateRef.getTemplateRef())) {
-        log.error("templateRef is empty in yaml for account id :{}", accountId);
-        throw new InvalidRequestException("templateRef is null in yaml");
-      }
-      return stepTemplateRef;
-    } catch (Exception e) {
-      log.error("Could not fetch the template reference from yaml for acc :{}: {}", accountId, e);
-      throw new InvalidRequestException("Could not fetch the template reference from yaml " + e.getMessage());
-    }
-  }
 
   public Page<InfrastructureEntity> getFilteredInfraEntities(int page, int size, List<String> sort,
       String deploymentTemplateIdentifier, String versionLabel, Page<InfrastructureEntity> infraEntities) {
@@ -165,24 +133,6 @@ public class CustomDeploymentYamlHelper {
           templateResourceClient.get(templateRef, accRef, orgRef, projectRef, versionLabel, false));
     }
     return response;
-  }
-
-  public void validateInfrastructureYaml(@NotNull InfrastructureEntity infraEntity) {
-    StepTemplateRef stepTemplateRef = getStepTemplateRefFromYaml(infraEntity.getYaml(), infraEntity.getAccountId());
-    Map<String, String> infraVariablesFromYaml = getInfraVariables(infraEntity);
-    String templateYaml = getScopedTemplateResponseDTO(infraEntity.getAccountId(), infraEntity.getOrgIdentifier(),
-        infraEntity.getProjectIdentifier(), stepTemplateRef.getTemplateRef(), stepTemplateRef.getVersionLabel())
-                              .getYaml();
-    Map<String, String> templateVariables = getTemplateVariables(templateYaml);
-    if (infraVariablesFromYaml.size() != templateVariables.size()) {
-      throw new InvalidRequestException("Infrastructure Variables doesn't match the template Variables");
-    }
-    for (Map.Entry<String, String> entry : infraVariablesFromYaml.entrySet()) {
-      if (!templateVariables.containsKey(entry.getKey())
-          || !templateVariables.get(entry.getKey()).equals(entry.getValue())) {
-        throw new InvalidRequestException("Infrastructure Variables doesn't match the template Variables");
-      }
-    }
   }
 
   public String getVariables(String yaml) {
@@ -300,25 +250,27 @@ public class CustomDeploymentYamlHelper {
       ObjectMapper mapper = new ObjectMapper();
       ArrayNode updatedVariableNode = mapper.createArrayNode();
       Map<String, JsonNode> infraVariables = new HashMap<>();
-      if (infraSpecNode.has("variables")) {
-        JsonNode infraVariableNode = infraSpecNode.get("variables");
+      if (infraSpecNode.has(VARIABLES)) {
+        JsonNode infraVariableNode = infraSpecNode.get(VARIABLES);
         for (JsonNode variable : infraVariableNode) {
           infraVariables.put(variable.get("name").asText(), variable);
         }
       }
       List<JsonNode> updateVariablesList = new ArrayList<>();
-      if (templateInfraNode.has("variables")) {
-        JsonNode templateVariableNode = templateInfraNode.get("variables");
+      if (templateInfraNode.has(VARIABLES)) {
+        JsonNode templateVariableNode = templateInfraNode.get(VARIABLES);
         for (JsonNode variable : templateVariableNode) {
           JsonNode var = variable;
           if (infraVariables.containsKey(variable.get("name").asText())) {
-            ((ObjectNode) var).set("value", infraVariables.get(variable.get("name").asText()).get("value"));
+            ((ObjectNode) var)
+                .set(CustomDeploymentConstants.VALUE,
+                    infraVariables.get(variable.get("name").asText()).get(CustomDeploymentConstants.VALUE));
           }
           updateVariablesList.add(var);
         }
       }
       updatedVariableNode.addAll(updateVariablesList);
-      ((ObjectNode) infraSpecNode).set("variables", updatedVariableNode);
+      ((ObjectNode) infraSpecNode).set(VARIABLES, updatedVariableNode);
       return YamlUtils.write(infraYamlConfig.getYamlMap()).replace("---\n", "");
     } catch (Exception e) {
       throw new InvalidRequestException(
@@ -370,7 +322,7 @@ public class CustomDeploymentYamlHelper {
        * For nodes such as variables where only value field is associated with name, key.
        */
       if (isEmpty(arrayElement.getIdentifier()) && isNotEmpty(arrayElement.getArrayUniqueIdentifier())) {
-        String fieldName = "value";
+        String fieldName = CustomDeploymentConstants.VALUE;
         if (isNull(arrayElement.getField(fieldName))) {
           if (isNull(arrayElement.getField("ref"))) {
             continue;
@@ -574,58 +526,5 @@ public class CustomDeploymentYamlHelper {
       }
     }
     return false;
-  }
-
-  private Map<String, String> getTemplateVariables(String yaml) {
-    try {
-      ObjectNode templateInfra = getInfra(yaml);
-      JsonNode templateVariables = templateInfra.get(YAMLFieldNameConstants.VARIABLES);
-      Map<String, String> variables = new HashMap<>();
-      if (isNull(templateVariables) || isEmpty(templateVariables.toString())) {
-        return variables;
-      }
-      for (JsonNode variable : templateVariables) {
-        if (isNull(variable) || isEmpty(variable.get("name").toString()) || isEmpty(variable.get("type").toString())) {
-          throw new InvalidRequestException("Template yaml is not valid");
-        }
-        variables.put(variable.get("name").asText(), variable.get("type").asText());
-      }
-      return variables;
-    } catch (Exception e) {
-      log.error("Error occurred while fetching template " + e);
-      throw new InvalidRequestException("Error occurred while fetching template " + e.getMessage());
-    }
-  }
-
-  private Map<String, String> getInfraVariables(InfrastructureEntity infraEntity) {
-    YamlConfig yamlConfig = new YamlConfig(infraEntity.getYaml());
-    JsonNode yamlMap = yamlConfig.getYamlMap();
-    JsonNode infraDef = yamlMap.get("infrastructureDefinition");
-    try {
-      if (isNull(infraDef)) {
-        log.error("Infra definition is null in yaml for account id :{}", infraEntity.getAccountId());
-        throw new InvalidRequestException("Infra definition is null in yaml");
-      }
-      JsonNode spec = infraDef.get("spec");
-      if (isNull(spec)) {
-        log.error("spec is null in yaml for account id :{}", infraEntity.getAccountId());
-        throw new InvalidRequestException("Infra definition spec is null in yaml");
-      }
-      JsonNode infraVariables = spec.get(YAMLFieldNameConstants.VARIABLES);
-      Map<String, String> variables = new HashMap<>();
-      if (isNull(infraVariables) || isEmpty(infraVariables.toString())) {
-        return variables;
-      }
-      for (JsonNode variable : infraVariables) {
-        if (isNull(variable) || isEmpty(variable.get("name").toString()) || isEmpty(variable.get("type").toString())) {
-          throw new InvalidRequestException("Infrastructure yaml is not valid");
-        }
-        variables.put(variable.get("name").asText(), variable.get("type").asText());
-      }
-      return variables;
-    } catch (Exception e) {
-      throw new InvalidRequestException(
-          "Error occurred while parsing variables from infrastructure yaml " + e.getMessage());
-    }
   }
 }

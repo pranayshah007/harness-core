@@ -67,7 +67,8 @@ import org.springframework.data.mongodb.core.query.Update;
 @Singleton
 @Slf4j
 public class GraphGenerationServiceImpl implements GraphGenerationService {
-  private static final long THRESHOLD_LOG = 50;
+  public static final int THRESHOLD_LOG = 1000;
+
   private static final String GRAPH_LOCK = "GRAPH_LOCK_";
 
   @Inject private PlanExecutionService planExecutionService;
@@ -142,21 +143,25 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
     if (orchestrationGraph == null) {
       return false;
     }
+    boolean shouldAck = true;
     String planExecutionId = orchestrationGraph.getPlanExecutionId();
     long startTs = System.currentTimeMillis();
     long lastUpdatedAt = orchestrationGraph.getLastUpdatedAt();
+
     List<OrchestrationEventLog> unprocessedEventLogs =
-        orchestrationEventLogRepository.findUnprocessedEvents(planExecutionId, lastUpdatedAt);
+        orchestrationEventLogRepository.findUnprocessedEvents(planExecutionId, lastUpdatedAt, THRESHOLD_LOG);
     if (unprocessedEventLogs.isEmpty()) {
       return true;
     }
 
-    if (unprocessedEventLogs.size() > THRESHOLD_LOG) {
+    if (unprocessedEventLogs.size() == THRESHOLD_LOG) {
       log.warn("[PMS_GRAPH] Found [{}] unprocessed event logs", unprocessedEventLogs.size());
+      // Re-emit if there are too many logs
+      shouldAck = false;
     }
-
+    boolean updateRequired = false;
     Update executionSummaryUpdate = new Update();
-    Set<String> processedNodeExecutionIds = new HashSet<>();
+    Set<String> nodeExecutionIds = new HashSet<>();
     for (OrchestrationEventLog orchestrationEventLog : unprocessedEventLogs) {
       String nodeExecutionId = orchestrationEventLog.getNodeExecutionId();
       OrchestrationEventType orchestrationEventType = orchestrationEventLog.getOrchestrationEventType();
@@ -167,39 +172,49 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
         case STEP_DETAILS_UPDATE:
           orchestrationGraph = stepDetailsUpdateEventHandler.handleEvent(
               planExecutionId, nodeExecutionId, orchestrationGraph, executionSummaryUpdate);
+          updateRequired = true;
           break;
         case STEP_INPUTS_UPDATE:
           orchestrationGraph =
               stepDetailsUpdateEventHandler.handleStepInputEvent(planExecutionId, nodeExecutionId, orchestrationGraph);
+          updateRequired = true;
           break;
         default:
-          if (processedNodeExecutionIds.contains(nodeExecutionId)) {
+          if (nodeExecutionIds.contains(nodeExecutionId)) {
             continue;
           }
-          processedNodeExecutionIds.add(nodeExecutionId);
+          nodeExecutionIds.add(nodeExecutionId);
           NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
-          pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
-              planExecutionId, nodeExecution, executionSummaryUpdate);
-          pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate);
+          updateRequired = updateRequired
+              || pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
+                  planExecutionId, nodeExecution, executionSummaryUpdate);
+          updateRequired = updateRequired
+              || pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate);
 
           if (OrchestrationUtils.isStageNode(nodeExecution)
               && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
               && StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
-            pmsExecutionSummaryService.updateStageOfIdentityType(planExecutionId, executionSummaryUpdate);
+            updateRequired = updateRequired
+                || pmsExecutionSummaryService.updateStageOfIdentityType(planExecutionId, executionSummaryUpdate);
           } else {
-            ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(executionSummaryUpdate, nodeExecution);
-            ExecutionSummaryUpdateUtils.addStageUpdateCriteria(executionSummaryUpdate, nodeExecution);
+            updateRequired = updateRequired
+                || ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(executionSummaryUpdate, nodeExecution);
+            updateRequired = updateRequired
+                || ExecutionSummaryUpdateUtils.addStageUpdateCriteria(executionSummaryUpdate, nodeExecution);
           }
-          orchestrationGraph = graphStatusUpdateHelper.handleEventV2(
-              planExecutionId, nodeExecution, orchestrationEventType, orchestrationGraph);
+          orchestrationGraph =
+              graphStatusUpdateHelper.handleEventV2(planExecutionId, nodeExecution, orchestrationGraph);
       }
       lastUpdatedAt = orchestrationEventLog.getCreatedAt();
     }
+
     cachePartialOrchestrationGraph(orchestrationGraph.withLastUpdatedAt(lastUpdatedAt), lastUpdatedAt);
-    pmsExecutionSummaryService.update(planExecutionId, executionSummaryUpdate);
+    if (updateRequired) {
+      pmsExecutionSummaryService.update(planExecutionId, executionSummaryUpdate);
+    }
     log.info("[PMS_GRAPH] Processing of [{}] orchestration event logs completed in [{}ms]", unprocessedEventLogs.size(),
         System.currentTimeMillis() - startTs);
-    return true;
+    return shouldAck;
   }
 
   @Override
