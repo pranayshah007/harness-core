@@ -42,7 +42,7 @@ settings :
     name: Max Concurrent Pipelines
     category : PMS
     groupIdentifier: max_concurrent_pipelines
-    defaultValue: 10
+    defaultValue: 100
     valueType : NUMBER
     allowedScopes :
       - ACCOUNT
@@ -50,7 +50,7 @@ settings :
     name: Max Concurrent Pipelines
     category : PMS
     groupIdentifier: max_concurrent_pipelines
-    defaultValue: 10
+    defaultValue: 200
     valueType : NUMBER
     allowedScopes :
       - ACCOUNT
@@ -67,7 +67,7 @@ settings :
     name: Max Concurrent Nodes
     category : PMS
     groupIdentifier: max_concurrent_nodes
-    defaultValue: 10
+    defaultValue: 1000
     valueType : NUMBER
     allowedScopes :
       - ACCOUNT
@@ -75,7 +75,7 @@ settings :
     name: Max Concurrent Nodes
     category : PMS
     groupIdentifier: max_concurrent_nodes
-    defaultValue: 20
+    defaultValue: 2000
     valueType : NUMBER
     allowedScopes :
       - ACCOUNT
