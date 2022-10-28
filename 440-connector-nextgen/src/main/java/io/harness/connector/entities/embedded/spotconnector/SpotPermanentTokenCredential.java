@@ -16,11 +16,11 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@FieldNameConstants(innerTypeName = "SpotManualCredentialKeys")
+@FieldNameConstants(innerTypeName = "SpotPermanentTokenCredentialKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.spotconnector.SpotManualCredential")
-public class SpotManualCredential implements SpotCredential {
-  String accountId;
-  String accountIdRef;
+@TypeAlias("io.harness.connector.entities.embedded.spotconnector.SpotPermanentTokenCredential")
+public class SpotPermanentTokenCredential implements SpotCredential {
+  String spotAccountId;
+  String spotAccountIdRef;
   String apiTokenRef;
 }

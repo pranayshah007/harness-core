@@ -142,8 +142,9 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
         return AzureIdentityAccessTokenResponse.builder().accessToken(token).build();
       }
 
-      AzureAuthorizationRestClient azureAuthorizationRestClient =
-          getAzureRestClient(AzureUtils.AUTH_URL, AzureAuthorizationRestClient.class);
+      AzureAuthorizationRestClient azureAuthorizationRestClient = getAzureRestClient(
+          AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).activeDirectoryEndpoint(),
+          AzureAuthorizationRestClient.class);
       Response<AzureIdentityAccessTokenResponse> response = null;
       if (azureCredentialType == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT) {
         String clientAssertion = createClientAssertion(azureConfig);

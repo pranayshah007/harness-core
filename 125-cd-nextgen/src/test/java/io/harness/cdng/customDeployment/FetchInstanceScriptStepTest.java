@@ -48,6 +48,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -81,6 +82,7 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Captor private ArgumentCaptor<List<ServerInstanceInfo>> serverInstanceInfoListCaptor;
   @Mock private InstanceInfoService instanceInfoService;
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @InjectMocks private FetchInstanceScriptStep fetchInstanceScriptStep;
 
   private FetchInstanceScriptStepParameters parameters =
@@ -211,7 +213,7 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
                     .commandExecutionData(ShellExecutionData.builder().sweepingOutputEnvVariables(map).build())
                     .build())
             .build();
-
+    doReturn("").when(executionSweepingOutputService).consume(any(), any(), any(), any());
     StepResponse stepResponse = fetchInstanceScriptStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> shellScriptTaskResponseNG);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);

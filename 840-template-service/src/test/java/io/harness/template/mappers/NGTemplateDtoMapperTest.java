@@ -10,6 +10,7 @@ package io.harness.template.mappers;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,6 +19,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
@@ -198,5 +200,32 @@ public class NGTemplateDtoMapperTest extends CategoryTest {
 
     assertThatThrownBy(() -> NGTemplateDtoMapper.toTemplateEntity(ACCOUNT_ID, yaml2))
         .isInstanceOf(JerseyViolationException.class);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testValidateIconForTemplateWithInvalidFormat() {
+    String icon1 = "data:image/pmg;base64,ICONSTRING";
+    assertThatThrownBy(() -> NGTemplateDtoMapper.validateIconForTemplate(icon1))
+        .isInstanceOf(InvalidRequestException.class);
+
+    String icon2 = "ICONSTRING";
+    assertThatThrownBy(() -> NGTemplateDtoMapper.validateIconForTemplate(icon2))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test(expected = Test.None.class)
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testValidateIconForTemplateWithValidFormat() {
+    String icon1 = "data:image/png;base64,ICONSTRING";
+    NGTemplateDtoMapper.validateIconForTemplate(icon1);
+    String icon2 = "data:image/jpeg;base64,ICONSTRING";
+    NGTemplateDtoMapper.validateIconForTemplate(icon2);
+    String icon3 = "data:image/jpg;base64,ICONSTRING";
+    NGTemplateDtoMapper.validateIconForTemplate(icon3);
+    String icon4 = "data:image/svg+xml;base64,ICONSTRING";
+    NGTemplateDtoMapper.validateIconForTemplate(icon4);
   }
 }

@@ -4498,7 +4498,6 @@ plain_artifacts = [
     "com.azure:azure-security-keyvault-secrets:4.4.1",
     "com.azure:azure-storage-blob:12.16.0",
     "com.azure:azure-storage-common:12.15.1",
-    "com.bertramlabs.plugins:hcl4j:0.1.7",
     "com.bettercloud:vault-java-driver:4.0.0",
     "com.rabbitmq:amqp-client:jar:4.8.0",
     "com.bugsnag:bugsnag:3.6.2",

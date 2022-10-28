@@ -29,12 +29,12 @@ import java.util.stream.Collectors;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class EngineExceptionUtils {
   public static EnumSet<FailureType> getOrchestrationFailureTypes(Throwable throwable) {
-    EnumSet<io.harness.eraro.FailureType> hFailureTypes = ExceptionUtils.getFailureTypes(throwable);
+    EnumSet<io.harness.exception.FailureType> hFailureTypes = ExceptionUtils.getFailureTypes(throwable);
     return transformToOrchestrationFailureTypes(hFailureTypes);
   }
 
   public static EnumSet<FailureType> transformToOrchestrationFailureTypes(
-      Collection<io.harness.eraro.FailureType> hFailureTypes) {
+      Collection<io.harness.exception.FailureType> hFailureTypes) {
     if (hFailureTypes == null) {
       hFailureTypes = Collections.emptyList();
     }
@@ -43,15 +43,15 @@ public class EngineExceptionUtils {
       return orchestrationFailureTypes;
     }
 
-    for (io.harness.eraro.FailureType hFailureType : hFailureTypes) {
+    for (io.harness.exception.FailureType hFailureType : hFailureTypes) {
       orchestrationFailureTypes.add(mapToOrchestrationFailureType(hFailureType));
     }
     return orchestrationFailureTypes;
   }
 
-  public static EnumSet<io.harness.eraro.FailureType> transformToWingsFailureTypes(
+  public static EnumSet<io.harness.exception.FailureType> transformToWingsFailureTypes(
       Collection<FailureType> oFailureTypes) {
-    EnumSet<io.harness.eraro.FailureType> wingsFailureType = EnumSet.noneOf(io.harness.eraro.FailureType.class);
+    EnumSet<io.harness.exception.FailureType> wingsFailureType = EnumSet.noneOf(io.harness.exception.FailureType.class);
     if (oFailureTypes.isEmpty()) {
       return wingsFailureType;
     }
@@ -83,36 +83,36 @@ public class EngineExceptionUtils {
   }
 
   @VisibleForTesting
-  static io.harness.eraro.FailureType mapToWingsFailureType(FailureType oFailureType) {
+  static io.harness.exception.FailureType mapToWingsFailureType(FailureType oFailureType) {
     switch (oFailureType) {
       case TIMEOUT_FAILURE:
-        return io.harness.eraro.FailureType.EXPIRED;
+        return io.harness.exception.FailureType.EXPIRED;
       case UNRECOGNIZED:
       case UNKNOWN_FAILURE:
       case SKIPPING_FAILURE:
       case APPLICATION_FAILURE:
-        return io.harness.eraro.FailureType.APPLICATION_ERROR;
+        return io.harness.exception.FailureType.APPLICATION_ERROR;
       case CONNECTIVITY_FAILURE:
-        return io.harness.eraro.FailureType.CONNECTIVITY;
+        return io.harness.exception.FailureType.CONNECTIVITY;
       case VERIFICATION_FAILURE:
-        return io.harness.eraro.FailureType.VERIFICATION_FAILURE;
+        return io.harness.exception.FailureType.VERIFICATION_FAILURE;
       case AUTHORIZATION_FAILURE:
-        return io.harness.eraro.FailureType.AUTHORIZATION_ERROR;
+        return io.harness.exception.FailureType.AUTHORIZATION_ERROR;
       case AUTHENTICATION_FAILURE:
-        return io.harness.eraro.FailureType.AUTHENTICATION;
+        return io.harness.exception.FailureType.AUTHENTICATION;
       case DELEGATE_PROVISIONING_FAILURE:
-        return io.harness.eraro.FailureType.DELEGATE_PROVISIONING;
+        return io.harness.exception.FailureType.DELEGATE_PROVISIONING;
       case POLICY_EVALUATION_FAILURE:
-        return io.harness.eraro.FailureType.POLICY_EVALUATION_FAILURE;
+        return io.harness.exception.FailureType.POLICY_EVALUATION_FAILURE;
       case INPUT_TIMEOUT_FAILURE:
-        return io.harness.eraro.FailureType.INPUT_TIMEOUT_FAILURE;
+        return io.harness.exception.FailureType.INPUT_TIMEOUT_FAILURE;
       default:
         throw new InvalidRequestException("No failure mapped to " + oFailureType.name());
     }
   }
 
   @VisibleForTesting
-  static FailureType mapToOrchestrationFailureType(io.harness.eraro.FailureType hFailureType) {
+  static FailureType mapToOrchestrationFailureType(io.harness.exception.FailureType hFailureType) {
     switch (hFailureType) {
       case DELEGATE_PROVISIONING:
         return FailureType.DELEGATE_PROVISIONING_FAILURE;

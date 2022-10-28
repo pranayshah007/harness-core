@@ -33,7 +33,8 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
   @Override
   public boolean refreshTemplateInputsInPipeline(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
+    PipelineEntity pipelineEntity =
+        getPipelineEntityWithoutValidations(accountId, orgId, projectId, pipelineIdentifier);
     if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
       RefreshResponseDTO refreshResponseDTO =
           pmsPipelineTemplateHelper.getRefreshedYaml(accountId, orgId, projectId, pipelineEntity.getYaml());
@@ -52,7 +53,8 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
   @Override
   public ValidateTemplateInputsResponseDTO validateTemplateInputsInPipeline(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
+    PipelineEntity pipelineEntity =
+        getPipelineEntityWithoutValidations(accountId, orgId, projectId, pipelineIdentifier);
 
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
         pmsPipelineTemplateHelper.validateTemplateInputsForGivenYaml(
@@ -65,10 +67,10 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
     return ValidateTemplateInputsResponseDTO.builder().validYaml(true).build();
   }
 
-  private PipelineEntity getPipelineEntity(
+  private PipelineEntity getPipelineEntityWithoutValidations(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    Optional<PipelineEntity> optionalPipelineEntity =
-        pmsPipelineService.get(accountId, orgId, projectId, pipelineIdentifier, false);
+    Optional<PipelineEntity> optionalPipelineEntity = pmsPipelineService.getPipelineWithoutPerformingValidations(
+        accountId, orgId, projectId, pipelineIdentifier, false, false);
     if (!optionalPipelineEntity.isPresent()) {
       throw new InvalidRequestException(
           String.format("Pipeline with the given id: %s does not exist or has been deleted", pipelineIdentifier));
@@ -78,7 +80,8 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
 
   @Override
   public YamlDiffResponseDTO getYamlDiff(String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
+    PipelineEntity pipelineEntity =
+        getPipelineEntityWithoutValidations(accountId, orgId, projectId, pipelineIdentifier);
 
     String pipelineYaml = pipelineEntity.getYaml();
     RefreshResponseDTO refreshResponseDTO =
@@ -92,7 +95,8 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
   @Override
   public boolean recursivelyRefreshAllTemplateInputsInPipeline(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
+    PipelineEntity pipelineEntity =
+        getPipelineEntityWithoutValidations(accountId, orgId, projectId, pipelineIdentifier);
 
     if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
       YamlFullRefreshResponseDTO refreshResponse =

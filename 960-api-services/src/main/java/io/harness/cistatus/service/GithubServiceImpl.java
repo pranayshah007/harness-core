@@ -54,6 +54,8 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Slf4j
 public class GithubServiceImpl implements GithubService {
   private static final int EXP_TIME = 5 * 60 * 1000;
+  private static final String MERGED = "merged";
+  private static final String MESSAGE = "message";
 
   @Override
   public String getToken(GithubAppConfig githubAppConfig) {
@@ -126,20 +128,25 @@ public class GithubServiceImpl implements GithubService {
       Response<Object> response = getGithubClient(GithubAppConfig.builder().githubUrl(apiUrl).build())
                                       .mergePR(getAuthToken(token), owner, repo, prNumber)
                                       .execute();
+      JSONObject json = new JSONObject();
       if (response.isSuccessful()) {
-        JSONObject json = new JSONObject();
         json.put("sha", ((LinkedHashMap) response.body()).get("sha"));
-        json.put("merged", ((LinkedHashMap) response.body()).get("merged"));
-        json.put("message", ((LinkedHashMap) response.body()).get("message"));
-        return json;
+        json.put(MERGED, ((LinkedHashMap) response.body()).get(MERGED));
+        json.put(MESSAGE, ((LinkedHashMap) response.body()).get(MESSAGE));
       } else {
-        log.error("Failed to merge pr error {}, message {}", response.errorBody().string(), response.message());
-        log.warn("Merge Request for merging PR returned with response code {}", prNumber, response.code());
-        return new JSONObject();
+        JSONObject errObject = new JSONObject(response.errorBody().string());
+        log.error("Failed to merge PR {}. error {}, code {}", prNumber, errObject.get(MESSAGE), response.code());
+        json.put("error", errObject.get(MESSAGE));
+        json.put("code", response.code());
+        json.put(MERGED, false);
       }
+      return json;
     } catch (Exception e) {
       log.error("Failed to merge PR for github url {} and prNum {} ", apiUrl, prNumber, e);
-      return new JSONObject();
+      JSONObject json = new JSONObject();
+      json.put("error", e.getMessage());
+      json.put(MERGED, false);
+      return json;
     }
   }
 

@@ -110,6 +110,7 @@ import io.harness.delegate.beans.StartupMode;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.event.listener.OrganizationEntityCRUDEventListener;
 import io.harness.delegate.event.listener.ProjectEntityCRUDEventListener;
+import io.harness.delegate.heartbeat.HeartbeatModule;
 import io.harness.delegate.outbox.DelegateOutboxEventHandler;
 import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
 import io.harness.delegate.service.impl.DelegateRingServiceImpl;
@@ -955,6 +956,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
         return configuration.getSegmentConfiguration();
       }
     });
+
+    install(new HeartbeatModule());
 
     bind(MainConfiguration.class).toInstance(configuration);
     bind(PortalConfig.class).toInstance(configuration.getPortal());

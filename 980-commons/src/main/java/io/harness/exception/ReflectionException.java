@@ -8,7 +8,6 @@
 package io.harness.exception;
 
 import io.harness.eraro.ErrorCode;
-import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
 
 import java.util.EnumSet;

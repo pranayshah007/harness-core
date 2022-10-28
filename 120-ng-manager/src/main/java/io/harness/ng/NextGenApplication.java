@@ -69,6 +69,7 @@ import io.harness.enforcement.executions.DeploymentsPerMonthRestrictionUsageImpl
 import io.harness.enforcement.executions.InitialDeploymentRestrictionUsageImpl;
 import io.harness.enforcement.services.FeatureRestrictionLoader;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.exception.MongoExecutionTimeoutExceptionMapper;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.freeze.FreezeNotificationTemplateRegistrar;
 import io.harness.gitsync.AbstractGitSyncModule;
@@ -797,6 +798,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.jersey().register(WingsExceptionMapperV2.class);
     environment.jersey().register(GenericExceptionMapperV2.class);
     environment.jersey().register(NotSupportedExceptionMapper.class);
+    environment.jersey().register(MongoExecutionTimeoutExceptionMapper.class);
   }
 
   private void registerJerseyFeatures(Environment environment) {

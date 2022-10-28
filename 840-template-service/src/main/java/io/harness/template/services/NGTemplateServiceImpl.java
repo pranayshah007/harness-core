@@ -333,6 +333,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                                             .withTags(templateEntity.getTags())
                                             .withOrgIdentifier(templateEntity.getOrgIdentifier())
                                             .withProjectIdentifier(templateEntity.getProjectIdentifier())
+                                            .withIcon(templateEntity.getIcon())
                                             .withFullyQualifiedIdentifier(templateEntity.getFullyQualifiedIdentifier())
                                             .withLastUpdatedTemplate(updateLastUpdatedTemplateFlag)
                                             .withIsEntityInvalid(false);

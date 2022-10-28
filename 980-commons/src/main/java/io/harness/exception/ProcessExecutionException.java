@@ -11,7 +11,6 @@ import static io.harness.eraro.ErrorCode.PROCESS_EXECUTION_EXCEPTION;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
 
 import java.util.EnumSet;

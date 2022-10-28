@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.RepairActionCode;
-import io.harness.eraro.FailureType;
+import io.harness.exception.FailureType;
 import io.harness.yaml.BaseYaml;
 
 import java.util.ArrayList;
