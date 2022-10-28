@@ -38,6 +38,7 @@ import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -65,6 +66,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   @Inject private NodeStatusUpdateHandlerFactory nodeStatusUpdateHandlerFactory;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
+  @Inject @Named("secondary-mongo") public MongoTemplate secondaryMongoTemplate;
 
   @Getter private final Subject<PlanStatusUpdateObserver> planStatusUpdateSubject = new Subject<>();
 
@@ -243,7 +245,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
                             .is(pipelineIdentifier)
                             .and(PlanExecutionKeys.status)
                             .in(StatusUtils.activeStatuses());
-    return mongoTemplate.count(new Query(criteria), PlanExecution.class);
+    return secondaryMongoTemplate.count(new Query(criteria), PlanExecution.class);
   }
 
   @Override
@@ -260,7 +262,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
                             .is(pipelineIdentifier)
                             .and(PlanExecutionKeys.status)
                             .is(Status.QUEUED);
-    return mongoTemplate.findOne(
+    return secondaryMongoTemplate.findOne(
         new Query(criteria).with(Sort.by(Sort.Direction.ASC, PlanExecutionKeys.createdAt)), PlanExecution.class);
   }
 }
