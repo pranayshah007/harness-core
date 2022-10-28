@@ -99,6 +99,5 @@ public class EC2RecommendationDAO {
             toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS - 1, ChronoUnit.DAYS)))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .execute();
-    log.info("upsertCeRecommendation");
   }
 }
