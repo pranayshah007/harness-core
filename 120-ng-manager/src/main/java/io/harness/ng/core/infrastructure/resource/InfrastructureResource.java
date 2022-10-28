@@ -19,7 +19,6 @@ import static java.lang.String.format;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
-import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
@@ -146,7 +145,6 @@ public class InfrastructureResource {
   @GET
   @Path("{infraIdentifier}")
   @ApiOperation(value = "Gets an Infrastructure by identifier", nickname = "getInfrastructure")
-  @NGAccessControlCheck(resourceType = NGResourceType.ENVIRONMENT, permission = "core_environment_view")
   @Operation(operationId = "getInfrastructure", summary = "Gets an Infrastructure by identifier",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "The saved Infrastructure") })
   public ResponseDTO<InfrastructureResponse>
