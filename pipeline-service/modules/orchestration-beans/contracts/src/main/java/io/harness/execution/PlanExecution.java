@@ -23,6 +23,7 @@ import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.UuidAccess;
 import io.harness.plan.NodeType;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 
@@ -80,6 +81,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   @Wither @Version Long version;
 
   @Getter @NonFinal @Setter Long nextIteration;
+  Ambiance ambiance;
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {

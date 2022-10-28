@@ -12,7 +12,6 @@ import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.events.OrchestrationEventEmitter;
-import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
@@ -101,11 +100,12 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
                 pipelineExecutionSummaryUpdatedEntity.getEndTs()));
       }
 
+      // Todo (sahil): Commenting this as this might cause issues, will fix it next week.
       // Wait notify is for Pipeline Chain Parent Node.
-      waitNotifyEngine.doneWith(pipelineExecutionSummaryUpdatedEntity.getPlanExecutionId(),
-          PipelineStageResponseData.builder()
-              .status(pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus())
-              .build());
+      //      waitNotifyEngine.doneWith(pipelineExecutionSummaryUpdatedEntity.getPlanExecutionId(),
+      //          PipelineStageResponseData.builder()
+      //              .status(pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus())
+      //              .build());
     }
   }
 
