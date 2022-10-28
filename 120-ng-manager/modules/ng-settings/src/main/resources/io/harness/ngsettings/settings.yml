@@ -44,7 +44,6 @@ settings :
     groupIdentifier: pipeline_settings_team
     defaultValue: 10
     valueType : NUMBER
-    allowOverrides: true
     allowedScopes :
       - ACCOUNT
   - identifier: max_concurrent_pipelines_enterprise_plan
@@ -53,7 +52,6 @@ settings :
     groupIdentifier: pipeline_settings_enterprise
     defaultValue: 10
     valueType : NUMBER
-    allowOverrides: true
     allowedScopes :
       - ACCOUNT
 
@@ -71,7 +69,6 @@ settings :
     groupIdentifier: pipeline_settings_team
     defaultValue: 10
     valueType : NUMBER
-    allowOverrides: true
     allowedScopes :
       - ACCOUNT
   - identifier: max_parallel_stages_enterprise_plan
@@ -80,7 +77,6 @@ settings :
     groupIdentifier: pipeline_settings_enterprise
     defaultValue: 20
     valueType : NUMBER
-    allowOverrides: true
     allowedScopes :
       - ACCOUNT
 
@@ -98,7 +94,6 @@ settings :
     groupIdentifier: pipeline_settings_team
     defaultValue: 10
     valueType : NUMBER
-    allowOverrides: true
     allowedScopes :
       - ACCOUNT
   - identifier: max_parallel_steps_enterprise_plan
@@ -106,7 +101,6 @@ settings :
     category : PMS
     groupIdentifier: pipeline_settings_enterprise
     defaultValue: 20
-    allowOverrides: true
     valueType : NUMBER
     allowedScopes :
       - ACCOUNT
