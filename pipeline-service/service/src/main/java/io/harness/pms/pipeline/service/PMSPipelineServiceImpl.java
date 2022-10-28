@@ -113,8 +113,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   @Override
   public PipelineCRUDResult create(PipelineEntity pipelineEntity) {
-    if (pmsPipelineRepository.countAllPipelinesInAProject(pipelineEntity.getAccountIdentifier(),
-            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier())
+    if (pmsPipelineRepository.countAllPipelinesInAccount(pipelineEntity.getAccountIdentifier())
         > pipelineSettingsService.getMaxPipelineCreationCount(pipelineEntity.getAccountId())) {
       throw new InvalidRequestException(
           "You have created maximum number of pipelines, please upgrade if you want to create more pipelines");
@@ -145,8 +144,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   @Override
   public PipelineCRUDResult createWithoutValidations(PipelineEntity pipelineEntity) {
-    if (pmsPipelineRepository.countAllPipelinesInAProject(pipelineEntity.getAccountIdentifier(),
-            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier())
+    if (pmsPipelineRepository.countAllPipelinesInAccount(pipelineEntity.getAccountIdentifier())
         > pipelineSettingsService.getMaxPipelineCreationCount(pipelineEntity.getAccountId())) {
       throw new InvalidRequestException(
           "You have created maximum number of pipelines, please upgrade if you want to create more pipelines");
@@ -181,9 +179,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
   @Override
   public PipelineSaveResponse clone(ClonePipelineDTO clonePipelineDTO, String accountId) {
-    if (pmsPipelineRepository.countAllPipelinesInAProject(accountId,
-            clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
-            clonePipelineDTO.getSourceConfig().getProjectIdentifier())
+    if (pmsPipelineRepository.countAllPipelinesInAccount(accountId)
         > pipelineSettingsService.getMaxPipelineCreationCount(accountId)) {
       throw new InvalidRequestException(
           "You have created maximum number of pipelines, please upgrade if you want to create more pipelines");

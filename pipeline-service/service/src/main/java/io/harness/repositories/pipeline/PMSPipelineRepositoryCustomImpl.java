@@ -92,15 +92,9 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   @Override
-  public Long countAllPipelinesInAProject(String accountId, String orgId, String projectId) {
-    Criteria criteria = Criteria.where(PipelineEntityKeys.accountId)
-                            .is(accountId)
-                            .and(PipelineEntityKeys.orgIdentifier)
-                            .is(orgId)
-                            .and(PipelineEntityKeys.projectIdentifier)
-                            .is(projectId)
-                            .and(PipelineEntityKeys.deleted)
-                            .is(false);
+  public Long countAllPipelinesInAccount(String accountId) {
+    Criteria criteria =
+        Criteria.where(PipelineEntityKeys.accountId).is(accountId).and(PipelineEntityKeys.deleted).is(false);
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.count(query, PipelineEntity.class);
   }
