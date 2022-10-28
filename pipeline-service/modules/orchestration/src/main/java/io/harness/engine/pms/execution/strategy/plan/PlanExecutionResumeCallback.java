@@ -1,5 +1,13 @@
+/*
+ * Copyright 2021 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ */
 package io.harness.engine.pms.execution.strategy.plan;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.PlanExecution;
@@ -14,6 +22,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
+@OwnedBy(HarnessTeam.PIPELINE)
 @Data
 @Builder
 public class PlanExecutionResumeCallback implements OldNotifyCallback {

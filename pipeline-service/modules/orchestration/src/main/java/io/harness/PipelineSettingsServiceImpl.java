@@ -1,3 +1,9 @@
+/*
+ * Copyright 2021 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ */
 package io.harness;
 
 import static io.harness.licensing.Edition.ENTERPRISE;
@@ -30,7 +36,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
 
   private final LoadingCache<String, List<ModuleLicenseDTO>> moduleLicensesCache =
       CacheBuilder.newBuilder()
-          .expireAfterWrite(10, TimeUnit.DAYS)
+          .expireAfterWrite(1, TimeUnit.DAYS)
           .build(new CacheLoader<String, List<ModuleLicenseDTO>>() {
             @Override
             public List<ModuleLicenseDTO> load(@NotNull final String accountId) {
@@ -116,10 +122,10 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
   }
 
   private PlanExecutionSettingResponse shouldQueueInternal(
-      String accountId, String orgId, String projectId, String pipelineIdentifier, long count) {
+      String accountId, String orgId, String projectId, String pipelineIdentifier, long maxCount) {
     long runningExecutionsForGivenPipeline =
         planExecutionService.findRunningExecutionsForGivenPipeline(accountId, orgId, projectId, pipelineIdentifier);
-    if (runningExecutionsForGivenPipeline >= count) {
+    if (runningExecutionsForGivenPipeline >= maxCount) {
       return PlanExecutionSettingResponse.builder().shouldQueue(true).useNewFlow(true).build();
     }
     return PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(true).build();
