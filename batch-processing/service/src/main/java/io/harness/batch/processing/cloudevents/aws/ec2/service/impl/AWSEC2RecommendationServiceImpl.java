@@ -20,11 +20,7 @@ import com.amazonaws.services.costexplorer.model.RecommendationTarget;
 import com.amazonaws.services.costexplorer.model.RightsizingRecommendation;
 import com.amazonaws.services.costexplorer.model.RightsizingRecommendationConfiguration;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -65,7 +61,9 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
       recommendationRequest.withNextPageToken(nextPageToken);
       GetRightsizingRecommendationResult recommendationResult =
           getRecommendations(request.getAwsCrossAccountAttributes(), recommendationRequest);
-      recommendationsResult.addAll(recommendationResult.getRightsizingRecommendations());
+      if (Objects.nonNull(recommendationResult)) {
+        recommendationsResult.addAll(recommendationResult.getRightsizingRecommendations());
+      }
       nextPageToken = recommendationResult.getNextPageToken();
     } while (nextPageToken != null);
 

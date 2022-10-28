@@ -75,39 +75,53 @@ public class EC2MetricHelper {
   public List<Ec2UtilzationData> getUtilizationMetrics(AwsCrossAccountAttributes awsCrossAccountAttributes,
       Date startTime, Date endTime, List<AWSEC2Details> instanceDetails) {
     final Map<String, MetricDataResult> metricDataResultMap = new HashMap<>();
+    final Map<String, List<AWSEC2Details>> regionBasedInstanceMap = new HashMap<>();
     Set<AWSEC2Details> uniqueInstances = new HashSet<>();
     for (AWSEC2Details instance : instanceDetails) {
       uniqueInstances.add(instance);
     }
 
+    log.info("uniqueInstances = {}", uniqueInstances);
     uniqueInstances.forEach(instance -> {
-      List<MetricDataQuery> aggregatedQuery = new ArrayList<>();
-      for (Statistic stat : Arrays.asList(Average, Maximum)) {
-        for (String metricName : Arrays.asList(CPU_UTILIZATION, MEMORY_UTILIZATION)) {
-          // instance level metrics
-
-          Metric clusterMetric = metricFor(metricName, instance.getInstanceId());
-          aggregatedQuery.add(
-              new MetricDataQuery()
-                  .withId(generateId(metricName, stat.toString(), instance.getInstanceId()))
-                  .withMetricStat(
-                      new MetricStat().withPeriod(PERIOD).withStat(stat.toString()).withMetric(clusterMetric)));
-        }
-      }
-      metricDataResultMap.putAll(awsCloudWatchHelperService
-                                     .getMetricData(AwsCloudWatchMetricDataRequest.builder()
-                                                        .region(instance.getRegion())
-                                                        .awsCrossAccountAttributes(awsCrossAccountAttributes)
-                                                        .startTime(startTime)
-                                                        .endTime(endTime)
-                                                        .metricDataQueries(aggregatedQuery)
-                                                        .build())
-                                     .getMetricDataResults()
-                                     .stream()
-                                     .collect(Collectors.toMap(MetricDataResult::getId, Function.identity())));
+      regionBasedInstanceMap.putIfAbsent(instance.getRegion(), new ArrayList<>());
+      regionBasedInstanceMap.get(instance.getRegion()).add(instance);
     });
 
-    log.debug("metricDataResultMap = {}", metricDataResultMap);
+    if (!regionBasedInstanceMap.isEmpty()) {
+      log.info("regionBasedInstanceMap = {}", regionBasedInstanceMap);
+      regionBasedInstanceMap.entrySet().forEach(entry -> {
+        List<AWSEC2Details> instanceList = entry.getValue();
+        List<MetricDataQuery> aggregatedQuery = new ArrayList<>();
+        instanceList.forEach(instance -> {
+          for (Statistic stat : Arrays.asList(Average, Maximum)) {
+            for (String metricName : Arrays.asList(CPU_UTILIZATION, MEMORY_UTILIZATION)) {
+              // instance level metrics
+
+              Metric clusterMetric = metricFor(metricName, instance.getInstanceId());
+              aggregatedQuery.add(
+                  new MetricDataQuery()
+                      .withId(generateId(metricName, stat.toString(), instance.getInstanceId()))
+                      .withMetricStat(
+                          new MetricStat().withPeriod(PERIOD).withStat(stat.toString()).withMetric(clusterMetric)));
+            }
+          }
+        });
+        log.info("aggregatedQuery = {}", aggregatedQuery);
+        metricDataResultMap.putAll(awsCloudWatchHelperService
+                                       .getMetricData(AwsCloudWatchMetricDataRequest.builder()
+                                                          .region(entry.getKey())
+                                                          .awsCrossAccountAttributes(awsCrossAccountAttributes)
+                                                          .startTime(startTime)
+                                                          .endTime(endTime)
+                                                          .metricDataQueries(aggregatedQuery)
+                                                          .build())
+                                       .getMetricDataResults()
+                                       .stream()
+                                       .collect(Collectors.toMap(MetricDataResult::getId, Function.identity())));
+      });
+    }
+
+    log.info("metricDataResultMap = {}", metricDataResultMap);
     List<Ec2UtilzationData> utilizationMetrics = new ArrayList<>();
     for (AWSEC2Details instance : uniqueInstances) {
       utilizationMetrics.add(extractMetricResult(metricDataResultMap, instance.getInstanceId()));
