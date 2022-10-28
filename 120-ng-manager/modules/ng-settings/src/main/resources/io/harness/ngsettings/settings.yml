@@ -34,14 +34,14 @@ settings :
     name: Max Concurrent Pipelines
     category : PMS
     defaultValue: 5
-    groupIdentifier: pipeline_settings_free
+    groupIdentifier: max_concurrent_pipelines
     valueType : NUMBER
     allowedScopes :
       - ACCOUNT
   - identifier: max_concurrent_pipelines_team_plan
     name: Max Concurrent Pipelines
     category : PMS
-    groupIdentifier: pipeline_settings_team
+    groupIdentifier: max_concurrent_pipelines
     defaultValue: 10
     valueType : NUMBER
     allowedScopes :
@@ -49,57 +49,32 @@ settings :
   - identifier: max_concurrent_pipelines_enterprise_plan
     name: Max Concurrent Pipelines
     category : PMS
-    groupIdentifier: pipeline_settings_enterprise
+    groupIdentifier: max_concurrent_pipelines
     defaultValue: 10
     valueType : NUMBER
     allowedScopes :
       - ACCOUNT
 
-  - identifier: max_parallel_stages_free_plan
-    name: Max Parallel Stages
+  - identifier: max_concurrent_nodes_free_plan
+    name: Max Concurrent Nodes
     category : PMS
-    groupIdentifier: pipeline_settings_free
+    groupIdentifier: max_concurrent_nodes
     defaultValue: 5
     valueType : NUMBER
     allowedScopes :
       - ACCOUNT
-  - identifier: max_parallel_stages_team_plan
-    name: Max Parallel Stages
+  - identifier: max_concurrent_nodes_team_plan
+    name: Max Concurrent Nodes
     category : PMS
-    groupIdentifier: pipeline_settings_team
+    groupIdentifier: max_concurrent_nodes
     defaultValue: 10
     valueType : NUMBER
     allowedScopes :
       - ACCOUNT
-  - identifier: max_parallel_stages_enterprise_plan
-    name: Max Parallel Stages
+  - identifier: max_concurrent_nodes_enterprise_plan
+    name: Max Concurrent Nodes
     category : PMS
-    groupIdentifier: pipeline_settings_enterprise
-    defaultValue: 20
-    valueType : NUMBER
-    allowedScopes :
-      - ACCOUNT
-
-  - identifier: max_parallel_steps_free_plan
-    name: Max Parallel Steps
-    category : PMS
-    groupIdentifier: pipeline_settings_free
-    defaultValue: 5
-    valueType : NUMBER
-    allowedScopes :
-      - ACCOUNT
-  - identifier: max_parallel_steps_team_plan
-    name: Max Parallel Steps
-    category : PMS
-    groupIdentifier: pipeline_settings_team
-    defaultValue: 10
-    valueType : NUMBER
-    allowedScopes :
-      - ACCOUNT
-  - identifier: max_parallel_steps_enterprise_plan
-    name: Max Parallel Steps
-    category : PMS
-    groupIdentifier: pipeline_settings_enterprise
+    groupIdentifier: max_concurrent_nodes
     defaultValue: 20
     valueType : NUMBER
     allowedScopes :

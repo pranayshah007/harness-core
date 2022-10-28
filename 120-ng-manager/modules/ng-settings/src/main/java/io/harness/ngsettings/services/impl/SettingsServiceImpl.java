@@ -353,6 +353,10 @@ public class SettingsServiceImpl implements SettingsService {
 
   private void customValidation(String accountIdentifier, SettingDTO oldSettingDTO, SettingDTO newSettingDTO) {
     SettingValidator settingValidator = settingValidatorMap.get(oldSettingDTO.getIdentifier());
+    if (settingValidator == null) {
+      // Trying to get settingValidator by groupIdentifier.
+      settingValidator = settingValidatorMap.get(oldSettingDTO.getGroupIdentifier());
+    }
     if (settingValidator != null) {
       settingValidator.validate(accountIdentifier, oldSettingDTO, newSettingDTO);
     }
