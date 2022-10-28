@@ -61,4 +61,9 @@ public class PolicyPackServiceImpl implements PolicyPackService {
   public boolean deleteOOTB(String uuid) {
     return policyPackDAO.deleteOOTB(uuid);
   }
+
+  @Override
+  public List<PolicyPack> listPacks(String accountId, List<String> policyPackIDs){
+  return policyPackDAO.listPacks(accountId, policyPackIDs);
+  }
 }

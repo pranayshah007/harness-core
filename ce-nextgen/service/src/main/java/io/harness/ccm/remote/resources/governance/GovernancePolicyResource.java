@@ -211,7 +211,6 @@ public class GovernancePolicyResource {
   // Internal API for deletion of OOTB policies
 
   @DELETE
-  @Hidden
   @Path("{policyId}")
   @Timed
   @Consumes(MediaType.APPLICATION_JSON)
@@ -228,9 +227,10 @@ public class GovernancePolicyResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<Boolean>
-  deleteOOTB(@PathParam("policyId") @Parameter(
-      required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
-    boolean result = governancePolicyService.deleteOOTB(uuid);
+  delete(@PathParam("policyId") @Parameter(
+      required = true, description = "Unique identifier for the policy") @NotNull @Valid String name) {
+    boolean result =
+            governancePolicyService.delete("", governancePolicyService.listName("", name, false).getUuid());
     return ResponseDTO.newResponse(result);
   }
 

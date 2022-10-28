@@ -19,4 +19,5 @@ public interface PolicyPackService {
   List<PolicyPack> list(String accountId);
   void check( List<String> policyPackIdentifier);
   boolean deleteOOTB(String uuid);
+  List<PolicyPack> listPacks(String accountId, List<String> policyPackIDs);
 }

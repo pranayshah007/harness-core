@@ -104,6 +104,24 @@ public class PolicyEnforcementDAO {
     }
   }
 
+  public PolicyEnforcement listid(String accountId, String uuid, boolean create) {
+    try {
+      return hPersistence.createQuery(PolicyEnforcement.class)
+          .field(PolicyEnforcementId.accountId)
+          .equal(accountId)
+          .field(PolicyEnforcementId.uuid)
+          .equal(uuid)
+          .asList()
+          .get(0);
+    } catch (IndexOutOfBoundsException e) {
+      log.error("No such policy pack exists,{} accountId{} uuid{}", e, accountId, uuid);
+      if (create) {
+        return null;
+      }
+      throw new InvalidRequestException("No such policy pack exists");
+    }
+  }
+
   public List<PolicyEnforcement> list(String accountId) {
     return hPersistence.createQuery(PolicyEnforcement.class)
         .field(PolicyEnforcementId.accountId)

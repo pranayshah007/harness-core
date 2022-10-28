@@ -33,11 +33,6 @@ public class PolicyDAO {
     return hPersistence.save(policy) != null;
   }
 
-  public boolean deleteOOTB(String uuid) {
-    Query<Policy> query = hPersistence.createQuery(Policy.class).field(PolicyId.uuid).equal(uuid);
-    log.info("deleted policy: {}", uuid);
-    return hPersistence.delete(query);
-  }
   public boolean delete(String accountId, String uuid) {
     Query<Policy> query = hPersistence.createQuery(Policy.class)
                               .field(PolicyId.accountId)
@@ -92,8 +87,33 @@ public class PolicyDAO {
                           .equal(name)
                           .asList());
       return policies.get(0);
-    } catch (IndexOutOfBoundsException e) {
+    }
+    catch (IndexOutOfBoundsException e) {
       log.error("No such policy exists,{} accountId {} name {}", e, accountId, name);
+      if (create) {
+        return null;
+      }
+      throw new InvalidRequestException("No such policy exists");
+    }
+  }
+
+  public Policy listid(String accountId, String uuid, boolean create) {
+    try {
+      List<Policy> policies = hPersistence.createQuery(Policy.class)
+                                  .field(PolicyId.accountId)
+                                  .equal(accountId)
+                                  .field(PolicyId.uuid)
+                                  .equal(uuid)
+                                  .asList();
+      policies.addAll(hPersistence.createQuery(Policy.class)
+                          .field(PolicyId.accountId)
+                          .equal("")
+                          .field(PolicyId.uuid)
+                          .equal(uuid)
+                          .asList());
+      return policies.get(0);
+    } catch (IndexOutOfBoundsException e) {
+      log.error("No such policy exists,{} accountId {} name {}", e, accountId, uuid);
       if (create) {
         return null;
       }

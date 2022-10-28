@@ -13,7 +13,6 @@ import java.util.List;
 
 public interface GovernancePolicyService {
   boolean save(Policy policy);
-  boolean deleteOOTB(String uuid);
   boolean delete(String accountId, String uuid);
   Policy update(Policy policy, String accountId);
   List<Policy> list(GovernancePolicyFilter governancePolicyFilter);

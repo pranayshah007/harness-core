@@ -32,11 +32,6 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
   }
 
   @Override
-  public boolean deleteOOTB( String uuid) {
-    return policyDao.deleteOOTB( uuid);
-  }
-
-  @Override
   public boolean delete(String accountId, String uuid) {
     return policyDao.delete( accountId, uuid );
   }

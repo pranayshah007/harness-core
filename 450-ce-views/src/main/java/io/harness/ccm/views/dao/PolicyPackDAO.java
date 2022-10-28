@@ -97,6 +97,33 @@ public class PolicyPackDAO {
       throw new InvalidRequestException("No such policy pack exists");
     }
   }
+
+  public PolicyPack listid(String accountId, String uuid, boolean create) {
+    try {
+      List<PolicyPack> policyPacks = hPersistence.createQuery(PolicyPack.class)
+                                         .field(PolicySetId.accountId)
+                                         .equal(accountId)
+                                         .field(PolicySetId.uuid)
+                                         .equal(uuid)
+                                         .asList();
+      policyPacks.addAll(hPersistence.createQuery(PolicyPack.class)
+                             .field(PolicySetId.accountId)
+                             .equal("")
+                             .field(PolicySetId.uuid)
+                             .equal(uuid)
+                             .asList());
+      return policyPacks.get(0);
+    }
+    catch (IndexOutOfBoundsException e) {
+      log.error("No such policy pack exists,{} accountId{} name {} {}", e, accountId, uuid, create);
+      if (create) {
+        log.info("returning null");
+        return null;
+      }
+      throw new InvalidRequestException("No such policy pack exists");
+    }
+  }
+
   public void check( List<String> policiesPackIdentifier) {
     try {
       List<PolicyPack> policyPacks = hPersistence.createQuery(PolicyPack.class)
@@ -108,6 +135,18 @@ public class PolicyPackDAO {
     catch (IndexOutOfBoundsException e) {
       throw new InvalidRequestException("A policy pack entered in the list doesn't exist");
     }
+  }
+
+  public List<PolicyPack> listPacks(String accountId, List<String> packIds) {
+    List<PolicyPack> policyPacks = hPersistence.createQuery(PolicyPack.class)
+            .field(PolicySetId.accountId)
+            .equal(accountId)
+            .field(PolicySetId.uuid)
+            .in(packIds)
+            .order(Sort.descending(PolicyEnforcement.PolicyEnforcementId.lastUpdatedAt))
+            .asList();
+    log.info("list size {}", policyPacks.size());
+    return policyPacks;
   }
 
   public List<PolicyPack> list(String accountId) {
