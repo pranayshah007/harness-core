@@ -7,7 +7,6 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.OrchestrationPublisherName.PERSISTENCE_LAYER;
 import static io.harness.OrchestrationPublisherName.PUBLISHER_NAME;
 
