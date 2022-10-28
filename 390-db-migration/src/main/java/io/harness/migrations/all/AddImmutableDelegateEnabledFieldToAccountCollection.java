@@ -1,10 +1,11 @@
 package io.harness.migrations.all;
 
-import io.harness.beans.FeatureFlag;
-import io.harness.beans.FeatureFlag.FeatureFlagKeys;
+import io.harness.beans.FeatureName;
+import io.harness.ff.FeatureFlagService;
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 
+import software.wings.beans.Account.AccountKeys;
 import software.wings.beans.Account;
 import software.wings.dl.WingsPersistence;
 
@@ -17,15 +18,12 @@ import org.mongodb.morphia.query.Query;
 public class AddImmutableDelegateEnabledFieldToAccountCollection implements Migration {
   @Inject private WingsPersistence wingsPersistence;
 
+  @Inject private FeatureFlagService featureFlagService;
+
   @Override
   public void migrate() {
     log.info("Migration for adding ImmutableDelegateField to account collection started");
-    Set<String> accountIds = wingsPersistence.createQuery(FeatureFlag.class)
-                                 .field(FeatureFlagKeys.name)
-                                 .equal("USE_IMMUTABLE_DELEGATE")
-                                 .project(FeatureFlagKeys.accountIds, true)
-                                 .get()
-                                 .getAccountIds();
+    Set<String> accountIds = featureFlagService.getAccountIds(FeatureName.USE_IMMUTABLE_DELEGATE);
 
     Query<Account> query = wingsPersistence.createQuery(Account.class);
 
@@ -33,10 +31,10 @@ public class AddImmutableDelegateEnabledFieldToAccountCollection implements Migr
       for (Account account : accounts) {
         if (accountIds.contains(account.getUuid())) {
           wingsPersistence.updateField(
-              Account.class, account.getUuid(), Account.AccountKeys.immutableDelegateEnabled, Boolean.TRUE);
+              Account.class, account.getUuid(), AccountKeys.immutableDelegateEnabled, Boolean.TRUE);
         } else {
           wingsPersistence.updateField(
-              Account.class, account.getUuid(), Account.AccountKeys.immutableDelegateEnabled, Boolean.FALSE);
+              Account.class, account.getUuid(), AccountKeys.immutableDelegateEnabled, Boolean.FALSE);
         }
       }
     }
