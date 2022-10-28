@@ -11,4 +11,5 @@ public class OrchestrationRestrictionConfiguration {
   @JsonProperty("useRestrictionForTeam") boolean useRestrictionForTeam;
   @JsonProperty("useRestrictionForEnterprise") boolean useRestrictionForEnterprise;
   @JsonProperty("planExecutionRestriction") PlanExecutionRestrictionConfig planExecutionRestriction;
+  @JsonProperty("pipelineCreationRestriction") PlanExecutionRestrictionConfig pipelineCreationRestriction;
 }

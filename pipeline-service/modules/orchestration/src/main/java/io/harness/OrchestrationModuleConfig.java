@@ -15,6 +15,7 @@ import io.harness.engine.expressions.ExpressionEvaluatorProvider;
 import io.harness.event.OrchestrationLogConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.redis.RedisConfig;
+import io.harness.remote.client.ServiceHttpClientConfig;
 
 import javax.annotation.Nullable;
 import lombok.Builder;
@@ -50,4 +51,7 @@ public class OrchestrationModuleConfig {
   @Default
   OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration =
       OrchestrationRestrictionConfiguration.builder().build();
+  ServiceHttpClientConfig licenseClientConfig;
+  String licenseClientServiceSecret;
+  String licenseClientId;
 }

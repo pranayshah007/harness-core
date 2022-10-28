@@ -287,6 +287,9 @@ public class PipelineServiceModule extends AbstractModule {
             .orchestrationRedisEventsConfig(configuration.getOrchestrationRedisEventsConfig())
             .orchestrationLogConfiguration(configuration.getOrchestrationLogConfiguration())
             .orchestrationRestrictionConfiguration(configuration.getOrchestrationRestrictionConfiguration())
+            .licenseClientServiceSecret(configuration.getNgManagerServiceSecret())
+            .licenseClientConfig(configuration.getNgManagerServiceHttpClientConfig())
+            .licenseClientId(PIPELINE_SERVICE.getServiceId())
             .build()));
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),
