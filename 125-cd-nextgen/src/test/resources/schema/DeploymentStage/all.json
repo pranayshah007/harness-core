@@ -3669,6 +3669,47 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ElastigroupConfiguration": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupInfrastructure": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration",
+            "connectorRef"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/ElastigroupConfiguration"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ElastigroupServiceSpec": {
       "allOf": [
         {
@@ -5090,7 +5131,8 @@
             "AzureWebApp",
             "SshWinRmAws",
             "CustomDeployment",
-            "ECS"
+            "ECS",
+            "Elastigroup"
           ]
         }
       },
@@ -5140,6 +5182,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/EcsInfrastructure"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Elastigroup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupInfrastructure"
               }
             }
           }

@@ -530,3 +530,8 @@ io.harness.cdng.instance.outcome.HostOutcome
 io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput
 io.harness.steps.shellscript.SshInfraDelegateConfigOutput
 io.harness.steps.shellscript.HostsOutput
+io.harness.cdng.infra.beans.ElastigroupInfraMapping
+io.harness.cdng.elastigroup.ElastigroupConfiguration
+io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome
+io.harness.cdng.infra.yaml.ElastigroupInfrastructure
+io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput
