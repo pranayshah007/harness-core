@@ -13,6 +13,7 @@ import static io.harness.beans.DelegateTask.Status.ERROR;
 import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
+import static io.harness.beans.FeatureName.DEL_SECRET_EVALUATION_VERBOSE_LOGGING;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -72,6 +73,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
+import io.harness.delegate.beans.DelegateTaskExpiredException;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskPackage.DelegateTaskPackageBuilder;
 import io.harness.delegate.beans.DelegateTaskRank;
@@ -103,6 +105,7 @@ import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
@@ -532,7 +535,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       } catch (Exception exception) {
         log.info("Task id {} failed with error {}", task.getUuid(), exception);
         printErrorMessageOnTaskFailure(task);
-        handleTaskFailureResponse(task, ExceptionUtils.getMessage(exception));
+        handleTaskFailureResponse(task, exception);
         if (!task.getData().isAsync()) {
           throw exception;
         }
@@ -552,12 +555,21 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     return eligibleListOfDelegates.get(random.nextInt(eligibleListOfDelegates.size()));
   }
 
-  private void handleTaskFailureResponse(DelegateTask task, String errorMessage) {
+  private void handleTaskFailureResponse(DelegateTask task, Exception exception) {
     Query<DelegateTask> taskQuery = persistence.createQuery(DelegateTask.class)
                                         .filter(DelegateTaskKeys.accountId, task.getAccountId())
                                         .filter(DelegateTaskKeys.uuid, task.getUuid());
+    WingsException ex = null;
+    if (exception instanceof WingsException) {
+      ex = (WingsException) exception;
+    } else {
+      log.error("Encountered unknown exception and failing task", exception);
+    }
     DelegateTaskResponse response = DelegateTaskResponse.builder()
-                                        .response(ErrorNotifyResponseData.builder().errorMessage(errorMessage).build())
+                                        .response(ErrorNotifyResponseData.builder()
+                                                      .errorMessage(ExceptionUtils.getMessage(exception))
+                                                      .exception(ex)
+                                                      .build())
                                         .responseCode(ResponseCode.FAILED)
                                         .accountId(task.getAccountId())
                                         .build();
@@ -961,8 +973,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         return null;
       }
 
-      addSecretManagerFunctorConfigs(
-          delegateTaskPackageBuilder, secretManagerFunctor, ngSecretManagerFunctor, sweepingOutputSecretFunctor);
+      addSecretManagerFunctorConfigs(delegateTaskPackageBuilder, secretManagerFunctor, ngSecretManagerFunctor,
+          sweepingOutputSecretFunctor, delegateTask.getAccountId());
 
       return delegateTaskPackageBuilder.build();
     } catch (CriticalExpressionEvaluationException exception) {
@@ -987,7 +999,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   private void addSecretManagerFunctorConfigs(DelegateTaskPackageBuilder delegateTaskPackageBuilder,
       SecretManagerFunctor secretManagerFunctor, NgSecretManagerFunctor ngSecretManagerFunctor,
-      SweepingOutputSecretFunctor sweepingOutputSecretFunctor) {
+      SweepingOutputSecretFunctor sweepingOutputSecretFunctor, String accountID) {
     Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
     Map<String, SecretDetail> secretDetails = new HashMap<>();
     Set<String> secrets = new HashSet<>();
@@ -1012,6 +1024,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       if (isNotEmpty(sweepingOutputSecretFunctor.getEvaluatedSecrets())) {
         secrets.addAll(sweepingOutputSecretFunctor.getEvaluatedSecrets());
       }
+    }
+
+    if (featureFlagService.isEnabled(DEL_SECRET_EVALUATION_VERBOSE_LOGGING, accountID)) {
+      ArrayList<String> secretUuids = new ArrayList<>();
+      secretDetails.forEach((key, value) -> { secretUuids.add(key); });
+      log.info("SecretDetails being sent in DelegateTaskPackage {} ", secretUuids.toString());
     }
 
     delegateTaskPackageBuilder.encryptionConfigs(encryptionConfigs);
@@ -1147,7 +1165,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
           if (isNotBlank(delegateTask.getWaitId())) {
             waitNotifyEngine.doneWith(delegateTask.getWaitId(),
-                ErrorNotifyResponseData.builder().errorMessage(errorMessage).expired(true).build());
+                ErrorNotifyResponseData.builder()
+                    .errorMessage(errorMessage)
+                    .expired(true)
+                    .exception(new DelegateTaskExpiredException(delegateTaskId))
+                    .build());
           }
         }
       }

@@ -120,7 +120,7 @@ public class ArtifactCollectionHandlerTest extends WingsBaseTest {
     when(harnessMetricRegistry.getThreadPoolMetricRegistry()).thenReturn(metricRegistry);
 
     ScheduledThreadPoolExecutor executor = mock(ScheduledThreadPoolExecutor.class);
-    artifactCollectionHandler.registerIterators(executor);
+    artifactCollectionHandler.registerIterators(executor, 1);
 
     verify(executor).scheduleAtFixedRate(any(), anyLong(), anyLong(), any(TimeUnit.class));
   }

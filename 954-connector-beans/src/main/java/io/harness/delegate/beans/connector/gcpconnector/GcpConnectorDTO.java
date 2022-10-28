@@ -14,6 +14,9 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.gcpconnector.outcome.GcpConnectorCredentialOutcomeDTO;
+import io.harness.delegate.beans.connector.gcpconnector.outcome.GcpConnectorOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -60,5 +63,17 @@ public class GcpConnectorDTO extends ConnectorConfigDTO implements DelegateSelec
         && isEmpty(delegateSelectors)) {
       throw new InvalidRequestException(INHERIT_FROM_DELEGATE_TYPE_ERROR_MSG);
     }
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return GcpConnectorOutcomeDTO.builder()
+        .credential(GcpConnectorCredentialOutcomeDTO.builder()
+                        .gcpCredentialType(this.credential.getGcpCredentialType())
+                        .config(this.credential.getConfig())
+                        .build())
+        .delegateSelectors(this.delegateSelectors)
+        .executeOnDelegate(this.executeOnDelegate)
+        .build();
   }
 }

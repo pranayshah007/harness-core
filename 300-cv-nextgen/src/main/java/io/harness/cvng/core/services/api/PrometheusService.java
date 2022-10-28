@@ -8,16 +8,17 @@
 package io.harness.cvng.core.services.api;
 
 import io.harness.cvng.core.beans.PrometheusSampleData;
+import io.harness.cvng.core.beans.params.PrometheusConnectionParams;
 
 import java.util.List;
 
 public interface PrometheusService {
-  List<String> getMetricNames(
-      String accountId, String connectorIdentifier, String orgIdentifier, String projectIdentifier, String tracingId);
-  List<String> getLabelNames(
-      String accountId, String connectorIdentifier, String orgIdentifier, String projectIdentifier, String tracingId);
-  List<String> getLabelValues(String accountId, String connectorIdentifier, String orgIdentifier,
-      String projectIdentifier, String labelName, String tracingId);
-  List<PrometheusSampleData> getSampleData(String accountId, String connectorIdentifier, String orgIdentifier,
-      String projectIdentifier, String query, String tracingId);
+  List<String> getMetricNames(String accountId, String orgIdentifier, String projectIdentifier, String tracingId,
+      PrometheusConnectionParams prometheusConnectionParams);
+  List<String> getLabelNames(String accountId, String orgIdentifier, String projectIdentifier, String tracingId,
+      PrometheusConnectionParams prometheusConnectionParams);
+  List<String> getLabelValues(String accountId, String orgIdentifier, String projectIdentifier, String labelName,
+      String tracingId, PrometheusConnectionParams prometheusConnectionParams);
+  List<PrometheusSampleData> getSampleData(String accountId, String orgIdentifier, String projectIdentifier,
+      String query, String tracingId, PrometheusConnectionParams prometheusConnectionParams);
 }

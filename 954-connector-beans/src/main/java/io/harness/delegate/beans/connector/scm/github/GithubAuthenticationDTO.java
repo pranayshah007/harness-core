@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.SourceCodeManagerAuthentication;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.github.outcome.GithubAuthenticationOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,5 +47,9 @@ public class GithubAuthenticationDTO implements SourceCodeManagerAuthentication 
   public GithubAuthenticationDTO(GitAuthType authType, GithubCredentialsDTO credentials) {
     this.authType = authType;
     this.credentials = credentials;
+  }
+
+  public GithubAuthenticationOutcomeDTO toOutcome() {
+    return GithubAuthenticationOutcomeDTO.builder().type(this.authType).spec(this.credentials.toOutcome()).build();
   }
 }

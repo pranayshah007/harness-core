@@ -84,6 +84,10 @@ planExecutions {"name": "validUntil_1", "background": true, "expireAfterSeconds"
 planExecutionsMetadata {"name": "planExecutionId_idx", "unique": true} {"planExecutionId": 1}
 planExecutionsMetadata {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 planExecutionsSummary {"name": "accountId_executed_modules_startTs_idx", "background": true} {"accountId": 1, "executedModules": 1, "startTs": 1}
+planExecutionsSummary {"name": "accountId_orgId_projectId_modules_name_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "modules": 1, "isLatestExecution": 1, "name": -1}
+planExecutionsSummary {"name": "accountId_orgId_projectId_modules_startTs_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "modules": 1, "isLatestExecution": 1, "startTs": -1}
+planExecutionsSummary {"name": "accountId_orgId_projectId_modules_startTs_status_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "modules": 1, "status": 1, "isLatestExecution": 1, "startTs": -1}
+planExecutionsSummary {"name": "accountId_orgId_projectId_modules_status_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "modules": 1, "isLatestExecution": 1, "status": -1}
 planExecutionsSummary {"name": "accountId_organizationId_projectId_createdAt_idx", "background": true} {"projectIdentifier": 1, "orgIdentifier": 1, "accountId": 1, "createdAt": 1}
 planExecutionsSummary {"name": "accountId_organizationId_projectId_createdAt_modules_idx", "background": true} {"modules": 1, "projectIdentifier": 1, "orgIdentifier": 1, "accountId": 1, "createdAt": 1}
 planExecutionsSummary {"name": "accountId_organizationId_projectId_pipelineId", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineIdentifier": 1}
@@ -104,9 +108,12 @@ progressUpdate {"name": "createdAt_1", "background": true} {"createdAt": 1}
 progressUpdate {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 resourceRestraintInstances {"name": "createdAt_1", "background": true} {"createdAt": 1}
 resourceRestraintInstances {"name": "next_iteration_idx", "background": true} {"state": 1, "nextIteration": 1}
+resourceRestraintInstances {"name": "releaseEntityId_state_idx", "background": true} {"releaseEntityId": 1, "state": 1}
 resourceRestraintInstances {"name": "releaseEntityType_releaseEntityId_idx", "background": true} {"releaseEntityType": 1, "releaseEntityId": 1}
 resourceRestraintInstances {"name": "resourceRestraintId_order_idx", "background": true} {"resourceRestraintId": 1, "order": 1}
 resourceRestraintInstances {"name": "resourceRestraintId_resourceUnit_order_idx", "unique": true} {"resourceRestraintId": 1, "resourceUnit": 1, "order": 1}
+resourceRestraintInstances {"name": "resourceRestraintId_resourceUnit_state_idx", "background": true} {"resourceRestraintId": 1, "resourceUnit": 1, "state": 1}
+resourceRestraintInstances {"name": "resourceRestraintId_state_idx", "background": true} {"resourceRestraintId": 1, "state": 1}
 resourceRestraintInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 resourceRestraints {"name": "createdAt_1", "background": true} {"createdAt": 1}
 resourceRestraints {"name": "uniqueName", "unique": true} {"accountId": 1, "name": 1}

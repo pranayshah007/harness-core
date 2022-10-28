@@ -1315,12 +1315,6 @@
             "com.bea.xml.stream.util": [
                 "@maven//:stax_stax"
             ],
-            "com.bertramlabs.plugins.hcl4j": [
-                "@maven//:com_bertramlabs_plugins_hcl4j"
-            ],
-            "com.bertramlabs.plugins.hcl4j.symbols": [
-                "@maven//:com_bertramlabs_plugins_hcl4j"
-            ],
             "com.bettercloud.vault": [
                 "@maven//:com_bettercloud_vault_java_driver"
             ],

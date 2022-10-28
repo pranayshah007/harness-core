@@ -8,6 +8,7 @@
 package io.harness.cvng;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -81,5 +82,34 @@ public class CVNGDataCollectionDelegateServiceImplTest extends CategoryTest {
             .build(),
         new ArrayList<>(details));
     assertThat(result).isEqualTo("{\"a\":1}");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetDataCollectionResult_dslException() {
+    ConnectorConfigDTO connectorConfigDTO =
+        SplunkConnectorDTO.builder()
+            .splunkUrl("https://splunk.dev.harness.io:8089/")
+            .username("harnessadmin")
+            .passwordRef(SecretRefData.builder().decryptedValue("123".toCharArray()).build())
+            .build();
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    encryptedDataDetails.add(EncryptedDataDetail.builder().build());
+    List<List<EncryptedDataDetail>> details = new ArrayList<>();
+    details.add(encryptedDataDetails);
+
+    when(dataCollectionDSLService.execute(any(), any(), any()))
+        .thenThrow(new RuntimeException(
+            "io.harness.datacollection.exception.DataCollectionException: Response code: 404, Message: Not Found"));
+    try {
+      String result = cvngDataCollectionDelegateService.getDataCollectionResult(accountId,
+          SplunkSavedSearchRequest.builder()
+              .connectorInfoDTO(ConnectorInfoDTO.builder().connectorConfig(connectorConfigDTO).build())
+              .build(),
+          new ArrayList<>(details));
+    } catch (Exception e) {
+      assertThat(e.getMessage().startsWith("Response"));
+    }
   }
 }

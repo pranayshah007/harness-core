@@ -28,6 +28,7 @@ message PollingPayloadData {
     GARPayload garPayload = 15;
     GithubPackagesPollingPayload githubPackagesPollingPayload = 16;
     CustomPayload customPayload = 17;
+    NGVariable ngVariable = 18;
   }
 }
 
@@ -131,8 +132,14 @@ message CustomPayload {
   string script = 1;
   string artifactsArrayPath = 2;
   string versionPath = 3;
+  repeated NGVariable ngVariable = 4;
 }
 
+message NGVariable {
+  string name = 1;
+  string type = 2;
+  string value = 3;
+}
 message GARPayload {
   string region = 1;
   string project = 2;

@@ -8,6 +8,7 @@
 package io.harness.delegate.beans.connector.scm.gitlab;
 
 import io.harness.delegate.beans.connector.scm.GitConfigConstants;
+import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabCredentialsOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -19,4 +20,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
   , @JsonSubTypes.Type(value = GitlabSshCredentialsDTO.class, name = GitConfigConstants.SSH)
 })
 @Schema(name = "GitlabCredentials", description = "This is a interface for details of the Gitlab credentials")
-public interface GitlabCredentialsDTO {}
+public interface GitlabCredentialsDTO {
+  default GitlabCredentialsOutcomeDTO toOutcome() {
+    return null;
+  }
+}

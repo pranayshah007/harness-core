@@ -1123,6 +1123,8 @@
 9123:io.harness.cvng.beans.elk.ELKSampleDataCollectionRequest
 9124:io.harness.cvng.beans.ELKDataCollectionInfo
 9130:io.harness.cvng.beans.aws.AwsDataCollectionRequest
+9131:io.harness.cvng.beans.AwsPrometheusDataCollectionInfo
+9132:io.harness.cvng.beans.AwsPrometheusDataCollectionInfo.MetricCollectionInfo
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
 9709:io.harness.jira.JiraIssueTypeNG
@@ -1597,7 +1599,7 @@
 21002:io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO
 21003:io.harness.delegate.beans.connector.spotconnector.SpotCredentialSpecDTO
 21004:io.harness.delegate.beans.connector.spotconnector.SpotCredentialType
-21005:io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO
+21005:io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO
 21006:io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse
 21007:io.harness.delegate.beans.connector.spotconnector.SpotTaskParams
 21008:io.harness.delegate.beans.connector.spotconnector.SpotTaskType
@@ -2395,6 +2397,7 @@
 980035:io.harness.exception.ngexception.AzureARMTaskException
 980036:io.harness.delegate.beans.DelegateTaskExpiredException
 980037:io.harness.exception.ngexception.AzureBPTaskException
+1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
 9800001:io.harness.beans.RecasterMap

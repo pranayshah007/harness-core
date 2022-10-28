@@ -92,6 +92,10 @@ if [[ "" != "$LOGGING_LEVEL" ]]; then
   export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$ENABLE_BATCH_WRITE" ]]; then
+  export ENABLE_BATCH_WRITE; yq -i '.eventDataBatchQueryConfig.enableBatchWrite=env(ENABLE_BATCH_WRITE)' $CONFIG_FILE
+fi
+
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
   yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
   yq -i '(.logging.appenders.[] | select(.type == "gke-console") | .stackdriverLogEnabled) = true' $CONFIG_FILE

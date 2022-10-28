@@ -78,6 +78,7 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSave() {
     when(businessMappingService.save(any(BusinessMapping.class))).thenReturn(businessMapping);
+    when(businessMappingService.isNamePresent(any(), any())).thenReturn(true);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
@@ -171,7 +172,7 @@ public class BusinessMappingResourceTest extends CategoryTest {
       return BusinessMapping.builder()
           .uuid(uuid)
           .accountId(TEST_ACCOUNT_ID)
-          .name(TEST_NAME_1)
+          .name(TEST_NAME_2)
           .costTargets(getCostTargets())
           .sharedCosts(getSharedCosts())
           .build();

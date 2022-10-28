@@ -8,6 +8,7 @@
 package io.harness.ci.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.beans.FeatureName.CIE_HOSTED_VMS;
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
@@ -36,11 +37,14 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.buildstate.BuildSetupUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.execution.BackgroundTaskUtility;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
+import io.harness.ci.license.CILicenseService;
+import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
@@ -78,6 +82,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.TaskExecutableWithRbac;
@@ -112,6 +117,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public static final Long TASK_BUFFER_TIMEOUT_MILLIS = 30 * 1000L;
 
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private CIFeatureFlagService ciFeatureFlagService;
   @Inject private BuildSetupUtils buildSetupUtils;
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private K8InitializeServiceUtils k8InitializeServiceUtils;
@@ -127,6 +133,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
   @Inject private CIYAMLSanitizationService sanitizationService;
   @Inject private BackgroundTaskUtility backgroundTaskUtility;
+  @Inject private CILicenseService ciLicenseService;
+  @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
@@ -151,6 +159,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       pipelineRbacHelper.checkRuntimePermissions(ambiance, connectorsEntityDetails, true);
     }
 
+    validateFeatureFlags(initializeStepInfo, accountIdentifier);
     validateConnectors(
         initializeStepInfo, connectorsEntityDetails, accountIdentifier, orgIdentifier, projectIdentifier);
     sanitizeExecution(initializeStepInfo);
@@ -208,12 +217,27 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
   }
 
+  private void validateFeatureFlags(InitializeStepInfo initializeStepInfo, String accountIdentifier) {
+    if (initializeStepInfo.getInfrastructure().getType() != Infrastructure.Type.HOSTED_VM) {
+      return;
+    }
+
+    // For hosted VMs, we need to check whether the feature flag is enabled or not
+    Boolean isEnabled = ciFeatureFlagService.isEnabled(CIE_HOSTED_VMS, accountIdentifier);
+    if (!isEnabled) {
+      throw new CIStageExecutionException(
+          "Hosted builds are not enabled for this account. Please contact Harness support.");
+    }
+  }
+
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
 
     String logPrefix = getLogPrefix(ambiance);
+    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
+        accountExecutionMetadataRepository, ciLicenseService, AmbianceUtils.getAccountId(ambiance));
 
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);

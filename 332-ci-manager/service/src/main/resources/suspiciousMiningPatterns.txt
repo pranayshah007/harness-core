@@ -140,3 +140,5 @@ zmine.io
 52.8.47.33
 54.91.161.78
 81.96.84.178
+n2dhektor
+silver-octo-palm-tree

@@ -749,7 +749,9 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponse =
         AzureIdentityAccessTokenResponse.builder().accessToken(accessToken).build();
     if (azureConnectorDTO.getCredential().getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
-      when(azureAuthorizationClient.getUserAccessToken(azureConfig, AzureUtils.AUTH_SCOPE))
+      when(azureAuthorizationClient.getUserAccessToken(azureConfig,
+               AzureUtils.convertToScope(
+                   AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint())))
           .thenReturn(azureIdentityAccessTokenResponse);
     } else if (azureConnectorDTO.getCredential().getAzureCredentialType()
         == AzureCredentialType.INHERIT_FROM_DELEGATE) {
@@ -792,7 +794,9 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
         AzureIdentityAccessTokenResponse.builder().accessToken(aadToken).build();
 
     if (azureConnectorDTO.getCredential().getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
-      when(azureAuthorizationClient.getUserAccessToken(azureConfig, AzureUtils.AUTH_SCOPE))
+      when(azureAuthorizationClient.getUserAccessToken(azureConfig,
+               AzureUtils.convertToScope(
+                   AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint())))
           .thenReturn(azureIdentityAccessTokenResponse);
     } else if (azureConnectorDTO.getCredential().getAzureCredentialType()
         == AzureCredentialType.INHERIT_FROM_DELEGATE) {

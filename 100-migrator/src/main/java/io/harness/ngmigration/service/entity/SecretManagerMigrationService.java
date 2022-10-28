@@ -165,7 +165,7 @@ public class SecretManagerMigrationService extends NgMigrationService {
     String name = secretManagerConfig.getName().trim();
     String identifier;
     // Handle Harness secret manager
-    if ("Harness Secrets Manager".equals(name)) {
+    if (SecretFactory.isHarnessSecretManager(secretManagerConfig)) {
       identifier = "harnessSecretManager";
     } else {
       name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, secretManagerConfig.getName());

@@ -95,6 +95,25 @@ public class PhysicalDataCenterConnectorValidatorTest extends CategoryTest {
             "Please ensure if port is opened on host. Check firewall rules between the delegate and host. Try to test connectivity by telnet");
   }
 
+  @Test
+  @Owner(developers = OwnerRule.VLAD)
+  @Category(UnitTests.class)
+  public void testValidateConnectivityStatusFailureWhenNoHosts() {
+    List<HostValidationDTO> validationHosts = Collections.emptyList();
+    doReturn(validationHosts)
+        .when(hostValidationService)
+        .validateHostsConnectivity(Collections.singletonList(HOST_NAME), ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
+            PROJECT_IDENTIFIER, Sets.newHashSet(DELEGATE_SELECTOR));
+
+    ConnectorValidationResult validationResult =
+        physicalDataCenterConnectorValidator.validate(getPhysicalDataCenterConnectorDTO(), ACCOUNT_IDENTIFIER,
+            ORG_IDENTIFIER, PROJECT_IDENTIFIER, CONNECTOR_IDENTIFIER);
+    assertThat(validationResult).isNotNull();
+    assertThat(validationResult).isInstanceOf(ConnectorValidationResult.class);
+    assertThat(validationResult.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
+    assertThat(validationResult.getErrorSummary()).isEqualTo("No hosts provided");
+  }
+
   private PhysicalDataCenterConnectorDTO getPhysicalDataCenterConnectorDTO() {
     HostDTO hostDTO = new HostDTO();
     hostDTO.setHostName(HOST_NAME);

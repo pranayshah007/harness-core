@@ -7,18 +7,18 @@
 
 package io.harness.connector.mappers.spotmapper;
 
-import static io.harness.delegate.beans.connector.spotconnector.SpotCredentialType.MANUAL_CREDENTIALS;
+import static io.harness.delegate.beans.connector.spotconnector.SpotCredentialType.PERMANENT_TOKEN;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.embedded.spotconnector.SpotConfig;
-import io.harness.connector.entities.embedded.spotconnector.SpotManualCredential;
+import io.harness.connector.entities.embedded.spotconnector.SpotPermanentTokenCredential;
 import io.harness.connector.mappers.ConnectorEntityToDTOMapper;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO.SpotCredentialDTOBuilder;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
-import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
@@ -32,8 +32,8 @@ public class SpotEntityToDTO implements ConnectorEntityToDTOMapper<SpotConnector
   public SpotConnectorDTO createConnectorDTO(SpotConfig connector) {
     final SpotCredentialType credentialType = connector.getCredentialType();
     SpotCredentialDTOBuilder spotCredentialDTOBuilder;
-    if (credentialType == MANUAL_CREDENTIALS) {
-      spotCredentialDTOBuilder = buildManualCredential((SpotManualCredential) connector.getCredential());
+    if (credentialType == PERMANENT_TOKEN) {
+      spotCredentialDTOBuilder = buildManualCredential((SpotPermanentTokenCredential) connector.getCredential());
     } else {
       throw new InvalidRequestException("Invalid Credential type.");
     }
@@ -43,14 +43,14 @@ public class SpotEntityToDTO implements ConnectorEntityToDTOMapper<SpotConnector
         .build();
   }
 
-  private SpotCredentialDTOBuilder buildManualCredential(SpotManualCredential credential) {
+  private SpotCredentialDTOBuilder buildManualCredential(SpotPermanentTokenCredential credential) {
     final SecretRefData apiTokenRef = SecretRefHelper.createSecretRef(credential.getApiTokenRef());
-    final SecretRefData accountIdRef = SecretRefHelper.createSecretRef(credential.getAccountIdRef());
-    final SpotManualConfigSpecDTO spotManualConfigSpecDTO = SpotManualConfigSpecDTO.builder()
-                                                                .accountId(credential.getAccountId())
-                                                                .accountIdRef(accountIdRef)
-                                                                .apiTokenRef(apiTokenRef)
-                                                                .build();
-    return SpotCredentialDTO.builder().spotCredentialType(MANUAL_CREDENTIALS).config(spotManualConfigSpecDTO);
+    final SecretRefData accountIdRef = SecretRefHelper.createSecretRef(credential.getSpotAccountIdRef());
+    final SpotPermanentTokenConfigSpecDTO configSpecDTO = SpotPermanentTokenConfigSpecDTO.builder()
+                                                              .spotAccountId(credential.getSpotAccountId())
+                                                              .spotAccountIdRef(accountIdRef)
+                                                              .apiTokenRef(apiTokenRef)
+                                                              .build();
+    return SpotCredentialDTO.builder().spotCredentialType(PERMANENT_TOKEN).config(configSpecDTO);
   }
 }

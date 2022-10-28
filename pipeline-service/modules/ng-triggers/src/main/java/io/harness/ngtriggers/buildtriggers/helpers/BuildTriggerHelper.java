@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.buildtriggers.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.stream.Collectors.toList;
@@ -49,7 +50,10 @@ import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.serializer.JsonUtils;
+import io.harness.yaml.core.variables.NGVariableTrigger;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
@@ -57,6 +61,7 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -490,6 +495,23 @@ public class BuildTriggerHelper {
       fieldName = fetchValueFromJsonNode(key, buildTriggerOpsData.getTriggerSpecMap());
     }
     return fieldName;
+  }
+
+  public List<NGVariableTrigger> validateAndFetchListFromJsonNode(BuildTriggerOpsData buildTriggerOpsData, String key) {
+    List<NGVariableTrigger> inputs = buildTriggerOpsData.getPipelineBuildSpecMap().containsKey(key)
+        ? JsonUtils.asList(((JsonNode) buildTriggerOpsData.getPipelineBuildSpecMap().get(key)).asText(),
+            new TypeReference<List<NGVariableTrigger>>() {})
+        : Collections.emptyList();
+    if (isEmpty(inputs)) {
+      EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
+      Object evaluateExpression =
+          engineExpressionEvaluator.evaluateExpression(key, buildTriggerOpsData.getTriggerSpecMap());
+      if (evaluateExpression == null) {
+        return Collections.emptyList();
+      }
+      inputs = JsonUtils.asList(evaluateExpression.toString(), new TypeReference<List<NGVariableTrigger>>() {});
+    }
+    return inputs;
   }
 
   public void verifyStageAndBuildRef(TriggerDetails triggerDetails, String fieldName) {

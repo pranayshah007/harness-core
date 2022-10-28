@@ -19,6 +19,7 @@ import io.harness.cvng.core.entities.TimeSeriesRecord;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 public interface TimeSeriesRecordService {
   boolean save(List<TimeSeriesDataCollectionRecord> dataRecords);
@@ -38,6 +39,8 @@ public interface TimeSeriesRecordService {
    * @return
    */
   List<TimeSeriesRecordDTO> getTimeSeriesRecordDTOs(String verificationTaskId, Instant startTime, Instant endTime);
+  List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
+      String verificationTaskId, Instant startTime, Instant endTime, Set<String> hosts);
   TimeSeriesTestDataDTO getMetricGroupDataForRange(
       String verificationTaskId, Instant startTime, Instant endTime, String metricName, List<String> groupNames);
 
