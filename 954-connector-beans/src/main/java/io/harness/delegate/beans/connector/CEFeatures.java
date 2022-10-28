@@ -15,7 +15,7 @@ public enum CEFeatures {
   BILLING("Cost Management And Billing Export"),
   OPTIMIZATION("Lightwing Cost Optimization"),
   VISIBILITY("Receive Events For Cloud Accounts"),
-  GOVERNANCE("Enable policy execution");
+  GOVERNANCE("Cloud asset governance");
 
   @Getter private final String description;
   CEFeatures(String description) {

@@ -7,10 +7,8 @@
 
 package io.harness.ccm.remote.resources.governance;
 
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.gson.Gson;
-import com.google.inject.Inject;
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,6 +27,11 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.PublicApi;
+
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.gson.Gson;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -44,13 +47,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import lombok.extern.slf4j.Slf4j;
-import net.minidev.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.springframework.scheduling.support.CronSequenceGenerator;
-import org.springframework.stereotype.Service;
-import retrofit2.Response;
-
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -62,8 +58,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
-import static io.harness.annotations.dev.HarnessTeam.CE;
+import lombok.extern.slf4j.Slf4j;
+import net.minidev.json.JSONArray;
+import net.sf.json.JSONObject;
+import org.springframework.scheduling.support.CronSequenceGenerator;
+import org.springframework.stereotype.Service;
+import retrofit2.Response;
 
 @Slf4j
 @Service
@@ -136,18 +136,19 @@ public class GovernancePolicyEnforcementResource {
     if (policyEnforcement.getExecutionTimezone() == null) {
       policyEnforcement.setExecutionTimezone("UTC");
     }
+
     try {
       CronSequenceGenerator cronSequenceGenerator = new CronSequenceGenerator(
-              policyEnforcement.getExecutionSchedule(), TimeZone.getTimeZone(policyEnforcement.getExecutionTimezone()));
-        CronSequenceGenerator.isValidExpression(String.valueOf(cronSequenceGenerator));
-        //Todo Timezone validtaion needs to be added
+          policyEnforcement.getExecutionSchedule(), TimeZone.getTimeZone(policyEnforcement.getExecutionTimezone()));
+      CronSequenceGenerator.isValidExpression(String.valueOf(cronSequenceGenerator));
+      // Todo Timezone validtaion needs to be added
     } catch (Exception e) {
       throw new InvalidRequestException("cron is not valid");
     }
     if (policyEnforcementService.listid(accountId, policyEnforcement.getName(), true) != null) {
       throw new InvalidRequestException("Policy Enforcement with given name already exits");
     }
-    // TODO: Re enable after testing
+
     policyService.check(accountId, policyEnforcement.getPolicyIds());
     policyPackService.check(accountId, policyEnforcement.getPolicyPackIDs());
     policyEnforcementService.save(policyEnforcement);

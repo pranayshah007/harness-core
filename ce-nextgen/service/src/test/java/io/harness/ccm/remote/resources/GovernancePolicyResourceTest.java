@@ -16,11 +16,12 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.rbac.CCMRbacHelper;
-import io.harness.ccm.remote.resources.governance.*;
+import io.harness.ccm.remote.resources.governance.GovernancePolicyResource;
 import io.harness.ccm.views.dto.CreatePolicyDTO;
-import io.harness.ccm.views.dto.ListDTO;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.service.GovernancePolicyService;
+import io.harness.ccm.views.service.PolicyEnforcementService;
+import io.harness.ccm.views.service.PolicyPackService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 
@@ -37,6 +38,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class GovernancePolicyResourceTest extends CategoryTest {
   private GovernancePolicyService governancePolicyService = mock(GovernancePolicyService.class);
+  private PolicyPackService policyPackService = mock(PolicyPackService.class);
+  private PolicyEnforcementService policyEnforcementService = mock(PolicyEnforcementService.class);
   private CCMRbacHelper rbacHelper = mock(CCMRbacHelper.class);
 
   private final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -66,7 +69,8 @@ public class GovernancePolicyResourceTest extends CategoryTest {
                  .orgIdentifier(ORG_PARAM_MESSAGE)
                  .projectIdentifier(PROJECT_PARAM_MESSAGE)
                  .build();
-    policymanagement = new GovernancePolicyResource(governancePolicyService, rbacHelper);
+    policymanagement =
+        new GovernancePolicyResource(governancePolicyService, rbacHelper, policyEnforcementService, policyPackService);
     createPolicyDTO = policy.toDTO();
     Policies.add(policy);
   }

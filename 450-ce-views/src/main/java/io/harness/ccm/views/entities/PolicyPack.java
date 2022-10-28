@@ -51,7 +51,7 @@ public final class PolicyPack implements PersistentEntity, UuidAware, CreatedAtA
   @Schema(description = NGCommonEntityConstants.TAGS) List<String> tags;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
-  @Schema(description = "cloudProvider") String cloudProvider;
+  @Schema(description = "cloudProvider") PolicyCloudProviderType cloudProvider;
   @Schema(description = "List of policies identifiers from governancePolicy collection")
   List<String> policiesIdentifier;
   @Schema(description = "is OOTB flag") Boolean isOOTB;

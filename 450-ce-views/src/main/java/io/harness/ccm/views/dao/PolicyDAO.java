@@ -7,21 +7,20 @@
 
 package io.harness.ccm.views.dao;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.harness.ccm.views.entities.GovernancePolicyFilter;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.Policy.PolicyId;
 import io.harness.ccm.views.entities.PolicyExecution;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import java.util.Collections;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
+
+import java.util.List;
 
 @Slf4j
 @Singleton
@@ -62,39 +61,37 @@ public class PolicyDAO {
     if (governancePolicyFilter.getCloudProvider() != null) {
       policiesOOTB.field(PolicyId.cloudProvider).equal(governancePolicyFilter.getCloudProvider());
       policiesCustom.field(PolicyId.cloudProvider).equal(governancePolicyFilter.getCloudProvider());
-
     }
-    if(governancePolicyFilter.getIsOOTB()!=null) {
-      if(governancePolicyFilter.getIsOOTB()) {
+    if (governancePolicyFilter.getIsOOTB() != null) {
+      if (governancePolicyFilter.getIsOOTB()) {
         return policiesOOTB.asList();
       }
       return policiesCustom.asList();
     }
 
-      log.info("Adding all available policies");
-      List<Policy> policies = policiesOOTB.asList();
-      policies.addAll(policiesCustom.asList());
-      return policies;
-    }
+    log.info("Adding all available policies");
+    List<Policy> policies = policiesOOTB.asList();
+    policies.addAll(policiesCustom.asList());
+    return policies;
+  }
 
-
-  public Policy listid(String accountId, String name, boolean create) {
+  public Policy listid(String accountId, String uuid, boolean create) {
     try {
       List<Policy> policies = hPersistence.createQuery(Policy.class)
                                   .field(PolicyId.accountId)
                                   .equal(accountId)
-                                  .field(PolicyId.name)
-                                  .equal(name)
+                                  .field(PolicyId.uuid)
+                                  .equal(uuid)
                                   .asList();
       policies.addAll(hPersistence.createQuery(Policy.class)
                           .field(PolicyId.accountId)
                           .equal("")
-                          .field(PolicyId.name)
-                          .equal(name)
+                          .field(PolicyId.uuid)
+                          .equal(uuid)
                           .asList());
       return policies.get(0);
     } catch (IndexOutOfBoundsException e) {
-      log.error("No such policy exists,{} accountId {} name {}", e, accountId, name);
+      log.error("No such policy exists,{} accountId {} uuid {}", e, accountId, uuid);
       if (create) {
         return null;
       }

@@ -12,6 +12,7 @@ import io.harness.ccm.views.entities.PolicyEnforcement;
 import java.util.List;
 
 public interface PolicyEnforcementService {
+  PolicyEnforcement get(String uuid);
   boolean save(PolicyEnforcement policyEnforcement);
   boolean delete(String accountId, String uuid);
   PolicyEnforcement update(PolicyEnforcement policyEnforcement);

@@ -51,7 +51,7 @@ public final class PolicyEnforcement implements PersistentEntity, UuidAware, Cre
   @Schema(description = NGCommonEntityConstants.TAGS) List<String> tags;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
-  @Schema(description = "cloudProvider") String cloudProvider;
+  @Schema(description = "cloudProvider") PolicyCloudProviderType cloudProvider;
   @Schema(description = "policyIds") List<String> policyIds;
   @Schema(description = "policyPackIDs") List<String> policyPackIDs;
   @Schema(description = "executionSchedule") String executionSchedule;

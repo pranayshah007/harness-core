@@ -8,6 +8,8 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -19,11 +21,27 @@ import io.harness.ccm.views.dto.CreatePolicyDTO;
 import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.dto.ListDTO;
+import io.harness.ccm.views.entities.GovernanceJobDetailsAWS;
 import io.harness.ccm.views.entities.GovernancePolicyFilter;
 import io.harness.ccm.views.entities.Policy;
+import io.harness.ccm.views.entities.PolicyCloudProviderType;
+import io.harness.ccm.views.entities.PolicyEnforcement;
+import io.harness.ccm.views.entities.PolicyPack;
 import io.harness.ccm.views.entities.PolicyStoreType;
 import io.harness.ccm.views.service.GovernancePolicyService;
+import io.harness.ccm.views.service.PolicyEnforcementService;
+import io.harness.ccm.views.service.PolicyPackService;
+import io.harness.connector.ConnectorFilterPropertiesDTO;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResourceClient;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.delegate.beans.connector.CEFeatures;
+import io.harness.delegate.beans.connector.CcmConnectorFilter;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.filter.FilterType;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -31,6 +49,8 @@ import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -45,7 +65,10 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -58,6 +81,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -87,11 +111,18 @@ import org.springframework.stereotype.Service;
 //@NextGenManagerAuth
 public class GovernancePolicyResource {
   private final GovernancePolicyService governancePolicyService;
+  private final PolicyPackService policyPackService;
+  private final PolicyEnforcementService policyEnforcementService;
   private final CCMRbacHelper rbacHelper;
+  @Autowired private ConnectorResourceClient connectorResourceClient;
+
   @Inject
-  public GovernancePolicyResource(GovernancePolicyService governancePolicyService, CCMRbacHelper rbacHelper) {
+  public GovernancePolicyResource(GovernancePolicyService governancePolicyService, CCMRbacHelper rbacHelper,
+      PolicyEnforcementService policyEnforcementService, PolicyPackService policyPackService) {
     this.governancePolicyService = governancePolicyService;
     this.rbacHelper = rbacHelper;
+    this.policyEnforcementService = policyEnforcementService;
+    this.policyPackService = policyPackService;
   }
 
   // Internal API for OOTB policy creation
@@ -255,15 +286,108 @@ public class GovernancePolicyResource {
   public ResponseDTO<GovernanceEnqueueResponseDTO>
   enqueue(@RequestBody(required = true, description = "Request body for queuing the governance job")
       @Valid GovernanceJobEnqueueDTO governanceJobEnqueueDTO) throws IOException {
-    log.info("Policy enforcement config id is {}", governanceJobEnqueueDTO.getPolicyEnforcementId());
-    // TODO: Next is fetch from Mongo this policySetId and enqueue in the Faktory queue one by one.
-    try {
-      // TEST
-      FaktoryProducer.Push("aws", "aws", "{}");
-      log.info("Pushed job in Faktory!");
-    } catch (IOException e) {
-      log.error("{}", e);
+    // TODO: Refactor and make this method smaller
+    // Step-1 Fetch from mongo
+    String policyEnforcementUuid = governanceJobEnqueueDTO.getPolicyEnforcementId();
+    log.info("Policy enforcement config id is {}", policyEnforcementUuid);
+    PolicyEnforcement policyEnforcement = policyEnforcementService.get(policyEnforcementUuid);
+    if (policyEnforcement == null) {
+      log.error("No policy enforcement setting {} found in db. Skipping enqueuing in faktory", policyEnforcementUuid);
+      // TODO: Return simple response to dkron instead of empty for debugging purposes
+      return ResponseDTO.newResponse();
     }
+    String accountId = policyEnforcement.getAccountId();
+
+    if (policyEnforcement.getCloudProvider() != PolicyCloudProviderType.AWS) {
+      log.error("Support for non AWS cloud providers is not present atm. Skipping enqueuing in faktory");
+      // TODO: Return simple response to dkron instead of empty for debugging purposes
+      return ResponseDTO.newResponse();
+    }
+
+    if (policyEnforcement.getTargetAccounts() == null || policyEnforcement.getTargetAccounts().size() == 0) {
+      log.error("Need at least one target cloud accountId to work on. Skipping enqueuing in faktory");
+      // TODO: Return simple response to dkron instead of empty for debugging purposes
+      return ResponseDTO.newResponse();
+    }
+
+    // Step-2 Prep unique policy Ids set from this enforcement
+    Set<String> uniquePolicyIds = new HashSet<>();
+    if (policyEnforcement.getPolicyIds().size() > 0) {
+      // Assumption: The policyIds in the enforcement records are all valid ones
+      uniquePolicyIds.addAll(policyEnforcement.getPolicyIds());
+    }
+    if (policyEnforcement.getPolicyPackIDs().size() > 0) {
+      List<PolicyPack> policyPacks = policyPackService.listPacks(accountId, policyEnforcement.getPolicyPackIDs());
+      for (PolicyPack policyPack : policyPacks) {
+        uniquePolicyIds.addAll(policyPack.getPoliciesIdentifier());
+      }
+    }
+    log.info("uniquePolicyIds: {}", uniquePolicyIds);
+
+    // Step-3 Figure out roleArn and externalId from the connector listv2 api call for all target accounts.
+    List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
+    PageResponse<ConnectorResponseDTO> response = null;
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder()
+            .types(Arrays.asList(ConnectorType.CE_AWS))
+            .ccmConnectorFilter(CcmConnectorFilter.builder()
+                                    .featuresEnabled(Arrays.asList(CEFeatures.GOVERNANCE))
+                                    .awsAccountId(policyEnforcement.getTargetAccounts())
+                                    .build())
+            .build();
+    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
+    int page = 0;
+    int size = 100;
+    do {
+      response = execute(connectorResourceClient.listConnectors(
+          accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
+      if (response != null && isNotEmpty(response.getContent())) {
+        nextGenConnectorResponses.addAll(response.getContent());
+      }
+      page++;
+    } while (response != null && isNotEmpty(response.getContent()));
+
+    log.info("Got connector data: {}", nextGenConnectorResponses);
+
+    // Step-4 Enqueue in faktory
+    for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
+      ConnectorInfoDTO connectorInfo = connector.getConnector();
+      CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
+      for (String region : policyEnforcement.getTargetRegions()) {
+        for (String policyId : uniquePolicyIds) {
+          try {
+            GovernanceJobDetailsAWS governanceJobDetailsAWS =
+                GovernanceJobDetailsAWS.builder()
+                    .awsAccountId(ceAwsConnectorDTO.getAwsAccountId())
+                    .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
+                    .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
+                    .isDryRun(policyEnforcement.getIsDryRun())
+                    .policyId(policyId)
+                    .region(region)
+                    .policyEnforcementId(policyEnforcementUuid)
+                    .policy("") // TODO
+                    .build();
+            Gson gson = new GsonBuilder().create();
+            String json = gson.toJson(governanceJobDetailsAWS);
+            log.info("Enqueuing job in Faktory {}", json);
+            // TODO: Test bulk enqueue here
+            FaktoryProducer.Push(policyEnforcement.getCloudProvider().toString(), "aws", json);
+            log.info("Pushed job in Faktory!");
+          } catch (Exception e) {
+            log.warn("Exception processing aws tags for connectorId: {} for CCM accountId: {}",
+                connectorInfo.getIdentifier(), accountId, e);
+          }
+        }
+      }
+    }
+
+    //    try {
+    //
+    //      FaktoryProducer.Push("aws", "aws", "{}");
+    //      log.info("Pushed job in Faktory!");
+    //    } catch (IOException e) {
+    //      log.error("{}", e);
+    //    }
 
     return ResponseDTO.newResponse();
   }

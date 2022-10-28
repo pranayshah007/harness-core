@@ -17,5 +17,6 @@ public interface PolicyPackService {
   PolicyPack update(PolicyPack policyPack);
   PolicyPack listid(String accountId, String name, boolean create);
   List<PolicyPack> list(String accountId);
+  List<PolicyPack> listPacks(String accountId, List<String> packIds);
   void check(String accountId, List<String> policyPackIdentifier);
 }

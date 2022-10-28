@@ -64,23 +64,24 @@ public class PolicyPackDAO {
     return policy;
   }
 
-  public PolicyPack listid(String accountId, String name, boolean create) {
+  public PolicyPack listid(String accountId, String uuid, boolean create) {
     try {
-      List<PolicyPack> policyPacks = hPersistence.createQuery(PolicyPack.class)
-                                         .field(PolicySetId.accountId)
-                                         .equal(accountId)
-                                         .field(PolicySetId.name)
-                                         .equal(name)
-                                         .asList();
+      Query<PolicyPack> query = hPersistence.createQuery(PolicyPack.class)
+                                    .field(PolicySetId.accountId)
+                                    .equal(accountId)
+                                    .field(PolicySetId.uuid)
+                                    .equal(uuid);
+      log.info("query: {}", query.toString());
+      List<PolicyPack> policyPacks = query.asList();
       policyPacks.addAll(hPersistence.createQuery(PolicyPack.class)
                              .field(PolicySetId.accountId)
                              .equal("")
-                             .field(PolicySetId.name)
-                             .equal(name)
+                             .field(PolicySetId.uuid)
+                             .equal(uuid)
                              .asList());
       return policyPacks.get(0);
     } catch (IndexOutOfBoundsException e) {
-      log.error("No such policy pack exists,{} accountId{} name {} {}", e, accountId, name, create);
+      log.error("No such policy pack exists,{} accountId {} uuid {} {}", e, accountId, uuid, create);
       if (create) {
         log.info("returning null");
         return null;
@@ -88,11 +89,13 @@ public class PolicyPackDAO {
       throw new InvalidRequestException("No such policy pack exists");
     }
   }
-  public void check(String accountId, List<String> policiesPackIdentifier) {
-    for (String identifiers : policiesPackIdentifier) {
-      listid(accountId, identifiers, false);
+
+  public void check(String accountId, List<String> policiesPackIdentifiers) {
+    for (String identifier : policiesPackIdentifiers) {
+      listid(accountId, identifier, false);
     }
   }
+
   public List<PolicyPack> list(String accountId) {
     List<PolicyPack> policyPacks = hPersistence.createQuery(PolicyPack.class)
                                        .field(PolicySetId.accountId)
@@ -104,6 +107,18 @@ public class PolicyPackDAO {
                            .equal("")
                            .order(Sort.descending(PolicyEnforcement.PolicyEnforcementId.lastUpdatedAt))
                            .asList());
+    log.info("list size {}", policyPacks.size());
+    return policyPacks;
+  }
+
+  public List<PolicyPack> listPacks(String accountId, List<String> packIds) {
+    List<PolicyPack> policyPacks = hPersistence.createQuery(PolicyPack.class)
+                                       .field(PolicySetId.accountId)
+                                       .equal(accountId)
+                                       .field(PolicySetId.uuid)
+                                       .in(packIds)
+                                       .order(Sort.descending(PolicyEnforcement.PolicyEnforcementId.lastUpdatedAt))
+                                       .asList();
     log.info("list size {}", policyPacks.size());
     return policyPacks;
   }

@@ -310,7 +310,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
 
   private void populateAwsFilters(Criteria criteria, CcmConnectorFilter ccmConnectorFilter) {
     if (ccmConnectorFilter.getAwsAccountId() != null) {
-      populateInFilter(criteria, CEAwsConfigKeys.awsAccountId, Arrays.asList(ccmConnectorFilter.getAwsAccountId()));
+      populateInFilter(criteria, CEAwsConfigKeys.awsAccountId, ccmConnectorFilter.getAwsAccountId());
     }
   }
 

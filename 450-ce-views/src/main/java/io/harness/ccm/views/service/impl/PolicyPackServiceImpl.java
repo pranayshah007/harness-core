@@ -52,7 +52,12 @@ public class PolicyPackServiceImpl implements PolicyPackService {
   }
 
   @Override
-  public void check(String accountId, List<String> policyPackIdentifier) {
-    { policyPackDAO.check(accountId, policyPackIdentifier); }
+  public List<PolicyPack> listPacks(String accountId, List<String> packIds) {
+    { return policyPackDAO.listPacks(accountId, packIds); }
+  }
+
+  @Override
+  public void check(String accountId, List<String> policyPackIdentifiers) {
+    { policyPackDAO.check(accountId, policyPackIdentifiers); }
   }
 }
