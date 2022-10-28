@@ -18,8 +18,10 @@ import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.validators.UniqueIdentifierCheck;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,14 +58,28 @@ public class StackdriverMetricHealthSourceSpec extends MetricHealthSourceSpec {
 
   @Override
   public void validate() {
-    getMetricDefinitions().forEach(metricDefinition
-        -> Preconditions.checkArgument(
-            !(Objects.nonNull(metricDefinition.getAnalysis())
-                && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification())
-                && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification().getEnabled())
-                && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
-                && StringUtils.isEmpty(metricDefinition.getServiceInstanceField())),
-            "Service instance field shouldn't be empty for Deployment verification"));
+    getMetricDefinitions().forEach(metricDefinition -> {
+      Preconditions.checkArgument(
+          !(Objects.nonNull(metricDefinition.getAnalysis())
+              && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification())
+              && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification().getEnabled())
+              && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
+              && StringUtils.isEmpty(metricDefinition.getServiceInstanceField())),
+          "Service instance field shouldn't be empty for Deployment verification");
+      Preconditions.checkArgument(Objects.isNull(metricDefinition.getJsonMetricDefinition())
+              && validateJSONMetricDefinitionString(metricDefinition.getJsonMetricDefinitionString()),
+          "jsonMetricDefinitionString should be of valid json format");
+    });
+  }
+
+  public static boolean validateJSONMetricDefinitionString(String jsonInString) {
+    try {
+      final ObjectMapper mapper = new ObjectMapper();
+      mapper.readTree(jsonInString);
+      return true;
+    } catch (IOException e) {
+      return false;
+    }
   }
 
   @Override

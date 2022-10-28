@@ -30,6 +30,7 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -136,7 +137,9 @@ public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
           MetricInfo.builder()
               .metricName(definition.getMetricName())
               .identifier(definition.getIdentifier())
-              .jsonMetricDefinition(JsonUtils.asJson(definition.getJsonMetricDefinition()))
+              .jsonMetricDefinition(Objects.nonNull(definition.getJsonMetricDefinition())
+                      ? JsonUtils.asJson(definition.getJsonMetricDefinition())
+                      : definition.getJsonMetricDefinitionString())
               .metricType(metricType)
               .tags(definition.getMetricTags())
               .isManualQuery(definition.isManualQuery())
