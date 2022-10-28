@@ -66,7 +66,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   @Inject private NodeStatusUpdateHandlerFactory nodeStatusUpdateHandlerFactory;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
-  @Inject @Named("secondary-mongo") public MongoTemplate secondaryMongoTemplate;
+  @Inject private PlanExecutionServiceReadHelper planExecutionServiceReadHelper;
 
   @Getter private final Subject<PlanStatusUpdateObserver> planStatusUpdateSubject = new Subject<>();
 
@@ -234,35 +234,13 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   @Override
   public long findRunningExecutionsForGivenPipeline(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    Criteria criteria = new Criteria()
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
-                            .is(accountId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
-                            .is(orgId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
-                            .is(projectId)
-                            .and(PlanExecutionKeys.metadata + ".pipelineIdentifier")
-                            .is(pipelineIdentifier)
-                            .and(PlanExecutionKeys.status)
-                            .in(StatusUtils.activeStatuses());
-    return secondaryMongoTemplate.count(new Query(criteria), PlanExecution.class);
+    return planExecutionServiceReadHelper.findRunningExecutionsForGivenPipeline(
+        accountId, orgId, projectId, pipelineIdentifier);
   }
 
   @Override
   public PlanExecution findNextExecutionToRun(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    Criteria criteria = new Criteria()
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
-                            .is(accountId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
-                            .is(orgId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
-                            .is(projectId)
-                            .and(PlanExecutionKeys.metadata + ".pipelineIdentifier")
-                            .is(pipelineIdentifier)
-                            .and(PlanExecutionKeys.status)
-                            .is(Status.QUEUED);
-    return secondaryMongoTemplate.findOne(
-        new Query(criteria).with(Sort.by(Sort.Direction.ASC, PlanExecutionKeys.createdAt)), PlanExecution.class);
+    return planExecutionServiceReadHelper.findNextExecutionToRun(accountId, orgId, projectId, pipelineIdentifier);
   }
 }
