@@ -7,14 +7,19 @@
 
 package io.harness.delegate.heartbeat;
 
+import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME;
+
 import io.harness.beans.DelegateHeartbeatParams;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateNotRegisteredException;
 import io.harness.exception.WingsException;
 import io.harness.logging.Misc;
+import io.harness.observer.Subject;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateTaskService;
+
+import software.wings.service.impl.DelegateObserver;
 
 import com.google.inject.Inject;
 import java.time.Clock;
@@ -24,14 +29,21 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Process delegate heart beat request.
+ * @param <T> Heartbeat response type.
+ * FIXME: use observer for heartbeat callbacks instead of inheritance.
+ */
 @Slf4j
 public abstract class DelegateHeartbeatService<T extends Object> {
   @Inject protected Clock clock;
   @Inject private DelegateHeartbeatDao delegateHeartbeatDao;
   @Inject private DelegateTaskService delegateTaskService;
   @Inject private DelegateCache delegateCache;
+  @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
   public Optional<T> precheck(@NotNull final Delegate existingDelegate) {
     return Optional.empty();
@@ -77,6 +89,11 @@ public abstract class DelegateHeartbeatService<T extends Object> {
           getExistingDelegateExceptionIfNullOrDeleted(params.getAccountId(), params.getDelegateId());
       final T response = precheck(existingDelegate).orElseGet(() -> processHeartbeatRequest(existingDelegate, params));
       finish(response, params);
+      boolean isDelegateReconnectingAfterLongPause =
+          clock.millis() > (params.getLastHeartBeat() + HEARTBEAT_EXPIRY_TIME.toMillis());
+      if (isDelegateReconnectingAfterLongPause) {
+        subject.fireInform(DelegateObserver::onAdded, existingDelegate);
+      }
       return response;
     } catch (WingsException e) {
       log.error("Heartbeat failed for delegate {}.", params.getDelegateId(), e);
