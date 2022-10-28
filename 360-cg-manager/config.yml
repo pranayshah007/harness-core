@@ -58,6 +58,7 @@ serviceScheduler:
   #mongoUri: mongodb://localhost:27017/service_scheduler
 
 enableIterators: ${ENABLE_ITERATORS:-true}
+iteratorConfigPath: ${ITERATOR_CONFIG_PATH:-""}
 trialRegistrationAllowed: true
 eventsFrameworkAvailableInOnPrem: false
 trialRegistrationAllowedForBugathon: false
