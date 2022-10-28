@@ -74,6 +74,7 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.mongodb.morphia.UpdateOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -94,10 +95,14 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
 
   @Override
   public boolean save(List<TimeSeriesDataCollectionRecord> dataRecords) {
-    log.info("Saving {} data records", dataRecords.size());
+    List<TimeSeriesDataCollectionRecord> validDataRecords = filterValidDataRecords(dataRecords);
+    if (CollectionUtils.isEmpty(validDataRecords)) {
+      return true;
+    }
+    log.info("Saving {} data records", validDataRecords.size());
     UpdateOptions options = new UpdateOptions();
     options.upsert(true);
-    Map<TimeSeriesRecordBucketKey, TimeSeriesRecord> timeSeriesRecordMap = bucketTimeSeriesRecords(dataRecords);
+    Map<TimeSeriesRecordBucketKey, TimeSeriesRecord> timeSeriesRecordMap = bucketTimeSeriesRecords(validDataRecords);
     timeSeriesRecordMap.forEach((timeSeriesRecordBucketKey, timeSeriesRecord) -> {
       List<TimeSeriesMetricDefinition> metricTemplates =
           timeSeriesAnalysisService.getMetricTemplate(timeSeriesRecord.getVerificationTaskId());
@@ -134,9 +139,35 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       }
       hPersistence.getDatastore(TimeSeriesRecord.class).update(query, updateOperations, options);
     });
-
-    saveHosts(dataRecords);
+    saveHosts(validDataRecords);
     return true;
+  }
+
+  private List<TimeSeriesDataCollectionRecord> filterValidDataRecords(
+      List<TimeSeriesDataCollectionRecord> dataRecords) {
+    return CollectionUtils.emptyIfNull(dataRecords)
+        .stream()
+        .map(dataRecord
+            -> dataRecord.toBuilder()
+                   .metricValues(
+                       dataRecord.getMetricValues()
+                           .stream()
+                           .map(metricValue
+                               -> metricValue.toBuilder()
+                                      .timeSeriesValues(
+                                          metricValue.getTimeSeriesValues()
+                                              .stream()
+                                              .filter(groupValue -> Double.isFinite(groupValue.getValue()))
+                                              .filter(groupValue
+                                                  -> groupValue.getPercent() == null
+                                                      || Double.isFinite(groupValue.getPercent()))
+                                              .collect(Collectors.toSet()))
+                                      .build())
+                           .filter(metricValue -> CollectionUtils.isNotEmpty(metricValue.getTimeSeriesValues()))
+                           .collect(Collectors.toSet()))
+                   .build())
+        .filter(dataRecord -> CollectionUtils.isNotEmpty(dataRecord.getMetricValues()))
+        .collect(Collectors.toList());
   }
 
   @Value

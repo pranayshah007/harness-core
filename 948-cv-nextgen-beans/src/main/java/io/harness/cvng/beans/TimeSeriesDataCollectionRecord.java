@@ -13,7 +13,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
-@Builder
+@Builder(toBuilder = true)
 public class TimeSeriesDataCollectionRecord {
   private String accountId;
   private String verificationTaskId;
@@ -22,7 +22,7 @@ public class TimeSeriesDataCollectionRecord {
   private Set<TimeSeriesDataRecordMetricValue> metricValues;
 
   @Data
-  @Builder
+  @Builder(toBuilder = true)
   @EqualsAndHashCode(of = "metricName")
   public static class TimeSeriesDataRecordMetricValue {
     private String metricName;
