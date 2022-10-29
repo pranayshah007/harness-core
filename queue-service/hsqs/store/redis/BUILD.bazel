@@ -15,13 +15,15 @@ go_library(
 
 go_test(
     name = "redis_test",
-    srcs = ["redis_store_test.go"],
+    srcs = [
+        "redis_store_test.go",
+    ],
     embed = [":redis"],
     deps = [
         "//queue-service/hsqs/store",
         "//queue-service/hsqs/utils",
         "@com_github_go_redis_redis_v8//:redis",
-        "@com_github_go_redis_redismock_v8//:go_default_library",
+        "@com_github_go_redis_redismock_v8//:redismock",
         "@com_github_rs_zerolog//:zerolog",
         "@com_github_stretchr_testify//assert",
     ],

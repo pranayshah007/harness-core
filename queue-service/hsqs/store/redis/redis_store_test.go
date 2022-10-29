@@ -241,9 +241,9 @@ func TestEnqueue(t *testing.T) {
 			r := &Store{Client: rdb, Logger: &l}
 			if tt.mockErr != nil {
 				if tt.wantSAddErr {
-					mock.ExpectSAdd(utils.GetStoreAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetErr(tt.mockErr)
+					mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetErr(tt.mockErr)
 				} else if tt.wantErr {
-					mock.ExpectSAdd(utils.GetStoreAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetVal(1)
+					mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetVal(1)
 					mock.ExpectXAdd(&redis.XAddArgs{
 						Stream: utils.GetSubTopicStreamQueueKey(tt.args.req.Topic, tt.args.req.SubTopic),
 						ID:     "*",
@@ -251,7 +251,7 @@ func TestEnqueue(t *testing.T) {
 					}).SetErr(tt.mockErr)
 				}
 			} else {
-				mock.ExpectSAdd(utils.GetStoreAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetVal(1)
+				mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetVal(1)
 				mock.ExpectXAdd(&redis.XAddArgs{
 					Stream: utils.GetSubTopicStreamQueueKey(tt.args.req.Topic, tt.args.req.SubTopic),
 					ID:     "*",
