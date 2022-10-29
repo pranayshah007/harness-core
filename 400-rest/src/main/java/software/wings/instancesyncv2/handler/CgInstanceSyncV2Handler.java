@@ -13,6 +13,8 @@ import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.infrastructure.instance.Instance;
+import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 
@@ -33,4 +35,12 @@ public interface CgInstanceSyncV2Handler {
   List<CgDeploymentReleaseDetails> getDeploymentReleaseDetails(InstanceSyncTaskDetails taskDetails);
 
   boolean isDeploymentInfoTypeSupported(Class<? extends DeploymentInfo> deploymentInfoClazz);
+
+  List<Instance> getDeployedInstances(DeploymentSummary deploymentSummary);
+
+  List<Instance> difference(List<Instance> list1, List<Instance> list2);
+
+  List<Instance> getDeployedInstances(List<InstanceInfo> instanceInfos, Instance lastDiscoveredInstance);
+
+  List<Instance> instancesToUpdate(List<Instance> instances, List<Instance> instancesInDb);
 }
