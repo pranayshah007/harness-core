@@ -12,7 +12,6 @@ import io.harness.beans.DelegateTask;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStep;
 import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsEntityHelper;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
@@ -33,6 +32,9 @@ import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome.EcsRollingRollbac
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData;
+import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePassThroughData;
+import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData;
+import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -41,11 +43,16 @@ import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.EcsRunTaskRequestDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult;
@@ -81,6 +88,10 @@ import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
+import io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest;
+import io.harness.delegate.task.elastigroup.response.ElastigroupCommandResponse;
+import io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse;
+import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.spotinst.request.SpotInstSetupTaskParameters;
 import io.harness.ecs.EcsCommandUnitConstants;
@@ -141,19 +152,20 @@ import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 import static java.lang.String.format;
 
 @Slf4j
-public class ElastigroupStepCommonHelper extends EcsStepUtils {
+public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private ElastigroupEntityHelper elastigroupEntityHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-  private static final String TARGET_GROUP_ARN_EXPRESSION = "<+targetGroupArn>";
 
   public TaskChainResponse startChainLink(ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance,
-                                          StepElementParameters stepElementParameters, EcsStepHelper ecsStepHelper) {
+                                          StepElementParameters stepElementParameters) {
 
     // Get ManifestsOutcome
     Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
+
+    StartupScriptOutcome startupScriptOutcome = resolveStartupScriptOutcome(ambiance);
 
     // Get InfrastructureOutcome
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
@@ -167,25 +179,25 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
 //    validateManifestsOutcome(ambiance, manifestsOutcome);
 //
 //    List<ManifestOutcome> ecsManifestOutcome = getEcsManifestOutcome(manifestsOutcome.values(), ecsStepHelper);
+//
+//      ElastigroupExecutionPassThroughData executionPassThroughData =
+//              ElastigroupExecutionPassThroughData.builder()
+//                      .infrastructure(infrastructureOutcome)
+//                      .build();
+//
+//      EcsStepExecutorParams ecsStepExecutorParams =
+//              EcsStepExecutorParams.builder()
+//                      .build();
+//
+//      LogCallback logCallback = getLogCallback(ElastigroupCommandUnitConstants.createSetup.toString(), ambiance, true);
+//
+//      UnitProgressData unitProgressData =
+//              getCommandUnitProgressData(ElastigroupCommandUnitConstants.createSetup.toString(), CommandExecutionStatus.SUCCESS);
 
-//    return prepareEcsManifestGitFetchTask(
-//            elastigroupStepExecutor, ambiance, stepElementParameters, infrastructureOutcome, ecsManifestOutcome, ecsStepHelper);
-      ElastigroupExecutionPassThroughData executionPassThroughData =
-              ElastigroupExecutionPassThroughData.builder()
-                      .infrastructure(infrastructureOutcome)
-                      .build();
-
-      EcsStepExecutorParams ecsStepExecutorParams =
-              EcsStepExecutorParams.builder()
-                      .build();
-
-      LogCallback logCallback = getLogCallback(ElastigroupCommandUnitConstants.createSetup.toString(), ambiance, true);
-
-      UnitProgressData unitProgressData =
-              getCommandUnitProgressData(ElastigroupCommandUnitConstants.createSetup.toString(), CommandExecutionStatus.SUCCESS);
-
-      return elastigroupStepExecutor.executeElastigroupTask(
-              ambiance, stepElementParameters, executionPassThroughData, unitProgressData, ecsStepExecutorParams);
+//      return elastigroupStepExecutor.executeElastigroupTask(
+//              ambiance, stepElementParameters, executionPassThroughData, unitProgressData, ecsStepExecutorParams);
+    return prepareEcsManifestGitFetchTask(
+            elastigroupStepExecutor, ambiance, stepElementParameters, infrastructureOutcome, startupScriptOutcome);
   }
 //
 //  public TaskChainResponse startChainLinkEcsRunTask(
@@ -197,148 +209,59 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
 //    return prepareEcsRunTaskGitFetchTask(ecsStepExecutor, ambiance, stepElementParameters, infrastructureOutcome);
 //  }
 //
-//  public List<ManifestOutcome> getEcsManifestOutcome(
+//  public List<ManifestOutcome> getStartupScriptOutcome(
 //      @NotEmpty Collection<ManifestOutcome> manifestOutcomes, EcsStepHelper ecsStepHelper) {
 //    return ecsStepHelper.getEcsManifestOutcome(manifestOutcomes);
 //  }
 //
-//  public ArtifactOutcome resolveElastigroupArtifactsOutcome(Ambiance ambiance) {
-//    OptionalOutcome artifactsOutcome = outcomeService.resolveOptional(
-//        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+  public StartupScriptOutcome resolveStartupScriptOutcome(Ambiance ambiance) {
+    OptionalOutcome startupScriptOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.STARTUP_SCRIPT));
+
+    if (!startupScriptOutcome.isFound()) {
+      String stageName =
+          AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getIdentifier).orElse("Deployment stage");
+      String stepType =
+          Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("Elastigroup");
+      throw new GeneralException(
+          format("No startupScript found in stage %s. %s step requires a startupScript defined in stage service definition",
+              stageName, stepType));
+    }
+    return (StartupScriptOutcome) startupScriptOutcome.getOutcome();
+  }
 //
-//    if (!artifactsOutcome.isFound()) {
-//      String stageName =
-//          AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getIdentifier).orElse("Deployment stage");
-//      String stepType =
-//          Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("Elastigroup");
-//      throw new GeneralException(
-//          format("No artifacts found in stage %s. %s step requires a artifacts defined in stage service definition",
-//              stageName, stepType));
-//    }
-//    return (ArtifactOutcome) artifactsOutcome.getOutcome();
-//  }
-//
-//  private TaskChainResponse prepareEcsManifestGitFetchTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-//      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
-//      List<ManifestOutcome> ecsManifestOutcomes, EcsStepHelper ecsStepHelper) {
-//    // Get EcsGitFetchFileConfig for task definition
-//    ManifestOutcome ecsTaskDefinitionManifestOutcome =
-//        ecsStepHelper.getEcsTaskDefinitionManifestOutcome(ecsManifestOutcomes);
-//
-//    LogCallback logCallback = getLogCallback(EcsCommandUnitConstants.fetchManifests.toString(), ambiance, true);
-//
-//    EcsGitFetchFileConfig ecsTaskDefinitionGitFetchFileConfig = null;
-//    String ecsTaskDefinitionFileContent = null;
-//
-//    if (ManifestStoreType.HARNESS.equals(ecsTaskDefinitionManifestOutcome.getStore().getKind())) {
-//      ecsTaskDefinitionFileContent =
-//          fetchFilesContentFromLocalStore(ambiance, ecsTaskDefinitionManifestOutcome, logCallback).get(0);
-//    } else {
-//      ecsTaskDefinitionGitFetchFileConfig =
-//          getEcsGitFetchFilesConfigFromManifestOutcome(ecsTaskDefinitionManifestOutcome, ambiance, ecsStepHelper);
-//    }
-//
-//    // Get EcsGitFetchFileConfig for service definition
-//    ManifestOutcome ecsServiceDefinitionManifestOutcome =
-//        ecsStepHelper.getEcsServiceDefinitionManifestOutcome(ecsManifestOutcomes);
-//
-//    EcsGitFetchFileConfig ecsServiceDefinitionGitFetchFileConfig = null;
-//    String ecsServiceDefinitionFileContent = null;
-//    if (ManifestStoreType.HARNESS.equals(ecsServiceDefinitionManifestOutcome.getStore().getKind())) {
-//      ecsServiceDefinitionFileContent =
-//          fetchFilesContentFromLocalStore(ambiance, ecsServiceDefinitionManifestOutcome, logCallback).get(0);
-//    } else {
-//      ecsServiceDefinitionGitFetchFileConfig =
-//          getEcsGitFetchFilesConfigFromManifestOutcome(ecsServiceDefinitionManifestOutcome, ambiance, ecsStepHelper);
-//    }
-//
-//    // Get EcsGitFetchFileConfig list for scalable targets if present
-//    List<ManifestOutcome> ecsScalableTargetManifestOutcomes =
-//        ecsStepHelper.getManifestOutcomesByType(ecsManifestOutcomes, ManifestType.EcsScalableTargetDefinition);
-//
-//    List<EcsGitFetchFileConfig> ecsScalableTargetGitFetchFileConfigs = new ArrayList<>();
-//    List<String> ecsScalableTargetFileContentList = new ArrayList<>();
-//    if (CollectionUtils.isNotEmpty(ecsScalableTargetManifestOutcomes)) {
-//      for (ManifestOutcome ecsScalableTargetManifestOutcome : ecsScalableTargetManifestOutcomes) {
-//        if (ManifestStoreType.HARNESS.equals(ecsScalableTargetManifestOutcome.getStore().getKind())) {
-//          ecsScalableTargetFileContentList.add(
-//              fetchFilesContentFromLocalStore(ambiance, ecsScalableTargetManifestOutcome, logCallback).get(0));
-//        } else {
-//          ecsScalableTargetGitFetchFileConfigs.add(
-//              getEcsGitFetchFilesConfigFromManifestOutcome(ecsScalableTargetManifestOutcome, ambiance, ecsStepHelper));
-//        }
-//      }
-//    }
-//
-//    // Get EcsGitFetchFileConfig list for scaling policies if present
-//    List<ManifestOutcome> ecsScalingPolicyManifestOutcomes =
-//        ecsStepHelper.getManifestOutcomesByType(ecsManifestOutcomes, ManifestType.EcsScalingPolicyDefinition);
-//
-//    List<EcsGitFetchFileConfig> ecsScalingPolicyGitFetchFileConfigs = new ArrayList<>();
-//    List<String> ecsScalingPolicyFileContentList = new ArrayList<>();
-//    if (CollectionUtils.isNotEmpty(ecsScalingPolicyManifestOutcomes)) {
-//      for (ManifestOutcome ecsScalingPolicyManifestOutcome : ecsScalingPolicyManifestOutcomes) {
-//        if (ManifestStoreType.HARNESS.equals(ecsScalingPolicyManifestOutcome.getStore().getKind())) {
-//          ecsScalingPolicyFileContentList.add(
-//              fetchFilesContentFromLocalStore(ambiance, ecsScalingPolicyManifestOutcome, logCallback).get(0));
-//        } else {
-//          ecsScalingPolicyGitFetchFileConfigs.add(
-//              getEcsGitFetchFilesConfigFromManifestOutcome(ecsScalingPolicyManifestOutcome, ambiance, ecsStepHelper));
-//        }
-//      }
-//    }
-//
-//    EcsGitFetchPassThroughDataBuilder ecsGitFetchPassThroughDataBuilder = EcsGitFetchPassThroughData.builder();
-//
-//    // Render expressions for all file content fetched from Harness File Store
-//
-//    if (ecsTaskDefinitionFileContent != null) {
-//      ecsTaskDefinitionFileContent = engineExpressionService.renderExpression(ambiance, ecsTaskDefinitionFileContent);
-//    }
-//
-//    long timeStamp = System.currentTimeMillis();
-//    StringBuilder key = new StringBuilder().append(timeStamp).append("targetGroup");
-//
-//    if (ecsServiceDefinitionFileContent != null) {
-//      if (ecsServiceDefinitionFileContent.contains(TARGET_GROUP_ARN_EXPRESSION)) {
-//        ecsServiceDefinitionFileContent =
-//            ecsServiceDefinitionFileContent.replace(TARGET_GROUP_ARN_EXPRESSION, key.toString());
-//      }
-//      ecsGitFetchPassThroughDataBuilder.targetGroupArnKey(key.toString());
-//      ecsServiceDefinitionFileContent =
-//          engineExpressionService.renderExpression(ambiance, ecsServiceDefinitionFileContent);
-//    }
-//
-//    if (CollectionUtils.isNotEmpty(ecsScalableTargetFileContentList)) {
-//      ecsScalableTargetFileContentList =
-//          ecsScalableTargetFileContentList.stream()
-//              .map(ecsScalableTargetFileContent
-//                  -> engineExpressionService.renderExpression(ambiance, ecsScalableTargetFileContent))
-//              .collect(Collectors.toList());
-//    }
-//
-//    if (CollectionUtils.isNotEmpty(ecsScalingPolicyFileContentList)) {
-//      ecsScalingPolicyFileContentList =
-//          ecsScalingPolicyFileContentList.stream()
-//              .map(ecsScalingPolicyFileContent
-//                  -> engineExpressionService.renderExpression(ambiance, ecsScalingPolicyFileContent))
-//              .collect(Collectors.toList());
-//    }
-//
-//    EcsGitFetchPassThroughData ecsGitFetchPassThroughData =
-//        ecsGitFetchPassThroughDataBuilder.infrastructureOutcome(infrastructureOutcome)
-//            .taskDefinitionHarnessFileContent(ecsTaskDefinitionFileContent)
-//            .serviceDefinitionHarnessFileContent(ecsServiceDefinitionFileContent)
-//            .scalableTargetHarnessFileContentList(ecsScalableTargetFileContentList)
-//            .scalingPolicyHarnessFileContentList(ecsScalingPolicyFileContentList)
-//            .build();
-//
-//    if (areAllManifestsFromHarnessFileStore(ecsManifestOutcomes)) {
-//      logCallback.saveExecutionLog("Fetched all manifests from Harness Store ", INFO, CommandExecutionStatus.SUCCESS);
-//
+  private TaskChainResponse prepareEcsManifestGitFetchTask(ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance,
+      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
+      StartupScriptOutcome startupScriptOutcome) {
+
+    LogCallback logCallback = getLogCallback(ElastigroupCommandUnitConstants.fetchManifests.toString(), ambiance, true);
+
+    String startupScript = null;
+
+    if (ManifestStoreType.HARNESS.equals(startupScriptOutcome.getStore().getKind())) {
+      startupScript =
+          fetchFilesContentFromLocalStore(ambiance, startupScriptOutcome, logCallback).get(0);
+    } else if (ManifestStoreType.INLINE.equals(startupScriptOutcome.getStore().getKind())) {
+        startupScript = ((InlineStoreConfig)startupScriptOutcome.getStore()).extractContent();
+    }
+
+    EcsGitFetchPassThroughDataBuilder ecsGitFetchPassThroughDataBuilder = EcsGitFetchPassThroughData.builder();
+
+    // Render expressions for all file content fetched from Harness File Store
+
+    if (startupScript != null) {
+      startupScript = engineExpressionService.renderExpression(ambiance, startupScript);
+    }
+
+    EcsGitFetchPassThroughData ecsGitFetchPassThroughData =
+        ecsGitFetchPassThroughDataBuilder.infrastructureOutcome(infrastructureOutcome)
+            .build();
+
+    logCallback.saveExecutionLog("Fetched startup Script", INFO, CommandExecutionStatus.SUCCESS);
+
 //      UnitProgressData unitProgressData =
-//          getCommandUnitProgressData(EcsCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
-//
+//          getCommandUnitProgressData(ElastigroupCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
+
 //      if (ecsStepExecutor instanceof EcsRollingDeployStep) {
 //        EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData =
 //            EcsPrepareRollbackDataPassThroughData.builder()
@@ -384,12 +307,10 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
 //            ambiance, stepElementParameters, executionPassThroughData, unitProgressData, ecsStepExecutorParams);
 //      }
 //    }
-//
-//    return getGitFetchFileTaskResponse(ambiance, false, stepElementParameters, ecsGitFetchPassThroughData,
-//        ecsTaskDefinitionGitFetchFileConfig, ecsServiceDefinitionGitFetchFileConfig,
-//        ecsScalableTargetGitFetchFileConfigs, ecsScalingPolicyGitFetchFileConfigs);
-//  }
-//
+
+    return getGitFetchFileTaskResponse(ambiance, false, stepElementParameters, ecsGitFetchPassThroughData);
+  }
+
 //  private TaskChainResponse prepareEcsRunTaskGitFetchTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
 //      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome) {
 //    EcsRunTaskStepParameters ecsRunTaskStepParameters = (EcsRunTaskStepParameters) stepElementParameters.getSpec();
@@ -517,48 +438,40 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
 //        .succeedIfFileNotFound(false)
 //        .build();
 //  }
-//
-//  private TaskChainResponse getGitFetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-//      StepElementParameters stepElementParameters, EcsGitFetchPassThroughData ecsGitFetchPassThroughData,
-//      EcsGitFetchFileConfig ecsTaskDefinitionGitFetchFileConfig,
-//      EcsGitFetchFileConfig ecsServiceDefinitionGitFetchFileConfig,
-//      List<EcsGitFetchFileConfig> ecsScalableTargetGitFetchFileConfigs,
-//      List<EcsGitFetchFileConfig> ecsScalingPolicyGitFetchFileConfigs) {
-//    String accountId = AmbianceUtils.getAccountId(ambiance);
-//
-//    EcsGitFetchRequest ecsGitFetchRequest =
-//        EcsGitFetchRequest.builder()
-//            .accountId(accountId)
-//            .ecsTaskDefinitionGitFetchFileConfig(ecsTaskDefinitionGitFetchFileConfig)
-//            .ecsServiceDefinitionGitFetchFileConfig(ecsServiceDefinitionGitFetchFileConfig)
-//            .ecsScalableTargetGitFetchFileConfigs(ecsScalableTargetGitFetchFileConfigs)
-//            .ecsScalingPolicyGitFetchFileConfigs(ecsScalingPolicyGitFetchFileConfigs)
-//            .shouldOpenLogStream(shouldOpenLogStream)
-//            .build();
-//
-//    final TaskData taskData = TaskData.builder()
-//                                  .async(true)
-//                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
-//                                  .taskType(TaskType.ELASTIGROUP_SETUP_TASK_NG.name())
-//                                  .parameters(new Object[] {ecsGitFetchRequest})
-//                                  .build();
-//
-//    String taskName = TaskType.ELASTIGROUP_SETUP_TASK_NG.getDisplayName();
-//
-//    ElastigroupSpecParameters elastigroupSpecParameters = (ElastigroupSpecParameters) stepElementParameters.getSpec();
-//
-//    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-//            elastigroupSpecParameters.getCommandUnits(), taskName,
-//        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(elastigroupSpecParameters.getDelegateSelectors()))),
-//        stepHelper.getEnvironmentType(ambiance));
-//
-//    return TaskChainResponse.builder()
-//        .chainEnd(false)
-//        .taskRequest(taskRequest)
-//        .passThroughData(ecsGitFetchPassThroughData)
-//        .build();
-//  }
-//
+
+  private TaskChainResponse getGitFetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
+      StepElementParameters stepElementParameters, EcsGitFetchPassThroughData ecsGitFetchPassThroughData) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+
+    ElastigroupStartupScriptFetchRequest ecsGitFetchRequest =
+            ElastigroupStartupScriptFetchRequest.builder()
+            .accountId(accountId)
+            .shouldOpenLogStream(shouldOpenLogStream)
+            .build();
+
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                                  .taskType(TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG.name())
+                                  .parameters(new Object[] {ecsGitFetchRequest})
+                                  .build();
+
+    String taskName = TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG.getDisplayName();
+
+    ElastigroupSpecParameters elastigroupSpecParameters = (ElastigroupSpecParameters) stepElementParameters.getSpec();
+
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+            elastigroupSpecParameters.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(elastigroupSpecParameters.getDelegateSelectors()))),
+        stepHelper.getEnvironmentType(ambiance));
+
+    return TaskChainResponse.builder()
+        .chainEnd(false)
+        .taskRequest(taskRequest)
+        .passThroughData(ecsGitFetchPassThroughData)
+        .build();
+  }
+
 //  private TaskChainResponse getGitFetchFileRunTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
 //      StepElementParameters stepElementParameters, EcsGitFetchPassThroughData ecsGitFetchPassThroughData,
 //      EcsGitFetchRunTaskFileConfig taskDefinitionEcsGitFetchRunTaskFileConfig,
@@ -637,35 +550,35 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
 //    return taskChainResponse;
 //  }
 //
-//  public TaskChainResponse executeNextLinkCanary(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-//      StepElementParameters stepElementParameters, PassThroughData passThroughData,
-//      ThrowingSupplier<ResponseData> responseDataSupplier, EcsStepHelper ecsStepHelper) throws Exception {
-//    ResponseData responseData = responseDataSupplier.get();
-//    UnitProgressData unitProgressData = null;
-//    TaskChainResponse taskChainResponse = null;
-//    try {
-//      if (responseData instanceof EcsGitFetchResponse) { // if EcsGitFetchResponse is received
-//
-//        EcsGitFetchResponse ecsGitFetchResponse = (EcsGitFetchResponse) responseData;
-//        EcsGitFetchPassThroughData ecsGitFetchPassThroughData = (EcsGitFetchPassThroughData) passThroughData;
-//
-//        taskChainResponse = handleEcsGitFetchFilesResponseCanary(
-//            ecsGitFetchResponse, ecsStepExecutor, ambiance, stepElementParameters, ecsGitFetchPassThroughData);
-//      }
-//    } catch (Exception e) {
-//      taskChainResponse =
-//          TaskChainResponse.builder()
-//              .chainEnd(true)
-//              .passThroughData(
-//                  EcsStepExceptionPassThroughData.builder()
-//                      .errorMessage(ExceptionUtils.getMessage(e))
-//                      .unitProgressData(completeUnitProgressData(unitProgressData, ambiance, e.getMessage()))
-//                      .build())
-//              .build();
-//    }
-//
-//    return taskChainResponse;
-//  }
+  public TaskChainResponse executeNextLink(ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance,
+      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    ResponseData responseData = responseDataSupplier.get();
+    UnitProgressData unitProgressData = null;
+    TaskChainResponse taskChainResponse = null;
+    try {
+      if (responseData instanceof ElastigroupStartupScriptFetchResponse) { // if EcsGitFetchResponse is received
+
+        ElastigroupStartupScriptFetchResponse elastigroupStartupScriptFetchResponse = (ElastigroupStartupScriptFetchResponse) responseData;
+        EcsGitFetchPassThroughData ecsGitFetchPassThroughData = (EcsGitFetchPassThroughData) passThroughData;
+
+        taskChainResponse = handleEcsGitFetchFilesResponse(
+                elastigroupStartupScriptFetchResponse, elastigroupStepExecutor, ambiance, stepElementParameters, ecsGitFetchPassThroughData);
+      }
+    } catch (Exception e) {
+      taskChainResponse =
+          TaskChainResponse.builder()
+              .chainEnd(true)
+              .passThroughData(
+                  EcsStepExceptionPassThroughData.builder()
+                      .errorMessage(ExceptionUtils.getMessage(e))
+                      .unitProgressData(completeUnitProgressData(unitProgressData, ambiance, e.getMessage()))
+                      .build())
+              .build();
+    }
+
+    return taskChainResponse;
+  }
 //
 //  public TaskChainResponse executeNextLinkBlueGreen(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
 //      StepElementParameters stepElementParameters, PassThroughData passThroughData,
@@ -739,6 +652,13 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
 //    return taskChainResponse;
 //  }
 //
+
+
+  public SpotInstConfig getSpotInstConfig(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    return elastigroupEntityHelper.getSpotInstConfig(infrastructureOutcome, ngAccess);
+  }
+
 //  public EcsInfraConfig getEcsInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
 //    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 //    return ecsEntityHelper.getEcsInfraConfig(infrastructure, ngAccess);
@@ -827,34 +747,27 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
 //        ecsPrepareRollbackDataPassThroughData, ecsGitFetchResponse.getUnitProgressData());
 //  }
 //
-//  private TaskChainResponse handleEcsGitFetchFilesResponseCanary(EcsGitFetchResponse ecsGitFetchResponse,
-//      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
-//      EcsGitFetchPassThroughData ecsGitFetchPassThroughData) {
-//    if (ecsGitFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
-//      return handleFailureGitTask(ecsGitFetchResponse);
-//    }
-//
-//    EcsManifestsContent ecsManifestsContent =
-//        mergeManifestsFromGitAndHarnessFileStore(ecsGitFetchResponse, ambiance, ecsGitFetchPassThroughData);
-//
-//    EcsExecutionPassThroughData ecsExecutionPassThroughData =
-//        EcsExecutionPassThroughData.builder()
-//            .infrastructure(ecsGitFetchPassThroughData.getInfrastructureOutcome())
-//            .lastActiveUnitProgressData(ecsGitFetchResponse.getUnitProgressData())
-//            .build();
-//
-//    EcsStepExecutorParams ecsStepExecutorParams =
-//        EcsStepExecutorParams.builder()
-//            .shouldOpenFetchFilesLogStream(false)
-//            .ecsTaskDefinitionManifestContent(ecsManifestsContent.getEcsTaskDefinitionFileContent())
-//            .ecsServiceDefinitionManifestContent(ecsManifestsContent.getEcsServiceDefinitionFileContent())
-//            .ecsScalableTargetManifestContentList(ecsManifestsContent.getEcsScalableTargetManifestContentList())
-//            .ecsScalingPolicyManifestContentList(ecsManifestsContent.getEcsScalingPolicyManifestContentList())
-//            .build();
-//
-//    return ecsStepExecutor.executeEcsTask(ambiance, stepElementParameters, ecsExecutionPassThroughData,
-//        ecsGitFetchResponse.getUnitProgressData(), ecsStepExecutorParams);
-//  }
+  private TaskChainResponse handleEcsGitFetchFilesResponse(ElastigroupStartupScriptFetchResponse elastigroupStartupScriptFetchResponse,
+      ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsGitFetchPassThroughData ecsGitFetchPassThroughData) {
+    if (elastigroupStartupScriptFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
+      return handleFailureGitTask(elastigroupStartupScriptFetchResponse);
+    }
+
+    ElastigroupExecutionPassThroughData elastigroupExecutionPassThroughData =
+            ElastigroupExecutionPassThroughData.builder()
+            .infrastructure(ecsGitFetchPassThroughData.getInfrastructureOutcome())
+            .lastActiveUnitProgressData(elastigroupStartupScriptFetchResponse.getUnitProgressData())
+            .build();
+
+    EcsStepExecutorParams ecsStepExecutorParams =
+        EcsStepExecutorParams.builder()
+            .shouldOpenFetchFilesLogStream(false)
+            .build();
+
+    return elastigroupStepExecutor.executeElastigroupTask(ambiance, stepElementParameters, elastigroupExecutionPassThroughData,
+            elastigroupStartupScriptFetchResponse.getUnitProgressData(), ecsStepExecutorParams);
+  }
 //
 //  private TaskChainResponse handleEcsGitFetchFilesResponseRunTask(EcsGitFetchRunTaskResponse ecsGitFetchRunTaskResponse,
 //      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
@@ -997,14 +910,14 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
 //        ecsPrepareRollbackDataPassThroughData, ecsGitFetchResponse.getUnitProgressData());
 //  }
 //
-//  private TaskChainResponse handleFailureGitTask(EcsGitFetchResponse ecsGitFetchResponse) {
-//    EcsGitFetchFailurePassThroughData ecsGitFetchFailurePassThroughData =
-//        EcsGitFetchFailurePassThroughData.builder()
-//            .errorMsg(ecsGitFetchResponse.getErrorMessage())
-//            .unitProgressData(ecsGitFetchResponse.getUnitProgressData())
-//            .build();
-//    return TaskChainResponse.builder().passThroughData(ecsGitFetchFailurePassThroughData).chainEnd(true).build();
-//  }
+  private TaskChainResponse handleFailureGitTask(ElastigroupStartupScriptFetchResponse elastigroupStartupScriptFetchResponse) {
+    ElastigroupStartupScriptFetchFailurePassThroughData elastigroupStartupScriptFetchFailurePassThroughData =
+            ElastigroupStartupScriptFetchFailurePassThroughData.builder()
+            .errorMsg(elastigroupStartupScriptFetchResponse.getErrorMessage())
+            .unitProgressData(elastigroupStartupScriptFetchResponse.getUnitProgressData())
+            .build();
+    return TaskChainResponse.builder().passThroughData(elastigroupStartupScriptFetchFailurePassThroughData).chainEnd(true).build();
+  }
 //
 //  private String getRenderedTaskDefinitionFileContent(EcsGitFetchResponse ecsGitFetchResponse, Ambiance ambiance) {
 //    FetchFilesResult ecsTaskDefinitionFetchFileResult = ecsGitFetchResponse.getEcsTaskDefinitionFetchFilesResult();
@@ -1223,71 +1136,71 @@ public class ElastigroupStepCommonHelper extends EcsStepUtils {
         .passThroughData(passThroughData)
         .build();
   }
-//
-//  public StepResponse handleGitTaskFailure(EcsGitFetchFailurePassThroughData ecsGitFetchFailurePassThroughData) {
-//    UnitProgressData unitProgressData = ecsGitFetchFailurePassThroughData.getUnitProgressData();
-//    return StepResponse.builder()
-//        .unitProgressList(unitProgressData.getUnitProgresses())
-//        .status(Status.FAILED)
-//        .failureInfo(FailureInfo.newBuilder().setErrorMessage(ecsGitFetchFailurePassThroughData.getErrorMsg()).build())
-//        .build();
-//  }
-//
-//  public StepResponse handleStepExceptionFailure(EcsStepExceptionPassThroughData stepException) {
-//    FailureData failureData = FailureData.newBuilder()
-//                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
-//                                  .setLevel(io.harness.eraro.Level.ERROR.name())
-//                                  .setCode(GENERAL_ERROR.name())
-//                                  .setMessage(HarnessStringUtils.emptyIfNull(stepException.getErrorMessage()))
-//                                  .build();
-//    return StepResponse.builder()
-//        .unitProgressList(stepException.getUnitProgressData().getUnitProgresses())
-//        .status(Status.FAILED)
-//        .failureInfo(FailureInfo.newBuilder()
-//                         .addAllFailureTypes(failureData.getFailureTypesList())
-//                         .setErrorMessage(failureData.getMessage())
-//                         .addFailureData(failureData)
-//                         .build())
-//        .build();
-//  }
-//
-//  public StepResponse handleTaskException(
-//      Ambiance ambiance, EcsExecutionPassThroughData executionPassThroughData, Exception e) throws Exception {
-//    if (ExceptionUtils.cause(TaskNGDataException.class, e) != null) {
-//      throw e;
-//    }
-//
-//    UnitProgressData unitProgressData =
-//        completeUnitProgressData(executionPassThroughData.getLastActiveUnitProgressData(), ambiance, e.getMessage());
-//    FailureData failureData = FailureData.newBuilder()
-//                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
-//                                  .setLevel(io.harness.eraro.Level.ERROR.name())
-//                                  .setCode(GENERAL_ERROR.name())
-//                                  .setMessage(HarnessStringUtils.emptyIfNull(ExceptionUtils.getMessage(e)))
-//                                  .build();
-//
-//    return StepResponse.builder()
-//        .unitProgressList(unitProgressData.getUnitProgresses())
-//        .status(Status.FAILED)
-//        .failureInfo(FailureInfo.newBuilder()
-//                         .addAllFailureTypes(failureData.getFailureTypesList())
-//                         .setErrorMessage(failureData.getMessage())
-//                         .addFailureData(failureData)
-//                         .build())
-//        .build();
-//  }
-//
-//  public static StepResponseBuilder getFailureResponseBuilder(
-//      EcsCommandResponse ecsCommandResponse, StepResponseBuilder stepResponseBuilder) {
-//    stepResponseBuilder.status(Status.FAILED)
-//        .failureInfo(
-//            FailureInfo.newBuilder().setErrorMessage(ElastigroupStepCommonHelper.getErrorMessage(ecsCommandResponse)).build());
-//    return stepResponseBuilder;
-//  }
-//
-//  public static String getErrorMessage(EcsCommandResponse ecsCommandResponse) {
-//    return ecsCommandResponse.getErrorMessage() == null ? "" : ecsCommandResponse.getErrorMessage();
-//  }
+
+  public StepResponse handleGitTaskFailure(ElastigroupStartupScriptFetchFailurePassThroughData elastigroupStartupScriptFetchFailurePassThroughData) {
+    UnitProgressData unitProgressData = elastigroupStartupScriptFetchFailurePassThroughData.getUnitProgressData();
+    return StepResponse.builder()
+        .unitProgressList(unitProgressData.getUnitProgresses())
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder().setErrorMessage(elastigroupStartupScriptFetchFailurePassThroughData.getErrorMsg()).build())
+        .build();
+  }
+
+  public StepResponse handleStepExceptionFailure(ElastigroupStepExceptionPassThroughData stepException) {
+    FailureData failureData = FailureData.newBuilder()
+                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                  .setLevel(io.harness.eraro.Level.ERROR.name())
+                                  .setCode(GENERAL_ERROR.name())
+                                  .setMessage(HarnessStringUtils.emptyIfNull(stepException.getErrorMessage()))
+                                  .build();
+    return StepResponse.builder()
+        .unitProgressList(stepException.getUnitProgressData().getUnitProgresses())
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder()
+                         .addAllFailureTypes(failureData.getFailureTypesList())
+                         .setErrorMessage(failureData.getMessage())
+                         .addFailureData(failureData)
+                         .build())
+        .build();
+  }
+
+  public StepResponse handleTaskException(
+      Ambiance ambiance, EcsExecutionPassThroughData executionPassThroughData, Exception e) throws Exception {
+    if (ExceptionUtils.cause(TaskNGDataException.class, e) != null) {
+      throw e;
+    }
+
+    UnitProgressData unitProgressData =
+        completeUnitProgressData(executionPassThroughData.getLastActiveUnitProgressData(), ambiance, e.getMessage());
+    FailureData failureData = FailureData.newBuilder()
+                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                  .setLevel(io.harness.eraro.Level.ERROR.name())
+                                  .setCode(GENERAL_ERROR.name())
+                                  .setMessage(HarnessStringUtils.emptyIfNull(ExceptionUtils.getMessage(e)))
+                                  .build();
+
+    return StepResponse.builder()
+        .unitProgressList(unitProgressData.getUnitProgresses())
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder()
+                         .addAllFailureTypes(failureData.getFailureTypesList())
+                         .setErrorMessage(failureData.getMessage())
+                         .addFailureData(failureData)
+                         .build())
+        .build();
+  }
+
+  public static StepResponseBuilder getFailureResponseBuilder(
+          ElastigroupCommandResponse elastigroupCommandResponse, StepResponseBuilder stepResponseBuilder) {
+    stepResponseBuilder.status(Status.FAILED)
+        .failureInfo(
+            FailureInfo.newBuilder().setErrorMessage(ElastigroupStepCommonHelper.getErrorMessage(elastigroupCommandResponse)).build());
+    return stepResponseBuilder;
+  }
+
+  public static String getErrorMessage(ElastigroupCommandResponse elastigroupCommandResponse) {
+    return elastigroupCommandResponse.getErrorMessage() == null ? "" : elastigroupCommandResponse.getErrorMessage();
+  }
 //
 //  public List<ServerInstanceInfo> getServerInstanceInfos(
 //      EcsCommandResponse ecsCommandResponse, String infrastructureKey) {

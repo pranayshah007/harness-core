@@ -14,14 +14,20 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
+import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -118,4 +124,16 @@ public class ElastigroupEntityHelper {
             format("Unsupported Infrastructure type: [%s]", infrastructureOutcome.getKind()));
     }
   }
+
+  public SpotInstConfig getSpotInstConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
+    ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
+    SpotConnectorDTO connectorConfigDTO = (SpotConnectorDTO) connectorDTO.getConnectorConfig();
+    SpotCredentialDTO spotCredentialDTO = connectorConfigDTO.getCredential();
+    SpotManualConfigSpecDTO spotManualConfigSpecDTO = (SpotManualConfigSpecDTO) spotCredentialDTO.getConfig();
+        return SpotInstConfig.builder()
+                .accountId(spotManualConfigSpecDTO.getAccountId())
+                .accountIdRef(spotManualConfigSpecDTO.getAccountIdRef())
+                .apiTokenRef(spotManualConfigSpecDTO.getApiTokenRef())
+                .build();
+    }
 }
