@@ -442,5 +442,17 @@ orchestrationRestrictionConfiguration:
   useRestrictionForEnterprise: ${USE_RESTRICTION_FOR_ENTERPRISE:-false}
   planExecutionRestriction:
      free: ${PLAN_EXECUTION_RESTRICTION_FREE:-1}
-     team: ${USE_RESTRICTION_FOR_TEAM:-5000}
-     enterprise: ${USE_RESTRICTION_FOR_ENTERPRISE:-10000}
+     team: ${PLAN_EXECUTION_RESTRICTION_TEAM:-5000}
+     enterprise: ${PLAN_EXECUTION_RESTRICTION_ENTERPRISE:-1}
+  pipelineCreationRestriction:
+    free: ${PIPELINE_CREATION_RESTRICTION_FREE:-5}
+    team: ${PIPELINE_CREATION_RESTRICTION_TEAM:-10000}
+    enterprise: ${PIPELINE_CREATION_RESTRICTION_ENTERPRISE:-10000}
+  maxConcurrencyRestriction:
+    free: ${MAX_CONCURRENCY_RESTRICTION_FREE:-2}
+    team: ${MAX_CONCURRENCY_RESTRICTION_TEAM:-50}
+    enterprise: ${MAX_CONCURRENCY_RESTRICTION_ENTERPRISE:-100}
+  totalParallelismStopRestriction:
+    free: ${TOTAL_PARALLELISM_RESTRICTION_FREE:-2}
+    team: ${TOTAL_PARALLELISM_RESTRICTION_TEAM:-1000}
+    enterprise: ${TOTAL_PARALLELISM_RESTRICTION_ENTERPRISE:-5000}

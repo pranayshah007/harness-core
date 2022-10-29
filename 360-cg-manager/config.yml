@@ -702,3 +702,5 @@ useGlobalKMSAsBaseAlgo: false
 cdTsDbRetentionPeriodMonths: 7
 
 enableOpentelemetry: false
+
+disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}

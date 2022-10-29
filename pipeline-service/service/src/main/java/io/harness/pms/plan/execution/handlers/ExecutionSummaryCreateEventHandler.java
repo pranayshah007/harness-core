@@ -22,7 +22,6 @@ import io.harness.notification.PipelineEventType;
 import io.harness.plan.Plan;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.ExecutionStatus;
@@ -156,8 +155,8 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .name(pipelineEntity.get().getName())
             .inputSetYaml(planExecutionMetadata.getInputSetYaml())
             .pipelineTemplate(getPipelineTemplate(pipelineEntity.get(), planExecutionMetadata))
-            .internalStatus(Status.NO_OP)
-            .status(ExecutionStatus.NOTSTARTED)
+            .internalStatus(planExecution.getStatus())
+            .status(ExecutionStatus.getExecutionStatus(planExecution.getStatus()))
             .startTs(planExecution.getStartTs())
             .startingNodeId(startingNodeId)
             .accountId(accountId)
