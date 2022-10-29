@@ -45,7 +45,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import lombok.Builder;
 import lombok.Data;
 import lombok.Value;
@@ -119,9 +118,9 @@ public class ConnectorRbacHelper {
     }
   }
 
-  public List<Connector> getPermitted(List<Connector> connectors, String accountIdentifier,
-                                      String orgIdentifier, String projectIdentifier) {
-    if(!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+  public List<Connector> getPermitted(
+      List<Connector> connectors, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
             Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
       return checkAccess(connectors);
     }
@@ -129,22 +128,23 @@ public class ConnectorRbacHelper {
   }
 
   private List<Connector> checkAccess(List<Connector> connectors) {
-    Map<ConnectorResource, List<Connector>> connectorsMap = connectors.stream().collect(groupingBy(ConnectorResource::fromConnector));
+    Map<ConnectorResource, List<Connector>> connectorsMap =
+        connectors.stream().collect(groupingBy(ConnectorResource::fromConnector));
     List<PermissionCheckDTO> permissionChecks =
-            connectors.stream()
-                    .map(connector
-                            -> PermissionCheckDTO.builder()
-                            .permission(VIEW_CONNECTOR_PERMISSION)
-                            .resourceIdentifier(connector.getIdentifier())
-                            .resourceScope(ResourceScope.of(
-                                    connector.getAccountIdentifier(), connector.getOrgIdentifier(), connector.getProjectIdentifier()))
-                            .resourceType(ResourceTypes.CONNECTOR)
-                            .build())
-                    .collect(Collectors.toList());
+        connectors.stream()
+            .map(connector
+                -> PermissionCheckDTO.builder()
+                       .permission(VIEW_CONNECTOR_PERMISSION)
+                       .resourceIdentifier(connector.getIdentifier())
+                       .resourceScope(ResourceScope.of(connector.getAccountIdentifier(), connector.getOrgIdentifier(),
+                           connector.getProjectIdentifier()))
+                       .resourceType(ResourceTypes.CONNECTOR)
+                       .build())
+            .collect(Collectors.toList());
     AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
 
     List<Connector> permittedConnectors = new ArrayList<>();
-    for(AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
+    for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
       if (accessControlDTO.isPermitted()) {
         permittedConnectors.add(connectorsMap.get(ConnectorResource.fromAccessControlDTO(accessControlDTO)).get(0));
       }
@@ -163,24 +163,24 @@ public class ConnectorRbacHelper {
 
     static ConnectorResource fromConnector(Connector connector) {
       return ConnectorResource.builder()
-              .accountIdentifier(connector.getAccountIdentifier())
-              .orgIdentifier(isBlank(connector.getOrgIdentifier()) ? null : connector.getOrgIdentifier())
-              .projectIdentifier(isBlank(connector.getProjectIdentifier()) ? null : connector.getProjectIdentifier())
-              .identifier(connector.getIdentifier())
-              .build();
+          .accountIdentifier(connector.getAccountIdentifier())
+          .orgIdentifier(isBlank(connector.getOrgIdentifier()) ? null : connector.getOrgIdentifier())
+          .projectIdentifier(isBlank(connector.getProjectIdentifier()) ? null : connector.getProjectIdentifier())
+          .identifier(connector.getIdentifier())
+          .build();
     }
 
     static ConnectorResource fromAccessControlDTO(AccessControlDTO accessControlDTO) {
       return ConnectorResource.builder()
-              .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
-              .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())
-                      ? null
-                      : accessControlDTO.getResourceScope().getOrgIdentifier())
-              .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
-                      ? null
-                      : accessControlDTO.getResourceScope().getProjectIdentifier())
-              .identifier(accessControlDTO.getResourceIdentifier())
-              .build();
+          .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
+          .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())
+                  ? null
+                  : accessControlDTO.getResourceScope().getOrgIdentifier())
+          .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
+                  ? null
+                  : accessControlDTO.getResourceScope().getProjectIdentifier())
+          .identifier(accessControlDTO.getResourceIdentifier())
+          .build();
     }
   }
 }
