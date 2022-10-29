@@ -17,8 +17,6 @@ import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.AccessControlDTO;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
@@ -44,7 +42,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -126,15 +123,12 @@ public class ConnectorRbacHelper {
                                       String orgIdentifier, String projectIdentifier) {
     if(!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
             Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
-      return Streams.stream(Iterables.partition(connectors, 1000))
-              .map(this::checkAccess)
-              .flatMap(Collection::stream)
-              .collect(Collectors.toList());
+      return checkAccess(connectors);
     }
     return connectors;
   }
 
-  private Collection<Connector> checkAccess(List<Connector> connectors) {
+  private List<Connector> checkAccess(List<Connector> connectors) {
     Map<ConnectorResource, List<Connector>> connectorsMap = connectors.stream().collect(groupingBy(ConnectorResource::fromConnector));
     List<PermissionCheckDTO> permissionChecks =
             connectors.stream()
@@ -147,9 +141,9 @@ public class ConnectorRbacHelper {
                             .resourceType(ResourceTypes.CONNECTOR)
                             .build())
                     .collect(Collectors.toList());
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionChecks);
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
 
-    Collection<Connector> permittedConnectors = new ArrayList<>();
+    List<Connector> permittedConnectors = new ArrayList<>();
     for(AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
       if (accessControlDTO.isPermitted()) {
         permittedConnectors.add(connectorsMap.get(ConnectorResource.fromAccessControlDTO(accessControlDTO)).get(0));
