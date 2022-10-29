@@ -117,13 +117,12 @@ public class GovernancePolicyPackResource {
     if (policyPackService.listName(accountId, policyPack.getName(), true) != null) {
       throw new InvalidRequestException("Policy pack with this name already exits");
     }
-    if(!policyPack.getIsOOTB()) {
+    if (!policyPack.getIsOOTB()) {
       policyPack.setAccountId(accountId);
-    }
-    else {
+    } else {
       policyPack.setAccountId("");
     }
-    policyService.check( policyPack.getPoliciesIdentifier());
+    policyService.check(policyPack.getPoliciesIdentifier());
     policyPackService.save(policyPack);
     return ResponseDTO.newResponse(policyPack.toDTO());
   }
@@ -149,7 +148,7 @@ public class GovernancePolicyPackResource {
     policyPack.toDTO();
     policyPack.setAccountId(accountId);
     policyPackService.listName(accountId, policyPack.getName(), false);
-    policyService.check( policyPack.getPoliciesIdentifier());
+    policyService.check(policyPack.getPoliciesIdentifier());
     policyPackService.update(policyPack);
     return ResponseDTO.newResponse(policyPack);
   }
@@ -168,13 +167,13 @@ public class GovernancePolicyPackResource {
       })
   public ResponseDTO<PolicyPack>
   updatePolicy(@RequestBody(required = true,
-          description = "Request body containing ceViewFolder object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
+      description = "Request body containing ceViewFolder object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
     //  rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
     PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId("");
-    policyPackService.listName("" ,policyPack.getName(), false);
-    policyService.check( policyPack.getPoliciesIdentifier());
+    policyPackService.listName("", policyPack.getName(), false);
+    policyService.check(policyPack.getPoliciesIdentifier());
     policyPackService.update(policyPack);
     return ResponseDTO.newResponse(policyPack);
   }
@@ -207,13 +206,14 @@ public class GovernancePolicyPackResource {
 
   @POST
   @Path("policypack/list")
-  @ApiOperation(value = "Get policies for pack", nickname = "getPolicies")
+  @ApiOperation(value = "list all policy packs", nickname = "listPolicyPacks")
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(operationId = "getPolicies", description = "Fetch policies ", summary = "Fetch policies for account",
+  @Operation(operationId = "listPolicyPacks", description = "Fetch policy packs ",
+      summary = "Fetch policy packs for account",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            description = "Returns List of policies", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns List of policy packs",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<List<PolicyPack>>
   listPolicyPack(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
@@ -221,7 +221,7 @@ public class GovernancePolicyPackResource {
       @RequestBody(required = true,
           description = "Request body containing policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     // rbacHelper.checkPolicyPackPermission(accountId, null, null);
-
+    // TODO: Query support for this api similar to policy list
     return ResponseDTO.newResponse(policyPackService.list(accountId));
   }
 
@@ -258,20 +258,17 @@ public class GovernancePolicyPackResource {
   @ApiOperation(value = "Delete a policy", nickname = "deletePolicy")
   @LogAccountIdentifier
   @Operation(operationId = "deletePolicy", description = "Delete a Policy for the given a ID.",
-          summary = "Delete a policy",
-          responses =
-                  {
-                          @io.swagger.v3.oas.annotations.responses.
-                                  ApiResponse(description = "A boolean whether the delete was successful or not",
-                                  content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-                  })
+      summary = "Delete a policy",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "A boolean whether the delete was successful or not",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
   public ResponseDTO<Boolean>
   deleteOOTB(@PathParam("uuid") @Parameter(
-          required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
-    boolean result =
-            policyPackService.deleteOOTB(uuid);
+      required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
+    boolean result = policyPackService.deleteOOTB(uuid);
     return ResponseDTO.newResponse(result);
   }
-
-
 }

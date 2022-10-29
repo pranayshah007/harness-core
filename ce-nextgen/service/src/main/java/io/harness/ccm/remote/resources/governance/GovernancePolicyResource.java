@@ -81,7 +81,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -114,15 +113,17 @@ public class GovernancePolicyResource {
   private final PolicyPackService policyPackService;
   private final PolicyEnforcementService policyEnforcementService;
   private final CCMRbacHelper rbacHelper;
-  @Autowired private ConnectorResourceClient connectorResourceClient;
+  private final ConnectorResourceClient connectorResourceClient;
 
   @Inject
   public GovernancePolicyResource(GovernancePolicyService governancePolicyService, CCMRbacHelper rbacHelper,
-      PolicyEnforcementService policyEnforcementService, PolicyPackService policyPackService) {
+      PolicyEnforcementService policyEnforcementService, PolicyPackService policyPackService,
+      ConnectorResourceClient connectorResourceClient) {
     this.governancePolicyService = governancePolicyService;
     this.rbacHelper = rbacHelper;
     this.policyEnforcementService = policyEnforcementService;
     this.policyPackService = policyPackService;
+    this.connectorResourceClient = connectorResourceClient;
   }
 
   // Internal API for OOTB policy creation
@@ -194,14 +195,14 @@ public class GovernancePolicyResource {
   @ApiOperation(value = "Update a existing OOTB Policy", nickname = "updatePolicy")
   @LogAccountIdentifier
   @Operation(operationId = "updatePolicy", description = "Update a Policy", summary = "Update a Policy",
-          responses =
-                  {
-                          @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update a existing OOTB Policy",
-                                  content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
-                  })
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update a existing OOTB Policy",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
   public ResponseDTO<Policy>
-  updatePolicy(@RequestBody(required = true,
-                       description = "Request body containing policy object") @Valid CreatePolicyDTO createPolicyDTO) {
+  updatePolicy(@RequestBody(
+      required = true, description = "Request body containing policy object") @Valid CreatePolicyDTO createPolicyDTO) {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
@@ -229,8 +230,7 @@ public class GovernancePolicyResource {
   public ResponseDTO<Boolean>
   delete(@PathParam("policyId") @Parameter(
       required = true, description = "Unique identifier for the policy") @NotNull @Valid String name) {
-    boolean result =
-            governancePolicyService.delete("", governancePolicyService.listName("", name, false).getUuid());
+    boolean result = governancePolicyService.delete("", governancePolicyService.listName("", name, false).getUuid());
     return ResponseDTO.newResponse(result);
   }
 
@@ -280,6 +280,9 @@ public class GovernancePolicyResource {
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing policy object") @Valid ListDTO listDTO) {
     // rbacHelper.checkPolicyViewPermission(accountId, null, null);
+    if (listDTO == null) {
+      // TODO: Return 400 when request payload is malformed. Same for other POST requests
+    }
     GovernancePolicyFilter query = listDTO.getGovernancePolicyFilter();
     query.setAccountId(accountId);
     log.info("assigned {} {}", query.getAccountId(), query.getIsOOTB());

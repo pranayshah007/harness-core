@@ -41,7 +41,7 @@ import org.mongodb.morphia.annotations.Id;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity(value = "governancePolicy", noClassnameStored = true)
 @Schema(description = "This object will contain the complete definition of a Cloud Cost Policies")
-//TODO add index with accid + name
+// TODO add index with accid + name
 public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
                                      CreatedByAware, UpdatedByAware {
   @Id @Schema(description = "unique id") String uuid;
@@ -69,7 +69,7 @@ public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware
                  .name("policy")
                  .field(PolicyId.name)
                  .field(PolicyId.accountId)
-                // .field(PolicyId.cloudProvider)
+                 // .field(PolicyId.cloudProvider)
                  .field(PolicyId.orgIdentifier)
                  .field(PolicyId.projectIdentifier)
                  .build())
@@ -87,6 +87,7 @@ public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware
         .cloudProvider(getCloudProvider())
         .versionLabel(getVersionLabel())
         .isStablePolicy(getIsStablePolicy())
+        .storeType(getStoreType())
         .isOOTB(getIsOOTB())
         .tags(getTags())
         .deleted(getDeleted())
