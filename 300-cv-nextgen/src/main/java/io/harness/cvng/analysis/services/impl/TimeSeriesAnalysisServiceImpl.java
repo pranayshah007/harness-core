@@ -223,6 +223,14 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
 
   private TimeSeriesCanaryLearningEngineTask_v2 createDeploymentTimeSeriesLearningEngineTask(AnalysisInput input) {
     String taskId = generateUuid();
+    Set<String> controlHosts = new HashSet<>();
+    Set<String> testHosts = new HashSet<>();
+    if (isNotEmpty(input.getControlHosts())) {
+      controlHosts = input.getControlHosts();
+    }
+    if (isNotEmpty(input.getTestHosts())) {
+      testHosts = input.getTestHosts();
+    }
     VerificationJobInstance verificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(input.getVerificationJobInstanceId());
     CanaryBlueGreenVerificationJob verificationJob =
@@ -248,8 +256,8 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     timeSeriesLearningEngineTask.setAnalysisSaveUrl(createVerificationTaskAnalysisSaveUrl(taskId));
     timeSeriesLearningEngineTask.setFailureUrl(learningEngineTaskService.createFailureUrl(taskId));
     timeSeriesLearningEngineTask.setUuid(taskId);
-    timeSeriesLearningEngineTask.setControlHosts(input.getControlHosts());
-    timeSeriesLearningEngineTask.setTestHosts(input.getTestHosts());
+    timeSeriesLearningEngineTask.setControlHosts(controlHosts);
+    timeSeriesLearningEngineTask.setTestHosts(testHosts);
 
     DeploymentVerificationTaskInfo deploymentVerificationTaskInfo =
         DeploymentVerificationTaskInfo.builder()
@@ -350,8 +358,10 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
     uriBuilder.addParameter("startTime", Long.toString(verificationJobInstance.getStartTime().toEpochMilli()));
     uriBuilder.addParameter("endTime", Long.toString(input.getEndTime().toEpochMilli()));
-    if (isNotEmpty(input.getControlHosts())) {
+    if (isNotEmpty(input.getTestHosts())) {
       uriBuilder.addParameter("hosts", String.join(",", input.getTestHosts()));
+    } else {
+      uriBuilder.addParameter("hosts", "");
     }
     return getUriString(uriBuilder);
   }
@@ -377,6 +387,8 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
     if (isNotEmpty(input.getControlHosts())) {
       uriBuilder.addParameter("hosts", String.join(",", input.getControlHosts()));
+    } else {
+      uriBuilder.addParameter("hosts", "");
     }
     if (input.getLearningEngineTaskType().equals(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES)) {
       uriBuilder.addParameter("startTime", Long.toString(verificationJobInstance.getStartTime().toEpochMilli()));

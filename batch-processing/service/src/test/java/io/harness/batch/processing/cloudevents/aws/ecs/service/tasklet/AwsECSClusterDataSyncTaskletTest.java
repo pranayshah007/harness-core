@@ -10,6 +10,7 @@ package io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet;
 import static io.harness.rule.OwnerRule.HITESH;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.any;
@@ -29,6 +30,7 @@ import io.harness.batch.processing.cloudevents.aws.ecs.service.intfc.AwsECSClust
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AwsEC2HelperService;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AwsECSHelperService;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.EcsMetricClient;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.aws.CEAWSConfigHelper;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.response.EcsUtilizationData;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.response.MetricValue;
@@ -126,6 +128,7 @@ public class AwsECSClusterDataSyncTaskletTest extends CategoryTest {
   @Mock private AwsECSClusterService awsECSClusterService;
   @Mock private NGConnectorHelper ngConnectorHelper;
   @Mock private LastReceivedPublishedMessageDao lastReceivedPublishedMessageDao;
+  @Mock private CEAWSConfigHelper ceawsConfigHelper;
 
   private MetricValue getMetricValue(String metricName, String statistic, long startTime, double value) {
     return MetricValue.builder()
@@ -229,6 +232,7 @@ public class AwsECSClusterDataSyncTaskletTest extends CategoryTest {
         .listSettingAttributesCreatedInDuration(any(), any(), any());
 
     Mockito.doReturn(emptyList()).when(ngConnectorHelper).getNextGenConnectors(any(), any(), any(), any());
+    Mockito.doReturn(emptyMap()).when(ceawsConfigHelper).getCrossAccountAttributes(any());
 
     RepeatStatus execute = awsECSClusterDataSyncTasklet.execute(null, chunkContext);
     assertThat(execute).isNull();

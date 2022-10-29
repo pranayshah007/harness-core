@@ -1712,21 +1712,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       // This will Add ECS delegate specific fields if DELEGATE_TYPE = "ECS"
       updateBuilderIfEcsDelegate(builder);
-      DelegateParams delegateParams =
-          builder.build()
-              .toBuilder()
-              .lastHeartBeat(clock.millis())
-              .pollingModeEnabled(delegateConfiguration.isPollForTasks())
-              .heartbeatAsObject(true)
-              .currentlyExecutingDelegateTasks(currentlyExecutingTasks.values()
-                                                   .stream()
-                                                   .map(DelegateTaskPackage::getDelegateTaskId)
-                                                   .collect(toList()))
-              .location(Paths.get("").toAbsolutePath().toString())
-              .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
-              .delegateConnectionId(delegateConnectionId)
-              .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
-              .build();
+      DelegateParams delegateParams = builder.build()
+                                          .toBuilder()
+                                          .delegateId(delegateId)
+                                          .lastHeartBeat(clock.millis())
+                                          .location(Paths.get("").toAbsolutePath().toString())
+                                          .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
+                                          .delegateConnectionId(delegateConnectionId)
+                                          .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+                                          .build();
 
       try {
         HTimeLimiter.callInterruptible21(
@@ -1743,50 +1737,20 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
   }
 
-  private void sendKeepAlivePacket(DelegateParamsBuilder builder, Socket socket) {
-    if (!shouldContactManager()) {
-      return;
-    }
-
-    if (socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED) {
-      log.debug("Sending keepAlive packet...");
-      updateBuilderIfEcsDelegate(builder);
-      try {
-        HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofSeconds(15), () -> {
-          DelegateParams delegateParams = builder.build().toBuilder().keepAlivePacket(true).build();
-          return socket.fire(JsonUtils.asJson(delegateParams));
-        });
-      } catch (UncheckedTimeoutException ex) {
-        log.warn("Timed out sending keep alive packet", ex);
-      } catch (Exception e) {
-        log.error("Error sending heartbeat", e);
-      }
-    } else {
-      log.warn("Socket is not open, status: {}", socket.status().toString());
-    }
-  }
-
   private void sendHeartbeat(DelegateParamsBuilder builder) {
     if (!shouldContactManager() || !acquireTasks.get() || frozen.get()) {
       return;
     }
     try {
       updateBuilderIfEcsDelegate(builder);
-      DelegateParams delegateParams =
-          builder.build()
-              .toBuilder()
-              .keepAlivePacket(false)
-              .pollingModeEnabled(true)
-              .heartbeatAsObject(true)
-              .currentlyExecutingDelegateTasks(currentlyExecutingTasks.values()
-                                                   .stream()
-                                                   .map(DelegateTaskPackage::getDelegateTaskId)
-                                                   .collect(toList()))
-              .location(Paths.get("").toAbsolutePath().toString())
-              .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
-              .delegateConnectionId(delegateConnectionId)
-              .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
-              .build();
+      DelegateParams delegateParams = builder.build()
+                                          .toBuilder()
+                                          .keepAlivePacket(false)
+                                          .location(Paths.get("").toAbsolutePath().toString())
+                                          .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
+                                          .delegateConnectionId(delegateConnectionId)
+                                          .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+                                          .build();
       lastHeartbeatSentAt.set(clock.millis());
       sentFirstHeartbeat.set(true);
       RestResponse<DelegateHeartbeatResponse> delegateParamsResponse =
@@ -2499,24 +2463,21 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void handleEcsDelegateSpecificMessage(String message) {
-    if (isEcsDelegate()) {
-      int indexForToken = message.lastIndexOf(TOKEN);
-      int indexForSeqNum = message.lastIndexOf(SEQ);
-      String token = message.substring(indexForToken + 7, indexForSeqNum);
-      String sequenceNum = message.substring(indexForSeqNum + 5);
+    int indexForToken = message.lastIndexOf(TOKEN);
+    int indexForSeqNum = message.lastIndexOf(SEQ);
+    String token = message.substring(indexForToken + 7, indexForSeqNum);
+    String sequenceNum = message.substring(indexForSeqNum + 5);
+    // Did not receive correct data, skip updating token and sequence
+    if (isInvalidData(token) || isInvalidData(sequenceNum)) {
+      return;
+    }
 
-      // Did not receive correct data, skip updating token and sequence
-      if (isInvalidData(token) || isInvalidData(sequenceNum)) {
-        return;
-      }
-
-      try {
-        FileIo.writeWithExclusiveLockAcrossProcesses(
-            TOKEN + token + SEQ + sequenceNum, DELEGATE_SEQUENCE_CONFIG_FILE, StandardOpenOption.TRUNCATE_EXISTING);
-        log.info("Token Received From Manager : {}, SeqNum Received From Manager: {}", token, sequenceNum);
-      } catch (Exception e) {
-        log.error("Failed to write registration response into delegate_sequence file", e);
-      }
+    try {
+      FileIo.writeWithExclusiveLockAcrossProcesses(
+          TOKEN + token + SEQ + sequenceNum, DELEGATE_SEQUENCE_CONFIG_FILE, StandardOpenOption.TRUNCATE_EXISTING);
+      log.info("Token Received From Manager : {}, SeqNum Received From Manager: {}", token, sequenceNum);
+    } catch (Exception e) {
+      log.error("Failed to write registration response into delegate_sequence file", e);
     }
   }
 

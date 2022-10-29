@@ -39,6 +39,7 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
+import io.harness.delegate.heartbeat.polling.DelegatePollingHeartbeatService;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.delegate.task.TaskLogContext;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
@@ -129,6 +130,7 @@ public class DelegateAgentResource {
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
   private InstanceSyncResponsePublisher instanceSyncResponsePublisher;
   private PollingResourceClient pollingResourceClient;
+  private DelegatePollingHeartbeatService delegatePollingHeartbeatService;
 
   @Inject
   public DelegateAgentResource(DelegateService delegateService, AccountService accountService, HPersistence persistence,
@@ -138,7 +140,8 @@ public class DelegateAgentResource {
       ConnectorHearbeatPublisher connectorHearbeatPublisher, KryoSerializer kryoSerializer,
       ConfigurationController configurationController, FeatureFlagService featureFlagService,
       DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
-      InstanceSyncResponsePublisher instanceSyncResponsePublisher) {
+      InstanceSyncResponsePublisher instanceSyncResponsePublisher,
+      DelegatePollingHeartbeatService delegatePollingHeartbeatService) {
     this.instanceHelper = instanceHelper;
     this.delegateService = delegateService;
     this.accountService = accountService;
@@ -154,6 +157,7 @@ public class DelegateAgentResource {
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
     this.pollingResourceClient = pollingResourceClient;
     this.instanceSyncResponsePublisher = instanceSyncResponsePublisher;
+    this.delegatePollingHeartbeatService = delegatePollingHeartbeatService;
   }
 
   @DelegateAuth
@@ -457,8 +461,7 @@ public class DelegateAgentResource {
 
         return new RestResponse<>(buildDelegateHBResponse(registeredDelegate));
       } else {
-        return new RestResponse<>(buildDelegateHBResponse(delegateService.updateHeartbeatForDelegateWithPollingEnabled(
-            Delegate.getDelegateFromParams(delegateParams, isConnectedUsingMtls))));
+        return new RestResponse<>(delegatePollingHeartbeatService.process(delegateParams));
       }
     }
   }

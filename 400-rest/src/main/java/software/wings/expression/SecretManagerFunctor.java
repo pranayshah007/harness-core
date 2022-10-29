@@ -45,9 +45,9 @@ import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
 import java.nio.charset.Charset;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
@@ -75,10 +75,10 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   private final ExecutorService expressionEvaluatorExecutor;
   private final boolean evaluateSync;
 
-  @Default private Map<String, String> evaluatedSecrets = new HashMap<>();
-  @Default private Map<String, String> evaluatedDelegateSecrets = new HashMap<>();
-  @Default private Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
-  @Default private Map<String, SecretDetail> secretDetails = new HashMap<>();
+  @Default private Map<String, String> evaluatedSecrets = new ConcurrentHashMap<>();
+  @Default private Map<String, String> evaluatedDelegateSecrets = new ConcurrentHashMap<>();
+  @Default private Map<String, EncryptionConfig> encryptionConfigs = new ConcurrentHashMap<>();
+  @Default private Map<String, SecretDetail> secretDetails = new ConcurrentHashMap<>();
 
   DelegateMetricsService delegateMetricsService;
 

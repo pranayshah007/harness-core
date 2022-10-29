@@ -1,0 +1,10 @@
+{
+  "@type": "MessageCard",
+  "themeColor": "${THEME_COLOR}",
+  "summary": "Deployment Freeze Window is Enabled",
+  "sections": [
+    {
+      "activityTitle": "This is a test notification from Harness"
+    }
+  ]
+}

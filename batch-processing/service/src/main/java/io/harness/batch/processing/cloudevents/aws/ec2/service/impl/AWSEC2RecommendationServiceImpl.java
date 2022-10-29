@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,19 +41,19 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
   public EC2RecommendationResponse getRecommendations(EC2RecommendationRequest request) {
     Map<RecommendationTarget, List<RightsizingRecommendation>> recommendationTargetListMap = new HashMap<>();
     List<RightsizingRecommendation> recommendationsOnCrossFamilyType =
-        getRecommendationsBasedRecommendationOnType(RecommendationTarget.CROSS_INSTANCE_FAMILY, request);
+        getRecommendationsBasedOnRecommendationTarget(RecommendationTarget.CROSS_INSTANCE_FAMILY, request);
     if (!recommendationsOnCrossFamilyType.isEmpty()) {
       recommendationTargetListMap.put(RecommendationTarget.CROSS_INSTANCE_FAMILY, recommendationsOnCrossFamilyType);
     }
     List<RightsizingRecommendation> recommendationsOnSameFamilyType =
-        getRecommendationsBasedRecommendationOnType(RecommendationTarget.SAME_INSTANCE_FAMILY, request);
+        getRecommendationsBasedOnRecommendationTarget(RecommendationTarget.SAME_INSTANCE_FAMILY, request);
     if (!recommendationsOnSameFamilyType.isEmpty()) {
       recommendationTargetListMap.put(RecommendationTarget.SAME_INSTANCE_FAMILY, recommendationsOnSameFamilyType);
     }
     return EC2RecommendationResponse.builder().recommendationMap(recommendationTargetListMap).build();
   }
 
-  List<RightsizingRecommendation> getRecommendationsBasedRecommendationOnType(
+  List<RightsizingRecommendation> getRecommendationsBasedOnRecommendationTarget(
       RecommendationTarget recommendationTarget, EC2RecommendationRequest request) {
     GetRightsizingRecommendationRequest recommendationRequest =
         new GetRightsizingRecommendationRequest()
@@ -65,7 +66,9 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
       recommendationRequest.withNextPageToken(nextPageToken);
       GetRightsizingRecommendationResult recommendationResult =
           getRecommendations(request.getAwsCrossAccountAttributes(), recommendationRequest);
-      recommendationsResult.addAll(recommendationResult.getRightsizingRecommendations());
+      if (Objects.nonNull(recommendationResult)) {
+        recommendationsResult.addAll(recommendationResult.getRightsizingRecommendations());
+      }
       nextPageToken = recommendationResult.getNextPageToken();
     } while (nextPageToken != null);
 

@@ -2,9 +2,6 @@ package io.harness.batch.processing.cloudevents.aws.ec2.service.tasklet;
 
 import static io.harness.batch.processing.ccm.UtilizationInstanceType.EC2_INSTANCE;
 
-import static software.wings.beans.SettingAttribute.SettingCategory.CE_CONNECTOR;
-import static software.wings.settings.SettingVariableTypes.CE_AWS;
-
 import io.harness.batch.processing.billing.timeseries.data.InstanceUtilizationData;
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
@@ -17,24 +14,14 @@ import io.harness.batch.processing.cloudevents.aws.ec2.service.request.EC2Recomm
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.EC2RecommendationResponse;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.Ec2UtilzationData;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.MetricValue;
-import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.aws.CEAWSConfigHelper;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.dao.recommendation.EC2RecommendationDAO;
-import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2RecommendationDetail;
-import io.harness.ccm.setup.CECloudAccountDao;
-import io.harness.connector.ConnectivityStatus;
-import io.harness.connector.ConnectorInfoDTO;
-import io.harness.connector.ConnectorResponseDTO;
-import io.harness.delegate.beans.connector.CEFeatures;
-import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.AwsCrossAccountAttributes;
-import software.wings.beans.SettingAttribute;
-import software.wings.beans.ce.CEAwsConfig;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.amazonaws.services.costexplorer.model.EC2ResourceDetails;
@@ -45,7 +32,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -58,18 +44,17 @@ import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Singleton
 public class AWSEC2RecommendationTasklet implements Tasklet {
   @Autowired private EC2MetricHelper ec2MetricHelper;
-  @Autowired private AWSEC2RecommendationService awsec2RecommendationService;
+  @Autowired private AWSEC2RecommendationService awsEc2RecommendationService;
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
-  @Autowired private CECloudAccountDao ceCloudAccountDao;
-  @Autowired private NGConnectorHelper ngConnectorHelper;
   @Autowired private UtilizationDataServiceImpl utilizationDataService;
   @Autowired private EC2RecommendationDAO ec2RecommendationDAO;
+  @Autowired private CEAWSConfigHelper ceawsConfigHelper;
+
   private static final String TERMINATE = "TERMINATE";
   private static final String MODIFY = "Modify";
 
@@ -81,13 +66,13 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
     log.info("accountId = {}", accountId);
     // call aws get-metric-data to get the cpu & memory utilisation data
-    Map<String, AwsCrossAccountAttributes> infraAccCrossArnMap = getCrossAccountAttributes(accountId);
+    Map<String, AwsCrossAccountAttributes> infraAccCrossArnMap = ceawsConfigHelper.getCrossAccountAttributes(accountId);
 
     if (!infraAccCrossArnMap.isEmpty()) {
       for (Map.Entry<String, AwsCrossAccountAttributes> infraAccCrossArn : infraAccCrossArnMap.entrySet()) {
         Instant now = Instant.now().truncatedTo(ChronoUnit.DAYS);
         // fetching the aws ec2 recommendations
-        EC2RecommendationResponse ec2RecommendationResponse = awsec2RecommendationService.getRecommendations(
+        EC2RecommendationResponse ec2RecommendationResponse = awsEc2RecommendationService.getRecommendations(
             EC2RecommendationRequest.builder().awsCrossAccountAttributes(infraAccCrossArn.getValue()).build());
         Map<String, List<EC2InstanceRecommendationInfo>> instanceLevelRecommendations = new HashMap<>();
         log.info("Ec2RecommendationResponse = {}", ec2RecommendationResponse);
@@ -228,10 +213,10 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
   }
 
   private List<AWSEC2Details> extractEC2InstanceDetails(EC2RecommendationResponse response) {
-    List<AWSEC2Details> awsec2Details = new ArrayList<>();
+    List<AWSEC2Details> awsEC2Details = new ArrayList<>();
     for (Map.Entry<RecommendationTarget, List<RightsizingRecommendation>> rightsizingRecommendations :
         response.getRecommendationMap().entrySet()) {
-      awsec2Details.addAll(rightsizingRecommendations.getValue()
+      awsEC2Details.addAll(rightsizingRecommendations.getValue()
                                .stream()
                                .map(rightsizingRecommendation -> {
                                  String instanceId = rightsizingRecommendation.getCurrentInstance().getResourceId();
@@ -244,7 +229,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
                                })
                                .collect(Collectors.toList()));
     }
-    return awsec2Details;
+    return awsEC2Details;
   }
 
   private EC2Recommendation buildRecommendationObjectFromModifyType(
@@ -373,40 +358,5 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
                          .reduce(Double::max)
                          .orElse(0.0);
     return String.valueOf(maxCost);
-  }
-
-  private Map<String, AwsCrossAccountAttributes> getCrossAccountAttributes(String accountId) {
-    List<SettingAttribute> ceConnectorsList =
-        cloudToHarnessMappingService.listSettingAttributesCreatedInDuration(accountId, CE_CONNECTOR, CE_AWS);
-    Map<String, AwsCrossAccountAttributes> crossAccountAttributesMap = new HashMap<>();
-    if (!CollectionUtils.isEmpty(ceConnectorsList)) {
-      List<CECloudAccount> ceCloudAccountList =
-          ceCloudAccountDao.getBySettingId(accountId, ceConnectorsList.get(0).getUuid());
-      ceCloudAccountList.forEach(ceCloudAccount
-          -> crossAccountAttributesMap.put(
-              ceCloudAccount.getInfraAccountId(), ceCloudAccount.getAwsCrossAccountAttributes()));
-      List<SettingAttribute> ceConnectorList =
-          cloudToHarnessMappingService.listSettingAttributesCreatedInDuration(accountId, CE_CONNECTOR, CE_AWS);
-      ceConnectorList.forEach(ceConnector -> {
-        CEAwsConfig ceAwsConfig = (CEAwsConfig) ceConnector.getValue();
-        crossAccountAttributesMap.put(ceAwsConfig.getAwsMasterAccountId(), ceAwsConfig.getAwsCrossAccountAttributes());
-      });
-    }
-    List<ConnectorResponseDTO> nextGenConnectors =
-        ngConnectorHelper.getNextGenConnectors(accountId, Arrays.asList(ConnectorType.CE_AWS),
-            Arrays.asList(CEFeatures.VISIBILITY), Arrays.asList(ConnectivityStatus.SUCCESS));
-    for (ConnectorResponseDTO connector : nextGenConnectors) {
-      ConnectorInfoDTO connectorInfo = connector.getConnector();
-      CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
-      if (ceAwsConnectorDTO != null && ceAwsConnectorDTO.getCrossAccountAccess() != null) {
-        AwsCrossAccountAttributes crossAccountAttributes =
-            AwsCrossAccountAttributes.builder()
-                .crossAccountRoleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
-                .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
-                .build();
-        crossAccountAttributesMap.put(ceAwsConnectorDTO.getAwsAccountId(), crossAccountAttributes);
-      }
-    }
-    return crossAccountAttributesMap;
   }
 }

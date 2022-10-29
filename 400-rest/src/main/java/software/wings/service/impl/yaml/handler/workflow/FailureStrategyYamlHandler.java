@@ -20,7 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.RepairActionCode;
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.FailureType;
+import io.harness.eraro.FailureType;
 import io.harness.exception.HarnessException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;

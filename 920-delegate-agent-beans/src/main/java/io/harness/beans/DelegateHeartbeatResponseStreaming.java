@@ -18,10 +18,8 @@ import lombok.Value;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "eventType", include = JsonTypeInfo.As.PROPERTY)
 public class DelegateHeartbeatResponseStreaming {
   String delegateId;
-  String status;
-  boolean useCdn;
-  String jreVersion;
+  long responseSentAt;
+  // Used by ECS
   String delegateRandomToken;
   String sequenceNumber;
-  long responseSentAt;
 }

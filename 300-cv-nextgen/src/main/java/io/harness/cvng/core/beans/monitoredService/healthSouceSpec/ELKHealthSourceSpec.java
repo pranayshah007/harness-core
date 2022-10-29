@@ -17,6 +17,7 @@ import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,6 +44,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "ELKHealthSource", description = "This is the ELK Log Health Source spec entity defined in Harness",
+    hidden = true)
 public class ELKHealthSourceSpec extends HealthSourceSpec {
   @NotNull @NotEmpty String feature;
 

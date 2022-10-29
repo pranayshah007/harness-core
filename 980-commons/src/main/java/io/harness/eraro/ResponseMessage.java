@@ -12,7 +12,6 @@ import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.eraro.Level.ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.FailureType;
 
 import java.util.EnumSet;
 import lombok.Builder;

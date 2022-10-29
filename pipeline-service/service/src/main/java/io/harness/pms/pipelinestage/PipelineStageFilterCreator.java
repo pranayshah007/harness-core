@@ -8,6 +8,7 @@
 package io.harness.pms.pipelinestage;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.yaml.ParameterField.isNotNull;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.filters.FilterCreatorHelper;
@@ -60,7 +61,7 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
       throw new InvalidRequestException("Pipeline Stage Yaml is empty");
     }
 
-    if (pipelineStageConfig.getPipelineInputs() != null && isNotEmpty(pipelineStageConfig.getInputSetReferences())) {
+    if (isNotNull(pipelineStageConfig.getPipelineInputs()) && isNotEmpty(pipelineStageConfig.getInputSetReferences())) {
       throw new InvalidRequestException("Pipeline Inputs and Pipeline Input Set references are not allowed together");
     }
 
@@ -72,7 +73,6 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
       throw new InvalidRequestException(
           String.format("Child pipeline does not exists %s ", pipelineStageConfig.getPipeline()));
     }
-
     pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get());
 
     return FilterCreationResponse.builder().build();
