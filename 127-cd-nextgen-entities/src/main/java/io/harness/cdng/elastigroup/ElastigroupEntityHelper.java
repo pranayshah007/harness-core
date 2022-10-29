@@ -24,7 +24,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
-import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
@@ -129,11 +129,11 @@ public class ElastigroupEntityHelper {
     ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
     SpotConnectorDTO connectorConfigDTO = (SpotConnectorDTO) connectorDTO.getConnectorConfig();
     SpotCredentialDTO spotCredentialDTO = connectorConfigDTO.getCredential();
-    SpotManualConfigSpecDTO spotManualConfigSpecDTO = (SpotManualConfigSpecDTO) spotCredentialDTO.getConfig();
+    SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO = (SpotPermanentTokenConfigSpecDTO) spotCredentialDTO.getConfig();
         return SpotInstConfig.builder()
-                .accountId(spotManualConfigSpecDTO.getAccountId())
-                .accountIdRef(spotManualConfigSpecDTO.getAccountIdRef())
-                .apiTokenRef(spotManualConfigSpecDTO.getApiTokenRef())
+                .accountId(spotPermanentTokenConfigSpecDTO.getSpotAccountId())
+                .accountIdRef(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef())
+                .apiTokenRef(spotPermanentTokenConfigSpecDTO.getApiTokenRef())
                 .build();
     }
 }

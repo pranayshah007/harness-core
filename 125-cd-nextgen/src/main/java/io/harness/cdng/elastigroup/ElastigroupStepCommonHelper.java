@@ -52,7 +52,6 @@ import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
-import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult;
