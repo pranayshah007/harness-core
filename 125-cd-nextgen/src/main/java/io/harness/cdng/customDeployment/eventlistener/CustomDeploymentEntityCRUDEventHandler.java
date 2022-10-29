@@ -59,25 +59,24 @@ public class CustomDeploymentEntityCRUDEventHandler {
     Map<String, List<String>> envToOrgProjectIdMap = new HashMap<>();
     Map<String, List<String>> envToInfraMap = new HashMap<>();
 
+    String templateYaml =
+        customDeploymentInfrastructureHelper.getTemplateYaml(accountRef, orgRef, projectRef, identifier, versionLabel);
     for (EntitySetupUsageDTO entitySetupUsage : entitySetupUsages) {
       if (!isNull(entitySetupUsage) && !isNull(entitySetupUsage.getReferredByEntity())) {
         String infraId = entitySetupUsage.getReferredByEntity().getEntityRef().getIdentifier();
         String environment = getEnvironment(entitySetupUsage);
         String orgIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getOrgIdentifier();
         String projectIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getProjectIdentifier();
-        envToOrgProjectIdMap.put(environment, Arrays.asList(orgIdentifierEnv, projectIdentifierEnv));
-        envToInfraMap.computeIfAbsent(environment, k -> new ArrayList<>()).add(infraId);
+        String infraYaml = getInfraYaml(entitySetupUsage, accountRef);
+        boolean updateRequired =
+            customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(infraYaml, templateYaml, accountRef);
+        if (updateRequired) {
+          envToOrgProjectIdMap.put(environment, Arrays.asList(orgIdentifierEnv, projectIdentifierEnv));
+          envToInfraMap.computeIfAbsent(environment, k -> new ArrayList<>()).add(infraId);
+        }
       }
     }
-
-    String infraYaml = getInfraYaml(entitySetupUsages.get(0), accountRef);
-    String templateYaml = customDeploymentInfrastructureHelper.getTemplateYaml(
-        accountRef, orgRef, projectRef, identifier, versionLabel.equals(STABLE_VERSION) ? null : versionLabel);
-    boolean updateRequired =
-        customDeploymentInfrastructureHelper.checkIfInfraIsObselete(infraYaml, templateYaml, accountRef);
-    if (updateRequired) {
-      updateInfrasAsObsolete(envToInfraMap, accountRef, envToOrgProjectIdMap);
-    }
+    updateInfrasAsObsolete(envToInfraMap, accountRef, envToOrgProjectIdMap);
     return true;
   }
 

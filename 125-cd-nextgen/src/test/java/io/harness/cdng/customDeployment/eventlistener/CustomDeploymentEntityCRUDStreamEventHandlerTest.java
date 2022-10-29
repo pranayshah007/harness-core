@@ -95,7 +95,7 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
                                               .envIdentifier(ENV)
                                               .build();
     List<EntitySetupUsageDTO> entityList = new ArrayList<>();
-    when(customDeploymentInfrastructureHelper.checkIfInfraIsObselete(any(), any(), any())).thenCallRealMethod();
+    when(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(any(), any(), any())).thenCallRealMethod();
     EntitySetupUsageDTO entitySetupUsageDTO =
         EntitySetupUsageDTO.builder()
             .referredByEntity(EntityDetail.builder().entityRef(infraDefReference).build())
@@ -139,7 +139,7 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
     when(infrastructureEntityService.get(any(), any(), any(), any(), any())).thenReturn(Optional.of(infrastructure));
     when(customDeploymentInfrastructureHelper.getTemplateYaml(any(), any(), any(), any(), any()))
         .thenReturn(templateYaml);
-    when(customDeploymentInfrastructureHelper.checkIfInfraIsObselete(any(), any(), any())).thenCallRealMethod();
+    when(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(any(), any(), any())).thenCallRealMethod();
     when(entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any(), any()))
         .thenReturn(entityList);
     boolean isObsolete = customDeploymentEntityCRUDEventHandler.updateInfraAsObsolete(ACCOUNT, null, null, TEMP, null);
@@ -173,7 +173,7 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
     when(infrastructureEntityService.get(any(), any(), any(), any(), any())).thenReturn(Optional.of(infrastructure));
     when(customDeploymentInfrastructureHelper.getTemplateYaml(any(), any(), any(), any(), any()))
         .thenReturn(templateYaml);
-    when(customDeploymentInfrastructureHelper.checkIfInfraIsObselete(any(), any(), any())).thenCallRealMethod();
+    when(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(any(), any(), any())).thenCallRealMethod();
     when(entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any(), any()))
         .thenReturn(entityList);
     boolean isObsolete = customDeploymentEntityCRUDEventHandler.updateInfraAsObsolete(ACCOUNT, ORG, null, TEMP, null);
