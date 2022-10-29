@@ -44,7 +44,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 
 import java.text.SimpleDateFormat;
@@ -63,7 +63,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
   @Mock private PlanService planService;
   @Mock private PlanExecutionService planExecutionService;
   @Mock private NodeTypeLookupService nodeTypeLookupService;
-  @Mock private PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
+  @Mock private PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   @Mock private NotificationHelper notificationHelper;
   @Mock private RecentExecutionsInfoHelper recentExecutionsInfoHelper;

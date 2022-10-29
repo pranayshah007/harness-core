@@ -27,7 +27,7 @@ import io.harness.pms.pipeline.observer.OrchestrationObserverUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
@@ -42,14 +42,14 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserver, OrchestrationEndObserver {
   private final PlanExecutionService planExecutionService;
-  private final PmsExecutionSummaryRespository pmsExecutionSummaryRepository;
+  private final PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   private OrchestrationEventEmitter eventEmitter;
 
   private WaitNotifyEngine waitNotifyEngine;
 
   @Inject
   public PipelineStatusUpdateEventHandler(PlanExecutionService planExecutionService,
-      PmsExecutionSummaryRespository pmsExecutionSummaryRepository, OrchestrationEventEmitter eventEmitter,
+      PmsExecutionSummaryRepository pmsExecutionSummaryRepository, OrchestrationEventEmitter eventEmitter,
       WaitNotifyEngine waitNotifyEngine) {
     this.planExecutionService = planExecutionService;
     this.pmsExecutionSummaryRepository = pmsExecutionSummaryRepository;

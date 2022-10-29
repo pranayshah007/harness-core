@@ -18,6 +18,16 @@ public class NodeProjectionUtils {
   public static final Set<String> fieldsForRetryInterruptHandler = Sets.newHashSet(
       NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.oldRetry, NodeExecutionKeys.mode);
 
+  public static final Set<String> fieldsForInterruptPropagatorHandler = Sets.newHashSet(
+      NodeExecutionKeys.parentId, NodeExecutionKeys.status, NodeExecutionKeys.stepType, NodeExecutionKeys.mode);
+
+  public static final Set<String> fieldsForDiscontinuingNodes =
+      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.executableResponses,
+          NodeExecutionKeys.mode, NodeExecutionKeys.unitProgresses);
+
+  public static final Set<String> fieldsForInstrumentationHandler =
+      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status);
+
   public static final Set<String> withAmbianceAndStatus =
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status);
 
@@ -40,6 +50,6 @@ public class NodeProjectionUtils {
       NodeExecutionKeys.ambiance, NodeExecutionKeys.mode, NodeExecutionKeys.startTs, NodeExecutionKeys.endTs,
       NodeExecutionKeys.parentId, NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry);
 
-  public static Set<String> forFacilitation = Sets.newHashSet(NodeExecutionKeys.ambiance,
+  public static final Set<String> forFacilitation = Sets.newHashSet(NodeExecutionKeys.ambiance,
       NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.module, NodeExecutionKeys.resolvedParams);
 }

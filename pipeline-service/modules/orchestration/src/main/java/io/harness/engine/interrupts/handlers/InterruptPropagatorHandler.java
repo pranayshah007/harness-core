@@ -19,25 +19,29 @@ import io.harness.engine.interrupts.InterruptService;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 /**
  * This serves as base class for the interrupts that are registered with parent but they recursively need to traverse
  * through  the tree and take appropriate action on the leaf node like ABORT_ALL, EXPIRE_ALL
- *
+ * <p>
  * TODO: Evaluate this an extract PAUSE_ALL and RESUME_ALL here too
- *
  */
 
 @OwnedBy(PIPELINE)
 @Slf4j
 public abstract class InterruptPropagatorHandler {
+  private static int MAX_NODES_BATCH_SIZE = 1000;
+
   @Inject private InterruptService interruptService;
   @Inject private NodeExecutionService nodeExecutionService;
 
@@ -52,8 +56,23 @@ public abstract class InterruptPropagatorHandler {
   public Interrupt handleChildNodes(Interrupt interrupt, String nodeExecutionId) {
     Interrupt updatedInterrupt = interruptService.markProcessing(interrupt.getUuid());
     // Find all the nodeExecutions for this plan
-    List<NodeExecution> allExecutions = nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
-        interrupt.getPlanExecutionId(), StatusUtils.abortAndExpireStatuses(), false, new HashSet<>());
+    int currentPage = 0;
+    int totalPages = 0;
+
+    List<NodeExecution> allExecutions = new LinkedList<>();
+    do {
+      Page<NodeExecution> paginatedNodeExecutions =
+          nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusIn(interrupt.getPlanExecutionId(),
+              StatusUtils.abortAndExpireStatuses(), NodeProjectionUtils.fieldsForInstrumentationHandler,
+              PageRequest.of(currentPage, MAX_NODES_BATCH_SIZE));
+      if (paginatedNodeExecutions == null || paginatedNodeExecutions.getTotalElements() == 0) {
+        break;
+      }
+      totalPages = paginatedNodeExecutions.getTotalPages();
+      allExecutions.addAll(new LinkedList<>(paginatedNodeExecutions.getContent()));
+      currentPage++;
+    } while (currentPage < totalPages);
+
     // Filter all the nodes that are in queued state
     List<NodeExecution> finalList =
         allExecutions.stream()
@@ -81,8 +100,21 @@ public abstract class InterruptPropagatorHandler {
       // If count is 0 that means no running leaf node and hence nothing to do
       return updatedInterrupt;
     } else {
-      List<NodeExecution> discontinuingNodeExecutions =
-          nodeExecutionService.fetchNodeExecutionsByStatus(updatedInterrupt.getPlanExecutionId(), DISCONTINUING);
+      int currentPage = 0;
+      int totalPages = 0;
+
+      List<NodeExecution> discontinuingNodeExecutions = new LinkedList<>();
+      do {
+        Page<NodeExecution> paginatedNodeExecutions =
+            nodeExecutionService.fetchNodeExecutionsByStatus(updatedInterrupt.getPlanExecutionId(), DISCONTINUING,
+                NodeProjectionUtils.fieldsForDiscontinuingNodes, PageRequest.of(currentPage, MAX_NODES_BATCH_SIZE));
+        if (paginatedNodeExecutions == null || paginatedNodeExecutions.getTotalElements() == 0) {
+          break;
+        }
+        totalPages = paginatedNodeExecutions.getTotalPages();
+        discontinuingNodeExecutions.addAll(new LinkedList<>(paginatedNodeExecutions.getContent()));
+        currentPage++;
+      } while (currentPage < totalPages);
 
       if (isEmpty(discontinuingNodeExecutions)) {
         log.warn(updatedInterrupt.getType()

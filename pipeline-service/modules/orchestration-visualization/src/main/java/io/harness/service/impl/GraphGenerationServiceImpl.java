@@ -291,6 +291,9 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           new InvalidRequestException("Graph could not be generated for planExecutionId [" + planExecutionId + "]."));
     }
     List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodeExecutionsWithoutOldRetries(planExecutionId);
+    log.warn(String.format(
+        "[GRAPH_ERROR]: Trying to build orchestration graph from scratch for planExecutionId [%s] with nodeExecutionsCount [%d]",
+        planExecutionId, nodeExecutions.size()));
     if (isEmpty(nodeExecutions)) {
       return OrchestrationGraph.builder()
           .adjacencyList(OrchestrationAdjacencyListInternal.builder()
