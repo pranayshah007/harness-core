@@ -38,6 +38,7 @@ import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
 import io.harness.cdng.ecs.EcsRunTaskStep;
 import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
+import io.harness.cdng.elastigroup.ElastigroupSetupStep;
 import io.harness.cdng.gitops.CreatePRStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
@@ -168,6 +169,7 @@ public class NgStepRegistrar {
     engineSteps.put(StartupCommandStep.STEP_TYPE, StartupCommandStep.class);
     engineSteps.put(AzureServiceSettingsStep.STEP_TYPE, AzureServiceSettingsStep.class);
     engineSteps.put(ElastigroupServiceSettingsStep.STEP_TYPE, ElastigroupServiceSettingsStep.class);
+    engineSteps.put(ElastigroupSetupStep.STEP_TYPE, ElastigroupSetupStep.class);
     engineSteps.put(ApplicationSettingsStep.STEP_TYPE, ApplicationSettingsStep.class);
     engineSteps.put(ConnectionStringsStep.STEP_TYPE, ConnectionStringsStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());

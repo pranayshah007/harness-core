@@ -8,13 +8,14 @@
 package io.harness.cdng.visitor.helpers.cdstepinfo;
 
 import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepInfo;
+import io.harness.cdng.elastigroup.ElastigroupSetupStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
 public class ElastigroupSetupStepInfoVisitorHelper implements ConfigValidator {
   @Override
   public Object createDummyVisitableElement(Object originalElement) {
-    return EcsBlueGreenCreateServiceStepInfo.infoBuilder().build();
+    return ElastigroupSetupStepInfo.infoBuilder().build();
   }
 
   @Override

@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ecs.EcsCommandUnitConstants;
+import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -26,7 +27,6 @@ public interface ElastigroupSpecParameters extends SpecParameters {
   @Nonnull
   @JsonIgnore
   default List<String> getCommandUnits() {
-    return Arrays.asList(EcsCommandUnitConstants.fetchManifests.toString(),
-        EcsCommandUnitConstants.prepareRollbackData.toString(), EcsCommandUnitConstants.deploy.toString());
+    return Arrays.asList(ElastigroupCommandUnitConstants.fetchManifests.toString(), EcsCommandUnitConstants.deploy.toString());
   }
 }
