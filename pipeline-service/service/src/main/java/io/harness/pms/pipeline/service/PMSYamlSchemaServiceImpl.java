@@ -158,6 +158,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       if (parent.equals(PARALLEL_NODE)) {
         pipelineSettingsService.getMaxConcurrencyBasedOnEdition(accountId, jsonNode.size());
       }
+      // Traversing all elements of parallel to validate other parallel blocks inside them.
       for (JsonNode child : jsonNode) {
         validateParallelNodesCountInternal(child, "", accountId);
       }
@@ -169,6 +170,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
           map.put(f.getKey(), f.getValue());
         }
       });
+      // Traversing all fields in objectNode.
       for (Map.Entry<String, JsonNode> entry : map.entrySet()) {
         validateParallelNodesCountInternal(entry.getValue(), entry.getKey(), accountId);
       }
