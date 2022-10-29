@@ -16,6 +16,7 @@ import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
+import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.delegate.task.spotinst.request.SpotInstTaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
@@ -24,9 +25,6 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.NonFinal;
-import software.wings.beans.AwsConfig;
-import software.wings.beans.SpotInstConfig;
-import software.wings.delegatetasks.delegatecapability.CapabilityHelper;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -52,12 +50,4 @@ public class ElastigroupSetupCommandRequest implements ElastigroupCommandRequest
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) SpotInstConfig spotInstConfig;
   @NonFinal @Expression(ALLOW_SECRETS) List<EncryptedDataDetail> spotinstEncryptionDetails;
-
-  @Override
-  public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    Set<ExecutionCapability> executionCapabilities = new HashSet<>();
-    executionCapabilities.addAll(
-        CapabilityHelper.generateDelegateCapabilities(spotInstConfig, spotinstEncryptionDetails, maskingEvaluator));
-    return new ArrayList<>(executionCapabilities);
-  }
 }
