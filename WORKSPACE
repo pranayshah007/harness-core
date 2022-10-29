@@ -621,6 +621,20 @@ go_repository(
 )
 
 go_repository(
+    name = "com_github_wings_software_dlite",
+    importpath = "github.com/wings-software/dlite",
+    sum = "h1:143lMB7T+9OqU9VYSpm71B4DzIONQOUvWWGsmreTpHI=",
+    version = "v0.0.0-20220915141325-eb8c295a2189",
+)
+
+go_repository(
+    name = "com_github_patrickmn_go_cache",
+    importpath = "github.com/patrickmn/go-cache",
+    sum = "h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=",
+    version = "v2.1.0+incompatible",
+)
+
+go_repository(
     name = "com_github_chzyer_test",
     importpath = "github.com/chzyer/test",
     sum = "h1:q763qf9huN11kDQavWsoZXJNW3xEE4JJyHa5Q25/sd8=",
@@ -5108,7 +5122,7 @@ plain_artifacts = [
     "org.modelmapper:modelmapper:0.7.5",
     "org.mongodb.morphia:morphia-logging-slf4j:1.3.2",
     "org.mongodb.morphia:morphia:1.3.2",
-    "org.mongodb:mongo-java-driver:3.12.11",
+    "org.mongodb:mongo-java-driver:3.12.2",
     "org.mortbay.jetty.alpn:alpn-boot:8.1.13.v20181017",
     "org.mozilla:rhino:1.7R4",
     "org.objenesis:objenesis:2.6",

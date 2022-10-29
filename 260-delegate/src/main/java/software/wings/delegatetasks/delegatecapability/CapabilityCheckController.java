@@ -25,8 +25,8 @@ import io.harness.delegate.task.executioncapability.CapabilityCheck;
 import io.harness.delegate.task.executioncapability.ProtoCapabilityCheck;
 import io.harness.delegate.task.executioncapability.ProtoCapabilityCheckFactory;
 
-import software.wings.delegatetasks.validation.AbstractDelegateValidateTask;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.AbstractDelegateValidateTask;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;

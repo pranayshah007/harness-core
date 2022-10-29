@@ -81,6 +81,11 @@ public class NexusArtifactTaskHelper {
         artifactTaskResponse = getSuccessTaskResponse(nexusArtifactTaskHandler.validateArtifactServer(attributes));
         saveLogs(executionLogCallback, "validated artifact server: " + registryUrl);
         break;
+      case GET_NEXUS_REPOSITORIES:
+        saveLogs(executionLogCallback, "Validating  Artifact Server");
+        artifactTaskResponse = getSuccessTaskResponse(nexusArtifactTaskHandler.getRepositories(attributes));
+        saveLogs(executionLogCallback, "validated artifact server: " + registryUrl);
+        break;
       default:
         saveLogs(executionLogCallback,
             "No corresponding Nexus artifact task type [{}]: " + artifactTaskParameters.toString());

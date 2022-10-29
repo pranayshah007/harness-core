@@ -23,15 +23,14 @@ import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
 import io.harness.models.constants.InstanceSyncConstants;
+import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndReplaceOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -46,10 +45,16 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
 @OwnedBy(HarnessTeam.DX)
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
-  private MongoTemplate mongoTemplate;
-  @Named("secondary-mongo") private MongoTemplate secondaryMongoTemplate;
+  private final MongoTemplate mongoTemplate;
+  private final MongoTemplate secondaryMongoTemplate;
+
+  @Inject
+  public InstanceRepositoryCustomImpl(
+      MongoTemplate mongoTemplate, SecondaryMongoTemplateHolder secondaryMongoTemplateHolder) {
+    this.mongoTemplate = mongoTemplate;
+    this.secondaryMongoTemplate = secondaryMongoTemplateHolder.getSecondaryMongoTemplate();
+  }
 
   @Override
   public Instance findAndReplace(Criteria criteria, Instance instance) {

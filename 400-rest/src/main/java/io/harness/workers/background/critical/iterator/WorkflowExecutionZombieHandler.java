@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Sort;
 
@@ -57,9 +58,6 @@ public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.
 
   @Override
   public void handle(WorkflowExecution wfExecution) {
-    if (featureFlagService.isNotEnabled(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR, wfExecution.getAccountId())) {
-      return;
-    }
     log.debug("Evaluating if workflow execution {} is a zombie execution [workflowId={}]", wfExecution.getUuid(),
         wfExecution.getWorkflowId());
 
@@ -126,13 +124,29 @@ public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.
   }
 
   // A SUCCESS ZOMBIE IS DETECTED WHEN
-  // -- THE StateExecutionInstance STATUS IS A POSITIVE VALUE
+  // -- THE StateExecutionInstance STATUS IS SUCCESS
   // -- HIT THE ENDED THRESHOLD
+  // -- PARENT IS NOT A FORK
   //
   // THE MOST RECENT StateExecutionInstance SHOULD NOT HAVE SUCCESS STATUS AND THE WORKFLOW
   // EXECUTION STILL IN A RUNNING STATE.
   private boolean isSuccessZombie(StateExecutionInstance seInstance) {
-    return hitEndedThreshold(seInstance) && ExecutionStatus.isPositiveStatus(seInstance.getStatus());
+    if (featureFlagService.isNotEnabled(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR, seInstance.getAccountId())) {
+      return false;
+    }
+    return hitEndedThreshold(seInstance) && ExecutionStatus.SUCCESS.equals(seInstance.getStatus())
+        && isNotParentFork(seInstance);
+  }
+
+  private boolean isNotParentFork(StateExecutionInstance seInstance) {
+    if (StringUtils.isEmpty(seInstance.getParentInstanceId())) {
+      return false;
+    }
+    long count = wingsPersistence.createQuery(StateExecutionInstance.class)
+                     .filter(StateExecutionInstanceKeys.uuid, seInstance.getParentInstanceId())
+                     .filter(StateExecutionInstanceKeys.stateType, StateType.FORK.name())
+                     .count();
+    return count == 0;
   }
 
   @VisibleForTesting

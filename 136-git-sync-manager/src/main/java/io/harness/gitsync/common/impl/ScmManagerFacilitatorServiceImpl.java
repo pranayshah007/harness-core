@@ -364,4 +364,11 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
     return scmClient.getFile(decryptedConnector, gitFileRequest);
   }
+
+  @Override
+  public GetLatestCommitResponse getBranchHeadCommitDetails(Scope scope, ScmConnector scmConnector, String branch) {
+    final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+    return scmClient.getLatestCommit(decryptedConnector, branch, null);
+  }
 }

@@ -13,6 +13,7 @@ import static io.harness.pms.pipeline.service.PMSPipelineServiceStepHelper.LIBRA
 
 import static java.lang.String.format;
 
+import io.harness.PipelineSettingsService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
@@ -101,6 +102,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineCloneHelper pipelineCloneHelper;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Inject private final PipelineSettingsService pipelineSettingsService;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -111,6 +113,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   @Override
   public PipelineCRUDResult create(PipelineEntity pipelineEntity) {
+    if (pmsPipelineRepository.countAllPipelinesInAccount(pipelineEntity.getAccountIdentifier())
+        > pipelineSettingsService.getMaxPipelineCreationCount(pipelineEntity.getAccountId())) {
+      throw new InvalidRequestException(
+          "You have created maximum number of pipelines, please upgrade if you want to create more pipelines");
+    }
     if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
       log.info("Creating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
       return createWithoutValidations(pipelineEntity);
@@ -137,6 +144,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   @Override
   public PipelineCRUDResult createWithoutValidations(PipelineEntity pipelineEntity) {
+    if (pmsPipelineRepository.countAllPipelinesInAccount(pipelineEntity.getAccountIdentifier())
+        > pipelineSettingsService.getMaxPipelineCreationCount(pipelineEntity.getAccountId())) {
+      throw new InvalidRequestException(
+          "You have created maximum number of pipelines, please upgrade if you want to create more pipelines");
+    }
     PipelineEntity createdEntity;
     try {
       if (gitSyncSdkService.isGitSyncEnabled(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
@@ -167,6 +179,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
   @Override
   public PipelineSaveResponse clone(ClonePipelineDTO clonePipelineDTO, String accountId) {
+    if (pmsPipelineRepository.countAllPipelinesInAccount(accountId)
+        > pipelineSettingsService.getMaxPipelineCreationCount(accountId)) {
+      throw new InvalidRequestException(
+          "You have created maximum number of pipelines, please upgrade if you want to create more pipelines");
+    }
     PipelineEntity sourcePipelineEntity = getSourcePipelineEntity(clonePipelineDTO, accountId);
 
     String sourcePipelineEntityYaml = sourcePipelineEntity.getYaml();

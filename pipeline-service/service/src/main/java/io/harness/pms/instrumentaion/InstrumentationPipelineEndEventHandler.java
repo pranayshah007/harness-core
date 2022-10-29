@@ -111,7 +111,6 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
             .filter(o -> StatusUtils.brokeStatuses().contains(o.getStatus()))
             .map(o -> AmbianceUtils.getCurrentStepType(o.getAmbiance()).getType())
             .collect(Collectors.toList());
-    String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId, false);
 
