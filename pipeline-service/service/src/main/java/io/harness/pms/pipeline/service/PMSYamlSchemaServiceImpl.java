@@ -13,6 +13,7 @@ import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.PAR
 import static io.harness.yaml.schema.beans.SchemaConstants.ALL_OF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.PARALLEL_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.REF_NODE;
@@ -23,6 +24,7 @@ import static java.lang.String.format;
 
 import io.harness.EntityType;
 import io.harness.ModuleType;
+import io.harness.PipelineSettingsService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -97,6 +99,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private final FeatureFlagYamlService featureFlagYamlService;
   private final SchemaFetcher schemaFetcher;
   private final NgLicenseHttpClient ngLicenseHttpClient;
+  private final PipelineSettingsService pipelineSettingsService;
   Integer allowedParallelStages;
 
   @Inject
@@ -104,7 +107,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       YamlSchemaValidator yamlSchemaValidator, PmsSdkInstanceService pmsSdkInstanceService,
       PmsYamlSchemaHelper pmsYamlSchemaHelper, ApprovalYamlSchemaService approvalYamlSchemaService,
       FeatureFlagYamlService featureFlagYamlService, SchemaFetcher schemaFetcher,
-      NgLicenseHttpClient ngLicenseHttpClient, @Named("allowedParallelStages") Integer allowedParallelStages) {
+      NgLicenseHttpClient ngLicenseHttpClient, @Named("allowedParallelStages") Integer allowedParallelStages,
+      PipelineSettingsService pipelineSettingsService) {
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.yamlSchemaGenerator = yamlSchemaGenerator;
     this.yamlSchemaValidator = yamlSchemaValidator;
@@ -115,6 +119,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     this.schemaFetcher = schemaFetcher;
     this.ngLicenseHttpClient = ngLicenseHttpClient;
     this.allowedParallelStages = allowedParallelStages;
+    this.pipelineSettingsService = pipelineSettingsService;
   }
 
   @Override
@@ -133,7 +138,40 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     // Keeping pipeline yaml schema validation behind ff. If ff is disabled then schema validation will happen. Will
     // remove after finding the root cause of invalid schema generation and fixing it.
     if (!pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, accountId)) {
+      validateParallelNodesCount(yaml, accountId);
       validateYamlSchemaInternal(accountId, orgId, projectId, yaml);
+    }
+  }
+
+  private void validateParallelNodesCount(String yaml, String accountId) {
+    JsonNode jsonNode = null;
+    try {
+      jsonNode = YamlUtils.readTree(yaml).getNode().getCurrJsonNode();
+    } catch (IOException e) {
+      throw new InvalidYamlException("Could not parse the YAML");
+    }
+    validateParallelNodesCountInternal(jsonNode, "", accountId);
+  }
+
+  private void validateParallelNodesCountInternal(JsonNode jsonNode, String parent, String accountId) {
+    if (jsonNode instanceof ArrayNode) {
+      if (parent.equals(PARALLEL_NODE)) {
+        pipelineSettingsService.getMaxConcurrencyBasedOnEdition(accountId, jsonNode.size());
+      }
+      for (JsonNode child : jsonNode) {
+        validateParallelNodesCountInternal(child, "", accountId);
+      }
+    }
+    if (jsonNode instanceof ObjectNode) {
+      Map<String, JsonNode> map = new HashMap<>();
+      jsonNode.fields().forEachRemaining(f -> {
+        if (EmptyPredicate.isNotEmpty(f.getKey()) && !JsonNodeUtils.isNull(f.getValue())) {
+          map.put(f.getKey(), f.getValue());
+        }
+      });
+      for (Map.Entry<String, JsonNode> entry : map.entrySet()) {
+        validateParallelNodesCountInternal(entry.getValue(), entry.getKey(), accountId);
+      }
     }
   }
 
