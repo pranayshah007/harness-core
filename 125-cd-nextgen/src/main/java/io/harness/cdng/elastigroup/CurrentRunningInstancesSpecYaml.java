@@ -34,8 +34,8 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 public class CurrentRunningInstancesSpecYaml extends InstancesSpecAbstractYaml {
   @JsonProperty("type")
   @NotNull
-  CurrentRunningInstancesSpecYaml.StepType type =
-          StepType.ElastigroupSetup;
+  CurrentRunningInstancesSpecYaml.InstanceType type =
+          InstanceType.CurrentRunning;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   CurrentRunningInstancesSpec currentRunningInstancesSpec;
@@ -44,10 +44,10 @@ public class CurrentRunningInstancesSpecYaml extends InstancesSpecAbstractYaml {
     return InstancesSpecTypeConstants.CURRENT_RUNNING;
   }
 
-  enum StepType {
-    ElastigroupSetup(InstancesSpecTypeConstants.CURRENT_RUNNING);
+  enum InstanceType {
+    CurrentRunning(InstancesSpecTypeConstants.CURRENT_RUNNING);
     @Getter String name;
-    StepType(String name) {
+    InstanceType(String name) {
       this.name = name;
     }
   }

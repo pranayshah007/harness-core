@@ -89,6 +89,7 @@ public interface YamlTypes {
   String STAGE_OVERRIDES_CONFIG = "stageOverrides";
   String PATH_CONNECTOR = VisitorParentPathUtils.PATH_CONNECTOR;
   String CONNECTOR_REF = "connectorRef";
+  String CONFIGURATION = "configuration";
   String TAG = "tag";
   String TAG_REGEX = "tagRegex";
   String IMAGE_PATH = "imagePath";
@@ -147,9 +148,9 @@ public interface YamlTypes {
   String JENKINS_BUILD = StepSpecTypeConstants.JENKINS_BUILD;
   String STARTUP_COMMAND = "startupCommand";
 
-  String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
   String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
-  String ELASTIGROUP_SETUP_STEP = "Elastigroup_Setup";
+  String ELASTIGROUP_SETUP_STEP = StepSpecTypeConstants.ELASTIGROUP_SETUP;
+  String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
 
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";

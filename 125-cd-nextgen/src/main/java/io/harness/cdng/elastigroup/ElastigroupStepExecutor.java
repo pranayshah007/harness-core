@@ -24,6 +24,4 @@ public interface ElastigroupStepExecutor {
   TaskChainResponse executeElastigroupTask(Ambiance ambiance, StepElementParameters stepParameters,
                                            ElastigroupExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
                                            EcsStepExecutorParams ecsStepExecutorParams);
-  TaskChainResponse executeEcsPrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
-      EcsPrepareRollbackDataPassThroughData ecsStepPassThroughData, UnitProgressData unitProgressData);
 }

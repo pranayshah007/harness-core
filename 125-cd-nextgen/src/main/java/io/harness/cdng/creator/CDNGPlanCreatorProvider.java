@@ -125,6 +125,7 @@ import io.harness.cdng.creator.plan.steps.ecs.EcsCanaryDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRunTaskStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.variables.CommandStepVariableCreator;
@@ -137,6 +138,7 @@ import io.harness.cdng.creator.variables.EcsCanaryDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRunTaskStepVariableCreator;
+import io.harness.cdng.creator.variables.ElastigroupSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsUpdateReleaseRepoStepVariableCreator;
@@ -321,6 +323,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new EcsBlueGreenSwapTargetGroupsStepPlanCreator());
     planCreators.add(new EcsBlueGreenRollbackStepPlanCreator());
     planCreators.add(new EcsRunTaskStepPlanCreator());
+    //Elastigroup
+    planCreators.add(new ElastigroupSetupStepPlanCreator());
 
     planCreators.add(new AzureCreateARMResourceStepPlanCreator());
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
@@ -412,6 +416,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new EcsBlueGreenSwapTargetGroupsStepVariableCreator());
     variableCreators.add(new EcsBlueGreenRollbackStepVariableCreator());
     variableCreators.add(new EcsRunTaskStepVariableCreator());
+    // Elastigroup
+    variableCreators.add(new ElastigroupSetupStepVariableCreator());
 
     variableCreators.add(new AzureCreateARMResourceStepVariableCreator());
     variableCreators.add(new AzureCreateBPStepVariableCreator());
@@ -599,6 +605,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setStepMetaData(
                 StepMetaData.newBuilder().addCategory("ServerlessAwsLambda").setFolderPath("Serverless Lambda").build())
             .build();
+
+    StepInfo elastigroupSetup =
+            StepInfo.newBuilder()
+                    .setName("Elastigroup Setup")
+                    .setType(StepSpecTypeConstants.ELASTIGROUP_SETUP)
+                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
+                    .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
+                    .build();
 
     StepInfo ecsRollingDeploy =
         StepInfo.newBuilder()
@@ -844,6 +858,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(azureCreateBPResources);
     stepInfos.add(azureARMRollback);
     stepInfos.add(fetchInstanceScript);
+    stepInfos.add(elastigroupSetup);
     stepInfos.add(ecsBlueGreenCreateService);
     stepInfos.add(ecsBlueGreenSwapTargetGroups);
     stepInfos.add(ecsBlueGreenRollback);

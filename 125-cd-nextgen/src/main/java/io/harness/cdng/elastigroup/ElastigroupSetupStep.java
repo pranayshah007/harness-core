@@ -21,10 +21,14 @@ import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData;
+import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
+import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePassThroughData;
+import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
+import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -35,6 +39,8 @@ import io.harness.delegate.task.ecs.request.EcsBlueGreenPrepareRollbackRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
+import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
+import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.Misc;
@@ -70,12 +76,9 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
                                                .build();
 
   private final String ELASTIGROUP_SETUP_COMMAND_NAME = "ElastigroupSetup";
-  private final String ECS_BLUE_GREEN_PREPARE_ROLLBACK_COMMAND_NAME = "EcsBlueGreenPrepareRollback";
 
   @Inject private ElastigroupStepCommonHelper elastigroupStepCommonHelper;
-  @Inject private EcsStepHelperImpl ecsStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public TaskChainResponse executeElastigroupTask(Ambiance ambiance, StepElementParameters stepParameters,
@@ -84,16 +87,21 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
+    SpotInstConfig spotInstConfig = elastigroupStepCommonHelper.getSpotInstConfig(infrastructureOutcome, ambiance);
+
     ElastigroupSetupStepParameters elastigroupSetupStepParameters =
         (ElastigroupSetupStepParameters) stepParameters.getSpec();
 
-    String elastiGroupNamePrefix = elastigroupSetupStepParameters.getName().getValue();
+    String elastigroupNamePrefix = elastigroupSetupStepParameters.getName().getValue();
+    String elastigroupJson = "asf";
 
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
             ElastigroupSetupCommandRequest.builder()
                     .blueGreen(false)
-                    .elastigroupNamePrefix(elastiGroupNamePrefix)
+                    .elastigroupNamePrefix(elastigroupNamePrefix)
             .accountId(accountId)
+            .spotInstConfig(spotInstConfig)
+                    .elastiGroupJson(elastigroupJson)
             .ecsCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
@@ -104,35 +112,35 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
         stepParameters, elastigroupSetupCommandRequest, ambiance, executionPassThroughData, true);
   }
 
-  @Override
-  public TaskChainResponse executeEcsPrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
-      EcsPrepareRollbackDataPassThroughData ecsStepPassThroughData, UnitProgressData unitProgressData) {
-    InfrastructureOutcome infrastructureOutcome = ecsStepPassThroughData.getInfrastructureOutcome();
-    final String accountId = AmbianceUtils.getAccountId(ambiance);
-    ElastigroupSetupStepParameters ecsBlueGreenCreateServiceStepParameters =
-        (ElastigroupSetupStepParameters) stepParameters.getSpec();
-    EcsLoadBalancerConfig ecsLoadBalancerConfig =
-        EcsLoadBalancerConfig.builder()
-            .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
-            .prodListenerArn(ecsBlueGreenCreateServiceStepParameters.getProdListener().getValue())
-            .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
-            .stageListenerArn(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
-            .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
-            .build();
-    EcsBlueGreenPrepareRollbackRequest ecsBlueGreenPrepareRollbackRequest =
-        EcsBlueGreenPrepareRollbackRequest.builder()
-            .commandName(ECS_BLUE_GREEN_PREPARE_ROLLBACK_COMMAND_NAME)
-            .accountId(accountId)
-            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA)
-            .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
-            .ecsServiceDefinitionManifestContent(ecsStepPassThroughData.getEcsServiceDefinitionManifestContent())
-            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-            .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
-            .build();
-    return elastigroupStepCommonHelper.queueEcsTask(
-        stepParameters, ecsBlueGreenPrepareRollbackRequest, ambiance, ecsStepPassThroughData, false);
-  }
+//  @Override
+//  public TaskChainResponse executeEcsPrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
+//      EcsPrepareRollbackDataPassThroughData ecsStepPassThroughData, UnitProgressData unitProgressData) {
+//    InfrastructureOutcome infrastructureOutcome = ecsStepPassThroughData.getInfrastructureOutcome();
+//    final String accountId = AmbianceUtils.getAccountId(ambiance);
+//    ElastigroupSetupStepParameters ecsBlueGreenCreateServiceStepParameters =
+//        (ElastigroupSetupStepParameters) stepParameters.getSpec();
+//    EcsLoadBalancerConfig ecsLoadBalancerConfig =
+//        EcsLoadBalancerConfig.builder()
+//            .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
+//            .prodListenerArn(ecsBlueGreenCreateServiceStepParameters.getProdListener().getValue())
+//            .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
+//            .stageListenerArn(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
+//            .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
+//            .build();
+//    EcsBlueGreenPrepareRollbackRequest ecsBlueGreenPrepareRollbackRequest =
+//        EcsBlueGreenPrepareRollbackRequest.builder()
+//            .commandName(ECS_BLUE_GREEN_PREPARE_ROLLBACK_COMMAND_NAME)
+//            .accountId(accountId)
+//            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA)
+//            .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
+//            .ecsServiceDefinitionManifestContent(ecsStepPassThroughData.getEcsServiceDefinitionManifestContent())
+//            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+//            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+//            .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+//            .build();
+//    return elastigroupStepCommonHelper.queueEcsTask(
+//        stepParameters, ecsBlueGreenPrepareRollbackRequest, ambiance, ecsStepPassThroughData, false);
+//  }
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -149,61 +157,50 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
     log.info("Calling executeNextLink");
-    return ecsStepCommonHelper.executeNextLinkBlueGreen(
+    return elastigroupStepCommonHelper.executeNextLink(
         this, ambiance, stepParameters, passThroughData, responseSupplier);
   }
 
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    if (passThroughData instanceof EcsGitFetchFailurePassThroughData) {
-      return ecsStepCommonHelper.handleGitTaskFailure((EcsGitFetchFailurePassThroughData) passThroughData);
-    } else if (passThroughData instanceof EcsStepExceptionPassThroughData) {
-      return ecsStepCommonHelper.handleStepExceptionFailure((EcsStepExceptionPassThroughData) passThroughData);
+    if (passThroughData instanceof ElastigroupStartupScriptFetchFailurePassThroughData) {
+      return elastigroupStepCommonHelper.handleGitTaskFailure((ElastigroupStartupScriptFetchFailurePassThroughData) passThroughData);
+    } else if (passThroughData instanceof ElastigroupStepExceptionPassThroughData) {
+      return elastigroupStepCommonHelper.handleStepExceptionFailure((ElastigroupStepExceptionPassThroughData) passThroughData);
     }
 
     log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
     EcsExecutionPassThroughData ecsExecutionPassThroughData = (EcsExecutionPassThroughData) passThroughData;
-    InfrastructureOutcome infrastructureOutcome = ecsExecutionPassThroughData.getInfrastructure();
-    EcsBlueGreenCreateServiceResponse ecsBlueGreenCreateServiceResponse;
+    ElastigroupSetupResponse elastigroupSetupResponse;
     try {
-      ecsBlueGreenCreateServiceResponse = (EcsBlueGreenCreateServiceResponse) responseDataSupplier.get();
+      elastigroupSetupResponse = (ElastigroupSetupResponse) responseDataSupplier.get();
     } catch (Exception e) {
       log.error("Error while processing ecs task response: {}", e.getMessage(), e);
-      return ecsStepCommonHelper.handleTaskException(ambiance, ecsExecutionPassThroughData, e);
+      return elastigroupStepCommonHelper.handleTaskException(ambiance, ecsExecutionPassThroughData, e);
     }
     StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
-        ecsBlueGreenCreateServiceResponse.getUnitProgressData().getUnitProgresses());
-    if (ecsBlueGreenCreateServiceResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-      return EcsStepCommonHelper.getFailureResponseBuilder(ecsBlueGreenCreateServiceResponse, stepResponseBuilder)
+            elastigroupSetupResponse.getUnitProgressData().getUnitProgresses());
+    if (elastigroupSetupResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      return ElastigroupStepCommonHelper.getFailureResponseBuilder(elastigroupSetupResponse, stepResponseBuilder)
           .build();
     }
 
-    EcsBlueGreenCreateServiceResult ecsBlueGreenCreateServiceResult =
-        ecsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult();
-    EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
-        EcsBlueGreenCreateServiceDataOutcome.builder()
-            .isNewServiceCreated(ecsBlueGreenCreateServiceResult.isNewServiceCreated())
-            .serviceName(ecsBlueGreenCreateServiceResult.getServiceName())
-            .targetGroupArn(ecsBlueGreenCreateServiceResult.getTargetGroupArn())
-            .loadBalancer(ecsBlueGreenCreateServiceResult.getLoadBalancer())
-            .listenerArn(ecsBlueGreenCreateServiceResult.getListenerArn())
-            .listenerRuleArn(ecsBlueGreenCreateServiceResult.getListenerRuleArn())
+//    ElastigroupSetupResult elastigroupSetupResult =
+//            elastigroupSetupResponse.getElastigroupSetupResult();
+    ElastigroupSetupDataOutcome elastigroupSetupDataOutcome =
+            ElastigroupSetupDataOutcome.builder()
             .build();
 
-    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ECS_BLUE_GREEN_CREATE_SERVICE_OUTCOME,
-        ecsBlueGreenCreateServiceDataOutcome, StepOutcomeGroup.STEP.name());
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME,
+            elastigroupSetupDataOutcome, StepOutcomeGroup.STEP.name());
 
-    List<ServerInstanceInfo> serverInstanceInfos = ecsStepCommonHelper.getServerInstanceInfos(
-        ecsBlueGreenCreateServiceResponse, infrastructureOutcome.getInfrastructureKey());
-    StepResponse.StepOutcome stepOutcome =
-        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
-    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
+    return stepResponseBuilder.status(Status.SUCCEEDED).build();
   }
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return elastigroupStepCommonHelper.startChainLink(this, ambiance, stepParameters, ecsStepHelper);
+    return elastigroupStepCommonHelper.startChainLink(this, ambiance, stepParameters);
   }
 }
