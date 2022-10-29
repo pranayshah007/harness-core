@@ -121,6 +121,8 @@ cgEventConfig {"name": "yaml", "unique": true} {"appId": 1, "name": 1}
 cloudFormationRollbackConfig {"name": "accountId_1", "background": true} {"accountId": 1}
 cloudFormationRollbackConfig {"name": "appId_1", "background": true} {"appId": 1}
 cloudFormationRollbackConfig {"name": "byAppAndEntityAndAwsConfig", "background": true} {"appId": 1, "entityId": 1, "awsConfigId": 1, "createdAt": 1}
+cloudFormationRollbackConfig {"name": "byAppAndEntityAndAwsConfigAndCustomStackNameAndRegion", "background": true} {"appId": 1, "entityId": 1, "awsConfigId": 1, "customStackName": 1, "region": 1, "createdAt": 1}
+cloudFormationRollbackConfig {"name": "byAppAndEntityAndCustomStackNameAndRegion", "background": true} {"appId": 1, "entityId": 1, "customStackName": 1, "region": 1, "createdAt": 1}
 cloudFormationRollbackConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
 cloudFormationRollbackConfig {"name": "entityId_1", "background": true} {"entityId": 1}
 clusterRecords {"name": "accountId_1", "background": true} {"accountId": 1}

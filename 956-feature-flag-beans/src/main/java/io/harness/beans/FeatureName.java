@@ -468,7 +468,9 @@ public enum FeatureName {
   SRM_ENABLE_HEALTHSOURCE_AWS_PROMETHEUS("UI FF to enable AWS Managed Prometheus healthsource", HarnessTeam.CV),
   DEL_SECRET_EVALUATION_VERBOSE_LOGGING(
       "FF to enable verbose logging for the manager process when secret gets evaluated", HarnessTeam.DEL),
-  CI_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CI UI", HarnessTeam.CI);
+  CI_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CI UI", HarnessTeam.CI),
+  CF_ROLLBACK_CUSTOM_STACK_NAME(
+      "Use custom stack name and region to find lates successful couldformation rollback data", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
