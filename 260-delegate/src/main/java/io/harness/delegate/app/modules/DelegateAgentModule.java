@@ -45,7 +45,6 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class DelegateAgentModule extends AbstractModule {
   private final DelegateConfiguration configuration;
-  private final boolean isImmutableDelegate;
 
   @Override
   protected void configure() {
@@ -57,13 +56,16 @@ public class DelegateAgentModule extends AbstractModule {
     }
 
     install(new DelegateTokensModule(configuration));
+    install(new DelegateServiceTokenModule(configuration));
     install(new DelegateHealthModule());
     install(KryoModule.getInstance());
     install(new DelegateKryoModule());
     install(new MetricRegistryModule(new MetricRegistry()));
 
     install(new DelegateManagerClientModule());
-    install(new VerificationServiceClientModule());
+    install(new VerificationServiceClientModule(configuration.getCvNextGenUrl(),
+        configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
+        configuration.isTrustAllCertificates()));
 
     install(new LogStreamingModule(configuration.getLogStreamingServiceBaseUrl(),
         configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
