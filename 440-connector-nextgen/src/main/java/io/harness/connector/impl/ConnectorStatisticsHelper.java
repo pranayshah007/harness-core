@@ -17,8 +17,10 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.proj
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.account.AccountClient;
+import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector.GcpKmsConnectorKeys;
+import io.harness.connector.helper.ConnectorRbacHelper;
 import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.connector.stats.ConnectorStatistics.ConnectorStatisticsKeys;
 import io.harness.connector.stats.ConnectorStatusStats.ConnectorStatusStatsKeys;
@@ -33,11 +35,14 @@ import io.harness.repositories.ConnectorRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.FacetOperation;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
@@ -52,9 +57,15 @@ public class ConnectorStatisticsHelper {
   ConnectorRepository connectorRepository;
   NGSettingsClient settingsClient;
   AccountClient accountClient;
+  ConnectorRbacHelper connectorRbacHelper;
 
   public ConnectorStatistics getStats(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = createCriteriaObjectForConnectorScope(accountIdentifier, orgIdentifier, projectIdentifier);
+    List<Connector> connectors = connectorRepository.findAll(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier).getContent();
+    connectors = connectorRbacHelper.getPermitted(connectors, accountIdentifier, orgIdentifier, projectIdentifier);
+    List<String> connectorIds = new ArrayList<>();
+    connectors.stream().map(connector -> connectorIds.add(connector.getIdentifier()));
+    criteria.and(ConnectorKeys.identifier).in(connectorIds);
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation groupByType = group(ConnectorKeys.type).count().as(ConnectorTypeStatsKeys.count);
     ProjectionOperation projectType =
