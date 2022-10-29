@@ -11,6 +11,7 @@ import static io.harness.licensing.Edition.FREE;
 import static io.harness.licensing.Edition.TEAM;
 
 import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
@@ -92,10 +93,83 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     return PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
   }
 
+  @Override
+  public long getMaxPipelineCreationCount(String accountId) {
+    try {
+      Edition edition = getEdition(accountId);
+      switch (edition) {
+        case FREE:
+          if (orchestrationRestrictionConfiguration.isUseRestrictionForFree()) {
+            return orchestrationRestrictionConfiguration.getPipelineCreationRestriction().getFree();
+          }
+          break;
+        case ENTERPRISE:
+          if (orchestrationRestrictionConfiguration.isUseRestrictionForEnterprise()) {
+            return orchestrationRestrictionConfiguration.getPipelineCreationRestriction().getEnterprise();
+          }
+          break;
+        case TEAM:
+          if (orchestrationRestrictionConfiguration.isUseRestrictionForTeam()) {
+            return orchestrationRestrictionConfiguration.getPipelineCreationRestriction().getTeam();
+          }
+          break;
+        default:
+          PlanExecutionSettingResponse.builder().shouldQueue(false).useNewFlow(false).build();
+      }
+    } catch (Exception ex) {
+      return Long.MAX_VALUE;
+    }
+    return Long.MAX_VALUE;
+  }
+
+  @Override
+  public int getMaxConcurrencyBasedOnEdition(String accountId, long childCount) {
+    try {
+      Edition edition = getEdition(accountId);
+      switch (edition) {
+        case FREE:
+          if (orchestrationRestrictionConfiguration.isUseRestrictionForFree()) {
+            if (childCount > orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getFree()) {
+              throw new InvalidRequestException(String.format(
+                  "Trying to run more than %s concurrent stages/steps. Please upgrade your plan to team or reduce concurrency",
+                  orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getFree()));
+            }
+            return (int) orchestrationRestrictionConfiguration.getMaxConcurrencyRestriction().getFree();
+          }
+          return 20;
+        case ENTERPRISE:
+          if (orchestrationRestrictionConfiguration.isUseRestrictionForEnterprise()) {
+            if (childCount
+                > orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getEnterprise()) {
+              throw new InvalidRequestException(String.format(
+                  "Trying to run more than %s concurrent stages/steps. Please contact sales if you want to run more",
+                  orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getEnterprise()));
+            }
+            return (int) orchestrationRestrictionConfiguration.getMaxConcurrencyRestriction().getEnterprise();
+          }
+          return 100;
+        case TEAM:
+          if (orchestrationRestrictionConfiguration.isUseRestrictionForTeam()) {
+            if (childCount > orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getTeam()) {
+              throw new InvalidRequestException(String.format(
+                  "Trying to run more than %s concurrent stages/steps. Please upgrade your plan to enterprise or reduce concurrency",
+                  orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getTeam()));
+            }
+            return (int) orchestrationRestrictionConfiguration.getMaxConcurrencyRestriction().getTeam();
+          }
+          return 50;
+        default:
+          return 20;
+      }
+    } catch (ExecutionException e) {
+      return 20;
+    }
+  }
+
   private PlanExecutionSettingResponse shouldQueueInternal(
       String accountId, String orgId, String projectId, String pipelineIdentifier, long maxCount) {
     long runningExecutionsForGivenPipeline =
-        planExecutionService.findRunningExecutionsForGivenPipeline(accountId, orgId, projectId, pipelineIdentifier);
+        planExecutionService.countRunningExecutionsForGivenPipeline(accountId, orgId, projectId, pipelineIdentifier);
     if (runningExecutionsForGivenPipeline >= maxCount) {
       return PlanExecutionSettingResponse.builder().shouldQueue(true).useNewFlow(true).build();
     }

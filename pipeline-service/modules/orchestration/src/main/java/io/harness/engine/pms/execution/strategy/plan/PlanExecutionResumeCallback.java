@@ -13,6 +13,7 @@ import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.PlanExecution;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;
 
@@ -52,6 +53,7 @@ public class PlanExecutionResumeCallback implements OldNotifyCallback {
       PlanExecution planExecution = planExecutionService.findNextExecutionToRun(
           accountIdIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier);
       if (planExecution != null) {
+        planExecutionService.updateStatus(planExecution.getUuid(), Status.RUNNING);
         planExecutionStrategy.startPlanExecution(
             planService.fetchPlan(planExecution.getPlanId()), planExecution.getAmbiance());
       }

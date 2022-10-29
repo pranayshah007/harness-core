@@ -58,6 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanExecution, PlanExecutionMetadata> {
+  public static final String ENFORCEMENT_CALLBACK_ID = "enforcement-%s";
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PlanExecutionService planExecutionService;
@@ -103,6 +104,15 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
           planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, Status.QUEUED);
           orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
               OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(metadata).build());
+          PlanExecutionResumeCallback callback = PlanExecutionResumeCallback.builder()
+                                                     .accountIdIdentifier(accountId)
+                                                     .orgIdentifier(orgIdentifier)
+                                                     .projectIdentifier(projectIdentifier)
+                                                     .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
+                                                     .build();
+
+          waitNotifyEngine.waitForAllOn(
+              publisherName, callback, String.format(ENFORCEMENT_CALLBACK_ID, planExecution.getUuid()));
           return planExecution;
         }
         planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, Status.RUNNING);
@@ -116,7 +126,8 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
                                                      .projectIdentifier(projectIdentifier)
                                                      .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
                                                      .build();
-          waitNotifyEngine.waitForAllOn(publisherName, callback, planExecution.getUuid());
+          waitNotifyEngine.waitForAllOn(
+              publisherName, callback, String.format(ENFORCEMENT_CALLBACK_ID, planExecution.getUuid()));
         }
         startPlanExecution(plan, ambiance);
         return planExecution;

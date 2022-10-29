@@ -9,6 +9,7 @@ package io.harness.engine.executions.plan;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy.ENFORCEMENT_CALLBACK_ID;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -108,7 +109,8 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
       emitEvent(updated);
     }
     if (StatusUtils.isFinalStatus(status)) {
-      waitNotifyEngine.doneWith(planExecutionId, StringNotifyResponseData.builder().build());
+      waitNotifyEngine.doneWith(
+          String.format(ENFORCEMENT_CALLBACK_ID, planExecutionId), StringNotifyResponseData.builder().build());
     }
     return updated;
   }
@@ -230,7 +232,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
-  public long findRunningExecutionsForGivenPipeline(
+  public long countRunningExecutionsForGivenPipeline(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
     Criteria criteria = new Criteria()
                             .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
