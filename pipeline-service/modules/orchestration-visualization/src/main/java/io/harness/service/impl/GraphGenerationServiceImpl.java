@@ -185,22 +185,25 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           }
           nodeExecutionIds.add(nodeExecutionId);
           NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
-          updateRequired = updateRequired
-              || pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
-                  planExecutionId, nodeExecution, executionSummaryUpdate);
-          updateRequired = updateRequired
-              || pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate);
+          updateRequired = pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
+                               planExecutionId, nodeExecution, executionSummaryUpdate)
+              || updateRequired;
+          updateRequired =
+              pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate)
+              || updateRequired;
 
           if (OrchestrationUtils.isStageNode(nodeExecution)
               && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
               && StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
-            updateRequired = updateRequired
-                || pmsExecutionSummaryService.updateStageOfIdentityType(planExecutionId, executionSummaryUpdate);
+            updateRequired =
+                pmsExecutionSummaryService.updateStageOfIdentityType(planExecutionId, executionSummaryUpdate)
+                || updateRequired;
           } else {
-            updateRequired = updateRequired
-                || ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(executionSummaryUpdate, nodeExecution);
-            updateRequired = updateRequired
-                || ExecutionSummaryUpdateUtils.addStageUpdateCriteria(executionSummaryUpdate, nodeExecution);
+            updateRequired =
+                ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(executionSummaryUpdate, nodeExecution)
+                || updateRequired;
+            updateRequired = ExecutionSummaryUpdateUtils.addStageUpdateCriteria(executionSummaryUpdate, nodeExecution)
+                || updateRequired;
           }
           orchestrationGraph =
               graphStatusUpdateHelper.handleEventV2(planExecutionId, nodeExecution, orchestrationGraph);
