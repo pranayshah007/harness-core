@@ -41,6 +41,6 @@ public class ElastigroupSetupStepParameters
 
   public List<String> getCommandUnits() {
     return Arrays.asList(ElastigroupCommandUnitConstants.fetchManifests.toString(),
-            ElastigroupCommandUnitConstants.prepareRollbackData.toString(), ElastigroupCommandUnitConstants.deploy.toString());
+            ElastigroupCommandUnitConstants.deploy.toString());
   }
 }
