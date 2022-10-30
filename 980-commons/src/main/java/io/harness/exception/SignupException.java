@@ -12,7 +12,6 @@ import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
-import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
 
 import java.util.EnumSet;

@@ -51,12 +51,7 @@ public class OrchestrationEndGraphHandler implements AsyncInformObserver, Orches
     try (AutoLogContext autoLogContext = AmbianceUtils.autoLogContext(ambiance)) {
       PlanExecution planExecution = planExecutionService.get(ambiance.getPlanExecutionId());
       // One last time try to update the graph to process any unprocessed logs
-      boolean updated = graphGenerationService.updateGraphWithWaitLock(planExecution.getUuid());
-      if (!updated) {
-        log.error(
-            "[GRAPH_ERROR] Exception occurred while updating graph through logs. Regenerating the graph from nodeExecutions");
-        graphGenerationService.buildOrchestrationGraph(ambiance.getPlanExecutionId());
-      }
+      graphGenerationService.updateGraphWithWaitLock(planExecution.getUuid());
       // Todo: Check if this is required
       OrchestrationGraph orchestrationGraph =
           graphGenerationService.getCachedOrchestrationGraph(ambiance.getPlanExecutionId());

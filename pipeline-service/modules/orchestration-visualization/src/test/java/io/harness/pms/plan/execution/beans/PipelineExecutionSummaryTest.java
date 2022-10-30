@@ -118,7 +118,7 @@ public class PipelineExecutionSummaryTest extends OrchestrationVisualizationTest
   public void shouldTestMongoIndexes() {
     List<MongoIndex> mongoIndices = PipelineExecutionSummaryEntity.mongoIndexes();
 
-    assertThat(mongoIndices.size()).isEqualTo(7);
-    assertThat(mongoIndices.stream().map(MongoIndex::getName).collect(Collectors.toSet()).size()).isEqualTo(7);
+    assertThat(mongoIndices.size()).isEqualTo(11);
+    assertThat(mongoIndices.stream().map(MongoIndex::getName).collect(Collectors.toSet()).size()).isEqualTo(11);
   }
 }

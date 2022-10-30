@@ -17,6 +17,8 @@ import io.harness.gitsync.CreateFileResponse;
 import io.harness.gitsync.CreatePRRequest;
 import io.harness.gitsync.CreatePRResponse;
 import io.harness.gitsync.FileInfo;
+import io.harness.gitsync.GetBranchHeadCommitRequest;
+import io.harness.gitsync.GetBranchHeadCommitResponse;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.GetRepoUrlRequest;
@@ -54,4 +56,6 @@ public interface HarnessToGitHelperService {
   GetRepoUrlResponse getRepoUrl(GetRepoUrlRequest getRepoUrlRequest);
 
   Boolean isOldGitSyncEnabledForModule(EntityScopeInfo entityScopeInfo, boolean isNotForFFModule);
+
+  GetBranchHeadCommitResponse getBranchHeadCommitDetails(GetBranchHeadCommitRequest getBranchHeadCommitRequest);
 }

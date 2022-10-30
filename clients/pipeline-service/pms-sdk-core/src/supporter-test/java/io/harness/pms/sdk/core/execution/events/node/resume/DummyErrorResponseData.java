@@ -7,7 +7,7 @@
 
 package io.harness.pms.sdk.core.execution.events.node.resume;
 
-import io.harness.eraro.FailureType;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.tasks.ErrorResponseData;

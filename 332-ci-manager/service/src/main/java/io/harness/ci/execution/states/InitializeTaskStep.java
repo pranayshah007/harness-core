@@ -8,6 +8,7 @@
 package io.harness.ci.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.beans.FeatureName.CIE_HOSTED_VMS;
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
@@ -36,6 +37,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.buildstate.BuildSetupUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.execution.BackgroundTaskUtility;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -115,6 +117,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public static final Long TASK_BUFFER_TIMEOUT_MILLIS = 30 * 1000L;
 
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private CIFeatureFlagService ciFeatureFlagService;
   @Inject private BuildSetupUtils buildSetupUtils;
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private K8InitializeServiceUtils k8InitializeServiceUtils;
@@ -156,6 +159,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       pipelineRbacHelper.checkRuntimePermissions(ambiance, connectorsEntityDetails, true);
     }
 
+    validateFeatureFlags(initializeStepInfo, accountIdentifier);
     validateConnectors(
         initializeStepInfo, connectorsEntityDetails, accountIdentifier, orgIdentifier, projectIdentifier);
     sanitizeExecution(initializeStepInfo);
@@ -210,6 +214,19 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
               + "Please update the connectors: %s to connect via the Harness platform instead. This can be done by "
               + "editing the connector and updating the connectivity to go via the Harness platform.",
           invalidIdentifiers));
+    }
+  }
+
+  private void validateFeatureFlags(InitializeStepInfo initializeStepInfo, String accountIdentifier) {
+    if (initializeStepInfo.getInfrastructure().getType() != Infrastructure.Type.HOSTED_VM) {
+      return;
+    }
+
+    // For hosted VMs, we need to check whether the feature flag is enabled or not
+    Boolean isEnabled = ciFeatureFlagService.isEnabled(CIE_HOSTED_VMS, accountIdentifier);
+    if (!isEnabled) {
+      throw new CIStageExecutionException(
+          "Hosted builds are not enabled for this account. Please contact Harness support.");
     }
   }
 

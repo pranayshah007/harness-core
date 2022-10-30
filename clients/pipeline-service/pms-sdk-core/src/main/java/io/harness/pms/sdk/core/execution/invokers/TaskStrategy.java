@@ -76,7 +76,6 @@ public class TaskStrategy extends ProgressableStrategy {
   }
 
   private void handleResponse(@NonNull Ambiance ambiance, TaskRequest taskRequest) {
-    String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     if (RequestCase.SKIPTASKREQUEST == taskRequest.getRequestCase()) {
       sdkNodeExecutionService.handleStepResponse(ambiance,
           StepResponseMapper.toStepResponseProto(

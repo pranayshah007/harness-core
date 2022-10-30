@@ -10,8 +10,8 @@ package io.harness.delegate;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 
 import io.harness.eraro.ErrorCode;
-import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
+import io.harness.exception.FailureType;
 import io.harness.exception.WingsException;
 
 import java.util.EnumSet;

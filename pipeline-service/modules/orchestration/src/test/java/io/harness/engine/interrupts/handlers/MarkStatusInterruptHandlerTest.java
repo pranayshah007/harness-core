@@ -50,6 +50,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class MarkStatusInterruptHandlerTest extends CategoryTest {
@@ -123,9 +127,14 @@ public class MarkStatusInterruptHandlerTest extends CategoryTest {
         .when(nodeExecutionService)
         .update(eq(nodeExecutionId), any());
     // Returning Final status so planExecutionService should not be called.
-    doReturn(Arrays.asList(NodeExecution.builder().uuid("newNodeExecutionId").status(FAILED).build()))
+    Pageable pageable = PageRequest.of(0, 1000);
+    Page<NodeExecution> nodeExecutions = new PageImpl<>(
+        Arrays.asList(NodeExecution.builder().uuid("newNodeExecutionId").status(FAILED).build()), pageable, 1);
+
+    doReturn(nodeExecutions)
         .when(nodeExecutionService)
-        .fetchWithoutRetriesAndStatusIn(planExecutionId, StatusUtils.activeStatuses());
+        .fetchWithoutRetriesAndStatusIn(
+            planExecutionId, StatusUtils.activeStatuses(), NodeProjectionUtils.withStatus, pageable);
     doReturn(interruptBuilder.state(State.PROCESSED_SUCCESSFULLY).build())
         .when(interruptService)
         .markProcessed(interruptUuid, State.PROCESSED_SUCCESSFULLY);
@@ -142,9 +151,13 @@ public class MarkStatusInterruptHandlerTest extends CategoryTest {
     verify(interruptService, times(1)).markProcessed(interruptUuid, State.PROCESSED_SUCCESSFULLY);
 
     // Returning NonFinal status so planExecutionService should be called.
-    doReturn(Arrays.asList(NodeExecution.builder().uuid("newNodeExecutionId").status(nonFinalStatus).build()))
+    nodeExecutions = new PageImpl<>(
+        Arrays.asList(NodeExecution.builder().uuid("newNodeExecutionId").status(nonFinalStatus).build()), pageable, 1);
+
+    doReturn(nodeExecutions)
         .when(nodeExecutionService)
-        .fetchWithoutRetriesAndStatusIn(planExecutionId, StatusUtils.activeStatuses());
+        .fetchWithoutRetriesAndStatusIn(
+            planExecutionId, StatusUtils.activeStatuses(), NodeProjectionUtils.withStatus, pageable);
 
     returnedInterrupt =
         markStatusInterruptHandler.handleInterruptStatus(interruptBuilder.build(), nodeExecutionId, status);

@@ -26,6 +26,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Api("health")
@@ -34,14 +35,10 @@ import lombok.extern.slf4j.Slf4j;
 @Produces(MediaType.APPLICATION_JSON)
 @OwnedBy(DEL)
 @Slf4j
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 @PublicApi
 public class HealthResource {
   private final HealthService healthService;
-
-  @Inject
-  public HealthResource(HealthService healthService) {
-    this.healthService = healthService;
-  }
 
   @GET
   @Timed

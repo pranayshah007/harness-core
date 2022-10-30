@@ -654,7 +654,8 @@ public enum ErrorCode {
 
   DELEGATE_TASK_EXPIRED,
 
-  DELEGATE_TASK_VALIDATION_FAILED;
+  DELEGATE_TASK_VALIDATION_FAILED,
+  MONGO_EXECUTION_TIMEOUT_EXCEPTION;
 
   private Status status = BAD_REQUEST;
   private String description;

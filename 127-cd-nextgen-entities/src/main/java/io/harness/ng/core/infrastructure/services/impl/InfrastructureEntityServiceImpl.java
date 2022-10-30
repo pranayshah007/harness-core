@@ -208,6 +208,9 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           return result;
         }));
     infrastructureEntitySetupUsageHelper.updateSetupUsages(upsertedInfra);
+    if (requestInfra.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
+      customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(requestInfra);
+    }
     return upsertedInfra;
   }
 

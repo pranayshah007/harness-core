@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
 import io.harness.helm.HelmCliCommandType;
 

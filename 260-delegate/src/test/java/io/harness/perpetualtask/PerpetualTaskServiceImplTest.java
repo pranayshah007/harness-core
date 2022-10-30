@@ -601,6 +601,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     perpetualTaskRecord.setAccountId(ACCOUNT_ID);
     perpetualTaskRecord.setDelegateId(DELEGATE_ID);
     perpetualTaskRecord.setUuid(taskId);
+    perpetualTaskRecord.setState(PerpetualTaskState.TASK_ASSIGNED);
     perpetualTaskRecordDao.save(perpetualTaskRecord);
     List<PerpetualTaskAssignDetails> perpetualTaskAssignDetailsList =
         perpetualTaskService.listAssignedTasks(DELEGATE_ID, ACCOUNT_ID);

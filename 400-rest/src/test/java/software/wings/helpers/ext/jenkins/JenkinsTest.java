@@ -671,13 +671,13 @@ public class JenkinsTest extends WingsBaseTest {
     JenkinsImpl jenkinsImpl = new JenkinsImpl("");
 
     // default case
-    JenkinsImpl.JobPathDetails jobPathDetails = jenkinsImpl.constructJobPathDetails("project%2Frelease%2Fnew/test");
+    JenkinsImpl.JobPathDetails jobPathDetails = jenkinsImpl.constructJobPathDetails("project/release/new%2Ftest");
     assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
     assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
-    assertThat(jobPathDetails.getChildJobName()).isEqualTo("new/test");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("new%2Ftest");
 
     // more than three paths
-    jobPathDetails = jenkinsImpl.constructJobPathDetails("project%2Frelease%2Fmaster");
+    jobPathDetails = jenkinsImpl.constructJobPathDetails("project/release/master");
     assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
     assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
     assertThat(jobPathDetails.getChildJobName()).isEqualTo("master");
