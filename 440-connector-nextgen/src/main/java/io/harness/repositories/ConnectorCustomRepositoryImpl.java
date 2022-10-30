@@ -74,6 +74,14 @@ public class ConnectorCustomRepositoryImpl implements ConnectorCustomRepository 
   }
 
   @Override
+  public Page<Connector> findAll(Criteria criteria, Pageable pageable) {
+    Query query = new Query(criteria).with(pageable);
+    List<Connector> connectors = mongoTemplate.find(query, Connector.class);
+    return PageableExecutionUtils.getPage(
+        connectors, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Connector.class));
+  }
+
+  @Override
   public Connector update(Criteria criteria, Update update, ChangeType changeType, String projectIdentifier,
       String orgIdentifier, String accountIdentifier) {
     return mongoTemplate.findAndModify(

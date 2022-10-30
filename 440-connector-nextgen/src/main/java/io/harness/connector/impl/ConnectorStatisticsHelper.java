@@ -9,6 +9,7 @@ package io.harness.connector.impl;
 
 import static io.harness.NGCommonEntityConstants.MONGODB_ID;
 import static io.harness.beans.FeatureName.NG_SETTINGS;
+import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
 
 import static java.lang.Boolean.parseBoolean;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.facet;
@@ -16,7 +17,11 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.grou
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
+import io.harness.connector.accesscontrol.ResourceTypes;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector.GcpKmsConnectorKeys;
@@ -35,10 +40,9 @@ import io.harness.repositories.ConnectorRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,14 +62,19 @@ public class ConnectorStatisticsHelper {
   NGSettingsClient settingsClient;
   AccountClient accountClient;
   ConnectorRbacHelper connectorRbacHelper;
+  AccessControlClient accessControlClient;
 
   public ConnectorStatistics getStats(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = createCriteriaObjectForConnectorScope(accountIdentifier, orgIdentifier, projectIdentifier);
-    List<Connector> connectors = connectorRepository.findAll(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier).getContent();
-    connectors = connectorRbacHelper.getPermitted(connectors, accountIdentifier, orgIdentifier, projectIdentifier);
-    List<String> connectorIds = new ArrayList<>();
-    connectors.stream().map(connector -> connectorIds.add(connector.getIdentifier()));
-    criteria.and(ConnectorKeys.identifier).in(connectorIds);
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
+      List<Connector> connectors =
+          connectorRepository.findAll(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier)
+              .getContent();
+      connectors = connectorRbacHelper.getPermitted(connectors);
+      List<String> connectorIds = connectors.stream().map(Connector::getIdentifier).collect(Collectors.toList());
+      criteria.and(ConnectorKeys.identifier).in(connectorIds);
+    }
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation groupByType = group(ConnectorKeys.type).count().as(ConnectorTypeStatsKeys.count);
     ProjectionOperation projectType =

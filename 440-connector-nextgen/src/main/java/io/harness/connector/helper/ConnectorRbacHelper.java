@@ -42,6 +42,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -118,16 +119,10 @@ public class ConnectorRbacHelper {
     }
   }
 
-  public List<Connector> getPermitted(
-      List<Connector> connectors, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
-      return checkAccess(connectors);
+  public List<Connector> getPermitted(List<Connector> connectors) {
+    if (isEmpty(connectors)){
+      return Collections.emptyList();
     }
-    return connectors;
-  }
-
-  private List<Connector> checkAccess(List<Connector> connectors) {
     Map<ConnectorResource, List<Connector>> connectorsMap =
         connectors.stream().collect(groupingBy(ConnectorResource::fromConnector));
     List<PermissionCheckDTO> permissionChecks =
