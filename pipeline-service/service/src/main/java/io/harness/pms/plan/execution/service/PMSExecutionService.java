@@ -20,11 +20,10 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
+import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesIDPPluginSupportDTO;
 
 import com.google.protobuf.ByteString;
 import java.util.List;
-
-import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesIDPPluginSupportDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -32,7 +31,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PIPELINE)
 public interface PMSExecutionService {
   InputSetYamlWithTemplateDTO getInputSetYamlWithTemplate(String accountId, String orgId, String projectId,
-                                                          String planExecutionId, boolean pipelineDeleted, boolean resolveExpressions);
+      String planExecutionId, boolean pipelineDeleted, boolean resolveExpressions);
 
   Page<PipelineExecutionSummaryEntity> getPipelineExecutionSummaryEntity(Criteria criteria, Pageable pageable);
 
@@ -64,10 +63,11 @@ public interface PMSExecutionService {
       String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
       ByteString gitEntityBasicInfo, boolean isLatest);
 
-  Criteria formCriteriaIDPPluginSupport(String accountId, String orgId, String projectId, List<String> pipelineIdentifier,
-                                        String filterIdentifier, PipelineExecutionFilterPropertiesIDPPluginSupportDTO filterProperties, String moduleName,
-                                        String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
-                                        ByteString gitSyncBranchContext, boolean isLatest);
+  Criteria formCriteriaIDPPluginSupport(String accountId, String orgId, String projectId,
+      List<String> pipelineIdentifier, String filterIdentifier,
+      PipelineExecutionFilterPropertiesIDPPluginSupportDTO filterProperties, String moduleName, String searchTerm,
+      List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted, ByteString gitSyncBranchContext,
+      boolean isLatest);
 
   void deleteExecutionsOnPipelineDeletion(PipelineEntity pipelineEntity);
 

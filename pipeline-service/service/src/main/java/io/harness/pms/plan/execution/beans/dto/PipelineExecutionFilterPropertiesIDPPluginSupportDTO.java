@@ -7,20 +7,20 @@
 
 package io.harness.pms.plan.execution.beans.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonTypeName;
+import static io.harness.filter.FilterConstants.PIPELINE_EXECUTION_FILTER;
+
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.TimeRange;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
+import java.util.List;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.util.List;
-
-import static io.harness.filter.FilterConstants.PIPELINE_EXECUTION_FILTER;
 
 @Data
 @Builder
