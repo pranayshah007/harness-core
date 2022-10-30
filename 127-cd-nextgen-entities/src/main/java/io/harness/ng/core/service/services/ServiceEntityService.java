@@ -60,6 +60,9 @@ public interface ServiceEntityService {
 
   ArtifactSourcesResponseDTO getArtifactSourceInputs(String yaml, String serviceIdentifier);
 
+  String mergeServiceInputs(
+      String accountId, String orgId, String projectId, String serviceId, String oldServiceInputsYaml);
+
   boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
 
   /**

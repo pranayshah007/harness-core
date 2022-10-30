@@ -54,6 +54,7 @@ import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
+import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
@@ -88,6 +89,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -540,6 +542,47 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       throw new InvalidRequestException(
           String.format("Error occurred while creating service inputs for service %s", serviceIdentifier), e);
     }
+  }
+
+  @Override
+  public String mergeServiceInputs(
+      String accountId, String orgId, String projectId, String serviceId, String oldServiceInputsYaml) {
+    Optional<ServiceEntity> serviceEntity = get(accountId, orgId, projectId, serviceId, false);
+    if (!serviceEntity.isPresent()) {
+      throw new NotFoundException(
+          format("Service with identifier [%s] in project [%s], org [%s] not found", serviceId, projectId, orgId));
+    }
+
+    String serviceYaml = serviceEntity.get().getYaml();
+    if (isEmpty(serviceYaml)) {
+      throw new InvalidRequestException(
+          format("Service %s is not configured with a Service definition. Service Yaml is empty", serviceId));
+    }
+    try {
+      YamlNode primaryArtifactRefNode = null;
+      if (isNotEmpty(oldServiceInputsYaml)) {
+        YamlNode oldServiceInputsNode = YamlUtils.readTree(oldServiceInputsYaml).getNode();
+        primaryArtifactRefNode = YamlNodeUtils.goToPathUsingFqn(
+            oldServiceInputsNode, "serviceInputs.serviceDefinition.spec.artifacts.primary.primaryArtifactRef");
+      }
+
+      String newServiceInputsYaml = createServiceInputsYamlGivenPrimaryArtifactRef(
+          serviceYaml, serviceId, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
+      return mergeServiceInputs(oldServiceInputsYaml, newServiceInputsYaml);
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Error occurred while merging old and new service inputs", ex);
+    }
+  }
+
+  private String mergeServiceInputs(String oldServiceInputsYaml, String newServiceInputsYaml) {
+    if (isEmpty(newServiceInputsYaml)) {
+      return newServiceInputsYaml;
+    }
+    if (isEmpty(oldServiceInputsYaml)) {
+      return newServiceInputsYaml;
+    }
+    return YamlPipelineUtils.writeYamlString(
+        YamlRefreshHelper.refreshYamlFromSourceYaml(oldServiceInputsYaml, newServiceInputsYaml));
   }
 
   private void modifyServiceDefinitionNodeBeforeCreatingServiceInputs(
