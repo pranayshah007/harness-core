@@ -22,6 +22,10 @@ import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.instance.outcome.HostOutcome;
+import io.harness.cdng.instance.outcome.InstanceOutcome;
+import io.harness.cdng.instance.outcome.InstancesOutcome;
+import io.harness.cdng.ssh.output.HostsOutput;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.TaskData;
@@ -55,12 +59,14 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ScriptType;
 import io.harness.shell.ShellExecutionData;
+import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -76,6 +82,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -98,6 +105,7 @@ public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<S
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private EngineExpressionService engineExpressionService;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   static Function<InstanceMapperUtils.HostProperties, CustomDeploymentServerInstanceInfo> instanceElementMapper =
       hostProperties -> {
@@ -220,11 +228,37 @@ public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<S
       }
       StepResponse.StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
           instanceElements.stream().map(element -> (ServerInstanceInfo) element).collect(Collectors.toList()));
-
+      InstancesOutcome instancesOutcome = buildInstancesOutcome(instanceElements);
+      executionSweepingOutputService.consume(
+          ambiance, OutputExpressionConstants.INSTANCES, instancesOutcome, StepCategory.STAGE.name());
+      Set<String> instances = getInstances(instanceElements);
+      executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
+          HostsOutput.builder().hosts(instances).build(), StepCategory.STAGE.name());
       return builder.stepOutcome(stepOutcome).build();
     } finally {
       closeLogStream(ambiance);
     }
+  }
+
+  private Set<String> getInstances(List<CustomDeploymentServerInstanceInfo> instanceElements) {
+    return instanceElements.stream()
+        .map(CustomDeploymentServerInstanceInfo::getInstanceName)
+        .collect(Collectors.toSet());
+  }
+
+  private InstancesOutcome buildInstancesOutcome(List<CustomDeploymentServerInstanceInfo> instanceElements) {
+    List<InstanceOutcome> instanceOutcomeList = new ArrayList<>();
+    for (CustomDeploymentServerInstanceInfo instance : instanceElements) {
+      instanceOutcomeList.add(InstanceOutcome.builder()
+                                  .hostName(instance.getInstanceName())
+                                  .name(instance.getInstanceName())
+                                  .host(HostOutcome.builder()
+                                            .instanceName(instance.getInstanceName())
+                                            .properties(instance.getProperties())
+                                            .build())
+                                  .build());
+    }
+    return InstancesOutcome.builder().instances(instanceOutcomeList).build();
   }
 
   private void closeLogStream(Ambiance ambiance) {

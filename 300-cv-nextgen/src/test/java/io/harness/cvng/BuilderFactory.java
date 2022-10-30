@@ -89,6 +89,8 @@ import io.harness.cvng.core.beans.sidekick.VerificationJobInstanceCleanupSideKic
 import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.AppDynamicsCVConfigBuilder;
+import io.harness.cvng.core.entities.AwsPrometheusCVConfig;
+import io.harness.cvng.core.entities.AwsPrometheusCVConfig.AwsPrometheusCVConfigBuilder;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CloudWatchMetricCVConfig;
 import io.harness.cvng.core.entities.CloudWatchMetricCVConfig.CloudWatchMetricCVConfigBuilder;
@@ -458,6 +460,19 @@ public class BuilderFactory {
         .connectorIdentifier("connectorRef")
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .category(CVMonitoringCategory.PERFORMANCE);
+  }
+
+  public AwsPrometheusCVConfigBuilder awsPrometheusCVConfigBuilder() {
+    return AwsPrometheusCVConfig.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .connectorIdentifier("connectorRef")
+        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
+        .category(CVMonitoringCategory.PERFORMANCE)
+        .region("us-east-1")
+        .workspaceId("ws-bd297196-b5ca-48c5-9857-972fe759354f");
   }
 
   public SplunkMetricCVConfigBuilder splunkMetricCVConfigBuilder() {

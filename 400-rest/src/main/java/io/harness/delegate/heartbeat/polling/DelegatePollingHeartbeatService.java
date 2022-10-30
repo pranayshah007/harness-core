@@ -45,7 +45,7 @@ public class DelegatePollingHeartbeatService extends DelegateHeartbeatService<De
   }
 
   @Override
-  public void finish(final DelegateHeartbeatResponse response, final DelegateHeartbeatParams params) {
+  public void finish(@NotNull final DelegateHeartbeatResponse response, @NotNull final DelegateHeartbeatParams params) {
     log.debug("Polling-mode heartbeat sending response at {} for delegate {}", clock.millis(), params.getDelegateId());
   }
 
@@ -58,6 +58,7 @@ public class DelegatePollingHeartbeatService extends DelegateHeartbeatService<De
           .status(DelegateInstanceStatus.DELETED.toString())
           .build();
     }
+    // If the heartbeat processing hit unknown exception, fail early.
     return null;
   }
 

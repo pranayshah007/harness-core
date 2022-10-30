@@ -22,7 +22,6 @@ import io.harness.notification.PipelineEventType;
 import io.harness.plan.Plan;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.ExecutionStatus;
@@ -41,7 +40,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -69,7 +68,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
   private final PlanService planService;
   private final PlanExecutionService planExecutionService;
   private final NodeTypeLookupService nodeTypeLookupService;
-  private final PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
+  private final PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   private final PmsGitSyncHelper pmsGitSyncHelper;
   private final NotificationHelper notificationHelper;
   private final RecentExecutionsInfoHelper recentExecutionsInfoHelper;
@@ -77,7 +76,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
   @Inject
   public ExecutionSummaryCreateEventHandler(PMSPipelineService pmsPipelineService, PlanService planService,
       PlanExecutionService planExecutionService, NodeTypeLookupService nodeTypeLookupService,
-      PmsExecutionSummaryRespository pmsExecutionSummaryRespository, PmsGitSyncHelper pmsGitSyncHelper,
+      PmsExecutionSummaryRepository pmsExecutionSummaryRespository, PmsGitSyncHelper pmsGitSyncHelper,
       NotificationHelper notificationHelper, RecentExecutionsInfoHelper recentExecutionsInfoHelper) {
     this.pmsPipelineService = pmsPipelineService;
     this.planService = planService;
@@ -156,8 +155,8 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .name(pipelineEntity.get().getName())
             .inputSetYaml(planExecutionMetadata.getInputSetYaml())
             .pipelineTemplate(getPipelineTemplate(pipelineEntity.get(), planExecutionMetadata))
-            .internalStatus(Status.NO_OP)
-            .status(ExecutionStatus.NOTSTARTED)
+            .internalStatus(planExecution.getStatus())
+            .status(ExecutionStatus.getExecutionStatus(planExecution.getStatus()))
             .startTs(planExecution.getStartTs())
             .startingNodeId(startingNodeId)
             .accountId(accountId)

@@ -151,6 +151,8 @@ public class CIExecutionConstants {
   // All FFs go here
   public static final String HARNESS_CI_INDIRECT_LOG_UPLOAD_FF = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF";
 
+  public static final String HARNESS_LE_STATUS_REST_ENABLED = "HARNESS_LE_STATUS_REST_ENABLED";
+
   // Deprecated
   public static final List<String> SH_COMMAND = Collections.unmodifiableList(Arrays.asList("sh", "-c", "--"));
   public static final List<String> PWSH_COMMAND = Collections.unmodifiableList(Arrays.asList("pwsh", "-Command"));

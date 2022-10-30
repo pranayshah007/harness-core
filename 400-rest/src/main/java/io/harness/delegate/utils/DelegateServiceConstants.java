@@ -9,9 +9,14 @@ package io.harness.delegate.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
+import static java.time.Duration.ofMinutes;
+
 import io.harness.annotations.dev.OwnedBy;
+
+import java.time.Duration;
 
 @OwnedBy(DEL)
 public interface DelegateServiceConstants {
   String STREAM_DELEGATE = "/stream/delegate/";
+  Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
 }

@@ -19,6 +19,7 @@ import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcomeAbstract;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -39,6 +40,7 @@ import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -234,6 +236,20 @@ public class InfrastructureMapper {
         infrastructureOutcome = ecsInfrastructureOutcome;
         break;
 
+      case InfrastructureKind.ELASTIGROUP:
+        ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
+        ElastigroupInfrastructureOutcome elastigroupInfrastructureOutcome =
+            ElastigroupInfrastructureOutcome.builder()
+                .connectorRef(elastigroupInfrastructure.getConnectorRef().getValue())
+                .environment(environmentOutcome)
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, elastigroupInfrastructure.getInfrastructureKeyValues()))
+                .build();
+        setInfraIdentifierAndName(elastigroupInfrastructureOutcome, elastigroupInfrastructure.getInfraIdentifier(),
+            elastigroupInfrastructure.getInfraName());
+        infrastructureOutcome = elastigroupInfrastructureOutcome;
+        break;
+
       case InfrastructureKind.CUSTOM_DEPLOYMENT:
         CustomDeploymentInfrastructure customDeploymentInfrastructure = (CustomDeploymentInfrastructure) infrastructure;
         String templateYaml = customDeploymentInfrastructureHelper.getTemplateYaml(accountIdentifier, orgIdentifier,
@@ -320,6 +336,7 @@ public class InfrastructureMapper {
       InfrastructureOutcomeAbstract infrastructureOutcome, String infraIdentifier, String infraName) {
     infrastructureOutcome.setInfraIdentifier(infraIdentifier);
     infrastructureOutcome.setInfraName(infraName);
+    infrastructureOutcome.setName(infraName);
   }
 
   private String getValueOrExpression(ParameterField<String> parameterField) {

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.NAVNEET;
@@ -39,6 +40,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
@@ -58,6 +60,7 @@ import io.harness.cdng.infra.beans.host.HostNamesFilter;
 import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure.K8SDirectInfrastructureBuilder;
@@ -70,17 +73,24 @@ import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.instance.InstanceOutcomeHelper;
 import io.harness.cdng.instance.outcome.InstanceOutcome;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
 import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
@@ -107,6 +117,7 @@ import io.harness.rule.Owner;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
 
+import com.google.common.collect.Lists;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -122,6 +133,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -817,6 +829,63 @@ public class InfrastructureStepTest extends CategoryTest {
                                .build();
 
     assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testValidateElastigroupInfrastructure() {
+    StoreConfig storeConfig =
+        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
+
+    ElastigroupInfrastructure infrastructure =
+        ElastigroupInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField(""))
+            .configuration(
+                ElastigroupConfiguration.builder()
+                    .store(StoreConfigWrapper.builder().type(StoreConfigType.INLINE).spec(storeConfig).build())
+                    .build())
+            .build();
+    Ambiance ambiance = Mockito.mock(Ambiance.class);
+    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any());
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
+        .isInstanceOf(InvalidRequestException.class);
+    doNothing().when(infrastructureStepHelper).validateExpression(any());
+    assertThatCode(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testValidateElastigroupConnector() {
+    StoreConfig storeConfig =
+        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
+
+    ElastigroupInfrastructure infrastructure =
+        ElastigroupInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField(""))
+            .configuration(
+                ElastigroupConfiguration.builder()
+                    .store(StoreConfigWrapper.builder().type(StoreConfigType.INLINE).spec(storeConfig).build())
+                    .build())
+            .build();
+    Ambiance ambiance = Mockito.mock(Ambiance.class);
+    when(infrastructureStepHelper.getInfrastructureLogCallback(ambiance)).thenReturn(ngLogCallback);
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorConfig(AwsConnectorDTO.builder().build())
+                                            .connectorType(ConnectorType.AWS)
+                                            .build();
+
+    doReturn(Lists.newArrayList(connectorInfoDTO))
+        .when(infrastructureStepHelper)
+        .validateAndGetConnectors(any(), any(), any());
+
+    assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
+        .isInstanceOf(InvalidRequestException.class);
+    connectorInfoDTO.setConnectorConfig(SpotConnectorDTO.builder().build());
+
+    assertThatCode(() -> infrastructureStep.validateConnector(infrastructure, ambiance)).doesNotThrowAnyException();
   }
 
   @Test

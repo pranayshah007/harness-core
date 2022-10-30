@@ -173,11 +173,10 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   public boolean resetTask(String accountId, String taskId, PerpetualTaskExecutionBundle taskExecutionBundle) {
     try (AutoLogContext ignore0 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore1 = new PerpetualTaskLogContext(taskId, OVERRIDE_ERROR)) {
-      log.info("Resetting the perpetual task");
-
       PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecordDao.getTask(taskId);
       if (perpetualTaskRecord != null) {
         String perpetualTaskType = perpetualTaskRecord.getPerpetualTaskType();
+        log.info("Resetting the perpetual task {}, type: {}", taskId, perpetualTaskType);
         delegateMetricsService.recordPerpetualTaskMetrics(accountId, perpetualTaskType, PERPETUAL_TASK_RESET);
       }
       return perpetualTaskRecordDao.resetDelegateIdForTask(accountId, taskId, taskExecutionBundle);
@@ -204,7 +203,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
 
       boolean hasDeleted = perpetualTaskRecordDao.remove(accountId, taskId);
       if (hasDeleted) {
-        log.info("Deleted the perpetual task");
+        log.info("Deleted the perpetual task {} ", taskId);
       }
       return hasDeleted;
     }
@@ -214,8 +213,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   public boolean pauseTask(String accountId, String taskId) {
     try (AutoLogContext ignore0 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore1 = new PerpetualTaskLogContext(taskId, OVERRIDE_ERROR)) {
-      log.info("Pausing the perpetual task");
-
+      log.info("Pausing the perpetual task, {}", taskId);
       PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecordDao.getTask(taskId);
       if (perpetualTaskRecord != null) {
         String perpetualTaskType = perpetualTaskRecord.getPerpetualTaskType();

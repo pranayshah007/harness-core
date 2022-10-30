@@ -186,6 +186,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidateTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidationParams;
+import io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsValidationParams;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerValidationParams;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCapabilityHelper;
@@ -1887,5 +1888,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(NoAvailableDelegatesException.class, 73990);
     kryo.register(NoDelegatesException.class, 73991);
     kryo.register(DelegateTaskExpiredException.class, 980036);
+    kryo.register(S3BuildsResponse.class, 1010101);
   }
 }

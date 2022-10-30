@@ -66,6 +66,7 @@ public class DelegateStreamHeartbeatService
           .responseMessage(SELF_DESTRUCT + params.getDelegateId())
           .build();
     }
+    // If the heartbeat processing hit unknown exception, fail early.
     return null;
   }
 

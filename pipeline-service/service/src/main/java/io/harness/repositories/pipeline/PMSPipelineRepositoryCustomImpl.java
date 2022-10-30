@@ -92,6 +92,14 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   @Override
+  public Long countAllPipelinesInAccount(String accountId) {
+    Criteria criteria =
+        Criteria.where(PipelineEntityKeys.accountId).is(accountId).and(PipelineEntityKeys.deleted).is(false);
+    Query query = new Query().addCriteria(criteria);
+    return mongoTemplate.count(query, PipelineEntity.class);
+  }
+
+  @Override
   public PipelineEntity saveForOldGitSync(PipelineEntity pipelineToSave) {
     return transactionHelper.performTransaction(() -> {
       PipelineEntity savedEntity = gitAwarePersistence.save(

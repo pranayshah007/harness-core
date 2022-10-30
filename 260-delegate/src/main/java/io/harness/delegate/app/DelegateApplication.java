@@ -113,7 +113,7 @@ public class DelegateApplication {
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(10, 400, 1, TimeUnit.SECONDS,
         new ThreadFactoryBuilder().setNameFormat("default-task-%d").setPriority(Thread.NORM_PRIORITY).build()));
 
-    Injector injector = Guice.createInjector(new DelegateAgentModule(configuration, false));
+    Injector injector = Guice.createInjector(new DelegateAgentModule(configuration));
     MessageService messageService = injector.getInstance(MessageService.class);
 
     // Add JVM shutdown hook so as to have a clean shutdown

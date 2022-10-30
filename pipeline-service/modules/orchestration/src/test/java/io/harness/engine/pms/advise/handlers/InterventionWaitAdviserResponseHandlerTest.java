@@ -43,7 +43,6 @@ import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Duration;
-import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -108,9 +107,7 @@ public class InterventionWaitAdviserResponseHandlerTest extends OrchestrationTes
   public void shouldTestHandleAdvise() {
     interventionWaitAdviserResponseHandler.handleAdvise(nodeExecution,
         AdviserResponse.newBuilder().setInterventionWaitAdvise(advise).setType(AdviseType.INTERVENTION_WAIT).build());
-    List<NodeExecution> executions = nodeExecutionService.fetchNodeExecutions(PLAN_EXECUTION_ID);
-    assertThat(executions).hasSize(1);
-    NodeExecution nodeExecution = executions.get(0);
+    NodeExecution nodeExecution = nodeExecutionService.get(NODE_EXECUTION_ID);
     assertThat(nodeExecution).isNotNull();
     assertThat(nodeExecution.getStatus()).isEqualTo(Status.INTERVENTION_WAITING);
     assertThat(nodeExecution.getAdviserTimeoutInstanceIds()).hasSize(1);

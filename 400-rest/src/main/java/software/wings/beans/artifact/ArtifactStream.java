@@ -99,6 +99,7 @@ public abstract class ArtifactStream
         .add(CompoundMongoIndex.builder()
                  .name("artifactStream_collection")
                  .field(ArtifactStreamKeys.collectionEnabled)
+                 .field(ArtifactStreamKeys.collectionStatus)
                  .field(ArtifactStreamKeys.nextIteration)
                  .build())
         .build();

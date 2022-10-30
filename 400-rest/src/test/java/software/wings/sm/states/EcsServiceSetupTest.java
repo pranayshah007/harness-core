@@ -8,7 +8,7 @@
 package software.wings.sm.states;
 
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
-import static io.harness.eraro.FailureType.TIMEOUT;
+import static io.harness.exception.FailureType.TIMEOUT;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.SATYAM;

@@ -24,6 +24,7 @@ import io.harness.entities.Instance.InstanceKeysAdditional;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
+import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.rule.Owner;
 
@@ -31,9 +32,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.bson.Document;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndReplaceOptions;
@@ -61,7 +62,14 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   private final long END_TIMESTAMP = 125L;
   @Mock MongoTemplate mongoTemplate;
   @Mock MongoTemplate secondaryMongoTemplate;
-  @InjectMocks InstanceRepositoryCustomImpl instanceRepositoryCustom;
+  @Mock SecondaryMongoTemplateHolder secondaryMongoTemplateHolder;
+  InstanceRepositoryCustomImpl instanceRepositoryCustom;
+
+  @Before
+  public void setup() {
+    when(secondaryMongoTemplateHolder.getSecondaryMongoTemplate()).thenReturn(secondaryMongoTemplate);
+    instanceRepositoryCustom = new InstanceRepositoryCustomImpl(mongoTemplate, secondaryMongoTemplateHolder);
+  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)

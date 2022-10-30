@@ -19,6 +19,7 @@ import io.harness.ccm.audittrails.events.CostCategoryUpdateEvent;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -67,6 +68,9 @@ public class BusinessMappingResource {
   public RestResponse<BusinessMapping> save(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, BusinessMapping businessMapping) {
     rbacHelper.checkCostCategoryEditPermission(accountId, null, null);
+    if (!businessMappingService.isNamePresent(businessMapping.getName(), businessMapping.getAccountId())) {
+      throw new InvalidRequestException("Cost category name already exists.");
+    }
     BusinessMapping costCategory = businessMappingService.save(businessMapping);
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(new CostCategoryCreateEvent(accountId, costCategory.toDTO()));
@@ -103,6 +107,11 @@ public class BusinessMappingResource {
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, BusinessMapping businessMapping) {
     rbacHelper.checkCostCategoryEditPermission(accountId, null, null);
     BusinessMapping oldCostCategory = businessMappingService.get(businessMapping.getUuid(), accountId);
+    if (!oldCostCategory.getName().equals(businessMapping.getName())) {
+      if (!businessMappingService.isNamePresent(businessMapping.getName(), businessMapping.getAccountId())) {
+        throw new InvalidRequestException("Cost category name already exists.");
+      }
+    }
     BusinessMapping newCostCategory = businessMappingService.update(businessMapping);
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(new CostCategoryUpdateEvent(accountId, newCostCategory.toDTO(), oldCostCategory.toDTO()));

@@ -19,6 +19,7 @@ import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
 import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
+import software.wings.helpers.ext.nexus.NexusRepositories;
 
 import java.util.List;
 import lombok.Builder;
@@ -39,6 +40,7 @@ public class ArtifactTaskExecutionResponse {
   List<AzureArtifactsFeed> azureArtifactsFeeds;
   List<AzureArtifactsPackage> azureArtifactsPackages;
   List<String> artifactPath;
+  List<NexusRepositories> repositories;
   JenkinsBuildTaskNGResponse jenkinsBuildTaskNGResponse;
   ExecuteCommandResponse executeCommandResponse;
   CommandExecutionStatus status;

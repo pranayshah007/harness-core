@@ -31,7 +31,6 @@ import io.harness.execution.StagesExecutionMetadata;
 import io.harness.notification.PipelineEventType;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.GraphLayoutInfo;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
@@ -45,7 +44,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 
 import java.text.SimpleDateFormat;
@@ -64,7 +63,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
   @Mock private PlanService planService;
   @Mock private PlanExecutionService planExecutionService;
   @Mock private NodeTypeLookupService nodeTypeLookupService;
-  @Mock private PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
+  @Mock private PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   @Mock private NotificationHelper notificationHelper;
   @Mock private RecentExecutionsInfoHelper recentExecutionsInfoHelper;
@@ -158,7 +157,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     assertThat(capturedEntity.getPipelineIdentifier()).isEqualTo("pipelineId");
     assertThat(capturedEntity.getPlanExecutionId()).isEqualTo(ambiance.getPlanExecutionId());
     assertThat(capturedEntity.getPipelineDeleted()).isFalse();
-    assertThat(capturedEntity.getInternalStatus()).isEqualTo(Status.NO_OP);
+    assertThat(capturedEntity.getInternalStatus()).isEqualTo(null);
     assertThat(capturedEntity.getStatus()).isEqualTo(ExecutionStatus.NOTSTARTED);
     assertThat(capturedEntity.getTags()).isEmpty();
     assertThat(capturedEntity.getStartingNodeId()).isEqualTo("startId");

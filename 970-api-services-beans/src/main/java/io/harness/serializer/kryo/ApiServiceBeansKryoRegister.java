@@ -175,6 +175,7 @@ import software.wings.helpers.ext.gcb.models.VerifyOption;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.helpers.ext.kustomize.KustomizeConfig;
+import software.wings.helpers.ext.nexus.NexusRepositories;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.utils.RepositoryFormat;
 import software.wings.utils.RepositoryType;
@@ -472,5 +473,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureDevopsProjects.class, 80310);
     kryo.register(ArtifactoryImagePath.class, 80311);
     kryo.register(WebhookSecretData.class, 80312);
+    kryo.register(NexusRepositories.class, 9000312);
   }
 }

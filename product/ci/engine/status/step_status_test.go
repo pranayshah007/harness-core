@@ -82,7 +82,7 @@ func TestSendStatusErr(t *testing.T) {
 				}
 			}
 		}
-		got := SendStepStatus(ctx, stepID, "", accountID, callbackToken, taskID, numRetries, timeTaken, status, "", nil, nil, log.Sugar())
+		got := SendStepStatus(ctx, stepID, "", "", "", "", accountID, callbackToken, taskID, numRetries, timeTaken, status, "", nil, nil, log.Sugar())
 		if tc.expectedErr == (got == nil) {
 			t.Fatalf("%s: expected error: %v, got: %v", tc.name, tc.expectedErr, got)
 		}
@@ -120,7 +120,7 @@ func TestSendStatusClientCreateErr(t *testing.T) {
 	testSetEnv(delegateSvcEndpointEnv, endpoint, t)
 	testSetEnv(delegateSvcTokenEnv, token, t)
 	testSetEnv(delegateSvcIDEnv, svcID, t)
-	err := SendStepStatus(ctx, stepID, "test", accountID, callbackToken, taskID, numRetries, timeTaken, status, "", nil, nil, log.Sugar())
+	err := SendStepStatus(ctx, stepID, "test", "", "", "", accountID, callbackToken, taskID, numRetries, timeTaken, status, "", nil, nil, log.Sugar())
 	assert.NotNil(t, err)
 	testUnsetEnv(delegateSvcEndpointEnv, t)
 	testUnsetEnv(delegateSvcTokenEnv, t)
