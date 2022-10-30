@@ -120,7 +120,7 @@ public class ConnectorRbacHelper {
   }
 
   public List<Connector> getPermitted(List<Connector> connectors) {
-    if (isEmpty(connectors)){
+    if (isEmpty(connectors)) {
       return Collections.emptyList();
     }
     Map<ConnectorResource, List<Connector>> connectorsMap =
