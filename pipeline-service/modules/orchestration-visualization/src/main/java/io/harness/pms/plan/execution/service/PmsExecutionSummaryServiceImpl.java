@@ -25,7 +25,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -42,7 +42,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @Slf4j
 public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryService {
   @Inject NodeExecutionService nodeExecutionService;
-  @Inject private PmsExecutionSummaryRespository pmsExecutionSummaryRepository;
+  @Inject private PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
 
   /**

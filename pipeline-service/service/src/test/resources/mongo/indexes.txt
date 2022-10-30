@@ -86,10 +86,10 @@ planExecutions {"name": "validUntil_1", "background": true, "expireAfterSeconds"
 planExecutionsMetadata {"name": "planExecutionId_idx", "unique": true} {"planExecutionId": 1}
 planExecutionsMetadata {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 planExecutionsSummary {"name": "accountId_executed_modules_startTs_idx", "background": true} {"accountId": 1, "executedModules": 1, "startTs": 1}
-planExecutionsSummary {"name": "accountId_orgId_projectId_modules_name_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "modules": 1, "isLatestExecution": 1, "name": -1}
-planExecutionsSummary {"name": "accountId_orgId_projectId_modules_startTs_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "modules": 1, "isLatestExecution": 1, "startTs": -1}
-planExecutionsSummary {"name": "accountId_orgId_projectId_modules_startTs_status_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "modules": 1, "status": 1, "isLatestExecution": 1, "startTs": -1}
-planExecutionsSummary {"name": "accountId_orgId_projectId_modules_status_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "modules": 1, "isLatestExecution": 1, "status": -1}
+planExecutionsSummary {"name": "accountId_orgId_projectId_name_modules_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "modules": 1, "isLatestExecution": 1, "name": -1}
+planExecutionsSummary {"name": "accountId_orgId_projectId_startTs_modules_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "modules": 1, "isLatestExecution": 1, "startTs": -1}
+planExecutionsSummary {"name": "accountId_orgId_projectId_startTs_status_modules_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "status": 1, "modules": 1, "isLatestExecution": 1, "startTs": -1}
+planExecutionsSummary {"name": "accountId_orgId_projectId_status_modules_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "modules": 1, "isLatestExecution": 1, "status": -1}
 planExecutionsSummary {"name": "accountId_organizationId_projectId_createdAt_idx", "background": true} {"projectIdentifier": 1, "orgIdentifier": 1, "accountId": 1, "createdAt": 1}
 planExecutionsSummary {"name": "accountId_organizationId_projectId_createdAt_modules_idx", "background": true} {"modules": 1, "projectIdentifier": 1, "orgIdentifier": 1, "accountId": 1, "createdAt": 1}
 planExecutionsSummary {"name": "accountId_organizationId_projectId_pipelineId", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineIdentifier": 1}

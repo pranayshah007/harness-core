@@ -7,9 +7,10 @@
 
 package io.harness.freeze.beans;
 
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class RecurrenceSpec {
-  String until;
+  @NotNull String until;
 }

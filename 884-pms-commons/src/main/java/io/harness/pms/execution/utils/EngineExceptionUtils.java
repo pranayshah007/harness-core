@@ -91,6 +91,7 @@ public class EngineExceptionUtils {
       case UNKNOWN_FAILURE:
       case SKIPPING_FAILURE:
       case APPLICATION_FAILURE:
+      case FREEZE_ACTIVE_FAILURE:
         return io.harness.exception.FailureType.APPLICATION_ERROR;
       case CONNECTIVITY_FAILURE:
         return io.harness.exception.FailureType.CONNECTIVITY;

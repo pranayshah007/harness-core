@@ -37,6 +37,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.rule.Owner;
 import io.harness.testlib.RealMongo;
@@ -44,6 +45,7 @@ import io.harness.testlib.RealMongo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -54,6 +56,10 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -118,10 +124,15 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
         planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).status(Status.PAUSED).build());
     assertThat(savedExecution.getUuid()).isEqualTo(planExecutionId);
 
-    when(nodeExecutionService.fetchWithoutRetriesAndStatusIn(eq(planExecutionId), eq(EnumSet.noneOf(Status.class))))
-        .thenReturn(
-            ImmutableList.of(NodeExecution.builder().uuid(excludedNodeExecutionId).status(Status.QUEUED).build(),
-                NodeExecution.builder().uuid(generateUuid()).status(Status.RUNNING).build()));
+    List<NodeExecution> nodeExecutionList =
+        Arrays.asList(NodeExecution.builder().uuid(excludedNodeExecutionId).status(Status.QUEUED).build(),
+            NodeExecution.builder().uuid(generateUuid()).status(Status.RUNNING).build());
+    Pageable pageable = PageRequest.of(0, 1000);
+    Page<NodeExecution> nodeExecutions = new PageImpl<>(nodeExecutionList, pageable, 1);
+
+    when(nodeExecutionService.fetchWithoutRetriesAndStatusIn(
+             eq(planExecutionId), eq(EnumSet.noneOf(Status.class)), eq(NodeProjectionUtils.withStatus), eq(pageable)))
+        .thenReturn(nodeExecutions);
 
     Status status = planExecutionService.calculateStatusExcluding(planExecutionId, excludedNodeExecutionId);
     assertThat(status).isEqualTo(Status.RUNNING);

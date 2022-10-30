@@ -120,7 +120,7 @@ public class FreezeEvalutationResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTO =
-        freezeEvaluateService.shouldDisableDeployment(accountId, orgId, projectId);
+        freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
     List<FreezeReference> freezeReferences = new LinkedList<>();
     freezeSummaryResponseDTO.stream().forEach(freeze
         -> freezeReferences.add(FreezeReference.builder()

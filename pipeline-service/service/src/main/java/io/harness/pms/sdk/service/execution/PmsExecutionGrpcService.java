@@ -17,7 +17,7 @@ import io.harness.pms.contracts.service.ExecutionSummaryUpdateRequest;
 import io.harness.pms.contracts.service.PmsExecutionServiceGrpc.PmsExecutionServiceImplBase;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -36,7 +36,7 @@ public class PmsExecutionGrpcService extends PmsExecutionServiceImplBase {
   private static final String PIPELINE_MODULE_INFO_UPDATE_KEY = "moduleInfo.%s.%s";
   private static final String STAGE_MODULE_INFO_UPDATE_KEY = "layoutNodeMap.%s.moduleInfo.%s.%s";
 
-  @Inject PmsExecutionSummaryRespository pmsExecutionSummaryRepository;
+  @Inject PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Inject private NodeExecutionService nodeExecutionService;
 
   @Override

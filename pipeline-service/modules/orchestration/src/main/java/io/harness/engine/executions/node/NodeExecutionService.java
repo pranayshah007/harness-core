@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PIPELINE)
@@ -39,24 +41,43 @@ public interface NodeExecutionService {
 
   NodeExecution getByPlanNodeUuid(String planNodeUuid, String planExecutionId);
 
-  List<NodeExecution> fetchNodeExecutions(String planExecutionId);
+  Page<NodeExecution> fetchAllStepNodeExecutions(
+      String planExecutionId, Set<String> fieldsToInclude, Pageable pageable);
 
   List<Status> fetchNodeExecutionsWithoutOldRetriesOnlyStatus(String planExecutionId);
 
-  List<NodeExecution> fetchWithoutRetriesAndStatusIn(String planExecutionId, EnumSet<Status> statuses);
-
+  // TODO(Projection): Only left in graph generation in error
   List<NodeExecution> fetchNodeExecutionsWithoutOldRetries(String planExecutionId);
 
+  // TODO(Projection): only left in test case
+  List<NodeExecution> fetchWithoutRetriesAndStatusIn(String planExecutionId, EnumSet<Status> statuses);
+
+  Page<NodeExecution> fetchWithoutRetriesAndStatusIn(
+      String planExecutionId, EnumSet<Status> statuses, Set<String> fieldsToInclude, Pageable pageable);
+
+  // TODO(Projection): Only left in FindAllChildrenWithStatusIn
   List<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
       String planExecutionId, EnumSet<Status> statuses, boolean shouldUseProjections, Set<String> fieldsToBeIncluded);
 
+  Page<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
+      String planExecutionId, EnumSet<Status> statuses, Set<String> fieldsToBeIncluded, Pageable pageable);
+
+  Page<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(String planExecutionId, EnumSet<Status> statuses,
+      Set<String> fieldsToBeIncluded, Set<String> fieldsToBeExcluded, Pageable pageable);
+
+  // TODO(Projection): Only left in FindAllChildrenWithStatusIn
   List<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(String planExecutionId, EnumSet<Status> statuses,
       boolean shouldUseProjections, Set<String> fieldsToBeIncluded, Set<String> fieldsToBeExcluded);
 
+  // TODO(Projection): Make it paginated, has projection
   List<NodeExecution> fetchChildrenNodeExecutions(
       String planExecutionId, String parentId, Set<String> fieldsToBeIncluded);
 
+  // TODO(Projection): only left in test case
   List<NodeExecution> fetchNodeExecutionsByStatus(String planExecutionId, Status status);
+
+  Page<NodeExecution> fetchNodeExecutionsByStatus(
+      String planExecutionId, Status status, Set<String> fieldsToBeIncluded, Pageable pageable);
 
   NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops);
 
@@ -84,6 +105,7 @@ public interface NodeExecutionService {
 
   long markAllLeavesAndQueuedNodesDiscontinuing(String planExecutionId, EnumSet<Status> statuses);
 
+  // TODO(Projection): Make it paginated, has projection
   List<NodeExecution> findAllNodeExecutionsTrimmed(String planExecutionId);
 
   boolean markRetried(String nodeExecutionId);
@@ -95,7 +117,7 @@ public interface NodeExecutionService {
 
   Optional<NodeExecution> getPipelineNodeExecution(@NonNull String planExecutionId);
 
-  List<NodeExecution> findByParentIdAndStatusIn(String parentId, EnumSet<Status> flowingStatuses);
+  long findCountByParentIdAndStatusIn(String parentId, Set<Status> flowingStatuses);
 
   default List<NodeExecution> findAllChildrenOnlyIds(String planExecutionId, String parentId, boolean includeParent) {
     return findAllChildrenWithStatusIn(planExecutionId, parentId, EnumSet.noneOf(Status.class), includeParent, true,
@@ -111,8 +133,10 @@ public interface NodeExecutionService {
   List<NodeExecution> findAllChildrenWithStatusIn(
       String planExecutionId, String parentId, EnumSet<Status> flowingStatuses, boolean includeParent);
 
+  // TODO(Projection): Make it paginated, has projection
   List<NodeExecution> fetchNodeExecutionsByParentId(String nodeExecutionId, boolean oldRetry);
 
+  // TODO(Projection): Make it paginated, has projection
   List<NodeExecution> fetchNodeExecutionsByParentIdWithAmbianceAndNode(
       String nodeExecutionId, boolean oldRetry, boolean includeParent);
 
@@ -123,16 +147,22 @@ public interface NodeExecutionService {
 
   boolean removeTimeoutInstances(String nodeExecutionId);
 
+  // TODO(Projection): Make it paginated, and projection, in retry flow
   List<RetryStageInfo> getStageDetailFromPlanExecutionId(String planExecutionId);
 
+  // TODO(Projection): Make it paginated, and projection, in retry flow
   List<NodeExecution> fetchStageExecutions(String planExecutionId);
 
+  // TODO(Projection): Make it paginated, and projection, in retry flow
   List<NodeExecution> fetchStrategyNodeExecutions(String planExecutionId, List<String> stageFQNs);
 
+  // TODO(Projection): Make it paginated, and projection, in retry flow
   List<String> fetchStageFqnFromStageIdentifiers(String planExecutionId, List<String> stageIdentifiers);
 
+  // TODO(Projection): Make it paginated, and projection, in retry flow
   Map<String, Node> mapNodeExecutionIdWithPlanNodeForGivenStageFQN(String planExecutionId, List<String> stageFQNs);
 
+  // TODO(Projection): Make it paginated, has projection
   List<NodeExecution> fetchStageExecutionsWithEndTsAndStatusProjection(String planExecutionId);
 
   NodeExecution update(@NonNull NodeExecution nodeExecution);

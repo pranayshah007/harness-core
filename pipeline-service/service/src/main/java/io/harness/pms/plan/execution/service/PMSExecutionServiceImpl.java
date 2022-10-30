@@ -51,7 +51,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanEx
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.serializer.JsonUtils;
@@ -64,6 +64,7 @@ import com.google.protobuf.ByteString;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -80,7 +81,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PMSExecutionServiceImpl implements PMSExecutionService {
-  @Inject private PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
+  @Inject private PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   @Inject private GraphGenerationService graphGenerationService;
   @Inject private OrchestrationService orchestrationService;
   @Inject private FilterService filterService;
@@ -132,11 +133,10 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
     Criteria moduleCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(moduleName)) {
-      // Check for pipeline with no filters also - empty pipeline or pipelines with only approval stage
-      moduleCriteria.orOperator(Criteria.where(PlanExecutionSummaryKeys.modules).is(Collections.emptyList()),
-          // This is here just for backward compatibility should be removed
-          Criteria.where(PlanExecutionSummaryKeys.modules)
-              .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
+      // Pipelines having only pipeline stages like custom and approval
+      moduleCriteria.orOperator(Criteria.where(PlanExecutionSummaryKeys.modules)
+                                    .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
+          // Pipelines for checking in actual module
           Criteria.where(PlanExecutionSummaryKeys.modules).in(moduleName));
     }
 
@@ -182,8 +182,23 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       gitCriteria.orOperator(gitCriteriaDeprecated, gitCriteriaNew);
     }
 
-    criteria.andOperator(filterCriteria, moduleCriteria, searchCriteria, gitCriteria);
+    List<Criteria> criteriaList = new LinkedList<>();
+    if (!filterCriteria.equals(new Criteria())) {
+      criteriaList.add(filterCriteria);
+    }
+    if (!moduleCriteria.equals(new Criteria())) {
+      criteriaList.add(moduleCriteria);
+    }
+    if (!searchCriteria.equals(new Criteria())) {
+      criteriaList.add(searchCriteria);
+    }
+    if (!gitCriteria.equals(new Criteria())) {
+      criteriaList.add(gitCriteria);
+    }
 
+    if (!criteriaList.isEmpty()) {
+      criteria.andOperator(criteriaList.toArray(new Criteria[criteriaList.size()]));
+    }
     return criteria;
   }
 
