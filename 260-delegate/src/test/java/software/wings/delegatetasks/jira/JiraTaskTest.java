@@ -261,11 +261,11 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean());
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean(), anyBoolean());
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
     doThrow(new JiraClientException("error"))
         .when(jiraNGClient)
-        .createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean());
+        .createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean(), anyBoolean());
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.FAILED);
@@ -281,11 +281,11 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean());
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean(), anyBoolean());
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
     doReturn(mock(JiraIssueNG.class))
         .when(jiraNGClient)
-        .createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean());
+        .createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean(), anyBoolean());
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder()
             .jiraAction(JiraAction.CREATE_TICKET_NG)
@@ -299,8 +299,8 @@ public class JiraTaskTest extends CategoryTest {
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     verify(jiraNGClient).getUsers(taskParameters.getUserQuery(), null, null);
     verify(jiraNGClient)
-        .createIssue(
-            eq(taskParameters.getProject()), eq(taskParameters.getIssueType()), anyMap(), anyBoolean(), anyBoolean());
+        .createIssue(eq(taskParameters.getProject()), eq(taskParameters.getIssueType()), anyMap(), anyBoolean(),
+            anyBoolean(), anyBoolean());
     assertThat(delegateResponseData).isEqualToComparingFieldByField(jiraExecutionData);
   }
   @Test
