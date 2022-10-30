@@ -83,98 +83,21 @@ public class EnvironmentsResourceApiUtilsTest extends CategoryTest {
     environmentsResourceApiUtils = new EnvironmentsResourceApiUtils(validator);
 
     tags = Arrays.asList(NGTag.builder().key("k1").value("v1").build());
-    ngEnvironmentConfig = NGEnvironmentConfig.builder()
-                              .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
-                                                           .name(name)
-                                                           .identifier(slug)
-                                                           .orgIdentifier(org)
-                                                           .projectIdentifier(project)
-                                                           .tags(singletonMap("k1", "v1"))
-                                                           .type(EnvironmentType.PreProduction)
-                                                           .build())
-                              .build();
 
-    ngServiceOverrideConfig =
-        NGServiceOverrideConfig.builder()
-            .serviceOverrideInfoConfig(
-                NGServiceOverrideInfoConfig.builder().serviceRef(service).environmentRef(slug).build())
-            .build();
+    setNgEnvironmentConfig();
+    setNgServiceOverrideConfig();
 
     yamlServiceOverride = ServiceOverridesMapper.toYaml(ngServiceOverrideConfig);
-    environmentRequest = new EnvironmentRequest();
-    environmentRequest.setColor(HARNESS_BLUE);
-    environmentRequest.setDescription(description);
-    environmentRequest.setName(name);
-    environmentRequest.setTags(singletonMap("k1", "v1"));
-    environmentRequest.setSlug(slug);
-    environmentRequest.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
-    environmentRequest.setType(EnvironmentRequest.TypeEnum.PREPRODUCTION);
 
-    serviceOverrideRequest = new ServiceOverrideRequest();
-    serviceOverrideRequest.setYaml(yamlServiceOverride);
+    setEnvironmentRequest();
+    setServiceOverrideRequest();
+    setServiceOverrideResponse();
 
-    serviceOverrideResponse = new ServiceOverrideResponse();
-    serviceOverrideResponse.setYaml(yamlServiceOverride);
-    serviceOverrideResponse.setProject(project);
-    serviceOverrideResponse.setService(service);
-    serviceOverrideResponse.setEnvironemnt(slug);
-    serviceOverrideResponse.setAccount(account);
-    serviceOverrideResponse.setOrg(org);
-
-    environmentEntity = io.harness.ng.core.environment.beans.Environment.builder()
-                            .accountId(account)
-                            .identifier(slug)
-                            .orgIdentifier(org)
-                            .projectIdentifier(project)
-                            .color(HARNESS_BLUE)
-                            .name(name)
-                            .description(description)
-                            .type(EnvironmentType.PreProduction)
-                            .tags(tags)
-                            .version(1L)
-                            .createdAt(987654321L)
-                            .lastModifiedAt(123456789L)
-                            .yaml(EnvironmentMapper.toYaml(ngEnvironmentConfig))
-                            .build();
-
-    environmentRequestEntity = io.harness.ng.core.environment.beans.Environment.builder()
-                                   .accountId(account)
-                                   .identifier(slug)
-                                   .orgIdentifier(org)
-                                   .projectIdentifier(project)
-                                   .color(HARNESS_BLUE)
-                                   .name(name)
-                                   .description(description)
-                                   .type(EnvironmentType.PreProduction)
-                                   .tags(tags)
-                                   .yaml(EnvironmentMapper.toYaml(ngEnvironmentConfig))
-                                   .build();
-
-    ngServiceOverridesEntity = NGServiceOverridesEntity.builder()
-                                   .accountId(account)
-                                   .projectIdentifier(project)
-                                   .orgIdentifier(org)
-                                   .environmentRef(slug)
-                                   .serviceRef(service)
-                                   .yaml(yamlServiceOverride)
-                                   .build();
-
-    environment = new Environment();
-    environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
-    environment.setProject(project);
-    environment.setType(io.harness.spec.server.ng.model.Environment.TypeEnum.PREPRODUCTION);
-    environment.setName(name);
-    environment.setTags(singletonMap("k1", "v1"));
-    environment.setDescription(description);
-    environment.setSlug(slug);
-    environment.setAccount(account);
-    environment.setColor(HARNESS_BLUE);
-    environment.setOrg(org);
-
-    environmentResponse = new EnvironmentResponse();
-    environmentResponse.setEnvironment(environment);
-    environmentResponse.setUpdated(123456789L);
-    environmentResponse.setCreated(987654321L);
+    setUpEnvironmentEntity();
+    setUpEnvironmentRequestEntity();
+    setNgServiceOverridesEntity();
+    setEnvironment();
+    setEnvironmentResponse();
   }
   @Test
   @Owner(developers = TARUN_UBA)
@@ -239,5 +162,134 @@ public class EnvironmentsResourceApiUtilsTest extends CategoryTest {
 
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
     assertEquals(serviceOverrideResponseFinal, serviceOverrideResponse);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testMapSort() {
+    String sort_check_0 = environmentsResourceApiUtils.mapSort("slug", "ASC");
+    String sort_check_1 = environmentsResourceApiUtils.mapSort("slug", null);
+    String sort_check_2 = environmentsResourceApiUtils.mapSort(null, "ASC");
+    String sort_check_3 = environmentsResourceApiUtils.mapSort(null, null);
+
+    assertEquals(sort_check_0, "identifier,ASC");
+    assertEquals(sort_check_1, "identifier,DESC");
+    assertEquals(sort_check_2, "lastModifiedAt,ASC");
+    assertEquals(sort_check_3, "lastModifiedAt,DESC");
+  }
+
+  private void setUpEnvironmentEntity() {
+    environmentEntity = io.harness.ng.core.environment.beans.Environment.builder()
+                            .accountId(account)
+                            .identifier(slug)
+                            .orgIdentifier(org)
+                            .projectIdentifier(project)
+                            .color(HARNESS_BLUE)
+                            .name(name)
+                            .description(description)
+                            .type(EnvironmentType.PreProduction)
+                            .tags(tags)
+                            .version(1L)
+                            .createdAt(987654321L)
+                            .lastModifiedAt(123456789L)
+                            .yaml(EnvironmentMapper.toYaml(ngEnvironmentConfig))
+                            .build();
+    return;
+  }
+
+  private void setUpEnvironmentRequestEntity() {
+    environmentRequestEntity = io.harness.ng.core.environment.beans.Environment.builder()
+                                   .accountId(account)
+                                   .identifier(slug)
+                                   .orgIdentifier(org)
+                                   .projectIdentifier(project)
+                                   .color(HARNESS_BLUE)
+                                   .name(name)
+                                   .description(description)
+                                   .type(EnvironmentType.PreProduction)
+                                   .tags(tags)
+                                   .yaml(EnvironmentMapper.toYaml(ngEnvironmentConfig))
+                                   .build();
+    return;
+  }
+  private void setEnvironmentRequest() {
+    environmentRequest = new EnvironmentRequest();
+    environmentRequest.setColor(HARNESS_BLUE);
+    environmentRequest.setDescription(description);
+    environmentRequest.setName(name);
+    environmentRequest.setTags(singletonMap("k1", "v1"));
+    environmentRequest.setSlug(slug);
+    environmentRequest.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
+    environmentRequest.setType(EnvironmentRequest.TypeEnum.PREPRODUCTION);
+    return;
+  }
+  private void setServiceOverrideRequest() {
+    serviceOverrideRequest = new ServiceOverrideRequest();
+    serviceOverrideRequest.setYaml(yamlServiceOverride);
+    return;
+  }
+  private void setServiceOverrideResponse() {
+    serviceOverrideResponse = new ServiceOverrideResponse();
+    serviceOverrideResponse.setYaml(yamlServiceOverride);
+    serviceOverrideResponse.setProject(project);
+    serviceOverrideResponse.setService(service);
+    serviceOverrideResponse.setEnvironemnt(slug);
+    serviceOverrideResponse.setAccount(account);
+    serviceOverrideResponse.setOrg(org);
+    return;
+  }
+  private void setEnvironment() {
+    environment = new Environment();
+    environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
+    environment.setProject(project);
+    environment.setType(io.harness.spec.server.ng.model.Environment.TypeEnum.PREPRODUCTION);
+    environment.setName(name);
+    environment.setTags(singletonMap("k1", "v1"));
+    environment.setDescription(description);
+    environment.setSlug(slug);
+    environment.setAccount(account);
+    environment.setColor(HARNESS_BLUE);
+    environment.setOrg(org);
+    return;
+  }
+  private void setEnvironmentResponse() {
+    environmentResponse = new EnvironmentResponse();
+    environmentResponse.setEnvironment(environment);
+    environmentResponse.setUpdated(123456789L);
+    environmentResponse.setCreated(987654321L);
+    return;
+  }
+  private void setNgServiceOverridesEntity() {
+    ngServiceOverridesEntity = NGServiceOverridesEntity.builder()
+                                   .accountId(account)
+                                   .projectIdentifier(project)
+                                   .orgIdentifier(org)
+                                   .environmentRef(slug)
+                                   .serviceRef(service)
+                                   .yaml(yamlServiceOverride)
+                                   .build();
+    return;
+  }
+  private void setNgEnvironmentConfig() {
+    ngEnvironmentConfig = NGEnvironmentConfig.builder()
+                              .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
+                                                           .name(name)
+                                                           .identifier(slug)
+                                                           .orgIdentifier(org)
+                                                           .projectIdentifier(project)
+                                                           .tags(singletonMap("k1", "v1"))
+                                                           .type(EnvironmentType.PreProduction)
+                                                           .build())
+                              .build();
+    return;
+  }
+  private void setNgServiceOverrideConfig() {
+    ngServiceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(
+                NGServiceOverrideInfoConfig.builder().serviceRef(service).environmentRef(slug).build())
+            .build();
+    return;
   }
 }

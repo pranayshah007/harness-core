@@ -14,14 +14,8 @@ import static io.harness.data.structure.HarnessStringUtils.join;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
-import static java.lang.String.format;
-
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.ResourceScope;
-import io.harness.cdng.configfile.ConfigFile;
-import io.harness.cdng.configfile.ConfigFileWrapper;
-import io.harness.cdng.manifest.yaml.ManifestConfig;
-import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
@@ -39,22 +33,17 @@ import io.harness.spec.server.ng.model.EnvironmentRequest;
 import io.harness.spec.server.ng.model.EnvironmentResponse;
 import io.harness.spec.server.ng.model.ServiceOverrideRequest;
 import io.harness.spec.server.ng.model.ServiceOverrideResponse;
-import io.harness.utils.YamlPipelineUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.validation.ConstraintViolation;
-import javax.validation.Valid;
 import javax.validation.Validator;
-import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class EnvironmentsResourceApiUtils {
@@ -74,18 +63,7 @@ public class EnvironmentsResourceApiUtils {
       validate(ngEnvironmentConfig);
       validateEnvGlobalOverrides(ngEnvironmentConfig);
 
-      environment = Environment.builder()
-                        .identifier(environmentRequest.getSlug())
-                        .accountId(accountId)
-                        .orgIdentifier(org)
-                        .projectIdentifier(project)
-                        .name(environmentRequest.getName())
-                        .color(Optional.ofNullable(environmentRequest.getColor()).orElse(HARNESS_BLUE))
-                        .description(environmentRequest.getDescription())
-                        .type(EnvironmentType.valueOf(environmentRequest.getType().toString()))
-                        .tags(convertToList(environmentRequest.getTags()))
-                        .build();
-
+      environment = toNGEnvironmentEntity(accountId, environmentRequest, org, project);
       environment.setYaml(environmentRequest.getYaml());
       if (isEmpty(environment.getYaml())) {
         environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
@@ -94,14 +72,14 @@ public class EnvironmentsResourceApiUtils {
     }
     environment = toNGEnvironmentEntity(accountId, environmentRequest, org, project);
     NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
-    environment.setYaml(toYaml(ngEnvironmentConfig));
+    environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
     Set<ConstraintViolation<Environment>> violations = validator.validate(environment);
     if (!violations.isEmpty()) {
       throw new JerseyViolationException(violations, null);
     }
     return environment;
   }
-  public NGEnvironmentConfig toNGEnvironmentConfig(EnvironmentRequest dto, String org, String project) {
+  public static NGEnvironmentConfig toNGEnvironmentConfig(EnvironmentRequest dto, String org, String project) {
     if (isNotEmpty(dto.getYaml())) {
       try {
         return YamlUtils.read(dto.getYaml(), NGEnvironmentConfig.class);
@@ -109,20 +87,27 @@ public class EnvironmentsResourceApiUtils {
         throw new InvalidRequestException("Cannot create environment config due to " + e.getMessage());
       }
     }
-    return NGEnvironmentConfig.builder()
-        .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
-                                     .name(dto.getName())
-                                     .identifier(dto.getSlug())
-                                     .orgIdentifier(org)
-                                     .projectIdentifier(project)
-                                     .description(dto.getDescription())
-                                     .tags(dto.getTags())
-                                     .type(EnvironmentType.valueOf(dto.getType().toString()))
-                                     .build())
-        .build();
+    return toNGEnvironmentConfigWrapper(dto, org, project);
   }
 
-  public Environment toNGEnvironmentEntity(String accountId, EnvironmentRequest dto, String org, String project) {
+  public static NGEnvironmentConfig toNGEnvironmentConfigWrapper(EnvironmentRequest dto, String org, String project) {
+    NGEnvironmentConfig ngEnvironmentConfig =
+        NGEnvironmentConfig.builder()
+            .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
+                                         .name(dto.getName())
+                                         .identifier(dto.getSlug())
+                                         .orgIdentifier(org)
+                                         .projectIdentifier(project)
+                                         .description(dto.getDescription())
+                                         .tags(dto.getTags())
+                                         .type(EnvironmentType.valueOf(dto.getType().toString()))
+                                         .build())
+            .build();
+    return ngEnvironmentConfig;
+  }
+
+  public static Environment toNGEnvironmentEntity(
+      String accountId, EnvironmentRequest dto, String org, String project) {
     return Environment.builder()
         .identifier(dto.getSlug())
         .accountId(accountId)
@@ -150,8 +135,8 @@ public class EnvironmentsResourceApiUtils {
         && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() != null) {
       final NGEnvironmentGlobalOverride environmentGlobalOverride =
           ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride();
-      checkDuplicateManifestIdentifiersWithIn(environmentGlobalOverride.getManifests());
-      checkDuplicateConfigFilesIdentifiersWithIn(environmentGlobalOverride.getConfigFiles());
+      EnvironmentMapper.checkDuplicateManifestIdentifiersWithIn(environmentGlobalOverride.getManifests());
+      EnvironmentMapper.checkDuplicateConfigFilesIdentifiersWithIn(environmentGlobalOverride.getConfigFiles());
     }
   }
 
@@ -216,51 +201,6 @@ public class EnvironmentsResourceApiUtils {
       throw new JerseyViolationException(violations, null);
     }
     return serviceOverrideResponse;
-  }
-
-  public void checkDuplicateManifestIdentifiersWithIn(List<ManifestConfigWrapper> manifests) {
-    if (isEmpty(manifests)) {
-      return;
-    }
-    final Stream<String> identifierStream =
-        manifests.stream().map(ManifestConfigWrapper::getManifest).map(ManifestConfig::getIdentifier);
-    Set<String> duplicateIds = getDuplicateIdentifiers(identifierStream);
-    if (isNotEmpty(duplicateIds)) {
-      throw new InvalidRequestException(format("Found duplicate manifest identifiers [%s]",
-          duplicateIds.stream().map(Object::toString).collect(Collectors.joining(","))));
-    }
-  }
-
-  public void checkDuplicateConfigFilesIdentifiersWithIn(List<ConfigFileWrapper> configFiles) {
-    if (isEmpty(configFiles)) {
-      return;
-    }
-    final Stream<String> identifierStream =
-        configFiles.stream().map(ConfigFileWrapper::getConfigFile).map(ConfigFile::getIdentifier);
-    Set<String> duplicateIds = getDuplicateIdentifiers(identifierStream);
-    if (isNotEmpty(duplicateIds)) {
-      throw new InvalidRequestException(format("Found duplicate configFiles identifiers [%s]",
-          duplicateIds.stream().map(Object::toString).collect(Collectors.joining(","))));
-    }
-  }
-
-  @NotNull
-  private Set<String> getDuplicateIdentifiers(Stream<String> identifierStream) {
-    Set<String> uniqueIds = new HashSet<>();
-    Set<String> duplicateIds = new HashSet<>();
-    identifierStream.forEach(id -> {
-      if (!uniqueIds.add(id)) {
-        duplicateIds.add(id);
-      }
-    });
-    return duplicateIds;
-  }
-  public String toYaml(@Valid NGEnvironmentConfig ngEnvironmentConfig) {
-    try {
-      return YamlPipelineUtils.getYamlString(ngEnvironmentConfig);
-    } catch (IOException e) {
-      throw new InvalidRequestException("Cannot create environment entity due to " + e.getMessage());
-    }
   }
 
   public String mapSort(String sort, String order) {

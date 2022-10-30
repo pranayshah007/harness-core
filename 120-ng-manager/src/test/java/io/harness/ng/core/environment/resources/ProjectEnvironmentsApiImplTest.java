@@ -200,7 +200,6 @@ public class ProjectEnvironmentsApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGet() {
     doReturn(Optional.of(environmentEntity)).when(environmentService).get(account, org, project, slug, false);
-    when(environmentsResourceApiUtils.toYaml(any())).thenReturn(yaml);
     when(environmentsResourceApiUtils.toEnvironmentResponseWrapper(any())).thenReturn(environmentResponse);
     Response envResponse = environmentResource.getEnvironment(org, project, slug, account);
 
@@ -267,7 +266,6 @@ public class ProjectEnvironmentsApiImplTest extends CategoryTest {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testListEnvironmentsWithDESCSort() {
-    when(environmentsResourceApiUtils.toYaml(any())).thenReturn(yaml);
     when(environmentFilterHelper.createCriteriaForGetList(account, org, project, false, null))
         .thenReturn(new Criteria());
     when(environmentsResourceApiUtils.toEnvironmentResponseWrapper(any())).thenReturn(environmentResponse);
@@ -325,8 +323,6 @@ public class ProjectEnvironmentsApiImplTest extends CategoryTest {
             .accessControlList(Collections.singletonList(AccessControlDTO.builder().permitted(true).build()))
             .build();
     when(environmentValidationHelper.checkThatEnvExists(account, org, project, slug)).thenReturn(true);
-    doNothing().when(environmentsResourceApiUtils).checkDuplicateManifestIdentifiersWithIn(any());
-    doNothing().when(environmentsResourceApiUtils).checkDuplicateConfigFilesIdentifiersWithIn(any());
     when(accessControlClient.checkForAccess(any())).thenReturn(accessCheckResponseDTO);
     Response serviceOverride =
         environmentResource.updateEnvServiceOverride(org, project, slug, service, serviceOverrideRequest, account);
@@ -346,8 +342,6 @@ public class ProjectEnvironmentsApiImplTest extends CategoryTest {
             .accessControlList(Collections.singletonList(AccessControlDTO.builder().permitted(true).build()))
             .build();
     when(environmentValidationHelper.checkThatEnvExists(account, org, project, slug)).thenReturn(true);
-    doNothing().when(environmentsResourceApiUtils).checkDuplicateManifestIdentifiersWithIn(any());
-    doNothing().when(environmentsResourceApiUtils).checkDuplicateConfigFilesIdentifiersWithIn(any());
     when(accessControlClient.checkForAccess(any())).thenReturn(accessCheckResponseDTO);
     Response data = environmentResource.deleteEnvServiceOverride(org, project, slug, service, account);
     assertThat(data.getStatus()).isEqualTo(204);
@@ -375,8 +369,6 @@ public class ProjectEnvironmentsApiImplTest extends CategoryTest {
             .accessControlList(Collections.singletonList(AccessControlDTO.builder().permitted(true).build()))
             .build();
     when(environmentValidationHelper.checkThatEnvExists(account, org, project, slug)).thenReturn(true);
-    doNothing().when(environmentsResourceApiUtils).checkDuplicateManifestIdentifiersWithIn(any());
-    doNothing().when(environmentsResourceApiUtils).checkDuplicateConfigFilesIdentifiersWithIn(any());
     when(accessControlClient.checkForAccess(any())).thenReturn(accessCheckResponseDTO);
     Response serviceOverride =
         environmentResource.updateEnvServiceOverride(org, project, slug, service, serviceOverrideRequest, account);
@@ -389,7 +381,6 @@ public class ProjectEnvironmentsApiImplTest extends CategoryTest {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testListServiceOverridesWithDESCSort() {
-    when(environmentsResourceApiUtils.toYaml(any())).thenReturn(yaml);
     when(environmentsResourceApiUtils.toServiceOverrideResponse(any())).thenReturn(serviceOverrideResponse);
     when(environmentFilterHelper.createCriteriaForGetServiceOverrides(any(), any(), any(), any(), any()))
         .thenReturn(new Criteria());

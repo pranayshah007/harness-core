@@ -147,7 +147,7 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
       version = environmentOptional.get().getVersion().toString();
       if (EmptyPredicate.isEmpty(environmentOptional.get().getYaml())) {
         NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environmentOptional.get());
-        environmentOptional.get().setYaml(environmentsResourceApiUtils.toYaml(ngEnvironmentConfig));
+        environmentOptional.get().setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
     } else {
       throw new NotFoundException(String.format(
@@ -212,7 +212,7 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
     environmentEntities.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
         NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
-        environment.setYaml(environmentsResourceApiUtils.toYaml(ngEnvironmentConfig));
+        environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
     });
 
@@ -394,9 +394,8 @@ public class ProjectEnvironmentsApiImpl implements ProjectEnvironmentsApi {
           throw new InvalidRequestException("No overrides found in request");
         }
       }
-      environmentsResourceApiUtils.checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
-      environmentsResourceApiUtils.checkDuplicateConfigFilesIdentifiersWithIn(
-          serviceOverrideInfoConfig.getConfigFiles());
+      EnvironmentMapper.checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
+      EnvironmentMapper.checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideInfoConfig.getConfigFiles());
     }
   }
 
