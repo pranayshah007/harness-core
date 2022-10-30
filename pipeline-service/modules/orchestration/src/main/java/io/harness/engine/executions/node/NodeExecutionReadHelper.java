@@ -13,7 +13,6 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
@@ -21,7 +20,6 @@ import io.harness.pms.contracts.execution.Status;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -36,34 +34,13 @@ import org.springframework.data.repository.support.PageableExecutionUtils;
 @Singleton
 public class NodeExecutionReadHelper {
   private static int MAX_BATCH_SIZE = 1000;
-  @Inject @Named("secondary-mongo") public MongoTemplate secondaryMongoTemplate;
+  @Inject public MongoTemplate secondaryMongoTemplate;
 
   public long findCountByParentIdAndStatusIn(String parentId, Set<Status> flowingStatuses) {
     Query query = query(where(NodeExecutionKeys.parentId).is(parentId))
                       .addCriteria(where(NodeExecutionKeys.status).in(flowingStatuses))
                       .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
     return secondaryMongoTemplate.count(Query.of(query).limit(-1).skip(-1), NodeExecution.class);
-  }
-
-  public Page<NodeExecution> fetchNodeExecutions(
-      String planExecutionId, Set<String> fieldsToInclude, Pageable pageable) {
-    if (EmptyPredicate.isEmpty(fieldsToInclude)) {
-      throw new InvalidRequestException("Projection fields for NodeExecution in fetchNodeExecutions is required");
-    }
-    try {
-      Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId)).with(pageable);
-      for (String fieldName : fieldsToInclude) {
-        query.fields().include(fieldName);
-      }
-      // Do not add directly the read helper inside the lambda, as secondary mongo reads were not going through if used
-      // inside lambda in PageableExecutionUtils
-      long count = findCount(query);
-      List<NodeExecution> nodeExecutions = find(query);
-      return PageableExecutionUtils.getPage(nodeExecutions, pageable, () -> count);
-    } catch (IllegalArgumentException ex) {
-      log.error(ex.getMessage(), ex);
-      throw new InvalidRequestException("Not able to fetch NodeExecutions for planExecutionId- " + planExecutionId, ex);
-    }
   }
 
   public Page<NodeExecution> fetchNodeExecutions(Query givenQuery, Pageable pageable) {

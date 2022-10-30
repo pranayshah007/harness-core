@@ -443,7 +443,7 @@ orchestrationRestrictionConfiguration:
   planExecutionRestriction:
      free: ${PLAN_EXECUTION_RESTRICTION_FREE:-1}
      team: ${PLAN_EXECUTION_RESTRICTION_TEAM:-5000}
-     enterprise: ${PLAN_EXECUTION_RESTRICTION_ENTERPRISE:-1}
+     enterprise: ${PLAN_EXECUTION_RESTRICTION_ENTERPRISE:-10000}
   pipelineCreationRestriction:
     free: ${PIPELINE_CREATION_RESTRICTION_FREE:-5}
     team: ${PIPELINE_CREATION_RESTRICTION_TEAM:-10000}
