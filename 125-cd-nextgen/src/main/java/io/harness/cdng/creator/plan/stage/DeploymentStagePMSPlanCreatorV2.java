@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
@@ -35,6 +36,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.exception.ngexception.NGFreezeException;
+import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
+import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -51,6 +55,7 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -132,6 +137,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private ServiceOverrideService serviceOverrideService;
   @Inject private EnvGroupPlanCreatorHelper envGroupPlanCreatorHelper;
   @Inject private ServicePlanCreatorHelper servicePlanCreatorHelper;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject private FreezeEvaluateService freezeEvaluateService;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -210,6 +217,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, DeploymentStageNode stageNode) {
+    failIfProjectIsFrozen(ctx);
+
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     try {
       // Validate Stage Failure strategy.
@@ -570,6 +579,26 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     if (!GenericStepPMSPlanCreator.containsOnlyAllErrorsInSomeConfig(stageFailureStrategies)) {
       throw new InvalidRequestException(
           "There should be a Failure strategy that contains one error type as AllErrors, with no other error type along with it in that Failure Strategy.");
+    }
+  }
+
+  private void failIfProjectIsFrozen(PlanCreationContext ctx) {
+    List<FreezeSummaryResponseDTO> projectFreezeConfigs = null;
+    try {
+      if (ctx.getMetadata() != null
+          && ngFeatureFlagHelperService.isEnabled(
+              ctx.getMetadata().getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE)) {
+        PlanCreationContextValue planCreationContextValue = ctx.getMetadata();
+        projectFreezeConfigs =
+            freezeEvaluateService.getActiveFreezeEntities(planCreationContextValue.getAccountIdentifier(),
+                planCreationContextValue.getOrgIdentifier(), planCreationContextValue.getProjectIdentifier());
+      }
+    } catch (Exception e) {
+      log.error(
+          "NG Freeze: Failure occurred when evaluating execution should fail due to freeze at the time of plan creation");
+    }
+    if (EmptyPredicate.isNotEmpty(projectFreezeConfigs)) {
+      throw new NGFreezeException("Execution can't be performed because project is frozen");
     }
   }
 
