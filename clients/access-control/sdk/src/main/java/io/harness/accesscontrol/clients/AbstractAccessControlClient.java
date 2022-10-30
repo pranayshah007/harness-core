@@ -7,6 +7,7 @@
 
 package io.harness.accesscontrol.clients;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import static java.util.Collections.emptyList;
@@ -64,7 +65,7 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
             .collect(Collectors.toList());
     List<AccessControlDTO> accessControlList = new ArrayList<>();
     accessCheckResponseDTOs.forEach(res -> accessControlList.addAll(res.getAccessControlList()));
-    if (accessControlList.stream().noneMatch(AccessControlDTO::isPermitted)) {
+    if (isNotEmpty(accessControlList) && accessControlList.stream().noneMatch(AccessControlDTO::isPermitted)) {
       String message = String.format("Missing permission %s on %s", accessControlList.get(0).getPermission(),
           accessControlList.get(0).getResourceType().toLowerCase());
       throw new NGAccessDeniedException(message, USER, emptyList());
