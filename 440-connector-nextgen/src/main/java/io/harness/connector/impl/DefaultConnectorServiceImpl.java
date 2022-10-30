@@ -278,9 +278,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
                                                           .and(ConnectorKeys.identifier)
                                                           .is(connector.getIdentifier()))
                                                .toArray(Criteria[] ::new);
-      Page<Connector> filteredConnectors =
-          connectorRepository.findAll(new Criteria().orOperator(criteriaWithIdentifiers), pageable);
-      return filteredConnectors;
+      return connectorRepository.findAll(new Criteria().orOperator(criteriaWithIdentifiers), pageable);
     }
   }
 
