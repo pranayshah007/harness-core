@@ -20,6 +20,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import lombok.Builder;
 import lombok.Data;
@@ -40,6 +41,7 @@ public class PercentageElastigroupCapacitySpec implements ElastigroupCapacitySpe
   @YamlSchemaTypes(value = {expression})
   @JsonProperty("percentage")
   @Min(0)
+  @Max(100)
   ParameterField<Integer> percentage;
 
   @Override
