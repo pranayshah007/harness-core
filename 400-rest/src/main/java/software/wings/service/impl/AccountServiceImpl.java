@@ -20,7 +20,6 @@ import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -44,13 +43,10 @@ import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofDays;
 import static java.time.Duration.ofHours;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.account.ProvisionStep;
-import io.harness.account.ProvisionStep.ProvisionStepKeys;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -89,7 +85,6 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
-import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
@@ -97,7 +92,6 @@ import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.managerclient.HttpsCertRequirement.CertRequirement;
-import io.harness.network.Http;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.OauthProviderType;
@@ -191,17 +185,12 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.DuplicateKeyException;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -218,8 +207,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -233,10 +220,6 @@ import org.mongodb.morphia.mapping.Mapper;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 import org.mongodb.morphia.query.UpdateResults;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.zeroturnaround.exec.ProcessExecutor;
-import org.zeroturnaround.exec.stream.LogOutputStream;
 
 /**
  * Created by peeyushaggarwal on 10/11/16.
@@ -256,13 +239,6 @@ public class AccountServiceImpl implements AccountService {
   private static final String ILLEGAL_ACCOUNT_NAME_CHARACTERS = "[~!@#$%^*\\[\\]{}<>'\"/:;\\\\]";
   private static final int MAX_ACCOUNT_NAME_LENGTH = 50;
   private static final String WELCOME_EMAIL_TEMPLATE_NAME = "welcome_email";
-  private static final String GENERATE_SAMPLE_DELEGATE_CURL_COMMAND_FORMAT_STRING =
-      "curl -s -X POST -H 'content-type: application/json' "
-      + "--url https://app.harness.io/gateway/gratis/api/webhooks/cmnhGRyXyBP5RJzz8Ae9QP7mqUATVotr7v2knjOf "
-      + "-d '{\"application\":\"4qPkwP5dQI2JduECqGZpcg\","
-      + "\"parameters\":{\"Environment\":\"%s\",\"delegate\":\"delegate\","
-      + "\"account_id\":\"%s\",\"account_id_short\":\"%s\",\"account_secret\":\"%s\"}}'";
-  private static final String SAMPLE_DELEGATE_STATUS_ENDPOINT_FORMAT_STRING = "http://%s/account-%s.txt";
   private static final String DELIMITER = "####";
   private static final String DEFAULT_EXPERIENCE = "defaultExperience";
   private static final String[] RESERVED_SUBDOMAIN_PREFIX_REGEXES = {
@@ -1272,101 +1248,6 @@ public class AccountServiceImpl implements AccountService {
   @Override
   public boolean isCommunityAccount(String accountId) {
     return getAccountType(accountId).map(AccountType::isCommunity).orElse(false);
-  }
-
-  @Override
-  public String generateSampleDelegate(String accountId) {
-    assertTrialAccount(accountId);
-    if (isBlank(mainConfiguration.getSampleTargetEnv())) {
-      String err = "Sample target env not configured";
-      log.warn(err);
-      throw new UnexpectedException(err);
-    }
-
-    String script =
-        String.format(GENERATE_SAMPLE_DELEGATE_CURL_COMMAND_FORMAT_STRING, mainConfiguration.getSampleTargetEnv(),
-            accountId, getAccountIdentifier(accountId), getFromCache(accountId).getAccountKey());
-    Logger scriptLogger = LoggerFactory.getLogger("generate-delegate-" + accountId);
-    try {
-      ProcessExecutor processExecutor = new ProcessExecutor()
-                                            .timeout(10, TimeUnit.MINUTES)
-                                            .command("/bin/bash", "-c", script)
-                                            .readOutput(true)
-                                            .redirectOutput(new LogOutputStream() {
-                                              @Override
-                                              protected void processLine(String line) {
-                                                scriptLogger.info(line);
-                                              }
-                                            })
-                                            .redirectError(new LogOutputStream() {
-                                              @Override
-                                              protected void processLine(String line) {
-                                                scriptLogger.error(line);
-                                              }
-                                            });
-      int exitCode = processExecutor.execute().getExitValue();
-      if (exitCode == 0) {
-        return "SUCCESS";
-      }
-      log.error("Curl script to generate delegate returned non-zero exit code: {}", exitCode);
-    } catch (IOException e) {
-      log.error("Error executing generate delegate curl command", e);
-    } catch (InterruptedException e) {
-      log.info("Interrupted", e);
-    } catch (TimeoutException e) {
-      log.info("Timed out", e);
-    }
-
-    String err = "Failed to provision";
-    log.warn(err);
-    throw new UnexpectedException(err);
-  }
-
-  @Override
-  public boolean sampleDelegateExists(String accountId) {
-    assertTrialAccount(accountId);
-    return delegateService.sampleDelegateExists(accountId);
-  }
-
-  @Override
-  public List<ProvisionStep> sampleDelegateProgress(String accountId) {
-    assertTrialAccount(accountId);
-
-    if (isBlank(mainConfiguration.getSampleTargetStatusHost())) {
-      String err = "Sample target status host not configured";
-      log.warn(err);
-      throw new UnexpectedException(err);
-    }
-
-    try {
-      String url = String.format(SAMPLE_DELEGATE_STATUS_ENDPOINT_FORMAT_STRING,
-          mainConfiguration.getSampleTargetStatusHost(), getAccountIdentifier(accountId));
-      log.info("Fetching delegate provisioning progress for account {} from {}", accountId, url);
-      String result = Http.getResponseStringFromUrl(url, 30, 10).trim();
-      if (isNotEmpty(result)) {
-        log.info("Provisioning progress for account {}: {}", accountId, result);
-        if (result.contains("<title>404 Not Found</title>")) {
-          return singletonList(ProvisionStep.builder().step("Provisioning Started").done(false).build());
-        }
-        List<ProvisionStep> steps = new ArrayList<>();
-        for (JsonElement element : new JsonParser().parse(result).getAsJsonArray()) {
-          JsonObject jsonObject = element.getAsJsonObject();
-          steps.add(ProvisionStep.builder()
-                        .step(jsonObject.get(ProvisionStepKeys.step).getAsString())
-                        .done(jsonObject.get(ProvisionStepKeys.done).getAsBoolean())
-                        .build());
-        }
-        return steps;
-      }
-      throw new UnexpectedException(String.format("Empty provisioning result for account %s", accountId));
-    } catch (SocketTimeoutException e) {
-      // Timed out for some reason. Return empty list to indicate unknown progress. UI can ignore and try again.
-      log.info("Timed out getting progress. Returning empty list.");
-      return new ArrayList<>();
-    } catch (IOException e) {
-      throw new UnexpectedException(
-          String.format("Exception in fetching delegate provisioning progress for account %s", accountId), e);
-    }
   }
 
   private void assertTrialAccount(String accountId) {

@@ -573,7 +573,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               .ng(delegateNg)
               .tags(isNotBlank(delegateTags) ? new ArrayList<>(asList(delegateTags.trim().split("\\s*,+\\s*,*\\s*")))
                                              : emptyList())
-              .sampleDelegate(isSample)
               .location(Paths.get("").toAbsolutePath().toString())
               .heartbeatAsObject(true)
               .immutable(isImmutableDelegate)
