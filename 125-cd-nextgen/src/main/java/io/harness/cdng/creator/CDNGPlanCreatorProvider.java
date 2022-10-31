@@ -611,7 +611,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                     .setName("Elastigroup Setup")
                     .setType(StepSpecTypeConstants.ELASTIGROUP_SETUP)
                     .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
-                    .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
+                    .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
                     .build();
 
     StepInfo ecsRollingDeploy =
