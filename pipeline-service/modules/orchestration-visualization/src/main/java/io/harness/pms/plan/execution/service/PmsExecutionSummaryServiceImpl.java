@@ -10,11 +10,13 @@ package io.harness.pms.plan.execution.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrency.ConcurrentChildInstance;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.NodeType;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -29,8 +31,10 @@ import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -128,6 +132,58 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
     Query query = new Query(criteria);
     pmsExecutionSummaryRepository.update(query, update);
+  }
+
+  @Override
+  public void addStageNodeInGraphForPipelineRollback(
+      String planExecutionId, NodeExecution nodeExecution, Update summaryUpdate) {
+    String planNodeUuid = nodeExecution.getNodeId();
+    if (!planNodeUuid.endsWith(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)) {
+      return;
+    }
+
+    Map<String, GraphLayoutNodeDTO> graphLayoutNodeDTOMap = getGraphLayoutNodeDTOMap(nodeExecution, planExecutionId);
+    if (graphLayoutNodeDTOMap == null) {
+      return;
+    }
+
+    Update update = new Update();
+    // nodeExecution.getPreviousId() will be null for stages inside a parallel block
+    if (EmptyPredicate.isNotEmpty(nodeExecution.getPreviousId())) {
+      // get the node that is the previous node for the current node execution
+      Optional<String> optionalPrevStageID =
+          graphLayoutNodeDTOMap.keySet()
+              .stream()
+              .filter(key
+                  -> Objects.equals(graphLayoutNodeDTOMap.get(key).getNodeExecutionId(), nodeExecution.getPreviousId()))
+              .findFirst();
+      if (!optionalPrevStageID.isPresent()) {
+        return;
+      }
+      String prevStage = optionalPrevStageID.get();
+      // if prev stage is a non rollback stage, then we need to update the next node for this previous stage
+      if (!prevStage.endsWith(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)) {
+        List<String> newNextIdList = Collections.singletonList(planNodeUuid);
+        update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + prevStage + ".edgeLayoutList.nextIds", newNextIdList);
+      }
+    }
+    update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + planNodeUuid + ".status",
+        ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()));
+    update.set(
+        PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + planNodeUuid + ".nodeExecutionId",
+        nodeExecution.getUuid());
+    update(planExecutionId, update);
+  }
+
+  Map<String, GraphLayoutNodeDTO> getGraphLayoutNodeDTOMap(NodeExecution nodeExecution, String planExecutionId) {
+    Ambiance ambiance = nodeExecution.getAmbiance();
+    Optional<PipelineExecutionSummaryEntity> entity = getPipelineExecutionSummary(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), planExecutionId);
+    if (!entity.isPresent()) {
+      return null;
+    }
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = entity.get();
+    return pipelineExecutionSummaryEntity.getLayoutNodeMap();
   }
 
   @Override

@@ -21,6 +21,8 @@ public interface PmsExecutionSummaryService {
   void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions);
   void update(String planExecutionId, Update update);
   boolean updateStageOfIdentityType(String planExecutionId, Update update);
+  void addStageNodeInGraphForPipelineRollback(
+          String planExecutionId, NodeExecution nodeExecution, Update summaryUpdate);
   boolean addStageNodeInGraphIfUnderStrategy(String planExecutionId, NodeExecution nodeExecution, Update update);
   boolean updateStrategyNode(String planExecutionId, NodeExecution nodeExecution, Update update);
   Optional<PipelineExecutionSummaryEntity> getPipelineExecutionSummary(
