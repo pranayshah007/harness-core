@@ -257,5 +257,4 @@ public interface AccountService {
   boolean isAccountActivelyUsed(String accountId);
 
   boolean isImmutableDelegateEnabled(String accountId);
-
 }

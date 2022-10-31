@@ -113,8 +113,7 @@ public class AccountResourceNG {
 
   @GET
   @Path("immutable-delegate-enabled")
-  public RestResponse<Boolean> isImmutableDelegateEnabled(
-          @QueryParam("accountId") @NotNull String accountId) {
+  public RestResponse<Boolean> isImmutableDelegateEnabled(@QueryParam("accountId") @NotNull String accountId) {
     return new RestResponse<>(accountService.isImmutableDelegateEnabled(accountId));
   }
 

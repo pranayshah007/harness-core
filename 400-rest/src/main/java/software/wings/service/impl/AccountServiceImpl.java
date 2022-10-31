@@ -2147,7 +2147,8 @@ public class AccountServiceImpl implements AccountService {
   @Override
   public boolean isImmutableDelegateEnabled(String accountId) {
     Account account = getFromCacheWithFallback(accountId);
-    return account != null && account.isImmutableDelegateEnabled() && !featureFlagService.isEnabled(USE_LEGACY_DELEGATE, accountId);
+    return account != null && account.isImmutableDelegateEnabled()
+        && !featureFlagService.isEnabled(USE_LEGACY_DELEGATE, accountId);
   }
 
   @Override

@@ -65,8 +65,7 @@ public class DelegateVersionServiceTest {
 
   @Before
   public void setUp() {
-    underTest = spy(new DelegateVersionService(
-        delegateRingService, infraDownloadService, managerConfig, persistence));
+    underTest = spy(new DelegateVersionService(delegateRingService, infraDownloadService, managerConfig, persistence));
   }
 
   @Test
@@ -206,8 +205,8 @@ public class DelegateVersionServiceTest {
         VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_JAR).version(ACCOUNT_DELEGATE_JAR).build();
 
     mockDelegateJarOverrides(override, true);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, Collections.singletonList(ACCOUNT_DELEGATE_JAR),
-        null, false);
+    assertOverrides(
+        DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, Collections.singletonList(ACCOUNT_DELEGATE_JAR), null, false);
   }
 
   @Test
@@ -217,8 +216,8 @@ public class DelegateVersionServiceTest {
         VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_JAR).version(ACCOUNT_DELEGATE_JAR).build();
 
     mockDelegateJarOverrides(override, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, Collections.singletonList(ACCOUNT_DELEGATE_JAR),
-        null, false);
+    assertOverrides(
+        DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, Collections.singletonList(ACCOUNT_DELEGATE_JAR), null, false);
   }
 
   @Test
@@ -351,7 +350,7 @@ public class DelegateVersionServiceTest {
   }
 
   private void assertOverrides(final String expectedDelegateTag, final String expectedUpgraderTag,
-                               final List<String> delegateJars, final String watcherJars, boolean immutable) {
+      final List<String> delegateJars, final String watcherJars, boolean immutable) {
     final String actualDelegate = underTest.getDelegateImageTag(ACCOUNT_ID, immutable);
     final String actualUpgrader = underTest.getUpgraderImageTag(ACCOUNT_ID, immutable);
     final List<String> actualDelegateJar = underTest.getDelegateJarVersions(ACCOUNT_ID);

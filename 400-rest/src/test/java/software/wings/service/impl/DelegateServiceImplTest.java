@@ -1491,7 +1491,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     this.persistence.save(
         AgentMtlsEndpoint.builder().accountId(accountId).fqdn("customer.agent.ut.harness.io").build());
 
-    this.persistence.save(Account.Builder.anAccount().withUuid(accountId).withImmutableDelegateEnabled(Boolean.TRUE).withAccountName("testAccount").build());
+    when(accountService.isImmutableDelegateEnabled(accountId)).thenReturn(true);
 
     // test some arbitrary values that shouldn't get modified by the function
     String delegateType = KUBERNETES;
