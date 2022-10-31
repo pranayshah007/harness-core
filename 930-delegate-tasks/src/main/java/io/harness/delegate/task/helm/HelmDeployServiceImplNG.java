@@ -205,7 +205,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       List<KubernetesResourceId> workloads = readResources(resources);
 
-      boolean useSteadyStateCheck = useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback);
+      boolean useSteadyStateCheck = useSteadyStateCheck(logCallback);
 
       if (useSteadyStateCheck) {
         releaseHistory = createNewRelease(commandRequest, workloads, prevVersion);
@@ -273,15 +273,13 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
     } catch (UncheckedTimeoutException e) {
       logCallback.saveExecutionLog(TIMED_OUT_IN_STEADY_STATE, LogLevel.ERROR);
-      if (isInstallUpgrade && useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback)
-          && releaseHistory != null) {
+      if (isInstallUpgrade && useSteadyStateCheck(logCallback) && releaseHistory != null) {
         saveReleaseHistory(commandRequest, releaseHistory, CommandExecutionStatus.FAILURE);
       }
       throw new HelmNGException(prevVersion, ExceptionMessageSanitizer.sanitizeException(e), isInstallUpgrade);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      if (isInstallUpgrade && useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback)
-          && releaseHistory != null) {
+      if (isInstallUpgrade && useSteadyStateCheck(logCallback) && releaseHistory != null) {
         saveReleaseHistory(commandRequest, releaseHistory, CommandExecutionStatus.FAILURE);
       }
 
@@ -477,10 +475,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         .collect(Collectors.toList());
   }
 
-  private boolean useSteadyStateCheck(boolean isK8sSteadyStateCheckEnabled, LogCallback logCallback) {
-    if (!isK8sSteadyStateCheckEnabled) {
-      return false;
-    }
+  private boolean useSteadyStateCheck(LogCallback logCallback) {
     String versionAsString = kubernetesContainerService.getVersionAsString(kubernetesConfig);
     logCallback.saveExecutionLog(format("Kubernetes version [%s]", versionAsString));
     int versionMajorMin = Integer.parseInt(escapeNonDigitsAndTruncate(versionAsString));
@@ -513,7 +508,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
 
       List<KubernetesResourceId> rollbackWorkloads = new ArrayList<>();
-      boolean useSteadyStateCheck = useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback);
+      boolean useSteadyStateCheck = useSteadyStateCheck(logCallback);
       if (useSteadyStateCheck) {
         rollbackWorkloads = readResourcesForRollback(commandRequest, commandRequest.getPrevReleaseVersion());
         ReleaseHistory releaseHistory = createNewRelease(commandRequest, rollbackWorkloads, null);
