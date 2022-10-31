@@ -13,6 +13,7 @@ public class UtilizationInstanceType {
   public static final String K8S_POD = "K8S_POD";
   public static final String K8S_NODE = "K8S_NODE";
   public static final String K8S_PV = "K8S_PV";
+  public static final String EC2_INSTANCE = "EC2_INSTANCE";
 
   private UtilizationInstanceType() {}
 }
