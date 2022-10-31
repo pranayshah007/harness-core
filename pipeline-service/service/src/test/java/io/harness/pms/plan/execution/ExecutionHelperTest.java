@@ -689,41 +689,6 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(retryExecutionInfo.getRootExecutionId()).isEqualTo("rootParentId");
   }
 
-  @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  public void testBuildExecutionArgsWithV1Version() throws IOException {
-    pipelineEntity.setHarnessVersion(PipelineVersion.V1);
-    pipelineEntity.setYaml(pipelineYamlWithoutInputSet);
-    buildExecutionArgsMocks();
-
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        TemplateMergeResponseDTO.builder().mergedPipelineYaml(mergedPipelineYaml).build();
-    String mergedYaml = InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineEntity.getYaml(), runtimeInputYaml, true);
-    doReturn(templateMergeResponseDTO)
-        .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-            pipelineEntity.getProjectIdentifier(), mergedYaml, true, false);
-    ExecArgs execArgs =
-        executionHelper.buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(), null,
-            executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false);
-    executionMetadataAssertions(execArgs.getMetadata());
-    assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
-    assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
-    assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(PipelineVersion.V1);
-
-    PlanExecutionMetadata planExecutionMetadata = execArgs.getPlanExecutionMetadata();
-    assertThat(planExecutionMetadata.getPlanExecutionId()).isEqualTo(generatedExecutionId);
-    assertThat(planExecutionMetadata.getInputSetYaml()).isEqualTo(runtimeInputYaml);
-    assertThat(planExecutionMetadata.getYaml()).isEqualTo(pipelineYamlWithoutInputSet);
-    assertThat(planExecutionMetadata.getStagesExecutionMetadata().isStagesExecution()).isEqualTo(false);
-    assertThat(planExecutionMetadata.getProcessedYaml())
-        .isEqualTo(YamlUtils.injectUuidWithType(pipelineYamlWithoutInputSet, YAMLFieldNameConstants.PIPELINE));
-    verify(pmsPipelineServiceHelper, times(1))
-        .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, pipelineYamlWithoutInputSet, true);
-    buildExecutionMetadataVerificationsWithV1Version(pipelineEntity);
-  }
-
   private void buildExecutionMetadataVerificationsWithV1Version(PipelineEntity pipelineEntity) {
     verify(principalInfoHelper, times(1)).getPrincipalInfoFromSecurityContext();
     verify(pmsGitSyncHelper, times(1))
