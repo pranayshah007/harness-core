@@ -541,4 +541,4 @@ io.harness.cdng.spot.elastigroup.deploy.PercentageElastigroupDeployServiceSpec
 io.harness.cdng.spot.elastigroup.deploy.CountElastigroupDeployServiceSpec
 io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo
 io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepNode
-io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployServiceWrapper
+io.harness.cdng.spot.elastigroup.deploy.ElastigroupCapacity

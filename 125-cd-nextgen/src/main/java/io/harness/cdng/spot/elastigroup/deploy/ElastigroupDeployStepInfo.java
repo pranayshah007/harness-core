@@ -56,13 +56,13 @@ public class ElastigroupDeployStepInfo implements CDStepInfo, Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  ElastigroupDeployServiceWrapper newService;
+  ElastigroupCapacity newService;
 
-  ElastigroupDeployServiceWrapper oldService;
+  ElastigroupCapacity oldService;
 
   @Builder(builderMethodName = "infoBuilder")
   public ElastigroupDeployStepInfo(String uuid, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ElastigroupDeployServiceWrapper newService, ElastigroupDeployServiceWrapper oldService) {
+      ElastigroupCapacity newService, ElastigroupCapacity oldService) {
     this.uuid = uuid;
     this.delegateSelectors = delegateSelectors;
     this.newService = newService;

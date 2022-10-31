@@ -29,12 +29,12 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepParameters")
 public class ElastigroupDeployStepParameters implements ElastigroupSpecParameters {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
-  ElastigroupDeployServiceWrapper newService;
-  ElastigroupDeployServiceWrapper oldService;
+  ElastigroupCapacity newService;
+  ElastigroupCapacity oldService;
 
   @Builder
   public ElastigroupDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ElastigroupDeployServiceWrapper newService, ElastigroupDeployServiceWrapper oldService) {
+      ElastigroupCapacity newService, ElastigroupCapacity oldService) {
     this.delegateSelectors = delegateSelectors;
     this.newService = newService;
     this.oldService = oldService;

@@ -32,12 +32,12 @@ public class ElastigroupDeployStepInfoTest extends CategoryTest {
           .delegateSelectors(ParameterField.createValueField(
               Arrays.asList(new TaskSelectorYaml("delegate-1"), new TaskSelectorYaml("delegate-2"))))
           .newService(
-              ElastigroupDeployServiceWrapper.builder()
+              ElastigroupCapacity.builder()
                   .type(ElastigroupDeployServiceSpecType.COUNT)
                   .spec(CountElastigroupDeployServiceSpec.builder().count(ParameterField.createValueField(5)).build())
                   .build())
           .oldService(
-              ElastigroupDeployServiceWrapper.builder()
+              ElastigroupCapacity.builder()
                   .type(ElastigroupDeployServiceSpecType.COUNT)
                   .spec(CountElastigroupDeployServiceSpec.builder().count(ParameterField.createValueField(2)).build())
                   .build())
@@ -87,7 +87,7 @@ public class ElastigroupDeployStepInfoTest extends CategoryTest {
     assertThat(elastigroupDeployStepParameters.getNewService())
         .isNotNull()
         .isEqualTo(
-            ElastigroupDeployServiceWrapper.builder()
+            ElastigroupCapacity.builder()
                 .type(ElastigroupDeployServiceSpecType.COUNT)
                 .spec(CountElastigroupDeployServiceSpec.builder().count(ParameterField.createValueField(5)).build())
                 .build());
@@ -95,7 +95,7 @@ public class ElastigroupDeployStepInfoTest extends CategoryTest {
     assertThat(elastigroupDeployStepParameters.getOldService())
         .isNotNull()
         .isEqualTo(
-            ElastigroupDeployServiceWrapper.builder()
+            ElastigroupCapacity.builder()
                 .type(ElastigroupDeployServiceSpecType.COUNT)
                 .spec(CountElastigroupDeployServiceSpec.builder().count(ParameterField.createValueField(2)).build())
                 .build());
