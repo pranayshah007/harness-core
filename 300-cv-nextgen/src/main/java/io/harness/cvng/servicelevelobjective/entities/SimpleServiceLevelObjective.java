@@ -8,8 +8,6 @@ package io.harness.cvng.servicelevelobjective.entities;
 
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
-import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
@@ -40,20 +38,18 @@ public class SimpleServiceLevelObjective extends AbstractServiceLevelObjective {
   }
 
   public static class SimpleServiceLevelObjectiveUpdatableEntity
-      extends AbstractServiceLevelObjectiveUpdatableEntity<SimpleServiceLevelObjective, ServiceLevelObjectiveV2DTO> {
+      extends AbstractServiceLevelObjectiveUpdatableEntity<SimpleServiceLevelObjective, SimpleServiceLevelObjective> {
     @Override
     public void setUpdateOperations(UpdateOperations<SimpleServiceLevelObjective> updateOperations,
-        ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO) {
-      SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
-          (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
-      setCommonOperations(updateOperations, serviceLevelObjectiveV2DTO);
+        SimpleServiceLevelObjective simpleServiceLevelObjective) {
+      setCommonOperations(updateOperations, simpleServiceLevelObjective);
       updateOperations
           .set(SimpleServiceLevelObjectiveKeys.healthSourceIdentifier,
-              simpleServiceLevelObjectiveSpec.getHealthSourceRef())
+              simpleServiceLevelObjective.getHealthSourceIdentifier())
           .set(SimpleServiceLevelObjectiveKeys.monitoredServiceIdentifier,
-              simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
+              simpleServiceLevelObjective.getMonitoredServiceIdentifier())
           .set(SimpleServiceLevelObjectiveKeys.serviceLevelIndicatorType,
-              simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType());
+              simpleServiceLevelObjective.getServiceLevelIndicatorType());
     }
   }
 }

@@ -405,6 +405,7 @@ public enum FeatureName {
   UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
   ELK_HEALTH_SOURCE("Will enable ELK health source in SRM", HarnessTeam.CV),
   SERVICE_LEVEL_OBJECTIVE_V2("Enable Service Level Objectives V2 in SRM", HarnessTeam.CV, Scope.GLOBAL),
+  SRM_COMPOSITE_SLO("Flag to start creating composite SLOs", HarnessTeam.CV),
   WAIT_STEP(
       "Automatically pause a pipeline execution for a specific amount of time, after time expires the pipeline proceeds and eventually completes",
       HarnessTeam.PIPELINE),
