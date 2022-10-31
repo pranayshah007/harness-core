@@ -26,8 +26,8 @@ import lombok.Getter;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-@RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployServiceWrapper")
-public class ElastigroupDeployServiceWrapper {
+@RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.ElastigroupCapacity")
+public class ElastigroupCapacity {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
