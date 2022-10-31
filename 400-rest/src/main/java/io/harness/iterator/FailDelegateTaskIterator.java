@@ -226,6 +226,9 @@ public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handle
 
   @VisibleForTesting
   public void failValidationCompletedQueuedTask(DelegateTask delegateTask) {
+    if (delegateTask == null) {
+      return;
+    }
     long validationTime = clock.millis() - VALIDATION_TIMEOUT;
     if (delegateTask.getStatus().equals(QUEUED) && delegateTask.getValidationStartedAt() != null
         && delegateTask.getValidationStartedAt() < validationTime) {

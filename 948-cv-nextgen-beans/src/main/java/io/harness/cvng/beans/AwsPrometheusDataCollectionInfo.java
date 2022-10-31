@@ -98,7 +98,7 @@ public class AwsPrometheusDataCollectionInfo extends TimeSeriesDataCollectionInf
     return Collections.emptyMap();
   }
 
-  private List<MetricCollectionInfo> getMetricCollectionInfoList() {
+  public List<MetricCollectionInfo> getMetricCollectionInfoList() {
     if (metricCollectionInfoList == null) {
       return Collections.emptyList();
     }

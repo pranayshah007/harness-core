@@ -20,6 +20,7 @@ import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
+import io.harness.ng.core.notification.EmailConfigDTO;
 import io.harness.ng.core.notification.NotificationSettingConfigDTO;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.notification.NotificationChannelType;
@@ -158,7 +159,9 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
         for (NotificationSettingConfigDTO notificationSettingConfigDTO : userGroupDTO.getNotificationConfigs()) {
           if (notificationSettingConfigDTO.getType().equals(notificationChannelType)) {
             if (NotificationChannelType.EMAIL.equals(notificationChannelType)) {
-              notificationSettings.addAll(getEmailsForUserIds(userGroupDTO.getUsers(), accountId));
+              if (((EmailConfigDTO) notificationSettingConfigDTO).isSendEmailToAllUsers()) {
+                notificationSettings.addAll(getEmailsForUserIds(userGroupDTO.getUsers(), accountId));
+              }
             }
             if (notificationSettingConfigDTO.getSetting().isPresent()) {
               notificationSettings.add(notificationSettingConfigDTO.getSetting().get());

@@ -15,6 +15,9 @@ import lombok.Data;
 @Data
 @Builder
 public class ServiceLevelObjectiveDetailsDTO {
+  @NotNull String accountId;
+  String orgIdentifier;
+  String projectIdentifier;
   @NotNull @NotBlank String serviceLevelObjectiveRef;
-  @NotNull @NotBlank Double weightagePercentage;
+  @NotNull Double weightagePercentage;
 }

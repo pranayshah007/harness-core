@@ -7,8 +7,6 @@
 package io.harness.cvng.servicelevelobjective.entities;
 
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
-import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
@@ -37,6 +35,9 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   @Data
   @Builder
   public static class ServiceLevelObjectivesDetail {
+    String accountId;
+    String orgIdentifier;
+    String projectIdentifier;
     String serviceLevelObjectiveRef;
     Double weightagePercentage;
   }
@@ -47,14 +48,14 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   }
 
   public static class CompositeServiceLevelObjectiveUpdatableEntity
-      extends AbstractServiceLevelObjectiveUpdatableEntity<CompositeServiceLevelObjective, ServiceLevelObjectiveV2DTO> {
+      extends AbstractServiceLevelObjectiveUpdatableEntity<CompositeServiceLevelObjective,
+          CompositeServiceLevelObjective> {
     @Override
     public void setUpdateOperations(UpdateOperations<CompositeServiceLevelObjective> updateOperations,
-        ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO) {
-      setCommonOperations(updateOperations, serviceLevelObjectiveV2DTO);
+        CompositeServiceLevelObjective compositeServiceLevelObjective) {
+      setCommonOperations(updateOperations, compositeServiceLevelObjective);
       updateOperations.set(CompositeServiceLevelObjectiveKeys.serviceLevelObjectivesDetails,
-          ((CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec())
-              .getServiceLevelObjectivesDetails());
+          compositeServiceLevelObjective.getServiceLevelObjectivesDetails());
       updateOperations.inc(CompositeServiceLevelObjectiveKeys.version);
     }
   }

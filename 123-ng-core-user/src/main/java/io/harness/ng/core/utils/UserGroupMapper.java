@@ -123,7 +123,10 @@ public class UserGroupMapper {
             .microsoftTeamsWebhookUrl(((MicrosoftTeamsConfigDTO) dto).getMicrosoftTeamsWebhookUrl())
             .build();
       case EMAIL:
-        return EmailConfig.builder().groupEmail(((EmailConfigDTO) dto).getGroupEmail()).build();
+        return EmailConfig.builder()
+            .groupEmail(((EmailConfigDTO) dto).getGroupEmail())
+            .sendEmailToAllUsers(((EmailConfigDTO) dto).isSendEmailToAllUsers())
+            .build();
       default:
         throw new IllegalArgumentException("This is not a valid Notification Setting Type: " + dto.getType());
     }
@@ -143,7 +146,10 @@ public class UserGroupMapper {
             .microsoftTeamsWebhookUrl(((MicrosoftTeamsConfig) entity).getMicrosoftTeamsWebhookUrl())
             .build();
       case EMAIL:
-        return EmailConfigDTO.builder().groupEmail(((EmailConfig) entity).getGroupEmail()).build();
+        return EmailConfigDTO.builder()
+            .groupEmail(((EmailConfig) entity).getGroupEmail())
+            .sendEmailToAllUsers(((EmailConfig) entity).isSendEmailToAllUsers())
+            .build();
       default:
         throw new IllegalArgumentException("This is not a valid Notification Setting Type: " + entity.getType());
     }

@@ -1384,10 +1384,6 @@ public class WingsApplication extends Application<MainConfiguration> {
         (PerpetualTaskServiceImpl) injector.getInstance(Key.get(PerpetualTaskService.class));
     delegatePollingHeartbeatService.getSubject().register(perpetualTaskService);
     delegateStreamHeartbeatService.getSubject().register(perpetualTaskService);
-
-    KubernetesClusterHandler kubernetesClusterHandler = injector.getInstance(Key.get(KubernetesClusterHandler.class));
-    delegatePollingHeartbeatService.getSubject().register(kubernetesClusterHandler);
-    delegateStreamHeartbeatService.getSubject().register(kubernetesClusterHandler);
   }
 
   /**
