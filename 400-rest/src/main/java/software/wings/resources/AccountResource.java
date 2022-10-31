@@ -22,7 +22,6 @@ import static software.wings.utils.Utils.urlDecode;
 
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 
-import io.harness.account.ProvisionStep;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
@@ -319,31 +318,6 @@ public class AccountResource {
   public RestResponse<Void> updateDefaultExperience(
       @PathParam("accountId") @NotEmpty String accountId, Account account) {
     return new RestResponse<>(accountService.setDefaultExperience(accountId, account.getDefaultExperience()));
-  }
-
-  @GET
-  @Path("delegate/active")
-  @Timed
-  @ExceptionMetered
-  public RestResponse<Boolean> checkSampleDelegate(@QueryParam("accountId") @NotEmpty String accountId) {
-    return new RestResponse<>(accountService.sampleDelegateExists(accountId));
-  }
-
-  @GET
-  @Path("delegate/progress")
-  @Timed
-  @ExceptionMetered
-  public RestResponse<List<ProvisionStep>> checkProgressSampleDelegate(
-      @QueryParam("accountId") @NotEmpty String accountId) {
-    return new RestResponse<>(accountService.sampleDelegateProgress(accountId));
-  }
-
-  @POST
-  @Path("delegate/generate")
-  @Timed
-  @ExceptionMetered
-  public RestResponse<String> generateSampleDelegate(@QueryParam("accountId") @NotEmpty String accountId) {
-    return new RestResponse<>(accountService.generateSampleDelegate(accountId));
   }
 
   @POST
