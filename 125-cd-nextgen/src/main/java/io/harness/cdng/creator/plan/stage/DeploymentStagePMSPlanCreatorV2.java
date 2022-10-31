@@ -137,7 +137,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private ServiceOverrideService serviceOverrideService;
   @Inject private EnvGroupPlanCreatorHelper envGroupPlanCreatorHelper;
   @Inject private ServicePlanCreatorHelper servicePlanCreatorHelper;
-  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private FreezeEvaluateService freezeEvaluateService;
 
   @Override
@@ -582,11 +581,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
   }
 
-  private void failIfProjectIsFrozen(PlanCreationContext ctx) {
+  protected void failIfProjectIsFrozen(PlanCreationContext ctx) {
     List<FreezeSummaryResponseDTO> projectFreezeConfigs = null;
     try {
       if (ctx.getMetadata() != null
-          && ngFeatureFlagHelperService.isEnabled(
+          && featureFlagHelperService.isEnabled(
               ctx.getMetadata().getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE)) {
         PlanCreationContextValue planCreationContextValue = ctx.getMetadata();
         projectFreezeConfigs =
