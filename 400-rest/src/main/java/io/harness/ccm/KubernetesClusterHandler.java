@@ -60,7 +60,7 @@ public class KubernetesClusterHandler implements DelegateObserver {
   }
 
   @Override
-  public void onReconnected(String accountId, String delegateId) {
+  public void onReconnected(Delegate delegate) {
     // do nothing
   }
 

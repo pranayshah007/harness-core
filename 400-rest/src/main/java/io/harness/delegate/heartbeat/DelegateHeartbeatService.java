@@ -87,12 +87,13 @@ public abstract class DelegateHeartbeatService<T extends Object> {
     try {
       final Delegate existingDelegate =
           getExistingDelegateExceptionIfNullOrDeleted(params.getAccountId(), params.getDelegateId());
+      long lastRecordedHeartBeat = existingDelegate.getLastHeartBeat();
       final T response = precheck(existingDelegate).orElseGet(() -> processHeartbeatRequest(existingDelegate, params));
       finish(response, params);
       boolean isDelegateReconnectingAfterLongPause =
-          clock.millis() > (params.getLastHeartBeat() + HEARTBEAT_EXPIRY_TIME.toMillis());
+          clock.millis() > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
       if (isDelegateReconnectingAfterLongPause) {
-        subject.fireInform(DelegateObserver::onAdded, existingDelegate);
+        subject.fireInform(DelegateObserver::onReconnected, existingDelegate);
       }
       return response;
     } catch (WingsException e) {
