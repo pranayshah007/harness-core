@@ -40,7 +40,7 @@ public class ElastigroupStartupScriptFetchRequest implements ActivityAccess, Tas
   String activityId;
   String accountId;
 
-  @NonFinal @Expression(ALLOW_SECRETS)
+  @NonFinal @Expression(ALLOW_SECRETS) String startupScript;
 
   @Builder.Default boolean shouldOpenLogStream = true;
   boolean closeLogStream;

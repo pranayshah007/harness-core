@@ -11,7 +11,6 @@ import com.google.common.collect.Sets;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
-import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepNode;
 import io.harness.cdng.elastigroup.ElastigroupSetupStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;

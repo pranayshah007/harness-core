@@ -14,6 +14,12 @@ public enum ElastigroupCommandUnitConstants {
       return "Create Setup";
     }
   },
+  fetchStartupScript {
+    @Override
+    public String toString() {
+      return "Fetch Startup Scripts";
+    }
+  },
   fetchManifests {
     @Override
     public String toString() {
