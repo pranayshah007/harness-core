@@ -34,6 +34,7 @@ public class CDMigrationDetails implements MigrationDetails {
         .add(Pair.of(3, DeleteInstanceOfDeletedConnectors.class))
         // Adding DeleteInstanceOfDeletedProjects again as we want to run it for all accounts now.
         .add(Pair.of(4, DeleteInstanceOfDeletedProjects.class))
+        .add(Pair.of(5, UpdateCorruptInstances.class))
         .build();
   }
 }
