@@ -49,7 +49,7 @@ public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAw
   @Schema(description = "targetRegions") List<String> targetRegions;
   @Schema(description = "executionLogPath") String executionLogPath;
   @Schema(description = "executionLogBucketType") String executionLogBucketType;
-  @Schema(description = "executionCompletedAt") long executionCompletedAt;
+  @Schema(description = "executionCompletedAt") Long executionCompletedAt;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;

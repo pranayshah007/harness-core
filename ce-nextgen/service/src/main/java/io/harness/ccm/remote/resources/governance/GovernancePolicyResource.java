@@ -26,10 +26,12 @@ import io.harness.ccm.views.entities.GovernancePolicyFilter;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyCloudProviderType;
 import io.harness.ccm.views.entities.PolicyEnforcement;
+import io.harness.ccm.views.entities.PolicyExecution;
 import io.harness.ccm.views.entities.PolicyPack;
 import io.harness.ccm.views.entities.PolicyStoreType;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ccm.views.service.PolicyEnforcementService;
+import io.harness.ccm.views.service.PolicyExecutionService;
 import io.harness.ccm.views.service.PolicyPackService;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
@@ -114,16 +116,18 @@ public class GovernancePolicyResource {
   private final PolicyEnforcementService policyEnforcementService;
   private final CCMRbacHelper rbacHelper;
   private final ConnectorResourceClient connectorResourceClient;
+  private final PolicyExecutionService policyExecutionService;
 
   @Inject
   public GovernancePolicyResource(GovernancePolicyService governancePolicyService, CCMRbacHelper rbacHelper,
       PolicyEnforcementService policyEnforcementService, PolicyPackService policyPackService,
-      ConnectorResourceClient connectorResourceClient) {
+      ConnectorResourceClient connectorResourceClient, PolicyExecutionService policyExecutionService) {
     this.governancePolicyService = governancePolicyService;
     this.rbacHelper = rbacHelper;
     this.policyEnforcementService = policyEnforcementService;
     this.policyPackService = policyPackService;
     this.connectorResourceClient = connectorResourceClient;
+    this.policyExecutionService = policyExecutionService;
   }
 
   // Internal API for OOTB policy creation
@@ -313,6 +317,7 @@ public class GovernancePolicyResource {
     String policyEnforcementUuid = governanceJobEnqueueDTO.getPolicyEnforcementId();
     log.info("Policy enforcement config id is {}", policyEnforcementUuid);
     PolicyEnforcement policyEnforcement = policyEnforcementService.get(policyEnforcementUuid);
+    PolicyCloudProviderType policyCloudProviderType = policyEnforcement.getCloudProvider();
     if (policyEnforcement == null) {
       log.error("No policy enforcement setting {} found in db. Skipping enqueuing in faktory", policyEnforcementUuid);
       // TODO: Return simple response to dkron instead of empty for debugging purposes
@@ -395,22 +400,29 @@ public class GovernancePolicyResource {
             // TODO: Test bulk enqueue here
             FaktoryProducer.Push(policyEnforcement.getCloudProvider().toString(), "aws", json);
             log.info("Pushed job in Faktory!");
+            // Make a record in Mongo
+            // TODO: Test bulk insert when bulk enqueue support is made
+            PolicyExecution policyExecution =
+                PolicyExecution.builder()
+                    .accountId(accountId)
+                    .cloudProvider(policyCloudProviderType)
+                    .executionLogPath("") // Updated by worker when execution finishes
+                    .isDryRun(policyEnforcement.getIsDryRun())
+                    .policyEnforcementIdentifier(policyEnforcementUuid)
+                    .executionCompletedAt(null) // Updated by worker when execution finishes
+                    .policyIdentifier(policyId)
+                    .targetAccount(ceAwsConnectorDTO.getAwsAccountId())
+                    .targetRegions(Arrays.asList(region))
+                    .build();
+            policyExecutionService.save(policyExecution);
           } catch (Exception e) {
-            log.warn("Exception processing aws tags for connectorId: {} for CCM accountId: {}",
-                connectorInfo.getIdentifier(), accountId, e);
+            log.warn(
+                "Exception enqueueing job for policyEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
+                policyEnforcementUuid, ceAwsConnectorDTO.getAwsAccountId(), region, e);
           }
         }
       }
     }
-
-    //    try {
-    //
-    //      FaktoryProducer.Push("aws", "aws", "{}");
-    //      log.info("Pushed job in Faktory!");
-    //    } catch (IOException e) {
-    //      log.error("{}", e);
-    //    }
-
     return ResponseDTO.newResponse();
   }
 }
