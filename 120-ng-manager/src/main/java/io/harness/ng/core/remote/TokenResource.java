@@ -253,4 +253,21 @@ public class TokenResource {
         tokenService.listAggregateTokens(accountIdentifier, getPageRequest(pageRequest), filterDTO);
     return ResponseDTO.newResponse(requestDTOS);
   }
+
+  @POST
+  @Path("validate")
+  @ApiOperation(value = "Validate token", nickname = "validateToken")
+  @Operation(operationId = "validateToken", summary = "Validate a Token",
+      description = "Validate a Token for the given account.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Validate a Token for the given account")
+      })
+  public ResponseDTO<TokenDTO>
+  validateToken(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(ACCOUNT_KEY)
+                @AccountIdentifier String accountIdentifier, @NotNull String apiKey) {
+    TokenDTO tokenDTO = tokenService.validateToken(accountIdentifier, apiKey);
+    return ResponseDTO.newResponse(tokenDTO);
+  }
 }

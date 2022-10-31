@@ -650,23 +650,23 @@ public class InstanceHelper {
     try (AcquiredLock lock =
              persistentLocker.tryToAcquireLock(InfrastructureMapping.class, infraMappingId, Duration.ofSeconds(180))) {
       if (lock == null) {
-        log.warn("Couldn't acquire infra lock for infraMapping of appId [{}]", appId);
+        log.warn("Couldn't acquire infra lock. appId [{}]", appId);
         return;
       }
 
       try {
         InstanceHandler instanceHandler = instanceHandlerFactory.getInstanceHandler(infraMapping);
         if (instanceHandler == null) {
-          log.warn("Instance handler null for infraMapping of appId [{}]", appId);
+          log.warn("Instance handler null. appId [{}]", appId);
           return;
         }
-        log.info("Instance sync started for infraMapping");
+        log.info("Instance sync started");
         instanceHandler.syncInstances(appId, infraMappingId, instanceSyncFlow);
         instanceService.updateSyncSuccess(appId, infraMapping.getServiceId(), infraMapping.getEnvId(), infraMappingId,
             infraMapping.getDisplayName(), System.currentTimeMillis());
-        log.info("Instance sync completed for infraMapping");
+        log.info("Instance sync completed");
       } catch (Exception ex) {
-        log.warn("Instance sync failed for infraMapping", ex);
+        log.warn("Instance sync failed", ex);
         String errorMsg = getErrorMsg(ex);
 
         instanceService.handleSyncFailure(appId, infraMapping.getServiceId(), infraMapping.getEnvId(), infraMappingId,
@@ -693,8 +693,8 @@ public class InstanceHelper {
   void createPerpetualTaskForNewDeploymentIfEnabled(
       InfrastructureMapping infrastructureMapping, List<DeploymentSummary> deploymentSummaries) {
     if (isInstanceSyncByPerpetualTaskEnabled(infrastructureMapping)) {
-      log.info("Creating Perpetual tasks for new deployment for account: [{}] and infrastructure mapping [{}]",
-          infrastructureMapping.getAccountId(), infrastructureMapping.getUuid());
+      log.info("Creating Perpetual tasks for new deployment for infrastructure mapping [{}]",
+          infrastructureMapping.getUuid());
       instanceSyncPerpetualTaskService.createPerpetualTasksForNewDeployment(infrastructureMapping, deploymentSummaries);
     }
   }
@@ -732,22 +732,20 @@ public class InstanceHelper {
       return;
     }
 
-    log.debug("Handling Instance sync response. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
-        infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid());
+    log.debug("Handling Instance sync response. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());
 
     try (AcquiredLock<?> lock = persistentLocker.tryToAcquireLock(
              InfrastructureMapping.class, infrastructureMapping.getUuid(), Duration.ofSeconds(180))) {
       if (lock == null) {
-        log.warn(
-            "Couldn't acquire lock on Infrastructure Mapping. Infrastructure Mapping : [{}], Application Id : [{}]",
+        log.warn("Couldn't acquire lock on Infrastructure Mapping : [{}], Application Id : [{}]",
             infrastructureMappingId, appId);
         return;
       }
       handleInstanceSyncResponseFromPerpetualTask(infrastructureMapping, perpetualTaskRecord, response);
     }
 
-    log.debug("Handled Instance sync response successfully. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
-        infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid());
+    log.debug(
+        "Handled Instance sync response successfully. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());
   }
 
   private void handleInstanceSyncResponseFromPerpetualTask(InfrastructureMapping infrastructureMapping,
@@ -766,8 +764,8 @@ public class InstanceHelper {
       checkAndDeletePerpetualTask(infrastructureMapping, ex);
     } catch (Exception ex) {
       checkAndDeletePerpetualTask(infrastructureMapping, ex);
-      log.error("Error handling Instance sync response. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
-          infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid(), ex);
+      log.error(
+          "Error handling Instance sync response. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());
       throw ex;
     } finally {
       Status status = handler.getStatus(infrastructureMapping, response);
@@ -777,14 +775,13 @@ public class InstanceHelper {
             System.currentTimeMillis());
       }
       if (!status.isRetryable()) {
-        log.info("Task Not Retryable. Deleting Perpetual Task. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
-            infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid());
+        log.info("Task Not Retryable. Deleting Perpetual Task. Infrastructure Mapping : [{}]",
+            infrastructureMapping.getUuid());
         instanceSyncPerpetualTaskService.deletePerpetualTask(
             infrastructureMapping.getAccountId(), infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid());
       }
       if (!status.isSuccess()) {
-        log.info("Sync Failure. Reset Perpetual Task. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
-            infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid());
+        log.info("Sync Failure. Reset Perpetual Task. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());
         instanceSyncPerpetualTaskService.resetPerpetualTask(
             infrastructureMapping.getAccountId(), perpetualTaskRecord.getUuid());
       }

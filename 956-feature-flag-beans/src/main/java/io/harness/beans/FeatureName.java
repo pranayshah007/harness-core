@@ -96,7 +96,6 @@ public enum FeatureName {
   GRAPHQL_DEV,
   HARNESS_TAGS,
   HELM_CHART_AS_ARTIFACT,
-  HELM_STEADY_STATE_CHECK_1_16,
   HELM_CHART_NAME_SPLIT,
   HELM_MERGE_CAPABILITIES("Add helm merge capabilities", HarnessTeam.CDP),
   INLINE_SSH_COMMAND,
@@ -405,6 +404,7 @@ public enum FeatureName {
   UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
   ELK_HEALTH_SOURCE("Will enable ELK health source in SRM", HarnessTeam.CV),
   SERVICE_LEVEL_OBJECTIVE_V2("Enable Service Level Objectives V2 in SRM", HarnessTeam.CV, Scope.GLOBAL),
+  SRM_COMPOSITE_SLO("Flag to start creating composite SLOs", HarnessTeam.CV),
   WAIT_STEP(
       "Automatically pause a pipeline execution for a specific amount of time, after time expires the pipeline proceeds and eventually completes",
       HarnessTeam.PIPELINE),

@@ -56,4 +56,5 @@ public class OutcomeExpressionConstants {
   public final String UPDATE_RELEASE_REPO_OUTCOME = "updateReleaseRepoOutcome";
   public final String INSTANCES = "instances";
   public final String ELASTIGROUP_CONFIGURATION_OUTPUT = "elastigroupConfigurationOutput";
+  public final String FREEZE_OUTCOME = "freezeOutcome";
 }

@@ -247,25 +247,27 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
           .build();
     }
 
-    JiraTaskParameters parameters = JiraTaskParameters.builder()
-                                        .jiraConfig(jiraConfig)
-                                        .jiraAction(jiraAction)
-                                        .issueId(issueId)
-                                        .project(project)
-                                        .issueType(issueType)
-                                        .summary(summary)
-                                        .status(status)
-                                        .description(description)
-                                        .labels(labels)
-                                        .customFields(customFields)
-                                        .comment(comment)
-                                        .priority(priority)
-                                        .encryptionDetails(secretManager.getEncryptionDetails(jiraConfig,
-                                            executionContext.getAppId(), executionContext.getWorkflowExecutionId()))
-                                        .accountId(((ExecutionContextImpl) context).getApp().getAccountId())
-                                        .activityId(activityId)
-                                        .appId(context.getAppId())
-                                        .build();
+    JiraTaskParameters parameters =
+        JiraTaskParameters.builder()
+            .jiraConfig(jiraConfig)
+            .jiraAction(jiraAction)
+            .issueId(issueId)
+            .project(project)
+            .issueType(issueType)
+            .summary(summary)
+            .status(status)
+            .description(description)
+            .useNewMeta(featureFlagService.isEnabled(FeatureName.SPG_USE_NEW_METADATA, accountId))
+            .labels(labels)
+            .customFields(customFields)
+            .comment(comment)
+            .priority(priority)
+            .encryptionDetails(secretManager.getEncryptionDetails(
+                jiraConfig, executionContext.getAppId(), executionContext.getWorkflowExecutionId()))
+            .accountId(((ExecutionContextImpl) context).getApp().getAccountId())
+            .activityId(activityId)
+            .appId(context.getAppId())
+            .build();
 
     if (jiraAction == JiraAction.UPDATE_TICKET || jiraAction == JiraAction.UPDATE_TICKET_NG) {
       List<String> issueIds = parseExpression(issueId);

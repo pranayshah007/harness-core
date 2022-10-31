@@ -39,6 +39,18 @@ public class JiraField {
     }
   }
 
+  public JiraField(JiraFieldNG jiraFieldNG) {
+    this.required = jiraFieldNG.isRequired();
+    this.name = jiraFieldNG.getName();
+    this.key = jiraFieldNG.getKey();
+    this.isCustom = jiraFieldNG.isCustom();
+    JiraFieldSchema jiraFieldSchema = new JiraFieldSchema(jiraFieldNG.getSchema());
+    this.schema = JSONObject.fromObject(jiraFieldSchema);
+    if (jiraFieldNG.getAllowedValues() != null && jiraFieldNG.getAllowedValues().size() > 0) {
+      this.allowedValues = JSONArray.fromObject(jiraFieldNG.getAllowedValues());
+    }
+  }
+
   public static JiraField getNewField(JSONObject object, String key) {
     return new JiraField(object, key);
   }
