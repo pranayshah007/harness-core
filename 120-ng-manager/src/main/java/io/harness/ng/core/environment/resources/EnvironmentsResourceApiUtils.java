@@ -91,19 +91,17 @@ public class EnvironmentsResourceApiUtils {
   }
 
   public static NGEnvironmentConfig toNGEnvironmentConfigWrapper(EnvironmentRequest dto, String org, String project) {
-    NGEnvironmentConfig ngEnvironmentConfig =
-        NGEnvironmentConfig.builder()
-            .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
-                                         .name(dto.getName())
-                                         .identifier(dto.getSlug())
-                                         .orgIdentifier(org)
-                                         .projectIdentifier(project)
-                                         .description(dto.getDescription())
-                                         .tags(dto.getTags())
-                                         .type(EnvironmentType.valueOf(dto.getType().toString()))
-                                         .build())
-            .build();
-    return ngEnvironmentConfig;
+    return NGEnvironmentConfig.builder()
+        .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
+                                     .name(dto.getName())
+                                     .identifier(dto.getSlug())
+                                     .orgIdentifier(org)
+                                     .projectIdentifier(project)
+                                     .description(dto.getDescription())
+                                     .tags(dto.getTags())
+                                     .type(EnvironmentType.valueOf(dto.getType().toString()))
+                                     .build())
+        .build();
   }
 
   public static Environment toNGEnvironmentEntity(
