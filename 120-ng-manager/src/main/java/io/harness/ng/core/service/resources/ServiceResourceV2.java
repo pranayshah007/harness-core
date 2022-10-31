@@ -610,6 +610,23 @@ public class ServiceResourceV2 {
     return ResponseDTO.newResponse(entityReferences);
   }
 
+  @POST
+  @Path("/mergeServiceInputs/{serviceIdentifier}")
+  @ApiOperation(value = "This api merges old and new service inputs YAML", nickname = "mergeServiceInputs")
+  @Hidden
+  public ResponseDTO<String> mergeServiceInputs(@Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(
+                                                    "serviceIdentifier") @ResourceIdentifier String serviceIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      String oldServiceInputsYaml) {
+    return ResponseDTO.newResponse(serviceEntityService.mergeServiceInputs(
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifier, oldServiceInputsYaml));
+  }
+
   private List<ServiceResponse> filterByPermissionAndId(
       List<AccessControlDTO> accessControlList, List<ServiceResponse> serviceList) {
     List<ServiceResponse> filteredAccessControlDtoList = new ArrayList<>();

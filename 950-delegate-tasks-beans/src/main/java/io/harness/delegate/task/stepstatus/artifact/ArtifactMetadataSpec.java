@@ -10,5 +10,13 @@ package io.harness.delegate.task.stepstatus.artifact;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 @OwnedBy(HarnessTeam.CI)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = DockerArtifactMetadata.class, name = ArtifactMetadataTypes.DOCKER_ARTIFACT_METADATA)
+  , @JsonSubTypes.Type(value = FileArtifactMetadata.class, name = ArtifactMetadataTypes.FILE_ARTIFACT_METADATA)
+})
 public interface ArtifactMetadataSpec {}

@@ -680,6 +680,8 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
     }
 
     builder.variables(variables);
+    builder.capabilities(cloudFormationCreateStackRequest.getCapabilities());
+    builder.tags(cloudFormationCreateStackRequest.getTags());
     return builder.build();
   }
 

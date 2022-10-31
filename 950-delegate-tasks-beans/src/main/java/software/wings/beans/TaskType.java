@@ -19,6 +19,7 @@ import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
@@ -315,7 +316,7 @@ public enum TaskType {
   HELM_COLLECT_CHART(TaskGroup.HELM),
   SLACK(TaskGroup.SLACK),
   INITIALIZATION_PHASE(TaskGroup.CI),
-  CI_LE_STATUS(TaskGroup.CI),
+  CI_LE_STATUS(TaskGroup.CI, null, StepStatusTaskResponseData.class, false),
   EXECUTE_COMMAND(TaskGroup.CI),
   CI_CLEANUP(TaskGroup.CI),
   CI_EXECUTE_STEP(TaskGroup.CI),

@@ -108,7 +108,7 @@ public class SerializerUtils {
             + "    git config --global --add safe.directory '*' | Out-Null\n"
             + "}\n"
             + "catch [System.Management.Automation.CommandNotFoundException]\n"
-            + "{\n }";
+            + "{\n }\n";
       }
       return safeDirScript;
     }

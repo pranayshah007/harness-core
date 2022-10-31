@@ -61,7 +61,7 @@ import org.springframework.data.domain.Sort;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class CustomDeploymentYamlHelperImplTest extends CategoryTest {
+public class CustomDeploymentYamlHelperTest extends CategoryTest {
   @Spy @InjectMocks private CustomDeploymentYamlHelper customDeploymentYamlHelper;
   private static final String RESOURCE_PATH_PREFIX = "customDeployment/";
   private static final String INFRA_RESOURCE_PATH_PREFIX = "infrastructure/";

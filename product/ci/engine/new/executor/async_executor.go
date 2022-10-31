@@ -39,7 +39,7 @@ func ExecuteStepInAsync(ctx context.Context, in *pb.ExecuteStepRequest,
 // Execute a step
 func executeStep(in *pb.ExecuteStepRequest, log *zap.SugaredLogger, procWriter io.Writer) {
 	ctx := context.Background()
-	e := newStepExecutor(in.GetTmpFilePath(), in.GetDelegateSvcEndpoint(), log, procWriter)
+	e := newStepExecutor(in.GetTmpFilePath(), in.GetDelegateSvcEndpoint(), in.GetManagerSvcEndpoint(), in.GetDelegateId(), in.GetAccountKey(), log, procWriter)
 	err := e.Run(ctx, in.GetStep())
 	if err != nil {
 		log.Errorw("Job failed with execution ID",

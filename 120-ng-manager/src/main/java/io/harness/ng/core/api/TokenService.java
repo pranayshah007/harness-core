@@ -42,4 +42,6 @@ public interface TokenService {
   long deleteAllByApiKeyIdentifier(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier, String apiKeyIdentifier);
   TokenDTO getToken(String tokenId, boolean withEncodedPassword);
+
+  TokenDTO validateToken(String accountIdentifier, String apiKey);
 }

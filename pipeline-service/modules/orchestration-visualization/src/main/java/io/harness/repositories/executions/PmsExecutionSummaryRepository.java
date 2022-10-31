@@ -18,7 +18,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
 @OwnedBy(PIPELINE)
-public interface PmsExecutionSummaryRespository
+public interface PmsExecutionSummaryRepository
     extends PagingAndSortingRepository<PipelineExecutionSummaryEntity, String>, PmsExecutionSummaryRepositoryCustom {
   Optional<PipelineExecutionSummaryEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionId(
       String accountId, String orgIdentifier, String projectIdentifier, String planExecutionId);

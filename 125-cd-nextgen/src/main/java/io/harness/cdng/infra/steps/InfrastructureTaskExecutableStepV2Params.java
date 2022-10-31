@@ -10,6 +10,7 @@ package io.harness.cdng.infra.steps;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.SkipAutoEvaluation;
 
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -22,6 +23,6 @@ public class InfrastructureTaskExecutableStepV2Params implements StepParameters 
   @NotNull private ParameterField<String> envRef;
   @NotNull private ParameterField<String> infraRef;
   private ServiceDefinitionType deploymentType;
-  private ParameterField<Map<String, Object>> infraInputs;
+  @SkipAutoEvaluation private ParameterField<Map<String, Object>> infraInputs;
   private ParameterField<Boolean> skipInstances;
 }

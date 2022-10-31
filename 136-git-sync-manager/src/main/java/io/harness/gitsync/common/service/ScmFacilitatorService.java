@@ -16,6 +16,8 @@ import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
@@ -53,4 +55,7 @@ public interface ScmFacilitatorService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName);
 
   String getRepoUrl(Scope scope, String connectorRef, String repoName);
+
+  ScmGetBranchHeadCommitResponseDTO getBranchHeadCommitDetails(
+      ScmGetBranchHeadCommitRequestDTO scmGetBranchHeadCommitRequestDTO);
 }

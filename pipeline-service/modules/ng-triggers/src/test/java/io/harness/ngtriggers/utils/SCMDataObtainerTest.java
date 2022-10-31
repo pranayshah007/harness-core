@@ -132,19 +132,15 @@ public class SCMDataObtainerTest extends CategoryTest {
             .executeOnDelegate(false)
             .build();
 
-    when(taskExecutionUtils.executeSyncTask(any(DelegateTaskRequest.class)))
-        .thenReturn(BinaryResponseData.builder().build());
-
-    byte[] list = ListCommitsInPRResponse.newBuilder()
-                      .addCommits(Commit.newBuilder()
-                                      .setSha("commitId")
-                                      .setMessage("message")
-                                      .setLink("http://github.com/octocat/hello-world/pull/1/commits/commitId")
-                                      .build())
-                      .build()
-                      .toByteArray();
-    when(kryoSerializer.asInflatedObject(any()))
-        .thenReturn(ScmGitRefTaskResponseData.builder().listCommitsInPRResponse(list).build());
+    ListCommitsInPRResponse list =
+        ListCommitsInPRResponse.newBuilder()
+            .addCommits(Commit.newBuilder()
+                            .setSha("commitId")
+                            .setMessage("message")
+                            .setLink("http://github.com/octocat/hello-world/pull/1/commits/commitId")
+                            .build())
+            .build();
+    when(scmServiceClient.listCommitsInPR(any(), anyLong(), any())).thenReturn(list);
 
     List<Commit> commits = scmDataObtainer.getCommitsInPr(connectorDetails, triggerDetails, 3);
     assertThat(commits.size()).isEqualTo(1);

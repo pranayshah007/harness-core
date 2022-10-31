@@ -9,6 +9,8 @@ package io.harness.delegate.task.shell.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWinRmSessionConfig;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
@@ -87,7 +89,9 @@ public class WinRmCopyCommandHandler extends WinRmDownloadArtifactCommandHandler
 
     CommandExecutionStatus commandExecutionStatus = CommandExecutionStatus.SUCCESS;
     if (FileSourceType.ARTIFACT.equals(copyCommandUnit.getSourceType())) {
-      return super.handle(parameters, commandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+      throw NestedExceptionUtils.hintWithExplanationException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM_HINT,
+          COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM,
+          new SshCommandExecutionException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM));
     } else if (FileSourceType.CONFIG.equals(copyCommandUnit.getSourceType())) {
       commandExecutionStatus =
           copyConfigFiles(winRmCommandTaskParameters, copyCommandUnit, logStreamingTaskClient, commandUnitsProgress);

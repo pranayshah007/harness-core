@@ -26,6 +26,7 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.PRASHANT;
@@ -58,6 +59,7 @@ import static software.wings.infra.InfraDefinitionTestConstants.RESOURCE_CONSTRA
 import static software.wings.settings.SettingVariableTypes.KUBERNETES;
 import static software.wings.settings.SettingVariableTypes.PHYSICAL_DATA_CENTER;
 import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
+import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.StateMachine.StateMachineBuilder.aStateMachine;
 import static software.wings.sm.StateType.APPROVAL;
@@ -143,6 +145,7 @@ import io.harness.waiter.OrchestrationNotifyEventListener;
 import software.wings.WingsBaseTest;
 import software.wings.api.CloudProviderType;
 import software.wings.api.DeploymentType;
+import software.wings.api.InstanceElement;
 import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.api.WorkflowElement;
@@ -155,6 +158,7 @@ import software.wings.beans.ArtifactVariable;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.CanaryWorkflowExecutionAdvisor;
 import software.wings.beans.DirectKubernetesInfrastructureMapping;
+import software.wings.beans.ElementExecutionSummary;
 import software.wings.beans.Environment;
 import software.wings.beans.Environment.Builder;
 import software.wings.beans.ErrorStrategy;
@@ -233,6 +237,7 @@ import software.wings.service.intfc.security.SSHVaultService;
 import software.wings.sm.ContextElement;
 import software.wings.sm.ExecutionEventAdvisor;
 import software.wings.sm.ExecutionInterrupt;
+import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;
 import software.wings.sm.StateMachine;
@@ -266,6 +271,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * The type Workflow service impl test.
@@ -1919,9 +1926,9 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = MILOS)
+  @Owner(developers = LUCAS_SALES)
   @Category(UnitTests.class)
-  public void shouldObtainLastGoodDeployedArtifactsForRollback() throws InterruptedException {
+  public void shouldObtainEmptyArtifactsForRollbackWhenNoInstancesAreDeployed() throws InterruptedException {
     when(artifactStreamServiceBindingService.listArtifactStreamIds(anyString()))
         .thenReturn(singletonList("artifactStreamId"));
 
@@ -1947,7 +1954,82 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
 
     List<Artifact> artifacts = workflowExecutionService.obtainLastGoodDeployedArtifacts(
         workflowExecution2, workflowExecution1.getInfraMappingIds(), true);
+    assertThat(artifacts).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldObtainLastGoodDeployedArtifactsWithDeployedInstancesForRollback() throws InterruptedException {
+    when(artifactStreamServiceBindingService.listArtifactStreamIds(anyString()))
+        .thenReturn(singletonList("artifactStreamId"));
+
+    String appId = app.getUuid();
+    Service service = addService("Service");
+    DockerArtifactStream dockerArtifactStream = DockerArtifactStream.builder().uuid("artifactStreamId").build();
+    service.setArtifactStreams(singletonList(dockerArtifactStream));
+    service.setArtifactStreamIds(singletonList(dockerArtifactStream.getUuid()));
+
+    SettingAttribute computeProvider =
+        aSettingAttribute().withAppId(app.getUuid()).withValue(aPhysicalDataCenterConfig().build()).build();
+    when(mockSettingsService.getByAccountAndId(any(), any())).thenReturn(computeProvider);
+    wingsPersistence.save(computeProvider);
+
+    final InfrastructureDefinition infraDefinition = createInfraDefinition(computeProvider, "Infra", "host1");
+
+    Workflow workflow = createWorkflow(appId, env, service, infraDefinition);
+
+    WorkflowExecution workflowExecution1 = triggerWorkflow(workflow, env);
+    WorkflowExecution workflowExecution2 = triggerWorkflow(workflow, env);
+    WorkflowExecution workflowExecution3 = triggerWorkflow(workflow, env);
+
+    List<ElementExecutionSummary> executionSummaries1 = workflowExecution1.getServiceExecutionSummaries();
+    InstanceStatusSummary instanceStatusSummary1 =
+        anInstanceStatusSummary()
+            .withInstanceElement(InstanceElement.Builder.anInstanceElement().uuid("instanceId1").build())
+            .build();
+    executionSummaries1.get(0).setInstanceStatusSummaries(asList(instanceStatusSummary1));
+
+    Artifact artifact1 = workflowExecution1.getArtifacts().get(0);
+    artifact1.setUuid("artifact1");
+
+    Artifact artifact2 = workflowExecution2.getArtifacts().get(0);
+    artifact2.setUuid("artifact2");
+
+    Artifact artifact3 = workflowExecution3.getArtifacts().get(0);
+    artifact3.setUuid("artifact3");
+
+    Query<WorkflowExecution> query1 = wingsPersistence.createQuery(WorkflowExecution.class)
+                                          .filter(WorkflowExecutionKeys.uuid, workflowExecution1.getUuid());
+
+    Query<WorkflowExecution> query2 = wingsPersistence.createQuery(WorkflowExecution.class)
+                                          .filter(WorkflowExecutionKeys.uuid, workflowExecution2.getUuid());
+
+    Query<WorkflowExecution> query3 = wingsPersistence.createQuery(WorkflowExecution.class)
+                                          .filter(WorkflowExecutionKeys.uuid, workflowExecution3.getUuid());
+
+    UpdateOperations<WorkflowExecution> updateOps1 =
+        wingsPersistence.createUpdateOperations(WorkflowExecution.class)
+            .set(WorkflowExecutionKeys.serviceExecutionSummaries, executionSummaries1)
+            .set(WorkflowExecutionKeys.artifacts, workflowExecution1.getArtifacts());
+
+    UpdateOperations<WorkflowExecution> updateOps2 =
+        wingsPersistence.createUpdateOperations(WorkflowExecution.class)
+            .set(WorkflowExecutionKeys.artifacts, workflowExecution2.getArtifacts());
+
+    UpdateOperations<WorkflowExecution> updateOps3 =
+        wingsPersistence.createUpdateOperations(WorkflowExecution.class)
+            .set(WorkflowExecutionKeys.artifacts, workflowExecution3.getArtifacts());
+
+    wingsPersistence.update(query1, updateOps1);
+    wingsPersistence.update(query2, updateOps2);
+    wingsPersistence.update(query3, updateOps3);
+
+    List<Artifact> artifacts = workflowExecutionService.obtainLastGoodDeployedArtifacts(
+        workflowExecution3, workflowExecution1.getInfraMappingIds(), true);
     assertThat(artifacts).isNotEmpty();
+    assertThat(artifacts.get(0).getUuid()).isEqualTo(workflowExecution1.getArtifacts().get(0).getUuid());
+    assertThat(artifacts.get(0).getUuid()).isNotEqualTo(workflowExecution2.getArtifacts().get(0).getUuid());
   }
 
   @Test

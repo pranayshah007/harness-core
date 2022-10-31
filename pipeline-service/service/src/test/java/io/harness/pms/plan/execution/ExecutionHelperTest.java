@@ -10,7 +10,6 @@ package io.harness.pms.plan.execution;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.rule.OwnerRule.ARCHIT;
-import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
@@ -64,7 +63,7 @@ import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagHelper;
 
@@ -101,7 +100,7 @@ public class ExecutionHelperTest extends CategoryTest {
   @Mock OrchestrationService orchestrationService;
   @Mock PlanExecutionMetadataService planExecutionMetadataService;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
-  @Mock PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
+  @Mock PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   @Mock PmsFeatureFlagHelper featureFlagService;
 
   String accountId = "accountId";
@@ -122,15 +121,6 @@ public class ExecutionHelperTest extends CategoryTest {
       + "  - stage:\n"
       + "      identifier: s1\n"
       + "      description: <+input>\n"
-      + "  - stage:\n"
-      + "      identifier: s2\n"
-      + "      description: <+input>\n"
-      + "  allowStageExecutions: true\n";
-  String pipelineYamlAllowedValues = "pipeline:\n"
-      + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: s1\n"
-      + "      description: <+input>.allowedValues(true,false,maybe)\n"
       + "  - stage:\n"
       + "      identifier: s2\n"
       + "      description: <+input>\n"
@@ -531,17 +521,6 @@ public class ExecutionHelperTest extends CategoryTest {
         + "      description: desc\n";
     assertThatThrownBy(() -> executionHelper.getPipelineYamlAndValidate(wrongRuntimeInputYaml, pipelineEntity))
         .isInstanceOf(InvalidRequestException.class);
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void testGetPipelineYamlAndValidateEmptyRuntime() {
-    String wrongRuntimeInputYaml = "";
-    pipelineEntity.setYaml(pipelineYamlAllowedValues);
-    assertThatThrownBy(() -> executionHelper.getPipelineYamlAndValidate(wrongRuntimeInputYaml, pipelineEntity))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Pipeline need runtime input values for: [pipeline.stages.s1.description]");
   }
 
   @Test

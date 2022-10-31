@@ -64,6 +64,7 @@ import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.NGLogCallback;
@@ -96,6 +97,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.assertj.core.api.Assertions;
 import org.jooq.tools.reflect.Reflect;
 import org.junit.After;
 import org.junit.Before;
@@ -344,6 +346,35 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(0), "latest");
     verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(1), "latest-2");
     verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(2), "latest-3");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testPrimaryArtifactRefNotResolved() {
+    // Prepare test data
+    ArtifactSource source1 = ArtifactSource.builder()
+                                 .identifier("source1-id")
+                                 .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                 .spec(DockerHubArtifactConfig.builder()
+                                           .connectorRef(ParameterField.createValueField("connector"))
+                                           .tag(ParameterField.createValueField("latest"))
+                                           .imagePath(ParameterField.createValueField("nginx"))
+                                           .build())
+                                 .build();
+    doReturn(getServiceConfig(ArtifactListConfig.builder()
+                                  .primary(PrimaryArtifact.builder()
+                                               .sources(List.of(source1))
+                                               .primaryArtifactRef(
+                                                   ParameterField.createExpressionField(true, "<+input>", null, true))
+                                               .build())
+                                  .build()))
+        .when(cdStepHelper)
+        .fetchServiceConfigFromSweepingOutput(Mockito.any(Ambiance.class));
+
+    Assertions.assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> step.executeAsync(ambiance, stepParameters, inputPackage, null))
+        .withMessageContaining("could not be resolved");
   }
 
   @Test

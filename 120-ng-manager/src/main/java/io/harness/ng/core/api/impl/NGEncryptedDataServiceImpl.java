@@ -8,9 +8,6 @@
 package io.harness.ng.core.api.impl;
 
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
-import static io.harness.SecretConstants.LATEST;
-import static io.harness.SecretConstants.REGIONS;
-import static io.harness.SecretConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
@@ -59,11 +56,13 @@ import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.mappers.SecretManagerConfigMapper;
+import io.harness.ng.core.AdditionalMetadataValidationHelper;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
+import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.entities.NGEncryptedData.NGEncryptedDataBuilder;
@@ -90,7 +89,6 @@ import software.wings.service.impl.security.GlobalEncryptDecryptClient;
 import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -132,6 +130,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   private final CustomEncryptorsRegistry customEncryptorsRegistry;
   private final CustomSecretManagerHelper customSecretManagerHelper;
   private final NGEncryptorService ngEncryptorService;
+  private final AdditionalMetadataValidationHelper additionalMetadataValidationHelper;
 
   @Inject
   public NGEncryptedDataServiceImpl(NGEncryptedDataDao encryptedDataDao, KmsEncryptorsRegistry kmsEncryptorsRegistry,
@@ -139,7 +138,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       SecretManagerClient secretManagerClient, GlobalEncryptDecryptClient globalEncryptDecryptClient,
       NGConnectorSecretManagerService ngConnectorSecretManagerService,
       NGFeatureFlagHelperService ngFeatureFlagHelperService, CustomEncryptorsRegistry customEncryptorsRegistry,
-      CustomSecretManagerHelper customSecretManagerHelper, NGEncryptorService ngEncryptorService) {
+      CustomSecretManagerHelper customSecretManagerHelper, NGEncryptorService ngEncryptorService,
+      AdditionalMetadataValidationHelper additionalMetadataValidationHelper) {
     this.encryptedDataDao = encryptedDataDao;
     this.kmsEncryptorsRegistry = kmsEncryptorsRegistry;
     this.vaultEncryptorsRegistry = vaultEncryptorsRegistry;
@@ -150,6 +150,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     this.customEncryptorsRegistry = customEncryptorsRegistry;
     this.customSecretManagerHelper = customSecretManagerHelper;
     this.ngEncryptorService = ngEncryptorService;
+    this.additionalMetadataValidationHelper = additionalMetadataValidationHelper;
   }
 
   @Override
@@ -184,65 +185,13 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     return encryptedDataDao.save(encryptedData);
   }
 
-  private void validateAdditionalMetadata(SecretManagerConfigDTO secretManager, SecretTextSpecDTO secret) {
+  private void validateAdditionalMetadata(SecretManagerConfigDTO secretManager, SecretSpecDTO secret) {
     switch (secretManager.getEncryptionType()) {
       case GCP_SECRETS_MANAGER:
-        validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(secret);
+        additionalMetadataValidationHelper.validateAdditionalMetadataForGcpSecretManager(secret);
         return;
       default:
         return;
-    }
-  }
-
-  @VisibleForTesting
-  void validateAdditionalMetadataInSecretTextSpecDTOForGcpSecretManager(SecretTextSpecDTO secretTextSpecDTO) {
-    if (Inline.equals(secretTextSpecDTO.getValueType())) {
-      validateInlineSecretAdditionalMetadataForGcpSecretManager(secretTextSpecDTO);
-    } else {
-      validateReferenceSecretAdditionalMetadataForGcpSecretManager(secretTextSpecDTO);
-    }
-  }
-
-  private void validateReferenceSecretAdditionalMetadataForGcpSecretManager(SecretTextSpecDTO secretTextSpecDTO) {
-    if (secretTextSpecDTO.getAdditionalMetadata() == null
-        || secretTextSpecDTO.getAdditionalMetadata().getValues() == null) {
-      throw new InvalidRequestException("Version information in additional metadata values field is missing.");
-    }
-    Map<String, Object> values = secretTextSpecDTO.getAdditionalMetadata().getValues();
-    if (values.size() != 1 || !values.containsKey(VERSION)) {
-      throw new InvalidRequestException("Additional metadata values field should have only one field - version");
-    }
-    validateVersionInformation(values.get(VERSION));
-  }
-  private void validateVersionInformation(Object version) {
-    if (version == null) {
-      throw new InvalidRequestException("Version can not be null");
-    }
-    String versionString = String.valueOf(version);
-    if (isEmpty(versionString)) {
-      throw new InvalidRequestException("Version can not be empty");
-    }
-    if (version.equals(LATEST)) {
-      return;
-    }
-    try {
-      Integer.parseInt(versionString);
-    } catch (NumberFormatException numberFormatException) {
-      throw new InvalidRequestException("Version should be either latest or an integer.");
-    }
-  }
-
-  private void validateInlineSecretAdditionalMetadataForGcpSecretManager(SecretTextSpecDTO secretTextSpecDTO) {
-    if (secretTextSpecDTO.getAdditionalMetadata() != null
-        && !isEmpty(secretTextSpecDTO.getAdditionalMetadata().getValues())) {
-      Map<String, Object> values = secretTextSpecDTO.getAdditionalMetadata().getValues();
-      if (values.size() != 1 || !values.containsKey(REGIONS)) {
-        throw new InvalidRequestException(
-            String.format("Additional metadata values expect only one key - %s", REGIONS));
-      }
-      if (values.get(REGIONS) == null || isEmpty(String.valueOf(values.get(REGIONS)))) {
-        throw new InvalidRequestException(String.format("%s should not be empty", REGIONS));
-      }
     }
   }
 
@@ -286,10 +235,9 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     validateSecretDoesNotExist(
         accountIdentifier, dto.getOrgIdentifier(), dto.getProjectIdentifier(), dto.getIdentifier());
     SecretFileSpecDTO secret = (SecretFileSpecDTO) dto.getSpec();
-
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
-
+    validateAdditionalMetadata(secretManager, secret);
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
 
     if (isReadOnlySecretManager(secretManager)) {
@@ -327,6 +275,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       builder.additionalMetadata(secret.getAdditionalMetadata());
     } else if (SecretFile.equals(dto.getType())) {
       builder.type(SettingVariableTypes.CONFIG_FILE);
+      SecretFileSpecDTO secretFileSpecDTO = (SecretFileSpecDTO) dto.getSpec();
+      builder.additionalMetadata(secretFileSpecDTO.getAdditionalMetadata());
     }
     return builder.build();
   }
@@ -513,7 +463,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
 
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
-
+    validateAdditionalMetadata(secretManager, secret);
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
     if (Inline.equals(secret.getValueType())) {
       if (isReadOnlySecretManager(secretManager)) {
@@ -593,7 +543,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     validateUpdateRequest(existingEncryptedData, dto);
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
-
+    validateAdditionalMetadata(secretManager, secret);
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
 
     if (isReadOnlySecretManager(secretManager)) {

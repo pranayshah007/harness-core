@@ -7,6 +7,8 @@
 
 package io.harness.cdng.custom.deployment.ng;
 
+import static io.harness.rule.OwnerRule.RISHABH;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,7 +39,9 @@ import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.service.impl.FileStoreServiceImpl;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.template.TemplateResponseDTO;
+import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
@@ -61,6 +65,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 @PrepareForTest({NGVariablesUtils.class})
@@ -68,7 +73,7 @@ public class CustomDeploymentInfrastructureHelperTest extends CategoryTest {
   @Mock ConnectorService connectorService;
   @Mock FileStoreServiceImpl fileStoreService;
   @Mock TemplateResourceClient templateResourceClient;
-  @InjectMocks private CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
+  @Spy @InjectMocks private CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   private static final String ACCOUNT = "accIdentifier";
   private static final String ORG = "orgIdentifier";
   private static final String PROJECT = "projectIdentifier";
@@ -371,5 +376,215 @@ public class CustomDeploymentInfrastructureHelperTest extends CategoryTest {
     assertThatThrownBy(() -> customDeploymentInfrastructureHelper.getInstanceAttributes(templateYaml, ACCOUNT))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Template yaml provided does not have infrastructure in it.");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetStepTemplateRefFromYaml() {
+    String infraYaml = readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    StepTemplateRef stepTemplateRef =
+        customDeploymentInfrastructureHelper.getStepTemplateRefFromInfraYaml(infraYaml, ACCOUNT);
+
+    assertThat(stepTemplateRef.getTemplateRef()).isEqualTo("account.OpenStack");
+    assertThat(stepTemplateRef.getVersionLabel()).isEqualTo("V1");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetStepTemplateRefFromYamlInvalidInfraDef() {
+    String infraYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+
+    assertThatThrownBy(() -> customDeploymentInfrastructureHelper.getStepTemplateRefFromInfraYaml(infraYaml, ACCOUNT))
+        .hasMessage("Could not fetch the template reference from yaml Infra definition is null in yaml");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetStepTemplateRefFromYamlWithoutVersion() {
+    String infraYaml = readFile("infrastructureWithStableDT.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    StepTemplateRef stepTemplateRef =
+        customDeploymentInfrastructureHelper.getStepTemplateRefFromInfraYaml(infraYaml, ACCOUNT);
+
+    assertThat(stepTemplateRef.getTemplateRef()).isEqualTo("account.OpenStack");
+    assertThat(stepTemplateRef.getVersionLabel()).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetStepTemplateRefFromYamlWithoutSpec() {
+    String infraYaml = readFile("infrastructureWithoutSpec.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThatThrownBy(() -> customDeploymentInfrastructureHelper.getStepTemplateRefFromInfraYaml(infraYaml, ACCOUNT))
+        .hasMessage("Could not fetch the template reference from yaml Infra definition spec is null in yaml");
+  }
+
+  @Test()
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetStepTemplateRefFromYamlWithoutRef() {
+    String infraYaml = readFile("infrastructureWithoutDTRef.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThatThrownBy(() -> customDeploymentInfrastructureHelper.getStepTemplateRefFromInfraYaml(infraYaml, ACCOUNT))
+        .hasMessage("Could not fetch the template reference from yaml customDeploymentRef is null in yaml");
+  }
+
+  @Test()
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetStepTemplateRefFromYamlWithoutTemplateRef() {
+    String infraYaml = readFile("infrastructureWithoutTemplateRef.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThatThrownBy(() -> customDeploymentInfrastructureHelper.getStepTemplateRefFromInfraYaml(infraYaml, ACCOUNT))
+        .hasMessage("Could not fetch the template reference from yaml templateRef is null in yaml");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlWrongVariables() {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .projectIdentifier(PROJECT)
+                                                    .yaml(readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX))
+                                                    .build();
+    doReturn(readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX))
+        .when(customDeploymentInfrastructureHelper)
+        .getTemplateYaml(ACCOUNT, ORG, PROJECT, "account.OpenStack", "V1");
+    assertThat(customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYaml() {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .projectIdentifier(PROJECT)
+                                                    .yaml(readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX))
+                                                    .build();
+    doReturn(readFile("templateWithAllVariables.yaml", TEMPLATE_RESOURCE_PATH_PREFIX))
+        .when(customDeploymentInfrastructureHelper)
+        .getTemplateYaml(ACCOUNT, ORG, PROJECT, "account.OpenStack", "V1");
+    customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlWithInvalidInfra() {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .projectIdentifier(PROJECT)
+                                                    .yaml(readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX))
+                                                    .build();
+    doReturn(readFile("templateWithAllVariables.yaml", TEMPLATE_RESOURCE_PATH_PREFIX))
+        .when(customDeploymentInfrastructureHelper)
+        .getTemplateYaml(ACCOUNT, ORG, PROJECT, "account.OpenStack", "V1");
+    assertThatThrownBy(() -> customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity))
+        .hasMessage("Could not fetch the template reference from yaml Infra definition is null in yaml");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlWithoutInfraSpec() {
+    InfrastructureEntity infrastructureEntity =
+        InfrastructureEntity.builder()
+            .accountId(ACCOUNT)
+            .orgIdentifier(ORG)
+            .projectIdentifier(PROJECT)
+            .yaml(readFile("infrastructureWithoutSpec.yaml", INFRA_RESOURCE_PATH_PREFIX))
+            .build();
+    doReturn(readFile("templateWithAllVariables.yaml", TEMPLATE_RESOURCE_PATH_PREFIX))
+        .when(customDeploymentInfrastructureHelper)
+        .getTemplateYaml(ACCOUNT, ORG, PROJECT, "account.OpenStack", "V1");
+    assertThatThrownBy(() -> customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity))
+        .hasMessage("Could not fetch the template reference from yaml Infra definition spec is null in yaml");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlWrongVariableType() {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .projectIdentifier(PROJECT)
+                                                    .yaml(readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX))
+                                                    .build();
+    doReturn(readFile("templateWithDiffType.yaml", TEMPLATE_RESOURCE_PATH_PREFIX))
+        .when(customDeploymentInfrastructureHelper)
+        .getTemplateYaml(ACCOUNT, ORG, PROJECT, "account.OpenStack", "V1");
+    assertThat(customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlWrongVariableName() {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .projectIdentifier(PROJECT)
+                                                    .yaml(readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX))
+                                                    .build();
+    doReturn(readFile("templateWithDiffName.yaml", TEMPLATE_RESOURCE_PATH_PREFIX))
+        .when(customDeploymentInfrastructureHelper)
+        .getTemplateYaml(ACCOUNT, ORG, PROJECT, "account.OpenStack", "V1");
+    assertThat(customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlWithNoInfraVariables() {
+    InfrastructureEntity infrastructureEntity =
+        InfrastructureEntity.builder()
+            .accountId(ACCOUNT)
+            .orgIdentifier(ORG)
+            .projectIdentifier(PROJECT)
+            .yaml(readFile("infrastructureWithNoVariables.yaml", INFRA_RESOURCE_PATH_PREFIX))
+            .build();
+    doReturn(readFile("templateWithAllVariables.yaml", TEMPLATE_RESOURCE_PATH_PREFIX))
+        .when(customDeploymentInfrastructureHelper)
+        .getTemplateYaml(ACCOUNT, ORG, PROJECT, "account.OpenStack", "V1");
+    assertThat(customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlWithNoTemplateVariables() {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .projectIdentifier(PROJECT)
+                                                    .yaml(readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX))
+                                                    .build();
+    doReturn(readFile("templateWithNoVariables.yaml", TEMPLATE_RESOURCE_PATH_PREFIX))
+        .when(customDeploymentInfrastructureHelper)
+        .getTemplateYaml(ACCOUNT, ORG, PROJECT, "account.OpenStack", "V1");
+    assertThat(customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlWithNoVariables() {
+    InfrastructureEntity infrastructureEntity =
+        InfrastructureEntity.builder()
+            .accountId(ACCOUNT)
+            .orgIdentifier(ORG)
+            .projectIdentifier(PROJECT)
+            .yaml(readFile("infrastructureWithNoVariables.yaml", INFRA_RESOURCE_PATH_PREFIX))
+            .build();
+    doReturn(readFile("templateWithNoVariables.yaml", TEMPLATE_RESOURCE_PATH_PREFIX))
+        .when(customDeploymentInfrastructureHelper)
+        .getTemplateYaml(ACCOUNT, ORG, PROJECT, "account.OpenStack", "V1");
+    customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity);
   }
 }

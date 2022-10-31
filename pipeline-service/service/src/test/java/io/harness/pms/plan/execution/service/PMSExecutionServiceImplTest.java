@@ -33,7 +33,7 @@ import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
@@ -54,7 +54,7 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PIPELINE)
 public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
-  @Mock private PmsExecutionSummaryRespository pmsExecutionSummaryRepository;
+  @Mock private PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Mock private UpdateResult updateResult;
   @InjectMocks private PMSExecutionServiceImpl pmsExecutionService;
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
@@ -143,15 +143,12 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
         pmsExecutionService.formCriteria(null, null, null, null, null, null, "cd", null, null, false, true, null, true);
     Criteria criteria = new Criteria();
 
-    Criteria moduleCriteria = new Criteria();
     Criteria searchCriteria = new Criteria();
-    moduleCriteria.orOperator(
-        Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules).is(Collections.emptyList()),
-        Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules)
-            .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
+    searchCriteria.orOperator(Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules)
+                                  .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
         Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules).in("cd"));
 
-    criteria.andOperator(searchCriteria, moduleCriteria, searchCriteria, searchCriteria);
+    criteria.andOperator(searchCriteria);
 
     assertThat(form.getCriteriaObject().get("$and")).isEqualTo(criteria.getCriteriaObject().get("$and"));
   }

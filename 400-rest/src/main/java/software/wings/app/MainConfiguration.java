@@ -232,6 +232,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("totp") private TotpConfig totpConfig;
   @JsonProperty(value = "cdTsDbRetentionPeriodMonths") private String cdTsDbRetentionPeriodMonths;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+  @JsonProperty(value = "disableInstanceSyncIterator") private Boolean disableInstanceSyncIterator;
 
   private int applicationPort;
   private boolean sslEnabled;

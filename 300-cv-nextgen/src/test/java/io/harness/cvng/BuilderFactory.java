@@ -1084,10 +1084,16 @@ public class BuilderFactory {
                   .serviceLevelObjectivesDetails(Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
                                                                    .serviceLevelObjectiveRef("uuid1")
                                                                    .weightagePercentage(75.0)
+                                                                   .projectIdentifier(context.getProjectIdentifier())
+                                                                   .orgIdentifier(context.getOrgIdentifier())
+                                                                   .accountId(context.getAccountId())
                                                                    .build(),
                       ServiceLevelObjectiveDetailsDTO.builder()
                           .serviceLevelObjectiveRef("uuid2")
                           .weightagePercentage(25.0)
+                          .projectIdentifier(context.getProjectIdentifier())
+                          .orgIdentifier(context.getOrgIdentifier())
+                          .accountId(context.getAccountId())
                           .build()))
                   .build())
         .userJourneyRefs(Collections.singletonList("userJourney"));

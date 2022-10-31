@@ -8,6 +8,7 @@
 package io.harness.cdng.customDeployment;
 
 import static io.harness.rule.OwnerRule.RISHABH;
+import static io.harness.rule.OwnerRule.SOURABH;
 
 import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
 
@@ -19,6 +20,7 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,6 +35,7 @@ import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo;
@@ -48,6 +51,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -261,5 +265,41 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
     assertThat(stepResponse.getFailureInfo().getErrorMessage())
         .isEqualTo("Shell Script execution failed. Please check execution logs.");
+  }
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testHandleResponseWithSecurityContextForInstanceOutcome() throws Exception {
+    List<UnitProgress> unitProgresses = singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    Map<String, String> map = new HashMap<>();
+    map.put("INSTANCE_OUTPUT_PATH",
+        "{\"hosts\":[{ \"host\": \"instance1\", \"artifactBuildNo\": \"artifact1\" }, { \"host\": \"instance2\", \"artifactBuildNo\": \"artifact2\" } ] }");
+
+    ShellScriptTaskResponseNG shellScriptTaskResponseNG =
+        ShellScriptTaskResponseNG.builder()
+            .status(CommandExecutionStatus.SUCCESS)
+            .unitProgressData(unitProgressData)
+            .executeCommandResponse(
+                ExecuteCommandResponse.builder()
+                    .status(CommandExecutionStatus.SUCCESS)
+                    .commandExecutionData(ShellExecutionData.builder().sweepingOutputEnvVariables(map).build())
+                    .build())
+            .build();
+    doReturn("").when(executionSweepingOutputService).consume(any(), any(), any(), any());
+    StepResponse stepResponse = fetchInstanceScriptStep.handleTaskResultWithSecurityContext(
+        ambiance, stepElementParameters, () -> shellScriptTaskResponseNG);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+
+    verify(instanceInfoService)
+        .saveServerInstancesIntoSweepingOutput(eq(ambiance), serverInstanceInfoListCaptor.capture());
+    ArgumentCaptor<ExecutionSweepingOutput> instancesOutcomeCaptor =
+        ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
+    verify(executionSweepingOutputService, times(2)).consume(any(), any(), instancesOutcomeCaptor.capture(), any());
+    assertThat(((InstancesOutcome) instancesOutcomeCaptor.getAllValues().get(0)).getInstances().get(0).getHostName())
+        .isEqualTo("instance1");
+    assertThat(((InstancesOutcome) instancesOutcomeCaptor.getAllValues().get(0)).getInstances().get(1).getHostName())
+        .isEqualTo("instance2");
   }
 }

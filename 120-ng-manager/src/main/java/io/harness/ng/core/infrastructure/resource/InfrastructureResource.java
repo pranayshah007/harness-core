@@ -212,7 +212,7 @@ public class InfrastructureResource {
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
     if (infrastructureEntity.getDeploymentType() == ServiceDefinitionType.CUSTOM_DEPLOYMENT
         && infrastructureEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
-      if (customDeploymentInfrastructureHelper.validateInfrastructureYaml(infrastructureEntity)) {
+      if (customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity)) {
         throw new InvalidRequestException(
             "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
       }
@@ -309,7 +309,7 @@ public class InfrastructureResource {
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
     if (requestInfrastructure.getDeploymentType() == ServiceDefinitionType.CUSTOM_DEPLOYMENT
         && requestInfrastructure.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
-      if (customDeploymentInfrastructureHelper.validateInfrastructureYaml(requestInfrastructure)) {
+      if (customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(requestInfrastructure)) {
         throw new InvalidRequestException(
             "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
       }
@@ -345,7 +345,7 @@ public class InfrastructureResource {
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
     if (requestInfra.getDeploymentType() == ServiceDefinitionType.CUSTOM_DEPLOYMENT
         && requestInfra.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
-      if (customDeploymentInfrastructureHelper.validateInfrastructureYaml(requestInfra)) {
+      if (customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(requestInfra)) {
         throw new InvalidRequestException(
             "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
       }
