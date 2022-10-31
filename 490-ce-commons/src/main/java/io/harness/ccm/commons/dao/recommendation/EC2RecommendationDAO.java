@@ -20,7 +20,6 @@ import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation.EC2RecommendationKeys;
-import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
