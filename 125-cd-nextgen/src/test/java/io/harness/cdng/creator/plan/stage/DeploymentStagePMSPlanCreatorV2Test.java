@@ -12,14 +12,30 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.exception.ngexception.NGFreezeException;
+import io.harness.freeze.beans.FreezeStatus;
+import io.harness.freeze.beans.FreezeType;
+import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
+import io.harness.freeze.beans.yaml.FreezeConfig;
+import io.harness.freeze.beans.yaml.FreezeInfoConfig;
+import io.harness.freeze.entity.FreezeConfigEntity;
+import io.harness.freeze.mappers.NGFreezeDtoMapper;
+import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
@@ -41,6 +57,7 @@ import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,6 +84,7 @@ import org.mockito.MockitoAnnotations;
 public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   @Inject private KryoSerializer kryoSerializer;
+  @Mock private FreezeEvaluateService freezeEvaluateService;
   @InjectMocks private DeploymentStagePMSPlanCreatorV2 deploymentStagePMSPlanCreator;
   private AutoCloseable mocks;
   ObjectMapper mapper = new ObjectMapper();
@@ -143,6 +161,64 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                    .map(PlanNode::getIdentifier)
                    .collect(Collectors.toSet()))
         .containsExactlyInAnyOrder("service", "infrastructure", "artifacts", "manifests", "configFiles");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void failIfProjectIsFrozen() {
+    List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
+    doReturn(freezeSummaryResponseDTOList)
+        .when(freezeEvaluateService)
+        .getActiveFreezeEntities(anyString(), anyString(), anyString());
+    PlanCreationContext ctx = PlanCreationContext.builder()
+                                  .globalContext(Map.of("metadata",
+                                      PlanCreationContextValue.newBuilder()
+                                          .setAccountIdentifier("accountId")
+                                          .setOrgIdentifier("orgId")
+                                          .setProjectIdentifier("projId")
+                                          .build()))
+                                  .build();
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(ctx.getMetadata().getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE);
+    assertThatThrownBy(() -> deploymentStagePMSPlanCreator.failIfProjectIsFrozen(ctx))
+        .isInstanceOf(NGFreezeException.class)
+        .matches(ex -> ex.getMessage().equals("Execution can't be performed because project is frozen"));
+
+    verify(freezeEvaluateService, times(1)).getActiveFreezeEntities(anyString(), anyString(), anyString());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void failIfProjectIsFrozenWithFFOff() {
+    doReturn(false).when(featureFlagHelperService).isEnabled(anyString(), any());
+    PlanCreationContext ctx = PlanCreationContext.builder()
+                                  .globalContext(Map.of("metadata",
+                                      PlanCreationContextValue.newBuilder()
+                                          .setAccountIdentifier("accountId")
+                                          .setOrgIdentifier("orgId")
+                                          .setProjectIdentifier("projId")
+                                          .build()))
+                                  .build();
+    deploymentStagePMSPlanCreator.failIfProjectIsFrozen(ctx);
+
+    verify(freezeEvaluateService, times(0)).getActiveFreezeEntities(anyString(), anyString(), anyString());
+  }
+
+  private FreezeSummaryResponseDTO createGlobalFreezeResponse() {
+    FreezeConfig freezeConfig = FreezeConfig.builder()
+                                    .freezeInfoConfig(FreezeInfoConfig.builder()
+                                                          .identifier("_GLOBAL_")
+                                                          .name("Global Freeze")
+                                                          .status(FreezeStatus.DISABLED)
+                                                          .build())
+                                    .build();
+    String yaml = NGFreezeDtoMapper.toYaml(freezeConfig);
+    FreezeConfigEntity freezeConfigEntity =
+        NGFreezeDtoMapper.toFreezeConfigEntity("accountId", null, null, yaml, FreezeType.GLOBAL);
+    return NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(freezeConfigEntity);
   }
 
   private Object[][] getDeploymentStageConfig() {

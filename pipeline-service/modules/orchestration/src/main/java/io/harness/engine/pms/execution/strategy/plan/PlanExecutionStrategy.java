@@ -89,49 +89,51 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
       String orgIdentifier = ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.orgIdentifier);
       String projectIdentifier = ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier);
       String expandedPipelineJson = metadata.getExpandedPipelineJson();
+      PlanExecution planExecution;
+      PlanExecutionSettingResponse planExecutionSettingResponse = pipelineSettingsService.shouldQueuePlanExecution(
+          accountId, orgIdentifier, projectIdentifier, ambiance.getMetadata().getPipelineIdentifier());
       GovernanceMetadata governanceMetadata =
           governanceService.evaluateGovernancePolicies(expandedPipelineJson, accountId, orgIdentifier,
               projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN, ambiance.getPlanExecutionId());
+      if (planExecutionSettingResponse.isShouldQueue()) {
+        planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, Status.QUEUED);
+        orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
+            OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(metadata).build());
+        if (governanceMetadata.getDeny()) {
+          return planExecutionService.updateStatus(ambiance.getPlanExecutionId(), ERRORED,
+              ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis()));
+        }
+        PlanExecutionResumeCallback callback = PlanExecutionResumeCallback.builder()
+                                                   .accountIdIdentifier(accountId)
+                                                   .orgIdentifier(orgIdentifier)
+                                                   .projectIdentifier(projectIdentifier)
+                                                   .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
+                                                   .build();
 
+        waitNotifyEngine.waitForAllOn(
+            publisherName, callback, String.format(ENFORCEMENT_CALLBACK_ID, planExecution.getUuid()));
+        return planExecution;
+      }
+      planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, Status.RUNNING);
+      orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
+          OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(metadata).build());
       if (governanceMetadata.getDeny()) {
         return planExecutionService.updateStatus(ambiance.getPlanExecutionId(), ERRORED,
             ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis()));
-      } else {
-        PlanExecution planExecution;
-        PlanExecutionSettingResponse planExecutionSettingResponse = pipelineSettingsService.shouldQueuePlanExecution(
-            accountId, orgIdentifier, projectIdentifier, ambiance.getMetadata().getPipelineIdentifier());
-        if (planExecutionSettingResponse.isShouldQueue()) {
-          planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, Status.QUEUED);
-          orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
-              OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(metadata).build());
-          PlanExecutionResumeCallback callback = PlanExecutionResumeCallback.builder()
-                                                     .accountIdIdentifier(accountId)
-                                                     .orgIdentifier(orgIdentifier)
-                                                     .projectIdentifier(projectIdentifier)
-                                                     .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
-                                                     .build();
-
-          waitNotifyEngine.waitForAllOn(
-              publisherName, callback, String.format(ENFORCEMENT_CALLBACK_ID, planExecution.getUuid()));
-          return planExecution;
-        }
-        planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, Status.RUNNING);
-        orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
-            OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(metadata).build());
-        if (planExecutionSettingResponse.isUseNewFlow()) {
-          // Attach a Callback so that if this finishes then next execution starts
-          PlanExecutionResumeCallback callback = PlanExecutionResumeCallback.builder()
-                                                     .accountIdIdentifier(accountId)
-                                                     .orgIdentifier(orgIdentifier)
-                                                     .projectIdentifier(projectIdentifier)
-                                                     .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
-                                                     .build();
-          waitNotifyEngine.waitForAllOn(
-              publisherName, callback, String.format(ENFORCEMENT_CALLBACK_ID, planExecution.getUuid()));
-        }
-        startPlanExecution(plan, ambiance);
-        return planExecution;
       }
+      if (planExecutionSettingResponse.isUseNewFlow()) {
+        // Attach a Callback so that if this finishes then next execution starts
+        PlanExecutionResumeCallback callback = PlanExecutionResumeCallback.builder()
+                                                   .accountIdIdentifier(accountId)
+                                                   .orgIdentifier(orgIdentifier)
+                                                   .projectIdentifier(projectIdentifier)
+                                                   .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
+                                                   .build();
+        waitNotifyEngine.waitForAllOn(
+            publisherName, callback, String.format(ENFORCEMENT_CALLBACK_ID, planExecution.getUuid()));
+      }
+      startPlanExecution(plan, ambiance);
+      return planExecution;
     } finally {
       log.info("[PMS_PlanExecution] Time taken to runNode plan in PlanExecutionStrategy: {} ",
           System.currentTimeMillis() - startTs);

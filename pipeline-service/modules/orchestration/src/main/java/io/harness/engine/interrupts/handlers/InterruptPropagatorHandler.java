@@ -63,7 +63,7 @@ public abstract class InterruptPropagatorHandler {
     do {
       Page<NodeExecution> paginatedNodeExecutions =
           nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusIn(interrupt.getPlanExecutionId(),
-              StatusUtils.abortAndExpireStatuses(), NodeProjectionUtils.fieldsForInstrumentationHandler,
+              StatusUtils.abortAndExpireStatuses(), NodeProjectionUtils.fieldsForInterruptPropagatorHandler,
               PageRequest.of(currentPage, MAX_NODES_BATCH_SIZE));
       if (paginatedNodeExecutions == null || paginatedNodeExecutions.getTotalElements() == 0) {
         break;

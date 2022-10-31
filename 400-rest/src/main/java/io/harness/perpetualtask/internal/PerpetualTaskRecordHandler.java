@@ -127,6 +127,9 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
       DelegateTask validationTask = getValidationTask(taskRecord);
       if (validationTask == null) {
         log.info("Getting validation task null for perpetual task id {}.", taskId);
+        perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(
+            taskRecord, PerpetualTaskUnassignedReason.PT_TASK_FAILED, PerpetualTaskState.TASK_INVALID);
+        return;
       }
       try {
         DelegateResponseData response = delegateService.executeTask(validationTask);

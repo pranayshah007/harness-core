@@ -22,5 +22,6 @@ import lombok.Data;
 public class CDStageModuleInfo implements StageModuleInfo {
   ServiceExecutionSummary serviceInfo;
   InfraExecutionSummary infraExecutionSummary;
+  FreezeExecutionSummary freezeExecutionSummary;
   String nodeExecutionId;
 }

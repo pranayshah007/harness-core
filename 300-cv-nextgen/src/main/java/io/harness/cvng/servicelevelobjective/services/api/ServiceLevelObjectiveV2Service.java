@@ -28,8 +28,8 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
   ServiceLevelObjectiveV2Response create(
       ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO);
 
-  ServiceLevelObjectiveV2Response update(ProjectParams projectParams, String identifier,
-      ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO, List<String> serviceLevelIndicators);
+  ServiceLevelObjectiveV2Response update(
+      ProjectParams projectParams, String identifier, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO);
 
   AbstractServiceLevelObjective getEntity(ProjectParams projectParams, String identifier);
 

@@ -23,7 +23,6 @@ import io.harness.security.encryption.EncryptionType;
 import io.harness.validation.Create;
 
 import software.wings.annotation.EncryptableSetting;
-import software.wings.beans.configfile.ConfigFileDto;
 import software.wings.beans.yaml.YamlType;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.yaml.BaseEntityYaml;
@@ -220,7 +219,7 @@ public class ConfigFile extends BaseFile implements EncryptableSetting {
     //
   }
 
-  public software.wings.beans.configfile.ConfigFileDto toDto() {
+  public ConfigFileDto toDto() {
     Map<String, Integer> envVersionMap =
         getEnvIdVersionMap()
             .entrySet()
