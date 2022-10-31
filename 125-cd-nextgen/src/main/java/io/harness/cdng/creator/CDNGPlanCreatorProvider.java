@@ -623,6 +623,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                 StepMetaData.newBuilder().addCategory("ServerlessAwsLambda").setFolderPath("Serverless Lambda").build())
             .build();
 
+    StepInfo elastigroupSetup =
+            StepInfo.newBuilder()
+                    .setName("Elastigroup Setup")
+                    .setType(StepSpecTypeConstants.ELASTIGROUP_SETUP)
+                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
+                    .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
+                    .build();
+
     StepInfo ecsRollingDeploy =
         StepInfo.newBuilder()
             .setName("Ecs Rolling Deploy")
