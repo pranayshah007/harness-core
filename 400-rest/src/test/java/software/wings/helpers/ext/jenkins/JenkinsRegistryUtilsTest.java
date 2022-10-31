@@ -505,13 +505,13 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
   public void constructJobPathDetails() throws URISyntaxException {
     // default case
     JenkinsRegistryUtils.JobPathDetails jobPathDetails =
-        jenkinsRegistryUtils.constructJobPathDetails("project%2Frelease%2Fnew/test");
+        jenkinsRegistryUtils.constructJobPathDetails("project/release/new%2Ftest");
     assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
     assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
-    assertThat(jobPathDetails.getChildJobName()).isEqualTo("new/test");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("new%2Ftest");
 
     // more than three paths
-    jobPathDetails = jenkinsRegistryUtils.constructJobPathDetails("project%2Frelease%2Fmaster");
+    jobPathDetails = jenkinsRegistryUtils.constructJobPathDetails("project/release/master");
     assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
     assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
     assertThat(jobPathDetails.getChildJobName()).isEqualTo("master");

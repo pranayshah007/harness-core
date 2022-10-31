@@ -27,7 +27,7 @@ import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -39,7 +39,7 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizationTestBase {
-  @Inject PmsExecutionSummaryRespository pmsExecutionSummaryRepository;
+  @Inject PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Spy @Inject PmsExecutionSummaryServiceImpl pmsExecutionSummaryService;
   @Test
   @Owner(developers = SHALINI)

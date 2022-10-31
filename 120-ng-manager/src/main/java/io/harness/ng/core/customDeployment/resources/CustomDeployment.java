@@ -14,6 +14,7 @@ import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.customDeployment.CustomDeploymentInfraResponseDTO;
@@ -100,6 +101,7 @@ public class CustomDeployment {
   @Inject TemplateResourceClient templateResourceClient;
   @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
   @Inject private InfrastructureEntityService infrastructureEntityService;
+  @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
 
   @GET
   @Path("/variables/{templateIdentifier}")
@@ -237,7 +239,8 @@ public class CustomDeployment {
           "infraIdentifier") @ResourceIdentifier String infraIdentifier,
       @Parameter(description = "YAML") @NotNull @Body CustomDeploymentYamlDTO refreshRequestDTO) {
     String infraYaml = refreshRequestDTO.getYaml();
-    StepTemplateRef customDeploymentRef = customDeploymentYamlHelper.getStepTemplateRefFromYaml(infraYaml, accountId);
+    StepTemplateRef customDeploymentRef =
+        customDeploymentInfrastructureHelper.getStepTemplateRefFromInfraYaml(infraYaml, accountId);
     TemplateResponseDTO responseTemplate = customDeploymentYamlHelper.getScopedTemplateResponseDTO(
         accountId, orgId, projectId, customDeploymentRef.getTemplateRef(), customDeploymentRef.getVersionLabel());
     if (!responseTemplate.getTemplateEntityType().equals(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE)) {

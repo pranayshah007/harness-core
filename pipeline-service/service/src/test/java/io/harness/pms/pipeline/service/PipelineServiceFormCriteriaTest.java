@@ -15,6 +15,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.PipelineServiceTestBase;
+import io.harness.PipelineSettingsService;
 import io.harness.category.element.UnitTests;
 import io.harness.filter.service.FilterService;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -55,6 +56,8 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Mock private TelemetryReporter telemetryReporter;
   @Mock private GitSyncSdkService gitSyncSdkService;
   @Inject private PipelineMetadataService pipelineMetadataService;
+
+  @Mock private PipelineSettingsService pipelineSettingsService;
   @InjectMocks private PMSPipelineServiceImpl pmsPipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
 

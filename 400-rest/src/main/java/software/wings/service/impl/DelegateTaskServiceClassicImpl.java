@@ -1423,7 +1423,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   @Override
-  public void onReconnected(String accountId, String delegateId) {
+  public void onReconnected(Delegate delegate) {
     // do nothing
   }
 }

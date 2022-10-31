@@ -36,6 +36,7 @@ import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.filestore.NGFileType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -51,6 +52,8 @@ import java.util.Optional;
 @Singleton
 @OwnedBy(CDP)
 public class SshWinRmConfigFileHelper {
+  private static final long SSH_WIN_RM_CONFIG_FILE_SIZE_LIMIT = 15L * 1024 * 1024 /*15 MB */;
+
   @Inject private FileStoreService fileStoreService;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
   @Inject private CDExpressionResolver cdExpressionResolver;
@@ -125,7 +128,18 @@ public class SshWinRmConfigFileHelper {
           fileReference.getPath(), fileReference.getScope()));
     }
 
-    return mapFileNodes(configFile.get(),
+    FileStoreNodeDTO fileStoreNodeDTO = configFile.get();
+    if (fileStoreNodeDTO.getType() != NGFileType.FILE) {
+      throw new InvalidRequestException(format("Config file cannot be directory, path [%s], scope: [%s]",
+          fileReference.getPath(), fileReference.getScope()));
+    }
+
+    if (((FileNodeDTO) fileStoreNodeDTO).getSize() > SSH_WIN_RM_CONFIG_FILE_SIZE_LIMIT) {
+      throw new InvalidRequestException(format("Config file size is larger than maximum [%s], path [%s], scope: [%s]",
+          SSH_WIN_RM_CONFIG_FILE_SIZE_LIMIT, fileReference.getPath(), fileReference.getScope()));
+    }
+
+    return mapFileNodes(fileStoreNodeDTO,
         fileNode
         -> ConfigFileParameters.builder()
                .fileContent(fileNode.getContent())

@@ -59,7 +59,7 @@ import org.springframework.batch.item.ItemWriter;
 
 @Slf4j
 class ComputedRecommendationWriter implements ItemWriter<K8sWorkloadRecommendation> {
-  public static final Duration RECOMMENDATION_TTL = Duration.ofDays(30);
+  public static final Duration RECOMMENDATION_TTL = Duration.ofDays(15);
 
   private static final long podMinCpuMilliCores = 25L;
   private static final long podMinMemoryBytes = 250_000_000L;

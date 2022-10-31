@@ -171,8 +171,12 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
         PrincipalType principalType =
             USER_GROUP.equals(roleAssignmentDBO.getPrincipalType()) ? USER : roleAssignmentDBO.getPrincipalType();
 
-        numberOfACLsDeleted += aclRepository.deleteByRoleAssignmentIdAndResourceSelectors(
-            roleAssignmentDBO.getId(), resourceSelectorsRemovedFromResourceGroup);
+        if (newResourceSelectors.size() == 0) {
+          numberOfACLsDeleted += aclRepository.deleteByRoleAssignmentId(roleAssignmentDBO.getId());
+        } else {
+          numberOfACLsDeleted += aclRepository.deleteByRoleAssignmentIdAndResourceSelectors(
+              roleAssignmentDBO.getId(), resourceSelectorsRemovedFromResourceGroup);
+        }
 
         List<ACL> aclsToCreate = new ArrayList<>();
 
@@ -187,13 +191,12 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
                               roleAssignmentDBO, resourceSelector, false)))));
         }
         numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
-      }
-
-      if (updatedResourceGroup.getScopeSelectors() != null) {
-        numberOfACLsDeleted += aclRepository.deleteByRoleAssignmentIdAndImplicitForScope(roleAssignmentDBO.getId());
-        List<ACL> aclsToCreate =
-            changeConsumerService.getImplicitACLsForRoleAssignment(roleAssignmentDBO, new HashSet<>(), new HashSet<>());
-        numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
+        if (updatedResourceGroup.getScopeSelectors() != null) {
+          numberOfACLsDeleted += aclRepository.deleteByRoleAssignmentIdAndImplicitForScope(roleAssignmentDBO.getId());
+          List<ACL> implicitAclsToCreate = changeConsumerService.getImplicitACLsForRoleAssignment(
+              roleAssignmentDBO, new HashSet<>(), new HashSet<>());
+          numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(implicitAclsToCreate);
+        }
       }
 
       return new Result(numberOfACLsCreated, numberOfACLsDeleted);

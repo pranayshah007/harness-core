@@ -174,7 +174,6 @@ public class K8sApplyStateTest extends CategoryTest {
     on(context).set("evaluator", evaluator);
     k8sApplyState.setInheritManifests(true);
     doReturn(kubernetesResources).when(k8sStateHelper).getResourcesFromSweepingOutput(any(), nullable(String.class));
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
     when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());
@@ -213,7 +212,6 @@ public class K8sApplyStateTest extends CategoryTest {
     on(context).set("variableProcessor", variableProcessor);
     on(context).set("evaluator", evaluator);
     k8sApplyState.setInheritManifests(true);
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
     when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());
@@ -287,7 +285,6 @@ public class K8sApplyStateTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteWhenInheritManifests() {
     k8sApplyState.setInheritManifests(true);
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     doReturn(Activity.builder().build()).when(k8sApplyState).createK8sActivity(any(), any(), any(), any(), any());
     doReturn(ExecutionResponse.builder().build()).when(k8sApplyState).executeK8sTask(any(), any());
     k8sApplyState.execute(context);
@@ -335,7 +332,6 @@ public class K8sApplyStateTest extends CategoryTest {
             .build();
     Map<String, ResponseData> response = new HashMap<>();
     response.put("k8sTaskExecutionResponse", k8sTaskExecutionResponse);
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     when(appService.get(nullable(String.class))).thenReturn(new Application());
     Map<String, StateExecutionData> stateExecutionMap = new HashMap<>();
     stateExecutionMap.put(STATE_NAME, new K8sStateExecutionData());
@@ -353,7 +349,6 @@ public class K8sApplyStateTest extends CategoryTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testCommandUnitListFeatureEnabled() {
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled("accountId");
     k8sApplyState.setInheritManifests(false);
     k8sApplyState.setExportManifests(false);
     List<CommandUnit> applyCommandUnits = k8sApplyState.commandUnitList(true, "accountId");
@@ -383,35 +378,28 @@ public class K8sApplyStateTest extends CategoryTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testCommandUnitListFeatureDisabled() {
-    doReturn(false).when(k8sStateHelper).isExportManifestsEnabled("accountId");
     k8sApplyState.setInheritManifests(false);
     k8sApplyState.setExportManifests(false);
     List<CommandUnit> applyCommandUnits = k8sApplyState.commandUnitList(true, "accountId");
     assertThat(applyCommandUnits).isNotEmpty();
     assertThat(applyCommandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.FetchFiles);
     assertThat(applyCommandUnits.get(1).getName()).isEqualTo(K8sCommandUnitConstants.Init);
-    assertThat(applyCommandUnits.get(4).getName()).isEqualTo(K8sCommandUnitConstants.WaitForSteadyState);
     assertThat(applyCommandUnits.get(applyCommandUnits.size() - 1).getName()).isEqualTo(K8sCommandUnitConstants.WrapUp);
 
-    doReturn(false).when(k8sStateHelper).isExportManifestsEnabled("accountId");
     k8sApplyState.setExportManifests(false);
     k8sApplyState.setInheritManifests(true);
     applyCommandUnits = k8sApplyState.commandUnitList(true, "accountId");
     assertThat(applyCommandUnits).isNotEmpty();
-    assertThat(applyCommandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.FetchFiles);
-    assertThat(applyCommandUnits.get(1).getName()).isEqualTo(K8sCommandUnitConstants.Init);
-    assertThat(applyCommandUnits.get(4).getName()).isEqualTo(K8sCommandUnitConstants.WaitForSteadyState);
+    assertThat(applyCommandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.Init);
+    assertThat(applyCommandUnits.get(1).getName()).isEqualTo(K8sCommandUnitConstants.Prepare);
     assertThat(applyCommandUnits.get(applyCommandUnits.size() - 1).getName()).isEqualTo(K8sCommandUnitConstants.WrapUp);
 
-    doReturn(false).when(k8sStateHelper).isExportManifestsEnabled("accountId");
     k8sApplyState.setInheritManifests(false);
     k8sApplyState.setExportManifests(true);
     applyCommandUnits = k8sApplyState.commandUnitList(true, "accountId");
     assertThat(applyCommandUnits).isNotEmpty();
     assertThat(applyCommandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.FetchFiles);
     assertThat(applyCommandUnits.get(1).getName()).isEqualTo(K8sCommandUnitConstants.Init);
-    assertThat(applyCommandUnits.get(4).getName()).isEqualTo(K8sCommandUnitConstants.WaitForSteadyState);
-    assertThat(applyCommandUnits.get(applyCommandUnits.size() - 1).getName()).isEqualTo(K8sCommandUnitConstants.WrapUp);
   }
 
   @Test

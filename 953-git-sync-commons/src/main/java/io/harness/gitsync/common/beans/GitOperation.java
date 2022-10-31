@@ -16,7 +16,8 @@ public enum GitOperation {
   CREATE_FILE("create file"),
   UPDATE_FILE("update file"),
   GET_FILE("get file"),
-  GET_REPO_URL("get repo url");
+  GET_REPO_URL("get repo url"),
+  GET_BRANCH_HEAD_COMMIT("get branch head commit");
 
   private String value;
 

@@ -401,7 +401,19 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     if (isNotEmpty(accountId)) {
       query.field("accountId").equal(accountId);
     }
-    return new HIterator(query.fetch());
+    HIterator hSamlSettingsIterator = new HIterator(query.fetch());
+    if (hSamlSettingsIterator.hasNext()) {
+      return hSamlSettingsIterator;
+    }
+    if (isNotEmpty(accountId)) {
+      query = wingsPersistence.createQuery(SamlSettings.class, excludeAuthority)
+                  .field("accountId")
+                  .equal(accountId)
+                  .field("type")
+                  .equal(SSOType.SAML);
+      return new HIterator(query.fetch());
+    }
+    return null;
   }
 
   @Override

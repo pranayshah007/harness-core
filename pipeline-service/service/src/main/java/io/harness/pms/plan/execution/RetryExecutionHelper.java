@@ -40,7 +40,7 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.plan.utils.PlanResourceUtility;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -70,7 +70,7 @@ public class RetryExecutionHelper {
   private static final String LAST_STAGE_IDENTIFIER = "last_stage_identifier";
   private final NodeExecutionService nodeExecutionService;
   private final PlanExecutionMetadataService planExecutionMetadataService;
-  private final PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
+  private final PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   private final PMSPipelineService pmsPipelineService;
   private final PMSExecutionService pmsExecutionService;
   private final PMSPipelineTemplateHelper pmsPipelineTemplateHelper;

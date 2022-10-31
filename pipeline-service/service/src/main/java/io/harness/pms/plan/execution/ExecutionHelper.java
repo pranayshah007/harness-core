@@ -62,7 +62,7 @@ import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -102,7 +102,7 @@ public class ExecutionHelper {
   RetryExecutionHelper retryExecutionHelper;
   PlanCreatorMergeService planCreatorMergeService;
   OrchestrationService orchestrationService;
-  PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
+  PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   PlanService planService;
   PlanExecutionMetadataService planExecutionMetadataService;
   PMSPipelineTemplateHelper pipelineTemplateHelper;
@@ -242,13 +242,6 @@ public class ExecutionHelper {
     long start = System.currentTimeMillis();
     if (isEmpty(mergedRuntimeInputYaml)) {
       pipelineYamlConfig = new YamlConfig(pipelineEntity.getYaml());
-      // WHEN A PIPELINE DECLARES ALLOWED VALUES INSIDE RUNTIME INPUTS, IS
-      // REQUIRED TO PROVIDE THESE VALUES BEFORE THE EXECUTIONS.
-      List<FQN> missingFQNs = InputSetErrorsHelper.getMissingFQNsInInputSet(pipelineYamlConfig);
-      if (EmptyPredicate.isNotEmpty(missingFQNs)) {
-        throw new InvalidRequestException("Pipeline need runtime input values for: "
-            + missingFQNs.stream().map(FQN::getExpressionFqn).collect(Collectors.toList()));
-      }
       pipelineYamlConfigForSchemaValidations = pipelineYamlConfig;
     } else {
       YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());

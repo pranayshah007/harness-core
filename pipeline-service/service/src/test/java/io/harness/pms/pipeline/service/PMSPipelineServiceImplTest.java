@@ -21,8 +21,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.PipelineServiceTestBase;
+import io.harness.PipelineSettingsService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
@@ -77,6 +79,9 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Mock private OutboxServiceImpl outboxService;
   @Mock private GitSyncSdkService gitSyncSdkService;
   @Inject private PipelineMetadataService pipelineMetadataService;
+
+  @Mock private PipelineSettingsService pipelineSettingsService;
+
   @InjectMocks private PMSPipelineServiceImpl pmsPipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
   @Mock private PipelineCloneHelper pipelineCloneHelper;
@@ -161,6 +166,8 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     String pipeline_yaml_filename = "clonePipelineInput.yaml";
     PIPELINE_YAML = Resources.toString(
         Objects.requireNonNull(classLoader.getResource(pipeline_yaml_filename)), StandardCharsets.UTF_8);
+
+    when(pipelineSettingsService.getMaxPipelineCreationCount(any())).thenReturn(1000L);
   }
 
   private ClonePipelineDTO buildCloneDTO() {
@@ -373,17 +380,10 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = SOUMYAJIT)
   @Category(UnitTests.class)
   public void testUpdatePipelineYamlDraftException() {
+    on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     pipelineEntity.setIsDraft(true);
     assertThatThrownBy(() -> pmsPipelineService.updatePipelineYaml(pipelineEntity, ChangeType.ADD))
         .isInstanceOf(InvalidRequestException.class);
-  }
-
-  @Test
-  @Owner(developers = SOUMYAJIT)
-  @Category(UnitTests.class)
-  public void testCreateDraftException() {
-    pipelineEntity.setIsDraft(true);
-    assertThatThrownBy(() -> pmsPipelineService.create(pipelineEntity)).isInstanceOf(InvalidRequestException.class);
   }
 
   @Test

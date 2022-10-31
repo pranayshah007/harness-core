@@ -34,7 +34,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.task.TaskLogContext;
-import io.harness.eraro.FailureType;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -226,6 +226,9 @@ public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handle
 
   @VisibleForTesting
   public void failValidationCompletedQueuedTask(DelegateTask delegateTask) {
+    if (delegateTask == null) {
+      return;
+    }
     long validationTime = clock.millis() - VALIDATION_TIMEOUT;
     if (delegateTask.getStatus().equals(QUEUED) && delegateTask.getValidationStartedAt() != null
         && delegateTask.getValidationStartedAt() < validationTime) {

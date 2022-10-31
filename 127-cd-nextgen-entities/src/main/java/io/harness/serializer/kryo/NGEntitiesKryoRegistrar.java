@@ -39,6 +39,7 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfi
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
@@ -318,6 +319,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(EcsInfrastructure.class, 12612);
     kryo.register(CustomDeploymentInfrastructure.class, 12613);
     kryo.register(ServerlessAwsLambdaInfrastructure.class, 12579);
+    kryo.register(NexusRegistryRawConfig.class, 1400171);
     kryo.register(ElastigroupServiceSpec.class, 140011);
   }
 }

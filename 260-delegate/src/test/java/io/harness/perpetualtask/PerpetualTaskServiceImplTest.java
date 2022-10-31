@@ -601,6 +601,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     perpetualTaskRecord.setAccountId(ACCOUNT_ID);
     perpetualTaskRecord.setDelegateId(DELEGATE_ID);
     perpetualTaskRecord.setUuid(taskId);
+    perpetualTaskRecord.setState(PerpetualTaskState.TASK_ASSIGNED);
     perpetualTaskRecordDao.save(perpetualTaskRecord);
     List<PerpetualTaskAssignDetails> perpetualTaskAssignDetailsList =
         perpetualTaskService.listAssignedTasks(DELEGATE_ID, ACCOUNT_ID);
@@ -613,6 +614,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testPerpetualTaskState_FromUnAssigned_ToNonAssignable() throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new NoEligibleDelegatesInAccountException(NO_ELIGIBLE_DELEGATES);
     });
@@ -634,6 +638,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testPerpetualTaskNonAssignableState_OnNonEligibleDelegate() throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new NoEligibleDelegatesInAccountException(NO_ELIGIBLE_DELEGATES);
     });
@@ -650,6 +657,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   public void testPerpetualTaskNonAssignableState_OnNonEligibleDelegate_AfterMaxAssignmentTry()
       throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecordAndAssignTryCountAsMax();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new NoEligibleDelegatesInAccountException(NO_ELIGIBLE_DELEGATES);
     });
@@ -665,6 +675,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testPerpetualTaskNonAssignableState_OnNoAvailableDelegate() throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new NoAvailableDelegatesException();
     });
@@ -681,6 +694,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   public void testPerpetualTaskNonAssignableState_OnNoAvailableDelegate_AfterMaxAssignmentTry()
       throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecordAndAssignTryCountAsMax();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new NoAvailableDelegatesException();
     });
@@ -696,6 +712,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testPerpetualTaskNonAssignableState_OnNoInstalledDelegate() throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new NoInstalledDelegatesException();
     });
@@ -711,6 +730,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testPerpetualTaskNonAssignableState_OnTaskExpired() throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new DelegateTaskExpiredException("");
     });
@@ -726,6 +748,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testPerpetualTaskNonAssignableState_OnTaskExpired_AfterMaxAssignmentTry() throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecordAndAssignTryCountAsMax();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new DelegateTaskExpiredException("");
     });
@@ -741,6 +766,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testPerpetualTaskNonAssignableState_OnTaskValidationFailed() throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new DelegateTaskValidationFailedException("");
     });
@@ -757,6 +785,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   public void testPerpetualTaskNonAssignableState_OnTaskValidationFailed_AfterMaxAssignmentTry()
       throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecordAndAssignTryCountAsMax();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new DelegateTaskValidationFailedException("");
     });
@@ -772,6 +803,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testPerpetualTaskNonAssignableState_OnInvalidArgumentException() throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new InvalidArgumentsException("");
     });
@@ -788,6 +822,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   public void testPerpetualTaskNonAssignableState_OnInvalidArgumentException_AfterMaxAssignmentTry()
       throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecordAndAssignTryCountAsMax();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new InvalidArgumentsException("");
     });
@@ -803,6 +840,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testPerpetualTaskNonAssignableState_OnUnExpectedException() throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new InvalidArgumentsException("");
     });
@@ -819,6 +859,9 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
   public void testPerpetualTaskNonAssignableState_OnUnExpectedException_AfterMaxAssignmentTry()
       throws InterruptedException {
     PerpetualTaskRecord perpetualTaskRecord = createPerpetualTaskRecord();
+    when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
+    when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
+        .thenReturn(DelegateTask.builder().build());
     when(delegateService.executeTask(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new InvalidArgumentsException("");
     });

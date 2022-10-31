@@ -393,10 +393,16 @@ public class ExecutionResource {
       @PathParam("workflowExecutionId") String workflowExecutionId, ExecutionInterrupt executionInterrupt) {
     executionInterrupt.setAppId(appId);
     executionInterrupt.setExecutionUuid(workflowExecutionId);
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getExecutionDetailsWithoutGraph(appId, workflowExecutionId);
     if (ExecutionInterruptType.ROLLBACK.equals(executionInterrupt.getExecutionInterruptType())
         || ExecutionInterruptType.ROLLBACK_PROVISIONER_AFTER_PHASES.equals(
             executionInterrupt.getExecutionInterruptType())) {
       deploymentAuthHandler.authorizeRollback(appId, workflowExecutionId);
+    } else if ((ExecutionInterruptType.ABORT_ALL.equals(executionInterrupt.getExecutionInterruptType())
+                   || ExecutionInterruptType.ABORT.equals(executionInterrupt.getExecutionInterruptType()))
+        && workflowExecution.getWorkflowType().equals(WorkflowType.ORCHESTRATION)) {
+      deploymentAuthHandler.authorizeAbortWorkflow(appId, workflowExecution);
     } else {
       deploymentAuthHandler.authorize(appId, workflowExecutionId);
     }

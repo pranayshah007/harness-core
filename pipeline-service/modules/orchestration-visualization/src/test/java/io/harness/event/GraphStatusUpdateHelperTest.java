@@ -13,7 +13,6 @@ import static io.harness.pms.contracts.execution.Status.FAILED;
 import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
-import static io.harness.pms.contracts.execution.events.OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.ARCHIT;
 
@@ -101,8 +100,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
   @RealMongo
   public void shouldDoNothingIfRuntimeIdIsNull() {
     String planExecutionId = generateUuid();
-    eventHandlerV2.handleEvent(
-        planExecutionId, null, NODE_EXECUTION_STATUS_UPDATE, OrchestrationGraph.builder().build());
+    eventHandlerV2.handleEvent(planExecutionId, null, OrchestrationGraph.builder().build());
 
     verify(graphGenerationService, never()).getCachedOrchestrationGraph(planExecutionId);
   }
@@ -154,8 +152,8 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                                          .build();
     mongoStore.upsert(cachedGraph, Duration.ofDays(10));
 
-    OrchestrationGraph updatedGraph = eventHandlerV2.handleEvent(
-        planExecution.getUuid(), dummyStart.getUuid(), NODE_EXECUTION_STATUS_UPDATE, cachedGraph);
+    OrchestrationGraph updatedGraph =
+        eventHandlerV2.handleEvent(planExecution.getUuid(), dummyStart.getUuid(), cachedGraph);
 
     Awaitility.await().atMost(2, TimeUnit.SECONDS).pollInterval(500, TimeUnit.MILLISECONDS).until(() -> {
       OrchestrationGraph graphInternal = graphGenerationService.getCachedOrchestrationGraph(planExecution.getUuid());
@@ -248,8 +246,8 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                                   .build();
     mongoTemplate.insert(outcome);
 
-    OrchestrationGraph updatedGraph = eventHandlerV2.handleEvent(
-        planExecution.getUuid(), dummyStart.getUuid(), NODE_EXECUTION_STATUS_UPDATE, cachedGraph);
+    OrchestrationGraph updatedGraph =
+        eventHandlerV2.handleEvent(planExecution.getUuid(), dummyStart.getUuid(), cachedGraph);
 
     assertThat(updatedGraph).isNotNull();
     assertThat(updatedGraph.getPlanExecutionId()).isEqualTo(planExecution.getUuid());
