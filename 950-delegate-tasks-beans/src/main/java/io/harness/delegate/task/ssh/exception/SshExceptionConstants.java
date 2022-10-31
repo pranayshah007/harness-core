@@ -72,9 +72,12 @@ public class SshExceptionConstants {
       "Selected workingDir path should exist and accessible on the host in order to use it with the script command unit";
   public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT =
       "Copy Artifact is not supported for Custom Repository artifacts";
+  public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM = "Copy Artifact is not supported for Winrm";
   public final String DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT =
       "Download Artifact is not supported for Custom Repository artifacts";
   public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT =
+      "Please make sure there is no copy artifact command unit specified";
+  public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM_HINT =
       "Please make sure there is no copy artifact command unit specified";
   public final String DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT =
       "Please make sure there is no download artifact command unit specified";
