@@ -11,8 +11,6 @@ import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_DEFAULT;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_FOR_DEMO;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_FOR_SLI;
-import static io.harness.cvng.models.VerificationType.LOG;
-import static io.harness.cvng.models.VerificationType.TIME_SERIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 

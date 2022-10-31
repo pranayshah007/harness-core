@@ -9,6 +9,7 @@ package io.harness.cvng.cdng.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobBuilder;
 
@@ -30,6 +31,6 @@ public class ImprovisedCanaryVerificationJobSpec extends BlueGreenCanaryVerifica
 
   @Override
   protected VerificationJobBuilder verificationJobBuilder() {
-    return addFieldValues(CanaryVerificationJob.builder());
+    return addFieldValues(BlueGreenVerificationJob.builder());
   }
 }
