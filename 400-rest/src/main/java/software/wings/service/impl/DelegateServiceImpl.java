@@ -2770,6 +2770,7 @@ public class DelegateServiceImpl implements DelegateService {
         .project(DelegateKeys.ng, true)
         .project(DelegateKeys.hostName, true)
         .project(DelegateKeys.owner, true)
+        .project(DelegateKeys.lastHeartBeat, true)
         .project(DelegateKeys.delegateGroupName, true)
         .project(DelegateKeys.description, true)
         .get();
@@ -2801,6 +2802,7 @@ public class DelegateServiceImpl implements DelegateService {
   @VisibleForTesting
   Delegate upsertDelegateOperation(
       Delegate existingDelegate, Delegate delegate, DelegateSetupDetails delegateSetupDetails) {
+    long lastRecordedHeartBeat = existingDelegate != null ? existingDelegate.getLastHeartBeat() : 0L;
     long delegateHeartbeat = delegate.getLastHeartBeat();
     long now = now();
     long skew = Math.abs(now - delegateHeartbeat);
@@ -2854,11 +2856,11 @@ public class DelegateServiceImpl implements DelegateService {
       }
     }
 
-    // for new delegate and delegate reconnecting long pause, trigger delegateObserver::onAdded event
+    // for new delegate and delegate reconnecting long pause, trigger delegateObserver::onReconnected event
     if (registeredDelegate != null) {
-      boolean isDelegateReconnectingAfterLongPause = now > (delegateHeartbeat + HEARTBEAT_EXPIRY_TIME.toMillis());
+      boolean isDelegateReconnectingAfterLongPause = now > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
       if (existingDelegate == null || isDelegateReconnectingAfterLongPause) {
-        subject.fireInform(DelegateObserver::onAdded, delegate);
+        subject.fireInform(DelegateObserver::onReconnected, delegate);
       }
     }
 

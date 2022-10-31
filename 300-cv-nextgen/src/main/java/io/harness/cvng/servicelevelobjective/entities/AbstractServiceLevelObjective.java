@@ -15,7 +15,6 @@ import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -23,7 +22,6 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
-import io.harness.ng.core.mapper.TagMapper;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -168,20 +166,21 @@ public abstract class AbstractServiceLevelObjective
   }
 
   public abstract Optional<String> mayBeGetMonitoredServiceIdentifier();
+
   public abstract static class AbstractServiceLevelObjectiveUpdatableEntity<T extends AbstractServiceLevelObjective, D
-                                                                                extends ServiceLevelObjectiveV2DTO>
+                                                                                extends AbstractServiceLevelObjective>
       implements UpdatableEntity<T, D> {
-    protected void setCommonOperations(UpdateOperations<T> updateOperations, D serviceLevelObjectiveDTO) {
-      updateOperations.set(ServiceLevelObjectiveV2Keys.orgIdentifier, serviceLevelObjectiveDTO.getOrgIdentifier())
-          .set(ServiceLevelObjectiveV2Keys.projectIdentifier, serviceLevelObjectiveDTO.getProjectIdentifier())
-          .set(ServiceLevelObjectiveV2Keys.name, serviceLevelObjectiveDTO.getName())
-          .set(ServiceLevelObjectiveV2Keys.tags, TagMapper.convertToList(serviceLevelObjectiveDTO.getTags()))
-          .set(ServiceLevelObjectiveV2Keys.userJourneyIdentifiers, serviceLevelObjectiveDTO.getUserJourneyRefs())
-          .set(ServiceLevelObjectiveV2Keys.type, serviceLevelObjectiveDTO.getType())
-          .set(ServiceLevelObjectiveV2Keys.sloTargetPercentage,
-              serviceLevelObjectiveDTO.getSloTarget().getSloTargetPercentage());
-      if (serviceLevelObjectiveDTO.getDescription() != null) {
-        updateOperations.set(ServiceLevelObjectiveV2Keys.desc, serviceLevelObjectiveDTO.getDescription());
+    protected void setCommonOperations(UpdateOperations<T> updateOperations, D abstractServiceLevelObjective) {
+      updateOperations.set(ServiceLevelObjectiveV2Keys.orgIdentifier, abstractServiceLevelObjective.getOrgIdentifier())
+          .set(ServiceLevelObjectiveV2Keys.projectIdentifier, abstractServiceLevelObjective.getProjectIdentifier())
+          .set(ServiceLevelObjectiveV2Keys.name, abstractServiceLevelObjective.getName())
+          .set(ServiceLevelObjectiveV2Keys.tags, abstractServiceLevelObjective.getTags())
+          .set(ServiceLevelObjectiveV2Keys.userJourneyIdentifiers,
+              abstractServiceLevelObjective.getUserJourneyIdentifiers())
+          .set(ServiceLevelObjectiveV2Keys.type, abstractServiceLevelObjective.getType())
+          .set(ServiceLevelObjectiveV2Keys.sloTargetPercentage, abstractServiceLevelObjective.getSloTargetPercentage());
+      if (abstractServiceLevelObjective.getDesc() != null) {
+        updateOperations.set(ServiceLevelObjectiveV2Keys.desc, abstractServiceLevelObjective.getDesc());
       }
     }
   }

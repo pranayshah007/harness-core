@@ -35,6 +35,7 @@ import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.outbox.api.OutboxService;
+import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
@@ -75,6 +76,8 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Mock ClusterService clusterService;
   @Mock CustomDeploymentEntitySetupHelper customDeploymentEntitySetupHelper;
   @Mock InfrastructureEntitySetupUsageHelper infrastructureEntitySetupUsageHelper;
+
+  @Mock HPersistence hPersistence;
   ServiceEntityServiceImpl serviceEntityService;
   EnvironmentServiceImpl environmentService;
   InfrastructureEntityServiceImpl infrastructureEntityService;
@@ -85,7 +88,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     serviceEntityService = spy(new ServiceEntityServiceImpl(serviceRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, serviceOverrideService, entitySetupUsageHelper));
     infrastructureEntityService = spy(new InfrastructureEntityServiceImpl(infrastructureRepository, transactionTemplate,
-        outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper));
+        outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
         serviceEntityService));

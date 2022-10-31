@@ -375,8 +375,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
 
   @Override
   public void onAdded(Delegate delegate) {
-    log.info("Delegate registered for account {} delegateId {}", delegate.getAccountId(), delegate.getUuid());
-    perpetualTaskRecordDao.updateTaskNonAssignableToAssignable(delegate.getAccountId());
+    // do nothing
   }
 
   @Override
@@ -385,8 +384,9 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   }
 
   @Override
-  public void onReconnected(String accountId, String delegateId) {
-    // do nothing
+  public void onReconnected(Delegate delegate) {
+    log.info("Delegate reconnected/added for account {} delegateId {}", delegate.getAccountId(), delegate.getUuid());
+    perpetualTaskRecordDao.updateTaskNonAssignableToAssignable(delegate.getAccountId());
   }
 
   @VisibleForTesting

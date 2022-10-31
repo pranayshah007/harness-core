@@ -63,6 +63,7 @@ import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraFieldAllowedValueNG;
 import io.harness.jira.JiraFieldNG;
+import io.harness.jira.JiraFieldSchema;
 import io.harness.jira.JiraFieldSchemaNG;
 import io.harness.jira.JiraFieldTypeNG;
 import io.harness.jira.JiraIssueCreateMetadataNG;
@@ -346,6 +347,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(JiraIssueType.class, 7199);
     kryo.register(JiraField.class, 7200);
     kryo.register(JiraCreateMetaResponse.class, 7201);
+    kryo.register(JiraFieldSchema.class, 7510);
 
     kryo.register(AwsConfig.class, 1428);
     kryo.register(CrossAccountAccess.class, 1429);
