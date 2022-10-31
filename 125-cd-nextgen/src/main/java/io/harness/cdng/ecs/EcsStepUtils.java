@@ -19,6 +19,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
@@ -26,6 +27,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
@@ -49,6 +51,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class EcsStepUtils extends CDStepHelper {
   @Inject private EngineExpressionService engineExpressionService;
@@ -75,6 +78,25 @@ public class EcsStepUtils extends CDStepHelper {
 
     return getGitStoreDelegateConfig(
         gitStoreConfig, connectorDTO, manifestOutcome, gitStoreConfig.getPaths().getValue(), ambiance);
+  }
+
+  public boolean checkForS3Manifest(List<ManifestOutcome> ecsManifestsOutcome) {
+    AtomicBoolean isS3Manifest = new AtomicBoolean(false);
+    ecsManifestsOutcome.forEach(manifest -> {
+      if (manifest.getStore().getKind() == ManifestStoreType.S3) {
+        isS3Manifest.set(true);
+      }
+    });
+    return isS3Manifest.get();
+  }
+
+  public S3StoreDelegateConfig getS3StoreDelegateConfig(
+      Ambiance ambiance, S3StoreConfig s3StoreConfig, ManifestOutcome manifestOutcome) {
+    String connectorId = s3StoreConfig.getConnectorRef().getValue();
+    String validationMessage = format("Ecs manifest with Id [%s]", manifestOutcome.getIdentifier());
+    ConnectorInfoDTO connectorDTO = getConnectorDTO(connectorId, ambiance);
+    validateManifest(s3StoreConfig.getKind(), connectorDTO, validationMessage);
+    return getS3StoreDelegateConfig(s3StoreConfig, connectorDTO, manifestOutcome, ambiance);
   }
 
   private ConnectorInfoDTO getConnectorDTO(String connectorId, Ambiance ambiance) {

@@ -27,17 +27,21 @@ import io.harness.cdng.ecs.beans.EcsManifestsContent;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
 import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome.EcsRollingRollbackDataOutcomeBuilder;
+import io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData;
+import io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData.EcsS3FetchPassThroughDataBuilder;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.mappers.ManifestOutcomeValidator;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.EcsRunTaskRequestDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.HarnessStringUtils;
@@ -58,9 +62,11 @@ import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.ecs.EcsGitFetchFileConfig;
 import io.harness.delegate.task.ecs.EcsGitFetchRunTaskFileConfig;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
+import io.harness.delegate.task.ecs.EcsS3FetchFileConfig;
 import io.harness.delegate.task.ecs.request.EcsCommandRequest;
 import io.harness.delegate.task.ecs.request.EcsGitFetchRequest;
 import io.harness.delegate.task.ecs.request.EcsGitFetchRunTaskRequest;
+import io.harness.delegate.task.ecs.request.EcsS3FetchRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
@@ -147,6 +153,10 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     List<ManifestOutcome> ecsManifestOutcome = getEcsManifestOutcome(manifestsOutcome.values(), ecsStepHelper);
 
+    if (checkForS3Manifest(ecsManifestOutcome)) {
+      prepareEcsManifestS3FetchTask(
+          ecsStepExecutor, ambiance, stepElementParameters, infrastructureOutcome, ecsManifestOutcome, ecsStepHelper);
+    }
     return prepareEcsManifestGitFetchTask(
         ecsStepExecutor, ambiance, stepElementParameters, infrastructureOutcome, ecsManifestOutcome, ecsStepHelper);
   }
@@ -179,6 +189,102 @@ public class EcsStepCommonHelper extends EcsStepUtils {
               stageName, stepType));
     }
     return (ManifestsOutcome) manifestsOutcome.getOutcome();
+  }
+
+  private TaskChainResponse prepareEcsManifestS3FetchTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
+      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
+      List<ManifestOutcome> ecsManifestOutcomes, EcsStepHelper ecsStepHelper) {
+    // Get EcsGitFetchFileConfig for task definition
+    ManifestOutcome ecsTaskDefinitionManifestOutcome =
+        ecsStepHelper.getEcsTaskDefinitionManifestOutcome(ecsManifestOutcomes);
+    EcsS3FetchFileConfig ecsTaskDefinitionS3FetchFileConfig = null;
+    if (ManifestStoreType.S3.equals(ecsTaskDefinitionManifestOutcome.getStore().getKind())) {
+      ecsTaskDefinitionS3FetchFileConfig =
+          getEcsS3FetchFilesConfigFromManifestOutcome(ecsTaskDefinitionManifestOutcome, ambiance, ecsStepHelper);
+    }
+
+    // Get EcsGitFetchFileConfig for service definition
+    ManifestOutcome ecsServiceDefinitionManifestOutcome =
+        ecsStepHelper.getEcsServiceDefinitionManifestOutcome(ecsManifestOutcomes);
+    EcsS3FetchFileConfig ecsServiceDefinitionS3FetchFileConfig = null;
+    if (ManifestStoreType.S3.equals(ecsServiceDefinitionManifestOutcome.getStore().getKind())) {
+      ecsServiceDefinitionS3FetchFileConfig =
+          getEcsS3FetchFilesConfigFromManifestOutcome(ecsServiceDefinitionManifestOutcome, ambiance, ecsStepHelper);
+    }
+
+    // Get EcsGitFetchFileConfig list for scalable targets if present
+    List<ManifestOutcome> ecsScalableTargetManifestOutcomes =
+        ecsStepHelper.getManifestOutcomesByType(ecsManifestOutcomes, ManifestType.EcsScalableTargetDefinition);
+    List<EcsS3FetchFileConfig> ecsScalableTargetS3FetchFileConfigs = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(ecsScalableTargetManifestOutcomes)) {
+      for (ManifestOutcome ecsScalableTargetManifestOutcome : ecsScalableTargetManifestOutcomes) {
+        if (ManifestStoreType.S3.equals(ecsScalableTargetManifestOutcome.getStore().getKind())) {
+          ecsScalableTargetS3FetchFileConfigs.add(
+              getEcsS3FetchFilesConfigFromManifestOutcome(ecsScalableTargetManifestOutcome, ambiance, ecsStepHelper));
+        }
+      }
+    }
+
+    // Get EcsGitFetchFileConfig list for scaling policies if present
+    List<ManifestOutcome> ecsScalingPolicyManifestOutcomes =
+        ecsStepHelper.getManifestOutcomesByType(ecsManifestOutcomes, ManifestType.EcsScalingPolicyDefinition);
+
+    List<EcsS3FetchFileConfig> ecsScalingPolicyS3FetchFileConfigs = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(ecsScalingPolicyManifestOutcomes)) {
+      for (ManifestOutcome ecsScalingPolicyManifestOutcome : ecsScalingPolicyManifestOutcomes) {
+        if (ManifestStoreType.HARNESS.equals(ecsScalingPolicyManifestOutcome.getStore().getKind())) {
+          ecsScalingPolicyS3FetchFileConfigs.add(
+              getEcsS3FetchFilesConfigFromManifestOutcome(ecsScalingPolicyManifestOutcome, ambiance, ecsStepHelper));
+        }
+      }
+    }
+
+    EcsS3FetchPassThroughData ecsS3FetchPassThroughData =
+        EcsS3FetchPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build();
+
+    return getS3FetchFileTaskResponse(ambiance, false, stepElementParameters, ecsS3FetchPassThroughData,
+        ecsTaskDefinitionS3FetchFileConfig, ecsServiceDefinitionS3FetchFileConfig, ecsScalableTargetS3FetchFileConfigs,
+        ecsScalingPolicyS3FetchFileConfigs);
+  }
+
+  private TaskChainResponse getS3FetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
+      StepElementParameters stepElementParameters, EcsS3FetchPassThroughData ecsS3FetchPassThroughData,
+      EcsS3FetchFileConfig ecsTaskDefinitionS3FetchFileConfig,
+      EcsS3FetchFileConfig ecsServiceDefinitionS3FetchFileConfig,
+      List<EcsS3FetchFileConfig> ecsScalableTargetS3FetchFileConfigs,
+      List<EcsS3FetchFileConfig> ecsScalingPolicyS3FetchFileConfigs) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+
+    EcsS3FetchRequest ecsS3FetchRequest =
+        EcsS3FetchRequest.builder()
+            .accountId(accountId)
+            .ecsTaskDefinitionS3FetchFileConfig(ecsTaskDefinitionS3FetchFileConfig)
+            .ecsServiceDefinitionS3FetchFileConfig(ecsServiceDefinitionS3FetchFileConfig)
+            .ecsScalableTargetS3FetchFileConfigs(ecsScalableTargetS3FetchFileConfigs)
+            .ecsScalingPolicyS3FetchFileConfigs(ecsScalingPolicyS3FetchFileConfigs)
+            .shouldOpenLogStream(shouldOpenLogStream)
+            .build();
+
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                                  .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
+                                  .parameters(new Object[] {ecsS3FetchRequest})
+                                  .build();
+    String taskName = TaskType.ECS_S3_FETCH_TASK_NG.getDisplayName();
+
+    EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
+
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        ecsSpecParameters.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
+        stepHelper.getEnvironmentType(ambiance));
+
+    return TaskChainResponse.builder()
+        .chainEnd(false)
+        .taskRequest(taskRequest)
+        .passThroughData(ecsS3FetchPassThroughData)
+        .build();
   }
 
   private TaskChainResponse prepareEcsManifestGitFetchTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
@@ -454,6 +560,26 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       Ambiance ambiance, GitStoreConfig gitStoreConfig, ManifestOutcome manifestOutcome, EcsStepHelper ecsStepHelper) {
     return EcsGitFetchFileConfig.builder()
         .gitStoreDelegateConfig(getGitStoreDelegateConfig(ambiance, gitStoreConfig, manifestOutcome))
+        .identifier(manifestOutcome.getIdentifier())
+        .manifestType(manifestOutcome.getType())
+        .succeedIfFileNotFound(false)
+        .build();
+  }
+
+  private EcsS3FetchFileConfig getEcsS3FetchFilesConfigFromManifestOutcome(
+      ManifestOutcome manifestOutcome, Ambiance ambiance, EcsStepHelper ecsStepHelper) {
+    StoreConfig storeConfig = manifestOutcome.getStore();
+    if (!ManifestStoreType.S3.equals(storeConfig.getKind())) {
+      throw new InvalidRequestException("Invalid kind of storeConfig for Ecs step", USER);
+    }
+    S3StoreConfig s3StoreConfig = (S3StoreConfig) storeConfig;
+    return getEcsS3FetchFilesConfig(ambiance, s3StoreConfig, manifestOutcome, ecsStepHelper);
+  }
+
+  private EcsS3FetchFileConfig getEcsS3FetchFilesConfig(
+      Ambiance ambiance, S3StoreConfig s3StoreConfig, ManifestOutcome manifestOutcome, EcsStepHelper ecsStepHelper) {
+    return EcsS3FetchFileConfig.builder()
+        .s3StoreDelegateConfig(getS3StoreDelegateConfig(ambiance, s3StoreConfig, manifestOutcome))
         .identifier(manifestOutcome.getIdentifier())
         .manifestType(manifestOutcome.getType())
         .succeedIfFileNotFound(false)
