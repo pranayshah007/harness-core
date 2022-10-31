@@ -24,6 +24,7 @@ import io.harness.connector.impl.ConnectorActivityServiceImpl;
 import io.harness.connector.impl.ConnectorFilterServiceImpl;
 import io.harness.connector.impl.ConnectorHeartbeatServiceImpl;
 import io.harness.connector.impl.DefaultConnectorServiceImpl;
+import io.harness.connector.impl.GoogleSecretManagerConnectorServiceImpl;
 import io.harness.connector.impl.NGConnectorSecretManagerServiceImpl;
 import io.harness.connector.impl.NGHostServiceImpl;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
@@ -36,6 +37,7 @@ import io.harness.connector.services.ConnectorActivityService;
 import io.harness.connector.services.ConnectorFilterService;
 import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
+import io.harness.connector.services.GoogleSecretManagerConnectorService;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.connector.services.NGHostService;
 import io.harness.connector.task.ConnectorValidationHandler;
@@ -133,6 +135,7 @@ public class ConnectorModule extends AbstractModule {
     bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
     bind(NGAccountSettingService.class).to(NGAccountSettingServiceImpl.class);
     bind(NGHostService.class).to(NGHostServiceImpl.class);
+    bind(GoogleSecretManagerConnectorService.class).to(GoogleSecretManagerConnectorServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.CONNECTOR.toString()).to(ConnectorFilterPropertiesMapper.class);

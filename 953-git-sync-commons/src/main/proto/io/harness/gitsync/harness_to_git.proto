@@ -28,6 +28,7 @@ service HarnessToGitPushInfoService {
   rpc createPullRequest(CreatePRRequest) returns (CreatePRResponse);
   rpc getRepoUrl(GetRepoUrlRequest) returns (GetRepoUrlResponse);
   rpc isOldGitSyncEnabledForModule(IsOldGitSyncEnabledForModule) returns (IsOldGitSyncEnabledResponse);
+  rpc getBranchHeadCommitDetails(GetBranchHeadCommitRequest) returns (GetBranchHeadCommitResponse);
 }
 
 message PushInfo {
@@ -217,4 +218,20 @@ message IsOldGitSyncEnabledForModule {
 
 message IsOldGitSyncEnabledResponse {
   bool isEnabled = 1;
+}
+
+message GetBranchHeadCommitRequest {
+  string repoName = 1;
+  string branchName = 2;
+  string connectorRef = 3;
+  ScopeIdentifiers scopeIdentifiers = 4;
+  map<string, string> contextMap = 5;
+}
+
+message GetBranchHeadCommitResponse {
+  int32 statusCode = 1;
+  string sha = 2;
+  string message = 3;
+  string link = 4;
+  ErrorDetails error = 5;
 }

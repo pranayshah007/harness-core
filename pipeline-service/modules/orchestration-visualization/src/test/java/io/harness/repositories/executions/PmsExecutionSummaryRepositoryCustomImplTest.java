@@ -33,7 +33,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -83,20 +82,6 @@ public class PmsExecutionSummaryRepositoryCustomImplTest extends OrchestrationVi
     assertEquals(updateResult1.getModifiedCount(), 1);
     assertTrue(updateResult1.wasAcknowledged());
     assertNull(updateResult1.getUpsertedId());
-  }
-
-  @Test
-  @Owner(developers = SHALINI)
-  @Category(UnitTests.class)
-  public void testFindFirst() {
-    mongoTemplate.save(
-        PipelineExecutionSummaryEntity.builder().pipelineIdentifier("test").status(ExecutionStatus.SKIPPED).build());
-    mongoTemplate.save(
-        PipelineExecutionSummaryEntity.builder().pipelineIdentifier("test").status(ExecutionStatus.FAILED).build());
-    Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.pipelineIdentifier).is("test");
-    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
-        pmsExecutionSummaryRepositoryCustom.findFirst(criteria);
-    assertEquals(pipelineExecutionSummaryEntity.getStatus(), ExecutionStatus.SKIPPED);
   }
 
   @Test

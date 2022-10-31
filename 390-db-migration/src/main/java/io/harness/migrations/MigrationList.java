@@ -39,7 +39,6 @@ import io.harness.migrations.all.AddHarnessCommandLibraryToAccount;
 import io.harness.migrations.all.AddHarnessGroupAccessFlagToAccount;
 import io.harness.migrations.all.AddInstanceStatsCollectionJobToAllAccounts;
 import io.harness.migrations.all.AddIsProductLedToAccount;
-import io.harness.migrations.all.AddIsSmpAccountToAccount;
 import io.harness.migrations.all.AddLimitVicinityCheckJobToAllAccounts;
 import io.harness.migrations.all.AddLoginSettingsToAccountMigration;
 import io.harness.migrations.all.AddNgFieldToDelegateGroupMigration;
@@ -168,6 +167,7 @@ import io.harness.migrations.all.ServiceNameMigrationIfEmpty;
 import io.harness.migrations.all.SetIsDeletedFlagForInstances;
 import io.harness.migrations.all.SetNamespaceInContainerInstanceInfo;
 import io.harness.migrations.all.SetNamespaceToKubernetesInstanceInfo;
+import io.harness.migrations.all.SetPropertiesToCloudformationRollbackStackSteps;
 import io.harness.migrations.all.SetRollbackFlagToWorkflows;
 import io.harness.migrations.all.SettingAttributesCategoryMigration;
 import io.harness.migrations.all.SshAndWinRmAccountPermissionMigration;
@@ -455,8 +455,8 @@ public class MigrationList {
         .add(Pair.of(372, BaseMigration.class))
         .add(Pair.of(373, AddRingDetailsToDelegateRing.class))
         .add(Pair.of(374, AddIsProductLedToAccount.class))
-        .add(Pair.of(375, AddIsSmpAccountToAccount.class))
         .add(Pair.of(376, UpdateRebalanceStateToTaskUnAssigned.class))
+        .add(Pair.of(377, SetPropertiesToCloudformationRollbackStackSteps.class))
         .build();
   }
 }

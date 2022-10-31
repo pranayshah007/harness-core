@@ -40,13 +40,22 @@ public class AzureUtils {
       Arrays.asList(Region.GOV_US_VIRGINIA.name(), Region.GOV_US_IOWA.name(), Region.GOV_US_ARIZONA.name(),
           Region.GOV_US_TEXAS.name(), Region.GOV_US_DOD_EAST.name(), Region.GOV_US_DOD_CENTRAL.name());
 
-  public static String AUTH_URL = "https://login.microsoftonline.com/";
-  public static String AUTH_SCOPE = "https://management.core.windows.net/.default";
+  private static String SCOPE_SUFFIX = ".default";
 
   static String BEGIN_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----";
   static String END_PRIVATE_KEY = "-----END PRIVATE KEY-----";
   static String BEGIN_CERTIFICATE = "-----BEGIN CERTIFICATE-----";
   static String END_CERTIFICATE = "-----END CERTIFICATE-----";
+
+  public String convertToScope(String endpoint) {
+    if (EmptyPredicate.isNotEmpty(endpoint)) {
+      if (endpoint.charAt(endpoint.length() - 1) != '/') {
+        return String.format("%s/%s", endpoint, SCOPE_SUFFIX);
+      }
+      return String.format("%s%s", endpoint, SCOPE_SUFFIX);
+    }
+    return null;
+  }
 
   public final AzureEnvironment getAzureEnvironment(AzureEnvironmentType azureEnvironmentType) {
     if (azureEnvironmentType == null) {

@@ -340,50 +340,6 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  public void shouldTestFetchChildrenNodeExecutions() {
-    String planExecutionUuid = generateUuid();
-    String parentId = generateUuid();
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .uuid(generateUuid())
-            .parentId(parentId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .uuid(generateUuid())
-            .name("name")
-            .identifier(generateUuid())
-            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-            .module("CD")
-            .startTs(System.currentTimeMillis())
-            .status(Status.SUCCEEDED)
-            .build();
-    NodeExecution nodeExecution1 =
-        NodeExecution.builder()
-            .uuid(generateUuid())
-            .parentId(parentId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .uuid(generateUuid())
-            .name("name")
-            .identifier(generateUuid())
-            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-            .module("CD")
-            .startTs(System.currentTimeMillis())
-            .status(Status.SUCCEEDED)
-            .build();
-    nodeExecutionService.save(nodeExecution);
-    nodeExecutionService.save(nodeExecution1);
-
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchChildrenNodeExecutions(planExecutionUuid, parentId);
-    assertThat(nodeExecutions).isNotEmpty();
-
-    assertThat(nodeExecutions.size()).isEqualTo(2);
-    assertThat(nodeExecutions)
-        .extracting(NodeExecution::getUuid)
-        .containsExactlyInAnyOrder(nodeExecution.getUuid(), nodeExecution1.getUuid());
-  }
-
-  @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
   public void shouldTestFetchNodeExecutionsByStatus() {
     String planExecutionUuid = generateUuid();
     String parentId = generateUuid();

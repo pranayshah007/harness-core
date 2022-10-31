@@ -33,6 +33,8 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.outbox.api.OutboxService;
+import io.harness.persistence.HIterator;
+import io.harness.persistence.HPersistence;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -52,6 +54,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +87,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   private final OutboxService outboxService;
   @Inject CustomDeploymentEntitySetupHelper customDeploymentEntitySetupHelper;
   @Inject private InfrastructureEntitySetupUsageHelper infrastructureEntitySetupUsageHelper;
+
+  @Inject private HPersistence hPersistence;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Infrastructure [%s] under Environment [%s] Project[%s], Organization [%s] in Account [%s] already exists";
@@ -208,12 +213,28 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           return result;
         }));
     infrastructureEntitySetupUsageHelper.updateSetupUsages(upsertedInfra);
+    if (requestInfra.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
+      customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(requestInfra);
+    }
     return upsertedInfra;
   }
 
   @Override
   public Page<InfrastructureEntity> list(@NotNull Criteria criteria, @NotNull Pageable pageable) {
     return infrastructureRepository.findAll(criteria, pageable);
+  }
+
+  @Override
+  public HIterator<InfrastructureEntity> listIterator(String accountId, String orgIdentifier, String projectIdentifier,
+      String envIdentifier, Collection<String> identifiers) {
+    return new HIterator<>(hPersistence.createQuery(InfrastructureEntity.class)
+                               .filter(InfrastructureEntityKeys.accountId, accountId)
+                               .filter(InfrastructureEntityKeys.orgIdentifier, orgIdentifier)
+                               .filter(InfrastructureEntityKeys.projectIdentifier, projectIdentifier)
+                               .filter(InfrastructureEntityKeys.envIdentifier, envIdentifier)
+                               .field(InfrastructureEntityKeys.identifier)
+                               .in(identifiers)
+                               .fetch());
   }
 
   @Override
@@ -340,13 +361,6 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           infraNames, ex);
       throw new UnexpectedException("Encountered exception while saving the infrastructure entity records.");
     }
-  }
-
-  @Override
-  public InfrastructureEntity find(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String envIdentifier, String infraIdentifier) {
-    return infrastructureRepository.find(
-        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier);
   }
 
   @Override

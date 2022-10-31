@@ -47,6 +47,11 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
   }
 
   @Override
+  public boolean isNamePresent(String name, String accountId) {
+    return businessMappingDao.isNamePresent(name, accountId);
+  }
+
+  @Override
   public BusinessMapping get(String uuid) {
     return businessMappingDao.get(uuid);
   }

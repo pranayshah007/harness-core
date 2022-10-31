@@ -19,6 +19,7 @@ import io.harness.rest.RestResponse;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -31,6 +32,7 @@ import retrofit2.http.Query;
 public interface AccountClient {
   String ACCOUNT_API = "ng/accounts";
   String FEATURE_FLAG_CHECK_API = "ng/accounts/feature-flag-enabled";
+  String FEATURE_FLAG_ENABLED_ACCOUNTS_API = "ng/accounts/feature-flag-enabled-accounts";
   String ACCOUNT_BASEURL_API = "ng/accounts/baseUrl";
   String ACCOUNT_VANITYURL_API = "ng/accounts/vanityUrl";
   String ACCOUNT_GATEWAYBASEURL_API = "ng/accounts/gatewayBaseUrl";
@@ -57,6 +59,9 @@ public interface AccountClient {
   @GET(FEATURE_FLAG_CHECK_API)
   Call<RestResponse<Boolean>> isFeatureFlagEnabled(
       @Query("featureName") String featureName, @Query("accountId") String accountId);
+
+  @GET(FEATURE_FLAG_ENABLED_ACCOUNTS_API)
+  Call<RestResponse<Set<String>>> featureFlagEnabledAccounts(@Query("featureName") String featureName);
 
   @GET(ACCOUNT_API + "/{accountId}/nextgen-enabled")
   Call<RestResponse<Boolean>> isNextGenEnabled(@Path("accountId") String accountId);

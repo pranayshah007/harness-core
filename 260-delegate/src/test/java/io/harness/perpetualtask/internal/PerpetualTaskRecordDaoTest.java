@@ -131,6 +131,7 @@ public class PerpetualTaskRecordDaoTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testListAssignedTasks() {
     PerpetualTaskRecord taskRecord = getPerpetualTaskRecord();
+    taskRecord.setState(PerpetualTaskState.TASK_ASSIGNED);
     perpetualTaskRecordDao.save(taskRecord);
     List<PerpetualTaskRecord> taskIds = perpetualTaskRecordDao.listAssignedTasks(DELEGATE_ID, ACCOUNT_ID);
     assertThat(taskIds).hasSize(1);

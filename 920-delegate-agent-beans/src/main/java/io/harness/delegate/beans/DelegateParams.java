@@ -9,6 +9,7 @@ package io.harness.delegate.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateHeartbeatParams;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
@@ -22,7 +23,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.DEL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class DelegateParams {
+public class DelegateParams implements DelegateHeartbeatParams {
   String delegateId;
   String delegateConnectionId;
   String accountId;

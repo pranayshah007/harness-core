@@ -61,4 +61,5 @@ public class TemplateResponseDTO {
   long lastUpdatedAt;
   StoreType storeType;
   String connectorRef;
+  String icon;
 }

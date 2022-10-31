@@ -182,18 +182,21 @@ public class ArtifactUtils {
             jenkinsArtifactConfig.getConnectorRef().getValue());
       case GITHUB_PACKAGES:
         GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
-        return String.format(placeholder, sourceType, githubPackagesArtifactConfig.getPackageName().getValue(),
+        return String.format(
+            "\ntype: %s \nconnectorRef: %s \norg: %s \npackageName: %s \npackageType: %s \nversion: %s \nversionRegex: %s\n",
+            sourceType, githubPackagesArtifactConfig.getConnectorRef().getValue(),
+            githubPackagesArtifactConfig.getOrg().getValue(), githubPackagesArtifactConfig.getPackageName().getValue(),
+            githubPackagesArtifactConfig.getPackageType().getValue(),
             githubPackagesArtifactConfig.getVersion().getValue(),
-            githubPackagesArtifactConfig.getVersionRegex().getValue(),
-            githubPackagesArtifactConfig.getConnectorRef().getValue());
+            githubPackagesArtifactConfig.getVersionRegex().getValue());
       case AZURE_ARTIFACTS:
         AzureArtifactsConfig azureArtifactsConfig = (AzureArtifactsConfig) artifactConfig;
 
         return String.format(
-            "\ntype: %s \npackageName: %s \npackageType: %s \nproject: %s \nfeed: %s \nversion: %s \nversionRegex: %s \nconnectorRef: %s\n",
-            sourceType, azureArtifactsConfig.getPackageName().getValue(),
-            azureArtifactsConfig.getPackageType().getValue(), azureArtifactsConfig.getProject().getValue(),
-            azureArtifactsConfig.getFeed().getValue(), azureArtifactsConfig.getVersion().getValue(),
+            "\ntype: %s \nscope: %s \nproject: %s \nfeed: %s \npackageType: %s \npackageName: %s \nversion: %s \nversionRegex: %s \nconnectorRef: %s\n",
+            sourceType, azureArtifactsConfig.getScope().getValue(), azureArtifactsConfig.getProject().getValue(),
+            azureArtifactsConfig.getFeed().getValue(), azureArtifactsConfig.getPackageType().getValue(),
+            azureArtifactsConfig.getPackageName().getValue(), azureArtifactsConfig.getVersion().getValue(),
             azureArtifactsConfig.getVersionRegex().getValue(), azureArtifactsConfig.getConnectorRef().getValue());
       case GOOGLE_ARTIFACT_REGISTRY:
         GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;

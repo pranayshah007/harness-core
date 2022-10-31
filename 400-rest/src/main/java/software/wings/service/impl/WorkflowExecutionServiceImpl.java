@@ -5671,7 +5671,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     return wingsPersistence.createQuery(WorkflowExecution.class)
         .filter(WorkflowExecutionKeys.appId, workflowExecution.getAppId())
         .filter(WorkflowExecutionKeys.workflowType, workflowExecution.getWorkflowType())
-        .filter(WorkflowExecutionKeys.status, status);
+        .filter(WorkflowExecutionKeys.status, status)
+        .field(WorkflowExecutionKeys.serviceExecutionSummaries_instanceStatusSummaries_instanceElement_uuid)
+        .exists();
   }
 
   private String getAccountId(WorkflowExecution workflowExecution) {

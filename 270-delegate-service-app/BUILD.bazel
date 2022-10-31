@@ -81,7 +81,6 @@ shared_dependencies = [
     "@maven//:com_amazonaws_aws_java_sdk_sts",
     "@maven//:com_amazonaws_jmespath_java",
     "@maven//:com_auth0_java_jwt",
-    "@maven//:com_bertramlabs_plugins_hcl4j",
     "@maven//:com_bettercloud_vault_java_driver",
     "@maven//:com_bugsnag_bugsnag",
     "@maven//:com_carrotsearch_hppc",

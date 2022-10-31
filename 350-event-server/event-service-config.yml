@@ -1,5 +1,5 @@
 server:
-  rootPath: /api/ccmevent
+  rootPath: /ccmevent
   applicationConnectors:
     - type: http
       port: 7280
@@ -57,4 +57,4 @@ secretsConfiguration:
 
 eventDataBatchQueryConfig:
   queryBatchSize: 4000
-  enableBatchWrite: true
+  enableBatchWrite: false

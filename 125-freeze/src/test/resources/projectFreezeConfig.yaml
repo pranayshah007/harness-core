@@ -46,3 +46,51 @@ freeze:
           type: "Service"
         - filterType: "All"
           type: "EnvType"
+  notificationRules:
+    - name: Rule 1
+      identifier: Rule_1
+      events:
+        - type: FreezeWindowEnabled
+      notificationMethod:
+        type: Slack
+        spec:
+          userGroups: [ ]
+          webhookUrl: https://hooks.slack.com/services/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
+      enabled: true
+    - name: Rule 2
+      identifier: Rule_2
+      events:
+        - type: DeploymentRejectedDueToFreeze
+        - type: TriggerInvocationRejectedDueToFreeze
+      notificationMethod:
+        type: PagerDuty
+        spec:
+          userGroups: [ ]
+          integrationKey: ${}
+      enabled: true
+    - name: Rule 3
+      identifier: Rule_1
+      events:
+        - type: FreezeWindowEnabled
+        - type: DeploymentRejectedDueToFreeze
+      notificationMethod:
+        type: Email
+        spec:
+          userGroups:
+            - account._account_all_users
+            - account.act_usergroup
+          recipients:
+            - utkarsh@gmail.com
+      enabled: true
+    - name: ytr
+      identifier: ytr
+      events:
+        - type: FreezeWindowEnabled
+        - type: DeploymentRejectedDueToFreeze
+      notificationMethod:
+        type: MsTeams
+        spec:
+          userGroups: [ ]
+          msTeamKeys:
+            - https://www.google.in/
+      enabled: true

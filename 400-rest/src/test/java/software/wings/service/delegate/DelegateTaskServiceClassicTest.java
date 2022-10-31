@@ -125,7 +125,7 @@ import software.wings.beans.LicenseInfo;
 import software.wings.beans.TaskType;
 import software.wings.cdn.CdnConfig;
 import software.wings.delegatetasks.cv.RateLimitExceededException;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.events.TestUtils;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.jre.JreConfig;
@@ -1206,13 +1206,22 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     } catch (NoEligibleDelegatesInAccountException e) {
       final DelegateTaskResponse response =
           DelegateTaskResponse.builder()
-              .response(ErrorNotifyResponseData.builder().errorMessage("Delegates are not available").build())
+              .response(ErrorNotifyResponseData.builder()
+                            .errorMessage("Delegates are not available")
+                            .exception(new NoEligibleDelegatesInAccountException(
+                                "No eligible delegate(s) in account to execute task. "))
+                            .build())
               .responseCode(ResponseCode.FAILED)
               .accountId(task.getAccountId())
               .build();
 
+      ArgumentCaptor<DelegateTaskResponse> delegateTaskResponseArgumentCaptor =
+          ArgumentCaptor.forClass(DelegateTaskResponse.class);
+      verify(delegateMetricsService)
+          .recordDelegateTaskResponseMetrics(
+              eq(task), delegateTaskResponseArgumentCaptor.capture(), eq(DELEGATE_TASK_RESPONSE));
+      assertThat(delegateTaskResponseArgumentCaptor.getValue().toString()).isEqualTo(response.toString());
       verify(delegateMetricsService).recordDelegateTaskMetrics(task, DELEGATE_TASK_NO_ELIGIBLE_DELEGATES);
-      verify(delegateMetricsService).recordDelegateTaskResponseMetrics(task, response, DELEGATE_TASK_RESPONSE);
       throw e;
     }
   }

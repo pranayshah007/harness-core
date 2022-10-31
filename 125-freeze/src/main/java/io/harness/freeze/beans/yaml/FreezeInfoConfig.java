@@ -17,7 +17,6 @@ import io.harness.freeze.beans.FreezeWindow;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.validator.NGRegexValidatorConstants;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
@@ -50,5 +49,5 @@ public class FreezeInfoConfig {
 
   @JsonProperty("entityConfigs") List<FreezeEntityRule> rules;
 
-  @JsonIgnore List<FreezeNotifications> notifications;
+  @JsonProperty("notificationRules") List<FreezeNotifications> notifications;
 }

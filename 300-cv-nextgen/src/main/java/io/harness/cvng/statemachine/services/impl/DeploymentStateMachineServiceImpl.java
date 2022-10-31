@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cvng.statemachine.services.impl;
 
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_DEFAULT;
@@ -9,13 +16,16 @@ import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.entities.CanaryTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogClusterState;
+import io.harness.cvng.statemachine.entities.HostSamplingState;
 import io.harness.cvng.statemachine.entities.PreDeploymentLogClusterState;
 import io.harness.cvng.statemachine.entities.TestTimeSeriesAnalysisState;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
@@ -34,6 +44,7 @@ public class DeploymentStateMachineServiceImpl extends AnalysisStateMachineServi
   @Inject private CVConfigService cvConfigService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private ExecutionLogService executionLogService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public AnalysisStateMachine createStateMachine(AnalysisInput inputForAnalysis) {
@@ -80,6 +91,13 @@ public class DeploymentStateMachineServiceImpl extends AnalysisStateMachineServi
           testTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
           testTimeSeriesAnalysisState.setInputs(inputForAnalysis);
           stateMachine.setCurrentState(testTimeSeriesAnalysisState);
+        } else if (featureFlagService.isFeatureFlagEnabled(
+                       stateMachine.getAccountId(), FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)) {
+          HostSamplingState hostSamplingState = new HostSamplingState();
+          hostSamplingState.setStatus(AnalysisStatus.CREATED);
+          hostSamplingState.setInputs(inputForAnalysis);
+          hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+          stateMachine.setCurrentState(hostSamplingState);
         } else {
           CanaryTimeSeriesAnalysisState canaryTimeSeriesAnalysisState = CanaryTimeSeriesAnalysisState.builder().build();
           canaryTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);

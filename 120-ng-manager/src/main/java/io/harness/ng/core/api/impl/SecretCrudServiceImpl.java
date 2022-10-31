@@ -21,6 +21,7 @@ import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
 
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -29,6 +30,7 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.FileUploadLimit;
@@ -41,8 +43,6 @@ import io.harness.eventsframework.producer.Message;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.governance.GovernanceMetadata;
-import io.harness.ng.core.accountsetting.dto.AccountSettingType;
-import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.api.SecretCrudService;
@@ -71,11 +71,15 @@ import io.harness.ng.core.models.SecretTextSpec;
 import io.harness.ng.core.remote.SecretValidationMetaData;
 import io.harness.ng.core.remote.SecretValidationResultDTO;
 import io.harness.ng.opa.entities.secret.OpaSecretService;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.opaclient.model.OpaConstants;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.stream.BoundedInputStream;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -106,26 +110,28 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   private final SecretEntityReferenceHelper secretEntityReferenceHelper;
   private final Producer eventProducer;
   private final NGEncryptedDataService encryptedDataService;
-  private final NGAccountSettingService accountSettingService;
+  private final NGSettingsClient settingsClient;
   private final NGConnectorSecretManagerService ngConnectorSecretManagerService;
   private final AccessControlClient accessControlClient;
   private final OpaSecretService opaSecretService;
+  private final NGFeatureFlagHelperService featureFlagHelperService;
 
   @Inject
   public SecretCrudServiceImpl(SecretEntityReferenceHelper secretEntityReferenceHelper, FileUploadLimit fileUploadLimit,
       NGSecretServiceV2 ngSecretService, @Named(ENTITY_CRUD) Producer eventProducer,
-      NGEncryptedDataService encryptedDataService, NGAccountSettingService accountSettingService,
-      NGConnectorSecretManagerService ngConnectorSecretManagerService, AccessControlClient accessControlClient,
-      OpaSecretService opaSecretService) {
+      NGEncryptedDataService encryptedDataService, NGConnectorSecretManagerService ngConnectorSecretManagerService,
+      AccessControlClient accessControlClient, OpaSecretService opaSecretService, NGSettingsClient settingsClient,
+      NGFeatureFlagHelperService featureFlagHelperService) {
     this.fileUploadLimit = fileUploadLimit;
     this.secretEntityReferenceHelper = secretEntityReferenceHelper;
     this.ngSecretService = ngSecretService;
     this.eventProducer = eventProducer;
     this.encryptedDataService = encryptedDataService;
-    this.accountSettingService = accountSettingService;
     this.ngConnectorSecretManagerService = ngConnectorSecretManagerService;
     this.accessControlClient = accessControlClient;
     this.opaSecretService = opaSecretService;
+    this.settingsClient = settingsClient;
+    this.featureFlagHelperService = featureFlagHelperService;
   }
 
   private void checkEqualityOrThrow(Object str1, Object str2) {
@@ -227,11 +233,19 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
 
     boolean isHarnessManaged = checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, dto);
-    boolean isBuiltInSMDisabled =
-        accountSettingService.getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
+    Boolean isBuiltInSMDisabled = false;
+
+    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
+      isBuiltInSMDisabled = parseBoolean(
+          NGRestUtils
+              .getResponse(settingsClient.getSetting(
+                  SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+              .getValue());
+    }
 
     if (isBuiltInSMDisabled && isHarnessManaged) {
-      throw new InvalidRequestException("Built-in Harness Secret Manager cannot be used to create Secret.");
+      throw new InvalidRequestException(
+          "Built-in Harness Secret Manager cannot be used to create Secret as it has been disabled.");
     }
 
     switch (dto.getType()) {

@@ -44,6 +44,7 @@ public class JiraTaskParameters implements ExecutionCapabilityDemander {
   private String status;
   private String comment;
   private String createmetaExpandParam;
+  private boolean useNewMeta;
   List<EncryptedDataDetail> encryptionDetails;
 
   private String accountId;

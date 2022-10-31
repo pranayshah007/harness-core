@@ -18,6 +18,9 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -66,12 +69,18 @@ import org.springframework.util.CollectionUtils;
 public class NGTriggerResourceImpl implements NGTriggerResource {
   private final NGTriggerService ngTriggerService;
   private final NGTriggerElementMapper ngTriggerElementMapper;
+  private final AccessControlClient accessControlClient;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<NGTriggerResponseDTO> create(@NotNull @AccountIdentifier String accountIdentifier,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String targetIdentifier, @NotNull String yaml, boolean ignoreError,
       boolean withServiceV2) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of("PIPELINE", targetIdentifier), PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
+
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of("PIPELINE", targetIdentifier), PipelineRbacPermissions.PIPELINE_EXECUTE);
     NGTriggerEntity createdEntity = null;
     try {
       TriggerDetails triggerDetails = ngTriggerElementMapper.toTriggerDetails(
@@ -108,11 +117,15 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
         ngTriggerEntity.map(ngTriggerElementMapper::toResponseDTO).orElse(null));
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<NGTriggerResponseDTO> update(String ifMatch, @NotNull @AccountIdentifier String accountIdentifier,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String targetIdentifier, String triggerIdentifier, @NotNull String yaml,
       boolean ignoreError) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of("PIPELINE", targetIdentifier), PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
+
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of("PIPELINE", targetIdentifier), PipelineRbacPermissions.PIPELINE_EXECUTE);
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
@@ -173,9 +186,20 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
 
-    return ResponseDTO.newResponse(getNGPageResponse(
-        ngTriggerService.list(criteria, pageRequest)
-            .map(triggerEntity -> ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(triggerEntity, true, false))));
+    return ResponseDTO.newResponse(getNGPageResponse(ngTriggerService.list(criteria, pageRequest).map(triggerEntity -> {
+      TriggerDetails triggerDetails =
+          ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier,
+              triggerEntity.getIdentifier(), triggerEntity.getYaml(), triggerEntity.getWithServiceV2());
+
+      Map<String, Map<String, String>> errorMap = ngTriggerService.validatePipelineRef(triggerDetails);
+      boolean isPipelineInputOutdated = false;
+      if (!CollectionUtils.isEmpty(errorMap)) {
+        isPipelineInputOutdated = true;
+      }
+      NGTriggerDetailsResponseDTO responseDTO =
+          ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(triggerEntity, true, false, isPipelineInputOutdated);
+      return responseDTO;
+    })));
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
@@ -190,8 +214,19 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       return ResponseDTO.newResponse(null);
     }
 
+    TriggerDetails triggerDetails = ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier,
+        projectIdentifier, targetIdentifier, ngTriggerEntity.get().getIdentifier(), ngTriggerEntity.get().getYaml(),
+        ngTriggerEntity.get().getWithServiceV2());
+
+    Map<String, Map<String, String>> errorMap = ngTriggerService.validatePipelineRef(triggerDetails);
+    boolean isPipelineInputOutdated = false;
+    if (!CollectionUtils.isEmpty(errorMap)) {
+      isPipelineInputOutdated = true;
+    }
+
     return ResponseDTO.newResponse(ngTriggerEntity.get().getVersion().toString(),
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity.get(), true, true));
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(
+            ngTriggerEntity.get(), true, true, isPipelineInputOutdated));
   }
 
   @Timed

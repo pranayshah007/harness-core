@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -130,6 +131,12 @@ public class InfrastructurePlanCreatorHelper {
         EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
         ecsInfrastructure.setInfraName(infraName);
         ecsInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.ELASTIGROUP:
+        ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
+        elastigroupInfrastructure.setInfraName(infraName);
+        elastigroupInfrastructure.setInfraIdentifier(infraIdentifier);
         return;
 
       default:

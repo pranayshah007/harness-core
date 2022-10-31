@@ -98,8 +98,8 @@ public class NGHostValidationServiceImpl implements NGHostValidationService {
   public List<HostValidationDTO> validateHostsConnectivity(@NotNull List<String> hosts,
       @Nullable String accountIdentifier, @Nullable String orgIdentifier, @Nullable String projectIdentifier,
       Set<String> delegateSelectors) {
-    if (hosts.isEmpty()) {
-      return Collections.emptyList();
+    if (isEmpty(hosts)) {
+      throw new InvalidArgumentsException("No hosts to test");
     }
 
     CompletableFutures<HostValidationDTO> validateHostSocketConnectivityTasks =

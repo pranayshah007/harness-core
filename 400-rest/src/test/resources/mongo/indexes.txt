@@ -25,6 +25,7 @@ accounts {"name": "usageMetricsTaskIteration_1", "background": true} {"usageMetr
 accounts {"name": "workflowDataCollectionIteration_1", "background": true} {"workflowDataCollectionIteration": 1}
 activities {"name": "accountId_1", "background": true} {"accountId": 1}
 activities {"name": "appId_1", "background": true} {"appId": 1}
+activities {"name": "appId_serviceId_environmentId_status_createdAt", "background": true} {"appId": 1, "serviceId": 1, "environmentId": 1, "status": 1, "createdAt": -1}
 activities {"name": "app_status_createdAt", "background": true} {"appId": 1, "serviceInstanceId": 1, "status": 1, "createdAt": -1}
 activities {"name": "createdAt_1", "background": true} {"createdAt": 1}
 activities {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
@@ -59,7 +60,7 @@ approvalPollingJob {"name": "nextIteration_1", "background": true} {"nextIterati
 artifactStream {"name": "accountId_1", "background": true} {"accountId": 1}
 artifactStream {"name": "appId_1", "background": true} {"appId": 1}
 artifactStream {"name": "artifactStream_cleanup", "background": true} {"artifactStreamType": 1, "collectionEnabled": 1, "nextCleanupIteration": 1}
-artifactStream {"name": "artifactStream_collection", "background": true} {"collectionEnabled": 1, "nextIteration": 1}
+artifactStream {"name": "artifactStream_collection", "background": true} {"collectionEnabled": 1, "collectionStatus": 1, "nextIteration": 1}
 artifactStream {"name": "createdAt_1", "background": true} {"createdAt": 1}
 artifactStream {"name": "nextCleanupIteration_1", "background": true} {"nextCleanupIteration": 1}
 artifactStream {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
@@ -120,6 +121,8 @@ cgEventConfig {"name": "yaml", "unique": true} {"appId": 1, "name": 1}
 cloudFormationRollbackConfig {"name": "accountId_1", "background": true} {"accountId": 1}
 cloudFormationRollbackConfig {"name": "appId_1", "background": true} {"appId": 1}
 cloudFormationRollbackConfig {"name": "byAppAndEntityAndAwsConfig", "background": true} {"appId": 1, "entityId": 1, "awsConfigId": 1, "createdAt": 1}
+cloudFormationRollbackConfig {"name": "byAppAndEntityAndAwsConfigAndCustomStackNameAndRegion", "background": true} {"appId": 1, "entityId": 1, "awsConfigId": 1, "customStackName": 1, "region": 1, "createdAt": 1}
+cloudFormationRollbackConfig {"name": "byAppAndEntityAndCustomStackNameAndRegion", "background": true} {"appId": 1, "entityId": 1, "customStackName": 1, "region": 1, "createdAt": 1}
 cloudFormationRollbackConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
 cloudFormationRollbackConfig {"name": "entityId_1", "background": true} {"entityId": 1}
 clusterRecords {"name": "accountId_1", "background": true} {"accountId": 1}
@@ -380,6 +383,7 @@ helmCharts {"name": "appId_appManifestId", "background": true} {"appId": 1, "app
 helmCharts {"name": "appId_serviceId", "background": true} {"appId": 1, "serviceId": 1}
 helmCharts {"name": "applicationManifestId_1", "background": true} {"applicationManifestId": 1}
 hosts {"name": "appId_1", "background": true} {"appId": 1}
+hosts {"name": "appId_envId_inframappingId_hostName", "background": true} {"appId": 1, "envId": 1, "infraMappingId": 1, "hostName": 1}
 hosts {"name": "app_inframappingid", "background": true} {"appId": 1, "infraMappingId": 1}
 hosts {"name": "createdAt_1", "background": true} {"createdAt": 1}
 hosts {"name": "hostName_1", "background": true} {"hostName": 1}

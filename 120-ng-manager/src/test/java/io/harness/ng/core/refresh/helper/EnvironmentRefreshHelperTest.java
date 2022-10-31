@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.refresh.helper;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -144,10 +151,41 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
             + "}");
   }
 
+  @Test
+  @Owner(developers = OwnerRule.INDER)
+  @Category(UnitTests.class)
+  public void validateInfraDefinitionsIdentifierAsExpression() throws IOException {
+    mockEnvWithNoRuntimeInputs("env_without_inputs");
+
+    InputsValidationResponse validationResponse = InputsValidationResponse.builder().isValid(true).build();
+    YamlNode env_with_inputs = buildEnvYamlNodeWithInfraDefAsExpression("env_without_inputs");
+    refreshHelper.validateEnvironmentInputs(env_with_inputs, refreshContext, validationResponse);
+
+    assertThat(validationResponse.isValid()).isTrue();
+
+    JsonNode jsonNode = refreshHelper.refreshEnvironmentInputs(env_with_inputs, refreshContext);
+    assertThat(jsonNode.toPrettyString())
+        .isEqualTo("{\n"
+            + "  \"environmentRef\" : \"env_without_inputs\",\n"
+            + "  \"deployToAll\" : false,\n"
+            + "  \"infrastructureDefinitions\" : [ {\n"
+            + "    \"identifier\" : \"<+env.name>\"\n"
+            + "  } ]\n"
+            + "}");
+  }
+
   private YamlNode buildEnvYamlNode(String identifier) throws IOException {
     String yaml = "environmentRef: " + identifier + "\n"
         + "deployToAll: false\n"
         + "infrastructureDefinitions: <+input>";
+    return YamlNode.fromYamlPath(yaml, "");
+  }
+
+  private YamlNode buildEnvYamlNodeWithInfraDefAsExpression(String identifier) throws IOException {
+    String yaml = "environmentRef: " + identifier + "\n"
+        + "deployToAll: false\n"
+        + "infrastructureDefinitions:\n"
+        + "- identifier: <+env.name>";
     return YamlNode.fromYamlPath(yaml, "");
   }
 

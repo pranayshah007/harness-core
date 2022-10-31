@@ -10,6 +10,9 @@ package io.harness.connector.impl;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -26,28 +29,35 @@ import io.harness.connector.utils.KubernetesConnectorTestHelper;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.encryption.Scope;
 import io.harness.git.model.ChangeType;
-import io.harness.ng.core.accountsetting.dto.AccountSettingType;
-import io.harness.ng.core.accountsetting.dto.ConnectorSettings;
-import io.harness.ng.core.accountsetting.entities.AccountSettings;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.ConnectorRepository;
-import io.harness.repositories.accountsetting.AccountSettingRepository;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(DX)
 public class ConnectorStatisticsHelperTest extends ConnectorsTestBase {
   @Inject ConnectorRepository connectorRepository;
+  @Inject NGSettingsClient settingsClient;
   @Inject ConnectorStatisticsHelper connectorStatisticsHelper;
   @Inject OutboxService outboxService;
-  @Inject AccountSettingRepository accountSettingRepository;
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   private static final String accountIdentifier = "accountIdentifier";
   private static final String orgIdentifier = "orgIdentifier";
   private static final String projectIdentifier = "projectIdentifier";
@@ -56,12 +66,15 @@ public class ConnectorStatisticsHelperTest extends ConnectorsTestBase {
   @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
-  public void getStats() {
-    accountSettingRepository.save(AccountSettings.builder()
-                                      .accountIdentifier(accountIdentifier)
-                                      .type(AccountSettingType.CONNECTOR)
-                                      .config(ConnectorSettings.builder().builtInSMDisabled(false).build())
-                                      .build());
+  public void getStats() throws IOException {
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
     for (int i = 0; i < 5; i++) {
       Connector connector = KubernetesConnectorTestHelper.createK8sConnector(
           accountIdentifier, orgIdentifier, projectIdentifier, identifier, Scope.PROJECT);

@@ -8,6 +8,7 @@
 package io.harness.pms.dashboards;
 
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,6 +24,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class QueryBuilderPipelineTest extends CategoryTest {
+  String tableName_default = "pipeline_execution_summary_ci";
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
@@ -38,5 +40,12 @@ public class QueryBuilderPipelineTest extends CategoryTest {
     assertThat(new PipelineDashboardServiceImpl().selectTableFromModuleInfo("CD")).isEqualTo(cd_table_name);
     assertThat(new PipelineDashboardServiceImpl().selectTableFromModuleInfo("Cd")).isEqualTo(cd_table_name);
     assertThat(new PipelineDashboardServiceImpl().selectTableFromModuleInfo("cD")).isEqualTo(cd_table_name);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testSelectTableFromModuleInfoForNullModuleInfo() {
+    assertThat(new PipelineDashboardServiceImpl().selectTableFromModuleInfo(null)).isEqualTo(tableName_default);
   }
 }

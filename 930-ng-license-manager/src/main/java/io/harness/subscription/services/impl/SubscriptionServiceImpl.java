@@ -67,6 +67,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   private final Map<String, StripeEventHandler> eventHandlers;
 
+  private static final String EDITION_CHECK_FAILED =
+      "Cannot create a subscription of %s edition. An active subscription of %s edition already exists.";
   private static final String QUANTITY_GREATER_THAN_MAX =
       "Quantity requested is greater than maximum quantity allowed.";
   private static final double RECOMMENDATION_MULTIPLIER = 1.2d;
@@ -172,6 +174,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionDTO.getCustomer());
     }
 
+    checkEdition(accountIdentifier, subscriptionDTO.getEdition());
+
     // Not allowed for creation if active subscriptionId exists
     SubscriptionDetail subscriptionDetail =
         subscriptionDetailRepository.findByAccountIdentifierAndModuleType(accountIdentifier, ModuleType.valueOf("CF"));
@@ -250,6 +254,17 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                           .build());
 
     return subscription;
+  }
+
+  private void checkEdition(String accountId, String edition) {
+    List<ModuleLicense> licenses = licenseRepository.findByAccountIdentifier(accountId);
+    String editionToCheck =
+        edition.equalsIgnoreCase(Edition.TEAM.toString()) ? Edition.ENTERPRISE.toString() : Edition.TEAM.toString();
+    if (licenses.stream()
+            .filter(l -> l.isActive())
+            .anyMatch(l -> l.getEdition().toString().equalsIgnoreCase(editionToCheck))) {
+      throw new InvalidRequestException(String.format(EDITION_CHECK_FAILED, edition, editionToCheck));
+    }
   }
 
   @Override

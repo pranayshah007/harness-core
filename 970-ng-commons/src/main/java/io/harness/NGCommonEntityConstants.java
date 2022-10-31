@@ -34,6 +34,7 @@ public class NGCommonEntityConstants {
   public static final String GROUP_IDENTIFIER_KEY = "groupIdentifier";
   public static final String GROUP_IDENTIFIERS_KEY = "groupIdentifiers";
   public static final String NAME_KEY = "name";
+  public static final String DELEGATE_IDENTIFIER_KEY = "delegateIdentifier";
   public static final String DRAFT_KEY = "skipValidation";
   public static final String TAGS_KEY = "tags";
   public static final String DESCRIPTION_KEY = "description";
