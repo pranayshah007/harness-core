@@ -26,6 +26,7 @@ import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.ccm.commons.entities.billing.CECluster;
 import io.harness.ccm.commons.entities.billing.CEGcpServiceAccount;
 import io.harness.ccm.commons.entities.billing.CloudBillingTransferRun;
+import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
 import io.harness.ccm.commons.entities.ecs.ECSService;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
@@ -82,6 +83,9 @@ public class CECommonsMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ECSService.class);
     set.add(ECSPartialRecommendationHistogram.class);
     set.add(ECSServiceRecommendation.class);
+
+    // ec2
+    set.add(EC2Recommendation.class);
 
     // commons
     set.add(CCMNotificationSetting.class);
