@@ -5221,6 +5221,7 @@ amazon_artifacts = [
         "aws-java-sdk-codedeploy",
         "aws-java-sdk-core",
         "aws-java-sdk-costandusagereport",
+        "aws-java-sdk-costexplorer",
         "aws-java-sdk-ec2",
         "aws-java-sdk-ecr",
         "aws-java-sdk-ecs",

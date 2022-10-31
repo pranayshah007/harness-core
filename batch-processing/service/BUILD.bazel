@@ -48,6 +48,7 @@ shared_dependencies = [
     "@maven//:org_springframework_data_spring_data_mongodb",
     "@maven//:org_springframework_guice_spring_guice",
     "@maven//:org_zeroturnaround_zt_exec",
+    "@maven//:com_amazonaws_aws_java_sdk_costexplorer",
 ]
 
 java_binary(
