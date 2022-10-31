@@ -7,29 +7,12 @@
 
 package io.harness.managerclient;
 
-import io.harness.security.TokenGenerator;
 import io.harness.verificationclient.CVNextGenServiceClient;
 import io.harness.verificationclient.CVNextGenServiceClientFactory;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 public class VerificationServiceClientModule extends AbstractModule {
-  private final String cvNextGenUrl;
-  private final String clientCertificateFilePath;
-  private final String clientCertificateKeyFilePath;
-  private final boolean trustAllCertificates;
-
-  @Provides
-  @Singleton
-  CVNextGenServiceClientFactory cvNextGenServiceClientFactory(final TokenGenerator tokenGenerator) {
-    return new CVNextGenServiceClientFactory(
-        cvNextGenUrl, tokenGenerator, clientCertificateFilePath, clientCertificateKeyFilePath, trustAllCertificates);
-  }
-
   @Override
   protected void configure() {
     bind(VerificationServiceClient.class).toProvider(VerificationServiceClientFactory.class);
