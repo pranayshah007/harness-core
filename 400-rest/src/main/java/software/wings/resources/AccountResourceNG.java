@@ -112,12 +112,6 @@ public class AccountResourceNG {
   }
 
   @GET
-  @Path("immutable-delegate-enabled")
-  public RestResponse<Boolean> isImmutableDelegateEnabled(@QueryParam("accountId") @NotNull String accountId) {
-    return new RestResponse<>(accountService.isImmutableDelegateEnabled(accountId));
-  }
-
-  @GET
   @Path("/feature-flag-enabled-accounts")
   public RestResponse<Set<String>> getFeatureFlagEnabledAccountIds(@QueryParam("featureName") String featureName) {
     return new RestResponse<>(accountService.getFeatureFlagEnabledAccountIds(featureName));
