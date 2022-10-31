@@ -32,7 +32,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.ELASTIGROUP_SETUP)
-@TypeAlias("elastigroupSetupStepNode")
+@TypeAlias("ElastigroupSetupStepNode")
 @RecasterAlias("io.harness.cdng.elastigroup.ElastigroupSetupStepNode")
 public class ElastigroupSetupStepNode extends CdAbstractStepNode {
   @JsonProperty("type")
