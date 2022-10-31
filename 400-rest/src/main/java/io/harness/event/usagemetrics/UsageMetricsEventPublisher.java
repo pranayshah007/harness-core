@@ -60,7 +60,6 @@ public class UsageMetricsEventPublisher {
   SimpleDateFormat sdf;
 
   private String APPROVAL = "APPROVAL";
-  private final List<String> STATE_TYPES = Arrays.asList("PHASE_STEP", "PHASE", "ENV_STATE");
 
   public UsageMetricsEventPublisher() {
     sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
@@ -82,7 +81,7 @@ public class UsageMetricsEventPublisher {
     if (stateExecutionInstance == null) {
       return;
     }
-    for (String stateType : STATE_TYPES) {
+    for (String stateType : StepEventProcessor.STATE_TYPES) {
       if (stateType.equals(stateExecutionInstance.getStateType())) {
         return;
       }

@@ -4,11 +4,13 @@ import static io.harness.event.reconciliation.service.DeploymentReconServiceHelp
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.isStatusMismatchedInMongoAndTSDB;
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.performReconciliationHelper;
 import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.threading.Morpheus.sleep;
 
 import io.harness.beans.ExecutionStatus;
 import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecordRepository;
 import io.harness.event.timeseries.processor.DeploymentStepEventProcessor;
+import io.harness.event.timeseries.processor.StepEventProcessor;
 import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
 import io.harness.lock.PersistentLocker;
 import io.harness.persistence.HIterator;
@@ -24,10 +26,15 @@ import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -164,6 +171,66 @@ public class DeploymentStepReconServiceImpl implements DeploymentReconService {
       } finally {
         DBUtils.close(resultSet);
       }
+    }
+  }
+
+  public void migrateDataMongoToTimescale(String accountId, int batchSize, Long intervalStart, Long intervalEnd) {
+    if (!timeScaleDBService.isValid()) {
+      log.info("TimeScaleDB not found, not migrating Deployment Step data to TimeScaleDB");
+    }
+
+    final DBCollection collection = persistence.getCollection(StateExecutionInstance.class);
+    BasicDBObject objectsToMigrate =
+        new BasicDBObject(StateExecutionInstanceKeys.accountId, accountId)
+            .append(StateExecutionInstanceKeys.createdAt, new BasicDBObject("$gte", intervalStart))
+            .append(StateExecutionInstanceKeys.createdAt, new BasicDBObject("$lte", intervalEnd));
+    DBCursor records = collection.find(objectsToMigrate)
+                           .sort(new BasicDBObject(StateExecutionInstanceKeys.createdAt, 1))
+                           .limit(batchSize);
+
+    int totalRecord = 0;
+    int recordAdded = 0;
+
+    try {
+      while (records.hasNext()) {
+        DBObject record = records.next();
+        StateExecutionInstance instance = persistence.convertToEntity(StateExecutionInstance.class, record);
+        totalRecord++;
+
+        boolean ignore = false;
+
+        for (String stateType : StepEventProcessor.STATE_TYPES) {
+          if (stateType.equals(instance.getStateType())) {
+            ignore = true;
+            break;
+          }
+        }
+
+        if (!ignore) {
+          recordAdded++;
+          DeploymentStepTimeSeriesEvent deploymentStepTimeSeriesEvent =
+              usageMetricsEventPublisher.constructDeploymentStepTimeSeriesEvent(instance.getAccountId(), instance);
+          deploymentStepEventProcessor.processEvent(deploymentStepTimeSeriesEvent.getTimeSeriesEventInfo());
+        }
+
+        if (totalRecord != 0 && totalRecord % batchSize == 0) {
+          log.info("{} records added to DEPLOYMENT_STEP table", recordAdded);
+          sleep(Duration.ofMillis(100));
+
+          records = collection.find(objectsToMigrate)
+                        .sort(new BasicDBObject(StateExecutionInstanceKeys.createdAt, 1))
+                        .skip(totalRecord)
+                        .limit(batchSize);
+        }
+      }
+      log.info("{} records added to DEPLOYMENT_STEP table", recordAdded);
+
+    } catch (Exception e) {
+      log.error("Exception occurred migrating StateExecutionInstance to DEPLOYMENT_STEP table", e);
+    } finally {
+      log.info(
+          "Migration of StateExecutionInstance data to DEPLOYMENT_STEP table for accountId: {} successful", accountId);
+      records.close();
     }
   }
 }

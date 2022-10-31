@@ -2,8 +2,12 @@ package io.harness.event.timeseries.processor;
 
 import io.harness.event.model.EventInfo;
 
+import java.util.Arrays;
+import java.util.List;
+
 public interface StepEventProcessor<T extends EventInfo> {
   int MAX_RETRY = 5;
+  Integer DEFAULT_MIGRATION_QUERY_BATCH_SIZE = 100;
 
   String ID = "ID";
   String ACCOUNT_ID = "ACCOUNT_ID";
@@ -31,6 +35,8 @@ public interface StepEventProcessor<T extends EventInfo> {
   String APPROVED_AT = "APPROVED_AT";
   String APPROVAL_COMMENT = "APPROVAL_COMMENT";
   String APPROVAL_EXPIRY = "APPROVAL_EXPIRY";
+
+  List<String> STATE_TYPES = Arrays.asList("PHASE_STEP", "PHASE", "ENV_STATE");
 
   void processEvent(T eventInfo) throws Exception;
 }

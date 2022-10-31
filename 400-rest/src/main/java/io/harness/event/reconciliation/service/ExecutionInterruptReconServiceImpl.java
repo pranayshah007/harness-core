@@ -3,6 +3,7 @@ package io.harness.event.reconciliation.service;
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.addTimeQuery;
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.performReconciliationHelper;
 import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.threading.Morpheus.sleep;
 
 import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecordRepository;
@@ -22,10 +23,15 @@ import software.wings.sm.ExecutionInterrupt.ExecutionInterruptKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -119,6 +125,53 @@ public class ExecutionInterruptReconServiceImpl implements DeploymentReconServic
       } finally {
         DBUtils.close(resultSet);
       }
+    }
+  }
+
+  public void migrateDataMongoToTimescale(String accountId, int batchSize, Long intervalStart, Long intervalEnd) {
+    if (!timeScaleDBService.isValid()) {
+      log.info("TimeScaleDB not found, not migrating Execution Interrupt data to TimeScaleDB");
+    }
+
+    final DBCollection collection = persistence.getCollection(ExecutionInterrupt.class);
+    BasicDBObject objectsToMigrate =
+        new BasicDBObject(ExecutionInterruptKeys.accountId, accountId)
+            .append(ExecutionInterruptKeys.createdAt, new BasicDBObject("$gte", intervalStart))
+            .append(ExecutionInterruptKeys.createdAt, new BasicDBObject("$lte", intervalEnd));
+    DBCursor records =
+        collection.find(objectsToMigrate).sort(new BasicDBObject(ExecutionInterruptKeys.createdAt, 1)).limit(batchSize);
+
+    int totalRecord = 0;
+
+    try {
+      while (records.hasNext()) {
+        DBObject record = records.next();
+        ExecutionInterrupt executionInterrupt = persistence.convertToEntity(ExecutionInterrupt.class, record);
+
+        totalRecord++;
+
+        ExecutionInterruptTimeSeriesEvent executionInterruptTimeSeriesEvent =
+            usageMetricsEventPublisher.constructExecutionInterruptTimeSeriesEvent(
+                executionInterrupt.getAccountId(), executionInterrupt);
+        executionInterruptProcessor.processEvent(executionInterruptTimeSeriesEvent.getTimeSeriesEventInfo());
+
+        if (totalRecord != 0 && totalRecord % batchSize == 0) {
+          log.info("{} records added to EXECUTION_INTERRUPT table", totalRecord);
+          sleep(Duration.ofMillis(100));
+
+          records = collection.find(objectsToMigrate)
+                        .sort(new BasicDBObject(ExecutionInterruptKeys.createdAt, 1))
+                        .skip(totalRecord)
+                        .limit(batchSize);
+        }
+      }
+      log.info("{} records added to EXECUTION_INTERRUPT table", totalRecord);
+
+    } catch (Exception e) {
+      log.error("Exception occurred migrating Execution Interrupts to timescaleDB", e);
+    } finally {
+      log.info("Migration of Execution Interrupt data to timescaleDB for accountId: {} successful", accountId);
+      records.close();
     }
   }
 }
