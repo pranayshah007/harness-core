@@ -27,10 +27,10 @@ import lombok.Getter;
 
 @Data
 @Builder
-@JsonTypeName(ElastigroupCapacitySpecType.COUNT)
+@JsonTypeName(CapacitySpecType.COUNT)
 @OwnedBy(CDP)
-@RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.CountElastigroupCapacitySpec")
-public class CountElastigroupCapacitySpec implements ElastigroupCapacitySpec {
+@RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.CountCapacitySpec")
+public class CountCapacitySpec implements CapacitySpec {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -44,6 +44,6 @@ public class CountElastigroupCapacitySpec implements ElastigroupCapacitySpec {
 
   @Override
   public String getType() {
-    return ElastigroupCapacitySpecType.COUNT;
+    return CapacitySpecType.COUNT;
   }
 }
