@@ -43,7 +43,7 @@ public class MigrateCloudProvidersToTimescaleDB implements TimeScaleEntityMigrat
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_CLOUD_PROVIDERS");
       return false;
     }
     int count = 0;
@@ -64,10 +64,10 @@ public class MigrateCloudProvidersToTimescaleDB implements TimeScaleEntityMigrat
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_CLOUD_PROVIDERS", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_CLOUD_PROVIDERS", count);
     }
     return true;
   }
