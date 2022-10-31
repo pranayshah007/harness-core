@@ -21,6 +21,7 @@ import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepParameters;
+import io.harness.cdng.elastigroup.ElastigroupSetupStepInfo;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
@@ -191,5 +192,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(FetchInstanceScriptStepInfo.class, 12614);
     kryo.register(FetchInstanceScriptStepParameters.class, 12615);
     kryo.register(ChaosStepNotifyData.class, 12616);
+    kryo.register(ElastigroupSetupStepInfo.class, 12618);
   }
 }

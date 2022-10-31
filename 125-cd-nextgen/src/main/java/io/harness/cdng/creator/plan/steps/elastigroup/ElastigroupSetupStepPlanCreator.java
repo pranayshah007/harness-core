@@ -15,6 +15,7 @@ import io.harness.cdng.elastigroup.ElastigroupSetupStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import java.util.Set;
 
@@ -35,5 +36,10 @@ public class ElastigroupSetupStepPlanCreator
   public PlanCreationResponse createPlanForField(
       PlanCreationContext ctx, ElastigroupSetupStepNode stepElement) {
     return super.createPlanForField(ctx, stepElement);
+  }
+
+  @Override
+  protected StepParameters getStepParameters(PlanCreationContext ctx, ElastigroupSetupStepNode stepElement) {
+    return super.getStepParameters(ctx, stepElement);
   }
 }
