@@ -8,7 +8,6 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//960-api-services/src/main/java/io/harness/delegate/configuration:module",
         "//970-api-services-beans:module",
         "//970-grpc:module",
         "//970-ng-commons:module",
