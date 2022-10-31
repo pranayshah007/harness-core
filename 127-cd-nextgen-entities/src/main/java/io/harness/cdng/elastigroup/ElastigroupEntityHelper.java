@@ -54,45 +54,6 @@ public class ElastigroupEntityHelper {
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
-  public List<EncryptedDataDetail> getEncryptionDataDetails(
-      @Nonnull ConnectorInfoDTO connectorDTO, @Nonnull NGAccess ngAccess) {
-    switch (connectorDTO.getConnectorType()) {
-      case AWS:
-        AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
-        List<DecryptableEntity> awsDecryptableEntities = awsConnectorDTO.getDecryptableEntities();
-        if (isNotEmpty(awsDecryptableEntities)) {
-          return secretManagerClientService.getEncryptionDetails(ngAccess, awsDecryptableEntities.get(0));
-        } else {
-          return emptyList();
-        }
-      case ARTIFACTORY:
-        ArtifactoryConnectorDTO artifactoryConnectorDTO = (ArtifactoryConnectorDTO) connectorDTO.getConnectorConfig();
-        List<DecryptableEntity> artifactoryDecryptableEntities = artifactoryConnectorDTO.getDecryptableEntities();
-        if (isNotEmpty(artifactoryDecryptableEntities)) {
-          return secretManagerClientService.getEncryptionDetails(
-              ngAccess, artifactoryConnectorDTO.getAuth().getCredentials());
-        } else {
-          return emptyList();
-        }
-      default:
-        throw new UnsupportedOperationException(
-            format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
-    }
-  }
-
-  public void getEcsInfraDelegateConfig(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    switch (infrastructureOutcome.getKind()) {
-      case ECS:
-        ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
-        EcsInfrastructureOutcome ecsInfrastructureOutcome = (EcsInfrastructureOutcome) infrastructureOutcome;
-        // todo: return ecsInfraConfig based on infra request schema for delegate task
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            format("Unsupported Infrastructure type: [%s]", infrastructureOutcome.getKind()));
-    }
-  }
 
   // todo: refactor it
   public ConnectorInfoDTO getConnectorInfoDTO(String connectorId, NGAccess ngAccess) {
@@ -106,24 +67,6 @@ public class ElastigroupEntityHelper {
     return connectorDTO.get().getConnector();
   }
 
-  public EcsInfraConfig getEcsInfraConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
-    ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
-    switch (infrastructureOutcome.getKind()) {
-      case ECS:
-        EcsInfrastructureOutcome ecsInfrastructureOutcome = (EcsInfrastructureOutcome) infrastructureOutcome;
-        return EcsInfraConfig.builder()
-            .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
-            .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
-            .ecsInfraType(EcsInfraType.ECS)
-            .region(ecsInfrastructureOutcome.getRegion())
-            .cluster(ecsInfrastructureOutcome.getCluster())
-            .infraStructureKey(ecsInfrastructureOutcome.getInfrastructureKey())
-            .build();
-      default:
-        throw new UnsupportedOperationException(
-            format("Unsupported Infrastructure type: [%s]", infrastructureOutcome.getKind()));
-    }
-  }
 
   public SpotInstConfig getSpotInstConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
     ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);

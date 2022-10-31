@@ -45,6 +45,7 @@ public class ElastigroupSetupCommandRequest implements ElastigroupCommandRequest
   CommandUnitsProgress commandUnitsProgress;
   String elastiGroupJson;
   String elastigroupNamePrefix;
+  String startupScript;
   boolean blueGreen;
   @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig ecsInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
