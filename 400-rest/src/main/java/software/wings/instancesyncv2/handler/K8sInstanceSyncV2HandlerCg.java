@@ -17,7 +17,6 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.instancesyncv2.CgInstanceSyncServiceV2.AUTO_SCALE;
 
-import static java.util.Collections.EMPTY_SET;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -137,7 +136,15 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
   @Override
   public Set<CgReleaseIdentifiers> mergeReleaseIdentifiers(
-      Set<CgReleaseIdentifiers> existingIdentifiers, Set<? extends CgReleaseIdentifiers> newIdentifiers) {
+      Set<CgReleaseIdentifiers> existingIdentifiers, Set<CgReleaseIdentifiers> newIdentifiers) {
+    if (CollectionUtils.isEmpty(existingIdentifiers)) {
+      return newIdentifiers;
+    }
+
+    if (CollectionUtils.isEmpty(newIdentifiers)) {
+      return existingIdentifiers;
+    }
+
     Set<CgReleaseIdentifiers> identifiers = new HashSet<>();
     for (CgReleaseIdentifiers newIdentifier : newIdentifiers) {
       if (newIdentifier instanceof CgK8sReleaseIdentifier) {

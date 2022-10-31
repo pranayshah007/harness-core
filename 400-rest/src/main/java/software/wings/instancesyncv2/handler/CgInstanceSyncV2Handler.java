@@ -30,7 +30,7 @@ public interface CgInstanceSyncV2Handler {
   Set<CgReleaseIdentifiers> buildReleaseIdentifiers(DeploymentInfo deploymentInfo);
 
   Set<CgReleaseIdentifiers> mergeReleaseIdentifiers(
-      Set<CgReleaseIdentifiers> releaseIdentifiers, Set<? extends CgReleaseIdentifiers> buildReleaseIdentifiers);
+      Set<CgReleaseIdentifiers> releaseIdentifiers, Set<CgReleaseIdentifiers> buildReleaseIdentifiers);
 
   List<CgDeploymentReleaseDetails> getDeploymentReleaseDetails(InstanceSyncTaskDetails taskDetails);
 
