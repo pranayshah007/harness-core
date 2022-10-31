@@ -33,13 +33,13 @@ public class ElastigroupDeployStepInfoTest extends CategoryTest {
               Arrays.asList(new TaskSelectorYaml("delegate-1"), new TaskSelectorYaml("delegate-2"))))
           .newService(
               ElastigroupCapacity.builder()
-                  .type(ElastigroupDeployServiceSpecType.COUNT)
-                  .spec(CountElastigroupDeployServiceSpec.builder().count(ParameterField.createValueField(5)).build())
+                  .type(ElastigroupCapacitySpecType.COUNT)
+                  .spec(CountElastigroupCapacitySpec.builder().count(ParameterField.createValueField(5)).build())
                   .build())
           .oldService(
               ElastigroupCapacity.builder()
-                  .type(ElastigroupDeployServiceSpecType.COUNT)
-                  .spec(CountElastigroupDeployServiceSpec.builder().count(ParameterField.createValueField(2)).build())
+                  .type(ElastigroupCapacitySpecType.COUNT)
+                  .spec(CountElastigroupCapacitySpec.builder().count(ParameterField.createValueField(2)).build())
                   .build())
           .build();
 
@@ -86,18 +86,16 @@ public class ElastigroupDeployStepInfoTest extends CategoryTest {
 
     assertThat(elastigroupDeployStepParameters.getNewService())
         .isNotNull()
-        .isEqualTo(
-            ElastigroupCapacity.builder()
-                .type(ElastigroupDeployServiceSpecType.COUNT)
-                .spec(CountElastigroupDeployServiceSpec.builder().count(ParameterField.createValueField(5)).build())
-                .build());
+        .isEqualTo(ElastigroupCapacity.builder()
+                       .type(ElastigroupCapacitySpecType.COUNT)
+                       .spec(CountElastigroupCapacitySpec.builder().count(ParameterField.createValueField(5)).build())
+                       .build());
 
     assertThat(elastigroupDeployStepParameters.getOldService())
         .isNotNull()
-        .isEqualTo(
-            ElastigroupCapacity.builder()
-                .type(ElastigroupDeployServiceSpecType.COUNT)
-                .spec(CountElastigroupDeployServiceSpec.builder().count(ParameterField.createValueField(2)).build())
-                .build());
+        .isEqualTo(ElastigroupCapacity.builder()
+                       .type(ElastigroupCapacitySpecType.COUNT)
+                       .spec(CountElastigroupCapacitySpec.builder().count(ParameterField.createValueField(2)).build())
+                       .build());
   }
 }
