@@ -104,6 +104,7 @@ public class RecommendationsDetailsQuery {
             firstNonNull(startTime, OffsetDateTime.now().minusDays(7)), firstNonNull(endTime, OffsetDateTime.now()),
             bufferPercentage);
       case EC2_INSTANCE:
+        log.info("recom call for EC2_INSTANCE");
         return ec2RecommendationService.getEC2RecommendationById(accountIdentifier, id);
       default:
         throw new InvalidRequestException(String.format("Recommendation not yet implemented for %s", resourceType));
