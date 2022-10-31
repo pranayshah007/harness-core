@@ -194,7 +194,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
               pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate)
               || updateRequired;
 
-          if (OrchestrationUtils.isStageNode(nodeExecution)
+          if (OrchestrationUtils.isStageOrParallelNode(nodeExecution)
               && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
               && StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
             updateRequired =

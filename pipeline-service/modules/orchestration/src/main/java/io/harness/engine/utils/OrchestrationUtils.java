@@ -54,6 +54,11 @@ public class OrchestrationUtils {
 
   public static boolean isStageNode(NodeExecution nodeExecution) {
     StepType currentStepType = Objects.requireNonNull(AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance()));
+    return currentStepType.getStepCategory() == StepCategory.STAGE;
+  }
+
+  public static boolean isStageOrParallelNode(NodeExecution nodeExecution) {
+    StepType currentStepType = Objects.requireNonNull(AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance()));
     return currentStepType.getStepCategory() == StepCategory.STAGE
         || currentStepType.getStepCategory() == StepCategory.FORK;
   }
