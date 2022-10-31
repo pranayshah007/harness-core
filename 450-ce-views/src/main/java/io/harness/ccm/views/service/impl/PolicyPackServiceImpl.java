@@ -11,12 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.PolicyPackDAO;
+import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyPack;
 import io.harness.ccm.views.service.PolicyPackService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+
+import io.harness.exception.InvalidRequestException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -54,7 +57,18 @@ public class PolicyPackServiceImpl implements PolicyPackService {
 
   @Override
   public void check( List<String> policyPackIdentifier) {
-    { policyPackDAO.check( policyPackIdentifier); }
+    {   List<PolicyPack> policyPacks= policyPackDAO.check( policyPackIdentifier);
+      if (policyPacks.size() != policyPackIdentifier.size()) {
+        for (PolicyPack it : policyPacks) {
+          log.info("{} {} ", it, it.getUuid());
+          policyPackIdentifier.remove(it.getUuid());
+        }
+        if (policyPackIdentifier.size() != 0) {
+          throw new InvalidRequestException("No such policies exist:" + policyPackIdentifier.toString());
+        }
+      }
+
+    }
   }
 
   @Override

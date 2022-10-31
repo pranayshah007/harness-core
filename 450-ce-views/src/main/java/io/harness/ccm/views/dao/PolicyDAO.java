@@ -148,16 +148,13 @@ public class PolicyDAO {
   }
 
 
-  public void check( List<String> policiesIdentifier) {
-    try {
-      List<Policy> policies = hPersistence.createQuery(Policy.class)
-                                  .field(PolicyId.uuid)
-                                  .hasAnyOf(policiesIdentifier)
-                                  .asList();
-      log.info("{} ",policies);
-      policies.get(policiesIdentifier.size()-1);
-    } catch (IndexOutOfBoundsException e) {
-      throw new InvalidRequestException("A policy entered in the list doesn't exist");
-    }
+  public List<Policy> check( List<String> policiesIdentifier) {
+
+    List<Policy> policies = hPersistence.createQuery(Policy.class)
+            .field(PolicyId.uuid)
+            .in(policiesIdentifier)
+            .asList();
+    log.info("{} ", policies);
+    return policies;
   }
 }

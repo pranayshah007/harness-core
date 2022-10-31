@@ -11,9 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.PolicyDAO;
+import io.harness.ccm.views.dao.PolicyEnforcementDAO;
 import io.harness.ccm.views.entities.GovernancePolicyFilter;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.service.GovernancePolicyService;
+import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -25,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CE)
 public class GovernancePolicyServiceImpl implements GovernancePolicyService {
   @Inject private PolicyDAO policyDao;
+  @Inject private PolicyEnforcementDAO policyEnforcementDAO;
 
   @Override
   public boolean save(Policy policy) {
@@ -33,9 +36,8 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
 
   @Override
   public boolean delete(String accountId, String uuid) {
-    return policyDao.delete( accountId, uuid );
+    return policyDao.delete(accountId, uuid);
   }
-
 
   @Override
   public Policy update(Policy policy, String accountId) {
@@ -43,7 +45,7 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
   }
 
   @Override
-  public List<Policy> list( GovernancePolicyFilter governancePolicyFilter) {
+  public List<Policy> list(GovernancePolicyFilter governancePolicyFilter) {
     return policyDao.list(governancePolicyFilter);
   }
 
@@ -53,7 +55,16 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
   }
 
   @Override
-  public void check( List<String> policiesIdentifier) {
-    policyDao.check( policiesIdentifier);
+  public void check(List<String> policiesIdentifier) {
+    List<Policy> policies = policyDao.check(policiesIdentifier);
+    if (policies.size() != policiesIdentifier.size()) {
+      for (Policy it : policies) {
+        log.info("{} {} ", it, it.getUuid());
+        policiesIdentifier.remove(it.getUuid());
+      }
+      if (policiesIdentifier.size() != 0) {
+        throw new InvalidRequestException("No such policies exist:" + policiesIdentifier.toString());
+      }
+    }
   }
 }

@@ -124,17 +124,13 @@ public class PolicyPackDAO {
     }
   }
 
-  public void check( List<String> policiesPackIdentifier) {
-    try {
+  public  List<PolicyPack>  check( List<String> policiesPackIdentifier) {
+
       List<PolicyPack> policyPacks = hPersistence.createQuery(PolicyPack.class)
               .field(PolicySetId.uuid)
               .in(policiesPackIdentifier).asList();
       log.info("{} ",policyPacks);
-      policyPacks.get(policiesPackIdentifier.size()-1);
-    }
-    catch (IndexOutOfBoundsException e) {
-      throw new InvalidRequestException("A policy pack entered in the list doesn't exist");
-    }
+      return policyPacks;
   }
 
   public List<PolicyPack> listPacks(String accountId, List<String> packIds) {
