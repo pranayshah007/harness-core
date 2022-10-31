@@ -726,6 +726,62 @@
       "discriminator": "type",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "Capacity": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Count"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CountCapacitySpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Percentage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/PercentageCapacitySpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CapacitySpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CloudformationCreateStackStepConfiguration": {
       "type": "object",
       "required": [
@@ -1326,10 +1382,10 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "CountElastigroupDeployServiceSpec": {
+    "CountCapacitySpec": {
       "allOf": [
         {
-          "$ref": "#/definitions/ElastigroupDeployServiceSpec"
+          "$ref": "#/definitions/CapacitySpec"
         },
         {
           "type": "object",
@@ -2058,62 +2114,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ElastigroupDeployServiceSpec": {
-      "type": "object",
-      "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ElastigroupDeployServiceWrapper": {
-      "type": "object",
-      "required": [
-        "type"
-      ],
-      "properties": {
-        "type": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Count"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/CountElastigroupDeployServiceSpec"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Percentage"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/PercentageElastigroupDeployServiceSpec"
-              }
-            }
-          }
-        }
-      ]
-    },
     "ElastigroupDeployStepInfo": {
       "allOf": [
         {
@@ -2141,10 +2141,10 @@
               "type": "string"
             },
             "newService": {
-              "$ref": "#/definitions/ElastigroupDeployServiceWrapper"
+              "$ref": "#/definitions/Capacity"
             },
             "oldService": {
-              "$ref": "#/definitions/ElastigroupDeployServiceWrapper"
+              "$ref": "#/definitions/Capacity"
             }
           }
         }
@@ -4237,10 +4237,10 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "PercentageElastigroupDeployServiceSpec": {
+    "PercentageCapacitySpec": {
       "allOf": [
         {
-          "$ref": "#/definitions/ElastigroupDeployServiceSpec"
+          "$ref": "#/definitions/CapacitySpec"
         },
         {
           "type": "object",
@@ -4250,7 +4250,8 @@
                 {
                   "type": "integer",
                   "format": "int32",
-                  "minimum": 0
+                  "minimum": 0,
+                  "maximum": 100
                 },
                 {
                   "type": "string",
