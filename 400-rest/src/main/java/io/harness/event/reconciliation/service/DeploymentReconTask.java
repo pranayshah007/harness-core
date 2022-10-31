@@ -94,7 +94,7 @@ public class DeploymentReconTask implements Runnable {
         }
       }
     } catch (Exception e) {
-      log.error("Failed to run reconcilation", e);
+      log.error("Failed to run reconciliation", e);
     }
   }
 }
