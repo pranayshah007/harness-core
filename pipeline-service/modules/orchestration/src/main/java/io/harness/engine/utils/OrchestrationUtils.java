@@ -54,7 +54,8 @@ public class OrchestrationUtils {
 
   public static boolean isStageNode(NodeExecution nodeExecution) {
     StepType currentStepType = Objects.requireNonNull(AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance()));
-    return currentStepType.getStepCategory() == StepCategory.STAGE;
+    return currentStepType.getStepCategory() == StepCategory.STAGE
+        || currentStepType.getStepCategory() == StepCategory.FORK;
   }
 
   public static boolean isPipelineNode(NodeExecution nodeExecution) {
