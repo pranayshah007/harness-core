@@ -13,11 +13,16 @@ go_library(
 
 go_test(
     name = "handler_test",
-    srcs = ["handler_test.go"],
+    srcs = [
+        "handler_test.go",
+    ],
     embed = [":handler"],
     deps = [
+        "//queue-service/hsqs/config",
+        "//queue-service/hsqs/store",
         "//queue-service/hsqs/store/redis",
-        "@com_github_go_redis_redismock_v8//:go_default_library",
+        "@com_github_go_redis_redismock_v8//:redismock",
+        "@com_github_golang_jwt_jwt//:jwt",
         "@com_github_rs_zerolog//:zerolog",
         "@com_github_stretchr_testify//assert",
     ],

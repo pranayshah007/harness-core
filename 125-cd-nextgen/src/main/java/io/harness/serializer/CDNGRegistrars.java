@@ -108,6 +108,7 @@ public class CDNGRegistrars {
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(NGCommonModuleRegistrars.morphiaRegistrars)
           .addAll(FileStoreRegistrars.morphiaRegistrars)
+          .addAll(FreezeRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =

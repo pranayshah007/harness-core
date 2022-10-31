@@ -803,7 +803,7 @@ public class JenkinsImpl implements Jenkins {
     String parentJobUrl = null;
     String childJobName;
 
-    String[] jobNameSplit = jobname.split("%2F");
+    String[] jobNameSplit = jobname.split("/");
     int parts = jobNameSplit.length;
     if (parts > 1) {
       parentJobUrl = constructParentJobPath(jobNameSplit);

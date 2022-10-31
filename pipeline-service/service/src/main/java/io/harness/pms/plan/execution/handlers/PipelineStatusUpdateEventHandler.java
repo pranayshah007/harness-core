@@ -12,7 +12,6 @@ import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.events.OrchestrationEventEmitter;
-import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
@@ -28,7 +27,7 @@ import io.harness.pms.pipeline.observer.OrchestrationObserverUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
@@ -43,14 +42,14 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserver, OrchestrationEndObserver {
   private final PlanExecutionService planExecutionService;
-  private final PmsExecutionSummaryRespository pmsExecutionSummaryRepository;
+  private final PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   private OrchestrationEventEmitter eventEmitter;
 
   private WaitNotifyEngine waitNotifyEngine;
 
   @Inject
   public PipelineStatusUpdateEventHandler(PlanExecutionService planExecutionService,
-      PmsExecutionSummaryRespository pmsExecutionSummaryRepository, OrchestrationEventEmitter eventEmitter,
+      PmsExecutionSummaryRepository pmsExecutionSummaryRepository, OrchestrationEventEmitter eventEmitter,
       WaitNotifyEngine waitNotifyEngine) {
     this.planExecutionService = planExecutionService;
     this.pmsExecutionSummaryRepository = pmsExecutionSummaryRepository;
@@ -101,11 +100,12 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
                 pipelineExecutionSummaryUpdatedEntity.getEndTs()));
       }
 
+      // Todo (sahil): Commenting this as this might cause issues, will fix it next week.
       // Wait notify is for Pipeline Chain Parent Node.
-      waitNotifyEngine.doneWith(pipelineExecutionSummaryUpdatedEntity.getPlanExecutionId(),
-          PipelineStageResponseData.builder()
-              .status(pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus())
-              .build());
+      //      waitNotifyEngine.doneWith(pipelineExecutionSummaryUpdatedEntity.getPlanExecutionId(),
+      //          PipelineStageResponseData.builder()
+      //              .status(pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus())
+      //              .build());
     }
   }
 

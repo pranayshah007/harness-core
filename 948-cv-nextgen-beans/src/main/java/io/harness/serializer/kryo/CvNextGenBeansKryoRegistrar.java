@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo.AppMetricInfoDTO;
 import io.harness.cvng.beans.AppdynamicsValidationResponse;
+import io.harness.cvng.beans.AwsPrometheusDataCollectionInfo;
 import io.harness.cvng.beans.CVDataCollectionInfo;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.CloudWatchMetricDataCollectionInfo;
@@ -213,5 +214,7 @@ public class CvNextGenBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(ELKSampleDataCollectionRequest.class, 9123);
     kryo.register(ELKDataCollectionInfo.class, 9124);
     kryo.register(AwsDataCollectionRequest.class, 9130);
+    kryo.register(AwsPrometheusDataCollectionInfo.class, 9131);
+    kryo.register(AwsPrometheusDataCollectionInfo.MetricCollectionInfo.class, 9132);
   }
 }

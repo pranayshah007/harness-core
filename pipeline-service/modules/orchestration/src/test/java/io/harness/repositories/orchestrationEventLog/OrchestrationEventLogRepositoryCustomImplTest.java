@@ -11,10 +11,7 @@ import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import io.harness.beans.OrchestrationEventLog;
 import io.harness.category.element.UnitTests;
@@ -52,16 +49,7 @@ public class OrchestrationEventLogRepositoryCustomImplTest {
     eventLogs.add(newlog);
     doReturn(eventLogs).when(mongoTemplate).find(any(), any());
     List<OrchestrationEventLog> unprocessedEvents =
-        orchImplClient.findUnprocessedEvents(planExecutionID, lastUpdatedAt);
+        orchImplClient.findUnprocessedEvents(planExecutionID, lastUpdatedAt, 1000);
     assertThat(unprocessedEvents).isEqualTo(eventLogs);
-  }
-
-  @Test
-  @Owner(developers = SOUMYAJIT)
-  @Category(UnitTests.class)
-  public void validateDeleteLogsForGivenPlanExecutionId() throws ExecutionException {
-    doReturn(null).when(mongoTemplate).remove(any(), eq(OrchestrationEventLog.class));
-    orchImplClient.deleteLogsForGivenPlanExecutionId(planExecutionID);
-    verify(mongoTemplate, times(1)).remove(any(), eq(OrchestrationEventLog.class));
   }
 }

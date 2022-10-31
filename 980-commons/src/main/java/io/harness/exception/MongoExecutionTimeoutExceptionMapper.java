@@ -19,6 +19,7 @@ public class MongoExecutionTimeoutExceptionMapper implements ExceptionMapper<Mon
 
   @Override
   public Response toResponse(MongoExecutionTimeoutException exception) {
+    log.error("Exception occurred: " + ERROR_MSG, exception);
     return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
         .entity(ResponseMessage.builder().message(ERROR_MSG).code(ErrorCode.MONGO_EXECUTION_TIMEOUT_EXCEPTION).build())
         .type(MediaType.APPLICATION_JSON)

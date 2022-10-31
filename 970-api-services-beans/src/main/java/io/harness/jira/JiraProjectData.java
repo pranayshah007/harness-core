@@ -48,4 +48,11 @@ public class JiraProjectData {
       this.issueTypes.add(new JiraIssueType(issueType));
     }
   }
+
+  public JiraProjectData(JiraProjectNG jiraProjectNG) {
+    this.id = jiraProjectNG.getId();
+    this.key = jiraProjectNG.getKey();
+    this.name = jiraProjectNG.getName();
+    jiraProjectNG.getIssueTypes().values().forEach(issueType -> this.issueTypes.add(new JiraIssueType(issueType)));
+  }
 }

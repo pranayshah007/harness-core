@@ -433,7 +433,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
 
     JiraClient jiraClient = Mockito.mock(JiraClient.class);
     PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
-    when(jiraClient.getIssueCreateMetadata("TJI", "Bug", null, false, false, false))
+    when(jiraClient.getIssueCreateMetadata("TJI", "Bug", null, false, false, false, false))
         .thenReturn(jiraIssueCreateMetadataNG);
     JiraUserData jiraUserData = new JiraUserData("accountId", "assignee", true, "your-jira-account-id");
     when(jiraClient.getUsers("your-jira-account-id", null, null)).thenReturn(Arrays.asList(jiraUserData));
@@ -442,7 +442,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     Map<String, String> fields1 = new HashMap<>();
     fields1.put("QE Assignee", "accountId");
     fields1.put("Test Summary", "No test added");
-    when(jiraClient.createIssue("TJI", "Bug", fields1, true, false)).thenReturn(jiraIssueNG);
+    when(jiraClient.createIssue("TJI", "Bug", fields1, true, false, false)).thenReturn(jiraIssueNG);
     JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
     when(jiraClient.getInstanceData()).thenReturn(jiraInstanceData);
     JiraTaskNGResponse jiraTaskNGResponse = jiraTaskNGHandler.createIssue(jiraTaskNGParameters);
@@ -504,7 +504,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
 
     JiraClient jiraClient = Mockito.mock(JiraClient.class);
     PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
-    when(jiraClient.getIssueCreateMetadata("TJI", "Bug", null, false, false, false))
+    when(jiraClient.getIssueCreateMetadata("TJI", "Bug", null, false, false, false, false))
         .thenReturn(jiraIssueCreateMetadataNG);
     JiraUserData jiraUserData = new JiraUserData("JIRAUSERaccountId", "assignee", true, "your-jira-account-id");
     jiraUserData.setName("Assignee");
@@ -514,7 +514,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     Map<String, String> fields1 = new HashMap<>();
     fields1.put("QE Assignee", "Assignee");
     fields1.put("Test Summary", "No test added");
-    when(jiraClient.createIssue("TJI", "Bug", fields1, true, false)).thenReturn(jiraIssueNG);
+    when(jiraClient.createIssue("TJI", "Bug", fields1, true, false, false)).thenReturn(jiraIssueNG);
     JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
     when(jiraClient.getInstanceData()).thenReturn(jiraInstanceData);
     JiraTaskNGResponse jiraTaskNGResponse = jiraTaskNGHandler.createIssue(jiraTaskNGParameters);

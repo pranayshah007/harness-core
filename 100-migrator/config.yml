@@ -347,7 +347,6 @@ cg:
 
   kubectlVersion: v1.13.2
   scmVersion: ff17c219
-
   ngAuthUIEnabled: false
 
   portal:

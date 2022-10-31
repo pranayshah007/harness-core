@@ -646,6 +646,30 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
             "{\"connectorRef\":\"account.harnessImage\",\"imagePath\":\"harness/todolist-sample\",\"region\":\"us-east-1\",\"tag\":\"<+input>\"}");
   }
 
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testMergeServiceInputs() {
+    String yaml = readFile("service/service-with-primaryArtifactRef-runtime.yaml");
+    ServiceEntity createRequest = ServiceEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_ID)
+                                      .projectIdentifier(PROJECT_ID)
+                                      .name("serviceWithPrimaryArtifactRefRuntime")
+                                      .identifier("serviceWithPrimaryArtifactRefRuntime")
+                                      .yaml(yaml)
+                                      .build();
+
+    serviceEntityService.create(createRequest);
+
+    String oldTemplateInputYaml = readFile("service/serviceInputs-with-few-values-fixed.yaml");
+    String mergedTemplateInputsYaml = readFile("service/serviceInputs-merged.yaml");
+    String mergedYaml = serviceEntityService.mergeServiceInputs(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "serviceWithPrimaryArtifactRefRuntime", oldTemplateInputYaml);
+    assertThat(mergedYaml).isNotNull().isNotEmpty();
+    assertThat(mergedYaml).isEqualTo(mergedTemplateInputsYaml);
+  }
+
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

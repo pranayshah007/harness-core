@@ -135,6 +135,10 @@ public class InfraVariableCreator {
           addVariablesForEcsAwsInfra(infraDefNode, yamlPropertiesMap);
           break;
 
+        case InfrastructureKind.ELASTIGROUP:
+          addVariablesForElastigroupInfra(infraDefNode, yamlPropertiesMap);
+          break;
+
         default:
           throw new InvalidRequestException("Invalid infra definition type");
       }
@@ -241,6 +245,16 @@ public class InfraVariableCreator {
     addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.REGION, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.CLUSTER, infraSpecNode, yamlPropertiesMap);
+  }
+
+  private void addVariablesForElastigroupInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
+    if (infraSpecNode == null) {
+      return;
+    }
+
+    addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.CONFIGURATION, infraSpecNode, yamlPropertiesMap);
   }
 
   private void addVariableForYamlType(

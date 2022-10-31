@@ -319,14 +319,20 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
     }
   }
 
+  public static String generateConnectivityUrl(String url, DockerRegistryProviderType providerType) {
+    if (DockerRegistryProviderType.HARBOR.equals(providerType)) {
+      return url.concat(url.endsWith("/") ? "api/v2.0/ping" : "/api/v2.0/ping");
+    } else if (!(url.endsWith("/v2") || url.endsWith("/v2/"))) {
+      return url.endsWith("/") ? url.concat("v2") : url.concat("/v2");
+    }
+    return url;
+  }
+
   @Override
   public boolean validateCredentials(DockerInternalConfig dockerConfig) {
-    String dockerRegistryUrl = dockerConfig.getDockerRegistryUrl();
-    if (!(dockerRegistryUrl.endsWith("/v2") || dockerRegistryUrl.endsWith("/v2/"))) {
-      dockerRegistryUrl =
-          dockerRegistryUrl.endsWith("/") ? dockerRegistryUrl.concat("v2") : dockerRegistryUrl.concat("/v2");
-    }
-    if (!connectableHttpUrl(dockerRegistryUrl)) {
+    String connectableHttpUrl =
+        generateConnectivityUrl(dockerConfig.getDockerRegistryUrl(), dockerConfig.getProviderType());
+    if (!connectableHttpUrl(connectableHttpUrl)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Check if the Docker Registry URL is correct & reachable from your delegate(s)",
           "The given Docker Registry URL may be incorrect or not reachable from your delegate(s)",

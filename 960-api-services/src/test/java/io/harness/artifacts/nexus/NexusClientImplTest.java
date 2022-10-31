@@ -385,6 +385,44 @@ public class NexusClientImplTest extends CategoryTest {
     assertThat(response).size().isEqualTo(3);
   }
 
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsForRaw() throws IOException {
+    NexusRequest nexusConfig1 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("3.x")
+                                    .build();
+
+    doReturn(buildDetailsData.get("bdi1"))
+        .when(nexusThreeService)
+        .getPackageNamesBuildDetails(nexusConfig1, "RAW", "test");
+
+    List<BuildDetailsInternal> response = nexusClient.getPackageNames(nexusConfig1, "RAW", "test");
+
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(3);
+
+    NexusRequest nexusConfig2 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("2.x")
+                                    .build();
+
+    doReturn(buildDetailsData.get("bdi1")).when(nexusThreeService).getPackageVersions(nexusConfig2, "npm", "");
+
+    response = nexusClient.getArtifactsVersions(nexusConfig2, "npm", "npm", "");
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(0);
+  }
+
   private BuildDetailsInternal createBuildDetails(String repoUrl, String port, String imageName, String tag) {
     return BuildDetailsInternal.builder()
         .number(tag)

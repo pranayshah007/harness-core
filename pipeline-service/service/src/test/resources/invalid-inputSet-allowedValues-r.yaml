@@ -1,6 +1,0 @@
-pipeline:
-  identifier: Missing_Runtime
-  variables:
-    - name: var2
-      type: String
-      value: __REPLACE__

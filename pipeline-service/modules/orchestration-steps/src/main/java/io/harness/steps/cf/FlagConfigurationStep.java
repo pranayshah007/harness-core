@@ -116,6 +116,9 @@ public class FlagConfigurationStep implements SyncExecutable<StepElementParamete
           flagConfigurationStepParameters.getInstructions().getValue()) {
         if (patchInstruction.getType().equals(Type.SET_FEATURE_FLAG_STATE)) {
           SetFeatureFlagStateYamlSpec spec = ((SetFeatureFlagStateYaml) patchInstruction).getSpec();
+          if (spec == null) {
+            throw new InvalidRequestException("the spec for  flag instruction, set flag state, is null");
+          }
           PatchInstruction instruction =
               cfApi.getFeatureFlagOnPatchInstruction(parseStateAsBoolean(spec.getState().getValue()));
           instructions.add(instruction);
@@ -125,6 +128,9 @@ public class FlagConfigurationStep implements SyncExecutable<StepElementParamete
 
         if (patchInstruction.getType().equals(Type.SET_ON_VARIATION)) {
           SetOnVariationYamlSpec spec = ((SetOnVariationYaml) patchInstruction).getSpec();
+          if (spec == null) {
+            throw new InvalidRequestException("the spec for  flag instruction, set on variation, is null");
+          }
           instructions.add(cfApi.setOnVariation(spec.getVariation().getValue()));
           ngManagerLogCallback.saveExecutionLog(
               format("setting On variation for flag to %s", spec.getVariation().getValue()), LogLevel.INFO);
@@ -132,6 +138,9 @@ public class FlagConfigurationStep implements SyncExecutable<StepElementParamete
 
         if (patchInstruction.getType().equals(Type.SET_OFF_VARIATION)) {
           SetOffVariationYamlSpec spec = ((SetOffVariationYaml) patchInstruction).getSpec();
+          if (spec == null) {
+            throw new InvalidRequestException("the spec for  flag instruction, set off variation, is null");
+          }
           instructions.add(cfApi.setOffVariation(spec.getVariation().getValue()));
           ngManagerLogCallback.saveExecutionLog(
               format("setting Off variation for flag to %s", spec.getVariation().getValue()), LogLevel.INFO);
@@ -139,6 +148,9 @@ public class FlagConfigurationStep implements SyncExecutable<StepElementParamete
 
         if (patchInstruction.getType().equals(Type.SET_DEFAULT_VARIATIONS)) {
           SetDefaultVariationsYamlSpec spec = ((SetDefaultVariationsYaml) patchInstruction).getSpec();
+          if (spec == null) {
+            throw new InvalidRequestException("the spec for flag instruction, set default variation, is null");
+          }
           String on = spec.getOn().getValue();
           if (StringUtils.isNotEmpty(on)) {
             String logStr = format("setting On variation for flag to %s", on);
@@ -158,6 +170,9 @@ public class FlagConfigurationStep implements SyncExecutable<StepElementParamete
 
         if (patchInstruction.getType().equals(Type.ADD_RULE)) {
           AddRuleYamlSpec spec = ((AddRuleYaml) patchInstruction).getSpec();
+          if (spec == null) {
+            throw new InvalidRequestException("the spec for flag instruction, add rule, is null");
+          }
           String identifier = ((AddRuleYaml) patchInstruction).getIdentifier();
           instructions.add(addRule(spec, accountID, orgID, projectID, featureIdentifier, environment, identifier));
           ngManagerLogCallback.saveExecutionLog(
@@ -166,6 +181,9 @@ public class FlagConfigurationStep implements SyncExecutable<StepElementParamete
 
         if (patchInstruction.getType().equals(Type.UPDATE_RULE)) {
           UpdateRuleYamlSpec spec = ((UpdateRuleYaml) patchInstruction).getSpec();
+          if (spec == null) {
+            throw new InvalidRequestException("the spec for flag instruction, update rule, is null");
+          }
           PatchInstruction instruction = cfApi.updatePercentageRollout(spec.getRuleID().getValue(), spec.getServe());
           instructions.add(instruction);
           ngManagerLogCallback.saveExecutionLog(format("updating rule for flag"), LogLevel.INFO);
@@ -175,6 +193,9 @@ public class FlagConfigurationStep implements SyncExecutable<StepElementParamete
           if (patchInstruction instanceof AddTargetsToVariationTargetMapYaml) {
             AddTargetsToVariationTargetMapYamlSpec spec =
                 ((AddTargetsToVariationTargetMapYaml) patchInstruction).getSpec();
+            if (spec == null) {
+              throw new InvalidRequestException("the spec for flag instruction, add targets, is null");
+            }
             PatchInstruction instruction =
                 cfApi.getAddTargetToVariationMapParams(spec.getVariation().getValue(), spec.getTargets().getValue());
             instructions.add(instruction);
@@ -185,6 +206,9 @@ public class FlagConfigurationStep implements SyncExecutable<StepElementParamete
           if (patchInstruction instanceof RemoveTargetsToVariationTargetMapYaml) {
             RemoveTargetsToVariationTargetMapYamlSpec spec =
                 ((RemoveTargetsToVariationTargetMapYaml) patchInstruction).getSpec();
+            if (spec == null) {
+              throw new InvalidRequestException("the spec for flag instruction, remove targets, is null");
+            }
             PatchInstruction instruction =
                 cfApi.getRemoveTargetToVariationMapParams(spec.getVariation().getValue(), spec.getTargets().getValue());
             instructions.add(instruction);
@@ -195,6 +219,9 @@ public class FlagConfigurationStep implements SyncExecutable<StepElementParamete
           if (patchInstruction instanceof AddSegmentToVariationTargetMapYaml) {
             AddSegmentToVariationTargetMapYamlSpec spec =
                 ((AddSegmentToVariationTargetMapYaml) patchInstruction).getSpec();
+            if (spec == null) {
+              throw new InvalidRequestException("the spec for flag instruction, add target group, is null");
+            }
             PatchInstruction instruction =
                 cfApi.getAddSegmentToVariationMapParams(spec.getVariation().getValue(), spec.getSegments().getValue());
             instructions.add(instruction);
@@ -205,6 +232,9 @@ public class FlagConfigurationStep implements SyncExecutable<StepElementParamete
           if (patchInstruction instanceof RemoveSegmentToVariationTargetMapYaml) {
             RemoveSegmentToVariationTargetMapYamlSpec spec =
                 ((RemoveSegmentToVariationTargetMapYaml) patchInstruction).getSpec();
+            if (spec == null) {
+              throw new InvalidRequestException("the spec for flag instruction, remove target group, is null");
+            }
             PatchInstruction instruction =
                 cfApi.getAddSegmentToVariationMapParams(spec.getVariation().getValue(), spec.getSegments().getValue());
             instructions.add(instruction);

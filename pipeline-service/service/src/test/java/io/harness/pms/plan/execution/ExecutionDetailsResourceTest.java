@@ -31,9 +31,9 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
@@ -131,7 +131,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   @Owner(developers = SAMARTH)
   @Category(UnitTests.class)
   public void testGetListOfExecutions() {
-    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineEntityKeys.createdAt));
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PlanExecutionSummaryKeys.startTs));
     Page<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntities =
         new PageImpl<>(Collections.singletonList(executionSummaryEntity), pageable, 1);
     doReturn(pipelineExecutionSummaryEntities)
@@ -170,7 +170,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
         .formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, null,
             false, false, gitSyncBranchContext, true);
 
-    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineEntityKeys.createdAt));
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PlanExecutionSummaryKeys.startTs));
     Page<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntities =
         new PageImpl<>(Collections.singletonList(executionSummaryEntity), pageable, 1);
     doReturn(pipelineExecutionSummaryEntities)

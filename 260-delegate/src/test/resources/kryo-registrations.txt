@@ -965,6 +965,8 @@
 7492:io.harness.k8s.model.response.CEK8sDelegatePrerequisite.Rule
 7501:software.wings.helpers.ext.ecs.request.EcsRunTaskDeployRequest
 7502:software.wings.helpers.ext.ecs.response.EcsRunTaskDeployResponse
+7510:io.harness.jira.JiraFieldSchema
+
 8030:io.harness.delegate.beans.storeconfig.FetchType
 8035:software.wings.service.impl.azure.manager.AzureVMSSCommandRequest
 8058:software.wings.helpers.ext.helm.request.HelmChartCollectionParams
@@ -1123,6 +1125,8 @@
 9123:io.harness.cvng.beans.elk.ELKSampleDataCollectionRequest
 9124:io.harness.cvng.beans.ELKDataCollectionInfo
 9130:io.harness.cvng.beans.aws.AwsDataCollectionRequest
+9131:io.harness.cvng.beans.AwsPrometheusDataCollectionInfo
+9132:io.harness.cvng.beans.AwsPrometheusDataCollectionInfo.MetricCollectionInfo
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
 9709:io.harness.jira.JiraIssueTypeNG
@@ -2395,6 +2399,8 @@
 980035:io.harness.exception.ngexception.AzureARMTaskException
 980036:io.harness.delegate.beans.DelegateTaskExpiredException
 980037:io.harness.exception.ngexception.AzureBPTaskException
+1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
+9000312:software.wings.helpers.ext.nexus.NexusRepositories
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
 9800001:io.harness.beans.RecasterMap
@@ -2411,3 +2417,4 @@
 10000103:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType
 10000109:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO
 10000111:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
+

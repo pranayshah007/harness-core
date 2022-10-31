@@ -45,6 +45,9 @@ public class NGExpressionUtils {
   public static final Pattern GENERIC_EXPRESSIONS_PATTERN =
       Pattern.compile(EXPR_START_ESC + "([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)" + EXPR_END_ESC);
 
+  public static final Pattern GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX =
+      Pattern.compile(".*" + EXPR_START_ESC + ".+" + EXPR_END_ESC + ".*");
+
   public boolean matchesInputSetPattern(String expression) {
     if (isEmpty(expression)) {
       return false;

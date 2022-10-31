@@ -44,15 +44,14 @@ template:
 
                   # Creating runtime, backup and staging folders:
 
-                  mkdir -p $env:DestinationDirectory/runtime
-                  mkdir -p $env:DestinationDirectory/backup
-                  mkdir -p $env:DestinationDirectory/staging
-                  mkdir -p $env:WorkingDirectory
+                  mkdir -p $DestinationDirectory/runtime
+                  mkdir -p $DestinationDirectory/backup
+                  mkdir -p $DestinationDirectory/staging
+                  mkdir -p $WorkingDirectory
         - identifier: Stop_Service
           name: Stop Service
           type: Script
           spec:
-            workingDirectory: $WorkingDirectory
             shell: Bash
             source:
               type: Inline
@@ -62,7 +61,6 @@ template:
           name: Process Stopped
           type: Script
           spec:
-            workingDirectory: $WorkingDirectory
             shell: Bash
             source:
               type: Inline
@@ -86,7 +84,6 @@ template:
           name: Port Cleared
           type: Script
           spec:
-            workingDirectory: $WorkingDirectory
             shell: Bash
             source:
               type: Inline
@@ -112,7 +109,6 @@ template:
           type: Script
           spec:
             shell: Bash
-            workingDirectory: $WorkingDirectory
             source:
               type: Inline
               spec:
@@ -126,7 +122,6 @@ template:
           name: Start Service
           type: Script
           spec:
-            workingDirectory: $WorkingDirectory
             shell: Bash
             source:
               type: Inline
@@ -136,7 +131,6 @@ template:
           name: Process Running
           type: Script
           spec:
-            workingDirectory: $WorkingDirectory
             shell: Bash
             source:
               type: Inline
@@ -162,7 +156,6 @@ template:
           name: Port Listening
           type: Script
           spec:
-            workingDirectory: $WorkingDirectory
             shell: Bash
             source:
               type: Inline

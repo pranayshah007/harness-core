@@ -1163,9 +1163,7 @@ public class HelmDeployState extends State {
         releaseName, app.getAccountId(), app.getUuid(), activityId, imageDetails, repoName, gitConfig,
         encryptedDataDetails, cmdFlags, manifestConfig, appManifestMap, helmVersion, helmCommandFlag);
 
-    commandRequest.setK8SteadyStateCheckEnabled(
-        featureFlagService.isEnabled(FeatureName.HELM_STEADY_STATE_CHECK_1_16, context.getAccountId()));
-
+    commandRequest.setK8SteadyStateCheckEnabled(true);
     StateExecutionContext stateExecutionContext =
         buildStateExecutionContext(stateExecutionDataBuilder, expressionFunctorToken);
     HelmDeployStateExecutionData stateExecutionData = stateExecutionDataBuilder.build();

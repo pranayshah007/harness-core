@@ -32,6 +32,7 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfi
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -256,6 +257,7 @@ public class ArtifactConfigToDelegateReqMapper {
     String classifier = null;
     String port = null;
     String artifactRepositoryUrl = null;
+    String group = null;
     if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("npm")) {
       NexusRegistryNpmConfig nexusRegistryNpmConfig =
           (NexusRegistryNpmConfig) artifactConfig.getNexusRegistryConfigSpec();
@@ -264,6 +266,10 @@ public class ArtifactConfigToDelegateReqMapper {
       NexusRegistryNugetConfig nexusRegistryNugetConfig =
           (NexusRegistryNugetConfig) artifactConfig.getNexusRegistryConfigSpec();
       packageName = nexusRegistryNugetConfig.getPackageName().getValue();
+    } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("raw")) {
+      NexusRegistryRawConfig nexusRegistryRawConfig =
+          (NexusRegistryRawConfig) artifactConfig.getNexusRegistryConfigSpec();
+      group = nexusRegistryRawConfig.getGroup().getValue();
     } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("docker")) {
       NexusRegistryDockerConfig nexusRegistryDockerConfig =
           (NexusRegistryDockerConfig) artifactConfig.getNexusRegistryConfigSpec();
@@ -288,7 +294,7 @@ public class ArtifactConfigToDelegateReqMapper {
     return ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(artifactConfig.getRepository().getValue(), port,
         artifactId, artifactConfig.getRepositoryFormat().getValue(), artifactRepositoryUrl, tag, tagRegex, connectorRef,
         nexusConnectorDTO, encryptedDataDetails, ArtifactSourceType.NEXUS3_REGISTRY, groupId, artifactId, extension,
-        classifier, packageName);
+        classifier, packageName, group);
   }
 
   public NexusArtifactDelegateRequest getNexus2ArtifactDelegateRequest(Nexus2RegistryArtifactConfig artifactConfig,
@@ -325,7 +331,7 @@ public class ArtifactConfigToDelegateReqMapper {
     return ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(artifactConfig.getRepository().getValue(), null,
         null, artifactConfig.getRepositoryFormat().getValue(), null, tag, tagRegex, connectorRef, nexusConnectorDTO,
         encryptedDataDetails, ArtifactSourceType.NEXUS2_REGISTRY, groupId, artifactId, extension, classifier,
-        packageName);
+        packageName, "");
   }
 
   public ArtifactSourceDelegateRequest getArtifactoryArtifactDelegateRequest(
