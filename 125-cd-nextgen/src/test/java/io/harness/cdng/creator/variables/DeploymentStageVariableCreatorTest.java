@@ -31,6 +31,7 @@ import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.persistence.HIterator;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
@@ -181,124 +182,6 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
   @Test
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
-  public void createVariablesForServiceEnvByRef() throws IOException {
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    final URL testFile = classLoader.getResource("pipelineWithV2ServiceEnv.yaml");
-    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
-    String pipelineJson = YamlUtils.injectUuid(pipelineYaml);
-
-    final URL serviceYamlFile = classLoader.getResource("serviceV2.yaml");
-    String serviceYaml = Resources.toString(serviceYamlFile, Charsets.UTF_8);
-    ServiceEntity serviceEntity = ServiceEntity.builder()
-                                      .name("variableTestSvc")
-                                      .identifier("variableTestSvc")
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .projectIdentifier(PROJ_IDENTIFIER)
-                                      .description("sample service")
-                                      .tags(Arrays.asList(NGTag.builder().key("k1").value("v1").build()))
-                                      .yaml(serviceYaml)
-                                      .build();
-
-    final URL envYamlFile = classLoader.getResource("environmentV2.yaml");
-    String environmentYaml = Resources.toString(envYamlFile, Charsets.UTF_8);
-
-    Environment environmentEntity = Environment.builder()
-                                        .name(ENV_IDENTIFIER)
-                                        .yaml(environmentYaml)
-                                        .identifier(ENV_IDENTIFIER)
-                                        .orgIdentifier(ORG_IDENTIFIER)
-                                        .projectIdentifier(PROJ_IDENTIFIER)
-                                        .type(EnvironmentType.Production)
-                                        .build();
-
-    final URL infraYamlFile = classLoader.getResource("k8sDirectInfrastructure.yaml");
-    String infraYaml = Resources.toString(infraYamlFile, Charsets.UTF_8);
-
-    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
-                                                    .accountId(ACCOUNT_ID)
-                                                    .orgIdentifier(ORG_IDENTIFIER)
-                                                    .projectIdentifier(PROJ_IDENTIFIER)
-                                                    .envIdentifier(ENV_IDENTIFIER)
-                                                    .type(InfrastructureType.KUBERNETES_DIRECT)
-                                                    .yaml(infraYaml)
-                                                    .build();
-
-    // mocks
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(serviceEntity));
-    when(environmentService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(environmentEntity));
-    when(infrastructureEntityService.get(any(), any(), any(), any(), any()))
-        .thenReturn(Optional.of(infrastructureEntity));
-    when(serviceOverrideService.get(any(), any(), any(), any(), any())).thenReturn(Optional.empty());
-    YamlField fullYamlField = YamlUtils.readTree(pipelineJson);
-
-    // Pipeline Node
-    YamlField stageField = fullYamlField.getNode()
-                               .getField("pipeline")
-                               .getNode()
-                               .getField("stages")
-                               .getNode()
-                               .asArray()
-                               .get(0)
-                               .getField("stage");
-
-    VariableCreationContext creationContext = VariableCreationContext.builder().currentField(stageField).build();
-    creationContext.put(NGCommonEntityConstants.ACCOUNT_KEY, ACCOUNT_ID);
-    creationContext.put(NGCommonEntityConstants.ORG_KEY, ORG_IDENTIFIER);
-    creationContext.put(NGCommonEntityConstants.PROJECT_KEY, PROJ_IDENTIFIER);
-
-    LinkedHashMap<String, VariableCreationResponse> variablesForChildrenNodesV2 =
-        deploymentStageVariableCreator.createVariablesForChildrenNodesV2(
-            creationContext, YamlUtils.read(stageField.getNode().toString(), DeploymentStageNode.class));
-
-    // linked hashmap so ordered entries: env, infra, service expressions
-    List<VariableCreationResponse> variableCreationResponseList = new ArrayList<>(variablesForChildrenNodesV2.values());
-    List<String> keys = new ArrayList<>(variablesForChildrenNodesV2.keySet());
-
-    // env
-    List<YamlProperties> envOutputProperties =
-        variableCreationResponseList.get(0).getYamlExtraProperties().get(keys.get(0)).getOutputPropertiesList();
-    List<String> envFqnPropertiesList =
-        envOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
-
-    assertThat(envFqnPropertiesList)
-        .containsExactly("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
-            "env.variables.envVar1", "env.variables.svar1");
-
-    // infra
-    List<YamlProperties> infraOutputProperties =
-        variableCreationResponseList.get(1).getYamlExtraProperties().get(keys.get(1)).getOutputPropertiesList();
-    List<String> infraFqnPropertiesList =
-        infraOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
-    assertThat(infraFqnPropertiesList)
-        .containsExactly(
-            "infra.connectorRef", "infra.namespace", "infra.releaseName", "infra.infrastructureKey", "infra.connector");
-
-    // service
-    List<YamlProperties> serviceOutputProperties =
-        variableCreationResponseList.get(2).getYamlExtraProperties().get(keys.get(2)).getOutputPropertiesList();
-    List<String> serviceFqnPropertiesList =
-        serviceOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
-
-    assertThat(serviceFqnPropertiesList)
-        .containsExactly("service.identifier", "service.name", "service.description", "service.type", "service.tags",
-            "service.gitOpsEnabled", "manifests.nginx.identifier", "manifests.nginx.type",
-            "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType", "manifests.nginx.store.branch",
-            "manifests.nginx.store.commitId", "manifests.nginx.store.paths", "manifests.nginx.store.folderPath",
-            "manifests.nginx.store.repoName", "manifests.nginx.skipResourceVersioning", "manifests.nginx.valuesPaths",
-            "artifacts.sidecars.gcr_test.connectorRef", "artifacts.sidecars.gcr_test.imagePath",
-            "artifacts.sidecars.gcr_test.tag", "artifacts.sidecars.gcr_test.tagRegex",
-            "artifacts.sidecars.gcr_test.registryHostname", "artifacts.sidecars.gcr_test.identifier",
-            "artifacts.sidecars.gcr_test.type", "artifacts.sidecars.gcr_test.primaryArtifact",
-            "artifacts.sidecars.gcr_test.image", "artifacts.sidecars.gcr_test.imagePullSecret",
-            "artifacts.primary.connectorRef", "artifacts.primary.imagePath", "artifacts.primary.tag",
-            "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
-            "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
-            "artifacts.primary.label", "serviceVariables.svar2", "serviceVariables.envVar1", "serviceVariables.svar1");
-  }
-
-  @Test
-  @Owner(developers = HINGER)
-  @Category(UnitTests.class)
   public void createVariablesForServiceEnvByRef_RuntimeInputServiceEnv() throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipelineWithV2ServiceEnv_Runtime.yaml");
@@ -444,6 +327,9 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     // mocks
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(serviceEntity));
     when(environmentService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(environmentEntity));
+    HIterator iteratorMock = Mockito.mock(HIterator.class);
+    when(infrastructureEntityService.listIterator(any(), any(), any(), any(), any())).thenReturn(iteratorMock);
+    when(iteratorMock.iterator()).thenReturn(List.of(infrastructureEntity).iterator());
     when(infrastructureEntityService.get(any(), any(), any(), any(), any()))
         .thenReturn(Optional.of(infrastructureEntity));
     when(serviceOverrideService.get(any(), any(), any(), any(), any())).thenReturn(Optional.empty());
@@ -481,7 +367,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
 
   private void assertExpressions(List<VariableCreationResponse> variableCreationResponses, int index,
       List<String> expectedExpressions, List<String> keys) {
-    if (index > 0) {
+    if (index > -1) {
       List<YamlProperties> serviceOutputProperties =
           variableCreationResponses.get(index).getYamlExtraProperties().get(keys.get(index)).getOutputPropertiesList();
       List<String> serviceFqnPropertiesList =
@@ -556,7 +442,99 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .svcFqnIndex(2)
             .build();
 
-    return new Object[][] {{data1}, {data2}, {data3}};
+    TestData data4 =
+        TestData.builder()
+            .pipelineYamlFile("pipelineWithV2ServiceEnvironments.yaml")
+            .serviceYamlFile("serviceV2.yaml")
+            .envYamlFile("environmentV2.yaml")
+            .infraYamlFile("k8sDirectInfrastructure.yaml")
+            .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
+                "service.tags", "service.gitOpsEnabled", "manifests.nginx.identifier", "manifests.nginx.type",
+                "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
+                "manifests.nginx.store.branch", "manifests.nginx.store.commitId", "manifests.nginx.store.paths",
+                "manifests.nginx.store.folderPath", "manifests.nginx.store.repoName",
+                "manifests.nginx.skipResourceVersioning", "manifests.nginx.valuesPaths",
+                "artifacts.sidecars.gcr_test.connectorRef", "artifacts.sidecars.gcr_test.imagePath",
+                "artifacts.sidecars.gcr_test.tag", "artifacts.sidecars.gcr_test.tagRegex",
+                "artifacts.sidecars.gcr_test.registryHostname", "artifacts.sidecars.gcr_test.identifier",
+                "artifacts.sidecars.gcr_test.type", "artifacts.sidecars.gcr_test.primaryArtifact",
+                "artifacts.sidecars.gcr_test.image", "artifacts.sidecars.gcr_test.imagePullSecret",
+                "artifacts.primary.connectorRef", "artifacts.primary.imagePath", "artifacts.primary.tag",
+                "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
+                "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
+                "artifacts.primary.label", "serviceVariables.svar2", "serviceVariables.envVar1",
+                "serviceVariables.svar1"))
+            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
+                "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
+            .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
+                "infra.infrastructureKey", "infra.connector"))
+            .envFqnIndex(0)
+            .infraFqnIndex(1)
+            .svcFqnIndex(2)
+            .build();
+
+    TestData data5 =
+        TestData.builder()
+            .pipelineYamlFile("pipelineWithV2ServiceEnvInfrastructureDefinition.yaml")
+            .serviceYamlFile("serviceV2.yaml")
+            .envYamlFile("environmentV2.yaml")
+            .infraYamlFile("k8sDirectInfrastructure.yaml")
+            .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
+                "service.tags", "service.gitOpsEnabled", "manifests.nginx.identifier", "manifests.nginx.type",
+                "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
+                "manifests.nginx.store.branch", "manifests.nginx.store.commitId", "manifests.nginx.store.paths",
+                "manifests.nginx.store.folderPath", "manifests.nginx.store.repoName",
+                "manifests.nginx.skipResourceVersioning", "manifests.nginx.valuesPaths",
+                "artifacts.sidecars.gcr_test.connectorRef", "artifacts.sidecars.gcr_test.imagePath",
+                "artifacts.sidecars.gcr_test.tag", "artifacts.sidecars.gcr_test.tagRegex",
+                "artifacts.sidecars.gcr_test.registryHostname", "artifacts.sidecars.gcr_test.identifier",
+                "artifacts.sidecars.gcr_test.type", "artifacts.sidecars.gcr_test.primaryArtifact",
+                "artifacts.sidecars.gcr_test.image", "artifacts.sidecars.gcr_test.imagePullSecret",
+                "artifacts.primary.connectorRef", "artifacts.primary.imagePath", "artifacts.primary.tag",
+                "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
+                "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
+                "artifacts.primary.label", "serviceVariables.svar2", "serviceVariables.envVar1",
+                "serviceVariables.svar1"))
+            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
+                "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
+            .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
+                "infra.infrastructureKey", "infra.connector"))
+            .envFqnIndex(0)
+            .infraFqnIndex(1)
+            .svcFqnIndex(2)
+            .build();
+
+    TestData data6 =
+        TestData.builder()
+            .pipelineYamlFile("pipelineWithServicesEnvironments.yaml")
+            .serviceYamlFile("serviceV2.yaml")
+            .envYamlFile("environmentV2.yaml")
+            .infraYamlFile("k8sDirectInfrastructure.yaml")
+            .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
+                "service.tags", "service.gitOpsEnabled", "manifests.nginx.identifier", "manifests.nginx.type",
+                "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
+                "manifests.nginx.store.branch", "manifests.nginx.store.commitId", "manifests.nginx.store.paths",
+                "manifests.nginx.store.folderPath", "manifests.nginx.store.repoName",
+                "manifests.nginx.skipResourceVersioning", "manifests.nginx.valuesPaths",
+                "artifacts.sidecars.gcr_test.connectorRef", "artifacts.sidecars.gcr_test.imagePath",
+                "artifacts.sidecars.gcr_test.tag", "artifacts.sidecars.gcr_test.tagRegex",
+                "artifacts.sidecars.gcr_test.registryHostname", "artifacts.sidecars.gcr_test.identifier",
+                "artifacts.sidecars.gcr_test.type", "artifacts.sidecars.gcr_test.primaryArtifact",
+                "artifacts.sidecars.gcr_test.image", "artifacts.sidecars.gcr_test.imagePullSecret",
+                "artifacts.primary.connectorRef", "artifacts.primary.imagePath", "artifacts.primary.tag",
+                "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
+                "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
+                "artifacts.primary.label", "serviceVariables.svar2", "serviceVariables.envVar1",
+                "serviceVariables.svar1"))
+            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
+                "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
+            .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
+                "infra.infrastructureKey", "infra.connector"))
+            .envFqnIndex(0)
+            .infraFqnIndex(1)
+            .svcFqnIndex(2)
+            .build();
+    return new Object[][] {{data1}, {data2}, {data3}, {data4}, {data5}, {data6}};
   }
 
   @Value
