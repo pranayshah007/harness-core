@@ -36,5 +36,5 @@ public class ElastigroupCapacity {
   @NotNull String type;
 
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  ElastigroupDeployServiceSpec spec;
+  ElastigroupCapacitySpec spec;
 }
