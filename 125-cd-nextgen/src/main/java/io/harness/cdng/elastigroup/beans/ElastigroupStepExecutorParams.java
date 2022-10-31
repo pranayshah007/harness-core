@@ -19,4 +19,5 @@ import java.util.List;
 @Builder
 public class ElastigroupStepExecutorParams {
   boolean shouldOpenFetchFilesLogStream;
+  String startupScript;
 }

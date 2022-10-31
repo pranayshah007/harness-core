@@ -7,27 +7,25 @@
 
 package io.harness.cdng.elastigroup.beans;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
-import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
+import java.util.List;
+
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("elastigroupSetupDataOutcome")
-@JsonTypeName("elastigroupSetupDataOutcome")
-@RecasterAlias("io.harness.cdng.elastigroup.ElastigroupSetupDataOutcome")
-public class ElastigroupSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
-  boolean isNewServiceCreated;
-  String serviceName;
-  String loadBalancer;
-  String listenerArn;
-  String listenerRuleArn;
-  String targetGroupArn;
+@TypeAlias("ecsGitFetchPassThroughData")
+@RecasterAlias("io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData")
+public class ElastigroupStartupScriptFetchPassThroughData implements PassThroughData {
+  InfrastructureOutcome infrastructureOutcome;
+  StoreConfig store;
+  String startupScript;
 }

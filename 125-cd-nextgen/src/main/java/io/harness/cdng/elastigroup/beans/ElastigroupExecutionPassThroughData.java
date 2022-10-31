@@ -21,8 +21,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 @Value
 @Builder
 @OwnedBy(CDP)
-@TypeAlias("ecsExecutionPassThroughData")
-@RecasterAlias("io.harness.cdng.ecs.beans.EcsExecutionPassThroughData")
+@TypeAlias("elastigroupExecutionPassThroughData")
+@RecasterAlias("io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData")
 public class ElastigroupExecutionPassThroughData implements PassThroughData {
   InfrastructureOutcome infrastructure;
   UnitProgressData lastActiveUnitProgressData;
