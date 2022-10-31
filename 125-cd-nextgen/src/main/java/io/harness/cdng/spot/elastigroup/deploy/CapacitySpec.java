@@ -18,6 +18,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @OwnedBy(CDP)
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-public interface ElastigroupCapacitySpec {
+public interface CapacitySpec {
   String getType();
 }

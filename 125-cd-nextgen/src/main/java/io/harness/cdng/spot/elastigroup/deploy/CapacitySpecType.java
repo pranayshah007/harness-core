@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(CDP)
-public interface ElastigroupCapacitySpecType {
+public interface CapacitySpecType {
   String COUNT = "Count";
   String PERCENTAGE = "Percentage";
 }

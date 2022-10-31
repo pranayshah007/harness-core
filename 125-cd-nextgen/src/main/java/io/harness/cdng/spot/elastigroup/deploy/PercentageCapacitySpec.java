@@ -28,10 +28,10 @@ import lombok.Getter;
 
 @Data
 @Builder
-@JsonTypeName(ElastigroupCapacitySpecType.PERCENTAGE)
+@JsonTypeName(CapacitySpecType.PERCENTAGE)
 @OwnedBy(CDP)
-@RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.PercentageElastigroupCapacitySpec")
-public class PercentageElastigroupCapacitySpec implements ElastigroupCapacitySpec {
+@RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.PercentageCapacitySpec")
+public class PercentageCapacitySpec implements CapacitySpec {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -46,6 +46,6 @@ public class PercentageElastigroupCapacitySpec implements ElastigroupCapacitySpe
 
   @Override
   public String getType() {
-    return ElastigroupCapacitySpecType.PERCENTAGE;
+    return CapacitySpecType.PERCENTAGE;
   }
 }

@@ -537,8 +537,8 @@ io.harness.cdng.infra.yaml.ElastigroupInfrastructure
 io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput
 io.harness.cdng.freeze.FreezeOutcome
 io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepParameters
-io.harness.cdng.spot.elastigroup.deploy.PercentageElastigroupCapacitySpec
-io.harness.cdng.spot.elastigroup.deploy.CountElastigroupCapacitySpec
+io.harness.cdng.spot.elastigroup.deploy.PercentageCapacitySpec
+io.harness.cdng.spot.elastigroup.deploy.CountCapacitySpec
 io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo
 io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepNode
-io.harness.cdng.spot.elastigroup.deploy.ElastigroupCapacity
+io.harness.cdng.spot.elastigroup.deploy.Capacity

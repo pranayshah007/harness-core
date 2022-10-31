@@ -31,16 +31,14 @@ public class ElastigroupDeployStepInfoTest extends CategoryTest {
       ElastigroupDeployStepInfo.infoBuilder()
           .delegateSelectors(ParameterField.createValueField(
               Arrays.asList(new TaskSelectorYaml("delegate-1"), new TaskSelectorYaml("delegate-2"))))
-          .newService(
-              ElastigroupCapacity.builder()
-                  .type(ElastigroupCapacitySpecType.COUNT)
-                  .spec(CountElastigroupCapacitySpec.builder().count(ParameterField.createValueField(5)).build())
-                  .build())
-          .oldService(
-              ElastigroupCapacity.builder()
-                  .type(ElastigroupCapacitySpecType.COUNT)
-                  .spec(CountElastigroupCapacitySpec.builder().count(ParameterField.createValueField(2)).build())
-                  .build())
+          .newService(Capacity.builder()
+                          .type(CapacitySpecType.COUNT)
+                          .spec(CountCapacitySpec.builder().count(ParameterField.createValueField(5)).build())
+                          .build())
+          .oldService(Capacity.builder()
+                          .type(CapacitySpecType.COUNT)
+                          .spec(CountCapacitySpec.builder().count(ParameterField.createValueField(2)).build())
+                          .build())
           .build();
 
   @Test
@@ -86,16 +84,16 @@ public class ElastigroupDeployStepInfoTest extends CategoryTest {
 
     assertThat(elastigroupDeployStepParameters.getNewService())
         .isNotNull()
-        .isEqualTo(ElastigroupCapacity.builder()
-                       .type(ElastigroupCapacitySpecType.COUNT)
-                       .spec(CountElastigroupCapacitySpec.builder().count(ParameterField.createValueField(5)).build())
+        .isEqualTo(Capacity.builder()
+                       .type(CapacitySpecType.COUNT)
+                       .spec(CountCapacitySpec.builder().count(ParameterField.createValueField(5)).build())
                        .build());
 
     assertThat(elastigroupDeployStepParameters.getOldService())
         .isNotNull()
-        .isEqualTo(ElastigroupCapacity.builder()
-                       .type(ElastigroupCapacitySpecType.COUNT)
-                       .spec(CountElastigroupCapacitySpec.builder().count(ParameterField.createValueField(2)).build())
+        .isEqualTo(Capacity.builder()
+                       .type(CapacitySpecType.COUNT)
+                       .spec(CountCapacitySpec.builder().count(ParameterField.createValueField(2)).build())
                        .build());
   }
 }
