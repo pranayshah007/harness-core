@@ -1486,12 +1486,12 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = JOHANNES)
   @Category(UnitTests.class)
   public void testFinalizeTemplateParametersWithMtlsIfRequiredSmokeTest() {
-    this.persistence.save(
-        FeatureFlag.builder().uuid("21").name(USE_IMMUTABLE_DELEGATE.name()).enabled(true).obsolete(false).build());
 
     final String accountId = "abc21";
     this.persistence.save(
         AgentMtlsEndpoint.builder().accountId(accountId).fqdn("customer.agent.ut.harness.io").build());
+
+    this.persistence.save(Account.Builder.anAccount().withUuid(accountId).withImmutableDelegateEnabled(Boolean.TRUE).withAccountName("testAccount").build());
 
     // test some arbitrary values that shouldn't get modified by the function
     String delegateType = KUBERNETES;

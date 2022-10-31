@@ -586,6 +586,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private String ringName;
     private boolean backgroundJobsDisabled;
     private boolean isHarnessSupportAccessAllowed = true;
+
+    private boolean immutableDelegateEnabled = true;
     private AccountPreferences accountPreferences;
     private DefaultExperience defaultExperience;
     private boolean createdFromNG;
@@ -747,6 +749,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     public Builder withHarnessGroupAccessAllowed(boolean isAllowed) {
       this.isHarnessSupportAccessAllowed = isAllowed;
+      return this;
+    }
+
+    public Builder withImmutableDelegateEnabled(boolean immutableDelegateEnabled) {
+      this.immutableDelegateEnabled = immutableDelegateEnabled;
       return this;
     }
 
