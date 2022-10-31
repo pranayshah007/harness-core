@@ -60,7 +60,7 @@ public class OrchestrationUtils {
   public static boolean isStageOrParallelNode(NodeExecution nodeExecution) {
     StepType currentStepType = Objects.requireNonNull(AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance()));
     return currentStepType.getStepCategory() == StepCategory.STAGE
-            || currentStepType.getStepCategory() == StepCategory.FORK;
+        || currentStepType.getStepCategory() == StepCategory.FORK;
   }
 
   public static boolean isPipelineNode(NodeExecution nodeExecution) {
