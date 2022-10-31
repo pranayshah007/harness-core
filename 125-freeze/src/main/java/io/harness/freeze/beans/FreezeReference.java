@@ -17,4 +17,5 @@ import lombok.Data;
 public class FreezeReference {
   Scope freezeScope;
   String identifier;
+  FreezeType type;
 }

@@ -19,6 +19,8 @@ import org.mongodb.morphia.query.UpdateOperations;
 
 public class BudgetDao {
   @Inject private HPersistence persistence;
+  private static final String SCOPE_VIEW_ID = "scope.viewId";
+  private static final String SCOPE_VIEW_NAME = "scope.viewName";
 
   public String save(Budget budget) {
     return persistence.save(budget);
@@ -99,6 +101,18 @@ public class BudgetDao {
     if (null != budget.getUserGroupIds()) {
       updateOperations.set(BudgetKeys.userGroupIds, budget.getUserGroupIds());
     }
+    persistence.update(query, updateOperations);
+  }
+
+  public void updatePerspectiveName(String accountId, String perspectiveId, String perspectiveName) {
+    Query query = persistence.createQuery(Budget.class)
+                      .disableValidation()
+                      .field(BudgetKeys.accountId)
+                      .equal(accountId)
+                      .field(SCOPE_VIEW_ID)
+                      .equal(perspectiveId);
+    UpdateOperations<Budget> updateOperations =
+        persistence.createUpdateOperations(Budget.class).disableValidation().set(SCOPE_VIEW_NAME, perspectiveName);
     persistence.update(query, updateOperations);
   }
 

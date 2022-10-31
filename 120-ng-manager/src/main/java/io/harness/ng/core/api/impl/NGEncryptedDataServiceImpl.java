@@ -56,11 +56,13 @@ import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.mappers.SecretManagerConfigMapper;
+import io.harness.ng.core.AdditionalMetadataValidationHelper;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
+import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.entities.NGEncryptedData.NGEncryptedDataBuilder;
@@ -128,6 +130,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   private final CustomEncryptorsRegistry customEncryptorsRegistry;
   private final CustomSecretManagerHelper customSecretManagerHelper;
   private final NGEncryptorService ngEncryptorService;
+  private final AdditionalMetadataValidationHelper additionalMetadataValidationHelper;
 
   @Inject
   public NGEncryptedDataServiceImpl(NGEncryptedDataDao encryptedDataDao, KmsEncryptorsRegistry kmsEncryptorsRegistry,
@@ -135,7 +138,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       SecretManagerClient secretManagerClient, GlobalEncryptDecryptClient globalEncryptDecryptClient,
       NGConnectorSecretManagerService ngConnectorSecretManagerService,
       NGFeatureFlagHelperService ngFeatureFlagHelperService, CustomEncryptorsRegistry customEncryptorsRegistry,
-      CustomSecretManagerHelper customSecretManagerHelper, NGEncryptorService ngEncryptorService) {
+      CustomSecretManagerHelper customSecretManagerHelper, NGEncryptorService ngEncryptorService,
+      AdditionalMetadataValidationHelper additionalMetadataValidationHelper) {
     this.encryptedDataDao = encryptedDataDao;
     this.kmsEncryptorsRegistry = kmsEncryptorsRegistry;
     this.vaultEncryptorsRegistry = vaultEncryptorsRegistry;
@@ -146,6 +150,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     this.customEncryptorsRegistry = customEncryptorsRegistry;
     this.customSecretManagerHelper = customSecretManagerHelper;
     this.ngEncryptorService = ngEncryptorService;
+    this.additionalMetadataValidationHelper = additionalMetadataValidationHelper;
   }
 
   @Override
@@ -157,6 +162,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
 
+    validateAdditionalMetadata(secretManager, secret);
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
 
     switch (secret.getValueType()) {
@@ -177,6 +183,16 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         throw new RuntimeException("Secret value type is unknown");
     }
     return encryptedDataDao.save(encryptedData);
+  }
+
+  private void validateAdditionalMetadata(SecretManagerConfigDTO secretManager, SecretSpecDTO secret) {
+    switch (secretManager.getEncryptionType()) {
+      case GCP_SECRETS_MANAGER:
+        additionalMetadataValidationHelper.validateAdditionalMetadataForGcpSecretManager(secret);
+        return;
+      default:
+        return;
+    }
   }
 
   private void validateCustomSecretManagerPathValue(
@@ -219,10 +235,9 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     validateSecretDoesNotExist(
         accountIdentifier, dto.getOrgIdentifier(), dto.getProjectIdentifier(), dto.getIdentifier());
     SecretFileSpecDTO secret = (SecretFileSpecDTO) dto.getSpec();
-
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
-
+    validateAdditionalMetadata(secretManager, secret);
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
 
     if (isReadOnlySecretManager(secretManager)) {
@@ -257,8 +272,11 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         builder.path(secret.getValue());
       }
       builder.type(SettingVariableTypes.SECRET_TEXT);
+      builder.additionalMetadata(secret.getAdditionalMetadata());
     } else if (SecretFile.equals(dto.getType())) {
       builder.type(SettingVariableTypes.CONFIG_FILE);
+      SecretFileSpecDTO secretFileSpecDTO = (SecretFileSpecDTO) dto.getSpec();
+      builder.additionalMetadata(secretFileSpecDTO.getAdditionalMetadata());
     }
     return builder.build();
   }
@@ -280,9 +298,14 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
               encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
         ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
       }
-      encryptedRecord =
-          vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-              .createSecret(encryptedData.getAccountIdentifier(), encryptedData.getName(), value, secretManagerConfig);
+      encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
+                            .createSecret(encryptedData.getAccountIdentifier(),
+                                io.harness.beans.SecretText.builder()
+                                    .name(encryptedData.getName())
+                                    .value(value)
+                                    .additionalMetadata(encryptedData.getAdditionalMetadata())
+                                    .build(),
+                                secretManagerConfig);
       validateEncryptedRecord(encryptedRecord);
     } else {
       throw new UnsupportedOperationException("Secret Manager type not supported: " + secretManagerType);
@@ -320,13 +343,23 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
             encryptedRecord = existingEncryptedData;
           } else {
             encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-                                  .renameSecret(encryptedData.getAccountIdentifier(), encryptedData.getName(),
+                                  .renameSecret(encryptedData.getAccountIdentifier(),
+                                      io.harness.beans.SecretText.builder()
+                                          .name(encryptedData.getName())
+                                          .value(value)
+                                          .additionalMetadata(encryptedData.getAdditionalMetadata())
+                                          .build(),
                                       existingEncryptedData, secretManagerConfig);
             validateEncryptedRecord(encryptedRecord);
           }
         } else {
           encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-                                .updateSecret(encryptedData.getAccountIdentifier(), encryptedData.getName(), value,
+                                .updateSecret(encryptedData.getAccountIdentifier(),
+                                    io.harness.beans.SecretText.builder()
+                                        .name(encryptedData.getName())
+                                        .value(value)
+                                        .additionalMetadata(encryptedData.getAdditionalMetadata())
+                                        .build(),
                                     existingEncryptedData, secretManagerConfig);
           validateEncryptedRecord(encryptedRecord);
         }
@@ -334,7 +367,12 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         // Existing one is Reference Secret
         if (isNotEmpty(value)) {
           encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-                                .createSecret(encryptedData.getAccountIdentifier(), encryptedData.getName(), value,
+                                .createSecret(encryptedData.getAccountIdentifier(),
+                                    io.harness.beans.SecretText.builder()
+                                        .name(encryptedData.getName())
+                                        .value(value)
+                                        .additionalMetadata(encryptedData.getAdditionalMetadata())
+                                        .build(),
                                     secretManagerConfig);
           validateEncryptedRecord(encryptedRecord);
         } else {
@@ -425,7 +463,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
 
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
-
+    validateAdditionalMetadata(secretManager, secret);
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
     if (Inline.equals(secret.getValueType())) {
       if (isReadOnlySecretManager(secretManager)) {
@@ -505,7 +543,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     validateUpdateRequest(existingEncryptedData, dto);
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
-
+    validateAdditionalMetadata(secretManager, secret);
     NGEncryptedData encryptedData = buildNGEncryptedData(accountIdentifier, dto, secretManager);
 
     if (isReadOnlySecretManager(secretManager)) {
@@ -755,6 +793,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         .kmsId(encryptedData.getKmsId())
         .encryptionType(encryptedData.getEncryptionType())
         .base64Encoded(encryptedData.isBase64Encoded())
+        .additionalMetadata(encryptedData.getAdditionalMetadata())
         .build();
   }
 

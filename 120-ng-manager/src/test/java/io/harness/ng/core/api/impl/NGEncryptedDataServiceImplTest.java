@@ -54,6 +54,7 @@ import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.mappers.SecretManagerConfigMapper;
+import io.harness.ng.core.AdditionalMetadataValidationHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
@@ -112,6 +113,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Mock private CustomSecretManagerHelper customSecretManagerHelper;
   @Mock private NGEncryptorService ngEncryptorService;
   @Mock private LocalEncryptor localEncryptor;
+  @Mock private AdditionalMetadataValidationHelper additionalMetadataValidationHelper;
   public static final String HTTP_VAULT_URL = "http://vault.com";
   private String accountIdentifier = randomAlphabetic(10);
   private String orgIdentifier = randomAlphabetic(10);
@@ -124,10 +126,10 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   public void setup() {
     initMocks(this);
     ngConnectorSecretManagerService = mock(NGConnectorSecretManagerService.class);
-    ngEncryptedDataService =
-        spy(new NGEncryptedDataServiceImpl(encryptedDataDao, kmsEncryptorsRegistry, vaultEncryptorsRegistry,
-            secretsFileService, secretManagerClient, globalEncryptDecryptClient, ngConnectorSecretManagerService,
-            ngFeatureFlagHelperService, customEncryptorsRegistry, customSecretManagerHelper, ngEncryptorService));
+    ngEncryptedDataService = spy(new NGEncryptedDataServiceImpl(encryptedDataDao, kmsEncryptorsRegistry,
+        vaultEncryptorsRegistry, secretsFileService, secretManagerClient, globalEncryptDecryptClient,
+        ngConnectorSecretManagerService, ngFeatureFlagHelperService, customEncryptorsRegistry,
+        customSecretManagerHelper, ngEncryptorService, additionalMetadataValidationHelper));
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
     when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(localEncryptor);
   }
@@ -167,7 +169,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.createSecret(any(), any(), any(), argumentCaptor.capture()))
+    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
         .thenReturn(NGEncryptedData.builder()
                         .name("name")
                         .encryptedValue("encryptedValue".toCharArray())
@@ -215,7 +217,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.createSecret(any(), any(), any(), argumentCaptor.capture()))
+    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
         .thenReturn(NGEncryptedData.builder()
                         .name("name")
                         .encryptedValue("encryptedValue".toCharArray())
@@ -433,7 +435,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.createSecret(any(), any(), any(), argumentCaptor.capture()))
+    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
         .thenReturn(NGEncryptedData.builder()
                         .name("name")
                         .encryptedValue("encryptedValue".toCharArray())

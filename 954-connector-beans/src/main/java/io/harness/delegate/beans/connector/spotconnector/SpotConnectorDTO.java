@@ -41,9 +41,9 @@ public class SpotConnectorDTO extends ConnectorConfigDTO implements DelegateSele
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
-    if (credential.getSpotCredentialType() == SpotCredentialType.MANUAL_CREDENTIALS) {
-      SpotManualConfigSpecDTO spotManualCredentials = (SpotManualConfigSpecDTO) credential.getConfig();
-      return Collections.singletonList(spotManualCredentials);
+    if (credential.getSpotCredentialType() == SpotCredentialType.PERMANENT_TOKEN) {
+      SpotPermanentTokenConfigSpecDTO credentialConfig = (SpotPermanentTokenConfigSpecDTO) credential.getConfig();
+      return Collections.singletonList(credentialConfig);
     }
     return null;
   }

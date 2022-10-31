@@ -46,6 +46,7 @@ import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.validator.service.api.NGHostValidationService;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.remote.CEAwsSetupConfig;
@@ -147,6 +148,7 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         bind(NGHostValidationService.class).toInstance(mock(NGHostValidationService.class));
         bind(FeatureFlagService.class).toInstance(mock(FeatureFlagService.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
       }
     });
     modules.add(mongoTypeModule(annotations));

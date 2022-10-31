@@ -53,14 +53,12 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
     // - IN / UNION query for each org, project, service combination
     // - store metadata and latest time snapshot in a separate table
     boolean ranAtLeastOnce = false;
+    log.info("Collect and publish stats. Account: {}", accountId);
     try (HIterator<ServiceEntity> services = new HIterator<>(getFetchServicesQuery(accountId).fetch())) {
       while (services.hasNext()) {
         ServiceEntity service = services.next();
-        log.info("Collect and publish stats for service {} (account {}, org {}, project {})", service.getIdentifier(),
-            accountId, service.getOrgIdentifier(), service.getProjectIdentifier());
         Instant lastSnapshot = instanceStatsService.getLastSnapshotTime(
             accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier());
-        log.info("Last published timestamp: {}", lastSnapshot);
         if (null == lastSnapshot) {
           boolean success = createStats(accountId, service.getOrgIdentifier(), service.getProjectIdentifier(),
               service.getIdentifier(), alignedWithMinute(Instant.now(), SYNC_INTERVAL_MINUTES));
@@ -122,9 +120,8 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
       }
       return true;
     } catch (Exception e) {
-      log.error(
-          "Unable to publish instance stats for service: {} (account: {}, org: {}, project: {}) with exception {}",
-          serviceId, accountId, orgId, projectId, e);
+      log.error("Unable to publish instance stats for service: {} (account: {}, org: {}, project: {}) at {}", serviceId,
+          accountId, orgId, projectId, instant, e);
       return false;
     }
   }

@@ -22,6 +22,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.io.IOException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -54,8 +55,10 @@ public class ConnectorSetup {
   @Path("/awsaccountconnectiondetail")
   @ApiOperation(value = "Get Aws account connection details", nickname = "awsaccountconnectiondetail")
   public ResponseDTO<AwsAccountConnectionDetail> getAwsAccountConnectionDetail(
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
-    return ResponseDTO.newResponse(awsAccountConnectionDetailsHelper.getAwsAccountConnectorDetail(accountId));
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Parameter(required = false, description = "Set this true in case of Gov cloud") @QueryParam(
+          "is_gov") Boolean isGov) {
+    return ResponseDTO.newResponse(awsAccountConnectionDetailsHelper.getAwsAccountConnectorDetail(accountId, isGov));
   }
 
   @GET

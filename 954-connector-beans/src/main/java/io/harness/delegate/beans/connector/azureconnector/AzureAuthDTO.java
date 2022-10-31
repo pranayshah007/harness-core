@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.azureconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureAuthOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -39,5 +40,9 @@ public class AzureAuthDTO {
   public AzureAuthDTO(AzureSecretType azureSecretType, AzureAuthCredentialDTO credentials) {
     this.azureSecretType = azureSecretType;
     this.credentials = credentials;
+  }
+
+  public AzureAuthOutcomeDTO toOutcome() {
+    return AzureAuthOutcomeDTO.builder().type(this.azureSecretType).spec(this.credentials.toOutcome()).build();
   }
 }

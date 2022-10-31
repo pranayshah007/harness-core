@@ -23,6 +23,7 @@ import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
 import io.harness.models.constants.InstanceSyncConstants;
+import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -30,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndReplaceOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -45,9 +45,16 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
 @OwnedBy(HarnessTeam.DX)
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
-  private MongoTemplate mongoTemplate;
+  private final MongoTemplate mongoTemplate;
+  private final MongoTemplate secondaryMongoTemplate;
+
+  @Inject
+  public InstanceRepositoryCustomImpl(
+      MongoTemplate mongoTemplate, SecondaryMongoTemplateHolder secondaryMongoTemplateHolder) {
+    this.mongoTemplate = mongoTemplate;
+    this.secondaryMongoTemplate = secondaryMongoTemplateHolder.getSecondaryMongoTemplate();
+  }
 
   @Override
   public Instance findAndReplace(Criteria criteria, Instance instance) {
@@ -75,7 +82,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                               .and(InstanceKeys.isDeleted)
                               .is(false);
       Query query = new Query().addCriteria(criteria);
-      return mongoTemplate.find(query, Instance.class);
+      return secondaryMongoTemplate.find(query, Instance.class);
     }
     Set<Instance> instances = new HashSet<>();
     instances.addAll(
@@ -100,7 +107,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeys.createdAt)
                             .lte(timestamp);
     Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.find(query, Instance.class);
+    return secondaryMongoTemplate.find(query, Instance.class);
   }
 
   private List<Instance> getInstancesDeletedAfter(String accountIdentifier, String orgIdentifier,
@@ -120,7 +127,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeys.deletedAt)
                             .gte(timestamp);
     Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.find(query, Instance.class);
+    return secondaryMongoTemplate.find(query, Instance.class);
   }
 
   @Override
@@ -133,7 +140,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .lte(endTimeStamp);
 
     Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.find(query, Instance.class);
+    return secondaryMongoTemplate.find(query, Instance.class);
   }
 
   @Override
@@ -150,7 +157,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .lte(endTimeStamp);
 
     Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.find(query, Instance.class);
+    return secondaryMongoTemplate.find(query, Instance.class);
   }
 
   @Override
@@ -171,7 +178,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier, timestampInMs);
 
     Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.find(query, Instance.class);
+    return secondaryMongoTemplate.find(query, Instance.class);
   }
 
   @Override
@@ -184,7 +191,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeysAdditional.instanceInfoNamespace)
                             .is(instanceInfoNamespace);
     Query query = new Query().addCriteria(criteria).with(Sort.by(Sort.Direction.DESC, InstanceKeys.createdAt));
-    return mongoTemplate.find(query, Instance.class);
+    return secondaryMongoTemplate.find(query, Instance.class);
   }
 
   /*
@@ -199,7 +206,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .and(InstanceKeys.serviceIdentifier)
             .is(serviceId);
     Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.find(query, Instance.class);
+    return secondaryMongoTemplate.find(query, Instance.class);
   }
 
   @Override
@@ -209,7 +216,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeys.serviceIdentifier)
                             .is(serviceId);
     Query query = new Query(criteria);
-    return mongoTemplate.find(query, Instance.class);
+    return secondaryMongoTemplate.find(query, Instance.class);
   }
 
   /*
@@ -230,7 +237,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeys.isDeleted)
                             .is(false);
     Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.find(query, Instance.class);
+    return secondaryMongoTemplate.find(query, Instance.class);
   }
 
   @Override
@@ -246,7 +253,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         group(InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
             .count()
             .as(InstanceSyncConstants.COUNT);
-    return mongoTemplate.aggregate(newAggregation(matchStage, groupEnvId), Instance.class, EnvBuildInstanceCount.class);
+    return secondaryMongoTemplate.aggregate(
+        newAggregation(matchStage, groupEnvId), Instance.class, EnvBuildInstanceCount.class);
   }
 
   @Override
@@ -270,7 +278,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
                                     .count()
                                     .as(InstanceSyncConstants.COUNT);
-    return mongoTemplate.aggregate(
+    return secondaryMongoTemplate.aggregate(
         newAggregation(matchStage, groupEnvId), Instance.class, ActiveServiceInstanceInfo.class);
   }
 
@@ -336,7 +344,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                          .slice(limit)
                                          .as(InstanceSyncConstants.INSTANCES);
 
-    return mongoTemplate.aggregate(
+    return secondaryMongoTemplate.aggregate(
         newAggregation(matchStage, group, projection), Instance.class, InstancesByBuildId.class);
   }
 
@@ -365,7 +373,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .andExpression(InstanceSyncConstants.COUNT)
             .as(InstanceSyncConstants.COUNT);
 
-    return mongoTemplate.aggregate(
+    return secondaryMongoTemplate.aggregate(
         newAggregation(matchStage, groupEnvId, projection), Instance.class, CountByServiceIdAndEnvType.class);
   }
 
@@ -417,7 +425,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public Instance findFirstInstance(Criteria criteria) {
     Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.findOne(query, Instance.class);
+    return secondaryMongoTemplate.findOne(query, Instance.class);
   }
 
   @Override

@@ -59,7 +59,7 @@ public class EventPublisherClientFactory implements Provider<EventPublisherClien
 
   public EventPublisherClientFactory(String managerBaseUrl, TokenGenerator tokenGenerator,
       String clientCertificateFilePath, String clientCertificateKeyFilePath, boolean trustAllCertificates) {
-    this.baseUrl = managerBaseUrl + CCM_EVENT_SERVICE_ENDPOINT;
+    this.baseUrl = getCcmEventServiceEndpoint(managerBaseUrl);
     this.tokenGenerator = tokenGenerator;
     this.clientCertificateFilePath = clientCertificateFilePath;
     this.clientCertificateKeyFilePath = clientCertificateKeyFilePath;
@@ -137,5 +137,9 @@ public class EventPublisherClientFactory implements Provider<EventPublisherClien
         // we need to give enough time for the call to finish.
         .readTimeout(5, TimeUnit.MINUTES)
         .build();
+  }
+
+  private String getCcmEventServiceEndpoint(String managerBaseUrl) {
+    return managerBaseUrl.substring(0, managerBaseUrl.lastIndexOf('/')) + CCM_EVENT_SERVICE_ENDPOINT;
   }
 }

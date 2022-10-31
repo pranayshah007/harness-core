@@ -22,6 +22,7 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.retry.RetryStageInfo;
@@ -86,6 +87,8 @@ import org.springframework.data.mongodb.core.query.Update;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class NodeExecutionServiceImpl implements NodeExecutionService {
+  private static final int MAX_BATCH_SIZE = 1000;
+
   private static final Set<String> GRAPH_FIELDS =
       ImmutableSet.of(NodeExecutionKeys.mode, NodeExecutionKeys.progressData, NodeExecutionKeys.unitProgresses,
           NodeExecutionKeys.executableResponses, NodeExecutionKeys.interruptHistories, NodeExecutionKeys.retryIds,
@@ -115,6 +118,21 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       throw new InvalidRequestException("Node Execution is null for id: " + nodeExecutionId);
     }
     return nodeExecution;
+  }
+
+  @Override
+  public List<NodeExecution> getAll(Set<String> nodeExecutionIds) {
+    if (EmptyPredicate.isEmpty(nodeExecutionIds)) {
+      return new ArrayList<>();
+    }
+
+    if (nodeExecutionIds.size() > MAX_BATCH_SIZE) {
+      throw new InvalidRequestException(
+          String.format("requested %d records more than threshold of %d. consider pagination", nodeExecutionIds.size(),
+              MAX_BATCH_SIZE));
+    }
+    Query query = query(where(NodeExecutionKeys.uuid).in(nodeExecutionIds));
+    return mongoTemplate.find(query, NodeExecution.class);
   }
 
   @Override
@@ -217,14 +235,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     if (isNotEmpty(statuses)) {
       query.addCriteria(where(NodeExecutionKeys.status).in(statuses));
     }
-    return mongoTemplate.find(query, NodeExecution.class);
-  }
-
-  @Override
-  public List<NodeExecution> fetchChildrenNodeExecutions(String planExecutionId, String parentId) {
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.parentId).is(parentId))
-                      .with(Sort.by(Direction.DESC, NodeExecutionKeys.createdAt));
     return mongoTemplate.find(query, NodeExecution.class);
   }
 

@@ -8,6 +8,7 @@
 package io.harness.cdng.infra.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.ELASTIGROUP_CONFIGURATION_OUTPUT;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -24,6 +25,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
@@ -35,6 +37,7 @@ import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
@@ -228,7 +231,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     final InfrastructureOutcome infrastructureOutcome = stepSweepingOutput.getInfrastructureOutcome();
 
-    Optional<InstancesOutcome> instancesOutcomeOpt = publishInfraDelegateConfigOutput(logCallback, serviceOutcome,
+    Optional<InstancesOutcome> instancesOutcomeOpt = publishInfraOutput(logCallback, serviceOutcome,
         infrastructureOutcome, ambiance, environmentOutcome, stepSweepingOutput.isSkipInstances());
 
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
@@ -317,6 +320,18 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
             .addRcStep(!infrastructure.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments())
             .build(),
         StepCategory.STAGE.name());
+
+    publishOutput(spec, ambiance);
+  }
+
+  private void publishOutput(Infrastructure infrastructure, Ambiance ambiance) {
+    if (InfrastructureKind.ELASTIGROUP.equals(infrastructure.getKind())) {
+      executionSweepingOutputService.consume(ambiance, ELASTIGROUP_CONFIGURATION_OUTPUT,
+          ElastigroupConfigurationOutput.builder()
+              .storeConfig(((ElastigroupInfrastructure) infrastructure).getConfiguration().getStore().getSpec())
+              .build(),
+          StepCategory.STAGE.name());
+    }
   }
 
   private boolean isTaskStep(String infraKind) {
@@ -352,9 +367,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     return InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
   }
 
-  private Optional<InstancesOutcome> publishInfraDelegateConfigOutput(NGLogCallback logCallback,
-      ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome, Ambiance ambiance,
-      EnvironmentOutcome environmentOutcome, boolean skipInstances) {
+  private Optional<InstancesOutcome> publishInfraOutput(NGLogCallback logCallback, ServiceStepOutcome serviceOutcome,
+      InfrastructureOutcome infrastructureOutcome, Ambiance ambiance, EnvironmentOutcome environmentOutcome,
+      boolean skipInstances) {
     if (serviceOutcome.getType() == null) {
       throw new InvalidRequestException("service type cannot be null");
     }
@@ -375,16 +390,20 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome
         || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome) {
-      K8sInfraDelegateConfig k8sInfraDelegateConfig =
-          cdStepHelper.getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
-
-      K8sInfraDelegateConfigOutput k8sInfraDelegateConfigOutput =
-          K8sInfraDelegateConfigOutput.builder().k8sInfraDelegateConfig(k8sInfraDelegateConfig).build();
-      executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
-          k8sInfraDelegateConfigOutput, StepCategory.STAGE.name());
+      publishK8sInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
     }
 
     return Optional.empty();
+  }
+
+  private void publishK8sInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig =
+        cdStepHelper.getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
+
+    K8sInfraDelegateConfigOutput k8sInfraDelegateConfigOutput =
+        K8sInfraDelegateConfigOutput.builder().k8sInfraDelegateConfig(k8sInfraDelegateConfig).build();
+    executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
+        k8sInfraDelegateConfigOutput, StepCategory.STAGE.name());
   }
 
   private InstancesOutcome publishSshInfraDelegateConfigOutput(Ambiance ambiance, NGLogCallback logCallback,

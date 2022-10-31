@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.scm.genericgitconnector;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.scm.GitConfigConstants;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitAuthenticationOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -22,4 +23,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 })
 @Schema(name = "GitAuthentication",
     description = "This is a interface for details of the Generic Git authentication information")
-public abstract class GitAuthenticationDTO implements DecryptableEntity {}
+public abstract class GitAuthenticationDTO implements DecryptableEntity {
+  public GitAuthenticationOutcomeDTO toOutcome() {
+    return null;
+  }
+}

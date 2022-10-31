@@ -7,12 +7,17 @@
 
 package io.harness.delegate.resources;
 
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+
 import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateSetupDetails;
+import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
+import io.harness.logging.AccountLogContext;
+import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
 
@@ -33,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -80,5 +86,25 @@ public class DelegateNgSetupInternalResource {
 
   private String getVerificationUrl(HttpServletRequest request) {
     return request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+  }
+
+  @DELETE
+  @Path("delegate")
+  @Timed
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<DelegateGroupDeleteResponse> deleteDelegateGroup(
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = NGCommonEntityConstants.IDENTIFIER_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.DELEGATE_IDENTIFIER_KEY) String delegateGroupIdentifier) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
+      return new RestResponse<>(delegateService.deleteDelegateGroupV3(
+          accountIdentifier, orgIdentifier, projectIdentifier, delegateGroupIdentifier));
+    }
   }
 }

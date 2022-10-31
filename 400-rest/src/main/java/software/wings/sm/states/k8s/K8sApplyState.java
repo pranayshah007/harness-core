@@ -145,7 +145,7 @@ public class K8sApplyState extends AbstractK8sState {
       return k8sStateHelper.getInvalidInfraDefFailedResponse();
     }
 
-    if (inheritManifests && k8sStateHelper.isExportManifestsEnabled(context.getAccountId())) {
+    if (inheritManifests) {
       Activity activity = createK8sActivity(
           context, commandName(), stateType(), activityService, commandUnitList(false, context.getAccountId()));
       return executeK8sTask(context, activity.getUuid());
@@ -168,17 +168,15 @@ public class K8sApplyState extends AbstractK8sState {
 
     K8sApplyTaskParametersBuilder builder = K8sApplyTaskParameters.builder();
 
-    if (k8sStateHelper.isExportManifestsEnabled(context.getAccountId())) {
-      builder.exportManifests(exportManifests);
-      if (inheritManifests) {
-        List<KubernetesResource> kubernetesResources =
-            k8sStateHelper.getResourcesFromSweepingOutput(context, getStateType());
-        if (isEmpty(kubernetesResources)) {
-          throw new InvalidRequestException("No kubernetes resources found to inherit", USER);
-        }
-        builder.inheritManifests(inheritManifests);
-        builder.kubernetesResources(kubernetesResources);
+    builder.exportManifests(exportManifests);
+    if (inheritManifests) {
+      List<KubernetesResource> kubernetesResources =
+          k8sStateHelper.getResourcesFromSweepingOutput(context, getStateType());
+      if (isEmpty(kubernetesResources)) {
+        throw new InvalidRequestException("No kubernetes resources found to inherit", USER);
       }
+      builder.inheritManifests(inheritManifests);
+      builder.kubernetesResources(kubernetesResources);
     }
 
     K8sTaskParameters k8sTaskParameters =
@@ -219,8 +217,7 @@ public class K8sApplyState extends AbstractK8sState {
 
     K8sApplyResponse k8sApplyResponse = (K8sApplyResponse) executionResponse.getK8sTaskResponse();
 
-    if (k8sApplyResponse != null && k8sApplyResponse.getResources() != null
-        && k8sStateHelper.isExportManifestsEnabled(context.getAccountId())) {
+    if (k8sApplyResponse != null && k8sApplyResponse.getResources() != null) {
       k8sStateHelper.saveResourcesToSweepingOutput(context, k8sApplyResponse.getResources(), getStateType());
       stateExecutionData.setExportManifests(true);
     }
@@ -234,14 +231,14 @@ public class K8sApplyState extends AbstractK8sState {
   @Override
   public List<CommandUnit> commandUnitList(boolean remoteStoreType, String accountId) {
     List<CommandUnit> applyCommandUnits = new ArrayList<>();
-    if (!(k8sStateHelper.isExportManifestsEnabled(accountId) && inheritManifests)) {
+    if (!inheritManifests) {
       if (remoteStoreType) {
         applyCommandUnits.add(new K8sDummyCommandUnit(K8sCommandUnitConstants.FetchFiles));
       }
     }
 
     applyCommandUnits.add(new K8sDummyCommandUnit(K8sCommandUnitConstants.Init));
-    if (!(k8sStateHelper.isExportManifestsEnabled(accountId) && exportManifests)) {
+    if (!exportManifests) {
       applyCommandUnits.add(new K8sDummyCommandUnit(K8sCommandUnitConstants.Prepare));
       applyCommandUnits.add(new K8sDummyCommandUnit(K8sCommandUnitConstants.Apply));
 

@@ -10,6 +10,9 @@ package io.harness.engine.pms.execution.strategy.plan;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
 
+import io.harness.OrchestrationPublisherName;
+import io.harness.PipelineSettingsService;
+import io.harness.PlanExecutionSettingResponse;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.GovernanceService;
@@ -41,6 +44,7 @@ import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.springdata.TransactionHelper;
+import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -63,6 +67,10 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
   @Inject private GovernanceService governanceService;
   @Inject private PlanService planService;
 
+  @Inject private PipelineSettingsService pipelineSettingsService;
+  @Inject private WaitNotifyEngine waitNotifyEngine;
+  @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
+
   @Getter private final Subject<OrchestrationStartObserver> orchestrationStartSubject = new Subject<>();
   @Getter private final Subject<OrchestrationEndObserver> orchestrationEndSubject = new Subject<>();
 
@@ -83,23 +91,34 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
       GovernanceMetadata governanceMetadata =
           governanceService.evaluateGovernancePolicies(expandedPipelineJson, accountId, orgIdentifier,
               projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN, ambiance.getPlanExecutionId());
-      PlanExecution planExecution = createPlanExecution(ambiance, metadata, governanceMetadata);
-
-      Node planNode = planService.fetchNode(plan.getUuid(), plan.getStartingNodeId());
-      if (planNode == null) {
-        throw new InvalidRequestException("Starting node for plan cannot be null");
-      }
-
-      orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
-          OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(metadata).build());
 
       if (governanceMetadata.getDeny()) {
         return planExecutionService.updateStatus(ambiance.getPlanExecutionId(), ERRORED,
             ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis()));
       } else {
-        Ambiance cloned =
-            AmbianceUtils.cloneForChild(ambiance, PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode));
-        executorService.submit(() -> orchestrationEngine.runNode(cloned, planNode, null));
+        PlanExecution planExecution;
+        PlanExecutionSettingResponse planExecutionSettingResponse = pipelineSettingsService.shouldQueuePlanExecution(
+            accountId, orgIdentifier, projectIdentifier, ambiance.getMetadata().getPipelineIdentifier());
+        if (planExecutionSettingResponse.isShouldQueue()) {
+          planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, Status.QUEUED);
+          orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
+              OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(metadata).build());
+          return planExecution;
+        }
+        planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, Status.RUNNING);
+        orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
+            OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(metadata).build());
+        if (planExecutionSettingResponse.isUseNewFlow()) {
+          // Attach a Callback so that if this finishes then next execution starts
+          PlanExecutionResumeCallback callback = PlanExecutionResumeCallback.builder()
+                                                     .accountIdIdentifier(accountId)
+                                                     .orgIdentifier(orgIdentifier)
+                                                     .projectIdentifier(projectIdentifier)
+                                                     .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
+                                                     .build();
+          waitNotifyEngine.waitForAllOn(publisherName, callback, planExecution.getUuid());
+        }
+        startPlanExecution(plan, ambiance);
         return planExecution;
       }
     } finally {
@@ -108,16 +127,27 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
     }
   }
 
-  private PlanExecution createPlanExecution(
-      Ambiance ambiance, PlanExecutionMetadata planExecutionMetadata, GovernanceMetadata governanceMetadata) {
+  public boolean startPlanExecution(Plan plan, Ambiance ambiance) {
+    Node planNode = planService.fetchNode(plan.getUuid(), plan.getStartingNodeId());
+    if (planNode == null) {
+      throw new InvalidRequestException("Starting node for plan cannot be null");
+    }
+    Ambiance cloned = AmbianceUtils.cloneForChild(ambiance, PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode));
+    executorService.submit(() -> orchestrationEngine.runNode(cloned, planNode, null));
+    return true;
+  }
+
+  private PlanExecution createPlanExecution(Ambiance ambiance, PlanExecutionMetadata planExecutionMetadata,
+      GovernanceMetadata governanceMetadata, Status status) {
     PlanExecution planExecution = PlanExecution.builder()
                                       .uuid(ambiance.getPlanExecutionId())
                                       .planId(ambiance.getPlanId())
                                       .setupAbstractions(ambiance.getSetupAbstractionsMap())
-                                      .status(Status.RUNNING)
+                                      .status(status)
                                       .startTs(System.currentTimeMillis())
                                       .governanceMetadata(governanceMetadata)
                                       .metadata(ambiance.getMetadata())
+                                      .ambiance(ambiance)
                                       .build();
 
     return transactionHelper.performTransaction(() -> {

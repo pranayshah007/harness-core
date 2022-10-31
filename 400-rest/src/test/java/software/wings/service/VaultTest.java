@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.UNKNOWN;
 import static io.harness.rule.OwnerRule.UTKARSH;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.TestUserProvider.testUserProvider;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
@@ -35,6 +36,7 @@ import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -154,6 +156,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mongodb.morphia.query.Query;
@@ -562,6 +565,116 @@ public class VaultTest extends WingsBaseTest {
     assertThat(modifiedSavedConfig.getSecretId()).isEqualTo(savedConfig.getSecretId());
     assertThat(modifiedSavedConfig.getName()).isEqualTo(vaultConfig.getName());
     assertThat(modifiedSavedConfig.isDefault()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void updateVaultConfig_fromTokenBased_ToK8sAuth_withoutAuthEndpoint() {
+    Account account = getAccount(AccountType.PAID);
+    String accountId = account.getUuid();
+
+    when(accountService.get(accountId)).thenReturn(account);
+    when(secretsManagementFeature.isAvailableForAccount(accountId)).thenReturn(true);
+
+    String name = UUID.randomUUID().toString();
+    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken(VAULT_TOKEN);
+    vaultConfig.setName(name);
+    vaultConfig.setAccountId(accountId);
+
+    vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, true);
+    vaultConfig.setAuthToken(VAULT_TOKEN);
+
+    String k8sAuthRole = "k8sRole";
+    String k8sServiceAccountTokenPath = "k8sServiceAccountTokenPath";
+
+    VaultConfig vaultConfigNew =
+        secretManagementTestHelper.getVaultConfigWithK8sAuth(null, k8sAuthRole, k8sServiceAccountTokenPath);
+    vaultConfigNew.setUuid(vaultConfig.getUuid());
+    ArgumentCaptor<VaultConfig> argumentCaptor = ArgumentCaptor.forClass(VaultConfig.class);
+    String vaultConfigId = vaultService.saveOrUpdateVaultConfig(accountId, vaultConfigNew, false);
+    verify(auditServiceHelper, times(2))
+        .reportForAuditingUsingAccountId(eq(accountId), any(), argumentCaptor.capture(), any());
+    assertThat(vaultConfigId).isEqualTo(vaultConfig.getUuid());
+    VaultConfig updatedConfig = argumentCaptor.getValue();
+    assertThat(updatedConfig.isUseK8sAuth()).isEqualTo(true);
+    assertThat(updatedConfig.getVaultK8sAuthRole()).isEqualTo(k8sAuthRole);
+    assertThat(updatedConfig.getServiceAccountTokenPath()).isEqualTo(k8sServiceAccountTokenPath);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void updateVaultConfig_fromAppRole_ToK8sAuth_withoutAuthEndpoint() {
+    Account account = getAccount(AccountType.PAID);
+    String accountId = account.getUuid();
+
+    when(accountService.get(accountId)).thenReturn(account);
+    when(secretsManagementFeature.isAvailableForAccount(accountId)).thenReturn(true);
+
+    String name = UUID.randomUUID().toString();
+    String approleId = UUID.randomUUID().toString();
+    String secretId = UUID.randomUUID().toString();
+    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAppRole(approleId, secretId);
+    vaultConfig.setName(name);
+    vaultConfig.setAccountId(accountId);
+    VaultAppRoleLoginResult vaultAppRoleLoginResult = mock(VaultAppRoleLoginResult.class);
+    when(secretManagementDelegateService.appRoleLogin(any())).thenReturn(vaultAppRoleLoginResult);
+    when(vaultAppRoleLoginResult.getClientToken()).thenReturn(VAULT_TOKEN);
+    vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, false);
+
+    String k8sAuthRole = "k8sRole";
+    String k8sServiceAccountTokenPath = "k8sServiceAccountTokenPath";
+
+    VaultConfig vaultConfigNew =
+        secretManagementTestHelper.getVaultConfigWithK8sAuth(null, k8sAuthRole, k8sServiceAccountTokenPath);
+    vaultConfigNew.setUuid(vaultConfig.getUuid());
+    ArgumentCaptor<VaultConfig> argumentCaptor = ArgumentCaptor.forClass(VaultConfig.class);
+    String vaultConfigId = vaultService.saveOrUpdateVaultConfig(accountId, vaultConfigNew, false);
+    verify(auditServiceHelper, times(2))
+        .reportForAuditingUsingAccountId(eq(accountId), any(), argumentCaptor.capture(), any());
+    assertThat(vaultConfigId).isEqualTo(vaultConfig.getUuid());
+    VaultConfig updatedConfig = argumentCaptor.getValue();
+    assertThat(updatedConfig.isUseK8sAuth()).isEqualTo(true);
+    assertThat(updatedConfig.getVaultK8sAuthRole()).isEqualTo(k8sAuthRole);
+    assertThat(updatedConfig.getServiceAccountTokenPath()).isEqualTo(k8sServiceAccountTokenPath);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void updateVaultConfig_fromK8sWithoutAuthEndpoint_ToK8sAuthWithAuthEndpoint() {
+    Account account = getAccount(AccountType.PAID);
+    String accountId = account.getUuid();
+
+    when(accountService.get(accountId)).thenReturn(account);
+    when(secretsManagementFeature.isAvailableForAccount(accountId)).thenReturn(true);
+
+    String name = UUID.randomUUID().toString();
+    String k8sRole = UUID.randomUUID().toString();
+    String k8sSAPath = UUID.randomUUID().toString();
+    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithK8sAuth(null, k8sRole, k8sSAPath);
+    vaultConfig.setName(name);
+    vaultConfig.setAccountId(accountId);
+    vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, false);
+
+    String k8sAuthEndpoint = "k8sAuthEndpoint";
+    String k8sAuthRole = "k8sRole";
+    String k8sServiceAccountTokenPath = "k8sServiceAccountTokenPath";
+
+    VaultConfig vaultConfigNew =
+        secretManagementTestHelper.getVaultConfigWithK8sAuth(k8sAuthEndpoint, k8sAuthRole, k8sServiceAccountTokenPath);
+    vaultConfigNew.setUuid(vaultConfig.getUuid());
+    ArgumentCaptor<VaultConfig> argumentCaptor = ArgumentCaptor.forClass(VaultConfig.class);
+    String vaultConfigId = vaultService.saveOrUpdateVaultConfig(accountId, vaultConfigNew, false);
+    verify(auditServiceHelper, times(2))
+        .reportForAuditingUsingAccountId(eq(accountId), any(), argumentCaptor.capture(), any());
+    assertThat(vaultConfigId).isEqualTo(vaultConfig.getUuid());
+    VaultConfig updatedConfig = argumentCaptor.getValue();
+    assertThat(updatedConfig.isUseK8sAuth()).isEqualTo(true);
+    assertThat(updatedConfig.getK8sAuthEndpoint()).isEqualTo(k8sAuthEndpoint);
+    assertThat(updatedConfig.getVaultK8sAuthRole()).isEqualTo(k8sAuthRole);
+    assertThat(updatedConfig.getServiceAccountTokenPath()).isEqualTo(k8sServiceAccountTokenPath);
   }
 
   @Test

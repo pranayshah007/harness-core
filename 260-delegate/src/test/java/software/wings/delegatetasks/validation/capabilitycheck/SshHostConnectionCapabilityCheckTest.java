@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.validation.capabilitycheck;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,6 +81,36 @@ public class SshHostConnectionCapabilityCheckTest extends WingsBaseTest {
                                        .build())
                     .hosts(Sets.newHashSet("host1"))
                     .build())
+            .host("host1")
+            .build();
+
+    when(secretDecryptionService.decrypt(any(), any()))
+        .thenReturn(TGTPasswordSpecDTO.builder()
+                        .password(SecretRefData.builder().decryptedValue(DECRYPTED_PASSWORD_VALUE).build())
+                        .build());
+
+    doReturn(mockSession).when(spyCapabilityCheck).connect(any(SshSessionConfig.class));
+    CapabilityResponse capabilityResponse = spyCapabilityCheck.performCapabilityCheck(capability);
+    assertThat(capabilityResponse).isNotNull();
+    assertThat(capabilityResponse.isValidated()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void shouldPerformCapabilityCheckKerberosNoTGT() throws JSchException {
+    SshConnectivityExecutionCapability capability =
+        SshConnectivityExecutionCapability.builder()
+            .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder()
+                                        .sshKeySpecDto(SSHKeySpecDTO.builder()
+                                                           .port(1234)
+                                                           .auth(SSHAuthDTO.builder()
+                                                                     .type(SSHAuthScheme.Kerberos)
+                                                                     .spec(KerberosConfigDTO.builder().build())
+                                                                     .build())
+                                                           .build())
+                                        .hosts(Sets.newHashSet("host1"))
+                                        .build())
             .host("host1")
             .build();
 

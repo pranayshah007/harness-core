@@ -809,6 +809,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         }
       } catch (NumberFormatException ex) {
         log.error("Unable to parse delegate version ", ex);
+      } catch (IndexOutOfBoundsException ex) {
+        // This exception comes in local development because version is set to build.version.
+        // Not adding exception because that will pollute logs.
+        log.warn("Version is not set properly");
       }
     }
 

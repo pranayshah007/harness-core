@@ -9,6 +9,8 @@ package io.harness.delegate.beans.connector.azureconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialSpecOutcomeDTO;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureManualDetailsOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -32,4 +34,13 @@ public class AzureManualDetailsDTO implements AzureCredentialSpecDTO {
   String tenantId;
 
   @NotNull @JsonProperty("auth") @Schema(description = "The auth azure details ") AzureAuthDTO authDTO;
+
+  @Override
+  public AzureCredentialSpecOutcomeDTO toOutcome() {
+    return AzureManualDetailsOutcomeDTO.builder()
+        .applicationId(this.clientId)
+        .tenantId(this.tenantId)
+        .auth(this.authDTO.toOutcome())
+        .build();
+  }
 }

@@ -34,6 +34,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -67,6 +68,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.ssh.AwsInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig;
@@ -478,6 +480,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .taskType(TaskType.NG_AZURE_TASK.name())
             .timeout(StepUtils.getTimeoutMillis(ParameterField.createValueField("10m"), DEFAULT_TIMEOUT))
             .parameters(new Object[] {azureTaskParamsTaskParams})
+            .expressionFunctorToken((int) ambiance.getExpressionFunctorToken())
             .build();
 
     List<TaskSelectorYaml> taskSelectorYamlList =
@@ -522,6 +525,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .taskType(TaskType.NG_AWS_TASK.name())
             .timeout(StepUtils.getTimeoutMillis(ParameterField.createValueField("10m"), DEFAULT_TIMEOUT))
             .parameters(new Object[] {awsTaskParams})
+            .expressionFunctorToken((int) ambiance.getExpressionFunctorToken())
             .build();
 
     List<TaskSelectorYaml> taskSelectorYamlList = awsInfraDelegateConfig.getAwsConnectorDTO()
@@ -638,6 +642,13 @@ abstract class AbstractInfrastructureTaskExecutableStep {
           ConnectorType.AZURE.name()));
     }
 
+    if (InfrastructureKind.ELASTIGROUP.equals(infrastructure.getKind())
+        && !(connectorInfo.get(0).getConnectorConfig() instanceof SpotConnectorDTO)) {
+      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+          connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          ConnectorType.SPOT.name()));
+    }
+
     saveExecutionLog(logCallback, color("Connector validated", Green));
   }
 
@@ -685,6 +696,11 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             (ServerlessAwsLambdaInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(serverlessAwsLambdaInfrastructure.getConnectorRef(),
             serverlessAwsLambdaInfrastructure.getRegion(), serverlessAwsLambdaInfrastructure.getStage());
+        break;
+
+      case InfrastructureKind.ELASTIGROUP:
+        ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(elastigroupInfrastructure.getConnectorRef());
         break;
 
       case InfrastructureKind.KUBERNETES_AZURE:

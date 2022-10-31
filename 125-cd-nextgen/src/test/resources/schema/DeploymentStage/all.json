@@ -3017,7 +3017,8 @@
             "ServerlessAwsLambda",
             "AzureWebApp",
             "CustomDeployment",
-            "ECS"
+            "ECS",
+            "Elastigroup"
           ]
         },
         "environment": {
@@ -3662,6 +3663,63 @@
             },
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupConfiguration": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupInfrastructure": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration",
+            "connectorRef"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/ElastigroupConfiguration"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupServiceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ServiceSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "startupScript": {
+              "$ref": "#/definitions/StartupScriptConfiguration"
             }
           }
         }
@@ -5073,7 +5131,8 @@
             "AzureWebApp",
             "SshWinRmAws",
             "CustomDeployment",
-            "ECS"
+            "ECS",
+            "Elastigroup"
           ]
         }
       },
@@ -5123,6 +5182,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/EcsInfrastructure"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Elastigroup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupInfrastructure"
               }
             }
           }
@@ -6889,6 +6964,22 @@
           }
         },
         {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "raw"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryRawConfig"
+              }
+            }
+          }
+        },
+        {
           "oneOf": [
             {
               "required": [
@@ -6936,7 +7027,8 @@
                 "docker",
                 "maven",
                 "npm",
-                "nuget"
+                "nuget",
+                "raw"
               ]
             },
             "repositoryPort": {
@@ -7020,6 +7112,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/NexusRegistryNugetConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "raw"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryRawConfig"
               }
             }
           }
@@ -7151,6 +7259,25 @@
           ],
           "properties": {
             "packageName": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NexusRegistryRawConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/NexusRegistryConfigSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "group"
+          ],
+          "properties": {
+            "group": {
               "type": "string"
             }
           }
@@ -8660,7 +8787,8 @@
             "ServerlessAwsLambda",
             "AzureWebApp",
             "CustomDeployment",
-            "ECS"
+            "ECS",
+            "Elastigroup"
           ]
         }
       },
@@ -8710,6 +8838,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/EcsServiceSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Elastigroup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupServiceSpec"
               }
             }
           }
@@ -9559,6 +9703,21 @@
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "StartupCommandConfiguration": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "StartupScriptConfiguration": {
       "type": "object",
       "required": [
         "store"

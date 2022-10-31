@@ -553,7 +553,8 @@ public class AzureAsyncTaskHelper {
         null; // for ManagedIdentity we leave scope null as it is then defaulted to what the Azure SDK has defined
     if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET
         || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT) {
-      scope = AzureUtils.AUTH_SCOPE;
+      scope = AzureUtils.convertToScope(
+          AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint());
     }
     return azureAuthorizationClient.getUserAccessToken(azureConfig, scope).getAccessToken();
   }
@@ -662,7 +663,11 @@ public class AzureAsyncTaskHelper {
     if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT
         || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET) {
       azureAccessToken =
-          azureAuthorizationClient.getUserAccessToken(azureConfig, AzureUtils.AUTH_SCOPE).getAccessToken();
+          azureAuthorizationClient
+              .getUserAccessToken(azureConfig,
+                  AzureUtils.convertToScope(
+                      AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint()))
+              .getAccessToken();
     } else {
       // only MSI connection will/should reach here
       azureAccessToken = azureAuthorizationClient.getUserAccessToken(azureConfig, null).getAccessToken();

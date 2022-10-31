@@ -37,6 +37,7 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -59,6 +60,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
@@ -367,6 +369,15 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
             ConnectorType.AWS.name()));
       }
     }
+
+    if (InfrastructureKind.ELASTIGROUP.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof SpotConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.SPOT.name()));
+      }
+    }
+
     saveExecutionLogSafely(logCallback, color("Connector validated", Green));
   }
 
@@ -453,6 +464,11 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(azureWebAppInfrastructure.getConnectorRef(),
             azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
+        break;
+
+      case InfrastructureKind.ELASTIGROUP:
+        ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(elastigroupInfrastructure.getConnectorRef());
         break;
 
       case InfrastructureKind.ECS:

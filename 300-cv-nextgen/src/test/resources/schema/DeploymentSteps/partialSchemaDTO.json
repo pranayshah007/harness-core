@@ -85,6 +85,23 @@
           ],
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
+        "AutoVerificationJobSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/VerificationJobSpec"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "trafficSplitPercentage": {
+                  "type": "string",
+                  "description": "Example: 50, You can put max upto 50."
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
         "BlueGreenVerificationJobSpec": {
           "allOf": [
             {
@@ -118,6 +135,22 @@
           },
           "$schema": "http://json-schema.org/draft-07/schema#",
           "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Auto"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/AutoVerificationJobSpec"
+                  }
+                }
+              }
+            },
             {
               "if": {
                 "properties": {
