@@ -7,18 +7,20 @@
 
 package io.harness.delegate.service;
 
-import io.harness.delegate.beans.DelegateTaskResponse;
-
 public interface DelegateAgentService {
   void run(boolean watched, boolean isServer);
+
   void pause();
+
   void stop();
-  void shutdown(boolean shouldUnregister) throws InterruptedException;
+
   void freeze();
 
   boolean isHeartbeatHealthy();
-  boolean isSocketHealthy();
-  void recordMetrics();
 
-  void sendTaskResponse(String taskId, DelegateTaskResponse taskResponse);
+  boolean isSocketHealthy();
+
+  void shutdown(boolean shouldUnregister) throws InterruptedException;
+
+  void recordMetrics();
 }
