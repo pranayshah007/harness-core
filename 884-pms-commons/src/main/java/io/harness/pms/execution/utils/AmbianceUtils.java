@@ -196,6 +196,16 @@ public class AmbianceUtils {
     return stageLevel;
   }
 
+  public Optional<Level> getFirstParallelLevelFromAmbiance(Ambiance ambiance) {
+    Optional<Level> parallelLevel = Optional.empty();
+    for (Level level : ambiance.getLevelsList()) {
+      if (level.getStepType().getStepCategory() == StepCategory.FORK) {
+        parallelLevel = Optional.of(level);
+      }
+    }
+    return parallelLevel;
+  }
+
   public String getStageRuntimeIdAmbiance(Ambiance ambiance) {
     Optional<Level> stageLevel = getStageLevelFromAmbiance(ambiance);
     if (stageLevel.isPresent()) {

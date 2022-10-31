@@ -9,6 +9,8 @@ import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
@@ -58,6 +60,11 @@ public class RollbackStartAdvisor implements Adviser {
     }
     if (Objects.equals(rollbackOutcome.getStrategy(), RollbackStrategy.PIPELINE_ROLLBACK)
         && !adviserParameters.getCanAdviseOnPipelineRollback()) {
+      return false;
+    }
+    Optional<Level> stageLevel = AmbianceUtils.getStageLevelFromAmbiance(advisingEvent.getAmbiance());
+    Optional<Level> parallelLevel = AmbianceUtils.getFirstParallelLevelFromAmbiance(advisingEvent.getAmbiance());
+    if (parallelLevel.isPresent() && stageLevel.isPresent()) {
       return false;
     }
     return StatusUtils.brokeStatuses().contains(advisingEvent.getToStatus());

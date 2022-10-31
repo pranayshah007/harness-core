@@ -10,6 +10,8 @@ package io.harness.plancreator.stages.parallel;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.rollback.RollbackStartAdvisor;
+import io.harness.advisers.rollback.RollbackStartAdvisorParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -196,10 +198,21 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
                   .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
                       NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
                   .build();
+          AdviserObtainment pipelineRollbackAdvisor = getAdvisorForPipelineRollback();
+          adviserObtainments.add(pipelineRollbackAdvisor);
         }
         adviserObtainments.add(adviserObtainment);
       }
     }
     return adviserObtainments;
+  }
+
+  private AdviserObtainment getAdvisorForPipelineRollback() {
+    RollbackStartAdvisorParameters rollbackCustomAdviserParameters =
+        RollbackStartAdvisorParameters.builder().canAdviseOnPipelineRollback(true).build();
+    return AdviserObtainment.newBuilder()
+        .setType(RollbackStartAdvisor.ADVISER_TYPE)
+        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackCustomAdviserParameters)))
+        .build();
   }
 }

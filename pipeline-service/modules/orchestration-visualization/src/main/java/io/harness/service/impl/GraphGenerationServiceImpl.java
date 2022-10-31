@@ -305,7 +305,9 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
 
     List<NodeExecution> stageNodeExecutions =
         nodeExecutions.stream()
-            .filter(nodeExecution -> nodeExecution.getStepType().getStepCategory() == StepCategory.STAGE)
+            .filter(nodeExecution
+                -> nodeExecution.getStepType().getStepCategory() == StepCategory.STAGE
+                    || nodeExecution.getStepType().getStepCategory() == StepCategory.FORK)
             .collect(Collectors.toList());
     cacheOrchestrationGraph(graph);
     pmsExecutionSummaryService.regenerateStageLayoutGraph(planExecutionId, stageNodeExecutions);
