@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.spot.elastigroup.deploy;
+package io.harness.cdng.common.capacity;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
@@ -26,7 +26,7 @@ import lombok.Getter;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-@RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.Capacity")
+@RecasterAlias("io.harness.cdng.common.capacity.Capacity")
 public class Capacity {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

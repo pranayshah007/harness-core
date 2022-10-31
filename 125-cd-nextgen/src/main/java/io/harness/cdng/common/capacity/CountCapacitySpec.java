@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.spot.elastigroup.deploy;
+package io.harness.cdng.common.capacity;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
@@ -20,7 +20,6 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
-import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import lombok.Builder;
 import lombok.Data;
@@ -28,10 +27,10 @@ import lombok.Getter;
 
 @Data
 @Builder
-@JsonTypeName(CapacitySpecType.PERCENTAGE)
+@JsonTypeName(CapacitySpecType.COUNT)
 @OwnedBy(CDP)
-@RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.PercentageCapacitySpec")
-public class PercentageCapacitySpec implements CapacitySpec {
+@RecasterAlias("io.harness.cdng.common.capacity.CountCapacitySpec")
+public class CountCapacitySpec implements CapacitySpec {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -39,13 +38,12 @@ public class PercentageCapacitySpec implements CapacitySpec {
 
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
-  @JsonProperty("percentage")
+  @JsonProperty("count")
   @Min(0)
-  @Max(100)
-  ParameterField<Integer> percentage;
+  ParameterField<Integer> count;
 
   @Override
   public String getType() {
-    return CapacitySpecType.PERCENTAGE;
+    return CapacitySpecType.COUNT;
   }
 }

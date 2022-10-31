@@ -13,6 +13,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.common.capacity.Capacity;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ElastigroupDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
