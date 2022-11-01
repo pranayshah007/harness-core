@@ -4837,7 +4837,7 @@ plain_artifacts = [
     "io.harness.cv:data-collection-dsl:0.42-RELEASE",
     "io.harness:ff-java-server-sdk:1.0.5.1",
     "io.harness:access-control-server-spec:1.0.9",
-    "io.harness:ng-manager-server-spec:0.0.30",
+    "io.harness:ng-manager-server-spec:0.0.31",
     "io.harness:platform-server-spec:1.0.10",
     "io.harness:pipeline-server-spec:1.0.16",
     "io.harness:template-server-spec:1.0.8",
