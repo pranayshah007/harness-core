@@ -1829,6 +1829,7 @@
 73989:io.harness.delegate.NoEligibleDelegatesInAccountException
 73990:io.harness.delegate.beans.NoAvailableDelegatesException
 73991:io.harness.delegate.beans.NoDelegatesException
+73992:io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails
 80302:software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds
 80303:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile
 80304:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo

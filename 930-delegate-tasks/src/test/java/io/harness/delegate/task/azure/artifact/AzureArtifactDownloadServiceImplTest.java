@@ -35,26 +35,33 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
+import io.harness.delegate.task.nexus.NexusMapper;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.HintException;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.LogCallback;
+import io.harness.nexus.NexusRequest;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 
+import software.wings.helpers.ext.nexus.NexusService;
 import software.wings.service.impl.AwsApiHelperService;
 import software.wings.utils.ArtifactType;
+import software.wings.utils.RepositoryFormat;
 
 import com.amazonaws.services.s3.model.S3Object;
+import com.google.common.collect.ImmutableMap;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -67,6 +74,12 @@ import org.mockito.junit.MockitoRule;
 @OwnedBy(CDP)
 public class AzureArtifactDownloadServiceImplTest extends CategoryTest {
   private static final String ARTIFACT_FILE_CONTENT = "artifact-file-content";
+  private static final String NEXUS_NUGET_DOWNLOAD_URL =
+      "https://nexus.dev/repository/azure-webapp-nuget/myWebApp/1.0.0";
+  private static final String NEXUS_NUGET_ARTIFACT_NAME = "test-nuget-1.0.0.nupkg";
+  private static final String NEXUS_MAVEN_DOWNLOAD_URL =
+      "https://nexus.dev/repository/azure-webapp-maven/io/harness/test/hello-app/2.0.0/hello-app-2.0.0.jar";
+  private static final String NEXUS_MAVEN_ARTIFACT_NAME = "hello-app-2.0.0.jar";
 
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -78,6 +91,8 @@ public class AzureArtifactDownloadServiceImplTest extends CategoryTest {
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private AwsApiHelperService awsApiHelperService;
   @Mock private AwsNgConfigMapper awsNgConfigMapper;
+  @Mock private NexusService nexusService;
+  @Mock private NexusMapper nexusMapper;
 
   @InjectMocks private AzureArtifactDownloadServiceImpl downloadService;
 
@@ -226,6 +241,54 @@ public class AzureArtifactDownloadServiceImplTest extends CategoryTest {
 
     try {
       assertThatThrownBy(() -> downloadService.download(downloadContext)).isInstanceOf(HintException.class);
+    } finally {
+      FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
+    }
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testDownloadNexusNugetArtifact() throws Exception {
+    testDownloadNexusRequest(
+        NEXUS_NUGET_DOWNLOAD_URL, RepositoryFormat.nuget.name(), NEXUS_NUGET_ARTIFACT_NAME, ArtifactType.NUGET);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testDownloadNexusMavenArtifact() throws Exception {
+    testDownloadNexusRequest(
+        NEXUS_MAVEN_DOWNLOAD_URL, RepositoryFormat.maven.name(), NEXUS_MAVEN_ARTIFACT_NAME, ArtifactType.JAR);
+  }
+
+  private void testDownloadNexusRequest(String artifactUrl, String repositoryFormat, String expectedArtifactName,
+      ArtifactType expectedArtifactType) throws Exception {
+    final NexusConnectorDTO connectorDTO = NexusConnectorDTO.builder().version("3.x").build();
+    final NexusAzureArtifactRequestDetails artifactRequestDetails =
+        NexusAzureArtifactRequestDetails.builder()
+            .certValidationRequired(false)
+            .artifactUrl(artifactUrl)
+            .repositoryFormat(repositoryFormat)
+            .identifier("test")
+            .metadata(ImmutableMap.of("url", artifactUrl, "package", "test-nuget", "version", "1.0.0"))
+            .build();
+    final NexusRequest nexusRequest = NexusRequest.builder().build();
+    final ArtifactDownloadContext downloadContext =
+        createDownloadContext(ArtifactSourceType.NEXUS3_REGISTRY, artifactRequestDetails, connectorDTO);
+
+    doReturn(nexusRequest).when(nexusMapper).toNexusRequest(connectorDTO, artifactRequestDetails);
+
+    try (InputStream artifactStream = new ByteArrayInputStream(ARTIFACT_FILE_CONTENT.getBytes())) {
+      doReturn(Pair.of("artifact", artifactStream))
+          .when(nexusService)
+          .downloadArtifactByUrl(nexusRequest, expectedArtifactName, artifactUrl);
+
+      AzureArtifactDownloadResponse downloadResponse = downloadService.download(downloadContext);
+
+      List<String> fileContent = Files.readAllLines(downloadResponse.getArtifactFile().toPath());
+      assertThat(fileContent).containsOnly(ARTIFACT_FILE_CONTENT);
+      assertThat(downloadResponse.getArtifactType()).isEqualTo(expectedArtifactType);
     } finally {
       FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
     }
