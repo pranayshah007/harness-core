@@ -21,7 +21,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.validation.Create;
 
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import java.util.List;
