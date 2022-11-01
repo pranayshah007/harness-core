@@ -11,6 +11,7 @@ import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.validation.Validator.notNullCheck;
 
 import io.harness.exception.ExceptionUtils;
@@ -27,8 +28,10 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.WorkflowService;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -90,14 +93,34 @@ public class SetPropertiesToCloudformationRollbackStackSteps implements Migratio
                                                .stream()
                                                .filter(s -> s.getGraphName().equals("Pre-Deployment"))
                                                .findFirst();
-      Optional<GraphNode> preDeploymentNode = preDeploymentGraph.isPresent()
+      List<GraphNode> preDeploymentNodes = preDeploymentGraph.isPresent()
           ? preDeploymentGraph.get()
                 .getNodes()
                 .stream()
                 .filter(graphNode -> graphNode.getType().equals("CLOUD_FORMATION_CREATE_STACK"))
-                .findFirst()
-          : Optional.empty();
-      if (preDeploymentNode.isPresent()) {
+                .collect(Collectors.toList())
+          : Collections.emptyList();
+
+      preDeploymentNodes.forEach(graphNode -> {
+        if (graphNode.getType().equals("CLOUD_FORMATION_CREATE_STACK")) {
+          canaryOrchestrationWorkflow.getGraph().getSubworkflows().values().forEach(graph -> {
+            if (graph.getGraphName().equals("Rollback Provisioners")
+                || graph.getGraphName().equals("Rollback Provisioners Reverse")) {
+              graph.getNodes().forEach(graphNode1 -> {
+                if (graphNode1.getName().equals("Rollback " + graphNode.getName())) {
+                  graphNode1.getProperties().put("customStackName", graphNode.getProperties().get("customStackName"));
+                  graphNode1.getProperties().put("region", graphNode.getProperties().get("region"));
+                  graphNode1.getProperties().put(
+                      "useCustomStackName", graphNode.getProperties().get("useCustomStackName"));
+                  graphNode1.getProperties().put("awsConfigId", graphNode.getProperties().get("awsConfigId"));
+                }
+              });
+            }
+          });
+        }
+      });
+
+      if (isNotEmpty(preDeploymentNodes)) {
         try {
           log.info(String.format("%s Starting migration for workflow: %s", LOG_PREFIX, workflow.getUuid()));
           workflowService.updateWorkflow(workflow, true);
