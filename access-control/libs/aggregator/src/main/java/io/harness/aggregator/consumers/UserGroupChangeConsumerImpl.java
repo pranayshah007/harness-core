@@ -29,7 +29,6 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -82,12 +81,6 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
 
     Optional<UserGroupDBO> userGroup = userGroupRepository.findById(id);
     if (!userGroup.isPresent()) {
-      return;
-    }
-    List<String> list = Arrays.asList("/ACCOUNT/2gf_S_jTQMuh2aiLSELxTw", "/ACCOUNT/px7xd_BFRCi-pfWPYXVjvw");
-
-    if (updatedUserGroup != null &&  list.stream().anyMatch(item ->  updatedUserGroup.getScopeIdentifier().startsWith(item))) {
-      log.info(String.format("UserGroupChangeConsumerImpl: Skipping ACL creation for %s", updatedUserGroup.getScopeIdentifier()));
       return;
     }
 

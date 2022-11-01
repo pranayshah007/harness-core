@@ -16,8 +16,6 @@ import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAss
 import io.harness.annotations.dev.OwnedBy;
 
 import com.google.inject.Singleton;
-
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -76,11 +74,6 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
 
   @Override
   public void consumeCreateEvent(String id, RoleAssignmentDBO newRoleAssignmentDBO) {
-    List<String> list = Arrays.asList("/ACCOUNT/2gf_S_jTQMuh2aiLSELxTw", "/ACCOUNT/px7xd_BFRCi-pfWPYXVjvw");
-    if (newRoleAssignmentDBO != null && list.stream().anyMatch(item -> newRoleAssignmentDBO.getScopeIdentifier().startsWith(item))) {
-      log.info(String.format("RoleAssignmentChangeConsumerImpl: Skipping ACL creation for %s", newRoleAssignmentDBO.getScopeIdentifier()));
-      return;
-    }
     Optional<RoleAssignmentDBO> roleAssignmentOptional = roleAssignmentRepository.findByIdentifierAndScopeIdentifier(
         newRoleAssignmentDBO.getIdentifier(), newRoleAssignmentDBO.getScopeIdentifier());
     if (!roleAssignmentOptional.isPresent()) {
