@@ -155,7 +155,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     // all harness store
     if (areAllManifestsFromHarnessFileStore(ecsManifestOutcomes)) {
-      prepareEcsHarnessStoreTask(
+      return prepareEcsHarnessStoreTask(
           ecsStepExecutor, ambiance, stepElementParameters, ecsHarnessStoreContent, infrastructureOutcome, logCallback);
     }
 
