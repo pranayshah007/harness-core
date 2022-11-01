@@ -134,8 +134,8 @@ public class SLODashboardResource {
   getSloHealthListViewV2(@NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter filter,
       @BeanParam PageParams pageParams,
       @Parameter(description = "For filtering on the basis of name") @QueryParam("filter") String filterByName,
-      @Parameter(description = "For filtering on the basis of SLO Target spec") @NotNull @Valid
-      @Body SLOTargetDTO sloTargetDTO) {
+      @Parameter(
+          description = "For filtering on the basis of SLO Target spec") @Valid @Body SLOTargetDTO sloTargetDTO) {
     return ResponseDTO.newResponse(
         sloDashboardService.getSloHealthListView(projectParams, filter, pageParams, filterByName, sloTargetDTO));
   }
