@@ -9,13 +9,11 @@ package io.harness.cdng.elastigroup;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.infra.beans.host.HostFilterSpec;
+import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
+import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -24,31 +22,21 @@ import javax.validation.constraints.NotNull;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
-@OwnedBy(HarnessTeam.CDP)
 @Data
+@Builder
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-@JsonTypeName(InstancesSpecTypeConstants.CURRENT_RUNNING)
-@TypeAlias("currentRuningInstancesSpecYaml")
-@RecasterAlias("io.harness.cdng.elastigroup.CurrentRunningInstancesSpecYaml")
-public class CurrentRunningInstancesSpecYaml extends InstancesSpecAbstractYaml {
-  @JsonProperty("type")
-  @NotNull
-  CurrentRunningInstancesSpecYaml.InstanceType type =
-          InstanceType.CurrentRunning;
+@TypeAlias("elastigroupInstances")
+@RecasterAlias("io.harness.cdng.elastigroup.ElastigroupInstances")
+public class ElastigroupInstances {
+  @NotNull @JsonProperty("type") ElastigroupInstancesType type;
+
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  CurrentRunningInstancesSpec spec;
-  @Override
-  public String getType() {
-    return InstancesSpecTypeConstants.CURRENT_RUNNING;
-  }
+  ElastigroupInstancesSpec spec;
 
-  enum InstanceType {
-    CurrentRunning(InstancesSpecTypeConstants.CURRENT_RUNNING);
-    @Getter String name;
-    InstanceType(String name) {
-      this.name = name;
-    }
+  @Builder
+  public ElastigroupInstances(ElastigroupInstancesType type, ElastigroupInstancesSpec spec) {
+    this.type = type;
+    this.spec = spec;
   }
 }

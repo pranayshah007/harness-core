@@ -38,8 +38,8 @@ public class ElastigroupSetupStepPlanCreator
     return super.createPlanForField(ctx, stepElement);
   }
 
-  @Override
-  protected StepParameters getStepParameters(PlanCreationContext ctx, ElastigroupSetupStepNode stepElement) {
-    return super.getStepParameters(ctx, stepElement);
-  }
+//  @Override
+//  protected StepParameters getStepParameters(PlanCreationContext ctx, ElastigroupSetupStepNode stepElement) {
+//    return super.getStepParameters(ctx, stepElement);
+//  }
 }
