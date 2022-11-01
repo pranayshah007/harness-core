@@ -244,11 +244,10 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getBatchFile, batchFileRequest);
   }
 
-  private FileBatchContentResponse getContentOfFilesBase64(
+  private FileBatchContentResponse getContentOfFilesV2(
       List<String> filePaths, String slug, Provider gitProvider, String ref, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    log.info("Calling SCM for base64 response for files");
     GetBatchFileRequest batchFileRequest = createBatchFileRequest(filePaths, slug, ref, gitProvider, true);
-    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getBatchFileBase64, batchFileRequest);
+    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getBatchFilesV2, batchFileRequest);
   }
 
   @Override
@@ -596,7 +595,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       List<String> getFilesWhichArePartOfHarness =
           getFileNames(foldersList, slug, gitProvider, branchName, latestCommitId, scmBlockingStub);
       final FileBatchContentResponse contentOfFiles =
-          getContentOfFilesBase64(getFilesWhichArePartOfHarness, slug, gitProvider, latestCommitId, scmBlockingStub);
+          getContentOfFilesV2(getFilesWhichArePartOfHarness, slug, gitProvider, latestCommitId, scmBlockingStub);
       return FileContentBatchResponse.builder()
           .fileBatchContentResponse(contentOfFiles)
           .commitId(latestCommitId)
@@ -614,7 +613,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       List<String> getFilesWhichArePartOfHarness =
           getFileNames(foldersList, slug, gitProvider, null, commitId, scmBlockingStub);
       final FileBatchContentResponse contentOfFiles =
-          getContentOfFilesBase64(getFilesWhichArePartOfHarness, slug, gitProvider, commitId, scmBlockingStub);
+          getContentOfFilesV2(getFilesWhichArePartOfHarness, slug, gitProvider, commitId, scmBlockingStub);
       return FileContentBatchResponse.builder().fileBatchContentResponse(contentOfFiles).commitId(commitId).build();
     }
   }

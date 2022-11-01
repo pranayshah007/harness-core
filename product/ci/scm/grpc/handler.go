@@ -104,8 +104,8 @@ func (h *handler) GetBatchFile(ctx context.Context, in *pb.GetBatchFileRequest) 
 	return file.BatchFindFile(ctx, in, h.log)
 }
 
-// GetBatchFileBase64 is used to return multiple files
-func (h *handler) GetBatchFileBase64(ctx context.Context, in *pb.GetBatchFileRequest) (*pb.FileBatchContentResponse, error) {
+// GetBatchFilesV2 is used to return multiple files
+func (h *handler) GetBatchFilesV2(ctx context.Context, in *pb.GetBatchFileRequest) (*pb.FileBatchContentResponse, error) {
 	return file.BatchFindFile(ctx, in, h.log)
 }
 
