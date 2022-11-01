@@ -49,6 +49,7 @@ import io.harness.ng.accesscontrol.user.ACLAggregateFilter;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.AccountOrgProjectHelper;
+import io.harness.ng.core.InviteModule;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
@@ -109,7 +110,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -162,6 +162,7 @@ public class InviteServiceImpl implements InviteService {
   private final AccountOrgProjectHelper accountOrgProjectHelper;
   private final TelemetryReporter telemetryReporter;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final ScheduledExecutorService scheduledExecutor;
 
   private final RetryPolicy<Object> transactionRetryPolicy =
       getRetryPolicy("[Retrying]: Failed to mark previous invites as stale; attempt: {}",
@@ -173,7 +174,8 @@ public class InviteServiceImpl implements InviteService {
       InviteRepository inviteRepository, NotificationClient notificationClient, AccountClient accountClient,
       OutboxService outboxService, AccessControlClient accessControlClient, UserClient userClient,
       AccountOrgProjectHelper accountOrgProjectHelper, @Named("isNgAuthUIEnabled") boolean isNgAuthUIEnabled,
-      TelemetryReporter telemetryReporter, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      TelemetryReporter telemetryReporter, NGFeatureFlagHelperService ngFeatureFlagHelperService,
+      @Named(InviteModule.NG_INVITE_THREAD_EXECUTOR) ScheduledExecutorService scheduledExecutorService) {
     this.jwtPasswordSecret = jwtPasswordSecret;
     this.jwtGeneratorUtils = jwtGeneratorUtils;
     this.ngUserService = ngUserService;
@@ -188,6 +190,7 @@ public class InviteServiceImpl implements InviteService {
     this.accountOrgProjectHelper = accountOrgProjectHelper;
     this.telemetryReporter = telemetryReporter;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.scheduledExecutor = scheduledExecutorService;
     MongoClientURI uri = new MongoClientURI(mongoConfig.getUri());
     useMongoTransactions = uri.getHosts().size() > 2;
   }
@@ -853,14 +856,14 @@ public class InviteServiceImpl implements InviteService {
 
     properties.put("platform", "NG");
     // Wait 20 seconds, to ensure identify is sent before track
-    ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
-    tempExecutor.schedule(()
-                              -> telemetryReporter.sendTrackEvent("Invite  Accepted", userEmail, accountId, properties,
-                                  ImmutableMap.<Destination, Boolean>builder()
-                                      .put(Destination.MARKETO, true)
-                                      .put(Destination.AMPLITUDE, true)
-                                      .build(),
-                                  null),
+    scheduledExecutor.schedule(
+        ()
+            -> telemetryReporter.sendTrackEvent("Invite  Accepted", userEmail, accountId, properties,
+                ImmutableMap.<Destination, Boolean>builder()
+                    .put(Destination.MARKETO, true)
+                    .put(Destination.AMPLITUDE, true)
+                    .build(),
+                null),
         20, TimeUnit.SECONDS);
     log.info("User Invite telemetry sent");
   }
