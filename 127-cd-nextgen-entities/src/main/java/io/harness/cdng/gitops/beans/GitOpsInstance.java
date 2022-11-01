@@ -22,6 +22,7 @@ import lombok.experimental.NonFinal;
 @Builder
 public class GitOpsInstance {
   @NotEmpty private String accountIdentifier;
+  @NotEmpty private String agentIdentifier;
   @NotEmpty private String orgIdentifier;
   @NotEmpty private String projectIdentifier;
   @NotEmpty private String applicationIdentifier;
