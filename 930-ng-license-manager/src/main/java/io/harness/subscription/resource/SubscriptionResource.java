@@ -129,41 +129,23 @@ public class SubscriptionResource {
     return ResponseDTO.newResponse(subscriptionService.listPrices(accountIdentifier, moduleType));
   }
 
-  @POST
-  @ApiOperation(value = "Creates a feature flag subscription", nickname = "createFfSubscription")
-  @Operation(operationId = "createFfSubscription", summary = "Creates a feature flag subscription",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns subscription details")
-      })
-  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
-  public ResponseDTO<SubscriptionDetailDTO>
-  createFfSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+    @POST
+    @ApiOperation(value = "Creates a subscription", nickname = "createSubscription")
+    @Operation(operationId = "createSubscription", summary = "Creates a subscription",
+        responses =
+        {
+          @io.swagger.v3.oas.annotations.responses.
+          ApiResponse(responseCode = "default", description = "Returns subscription details")
+        })
+    @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+    public ResponseDTO<SubscriptionDetailDTO>
+    createSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @io.swagger.v3.oas.annotations.parameters.RequestBody(
-          required = true, description = "This is the details of the Subscription Request.") @NotNull
-      @Valid SubscriptionCreateParams subscriptionParams) {
-    return ResponseDTO.newResponse(subscriptionService.createFfSubscription(subscriptionParams));
-  }
-
-  //  @POST
-  //  @ApiOperation(value = "Creates a subscription", nickname = "createSubscription")
-  //  @Operation(operationId = "createSubscription", summary = "Creates a subscription",
-  //      responses =
-  //      {
-  //        @io.swagger.v3.oas.annotations.responses.
-  //        ApiResponse(responseCode = "default", description = "Returns subscription details")
-  //      })
-  //  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
-  //  public ResponseDTO<SubscriptionDetailDTO>
-  //  createSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-  //                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-  //      @io.swagger.v3.oas.annotations.parameters.RequestBody(
-  //          required = true, description = "This is the details of the Subscription Request.") @NotNull
-  //      @Valid SubscriptionDTO subscriptionDTO) {
-  //    return ResponseDTO.newResponse(subscriptionService.createSubscription(accountIdentifier, subscriptionDTO));
-  //  }
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true, description = "This is the details of the Subscription Request.") @NotNull
+        @Valid SubscriptionCreateParams subscriptionCreateParams) {
+      return ResponseDTO.newResponse(subscriptionService.createSubscription(accountIdentifier, subscriptionCreateParams));
+    }
 
   @PUT
   @Path("/{subscriptionId}")
