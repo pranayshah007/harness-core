@@ -189,7 +189,7 @@ deployMode: KUBERNETES
 envPath: ""
 
 
-scmVersion: ff17c219
+scmVersion: 139d8c67
 
 
 portal:
