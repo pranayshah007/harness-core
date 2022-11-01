@@ -27,18 +27,24 @@ import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec.WeeklyCalendarSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import java.util.Arrays;
+import java.util.List;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.json.JSONArray;
@@ -53,6 +59,7 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
   @Inject private HPersistence hPersistence;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private MetricPackService metricPackService;
 
   private BuilderFactory builderFactory;
@@ -102,29 +109,36 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
-  public void testGetSLODashboardWidgetsList() throws JsonProcessingException {
+  public void testGetSLODashboardWidgetsList() {
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
 
-    ServiceLevelObjectiveDTO sloDTO1 = builderFactory.getServiceLevelObjectiveDTOBuilder()
-                                           .identifier("id10")
-                                           .userJourneyRef("uj10")
-                                           .type(ServiceLevelIndicatorType.AVAILABILITY)
-                                           .build();
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO1);
+    ServiceLevelObjectiveV2DTO sloDTO1 = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+                                             .identifier("id10")
+                                             .userJourneyRefs(List.of("uj10"))
+                                             .build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+        (SimpleServiceLevelObjectiveSpec) sloDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec.setServiceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY);
+    sloDTO1.setSpec(simpleServiceLevelObjectiveSpec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO1);
 
-    ServiceLevelObjectiveDTO sloDTO2 = builderFactory.getServiceLevelObjectiveDTOBuilder()
-                                           .identifier("id5")
-                                           .userJourneyRef("uj2")
-                                           .type(ServiceLevelIndicatorType.LATENCY)
-                                           .build();
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO2);
+    ServiceLevelObjectiveV2DTO sloDTO2 = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+                                             .identifier("id5")
+                                             .userJourneyRefs(List.of("uj2"))
+                                             .build();
+    simpleServiceLevelObjectiveSpec = (SimpleServiceLevelObjectiveSpec) sloDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec.setServiceLevelIndicatorType(ServiceLevelIndicatorType.LATENCY);
+    sloDTO2.setSpec(simpleServiceLevelObjectiveSpec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO2);
 
-    ServiceLevelObjectiveDTO sloDTO3 = builderFactory.getServiceLevelObjectiveDTOBuilder()
-                                           .identifier("id8")
-                                           .userJourneyRef("uj10")
-                                           .type(ServiceLevelIndicatorType.LATENCY)
-                                           .build();
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO3);
+    ServiceLevelObjectiveV2DTO sloDTO3 = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+                                             .identifier("id8")
+                                             .userJourneyRefs(List.of("uj10"))
+                                             .build();
+    simpleServiceLevelObjectiveSpec = (SimpleServiceLevelObjectiveSpec) sloDTO3.getSpec();
+    simpleServiceLevelObjectiveSpec.setServiceLevelIndicatorType(ServiceLevelIndicatorType.LATENCY);
+    sloDTO3.setSpec(simpleServiceLevelObjectiveSpec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO3);
 
     Response response = RESOURCES.client()
                             .target("http://localhost:9998/slo-dashboard/widgets/list")
@@ -153,7 +167,69 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.get("noOfActiveAlerts")).isEqualTo(sloDTO3.getNotificationRuleRefs().size());
     assertThat(sloDashboardWidget.get("serviceName")).isEqualTo("Mocked service name");
     assertThat(sloDashboardWidget.get("environmentName")).isEqualTo("Mocked env name");
-    assertThat(sloDashboardWidget.get("userJourneyIdentifier")).isEqualTo(sloDTO3.getUserJourneyRef());
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetSLODashboardWidgetsListforAddingToCompositeSLO() {
+    SLOTargetDTO calendarSloTarget = SLOTargetDTO.builder()
+                                         .type(SLOTargetType.CALENDER)
+                                         .sloTargetPercentage(80.0)
+                                         .spec(CalenderSLOTargetSpec.builder()
+                                                   .type(SLOCalenderType.QUARTERLY)
+                                                   .spec(CalenderSLOTargetSpec.QuarterlyCalenderSpec.builder().build())
+                                                   .build())
+                                         .build();
+
+    ServiceLevelObjectiveV2DTO sloDTO1 = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    sloDTO1.setSloTarget(calendarSloTarget);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO1);
+
+    ServiceLevelObjectiveV2DTO sloDTO2 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id5").name("new one").build();
+    sloDTO2.setSloTarget(calendarSloTarget);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO2);
+
+    ServiceLevelObjectiveV2DTO sloDTO3 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("id8").name("new two").build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO3);
+
+    ServiceLevelObjectiveV2DTO compositeSLO =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .serviceLevelObjectivesDetails(
+                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef("id5")
+                                            .weightagePercentage(75.0)
+                                            .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                            .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                            .accountId(builderFactory.getContext().getAccountId())
+                                            .build(),
+                              ServiceLevelObjectiveDetailsDTO.builder()
+                                  .serviceLevelObjectiveRef("id8")
+                                  .weightagePercentage(25.0)
+                                  .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                  .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                  .accountId(builderFactory.getContext().getAccountId())
+                                  .build()))
+                      .build())
+            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/slo-dashboard/widgets/list")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                            .queryParam("type", "Simple")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(calendarSloTarget));
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    String responseString = response.readEntity(String.class);
+    assertThat(responseString).contains("\"totalItems\":2");
+    assertThat(responseString).contains("\"pageItemCount\":2");
   }
 
   @Test
@@ -165,8 +241,7 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                                           .userJourneyRef("uj1")
                                           .type(ServiceLevelIndicatorType.AVAILABILITY)
                                           .build();
-    ServiceLevelObjectiveResponse serviceLevelObjectiveResponse =
-        serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
     SLOHealthIndicator sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
                                                 .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
                                                 .errorBudgetRemainingPercentage(10)
@@ -178,7 +253,7 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                  .userJourneyRef("uj2")
                  .type(ServiceLevelIndicatorType.AVAILABILITY)
                  .build();
-    serviceLevelObjectiveResponse = serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
     sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
                              .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
                              .errorBudgetRemainingPercentage(10)
@@ -198,7 +273,7 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                                        .build())
                              .build())
                  .build();
-    serviceLevelObjectiveResponse = serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
     sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
                              .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
                              .errorBudgetRemainingPercentage(-10)
@@ -210,7 +285,7 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                  .type(ServiceLevelIndicatorType.AVAILABILITY)
                  .userJourneyRef("uj2")
                  .build();
-    serviceLevelObjectiveResponse = serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
 
     Response response = RESOURCES.client()
                             .target("http://localhost:9998/slo-dashboard/risk-count")
