@@ -398,7 +398,9 @@ public class GovernancePolicyResource {
             String json = gson.toJson(governanceJobDetailsAWS);
             log.info("Enqueuing job in Faktory {}", json);
             // TODO: Test bulk enqueue here
-            FaktoryProducer.Push(policyEnforcement.getCloudProvider().toString(), "aws", json);
+            // jobType, jobQueue, json
+            FaktoryProducer.Push(
+                policyEnforcement.getCloudProvider().toString(), policyEnforcement.getCloudProvider().toString(), json);
             log.info("Pushed job in Faktory!");
             // Make a record in Mongo
             // TODO: Test bulk insert when bulk enqueue support is made
