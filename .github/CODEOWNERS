@@ -23,7 +23,6 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 
 /315-sto-manager/ @harness/sto
 /323-sto-utilities/ @harness/sto
-/325-sto-beans/ @harness/sto
 /320-ci-execution/src/**/Security*.java @harness/sto
 /320-ci-execution/src/**/STO*.java @harness/sto
 /332-ci-manager/service/src/**/Security*.java @harness/sto

@@ -88,10 +88,6 @@ aeriform("//323-sto-utilities:module")
 
 aeriform("//323-sto-utilities:tests")
 
-aeriform("//325-sto-beans:module")
-
-aeriform("//325-sto-beans:tests")
-
 aeriform("//332-ci-manager/app:module")
 
 aeriform("//332-ci-manager/app:tests")
