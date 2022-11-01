@@ -501,7 +501,6 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
         .pollingModeEnabled(getDelegateConfiguration().isPollForTasks())
         .ng(DELEGATE_NG)
         .tags(isNotBlank(DELEGATE_TAGS) ? Arrays.asList(DELEGATE_TAGS.trim().split("\\s*,+\\s*,*\\s*")) : emptyList())
-        .sampleDelegate(false)
         .location(Paths.get("").toAbsolutePath().toString())
         .heartbeatAsObject(true)
         .immutable(getDelegateConfiguration().isImmutable())
