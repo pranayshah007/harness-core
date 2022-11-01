@@ -268,6 +268,7 @@ for kustomizeVersion in v3.5.4 v4.0.0; do
 
 done
 
+
 for scmVersion in ff17c219; do
   echo "Adding scm" $scmVersion
 
