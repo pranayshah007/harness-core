@@ -15,7 +15,9 @@ import lombok.Data;
 @Builder
 @Singleton
 public class GovernanceConfig {
-    private boolean useDkron;
-    private String callbackApiEndpoint;
-    private boolean dkronJobEnabled;
+  private boolean useDkron;
+  private String callbackApiEndpoint;
+  private boolean dkronJobEnabled;
+  private String awsFaktoryJobType;
+  private String awsFaktoryQueueName;
 }

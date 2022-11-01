@@ -14,6 +14,7 @@ import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.governance.faktory.FaktoryProducer;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
@@ -117,6 +118,7 @@ public class GovernancePolicyResource {
   private final CCMRbacHelper rbacHelper;
   private final ConnectorResourceClient connectorResourceClient;
   private final PolicyExecutionService policyExecutionService;
+  @Inject CENextGenConfiguration configuration;
 
   @Inject
   public GovernancePolicyResource(GovernancePolicyService governancePolicyService, CCMRbacHelper rbacHelper,
@@ -399,8 +401,8 @@ public class GovernancePolicyResource {
             log.info("Enqueuing job in Faktory {}", json);
             // TODO: Test bulk enqueue here
             // jobType, jobQueue, json
-            FaktoryProducer.Push(
-                policyEnforcement.getCloudProvider().toString(), policyEnforcement.getCloudProvider().toString(), json);
+            FaktoryProducer.Push(configuration.getGovernanceConfig().getAwsFaktoryJobType(),
+                configuration.getGovernanceConfig().getAwsFaktoryQueueName(), json);
             log.info("Pushed job in Faktory!");
             // Make a record in Mongo
             // TODO: Test bulk insert when bulk enqueue support is made
