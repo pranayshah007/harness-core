@@ -149,7 +149,7 @@ public interface YamlTypes {
   String STARTUP_COMMAND = "startupCommand";
 
   String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
-  String ELASTIGROUP_SETUP_STEP = StepSpecTypeConstants.ELASTIGROUP_SETUP;
+  String ELASTIGROUP_SETUP = StepSpecTypeConstants.ELASTIGROUP_SETUP;
   String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
 
   String APPLICATION_SETTINGS = "applicationSettings";

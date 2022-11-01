@@ -542,7 +542,7 @@ public class CDNGRegistrars {
                                            .build())
                    .build())
               .add(YamlSchemaRootClass.builder()
-                      .entityType(EntityType.ELASTIGROUP_SETUP)
+                      .entityType(EntityType.ELASTIGROUP_SETUP_STEP)
                       .availableAtProjectLevel(true)
                       .availableAtOrgLevel(false)
                       .availableAtAccountLevel(false)
