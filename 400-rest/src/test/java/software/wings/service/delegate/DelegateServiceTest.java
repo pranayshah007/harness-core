@@ -1162,7 +1162,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .version(VERSION)
                                 .proxy(true)
                                 .pollingModeEnabled(true)
-                                .sampleDelegate(true)
                                 .tags(ImmutableList.of("tag1", "tag2"))
                                 .build();
 
@@ -1185,7 +1184,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.getVersion()).isEqualTo(params.getVersion());
     assertThat(delegateFromDb.isProxy()).isEqualTo(params.isProxy());
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
-    assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateGroupFromDb.getTags()).containsExactlyInAnyOrder("tag1", "tag2");
     assertThat(delegateFromDb.isMtls()).isTrue();
   }
@@ -1218,7 +1216,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .version(IMMUTABLE_DELEGATE_VERSION)
                                 .proxy(true)
                                 .pollingModeEnabled(true)
-                                .sampleDelegate(true)
                                 .immutable(true)
                                 .tags(ImmutableList.of("tag1", "tag2"))
                                 .build();
@@ -1258,7 +1255,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .version(VERSION)
                                 .proxy(true)
                                 .pollingModeEnabled(true)
-                                .sampleDelegate(true)
                                 .build();
 
     when(delegatesFeature.getMaxUsageAllowedForAccount(ACCOUNT_ID)).thenReturn(Integer.MAX_VALUE);
@@ -1277,7 +1273,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.getVersion()).isEqualTo(params.getVersion());
     assertThat(delegateFromDb.isProxy()).isEqualTo(params.isProxy());
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
-    assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateGroupFromDb.getAccountId()).isEqualTo(delegateGroup.getAccountId());
     assertThat(delegateGroupFromDb.getName()).isEqualTo(delegateGroup.getName());
     assertThat(delegateFromDb.isMtls()).isFalse();
@@ -1305,7 +1300,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .ng(true)
                                 .proxy(true)
                                 .pollingModeEnabled(true)
-                                .sampleDelegate(true)
                                 .build();
 
     DelegateProfile profile = createDelegateProfileBuilder().accountId(accountId).primary(true).build();
@@ -1345,7 +1339,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .proxy(true)
                                 .ng(true)
                                 .pollingModeEnabled(true)
-                                .sampleDelegate(true)
                                 .build();
 
     DelegateProfile profile = createDelegateProfileBuilder().accountId(accountId).primary(true).build();
@@ -1378,7 +1371,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .ng(false)
                                 .proxy(true)
                                 .pollingModeEnabled(true)
-                                .sampleDelegate(false)
                                 .build();
     DelegateProfile profile = createDelegateProfileBuilder().accountId(accountId).primary(true).build();
     when(delegateProfileService.fetchCgPrimaryProfile(accountId)).thenReturn(profile);
@@ -1397,7 +1389,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.getVersion()).isEqualTo(params.getVersion());
     assertThat(delegateFromDb.isProxy()).isEqualTo(params.isProxy());
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
-    assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateFromDb.isNg()).isEqualTo(params.isNg());
     assertThat(delegateFromDb.isMtls()).isFalse();
   }
@@ -1440,7 +1431,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .version(VERSION)
                             .proxy(false)
                             .polllingModeEnabled(false)
-                            .sampleDelegate(false)
                             .mtls(false)
                             .build();
     DelegateProfile primaryDelegateProfile =
@@ -1464,7 +1454,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .version(VERSION + "UPDATED")
                                 .proxy(true)
                                 .pollingModeEnabled(true)
-                                .sampleDelegate(false)
                                 .build();
 
     delegateService.register(params, true);
@@ -1480,7 +1469,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.getVersion()).isEqualTo(params.getVersion());
     assertThat(delegateFromDb.isProxy()).isEqualTo(params.isProxy());
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
-    assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateFromDb.isMtls()).isTrue();
   }
 
@@ -1500,7 +1488,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .proxy(false)
                             .ng(false)
                             .polllingModeEnabled(false)
-                            .sampleDelegate(false)
                             .mtls(false)
                             .build();
     DelegateProfile primaryDelegateProfile =
@@ -1526,7 +1513,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .ng(false)
                                 .proxy(true)
                                 .pollingModeEnabled(true)
-                                .sampleDelegate(false)
                                 .build();
 
     delegateService.register(params, true);
@@ -1541,7 +1527,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.getVersion()).isEqualTo(params.getVersion());
     assertThat(delegateFromDb.isProxy()).isEqualTo(params.isProxy());
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
-    assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateFromDb.isNg()).isEqualTo(params.isNg());
     assertThat(delegateFromDb.isMtls()).isTrue();
   }
@@ -1594,7 +1579,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .version(VERSION)
                             .proxy(false)
                             .polllingModeEnabled(false)
-                            .sampleDelegate(false)
                             .build();
     DelegateProfile primaryDelegateProfile =
         createDelegateProfileBuilder().accountId(delegate.getAccountId()).primary(true).build();
@@ -1639,7 +1623,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                               .version(VERSION)
                               .proxy(false)
                               .polllingModeEnabled(false)
-                              .sampleDelegate(false)
                               .build();
       DelegateProfile primaryDelegateProfile =
           createDelegateProfileBuilder().accountId(delegate.getAccountId()).primary(true).build();
@@ -1689,7 +1672,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                               .version(VERSION)
                               .proxy(false)
                               .polllingModeEnabled(false)
-                              .sampleDelegate(false)
                               .build();
       DelegateProfile primaryDelegateProfile =
           createDelegateProfileBuilder().accountId(delegate.getAccountId()).primary(true).build();
@@ -1739,7 +1721,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .version(VERSION)
                             .proxy(false)
                             .polllingModeEnabled(false)
-                            .sampleDelegate(false)
                             .build();
     DelegateProfile primaryDelegateProfile =
         createDelegateProfileBuilder().accountId(delegate.getAccountId()).primary(true).build();
@@ -1758,7 +1739,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .version(VERSION + "UPDATED")
                                 .proxy(true)
                                 .pollingModeEnabled(true)
-                                .sampleDelegate(false)
                                 .ng(false)
                                 .build();
 
@@ -1774,7 +1754,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.getVersion()).isEqualTo(params.getVersion());
     assertThat(delegateFromDb.isProxy()).isEqualTo(params.isProxy());
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
-    assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateFromDb.isNg()).isFalse();
     assertThat(delegateFromDb.isMtls()).isFalse();
   }
@@ -3648,7 +3627,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .version(VERSION)
                                 .proxy(true)
                                 .pollingModeEnabled(true)
-                                .sampleDelegate(true)
                                 .build();
 
     DelegateProfile profile = createDelegateProfileBuilder().accountId(accountId).primary(true).build();
@@ -3675,7 +3653,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .version(VERSION)
                                 .proxy(true)
                                 .pollingModeEnabled(true)
-                                .sampleDelegate(true)
                                 .build();
 
     when(delegatesFeature.getMaxUsageAllowedForAccount(ACCOUNT_ID)).thenReturn(Integer.MAX_VALUE);
@@ -3694,7 +3671,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.getVersion()).isEqualTo(params.getVersion());
     assertThat(delegateFromDb.isProxy()).isEqualTo(params.isProxy());
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
-    assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateGroupFromDb.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(delegateFromDb.isMtls()).isTrue();
   }
@@ -4006,7 +3982,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .proxy(true)
                                 .ng(true)
                                 .pollingModeEnabled(true)
-                                .sampleDelegate(true)
                                 .build();
 
     DelegateTokenDetails delegateTokenDetails = DelegateTokenDetails.builder()

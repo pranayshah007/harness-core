@@ -296,7 +296,6 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.mongodb.morphia.Key;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
@@ -342,7 +341,6 @@ public class DelegateServiceImpl implements DelegateService {
   private static final String EMPTY_VERSION = "0.0.0";
   private static final String JRE_VERSION_KEY = "jreVersion";
   private static final String ENV_ENV_VAR = "ENV";
-  private static final String SAMPLE_DELEGATE_NAME = "harness-sample-k8s-delegate";
   private static final String deployVersion = System.getenv(DEPLOY_VERSION);
   private static final String DELEGATES_UPDATED_RESPONSE = "Following delegates have been updated";
   private static final String NO_DELEGATES_UPDATED_RESPONSE = "No delegate is waiting for approval/rejection";
@@ -939,7 +937,6 @@ public class DelegateServiceImpl implements DelegateService {
                   .grpcActive(connections.stream().allMatch(connection
                       -> connection.getLastGrpcHeartbeat() > System.currentTimeMillis() - MAX_GRPC_HB_TIMEOUT))
                   .implicitSelectors(delegateSetupService.retrieveDelegateImplicitSelectors(delegate, false))
-                  .sampleDelegate(delegate.isSampleDelegate())
                   .connections(connections)
                   .tokenActive(delegate.getDelegateTokenName() == null
                       || (delegateTokenStatusMap.containsKey(delegate.getDelegateTokenName())
@@ -1025,7 +1022,6 @@ public class DelegateServiceImpl implements DelegateService {
       setUnset(updateOperations, DelegateKeys.delegateType, delegate.getDelegateType());
     }
     setUnset(updateOperations, DelegateKeys.delegateProfileId, delegate.getDelegateProfileId());
-    setUnset(updateOperations, DelegateKeys.sampleDelegate, delegate.isSampleDelegate());
     setUnset(updateOperations, DelegateKeys.polllingModeEnabled, delegate.isPolllingModeEnabled());
     setUnset(updateOperations, DelegateKeys.proxy, delegate.isProxy());
     setUnset(updateOperations, DelegateKeys.ceEnabled, delegate.isCeEnabled());
@@ -2270,9 +2266,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     log.info("Delegate saved: {}", savedDelegate);
-
     updateWithTokenAndSeqNumIfEcsDelegate(delegate, savedDelegate);
-    eventPublishHelper.publishInstalledDelegateEvent(delegate.getAccountId(), delegate.getUuid());
 
     try {
       if (savedDelegate.isCeEnabled()) {
@@ -2701,7 +2695,6 @@ public class DelegateServiceImpl implements DelegateService {
             .tagsFromYaml(delegateParams.isNg() ? null : delegateParams.getTags())
             .polllingModeEnabled(delegateParams.isPollingModeEnabled())
             .proxy(delegateParams.isProxy())
-            .sampleDelegate(delegateParams.isSampleDelegate())
             .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
             .ceEnabled(delegateParams.isCeEnabled())
             .delegateTokenName(delegateTokenName.orElse(null))
@@ -4063,19 +4056,6 @@ public class DelegateServiceImpl implements DelegateService {
       task.setUuid(generateUuid());
     }
     return delegateTaskServiceClassic.executeTask(task);
-  }
-
-  @Override
-  public boolean sampleDelegateExists(String accountId) {
-    Key<Delegate> delegateKey = persistence.createQuery(Delegate.class)
-                                    .filter(DelegateKeys.accountId, accountId)
-                                    .filter(DelegateKeys.delegateName, SAMPLE_DELEGATE_NAME)
-                                    .getKey();
-    if (delegateKey == null) {
-      return false;
-    }
-    return delegateConnectionDao.checkDelegateConnected(
-        accountId, delegateKey.getId().toString(), versionInfoManager.getVersionInfo().getVersion());
   }
 
   @Override
