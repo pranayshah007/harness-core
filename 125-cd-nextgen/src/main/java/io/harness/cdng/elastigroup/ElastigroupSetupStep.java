@@ -72,7 +72,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 @Slf4j
 public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac implements ElastigroupStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(ExecutionNodeType.ELASTIGROUP_SETUP_STEP.getYamlType())
+                                               .setType(ExecutionNodeType.ELASTIGROUP_SETUP.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
