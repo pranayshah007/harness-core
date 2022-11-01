@@ -470,7 +470,8 @@ public enum FeatureName {
       "FF to enable verbose logging for the manager process when secret gets evaluated", HarnessTeam.DEL),
   CI_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CI UI", HarnessTeam.CI),
   CF_ROLLBACK_CUSTOM_STACK_NAME(
-      "Use custom stack name and region to find lates successful couldformation rollback data", HarnessTeam.CDP);
+      "Use custom stack name and region to find lates successful couldformation rollback data", HarnessTeam.CDP),
+  AZURE_WEB_APP_NG_NEXUS_PACKAGE("Enable support for Nexus package artifact in Azure Web App NG", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
