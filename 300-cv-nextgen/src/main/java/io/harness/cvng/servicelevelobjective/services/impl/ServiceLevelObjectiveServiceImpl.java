@@ -452,7 +452,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName) {
     try {
       return getServiceLevelObjectivePageResponseFromV2(pageParams.getSize(), pageParams.getPage(),
-          serviceLevelObjectiveV2Service.getSLOForListView(projectParams, filter, pageParams, filterByName));
+          serviceLevelObjectiveV2Service.getSLOForListView(projectParams, filter, pageParams, filterByName, null));
     } catch (Exception ex) {
       log.error("[SLO Data Mismatch]: Get SLO V2 List page failed", ex);
     }

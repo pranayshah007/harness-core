@@ -43,6 +43,7 @@ import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObject
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
@@ -388,8 +389,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   }
 
   @Override
-  public PageResponse<AbstractServiceLevelObjective> getSLOForListView(
-      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName) {
+  public PageResponse<AbstractServiceLevelObjective> getSLOForListView(ProjectParams projectParams,
+      SLODashboardApiFilter filter, PageParams pageParams, String filterByName, SLOTargetDTO sloTargetDTO) {
     return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(), filterByName,
         Filter.builder()
             .monitoredServiceIdentifier(filter.getMonitoredServiceIdentifier())
@@ -397,6 +398,10 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .sliTypes(filter.getSliTypes())
             .errorBudgetRisks(filter.getErrorBudgetRisks())
             .targetTypes(filter.getTargetTypes())
+            .sloType(filter.getType())
+            .sloTarget(sloTargetDTO != null ? sloTargetTypeSLOTargetTransformerMap.get(sloTargetDTO.getType())
+                                                  .getSLOTarget(sloTargetDTO.getSpec())
+                                            : null)
             .build());
   }
 
@@ -626,6 +631,12 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       sloQuery.field(ServiceLevelObjectiveV2Keys.sloTarget + "." + SLOTargetDTO.SLOTargetKeys.type)
           .in(filter.getTargetTypes());
     }
+    if (filter.getSloTarget() != null) {
+      sloQuery.filter(ServiceLevelObjectiveV2Keys.sloTarget, filter.getSloTarget());
+    }
+    if (filter.getSloType() != null) {
+      sloQuery.filter(ServiceLevelObjectiveV2Keys.type, filter.getSloType());
+    }
     if (filter.getMonitoredServiceIdentifier() != null) {
       sloQuery.filter(SimpleServiceLevelObjectiveKeys.monitoredServiceIdentifier, filter.monitoredServiceIdentifier);
     }
@@ -686,5 +697,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     List<ErrorBudgetRisk> errorBudgetRisks;
     String monitoredServiceIdentifier;
     String notificationRuleRef;
+    ServiceLevelObjective.SLOTarget sloTarget;
+    ServiceLevelObjectiveType sloType;
   }
 }

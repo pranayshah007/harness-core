@@ -40,4 +40,5 @@ public class SLODashboardApiFilter {
   @Parameter(description = CVConstants.ERROR_BUDGET_RISK_PARAM_MESSAGE)
   @QueryParam("errorBudgetRisks")
   List<ErrorBudgetRisk> errorBudgetRisks;
+  @Parameter(description = "For filtering on the basis of SLO type") @QueryParam("type") ServiceLevelObjectiveType type;
 }

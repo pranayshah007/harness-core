@@ -167,10 +167,9 @@ public abstract class AbstractServiceLevelObjective
 
   public abstract Optional<String> mayBeGetMonitoredServiceIdentifier();
 
-  public abstract static class AbstractServiceLevelObjectiveUpdatableEntity<T extends AbstractServiceLevelObjective, D
-                                                                                extends AbstractServiceLevelObjective>
-      implements UpdatableEntity<T, D> {
-    protected void setCommonOperations(UpdateOperations<T> updateOperations, D abstractServiceLevelObjective) {
+  public abstract static class AbstractServiceLevelObjectiveUpdatableEntity<T extends AbstractServiceLevelObjective>
+      implements UpdatableEntity<T, T> {
+    protected void setCommonOperations(UpdateOperations<T> updateOperations, T abstractServiceLevelObjective) {
       updateOperations.set(ServiceLevelObjectiveV2Keys.orgIdentifier, abstractServiceLevelObjective.getOrgIdentifier())
           .set(ServiceLevelObjectiveV2Keys.projectIdentifier, abstractServiceLevelObjective.getProjectIdentifier())
           .set(ServiceLevelObjectiveV2Keys.name, abstractServiceLevelObjective.getName())

@@ -20,6 +20,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
+import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -42,10 +43,12 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import retrofit2.http.Body;
 
 @Api("slo-dashboard")
 @Path("slo-dashboard")
@@ -113,7 +116,28 @@ public class SLODashboardResource {
       @BeanParam PageParams pageParams,
       @Parameter(description = "For filtering on the basis of name") @QueryParam("filter") String filterByName) {
     return ResponseDTO.newResponse(
-        sloDashboardService.getSloHealthListView(projectParams, filter, pageParams, filterByName));
+        sloDashboardService.getSloHealthListView(projectParams, filter, pageParams, filterByName, null));
+  }
+
+  @POST
+  @Path("widgets/list")
+  @ExceptionMetered
+  @ApiOperation(value = "get slo list view", nickname = "getSLOHealthListViewV2")
+  @Operation(operationId = "getSLOHealthListViewV2", summary = "Get SLO list view",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Gets the SLOs for list view")
+      })
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<SLOHealthListView>>
+  getSloHealthListViewV2(@NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter filter,
+      @BeanParam PageParams pageParams,
+      @Parameter(description = "For filtering on the basis of name") @QueryParam("filter") String filterByName,
+      @Parameter(description = "For filtering on the basis of SLO Target spec") @NotNull @Valid
+      @Body SLOTargetDTO sloTargetDTO) {
+    return ResponseDTO.newResponse(
+        sloDashboardService.getSloHealthListView(projectParams, filter, pageParams, filterByName, sloTargetDTO));
   }
 
   @GET
