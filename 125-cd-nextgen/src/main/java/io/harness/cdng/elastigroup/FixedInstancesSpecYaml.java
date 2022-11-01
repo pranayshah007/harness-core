@@ -41,7 +41,7 @@ public class FixedInstancesSpecYaml extends InstancesSpecAbstractYaml {
           InstanceType.Fixed;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  FixedInstancesSpec fixedInstancesSpec;
+  FixedInstancesSpec spec;
   @Override
   public String getType() {
     return InstancesSpecTypeConstants.FIXED;
