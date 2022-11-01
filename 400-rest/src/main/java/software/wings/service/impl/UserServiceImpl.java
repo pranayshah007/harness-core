@@ -229,6 +229,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -258,8 +259,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -359,6 +360,9 @@ public class UserServiceImpl implements UserService {
   @Inject private FeatureFlagService featureFlagService;
   @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
   @Inject private TelemetryReporter telemetryReporter;
+
+  private final ScheduledExecutorService scheduledExecutor = new ScheduledThreadPoolExecutor(1,
+      new ThreadFactoryBuilder().setNameFormat("invite-executor-thread-%d").setPriority(Thread.NORM_PRIORITY).build());
 
   private Cache<String, User> getUserCache() {
     if (configurationController.isPrimary()) {
@@ -1881,8 +1885,7 @@ public class UserServiceImpl implements UserService {
 
     properties.put("platform", "CG");
     // Wait 20 seconds, to ensure identify is sent before track
-    ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
-    tempExecutor.schedule(
+    scheduledExecutor.schedule(
         ()
             -> telemetryReporter.sendTrackEvent("Invite Accepted", userEmail, accountId, properties,
                 ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), null),
