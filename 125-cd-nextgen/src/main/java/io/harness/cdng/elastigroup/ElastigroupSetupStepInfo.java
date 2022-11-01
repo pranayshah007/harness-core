@@ -53,7 +53,7 @@ public class ElastigroupSetupStepInfo
   @Builder(builderMethodName = "infoBuilder")
   public ElastigroupSetupStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
                                   ParameterField<String> name,
-                                  ParameterField<InstancesSpecAbstractYaml> instances) {
+                                  ElastigroupInstances instances) {
     super(delegateSelectors, name, instances);
   }
 

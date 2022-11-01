@@ -38,5 +38,5 @@ public class ElastigroupSetupBaseStepInfo {
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> name;
 
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<InstancesSpecAbstractYaml> instances;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH) ElastigroupInstances instances;
 }
