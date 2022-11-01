@@ -59,6 +59,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
+import io.harness.redis.intc.DelegateCacheService;
 import io.harness.service.dto.RetryDelegate;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateTaskRetryObserver;
@@ -97,6 +98,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -144,6 +146,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private DelegateCache delegateCache;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
+  @Inject private DelegateCacheService delegateCacheService;
 
   private LoadingCache<ImmutablePair<String, String>, Optional<DelegateConnectionResult>>
       delegateConnectionResultCache =
@@ -890,6 +893,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
                   -> errorMessage + " : " + String.join(",", task.getNonAssignableDelegates().get(errorMessage)))
               .collect(Collectors.toList());
       nonAssignables.forEach(message -> delegateTaskServiceClassic.addToTaskActivityLog(task, message));
+
     } catch (Exception e) {
       log.error("Error checking for eligible or whitelisted delegates", e);
     }

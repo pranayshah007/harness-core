@@ -2558,7 +2558,6 @@ public class DelegateServiceImpl implements DelegateService {
       log.info("Registering delegate for Hostname: {} IP: {}", delegate.getHostName(), delegate.getIp());
     }
 
-    delegateCacheService.getDelegateTaskCache(delegate.getUuid());
     if (delegate.isImmutable() && delegate.getExpirationTime() == 0) {
       delegate.setExpirationTime(setDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()));
     }

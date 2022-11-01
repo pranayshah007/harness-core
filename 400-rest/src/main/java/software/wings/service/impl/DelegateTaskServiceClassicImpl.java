@@ -36,6 +36,7 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_V
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.app.ManagerCacheRegistrar.SECRET_CACHE;
+import static software.wings.app.ManagerCacheRegistrar.TASK_CACHE;
 import static software.wings.expression.SecretManagerModule.EXPRESSION_EVALUATOR_EXECUTOR;
 import static software.wings.service.impl.AssignDelegateServiceImpl.PIPELINE;
 import static software.wings.service.impl.AssignDelegateServiceImpl.STAGE;
@@ -134,6 +135,7 @@ import io.harness.service.intfc.DelegateTaskService;
 import io.harness.version.VersionInfoManager;
 import io.harness.waiter.WaitNotifyEngine;
 
+import org.redisson.api.RLocalCachedMap;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.ExecutionCredential;
 import software.wings.beans.GitConfig;
@@ -199,6 +201,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
@@ -276,11 +279,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private DelegateGlobalAccountController delegateGlobalAccountController;
   @Inject @Named(SECRET_CACHE) Cache<String, EncryptedDataDetails> secretsCache;
+  @Inject @Named(TASK_CACHE) RLocalCachedMap<String, AtomicInteger> taskCache;
   @Inject @Named(EXPRESSION_EVALUATOR_EXECUTOR) ExecutorService expressionEvaluatorExecutor;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
+  @Inject protected HarnessCacheManager harnessCacheManager;
 
   private static final SecureRandom random = new SecureRandom();
-  private HarnessCacheManager harnessCacheManager;
+
   private Supplier<Long> taskCountCache = Suppliers.memoizeWithExpiration(this::fetchTaskCount, 1, TimeUnit.MINUTES);
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private ManagerObserverEventProducer managerObserverEventProducer;
@@ -476,6 +481,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           }
           throw new NoEligibleDelegatesInAccountException(errorMessage.toString());
         }
+        Map<String, AtomicInteger> val = taskCache.getCachedMap();
+        AtomicInteger count = val.get(eligibleListOfDelegates.get(0));
+        count.incrementAndGet();
+        taskCache.putIfAbsent(eligibleListOfDelegates.get(0),count);
+
         // shuffle the eligible delegates to evenly distribute the load
         Collections.shuffle(eligibleListOfDelegates);
         task.setBroadcastToDelegateIds(

@@ -1,10 +1,9 @@
 package io.harness.redis.intc;
 
-import io.harness.delegate.beans.DelegateTaskCache;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public interface DelegateCacheService {
+  AtomicInteger getDelegateTaskCache(String delegateId);
 
-    DelegateTaskCache getDelegateTaskCache(String delegateId);
-
-    void updateDelegateTaskCache(String delegateId);
+  void updateDelegateTaskCache(String delegateId, AtomicInteger count);
 }
