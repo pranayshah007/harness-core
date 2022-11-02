@@ -5,6 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.task.artifacts.jenkins;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -161,7 +168,7 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
       buildDetails = buildDetails.stream()
                          .filter(buildDetail -> buildDetail.getNumber().equals(attributesRequest.getBuildNumber()))
                          .collect(toList());
-      if (buildDetails.get(0) != null) {
+      if (isNotEmpty(buildDetails) && buildDetails.get(0) != null) {
         JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
             JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
         return getSuccessTaskExecutionResponse(
