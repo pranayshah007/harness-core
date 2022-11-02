@@ -25,6 +25,7 @@ func (h *Handler) Register(g *echo.Group) {
 	g.POST("/ack", h.ack())
 	g.POST("/unack", h.unAck())
 	g.GET("/healthz", h.healthz())
+	g.POST("/register", h.register())
 }
 
 // handleEnqueue godoc
@@ -142,5 +143,31 @@ func (h *Handler) unAck() echo.HandlerFunc {
 func (h *Handler) healthz() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return c.JSON(http.StatusOK, "Queue Service is Healthy")
+	}
+}
+
+// register godoc
+// @Summary     Register a Topic to a particular Queue
+// @Description Register a Topic to a particular Queue
+// @Accept      json
+// @Produce     json
+// @Param       request body store.RegisterTopicMetadata true "query params"
+// @Param 		Authorization header string true "Authorization"
+// @Success     200 {object} string
+// @Router      /v1/register [POST]
+func (h *Handler) register() echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		p := &store.RegisterTopicMetadata{}
+
+		if err := c.Bind(p); err != nil {
+			return c.JSON(http.StatusBadRequest, err)
+		}
+
+		err := h.s.Register(c.Request().Context(), *p)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, err)
+		}
+		return c.JSON(http.StatusOK, "Registration completed successfully")
 	}
 }

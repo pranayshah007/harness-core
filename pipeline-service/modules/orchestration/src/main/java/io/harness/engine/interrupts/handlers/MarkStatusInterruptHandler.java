@@ -30,13 +30,18 @@ import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
 import java.util.EnumSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import lombok.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class MarkStatusInterruptHandler implements InterruptHandler {
+  private static int MAX_NODES_BATCH_SIZE = 1000;
+
   @Inject protected NodeExecutionService nodeExecutionService;
   @Inject protected InterruptService interruptService;
   @Inject private OrchestrationEngine orchestrationEngine;
@@ -98,8 +103,22 @@ public abstract class MarkStatusInterruptHandler implements InterruptHandler {
   }
 
   private void handlePlanStatus(String planExecutionId, String nodeExecutionId) {
-    List<NodeExecution> nodeExecutions =
-        nodeExecutionService.fetchWithoutRetriesAndStatusIn(planExecutionId, StatusUtils.activeStatuses());
+    int currentPage = 0;
+    int totalPages = 0;
+
+    List<NodeExecution> nodeExecutions = new LinkedList<>();
+    do {
+      Page<NodeExecution> paginatedNodeExecutions =
+          nodeExecutionService.fetchWithoutRetriesAndStatusIn(planExecutionId, StatusUtils.activeStatuses(),
+              NodeProjectionUtils.withStatus, PageRequest.of(currentPage, MAX_NODES_BATCH_SIZE));
+      if (paginatedNodeExecutions == null || paginatedNodeExecutions.getTotalElements() == 0) {
+        break;
+      }
+      totalPages = paginatedNodeExecutions.getTotalPages();
+      nodeExecutions.addAll(new LinkedList<>(paginatedNodeExecutions.getContent()));
+      currentPage++;
+    } while (currentPage < totalPages);
+
     List<Status> filteredExecutions = nodeExecutions.stream()
                                           .filter(ne -> !ne.getUuid().equals(nodeExecutionId))
                                           .map(NodeExecution::getStatus)

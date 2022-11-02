@@ -116,7 +116,6 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private String profileResult;
   private boolean profileError;
   private long profileExecutedAt;
-  private boolean sampleDelegate;
   private long expirationTime;
 
   @FdIndex Long capabilitiesCheckNextIteration;
@@ -182,7 +181,6 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
         .keepAlivePacket(delegateParams.isKeepAlivePacket())
         .polllingModeEnabled(delegateParams.isPollingModeEnabled())
         .ng(delegateParams.isNg())
-        .sampleDelegate(delegateParams.isSampleDelegate())
         .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
         .location(delegateParams.getLocation())
         .mtls(connectedUsingMtls)

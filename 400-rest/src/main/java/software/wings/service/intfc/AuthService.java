@@ -150,6 +150,8 @@ public interface AuthService {
 
   void checkIfUserAllowedToRollbackWorkflowToEnv(String appId, String envId);
 
+  void checkIfUserAllowedToAbortWorkflowToEnv(String appId, String envId);
+
   void checkIfUserCanCreateEnv(String appId, EnvironmentType envType);
 
   void checkWorkflowPermissionsForEnv(String appId, Workflow workflow, Action action);

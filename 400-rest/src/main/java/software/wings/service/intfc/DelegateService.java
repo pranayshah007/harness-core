@@ -199,8 +199,6 @@ public interface DelegateService extends OwnedByAccount {
 
   DelegateGroup upsertDelegateGroup(String name, String accountId, DelegateSetupDetails delegateSetupDetails);
 
-  boolean sampleDelegateExists(String accountId);
-
   List<Delegate> getNonDeletedDelegatesForAccount(String accountId);
 
   boolean checkDelegateConnected(String accountId, String delegateId);

@@ -31,6 +31,7 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.sf.json.JSONArray;
 import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -57,6 +58,7 @@ public class JiraClient {
           .name(COMMENT_FIELD_NAME)
           .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.STRING).build())
           .build();
+  private static final String REPORTER_FIELD_NAME = "Reporter";
 
   private final JiraInternalConfig config;
   private final JiraRestClient restClient;
@@ -189,7 +191,7 @@ public class JiraClient {
    * @return the issue create metadata
    */
   public JiraIssueCreateMetadataNG getIssueCreateMetadata(String projectKey, String issueType, String expand,
-      boolean fetchStatus, boolean ignoreComment, boolean ffEnabled) {
+      boolean fetchStatus, boolean ignoreComment, boolean ffEnabled, boolean fromCG) {
     JiraIssueCreateMetadataNG createMetadata = new JiraIssueCreateMetadataNG();
     JiraInstanceData jiraInstanceData = getInstanceData();
     if (jiraInstanceData.deploymentType == JiraInstanceData.JiraDeploymentType.SERVER && ffEnabled) {
@@ -206,6 +208,9 @@ public class JiraClient {
                 "fetching create metadata");
         if (!ignoreComment) {
           createMetadataNGFields.addField(COMMENT_FIELD);
+        }
+        if (!fromCG) {
+          createMetadataNGFields.removeField(REPORTER_FIELD_NAME);
         }
         originalMetadataFromNewFieldsMetadata(projectKey, createMetadata, issueTypeNG, createMetadataNGFields);
       }
@@ -300,6 +305,10 @@ public class JiraClient {
     return executeCall(restClient.getProjectStatuses(projectKey), "fetching project statuses");
   }
 
+  public JSONArray getResolution() {
+    return executeCall(restClient.getResolution(), "fetching Resolutions");
+  }
+
   /**
    * Create an issue in the given project and issue type.
    *
@@ -323,9 +332,9 @@ public class JiraClient {
    * @return the created issue
    */
   public JiraIssueNG createIssue(@NotBlank String projectKey, @NotBlank String issueTypeName,
-      Map<String, String> fields, boolean checkRequiredFields, boolean ffEnabled) {
+      Map<String, String> fields, boolean checkRequiredFields, boolean ffEnabled, boolean fromCG) {
     JiraIssueCreateMetadataNG createMetadata =
-        getIssueCreateMetadata(projectKey, issueTypeName, null, false, false, ffEnabled);
+        getIssueCreateMetadata(projectKey, issueTypeName, null, false, false, ffEnabled, fromCG);
     JiraProjectNG project = createMetadata.getProjects().get(projectKey);
     if (project == null) {
       throw new InvalidRequestException(String.format("Invalid project: %s", projectKey));

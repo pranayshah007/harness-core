@@ -30,7 +30,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -48,7 +48,7 @@ import org.springframework.data.mongodb.core.query.Update;
 
 public class PipelineStatusUpdateEventHandlerTest extends PipelineServiceTestBase {
   @Mock private PlanExecutionService planExecutionService;
-  @Mock private PmsExecutionSummaryRespository pmsExecutionSummaryRepository;
+  @Mock private PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Mock private OrchestrationEventEmitter eventEmitter;
   @Mock private WaitNotifyEngine waitNotifyEngine;
   private PipelineStatusUpdateEventHandler pipelineStatusUpdateEventHandler;

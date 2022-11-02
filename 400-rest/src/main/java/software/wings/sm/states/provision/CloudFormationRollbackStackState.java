@@ -65,8 +65,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 
@@ -162,9 +165,35 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
     if (isNotEmpty(allRollbackElements)) {
       return allRollbackElements.stream()
           .filter(element -> element.getProvisionerId().equals(provisionerId))
+          .filter(filterByConfigId(context))
+          .filter(filterByStackNameAndRegion(context))
           .findFirst();
     }
     return Optional.empty();
+  }
+
+  @NotNull
+  private Predicate<CloudFormationRollbackInfoElement> filterByConfigId(ExecutionContext context) {
+    return cloudFormationRollbackInfoElement -> {
+      if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CONFIG_FILTER, context.getAccountId())) {
+        return cloudFormationRollbackInfoElement.getAwsConfigId().equals(fetchResolvedAwsConfigId(context));
+      } else {
+        return true;
+      }
+    };
+  }
+
+  private Predicate<CloudFormationRollbackInfoElement> filterByStackNameAndRegion(ExecutionContext context) {
+    return cloudFormationRollbackInfoElement -> {
+      if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CUSTOM_STACK_NAME, context.getAccountId())) {
+        String renderedCustomStackName =
+            useCustomStackName ? context.renderExpression(customStackName) : StringUtils.EMPTY;
+        return cloudFormationRollbackInfoElement.getCustomStackName().equals(renderedCustomStackName)
+            && cloudFormationRollbackInfoElement.getRegion().equals(context.renderExpression(region));
+      } else {
+        return true;
+      }
+    };
   }
 
   /**
@@ -184,6 +213,12 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
             .filter(CloudFormationRollbackConfigKeys.entityId, entityId);
     if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CONFIG_FILTER, context.getAccountId())) {
       getRollbackConfig.filter(CloudFormationRollbackConfigKeys.awsConfigId, fetchResolvedAwsConfigId(context));
+    }
+    if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CUSTOM_STACK_NAME, context.getAccountId())) {
+      String renderedCustomStackName =
+          useCustomStackName ? executionContext.renderExpression(customStackName) : StringUtils.EMPTY;
+      getRollbackConfig.filter(CloudFormationRollbackConfigKeys.customStackName, renderedCustomStackName);
+      getRollbackConfig.filter(CloudFormationRollbackConfigKeys.region, executionContext.renderExpression(region));
     }
     getRollbackConfig.order(Sort.descending(CloudFormationRollbackConfigKeys.createdAt)).fetch();
     try (HIterator<CloudFormationRollbackConfig> configIterator = new HIterator(getRollbackConfig.fetch())) {
@@ -273,6 +308,8 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
               .variables(textVariables)
               .encryptedVariables(encryptedTextVariables)
               .deploy(featureFlagService.isEnabled(CLOUDFORMATION_CHANGE_SET, context.getAccountId()))
+              .tags(configParameter.getTags())
+              .capabilities(configParameter.getCapabilities())
               .build();
       setTimeOutOnRequest(request);
       DelegateTask delegateTask =
@@ -375,6 +412,8 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
           .commandName(mainCommandUnit())
           .variables(stackElement.getOldStackParameters())
           .awsConfig(awsConfig)
+          .capabilities(stackElement.getCapabilities())
+          .tags(stackElement.getTags())
           .deploy(featureFlagService.isEnabled(CLOUDFORMATION_CHANGE_SET, context.getAccountId()));
       if (stackElement.isSkipBasedOnStackStatus() == false || isEmpty(stackElement.getStackStatusesToMarkAsSuccess())) {
         builder.stackStatusesToMarkAsSuccess(new ArrayList<>());

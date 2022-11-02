@@ -242,7 +242,7 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
                  .orchestrationEventType(OrchestrationEventType.NODE_EXECUTION_START)
                  .createdAt(1550L)
                  .build());
-    doReturn(logs).when(orchestrationEventLogRepository).findUnprocessedEvents(planExecutionId, 1222L);
+    doReturn(logs).when(orchestrationEventLogRepository).findUnprocessedEvents(planExecutionId, 1222L, 1000);
     nodeExecutionService.save(
         NodeExecution.builder()
             .uuid(nodeExecutionId)

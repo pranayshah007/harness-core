@@ -19,6 +19,8 @@ import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentDat
 import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
+import software.wings.beans.TaskType;
+
 import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
@@ -36,4 +38,5 @@ public class AzureSlotDeploymentPassThroughData implements PassThroughData {
   AzureAppServicePreDeploymentData preDeploymentData;
   CommandUnitsProgress commandUnitsProgress;
   ArtifactOutcome primaryArtifactOutcome;
+  @Builder.Default String taskType = TaskType.AZURE_WEB_APP_TASK_NG.name();
 }

@@ -14,6 +14,7 @@ import static io.harness.beans.WorkflowType.ORCHESTRATION;
 import static io.harness.beans.WorkflowType.PIPELINE;
 import static io.harness.validation.Validator.notNullCheck;
 
+import static software.wings.security.PermissionAttribute.Action.ABORT_WORKFLOW;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_PIPELINE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_WORKFLOW;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_WORKFLOW_ROLLBACK;
@@ -106,6 +107,16 @@ public class DeploymentAuthHandler {
       permissionAttributeList.add(new PermissionAttribute(DEPLOYMENT, EXECUTE_WORKFLOW_ROLLBACK));
       authorize(permissionAttributeList, asList(appId), workflowId);
       authService.checkIfUserAllowedToRollbackWorkflowToEnv(appId, workflowExecution.getEnvId());
+    }
+  }
+  public void authorizeAbortWorkflow(String appId, WorkflowExecution workflowExecution) {
+    List<PermissionAttribute> permissionAttributeList = new ArrayList<>();
+    if (workflowExecution != null) {
+      String workflowId = workflowExecution.getWorkflowId();
+      notNullCheck("Workflow id is null for execution " + workflowId, workflowId);
+      permissionAttributeList.add(new PermissionAttribute(DEPLOYMENT, ABORT_WORKFLOW));
+      authorize(permissionAttributeList, asList(appId), workflowId);
+      authService.checkIfUserAllowedToAbortWorkflowToEnv(appId, workflowExecution.getEnvId());
     }
   }
 

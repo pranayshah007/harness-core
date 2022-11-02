@@ -24,7 +24,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class QueryBuilderPipelineTest extends CategoryTest {
-  String tableName_default = "pipeline_execution_summary_ci";
+  String tableName_default = "pipeline_execution_summary";
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)

@@ -621,6 +621,20 @@ go_repository(
 )
 
 go_repository(
+    name = "com_github_wings_software_dlite",
+    importpath = "github.com/wings-software/dlite",
+    sum = "h1:143lMB7T+9OqU9VYSpm71B4DzIONQOUvWWGsmreTpHI=",
+    version = "v0.0.0-20220915141325-eb8c295a2189",
+)
+
+go_repository(
+    name = "com_github_patrickmn_go_cache",
+    importpath = "github.com/patrickmn/go-cache",
+    sum = "h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=",
+    version = "v2.1.0+incompatible",
+)
+
+go_repository(
     name = "com_github_chzyer_test",
     importpath = "github.com/chzyer/test",
     sum = "h1:q763qf9huN11kDQavWsoZXJNW3xEE4JJyHa5Q25/sd8=",
@@ -4559,7 +4573,7 @@ plain_artifacts = [
     "com.google.api.grpc:proto-google-cloud-kms-v1:0.79.0",
     "com.google.api.grpc:proto-google-cloud-logging-v2:0.76.0",
     "com.google.api.grpc:proto-google-cloud-pubsub-v1:1.89.0",
-    "com.google.api.grpc:proto-google-cloud-secretmanager-v1:1.2.8",
+    "com.google.api.grpc:proto-google-cloud-secretmanager-v1:2.5.0",
     "com.google.api.grpc:proto-google-common-protos:1.17.0",
     "com.google.api.grpc:proto-google-iam-v1:0.13.0",
     "com.google.api:api-common:1.8.1",
@@ -4815,10 +4829,10 @@ plain_artifacts = [
     "io.grpc:grpc-grpclb:1.48.0",
     "io.grpc:grpc-netty-shaded:1.48.0",
     "io.grpc:grpc-netty:1.48.0",
-    "io.grpc:grpc-protobuf-lite:1.48.0",
-    "io.grpc:grpc-protobuf:1.48.0",
-    "io.grpc:grpc-services:1.48.0",
-    "io.grpc:grpc-stub:1.48.0",
+    "io.grpc:grpc-protobuf-lite:1.50.1",
+    "io.grpc:grpc-protobuf:1.50.1",
+    "io.grpc:grpc-services:1.50.1",
+    "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.42-RELEASE",
     "io.harness:ff-java-server-sdk:1.0.5.1",
@@ -5207,6 +5221,7 @@ amazon_artifacts = [
         "aws-java-sdk-codedeploy",
         "aws-java-sdk-core",
         "aws-java-sdk-costandusagereport",
+        "aws-java-sdk-costexplorer",
         "aws-java-sdk-ec2",
         "aws-java-sdk-ecr",
         "aws-java-sdk-ecs",

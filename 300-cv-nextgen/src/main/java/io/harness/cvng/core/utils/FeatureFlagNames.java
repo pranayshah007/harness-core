@@ -21,4 +21,6 @@ public class FeatureFlagNames {
   public static final String ELK_HEALTH_SOURCE = "ELK_HEALTH_SOURCE";
 
   public static final String SERVICE_LEVEL_OBJECTIVE_V2 = "SERVICE_LEVEL_OBJECTIVE_V2";
+
+  public static final String SRM_COMPOSITE_SLO = "SRM_COMPOSITE_SLO";
 }

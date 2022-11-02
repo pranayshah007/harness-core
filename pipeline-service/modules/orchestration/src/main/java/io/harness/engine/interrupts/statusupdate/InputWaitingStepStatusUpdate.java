@@ -8,7 +8,6 @@
 package io.harness.engine.interrupts.statusupdate;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -21,7 +20,6 @@ import io.harness.pms.contracts.execution.Status;
 
 import com.google.inject.Inject;
 import java.util.EnumSet;
-import java.util.List;
 
 @OwnedBy(CDC)
 public class InputWaitingStepStatusUpdate implements NodeStatusUpdateHandler {
@@ -36,9 +34,9 @@ public class InputWaitingStepStatusUpdate implements NodeStatusUpdateHandler {
       return;
     }
     // flowingChildren will always be empty currently. Will see later.
-    List<NodeExecution> flowingChildren =
-        nodeExecutionService.findByParentIdAndStatusIn(nodeExecution.getParentId(), EnumSet.noneOf(Status.class));
-    if (isEmpty(flowingChildren)) {
+    long flowingChildrenCount =
+        nodeExecutionService.findCountByParentIdAndStatusIn(nodeExecution.getParentId(), EnumSet.noneOf(Status.class));
+    if (flowingChildrenCount == 0) {
       nodeExecutionService.updateStatusWithOps(
           nodeExecution.getParentId(), INPUT_WAITING, null, EnumSet.noneOf(Status.class));
     }

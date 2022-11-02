@@ -9,6 +9,8 @@ package io.harness.cdng.customdeploymentng;
 
 import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.ccm.anomaly.graphql.AnomaliesFilter.log;
+import static io.harness.cdng.customDeployment.CustomDeploymentConstants.INFRASTRUCTURE_DEFINITION;
+import static io.harness.cdng.customDeployment.eventlistener.CustomDeploymentEntityCRUDEventHandler.STABLE_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
@@ -28,20 +30,31 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.template.TemplateResponseDTO;
+import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.merger.YamlConfig;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
+import io.harness.steps.OutputExpressionConstants;
+import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.yaml.utils.NGVariablesUtils;
 
+import software.wings.beans.AccountType;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -53,8 +66,11 @@ import java.util.Optional;
 
 public class CustomDeploymentInfrastructureHelper {
   @Inject TemplateResourceClient templateResourceClient;
+  @Inject protected ExecutionSweepingOutputService executionSweepingOutputService;
   @Named(ConnectorModule.DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
+  @Inject InfrastructureEntityService infrastructureEntityService;
   @Inject FileStoreService fileStoreService;
+  @JsonIgnore private final ObjectMapper jsonObjectMapper = new ObjectMapper();
   private static final String ACCOUNT_IDENTIFIER = "account.";
   private static final String ORG_IDENTIFIER = "org.";
 
@@ -102,9 +118,90 @@ public class CustomDeploymentInfrastructureHelper {
     return mapOfVariables;
   }
 
+  public boolean checkIfInfraIsObsolete(String infraYaml, String templateYaml, String accountId) {
+    try {
+      YamlConfig infraYamlConfig = checkIfValidInfraYaml(infraYaml, accountId);
+      if (isNull(infraYamlConfig)) {
+        // infrastructure yaml is invalid, so not obsolete
+        return false;
+      }
+      YamlConfig templateYamlConfig = checkIfValidTemplateYaml(templateYaml, accountId);
+      if (isNull(templateYamlConfig)) {
+        // template yaml is invalid, so not obsolete
+        return false;
+      }
+
+      Map<String, String> templateVariables = getTemplateVariables(templateYamlConfig);
+      Map<String, String> infraVariables = getInfraVariables(infraYamlConfig);
+      return variableListSizeNotSame(templateVariables, infraVariables)
+          || variablesNameAndTypeNotSame(templateVariables, infraVariables);
+    } catch (Exception e) {
+      AccountType.log.error("Error Encountered while validating infra for acc Id :{}: {}", accountId, e);
+      throw new InvalidRequestException("Error Encountered while validating infra: " + e.getMessage());
+    }
+  }
+
+  private boolean variablesNameAndTypeNotSame(
+      Map<String, String> variablesInTemplate, Map<String, String> variablesInInfra) {
+    for (Map.Entry<String, String> templateVariable : variablesInTemplate.entrySet()) {
+      if (!variablesInInfra.containsKey(templateVariable.getKey())
+          || !variablesInInfra.get(templateVariable.getKey()).equals(templateVariable.getValue())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean variableListSizeNotSame(
+      Map<String, String> variablesInTemplate, Map<String, String> variablesInInfra) {
+    return variablesInTemplate.size() != variablesInInfra.size();
+  }
+
+  public boolean isNotValidInfrastructureYaml(InfrastructureEntity infraEntity) {
+    StepTemplateRef stepTemplateRef =
+        getStepTemplateRefFromInfraYaml(infraEntity.getYaml(), infraEntity.getAccountId());
+    String templateYaml = getTemplateYaml(infraEntity.getAccountId(), infraEntity.getOrgIdentifier(),
+        infraEntity.getProjectIdentifier(), stepTemplateRef.getTemplateRef(), stepTemplateRef.getVersionLabel());
+    return checkIfInfraIsObsolete(infraEntity.getYaml(), templateYaml, infraEntity.getAccountId());
+  }
+
+  public StepTemplateRef getStepTemplateRefFromInfraYaml(String infrastructureYaml, String accountId) {
+    YamlConfig yamlConfig = new YamlConfig(infrastructureYaml);
+    JsonNode yamlMap = yamlConfig.getYamlMap();
+    JsonNode infraDef = yamlMap.get(INFRASTRUCTURE_DEFINITION);
+    try {
+      if (isNull(infraDef)) {
+        log.error("Infra definition is null in yaml for account id :{}", accountId);
+        throw new InvalidRequestException("Infra definition is null in yaml");
+      }
+      JsonNode spec = infraDef.get("spec");
+      if (isNull(spec)) {
+        log.error("spec is null in yaml for account id :{}", accountId);
+        throw new InvalidRequestException("Infra definition spec is null in yaml");
+      }
+      JsonNode customDeploymentRef = spec.get("customDeploymentRef");
+      if (isNull(customDeploymentRef)) {
+        log.error("customDeploymentRef is null in yaml for account id :{}", accountId);
+        throw new InvalidRequestException("customDeploymentRef is null in yaml");
+      }
+      StepTemplateRef stepTemplateRef = jsonObjectMapper.treeToValue(customDeploymentRef, StepTemplateRef.class);
+      if (isEmpty(stepTemplateRef.getTemplateRef())) {
+        log.error("templateRef is empty in yaml for account id :{}", accountId);
+        throw new InvalidRequestException("templateRef is null in yaml");
+      }
+      return stepTemplateRef;
+    } catch (Exception e) {
+      log.error("Could not fetch the template reference from yaml for acc :{}: {}", accountId, e);
+      throw new InvalidRequestException("Could not fetch the template reference from yaml " + e.getMessage());
+    }
+  }
+
   public String getTemplateYaml(
       String accRef, String orgRef, String projectRef, String templateRef, String versionLabel) {
     TemplateResponseDTO response;
+    if (versionLabel.equals(STABLE_VERSION)) {
+      versionLabel = null;
+    }
     SecurityContextBuilder.setContext(new ServicePrincipal(TEMPLATE_SERVICE.getServiceId()));
     if (templateRef.contains(ACCOUNT_IDENTIFIER)) {
       response = NGRestUtils.getResponse(templateResourceClient.get(
@@ -219,59 +316,122 @@ public class CustomDeploymentInfrastructureHelper {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-    String templateYaml = getTemplateYaml(accountIdentifier, orgIdentifier, projectIdentifier,
-        infrastructure.getCustomDeploymentRef().getTemplateRef(),
-        infrastructure.getCustomDeploymentRef().getVersionLabel());
-    List<CustomDeploymentNGVariable> variablesInInfra = infrastructure.getVariables();
-    if (templateYaml.isEmpty()) {
-      log.error("Template does not exist for this infrastructure for acc ID:{}", accountIdentifier);
-      throw new InvalidRequestException("Template does not exist for this infrastructure");
-    }
-    Map<String, String> variablesInTemplate = getTemplateVariables(templateYaml, accountIdentifier);
-    boolean isObsolete = variableListSizeNotSame(variablesInTemplate, variablesInInfra)
-        || variablesNameNotSame(variablesInTemplate, variablesInInfra);
-    if (isObsolete) {
-      throw new InvalidRequestException("Infrastructure is obsolete, please update the infrastructure");
-    }
-  }
+    EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) executionSweepingOutputService.resolve(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT));
 
-  private boolean variablesNameNotSame(
-      Map<String, String> variablesInTemplate, List<CustomDeploymentNGVariable> variablesInInfra) {
-    for (CustomDeploymentNGVariable variable : variablesInInfra) {
-      if (!variablesInTemplate.containsKey(variable.getName())) {
-        return true;
+    Optional<InfrastructureEntity> infraEntity = infrastructureEntityService.get(accountIdentifier, orgIdentifier,
+        projectIdentifier, environmentOutcome.getIdentifier(), infrastructure.getInfraIdentifier());
+    if (infraEntity.isPresent()) {
+      if (infraEntity.get().getObsolete()) {
+        throw new InvalidRequestException("Infrastructure is obsolete, please update the infrastructure");
       }
+    } else {
+      throw new InvalidRequestException("Infra does not exist for this infra id and env id");
     }
-    return false;
   }
 
-  private boolean variableListSizeNotSame(
-      Map<String, String> variablesInTemplate, List<CustomDeploymentNGVariable> variablesInInfra) {
-    return variablesInTemplate.size() != variablesInInfra.size();
+  private Map<String, String> getTemplateVariables(YamlConfig templateYamlConfig) {
+    JsonNode templateVariableNode = templateYamlConfig.getYamlMap()
+                                        .get("template")
+                                        .get("spec")
+                                        .get("infrastructure")
+                                        .get(YAMLFieldNameConstants.VARIABLES);
+    Map<String, String> variables = new HashMap<>();
+    if (isNull(templateVariableNode) || isEmpty(templateVariableNode.toString())) {
+      return variables;
+    }
+    for (JsonNode variable : templateVariableNode) {
+      variables.put(variable.get("name").asText(), variable.get("type").asText());
+    }
+    return variables;
   }
 
-  private Map<String, String> getTemplateVariables(String templateYaml, String accId) {
+  private Map<String, String> getInfraVariables(YamlConfig infraYamlConfig) {
+    JsonNode variablesNode =
+        infraYamlConfig.getYamlMap().get(INFRASTRUCTURE_DEFINITION).get("spec").get(YAMLFieldNameConstants.VARIABLES);
+    Map<String, String> variables = new HashMap<>();
+    if (isNull(variablesNode) || isEmpty(variablesNode.toString())) {
+      return variables;
+    }
+    for (JsonNode variable : variablesNode) {
+      variables.put(variable.get("name").asText(), variable.get("type").asText());
+    }
+    return variables;
+  }
+
+  private YamlConfig checkIfValidInfraYaml(String infraYaml, String accountId) {
+    if (isNull(infraYaml)) {
+      return null;
+    }
+    YamlConfig yamlConfig = new YamlConfig(infraYaml);
+    JsonNode yamlMap = yamlConfig.getYamlMap();
+    JsonNode infraDef = yamlMap.get(INFRASTRUCTURE_DEFINITION);
+    try {
+      if (isNull(infraDef)) {
+        log.error(
+            "Error encountered while validating infra, Infra definition is null in yaml for account id :{}", accountId);
+        return null;
+      }
+      JsonNode spec = infraDef.get("spec");
+      if (isNull(spec)) {
+        log.error("Error encountered while validating infra, Infra spec is null in yaml for account id :{}", accountId);
+        return null;
+      }
+      JsonNode infraVariables = spec.get(YAMLFieldNameConstants.VARIABLES);
+      if (isNull(infraVariables) || isEmpty(infraVariables.toString())) {
+        return yamlConfig;
+      }
+      for (JsonNode variable : infraVariables) {
+        if (isNull(variable) || isEmpty(variable.get("name").toString()) || isEmpty(variable.get("type").toString())) {
+          log.error("Error encountered while validating infra, Infra variable: {} is invalid for account id: {}",
+              variable, accountId);
+          return null;
+        }
+      }
+      return yamlConfig;
+    } catch (Exception e) {
+      log.error("Error occurred while validating infrastructure yaml", e);
+      throw new InvalidRequestException("Error occurred while validating infrastructure yaml " + e.getMessage());
+    }
+  }
+
+  private YamlConfig checkIfValidTemplateYaml(String templateYaml, String accountId) {
+    if (isNull(templateYaml)) {
+      return null;
+    }
     YamlConfig templateConfig = new YamlConfig(templateYaml);
     JsonNode templateNode = templateConfig.getYamlMap().get("template");
-    if (templateNode.isNull()) {
-      log.info("Error encountered while validating infra, template node is null for accId :{}", accId);
-      throw new InvalidRequestException("template yaml cannot be empty");
+    try {
+      if (isNull(templateNode)) {
+        log.error("Error encountered while validating infra, template node is null for accId :{}", accountId);
+        return null;
+      }
+      JsonNode templateSpecNode = templateNode.get("spec");
+      if (isNull(templateSpecNode)) {
+        log.error("Error encountered while validating infra, template spec node is null for accId :{}", accountId);
+        return null;
+      }
+      JsonNode templateInfraNode = templateSpecNode.get("infrastructure");
+      if (isNull(templateInfraNode)) {
+        log.error(
+            "Error encountered while validating infra, template infrastructure node is null for accId :{}", accountId);
+        return null;
+      }
+      JsonNode templateVariableNode = templateInfraNode.get("variables");
+      if (isNull(templateVariableNode) || isEmpty(templateVariableNode.toString())) {
+        return templateConfig;
+      }
+      for (JsonNode variable : templateVariableNode) {
+        if (isNull(variable) || isEmpty(variable.get("name").toString()) || isEmpty(variable.get("type").toString())) {
+          log.error("Error encountered while validating infra, Template variable: {} is invalid for account id: {}",
+              variable, accountId);
+          return null;
+        }
+      }
+      return templateConfig;
+    } catch (Exception e) {
+      log.error("Error occurred while validating template yaml", e);
+      throw new InvalidRequestException("Error occurred while validating template yaml " + e.getMessage());
     }
-    JsonNode templateSpecNode = templateNode.get("spec");
-    if (templateSpecNode.isNull()) {
-      log.info("Error encountered while validating infra, template spec node is null for accId :{}", accId);
-      throw new InvalidRequestException("template yaml spec cannot be empty");
-    }
-    JsonNode templateInfraNode = templateSpecNode.get("infrastructure");
-    if (templateInfraNode.isNull()) {
-      log.info("Error encountered while validating infra, template infrastructure node is null for accId :{}", accId);
-      throw new InvalidRequestException("template yaml infra cannot be empty");
-    }
-    Map<String, String> mapOfVariables = new HashMap<>();
-    JsonNode templateVariableNode = templateInfraNode.get("variables");
-    for (JsonNode variable : templateVariableNode) {
-      mapOfVariables.put(variable.get("name").asText(), variable.get("value").asText());
-    }
-    return mapOfVariables;
   }
 }

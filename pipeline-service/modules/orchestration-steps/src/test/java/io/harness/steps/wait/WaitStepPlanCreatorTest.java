@@ -98,7 +98,7 @@ public class WaitStepPlanCreatorTest extends OrchestrationStepsTestBase {
     assertNotNull(planNode.getStepParameters());
     StepElementParameters stepElementParameters = (StepElementParameters) planNode.getStepParameters();
     WaitStepParameters waitStepParameters = (WaitStepParameters) stepElementParameters.getSpec();
-    assertEquals(waitStepParameters.duration.getValue().getTimeoutString(), "10m");
+    assertEquals(waitStepParameters.duration.getValue(), "10m");
     assertEquals(planNode.getFacilitatorObtainments().size(), 1);
     assertEquals(
         planNode.getFacilitatorObtainments().get(0).getType().getType(), OrchestrationFacilitatorType.WAIT_STEP);
@@ -135,6 +135,6 @@ public class WaitStepPlanCreatorTest extends OrchestrationStepsTestBase {
     StepElementParameters stepElementParameters =
         (StepElementParameters) waitStepPlanCreator.getStepParameters(ctx, waitStepNode);
     WaitStepParameters waitStepParameters = (WaitStepParameters) stepElementParameters.getSpec();
-    assertEquals(waitStepParameters.duration.getValue().getTimeoutString(), "10m");
+    assertEquals(waitStepParameters.duration.getValue(), "10m");
   }
 }

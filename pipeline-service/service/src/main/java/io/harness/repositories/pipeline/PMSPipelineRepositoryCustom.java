@@ -26,6 +26,8 @@ public interface PMSPipelineRepositoryCustom {
 
   Long countAllPipelines(Criteria criteria);
 
+  Long countAllPipelinesInAccount(String accountId);
+
   PipelineEntity saveForOldGitSync(PipelineEntity pipelineToSave);
 
   /**

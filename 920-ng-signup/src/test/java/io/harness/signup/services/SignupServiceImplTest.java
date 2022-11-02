@@ -71,6 +71,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -96,6 +97,7 @@ public class SignupServiceImplTest extends CategoryTest {
   @Mock LicenseService licenseService;
   @Mock VersionInfoManager versionInfoManager;
   @Mock FeatureFlagService featureFlagService;
+  @Mock ScheduledExecutorService scheduledExecutorService;
 
   private static final String TOKEN = "token";
   private static final String EMAIL = "test@test.com";
@@ -111,7 +113,7 @@ public class SignupServiceImplTest extends CategoryTest {
     initMocks(this);
     signupServiceImpl = new SignupServiceImpl(accountService, userClient, signupValidator, reCaptchaVerifier,
         telemetryReporter, signupNotificationHelper, verificationTokenRepository, executorService, accessControlClient,
-        licenseService, versionInfoManager, featureFlagService);
+        licenseService, versionInfoManager, featureFlagService, scheduledExecutorService);
   }
 
   @Test

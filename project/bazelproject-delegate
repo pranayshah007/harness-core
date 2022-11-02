@@ -28,5 +28,6 @@ directories:
 import_run_configurations:
   project/run-configurations/DelegateApp.xml
   project/run-configurations/DelegateAgentApp.xml
+  project/run-configurations/DelegatePlatformApp.xml
   project/run-configurations/WingsApp.xml
   project/run-configurations/DataGenApp.xml

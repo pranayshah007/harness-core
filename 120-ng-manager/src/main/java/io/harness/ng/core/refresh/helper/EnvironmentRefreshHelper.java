@@ -390,10 +390,13 @@ public class EnvironmentRefreshHelper {
     if (infraDefsNode == null) {
       return;
     }
-    if (NGExpressionUtils.isRuntimeOrExpressionField(infraDefsNode.asText())) {
+    if (NGExpressionUtils.isRuntimeField(infraDefsNode.asText())) {
       return;
     }
     List<String> infraDefIdentifiers = collectAllInfraIdentifiers(infraDefsNode);
+    if (infraDefIdentifiers.stream().anyMatch(NGExpressionUtils::isExpressionField)) {
+      return;
+    }
     if (EmptyPredicate.isNotEmpty(infraDefIdentifiers)) {
       String infraInputs = infrastructureEntityService.createInfrastructureInputsFromYamlV2(
           context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue, infraDefIdentifiers, false);
@@ -440,10 +443,14 @@ public class EnvironmentRefreshHelper {
     if (infraDefsNode == null) {
       return true;
     }
-    if (NGExpressionUtils.isRuntimeOrExpressionField(infraDefsNode.asText())) {
+    if (NGExpressionUtils.isRuntimeField(infraDefsNode.asText())) {
       return true;
     }
     List<String> infraDefIdentifiers = collectAllInfraIdentifiers(infraDefsNode);
+    if (infraDefIdentifiers.stream().anyMatch(NGExpressionUtils::isExpressionField)) {
+      return true;
+    }
+
     if (EmptyPredicate.isNotEmpty(infraDefIdentifiers)) {
       String infraInputs = infrastructureEntityService.createInfrastructureInputsFromYamlV2(
           context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue, infraDefIdentifiers, false);
