@@ -13,6 +13,9 @@ import static io.harness.delegate.task.serverless.exception.ServerlessExceptionC
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.DOWNLOAD_FROM_S3_EXPLANATION;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.DOWNLOAD_FROM_S3_FAILED;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.DOWNLOAD_FROM_S3_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.JENKINS_ARTIFACT_DOWNLOAD_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.JENKINS_ARTIFACT_DOWNLOAD_FAILED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.JENKINS_ARTIFACT_DOWNLOAD_HINT;
 import static io.harness.delegate.utils.NexusUtils.getNexusArtifactFileName;
 import static io.harness.delegate.utils.NexusUtils.getNexusVersion;
 import static io.harness.logging.LogLevel.ERROR;
@@ -32,6 +35,10 @@ import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
+import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
@@ -50,10 +57,13 @@ import io.harness.logging.LogLevel;
 import io.harness.nexus.NexusRequest;
 import io.harness.security.encryption.SecretDecryptionService;
 
+import software.wings.beans.JenkinsConfig;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
+import software.wings.helpers.ext.jenkins.Jenkins;
 import software.wings.helpers.ext.nexus.NexusService;
 import software.wings.service.impl.AwsApiHelperService;
+import software.wings.service.impl.jenkins.JenkinsUtils;
 import software.wings.utils.ArtifactType;
 import software.wings.utils.RepositoryFormat;
 
@@ -78,6 +88,7 @@ public class AzureArtifactDownloadServiceImpl implements AzureArtifactDownloadSe
   @Inject private AwsApiHelperService awsApiHelperService;
   @Inject private NexusService nexusService;
   @Inject private NexusMapper nexusMapper;
+  @Inject private JenkinsUtils jenkinsUtil;
 
   @Override
   public AzureArtifactDownloadResponse download(ArtifactDownloadContext artifactDownloadContext) {
@@ -98,6 +109,9 @@ public class AzureArtifactDownloadServiceImpl implements AzureArtifactDownloadSe
           break;
         case NEXUS3_REGISTRY:
           artifactStream = downloadFromNexus(artifactConfig, artifactResponseBuilder, logCallback);
+          break;
+        case JENKINS:
+          artifactStream = downloadFromJenkins(artifactConfig, artifactResponseBuilder, logCallback);
           break;
         default:
           throw NestedExceptionUtils.hintWithExplanationException("Use supported artifact registry",
@@ -121,6 +135,70 @@ public class AzureArtifactDownloadServiceImpl implements AzureArtifactDownloadSe
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw e;
     }
+  }
+
+  private InputStream downloadFromJenkins(AzurePackageArtifactConfig artifactConfig,
+      AzureArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
+    JenkinsAzureArtifactRequestDetails jenkinsAzureArtifactRequestDetails =
+        (JenkinsAzureArtifactRequestDetails) artifactConfig.getArtifactDetails();
+    validateJenkinsArtifact(artifactConfig, jenkinsAzureArtifactRequestDetails, logCallback);
+    Pair<String, InputStream> pair;
+    Jenkins jenkins = configureJenkins(artifactConfig);
+
+    try {
+      JenkinsConnectorDTO jenkinsConnectorDto = (JenkinsConnectorDTO) artifactConfig.getConnectorConfig();
+
+      logCallback.saveExecutionLog(
+          color(format("Downloading jenkins artifact: %s/job/%s/%s/artifact/%s", jenkinsConnectorDto.getJenkinsUrl(),
+                    jenkinsAzureArtifactRequestDetails.getJobName(), jenkinsAzureArtifactRequestDetails.getBuild(),
+                    jenkinsAzureArtifactRequestDetails.getArtifactPath()),
+              White, Bold));
+      pair = jenkins.downloadArtifact(jenkinsAzureArtifactRequestDetails.getJobName(),
+          jenkinsAzureArtifactRequestDetails.getBuild(), jenkinsAzureArtifactRequestDetails.getArtifactPath());
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Failure in downloading jenkins artifact ", sanitizedException);
+      logCallback.saveExecutionLog(
+          "Failed to download jenkins artifact. " + ExceptionUtils.getMessage(sanitizedException), ERROR,
+          CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(JENKINS_ARTIFACT_DOWNLOAD_HINT,
+          format(JENKINS_ARTIFACT_DOWNLOAD_EXPLANATION, jenkinsAzureArtifactRequestDetails.getIdentifier()),
+          new InvalidArgumentsException(
+              format(JENKINS_ARTIFACT_DOWNLOAD_FAILED, jenkinsAzureArtifactRequestDetails.getIdentifier())));
+    }
+    if (null != pair) {
+      artifactResponseBuilder.artifactType(
+          AzureArtifactUtils.detectArtifactType(jenkinsAzureArtifactRequestDetails.getArtifactPath(), logCallback));
+      return pair.getRight();
+    } else {
+      return null;
+    }
+  }
+
+  private Jenkins configureJenkins(AzurePackageArtifactConfig artifactConfig) {
+    JenkinsConnectorDTO jenkinsConnectorDto = (JenkinsConnectorDTO) artifactConfig.getConnectorConfig();
+    JenkinsAuthType authType = jenkinsConnectorDto.getAuth().getAuthType();
+    Jenkins jenkins = null;
+    if (JenkinsAuthType.USER_PASSWORD.equals(authType)) {
+      JenkinsUserNamePasswordDTO jenkinsUserNamePasswordDTO =
+          (JenkinsUserNamePasswordDTO) jenkinsConnectorDto.getAuth().getCredentials();
+      JenkinsConfig jenkinsConfig = JenkinsConfig.builder()
+                                        .jenkinsUrl(jenkinsConnectorDto.getJenkinsUrl())
+                                        .username(jenkinsUserNamePasswordDTO.getUsername())
+                                        .password(jenkinsUserNamePasswordDTO.getPasswordRef().getDecryptedValue())
+                                        .build();
+      jenkins = jenkinsUtil.getJenkins(jenkinsConfig);
+    } else if (JenkinsAuthType.BEARER_TOKEN.equals(authType)) {
+      JenkinsBearerTokenDTO jenkinsBearerTokenDTO =
+          (JenkinsBearerTokenDTO) jenkinsConnectorDto.getAuth().getCredentials();
+      JenkinsConfig jenkinsConfig = JenkinsConfig.builder()
+                                        .jenkinsUrl(jenkinsConnectorDto.getJenkinsUrl())
+                                        .token(jenkinsBearerTokenDTO.getTokenRef().getDecryptedValue())
+                                        .authMechanism(JenkinsUtils.TOKEN_FIELD)
+                                        .build();
+      jenkins = jenkinsUtil.getJenkins(jenkinsConfig);
+    }
+    return jenkins;
   }
 
   private InputStream downloadFromAwsS3(AzurePackageArtifactConfig s3ArtifactConfig,
@@ -188,6 +266,25 @@ public class AzureArtifactDownloadServiceImpl implements AzureArtifactDownloadSe
     }
 
     if (EmptyPredicate.isEmpty(artifactRequestDetails.getFilePath())) {
+      logCallback.saveExecutionLog("artifact Path is blank", ERROR, CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
+          String.format(BLANK_ARTIFACT_PATH_EXPLANATION, artifactRequestDetails.getIdentifier()),
+          new InvalidArgumentsException("not able to find artifact Path"));
+    }
+  }
+
+  private void validateJenkinsArtifact(AzurePackageArtifactConfig jenkinsArtifactConfig,
+      JenkinsAzureArtifactRequestDetails artifactRequestDetails, LogCallback logCallback) {
+    if (!(jenkinsArtifactConfig.getArtifactDetails() instanceof JenkinsAzureArtifactRequestDetails)) {
+      throw NestedExceptionUtils.hintWithExplanationException("Please contact harness support team",
+          format("Unexpected artifact configuration of type '%s'",
+              jenkinsArtifactConfig.getArtifactDetails().getClass().getSimpleName()),
+          new InvalidArgumentsException(Pair.of("artifactDetails",
+              format("Invalid artifact details, expected '%s'",
+                  JenkinsAzureArtifactRequestDetails.class.getSimpleName()))));
+    }
+
+    if (EmptyPredicate.isEmpty(artifactRequestDetails.getArtifactName())) {
       logCallback.saveExecutionLog("artifact Path is blank", ERROR, CommandExecutionStatus.FAILURE);
       throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
           String.format(BLANK_ARTIFACT_PATH_EXPLANATION, artifactRequestDetails.getIdentifier()),
