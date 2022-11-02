@@ -23,7 +23,7 @@ import java.util.List;
 @Value
 @Builder
 @TypeAlias("ecsGitFetchPassThroughData")
-@RecasterAlias("io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData")
+@RecasterAlias("io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData")
 public class ElastigroupStartupScriptFetchPassThroughData implements PassThroughData {
   InfrastructureOutcome infrastructureOutcome;
   StoreConfig store;
