@@ -17,5 +17,6 @@ public interface GovernancePolicyService {
   Policy update(Policy policy, String accountId);
   List<Policy> list(GovernancePolicyFilter governancePolicyFilter);
   Policy listName(String accountId, String name, boolean create);
+  Policy listId(String accountId, String name, boolean create);
   void check(List<String> policiesIdentifier);
 }

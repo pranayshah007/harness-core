@@ -47,10 +47,10 @@ public class PolicyEnforcementDAO {
 
   public PolicyEnforcement update(PolicyEnforcement policy) {
     Query<PolicyEnforcement> query = hPersistence.createQuery(PolicyEnforcement.class)
-                      .field(PolicyEnforcementId.accountId)
-                      .equal(policy.getAccountId())
-                      .field(PolicyEnforcementId.uuid)
-                      .equal(policy.getUuid());
+                                         .field(PolicyEnforcementId.accountId)
+                                         .equal(policy.getAccountId())
+                                         .field(PolicyEnforcementId.uuid)
+                                         .equal(policy.getUuid());
     UpdateOperations<PolicyEnforcement> updateOperations = hPersistence.createUpdateOperations(PolicyEnforcement.class);
     if (policy.getName() != null) {
       updateOperations.set(PolicyEnforcementId.name, policy.getName());
@@ -128,6 +128,28 @@ public class PolicyEnforcementDAO {
         .equal(accountId)
         .order(Sort.descending(PolicyEnforcementId.lastUpdatedAt))
         .asList();
+  }
+
+  public List<PolicyEnforcement> policyEnforcementCount(String accountId, List<String> policyIds) {
+    List<PolicyEnforcement> policyEnforcements = hPersistence.createQuery(PolicyEnforcement.class)
+                                                     .field(PolicyEnforcementId.accountId)
+                                                     .equal(accountId)
+                                                     .field(PolicyEnforcementId.policyIds)
+                                                     .hasAnyOf(policyIds)
+                                                     .asList();
+    log.info("{}",policyEnforcements);
+    return policyEnforcements;
+  }
+
+  public List<PolicyEnforcement> policyPackEnforcementCount(String accountId, List<String> policyPackIds) {
+    List<PolicyEnforcement> policyPackEnforcements = hPersistence.createQuery(PolicyEnforcement.class)
+                                                     .field(PolicyEnforcementId.accountId)
+                                                     .equal(accountId)
+                                                     .field(PolicyEnforcementId.policyPackIDs)
+                                                     .hasAnyOf(policyPackIds)
+                                                     .asList();
+    log.info("{}",policyPackEnforcements);
+    return policyPackEnforcements;
   }
 
   public PolicyEnforcement get(String uuid) {

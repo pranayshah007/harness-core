@@ -7,6 +7,9 @@
 
 package io.harness.ccm.views.service;
 
+import io.harness.ccm.views.dto.EnforcementCountDTO;
+import io.harness.ccm.views.entities.EnforcementCount;
+import io.harness.ccm.views.entities.EnforcementCountRequest;
 import io.harness.ccm.views.entities.PolicyEnforcement;
 
 import java.util.List;
@@ -18,5 +21,5 @@ public interface PolicyEnforcementService {
   PolicyEnforcement update(PolicyEnforcement policyEnforcement);
   PolicyEnforcement listName(String accountId, String name, boolean create);
   List<PolicyEnforcement> list(String accountId);
-
+  EnforcementCount getCount(String accountId, EnforcementCountRequest enforcementCountRequest );
 }

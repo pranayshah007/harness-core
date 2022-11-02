@@ -19,9 +19,12 @@ import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.remote.resources.governance.GovernancePolicyResource;
 import io.harness.ccm.views.dto.CreatePolicyDTO;
 import io.harness.ccm.views.entities.Policy;
+import io.harness.ccm.views.entities.PolicyCloudProviderType;
+import io.harness.ccm.views.entities.PolicyStoreType;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ccm.views.service.PolicyEnforcementService;
 import io.harness.ccm.views.service.PolicyPackService;
+import io.harness.connector.ConnectorResourceClient;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 
@@ -41,45 +44,53 @@ public class GovernancePolicyResourceTest extends CategoryTest {
   private PolicyPackService policyPackService = mock(PolicyPackService.class);
   private PolicyEnforcementService policyEnforcementService = mock(PolicyEnforcementService.class);
   private CCMRbacHelper rbacHelper = mock(CCMRbacHelper.class);
+  private ConnectorResourceClient connectorResourceClient = mock(ConnectorResourceClient.class);
 
   private final String ACCOUNT_ID = "ACCOUNT_ID";
-  private final String UNIQUE_ID = "UNIQUE_ID";
+  private final String uuid = "UUID";
   private final String NAME = "NAME";
-  private final String RESOURCE = "RESOURCE";
   private final String POLICY = "POLICY";
   private final List<String> TAGS = Arrays.asList(new String[] {"TAGS"});
-  private final String ERROR = "ERROR";
   private final String DESCRIPTION = "DESCRIPTION";
   private final String ORG_PARAM_MESSAGE = "ORG_PARAM_MESSAGE";
   private final String PROJECT_PARAM_MESSAGE = "PROJECT_PARAM_MESSAGE";
-  private List<Policy> Policies = new ArrayList<>();
+  private final String STORE_TYPE = "INLINE";
+  private final String CLOUD_PROVIDER = "AWS";
+  private final Boolean OTTB = false;
+  private final Boolean DELETED = false;
+  private final Boolean STABLE = true;
+  private final String VERSION = "VERSION";
+
   private Policy policy;
-  private Policy createPolicyDTO;
-  private GovernancePolicyResource policymanagement;
+  private GovernancePolicyResource policyManagement;
 
   @Before
   public void setUp() throws IllegalAccessException, IOException {
     policy = Policy.builder()
-                 .uuid(UNIQUE_ID)
+                 .uuid(uuid)
                  .accountId(ACCOUNT_ID)
                  .name(NAME)
                  .description(DESCRIPTION)
                  .policyYaml(POLICY)
                  .tags(TAGS)
+                 .cloudProvider(PolicyCloudProviderType.valueOf(CLOUD_PROVIDER))
                  .orgIdentifier(ORG_PARAM_MESSAGE)
                  .projectIdentifier(PROJECT_PARAM_MESSAGE)
+                 .isOOTB(OTTB)
+                 .deleted(DELETED)
+                 .isStablePolicy(STABLE)
+                 .storeType(PolicyStoreType.valueOf(STORE_TYPE))
+                 .versionLabel(VERSION)
                  .build();
-    policymanagement =
-        new GovernancePolicyResource(governancePolicyService, rbacHelper, policyEnforcementService, policyPackService);
-    createPolicyDTO = policy.toDTO();
-    Policies.add(policy);
+    policyManagement = new GovernancePolicyResource(
+        governancePolicyService, rbacHelper, policyEnforcementService, policyPackService, connectorResourceClient);
   }
 
   @Test
   @Owner(developers = SAHIBA)
   @Category(UnitTests.class)
   public void testCreatePolicy() {
-    policymanagement.create(ACCOUNT_ID, CreatePolicyDTO.builder().policy(policy).build());
+    policyManagement.create(ACCOUNT_ID, CreatePolicyDTO.builder().policy(policy).build());
     verify(governancePolicyService).save(policy);
   }
 
@@ -87,16 +98,15 @@ public class GovernancePolicyResourceTest extends CategoryTest {
   @Owner(developers = SAHIBA)
   @Category(UnitTests.class)
   public void testUpadtePolicy() {
-    ResponseDTO<Policy> res =
-        policymanagement.updatePolicy(ACCOUNT_ID, CreatePolicyDTO.builder().policy(policy).build());
-    assertThat(res.getData()).isEqualTo(policy);
+    policyManagement.updatePolicy(ACCOUNT_ID, CreatePolicyDTO.builder().policy(policy).build());
+    verify(governancePolicyService).update(policy, ACCOUNT_ID);
   }
 
   @Test
   @Owner(developers = SAHIBA)
   @Category(UnitTests.class)
   public void deletePolicy() {
-    policymanagement.delete(ACCOUNT_ID, UNIQUE_ID);
-    verify(governancePolicyService).delete(ACCOUNT_ID, UNIQUE_ID);
+    policyManagement.delete(ACCOUNT_ID, uuid);
+    verify(governancePolicyService).delete(ACCOUNT_ID, uuid);
   }
 }

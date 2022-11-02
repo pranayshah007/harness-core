@@ -151,6 +151,10 @@ public class GovernancePolicyResource {
       @RequestBody(required = true,
           description = "Request body containing Policy store object") @Valid CreatePolicyDTO createPolicyDTO) {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    if(createPolicyDTO==null)
+    {
+      throw new InvalidRequestException("Request payload is malformed");
+    }
     Policy policy = createPolicyDTO.getPolicy();
     if (governancePolicyService.listName(accountId, policy.getName(), true) != null) {
       throw new InvalidRequestException("Policy  with given name already exits");
@@ -187,6 +191,10 @@ public class GovernancePolicyResource {
       @RequestBody(required = true,
           description = "Request body containing policy object") @Valid CreatePolicyDTO createPolicyDTO) {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    if(createPolicyDTO==null)
+    {
+      throw new InvalidRequestException("Request payload is malformed");
+    }
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
     governancePolicyService.listName(accountId, policy.getName(), false);
@@ -210,6 +218,10 @@ public class GovernancePolicyResource {
   updatePolicy(@RequestBody(
       required = true, description = "Request body containing policy object") @Valid CreatePolicyDTO createPolicyDTO) {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    if(createPolicyDTO==null)
+    {
+      throw new InvalidRequestException("Request payload is malformed");
+    }
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
     governancePolicyService.listName("", policy.getName(), false);
@@ -218,7 +230,7 @@ public class GovernancePolicyResource {
   // Internal API for deletion of OOTB policies
 
   @DELETE
-  @Path("{policyName}")
+  @Path("{policyID}")
   @Timed
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
@@ -234,14 +246,15 @@ public class GovernancePolicyResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<Boolean>
-  delete(@PathParam("policyName") @Parameter(
-      required = true, description = "Unique identifier for the policy") @NotNull @Valid String name) {
-    boolean result = governancePolicyService.delete("", governancePolicyService.listName("", name, false).getUuid());
+  deleteOOTB(@PathParam("policyID") @Parameter(
+      required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
+    governancePolicyService.listId("", uuid, false);
+    boolean result = governancePolicyService.delete("", uuid);
     return ResponseDTO.newResponse(result);
   }
 
   @DELETE
-  @Path("policy/{policyName}")
+  @Path("policy/{policyID}")
   @Timed
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
@@ -259,12 +272,12 @@ public class GovernancePolicyResource {
   public ResponseDTO<Boolean>
   delete(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @PathParam("policyName") @Parameter(
-          required = true, description = "Unique identifier for the policy") @NotNull @Valid String name) {
+      @PathParam("policyID") @Parameter(
+          required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyDeletePermission(accountId, null, null);
-
+    governancePolicyService.listId(accountId, uuid, false);
     boolean result =
-        governancePolicyService.delete(accountId, governancePolicyService.listName(accountId, name, false).getUuid());
+        governancePolicyService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
 
@@ -286,10 +299,13 @@ public class GovernancePolicyResource {
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing policy object") @Valid ListDTO listDTO) {
     // rbacHelper.checkPolicyViewPermission(accountId, null, null);
+    GovernancePolicyFilter query;
     if (listDTO == null) {
-      // TODO: Return 400 when request payload is malformed. Same for other POST requests
+   query= GovernancePolicyFilter.builder().build();
     }
-    GovernancePolicyFilter query = listDTO.getGovernancePolicyFilter();
+    else {
+     query = listDTO.getGovernancePolicyFilter();
+    }
     query.setAccountId(accountId);
     log.info("assigned {} {}", query.getAccountId(), query.getIsOOTB());
     return ResponseDTO.newResponse(governancePolicyService.list(query));
@@ -427,6 +443,15 @@ public class GovernancePolicyResource {
         }
       }
     }
+
+    //    try {
+    //
+    //      FaktoryProducer.Push("aws", "aws", "{}");
+    //      log.info("Pushed job in Faktory!");
+    //    } catch (IOException e) {
+    //      log.error("{}", e);
+    //    }
+
     return ResponseDTO.newResponse();
   }
 }

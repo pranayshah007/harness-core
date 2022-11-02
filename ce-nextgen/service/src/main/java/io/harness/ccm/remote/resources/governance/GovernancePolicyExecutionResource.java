@@ -20,6 +20,7 @@ import io.harness.ccm.views.dto.CreatePolicyExecutionFilterDTO;
 import io.harness.ccm.views.entities.PolicyExecution;
 import io.harness.ccm.views.entities.PolicyExecutionFilter;
 import io.harness.ccm.views.service.PolicyExecutionService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -120,6 +121,10 @@ public class GovernancePolicyExecutionResource {
       @RequestBody(required = true, description = "Request body containing Policy Execution store object")
       @Valid CreatePolicyExecutionDTO createPolicyExecutionDTO) {
     // rbacHelper.checkPolicyExecutionEditPermission(accountId, null, null);
+    if(createPolicyExecutionDTO==null)
+    {
+      throw new InvalidRequestException("Request payload is malformed");
+    }
     PolicyExecution policyExecution = createPolicyExecutionDTO.getPolicyExecution();
     policyExecution.setAccountId(accountId);
     policyExecutionService.save(policyExecution);

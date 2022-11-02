@@ -51,8 +51,8 @@ public class PolicyPackServiceImpl implements PolicyPackService {
   }
 
   @Override
-  public List<PolicyPack> list(String accountId) {
-    { return policyPackDAO.list(accountId); }
+  public List<PolicyPack> list(String accountId,PolicyPack policyPack) {
+    { return policyPackDAO.list(accountId,policyPack); }
   }
 
   @Override

@@ -55,6 +55,11 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
   }
 
   @Override
+  public Policy listId(String accountId, String name, boolean create) {
+    return policyDao.listid(accountId, name, create);
+  }
+
+  @Override
   public void check(List<String> policiesIdentifier) {
     List<Policy> policies = policyDao.check(policiesIdentifier);
     if (policies.size() != policiesIdentifier.size()) {

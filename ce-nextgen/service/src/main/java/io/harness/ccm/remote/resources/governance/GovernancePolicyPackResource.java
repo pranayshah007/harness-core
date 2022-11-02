@@ -111,9 +111,13 @@ public class GovernancePolicyPackResource {
   create(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
-          description = "Request body containing Policy store object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
+          description = "Request body containing Policy store object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     // rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
-    PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
+    if(createPolicyPackDTO==null)
+    {
+      throw new InvalidRequestException("Request payload is malformed");
+    }
+    PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
     if (policyPackService.listName(accountId, policyPack.getName(), true) != null) {
       throw new InvalidRequestException("Policy pack with this name already exits");
     }
@@ -142,9 +146,13 @@ public class GovernancePolicyPackResource {
   updatePolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
-          description = "Request body containing ceViewFolder object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
+          description = "Request body containing ceViewFolder object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     //  rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
-    PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
+    if(createPolicyPackDTO==null)
+    {
+      throw new InvalidRequestException("Request payload is malformed");
+    }
+    PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId(accountId);
     policyPackService.listName(accountId, policyPack.getName(), false);
@@ -167,9 +175,13 @@ public class GovernancePolicyPackResource {
       })
   public ResponseDTO<PolicyPack>
   updatePolicy(@RequestBody(required = true,
-      description = "Request body containing ceViewFolder object") @Valid CreatePolicyPackDTO createPolicySetDTO) {
+      description = "Request body containing ceViewFolder object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     //  rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
-    PolicyPack policyPack = createPolicySetDTO.getPolicyPack();
+    if(createPolicyPackDTO==null)
+    {
+      throw new InvalidRequestException("Request payload is malformed");
+    }
+    PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId("");
     policyPackService.listName("", policyPack.getName(), false);
@@ -221,8 +233,12 @@ public class GovernancePolicyPackResource {
       @RequestBody(required = true,
           description = "Request body containing policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     // rbacHelper.checkPolicyPackPermission(accountId, null, null);
-    // TODO: Query support for this api similar to policy list
-    return ResponseDTO.newResponse(policyPackService.list(accountId));
+    if(createPolicyPackDTO==null)
+    {
+      throw new InvalidRequestException("Request payload is malformed");
+    }
+    PolicyPack policyPack= createPolicyPackDTO.getPolicyPack();
+    return ResponseDTO.newResponse(policyPackService.list(accountId,policyPack));
   }
 
   @DELETE

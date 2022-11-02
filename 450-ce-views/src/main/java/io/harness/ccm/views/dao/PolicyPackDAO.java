@@ -145,18 +145,37 @@ public class PolicyPackDAO {
     return policyPacks;
   }
 
-  public List<PolicyPack> list(String accountId) {
-    List<PolicyPack> policyPacks = hPersistence.createQuery(PolicyPack.class)
+  public List<PolicyPack> list(String accountId, PolicyPack policyPack) {
+    Query<PolicyPack> policyPacksOOTB = hPersistence.createQuery(PolicyPack.class)
                                        .field(PolicySetId.accountId)
                                        .equal("")
-                                       .order(Sort.descending(PolicyEnforcement.PolicyEnforcementId.lastUpdatedAt))
-                                       .asList();
-    policyPacks.addAll(hPersistence.createQuery(PolicyPack.class)
+                                       .order(Sort.descending(PolicyEnforcement.PolicyEnforcementId.lastUpdatedAt));
+    Query<PolicyPack> policyPacks = hPersistence.createQuery(PolicyPack.class)
                            .field(PolicySetId.accountId)
                            .equal(accountId)
-                           .order(Sort.descending(PolicyEnforcement.PolicyEnforcementId.lastUpdatedAt))
-                           .asList());
-    log.info("list size {}", policyPacks.size());
-    return policyPacks;
+                           .order(Sort.descending(PolicyEnforcement.PolicyEnforcementId.lastUpdatedAt));
+    if(policyPack.getCloudProvider()!=null)
+    {
+      policyPacksOOTB.field(PolicySetId.cloudProvider).equal(policyPack.getCloudProvider());
+      policyPacks.field(PolicySetId.cloudProvider).equal(policyPack.getCloudProvider());
+    }
+    if(policyPack.getPoliciesIdentifier()!=null)
+    {
+      policyPacksOOTB.field(PolicySetId.policiesIdentifier).in(policyPack.getPoliciesIdentifier());
+      policyPacks.field(PolicySetId.policiesIdentifier).in(policyPack.getPoliciesIdentifier());
+    }
+    if(policyPack.getIsOOTB()!=null)
+    {
+      if(policyPack.getIsOOTB())
+      {
+        log.info("Adding all OOTB policies");
+        return policyPacksOOTB.asList();
+      }
+      return policyPacks.asList();
+    }
+    log.info("Adding all the policies");
+     List<PolicyPack> allPolicyPacks= policyPacksOOTB.asList();
+     allPolicyPacks.addAll(policyPacks.asList());
+    return allPolicyPacks;
   }
 }

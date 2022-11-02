@@ -18,6 +18,9 @@ import io.harness.ccm.scheduler.SchedulerClient;
 import io.harness.ccm.scheduler.SchedulerDTO;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyEnforcementDTO;
+import io.harness.ccm.views.dto.EnforcementCountDTO;
+import io.harness.ccm.views.entities.EnforcementCount;
+import io.harness.ccm.views.entities.EnforcementCountRequest;
 import io.harness.ccm.views.entities.PolicyEnforcement;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ccm.views.service.PolicyEnforcementService;
@@ -128,9 +131,13 @@ public class GovernancePolicyEnforcementResource {
   public ResponseDTO<PolicyEnforcement>
   create(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true, description = "Request body containing Policy store object")
+      @RequestBody(required = true, description = "Request body containing Policy Enforcement object")
       @Valid CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
     // rbacHelper.checkPolicyEnforcementEditPermission(accountId, null, null);
+    if(createPolicyEnforcementDTO==null)
+    {
+      throw new InvalidRequestException("Request payload is malformed");
+    }
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
     policyEnforcement.setAccountId(accountId);
     if (policyEnforcement.getExecutionTimezone() == null) {
@@ -139,9 +146,9 @@ public class GovernancePolicyEnforcementResource {
 
     try {
       CronSequenceGenerator cronSequenceGenerator = new CronSequenceGenerator(
-              policyEnforcement.getExecutionSchedule(), TimeZone.getTimeZone(policyEnforcement.getExecutionTimezone()));
-        CronSequenceGenerator.isValidExpression(String.valueOf(cronSequenceGenerator));
-        //Todo Timezone validtaion needs to be added
+          policyEnforcement.getExecutionSchedule(), TimeZone.getTimeZone(policyEnforcement.getExecutionTimezone()));
+      CronSequenceGenerator.isValidExpression(String.valueOf(cronSequenceGenerator));
+      // Todo Timezone validtaion needs to be added
     } catch (Exception e) {
       throw new InvalidRequestException("cron is not valid");
     }
@@ -242,17 +249,21 @@ public class GovernancePolicyEnforcementResource {
       @RequestBody(required = true, description = "Request body containing policy enforcement object")
       @Valid CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
     //  rbacHelper.checkPolicyEnforcementEditPermission(accountId, null, null);
+    if(createPolicyEnforcementDTO==null)
+    {
+      throw new InvalidRequestException("Request payload is malformed");
+    }
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
     policyEnforcement.setAccountId(accountId);
     policyEnforcementService.listName(accountId, policyEnforcement.getName(), false);
-    if(policyEnforcement.getPolicyIds()!=null) {
+    if (policyEnforcement.getPolicyIds() != null) {
       policyService.check(policyEnforcement.getPolicyIds());
     }
-    if(policyEnforcement.getPolicyPackIDs()!=null) {
+    if (policyEnforcement.getPolicyPackIDs() != null) {
       policyPackService.check(policyEnforcement.getPolicyPackIDs());
     }
     // TODO: Update the record in dkron as well.
-    return ResponseDTO.newResponse( policyEnforcementService.update(policyEnforcement));
+    return ResponseDTO.newResponse(policyEnforcementService.update(policyEnforcement));
   }
 
   @POST
@@ -271,8 +282,34 @@ public class GovernancePolicyEnforcementResource {
       @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing  Policy Enforcement  object")
-      @Valid CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
+      @Valid @NotNull CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
     // rbacHelper.checkPolicyEnforcementViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(policyEnforcementService.list(accountId));
+  }
+
+  @POST
+  @Path("enforcement/count")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Get enforcement list", nickname = "getPolicyEnforcement")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(operationId = "getPolicyEnforcement", description = "Fetch Policy Enforcement ",
+      summary = "Fetch Policy Enforcement for account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns List of policies  Enforcement",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<EnforcementCount>
+  enforcementCount(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(required = true, description = "Request body containing  Policy Enforcement count object")
+      @Valid EnforcementCountDTO enforcementCountDTO) {
+    if(enforcementCountDTO==null)
+    {
+      throw new InvalidRequestException("Request payload is malformed");
+    }
+    EnforcementCountRequest enforcementCountRequest = enforcementCountDTO.getEnforcementCountRequest();
+    log.info("{}", enforcementCountRequest);
+    return ResponseDTO.newResponse(policyEnforcementService.getCount(accountId, enforcementCountRequest));
   }
 }
