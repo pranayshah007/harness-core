@@ -33,6 +33,9 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
   @Inject private AwsAccountFieldHelper awsAccountFieldHelper;
   @Inject private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
 
+  private static final String OTHERS = "Others";
+  private static final String UNALLOCATED = "Unallocated";
+
   @Override
   public BusinessMapping save(BusinessMapping businessMapping) {
     validateBusinessMapping(businessMapping);
@@ -119,6 +122,14 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
   private void validateBusinessMapping(final BusinessMapping businessMapping) {
     // TODO: Validate if Business Mapping already exists or not
     updateBusinessMapping(businessMapping);
+  }
+
+  @Override
+  public boolean isInvalidBusinessMappingUnallocatedCostLabel(final BusinessMapping businessMapping) {
+    return businessMapping != null && businessMapping.getUnallocatedCost() != null
+        && businessMapping.getUnallocatedCost().getLabel() != null
+        && (businessMapping.getUnallocatedCost().getLabel().equals(OTHERS)
+            || businessMapping.getUnallocatedCost().getLabel().equals(UNALLOCATED));
   }
 
   private void updateBusinessMapping(final BusinessMapping businessMapping) {
