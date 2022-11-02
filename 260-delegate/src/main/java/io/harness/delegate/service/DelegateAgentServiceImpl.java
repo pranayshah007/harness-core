@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateTimeBasedUuid;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.app.DelegateApplication.getProcessId;
-import static io.harness.delegate.beans.DelegateType.SHELL_SCRIPT;
+import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.clienttools.InstallUtils.areClientToolsInstalled;
 import static io.harness.delegate.clienttools.InstallUtils.setupClientTools;
 import static io.harness.delegate.message.ManagerMessageConstants.MIGRATE;
@@ -460,7 +460,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       if (delegateConfiguration.isLocalNgDelegate()) {
         delegateNg = true;
         DELEGATE_GROUP_NAME = "localDelegate";
-        DELEGATE_TYPE = SHELL_SCRIPT;
+        // Setting delegate type as kubernetes, as NG doesn't allow shell delegates.
+        DELEGATE_TYPE = KUBERNETES;
         DELEGATE_NAME = "LocalDelegate";
       }
       accountId = delegateConfiguration.getAccountId();
