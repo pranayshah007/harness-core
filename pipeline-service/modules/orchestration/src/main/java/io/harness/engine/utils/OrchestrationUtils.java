@@ -57,10 +57,12 @@ public class OrchestrationUtils {
     return currentStepType.getStepCategory() == StepCategory.STAGE;
   }
 
-  public static boolean isStageOrParallelNode(NodeExecution nodeExecution) {
+  public static boolean isStageOrParallelStageNode(NodeExecution nodeExecution) {
     StepType currentStepType = Objects.requireNonNull(AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance()));
+    StepType parentStepType = Objects.requireNonNull(AmbianceUtils.getParentStepType(nodeExecution.getAmbiance()));
     return currentStepType.getStepCategory() == StepCategory.STAGE
-        || currentStepType.getStepCategory() == StepCategory.FORK;
+        || (currentStepType.getStepCategory() == StepCategory.FORK
+            && parentStepType.getStepCategory() == StepCategory.STAGES);
   }
 
   public static boolean isPipelineNode(NodeExecution nodeExecution) {

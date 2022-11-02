@@ -92,10 +92,19 @@ public class OrchestrationUtilsTest extends CategoryTest {
             .stepType(StepType.newBuilder().setType("PIPELINE").setStepCategory(StepCategory.STAGE).build())
             .build();
 
-    Ambiance ambiance =
-        Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode)).build();
+    PlanNode stagesPlanNode =
+        PlanNode.builder()
+            .uuid(generateUuid())
+            .identifier("PIPELINE")
+            .stepType(StepType.newBuilder().setType("PIPELINE").setStepCategory(StepCategory.STAGES).build())
+            .build();
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagesPlanNode))
+                            .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode))
+                            .build();
     NodeExecution nodeExecution = NodeExecution.builder().ambiance(ambiance).planNode(planNode).build();
-    assertThat(OrchestrationUtils.isStageOrParallelNode(nodeExecution)).isTrue();
+    assertThat(OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)).isTrue();
     assertThat(OrchestrationUtils.isPipelineNode(nodeExecution)).isFalse();
 
     planNode = PlanNode.builder()
@@ -104,9 +113,27 @@ public class OrchestrationUtilsTest extends CategoryTest {
                    .stepType(StepType.newBuilder().setType("PIPELINE").setStepCategory(StepCategory.FORK).build())
                    .build();
 
-    ambiance = Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode)).build();
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagesPlanNode))
+                   .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode))
+                   .build();
     nodeExecution = NodeExecution.builder().ambiance(ambiance).planNode(planNode).build();
-    assertThat(OrchestrationUtils.isStageOrParallelNode(nodeExecution)).isTrue();
+    assertThat(OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)).isTrue();
+    assertThat(OrchestrationUtils.isStageNode(nodeExecution)).isFalse();
+    assertThat(OrchestrationUtils.isPipelineNode(nodeExecution)).isFalse();
+
+    PlanNode stepGroupPlanNode =
+        PlanNode.builder()
+            .uuid(generateUuid())
+            .identifier("PIPELINE")
+            .stepType(StepType.newBuilder().setType("PIPELINE").setStepCategory(StepCategory.STEP_GROUP).build())
+            .build();
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stepGroupPlanNode))
+                   .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode))
+                   .build();
+    nodeExecution = NodeExecution.builder().ambiance(ambiance).planNode(planNode).build();
+    assertThat(OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)).isFalse();
     assertThat(OrchestrationUtils.isStageNode(nodeExecution)).isFalse();
     assertThat(OrchestrationUtils.isPipelineNode(nodeExecution)).isFalse();
   }
