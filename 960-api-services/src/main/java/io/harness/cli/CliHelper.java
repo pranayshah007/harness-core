@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
@@ -34,17 +35,27 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 @Singleton
 @OwnedBy(CDP)
 public class CliHelper {
+  private static final Predicate<String> NOOP_CLI_ERROR_PREDICATE = errorLine -> true;
+
   @Nonnull
   public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
       String directory, LogCallback executionLogCallback) throws IOException, InterruptedException, TimeoutException {
-    return executeCliCommand(
-        command, timeoutInMillis, envVariables, directory, executionLogCallback, command, new EmptyLogOutputStream());
+    return executeCliCommand(command, timeoutInMillis, envVariables, directory, executionLogCallback, command,
+        new EmptyLogOutputStream(), NOOP_CLI_ERROR_PREDICATE);
   }
 
   @Nonnull
   public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
       String directory, LogCallback executionLogCallback, String loggingCommand, LogOutputStream logOutputStream)
       throws IOException, InterruptedException, TimeoutException {
+    return executeCliCommand(command, timeoutInMillis, envVariables, directory, executionLogCallback, loggingCommand,
+        logOutputStream, NOOP_CLI_ERROR_PREDICATE);
+  }
+
+  @Nonnull
+  public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
+      String directory, LogCallback executionLogCallback, String loggingCommand, LogOutputStream logOutputStream,
+      Predicate<String> cliErrorPredicate) throws IOException, InterruptedException, TimeoutException {
     executionLogCallback.saveExecutionLog(loggingCommand, LogLevel.INFO, RUNNING);
 
     StringBuilder errorLogs = new StringBuilder();
@@ -60,7 +71,9 @@ public class CliHelper {
                                             protected void processLine(String line) {
                                               log.error(line);
                                               executionLogCallback.saveExecutionLog(line, LogLevel.ERROR);
-                                              errorLogs.append(' ').append(line);
+                                              if (cliErrorPredicate.test(line)) {
+                                                errorLogs.append(' ').append(line);
+                                              }
                                             }
                                           });
 
