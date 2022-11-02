@@ -535,4 +535,6 @@ io.harness.cdng.elastigroup.ElastigroupConfiguration
 io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome
 io.harness.cdng.infra.yaml.ElastigroupInfrastructure
 io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput
+io.harness.cdng.elastigroup.ElastigroupSetupStepInfo
+io.harness.cdng.elastigroup.ElastigroupSetupStepNode
 io.harness.cdng.freeze.FreezeOutcome

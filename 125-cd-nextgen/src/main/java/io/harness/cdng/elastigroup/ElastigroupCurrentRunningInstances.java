@@ -24,7 +24,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 @Builder
 @JsonTypeName("CurrentRunning")
 @TypeAlias("ElastigroupCurrentRunningInstances")
-@RecasterAlias("io.harness.cdng.infra.beans.host.ElastigroupCurrentRunningInstances")
+@RecasterAlias("io.harness.cdng.elastigroup.ElastigroupCurrentRunningInstances")
 public class ElastigroupCurrentRunningInstances implements ElastigroupInstancesSpec {
   @Override
   @JsonIgnore
