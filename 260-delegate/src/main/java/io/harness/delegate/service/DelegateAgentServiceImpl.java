@@ -1661,6 +1661,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private boolean doRestartDelegate() {
+    if (!acquireTasks.get()) {
+      // Skip checking other cases if Delegate isn't acquiring tasks.
+      return true;
+    }
+
     long now = clock.millis();
 
     boolean heartbeatExpired = ((now - lastHeartbeatSentAt.get()) > HEARTBEAT_TIMEOUT)
