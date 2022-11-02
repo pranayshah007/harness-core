@@ -30,7 +30,7 @@ public class CfRequestConfig {
   private int desiredCount;
   private List<String> routeMaps;
   private Map<String, String> serviceVariables;
-  private Map<String, PcfProcessInstances> processInstancesCount;
+  private List<PcfProcessInstances> desiredProcessInstances;
   Map<String, String> safeDisplayServiceVariables;
   private int timeOutIntervalInMins;
   private boolean useCFCLI;

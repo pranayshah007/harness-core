@@ -23,7 +23,7 @@ public class CfRenameRequest extends CfRequestConfig {
     super(requestConfig.getOrgName(), requestConfig.getSpaceName(), requestConfig.getUserName(),
         requestConfig.getPassword(), requestConfig.getEndpointUrl(), requestConfig.getApplicationName(),
         requestConfig.getManifestYaml(), requestConfig.getDesiredCount(), requestConfig.getRouteMaps(),
-        requestConfig.getServiceVariables(), requestConfig.getProcessInstancesCount(),
+        requestConfig.getServiceVariables(), requestConfig.getDesiredProcessInstances(),
         requestConfig.getSafeDisplayServiceVariables(), requestConfig.getTimeOutIntervalInMins(),
         requestConfig.isUseCFCLI(), requestConfig.getCfCliPath(), requestConfig.getCfCliVersion(),
         requestConfig.getCfHomeDirPath(), requestConfig.isLoggedin(), requestConfig.isLimitPcfThreads(),

@@ -156,7 +156,7 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     try {
       ApplicationDetail applicationDetail = cfSdkClient.getApplicationByName(pcfRequestConfig);
       cfSdkClient.scaleApplications(pcfRequestConfig);
-      if (!isEmpty(pcfRequestConfig.getProcessInstancesCount())) {
+      if (!isEmpty(pcfRequestConfig.getDesiredProcessInstances())) {
         upsizeProcesses(pcfRequestConfig, executionLogCallback);
       }
       if (pcfRequestConfig.getDesiredCount() >= 0 && applicationDetail.getInstances() == 0) {

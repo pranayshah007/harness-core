@@ -296,7 +296,7 @@ public class PcfSetupState extends State {
     List<String> tempRouteMaps = fetchTempRoutes(context, pcfInfrastructureMapping);
     List<String> routeMaps = fetchRouteMaps(context, pcfManifestsPackage, pcfInfrastructureMapping);
     Integer maxCount = fetchMaxCount(pcfManifestsPackage);
-    Map<String, PcfProcessInstances> pcfProcessInstancesMap = null;
+    List<PcfProcessInstances> pcfProcessInstancesMap = null;
     if (blueGreen
         && pcfStateHelper.getCfCliVersionOrDefault(app.getAppId(), serviceElement.getUuid()).equals(CfCliVersion.V7)) {
       pcfProcessInstancesMap = fetchMaxCountForAllProcesses(pcfManifestsPackage);
@@ -346,7 +346,7 @@ public class PcfSetupState extends State {
             .serviceVariables(serviceVariables)
             .timeoutIntervalInMin(timeoutIntervalInMinutes == null ? Integer.valueOf(5) : timeoutIntervalInMinutes)
             .maxCount(maxCount)
-            .processInstancesCount(pcfProcessInstancesMap)
+            .desiredProcessInstances(pcfProcessInstancesMap)
             .useCurrentCount(useCurrentRunningCount)
             .currentRunningCount(getCurrentRunningCountForSetupRequest())
             .blueGreen(blueGreen)
@@ -381,7 +381,7 @@ public class PcfSetupState extends State {
             .pcfCommandRequest(cfCommandSetupRequest)
             .commandName(PCF_SETUP_COMMAND)
             .maxInstanceCount(maxCount)
-            .processInstancesCount(pcfProcessInstancesMap)
+            .desiredProcessInstances(pcfProcessInstancesMap)
             .useCurrentRunningInstanceCount(useCurrentRunningCount)
             .currentRunningInstanceCount(getCurrentRunningCountForSetupRequest())
             .desireActualFinalCount(useCurrentRunningCount ? getCurrentRunningCountForSetupRequest() : maxCount)
@@ -470,23 +470,19 @@ public class PcfSetupState extends State {
   }
 
   @VisibleForTesting
-  Map<String, PcfProcessInstances> fetchMaxCountForAllProcesses(PcfManifestsPackage pcfManifestsPackage) {
-    List<String> allProcesses = pcfStateHelper.fetchProcessesFromManifest(pcfManifestsPackage);
-    Map<String, PcfProcessInstances> processInstancesMap = new HashMap<>();
+  List<PcfProcessInstances> fetchMaxCountForAllProcesses(PcfManifestsPackage pcfManifestsPackage) {
+    Map<String, Boolean> allProcesses = pcfStateHelper.fetchProcessesFromManifest(pcfManifestsPackage);
+    List<PcfProcessInstances> processInstancesMap = new ArrayList<>();
     maxInstances = maxInstances == null || maxInstances < 0
         ? Integer.valueOf(PcfConstants.MANIFEST_INSTANCE_COUNT_DEFAULT)
         : maxInstances;
 
-    for (String processName : allProcesses) {
-      if (processInstancesMap.containsKey(processName)) {
-        throw new InvalidRequestException("Duplicate process name exists in the manifest yml");
-      }
-      processInstancesMap.put(processName,
-          PcfProcessInstances.builder()
-              .type(processName)
-              .instanceCount(pcfStateHelper.fetchMaxCountFromManifest(
-                  pcfManifestsPackage, PcfConstants.MANIFEST_INSTANCE_COUNT_DEFAULT, processName))
-              .build());
+    for (String processName : allProcesses.keySet()) {
+      processInstancesMap.add(PcfProcessInstances.builder()
+                                  .type(processName)
+                                  .instanceCount(pcfStateHelper.fetchMaxCountFromManifest(
+                                      pcfManifestsPackage, PcfConstants.MANIFEST_INSTANCE_COUNT_DEFAULT, processName))
+                                  .build());
     }
     return processInstancesMap;
   }
@@ -719,7 +715,7 @@ public class PcfSetupState extends State {
                     ? AppNamingStrategy.VERSIONING.name()
                     : cfSetupCommandResponse.getExistingAppNamingStrategy())
             .isWebProcessCountZero(stateExecutionData.isWebProcessCountZero())
-            .processInstancesCount(stateExecutionData.getProcessInstancesCount())
+            .desiredProcessInstances(stateExecutionData.getDesiredProcessInstances())
             .isUseCfCli(true);
 
     if (!isPcfSetupCommandResponseNull) {

@@ -155,13 +155,13 @@ public class PcfCommandTaskBaseHelper {
     // Upscale new app
     cfRequestConfig.setApplicationName(cfCommandDeployRequest.getNewReleaseName());
     cfRequestConfig.setDesiredCount(cfCommandDeployRequest.getUpdateCount());
-    if (!isEmpty(cfCommandDeployRequest.getProcessInstancesCount())) {
-      cfRequestConfig.setProcessInstancesCount(cfCommandDeployRequest.getProcessInstancesCount());
+    if (!isEmpty(cfCommandDeployRequest.getDesiredProcessInstances())) {
+      cfRequestConfig.setDesiredProcessInstances(cfCommandDeployRequest.getDesiredProcessInstances());
     }
     // perform upsize
     upsizeInstance(
         cfRequestConfig, pcfDeploymentManager, executionLogCallback, cfServiceDataUpdated, pcfInstanceElements);
-    cfRequestConfig.setProcessInstancesCount(null); // unsetting it back
+    cfRequestConfig.setDesiredProcessInstances(null); // unsetting it back
   }
 
   private void upsizeInstance(CfRequestConfig cfRequestConfig, CfDeploymentManager pcfDeploymentManager,

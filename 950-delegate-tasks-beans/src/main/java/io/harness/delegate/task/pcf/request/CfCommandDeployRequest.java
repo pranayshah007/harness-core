@@ -46,7 +46,7 @@ public class CfCommandDeployRequest extends CfCommandRequest {
   private Integer totalPreviousInstanceCount;
   private CfAppSetupTimeDetails downsizeAppDetail;
   private Integer maxCount;
-  private Map<String, PcfProcessInstances> processInstancesCount;
+  private List<PcfProcessInstances> desiredProcessInstances;
   private PcfManifestsPackage pcfManifestsPackage;
   /**
    * This will be empty for deploy_state, so deploy will figureOut old versions and scale them down by 5
@@ -60,7 +60,7 @@ public class CfCommandDeployRequest extends CfCommandRequest {
   @Builder
   public CfCommandDeployRequest(String accountId, String appId, String commandName, String activityId,
       PcfCommandType pcfCommandType, String organization, String space, CfInternalConfig pcfConfig,
-      String workflowExecutionId, String newReleaseName, Map<String, PcfProcessInstances> processInstancesCount,
+      String workflowExecutionId, String newReleaseName, List<PcfProcessInstances> desiredProcessInstances,
       Integer maxCount, Integer updateCount, Integer downSizeCount, Integer totalPreviousInstanceCount,
       List<CfServiceData> instanceData, ResizeStrategy resizeStrategy, List<String> routeMaps,
       Integer timeoutIntervalInMin, boolean useCfCLI, CfAppSetupTimeDetails downsizeAppDetail,
@@ -79,7 +79,7 @@ public class CfCommandDeployRequest extends CfCommandRequest {
     this.downsizeAppDetail = downsizeAppDetail;
     this.isStandardBlueGreen = isStandardBlueGreen;
     this.maxCount = maxCount;
-    this.processInstancesCount = processInstancesCount;
+    this.desiredProcessInstances = desiredProcessInstances;
     this.pcfManifestsPackage = pcfManifestsPackage;
   }
 }

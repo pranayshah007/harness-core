@@ -917,10 +917,10 @@ public class PcfStateHelper {
     return maxCount;
   }
 
-  public List<String> fetchProcessesFromManifest(PcfManifestsPackage pcfManifestsPackage) {
+  public Map<String, Boolean> fetchProcessesFromManifest(PcfManifestsPackage pcfManifestsPackage) {
     Map<String, Object> applicationYamlMap = getApplicationYamlMap(pcfManifestsPackage.getManifestYml());
     Map<String, Object> treeMap = generateCaseInsensitiveTreeMap(applicationYamlMap);
-    List<String> allProcesses = new ArrayList<>();
+    Map<String, Boolean> allProcesses = new HashMap<>();
     if (treeMap.containsKey(PROCESSES_MANIFEST_YML_ELEMENT)) {
       Object processes = treeMap.get(PROCESSES_MANIFEST_YML_ELEMENT);
       if (processes instanceof ArrayList<?>) {
@@ -930,7 +930,10 @@ public class PcfStateHelper {
             if (!isNull(process) && process.containsKey(PROCESSES_TYPE_MANIFEST_YML_ELEMENT)) {
               Object p = process.get(PROCESSES_TYPE_MANIFEST_YML_ELEMENT);
               if ((p instanceof String) && !p.toString().equals(WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT)) {
-                allProcesses.add(p.toString());
+                if (allProcesses.containsKey(p.toString())) {
+                  throw new InvalidRequestException("Duplicate process name exists in the manifest yml");
+                }
+                allProcesses.put(p.toString(), true);
               }
             }
           }
