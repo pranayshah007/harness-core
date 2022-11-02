@@ -49,7 +49,7 @@ public class CfCommandSetupRequest extends CfCommandRequest {
   private Map<String, String> serviceVariables;
   private Map<String, String> safeDisplayServiceVariables;
   private Integer maxCount;
-  private Map<String, PcfProcessInstances> processInstancesCount;
+  private List<PcfProcessInstances> desiredProcessInstances;
   private Integer currentRunningCount;
   private boolean useCurrentCount;
   private boolean blueGreen;
@@ -65,7 +65,7 @@ public class CfCommandSetupRequest extends CfCommandRequest {
       String workflowExecutionId, String releaseNamePrefix, String manifestYaml, List<ArtifactFile> artifactFiles,
       ArtifactStreamAttributes artifactStreamAttributes, List<String> tempRouteMap, List<String> routeMaps,
       Map<String, String> serviceVariables, Map<String, String> safeDisplayServiceVariables,
-      Integer timeoutIntervalInMin, Integer maxCount, Map<String, PcfProcessInstances> processInstancesCount,
+      Integer timeoutIntervalInMin, Integer maxCount, List<PcfProcessInstances> desiredProcessInstances,
       Integer currentRunningCount, boolean useCurrentCount, boolean blueGreen, Integer olderActiveVersionCountToKeep,
       boolean useCLIForPcfAppCreation, PcfManifestsPackage pcfManifestsPackage, boolean useAppAutoscalar,
       boolean enforceSslValidation, boolean limitPcfThreads, String artifactProcessingScript, CfCliVersion cfCliVersion,
@@ -82,7 +82,7 @@ public class CfCommandSetupRequest extends CfCommandRequest {
     this.serviceVariables = serviceVariables;
     this.safeDisplayServiceVariables = safeDisplayServiceVariables;
     this.maxCount = maxCount;
-    this.processInstancesCount = processInstancesCount;
+    this.desiredProcessInstances = desiredProcessInstances;
     this.blueGreen = blueGreen;
     this.olderActiveVersionCountToKeep = olderActiveVersionCountToKeep;
     this.currentRunningCount = currentRunningCount;

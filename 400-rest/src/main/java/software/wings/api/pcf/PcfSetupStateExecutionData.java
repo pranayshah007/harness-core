@@ -54,7 +54,7 @@ public class PcfSetupStateExecutionData extends StateExecutionData implements De
   private CfCommandRequest pcfCommandRequest;
   private String commandName;
   private Integer maxInstanceCount;
-  private Map<String, PcfProcessInstances> processInstancesCount;
+  private List<PcfProcessInstances> desiredProcessInstances;
   private boolean useCurrentRunningInstanceCount;
   private Integer currentRunningInstanceCount;
   private List<String> routeMaps;

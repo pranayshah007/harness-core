@@ -183,9 +183,9 @@ public class CfCliClientImpl implements CfCliClient {
       }
 
       if (loginSuccessful) {
-        for (Map.Entry<String, PcfProcessInstances> process : cfRequestConfig.getProcessInstancesCount().entrySet()) {
+        for (PcfProcessInstances process : cfRequestConfig.getDesiredProcessInstances()) {
           ProcessResult processResult = getProcessResult(
-              getScaleProcessCfCliCommand(cfRequestConfig, process.getKey(), process.getValue().getInstanceCount()),
+              getScaleProcessCfCliCommand(cfRequestConfig, process.getType(), process.getInstanceCount()),
               getEnvironmentMapForCfExecutor(cfRequestConfig.getEndpointUrl(), cfRequestConfig.getCfHomeDirPath()),
               cfRequestConfig.getTimeOutIntervalInMins(), logCallback);
           exitCode = processResult.getExitValue();

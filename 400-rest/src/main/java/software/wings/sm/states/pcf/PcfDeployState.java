@@ -376,7 +376,7 @@ public class PcfDeployState extends State {
         .pcfConfig(pcfConfig)
         .pcfCommandType(PcfCommandType.RESIZE)
         .maxCount(setupSweepingOutputPcf.getDesiredActualFinalCount())
-        .processInstancesCount(setupSweepingOutputPcf.getProcessInstancesCount())
+        .desiredProcessInstances(setupSweepingOutputPcf.getDesiredProcessInstances())
         .updateCount(updateCount)
         .downSizeCount(downsizeUpdateCount)
         .totalPreviousInstanceCount(setupSweepingOutputPcf.getTotalPreviousInstanceCount() == null
