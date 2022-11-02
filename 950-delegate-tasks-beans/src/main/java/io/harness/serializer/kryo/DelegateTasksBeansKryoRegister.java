@@ -773,6 +773,7 @@ import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
 import io.harness.ng.core.dto.secrets.WinRmAuthDTO;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.notification.remote.SmtpConfigResponse;
+import io.harness.pcf.model.PcfProcessInstances;
 import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
@@ -1901,5 +1902,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AMIArtifactDelegateResponse.class, 60012);
     kryo.register(AMITag.class, 60013);
     kryo.register(AMIFilter.class, 60014);
+
+    kryo.register(PcfProcessInstances.class, 543530);
   }
 }

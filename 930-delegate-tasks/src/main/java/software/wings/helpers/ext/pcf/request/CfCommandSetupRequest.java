@@ -16,6 +16,7 @@ import io.harness.delegate.beans.pcf.CfInternalConfig;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.pcf.model.CfCliVersion;
+import io.harness.pcf.model.PcfProcessInstances;
 
 import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -48,6 +49,7 @@ public class CfCommandSetupRequest extends CfCommandRequest {
   private Map<String, String> serviceVariables;
   private Map<String, String> safeDisplayServiceVariables;
   private Integer maxCount;
+  private Map<String, PcfProcessInstances> processInstancesCount;
   private Integer currentRunningCount;
   private boolean useCurrentCount;
   private boolean blueGreen;
@@ -63,11 +65,11 @@ public class CfCommandSetupRequest extends CfCommandRequest {
       String workflowExecutionId, String releaseNamePrefix, String manifestYaml, List<ArtifactFile> artifactFiles,
       ArtifactStreamAttributes artifactStreamAttributes, List<String> tempRouteMap, List<String> routeMaps,
       Map<String, String> serviceVariables, Map<String, String> safeDisplayServiceVariables,
-      Integer timeoutIntervalInMin, Integer maxCount, Integer currentRunningCount, boolean useCurrentCount,
-      boolean blueGreen, Integer olderActiveVersionCountToKeep, boolean useCLIForPcfAppCreation,
-      PcfManifestsPackage pcfManifestsPackage, boolean useAppAutoscalar, boolean enforceSslValidation,
-      boolean limitPcfThreads, String artifactProcessingScript, CfCliVersion cfCliVersion, boolean isNonVersioning,
-      boolean nonVersioningInactiveRollbackEnabled) {
+      Integer timeoutIntervalInMin, Integer maxCount, Map<String, PcfProcessInstances> processInstancesCount,
+      Integer currentRunningCount, boolean useCurrentCount, boolean blueGreen, Integer olderActiveVersionCountToKeep,
+      boolean useCLIForPcfAppCreation, PcfManifestsPackage pcfManifestsPackage, boolean useAppAutoscalar,
+      boolean enforceSslValidation, boolean limitPcfThreads, String artifactProcessingScript, CfCliVersion cfCliVersion,
+      boolean isNonVersioning, boolean nonVersioningInactiveRollbackEnabled) {
     super(accountId, appId, commandName, activityId, pcfCommandType, organization, space, pcfConfig,
         workflowExecutionId, timeoutIntervalInMin, useCLIForPcfAppCreation, enforceSslValidation, useAppAutoscalar,
         limitPcfThreads, cfCliVersion);
@@ -80,6 +82,7 @@ public class CfCommandSetupRequest extends CfCommandRequest {
     this.serviceVariables = serviceVariables;
     this.safeDisplayServiceVariables = safeDisplayServiceVariables;
     this.maxCount = maxCount;
+    this.processInstancesCount = processInstancesCount;
     this.blueGreen = blueGreen;
     this.olderActiveVersionCountToKeep = olderActiveVersionCountToKeep;
     this.currentRunningCount = currentRunningCount;

@@ -17,8 +17,10 @@ import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.pcf.model.CfCliVersion;
+import io.harness.pcf.model.PcfProcessInstances;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -44,6 +46,7 @@ public class CfCommandDeployRequest extends CfCommandRequest {
   private Integer totalPreviousInstanceCount;
   private CfAppSetupTimeDetails downsizeAppDetail;
   private Integer maxCount;
+  private Map<String, PcfProcessInstances> processInstancesCount;
   private PcfManifestsPackage pcfManifestsPackage;
   /**
    * This will be empty for deploy_state, so deploy will figureOut old versions and scale them down by 5
@@ -57,9 +60,10 @@ public class CfCommandDeployRequest extends CfCommandRequest {
   @Builder
   public CfCommandDeployRequest(String accountId, String appId, String commandName, String activityId,
       PcfCommandType pcfCommandType, String organization, String space, CfInternalConfig pcfConfig,
-      String workflowExecutionId, String newReleaseName, Integer maxCount, Integer updateCount, Integer downSizeCount,
-      Integer totalPreviousInstanceCount, List<CfServiceData> instanceData, ResizeStrategy resizeStrategy,
-      List<String> routeMaps, Integer timeoutIntervalInMin, boolean useCfCLI, CfAppSetupTimeDetails downsizeAppDetail,
+      String workflowExecutionId, String newReleaseName, Map<String, PcfProcessInstances> processInstancesCount,
+      Integer maxCount, Integer updateCount, Integer downSizeCount, Integer totalPreviousInstanceCount,
+      List<CfServiceData> instanceData, ResizeStrategy resizeStrategy, List<String> routeMaps,
+      Integer timeoutIntervalInMin, boolean useCfCLI, CfAppSetupTimeDetails downsizeAppDetail,
       boolean isStandardBlueGreen, PcfManifestsPackage pcfManifestsPackage, boolean useAppAutoscalar,
       boolean enforceSslValidation, boolean limitPcfThreads, CfCliVersion cfCliVersion) {
     super(accountId, appId, commandName, activityId, pcfCommandType, organization, space, pcfConfig,
@@ -75,6 +79,7 @@ public class CfCommandDeployRequest extends CfCommandRequest {
     this.downsizeAppDetail = downsizeAppDetail;
     this.isStandardBlueGreen = isStandardBlueGreen;
     this.maxCount = maxCount;
+    this.processInstancesCount = processInstancesCount;
     this.pcfManifestsPackage = pcfManifestsPackage;
   }
 }

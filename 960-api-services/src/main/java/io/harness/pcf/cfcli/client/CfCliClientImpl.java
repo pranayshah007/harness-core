@@ -56,6 +56,7 @@ import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfManifestFileData;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CfRunPluginScriptRequestData;
+import io.harness.pcf.model.PcfProcessInstances;
 import io.harness.pcf.model.PcfRouteInfo;
 import io.harness.pcf.model.PcfRouteInfo.PcfRouteInfoBuilder;
 
@@ -166,6 +167,47 @@ public class CfCliClientImpl implements CfCliClient {
       throw new PivotalClientApiException(
           format("Exception occurred while starting Application: %s, Error: App start process ExitCode: %s",
               cfRequestConfig.getApplicationName(), exitCode));
+    }
+  }
+
+  @Override
+  public void scaleProcessesByCli(CfRequestConfig cfRequestConfig, LogCallback logCallback)
+      throws PivotalClientApiException {
+    log.info("Using CLI to scale processes");
+
+    int exitCode = 1;
+    try {
+      boolean loginSuccessful = true;
+      if (!cfRequestConfig.isLoggedin()) {
+        loginSuccessful = doLogin(cfRequestConfig, logCallback, cfRequestConfig.getCfHomeDirPath());
+      }
+
+      if (loginSuccessful) {
+        for (Map.Entry<String, PcfProcessInstances> process : cfRequestConfig.getProcessInstancesCount().entrySet()) {
+          ProcessResult processResult = getProcessResult(
+              getScaleProcessCfCliCommand(cfRequestConfig, process.getKey(), process.getValue().getInstanceCount()),
+              getEnvironmentMapForCfExecutor(cfRequestConfig.getEndpointUrl(), cfRequestConfig.getCfHomeDirPath()),
+              cfRequestConfig.getTimeOutIntervalInMins(), logCallback);
+          exitCode = processResult.getExitValue();
+          if (exitCode != 0) {
+            logCallback.saveExecutionLog(format(processResult.outputUTF8(), Bold, Red), ERROR);
+          } else {
+            logCallback.saveExecutionLog(format(SUCCESS, Bold, Green));
+          }
+        }
+      }
+    } catch (Exception e) {
+      throw new PivotalClientApiException(
+          format(
+              "Exception occurred while scaling process for Application: %s, Error: App Process scale process Failed",
+              cfRequestConfig.getApplicationName()),
+          e);
+    }
+
+    if (exitCode != 0) {
+      throw new PivotalClientApiException(format(
+          "Exception occurred while scaling process for Application: %s, Error: App Process scale process ExitCode: %s",
+          cfRequestConfig.getApplicationName(), exitCode));
     }
   }
 
@@ -290,6 +332,13 @@ public class CfCliClientImpl implements CfCliClient {
   private String getStartAppCfCliCommand(CfRequestConfig pcfRequestConfig) {
     return CfCliCommandResolver.getStartAppCliCommand(
         pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), pcfRequestConfig.getApplicationName());
+  }
+
+  @NotNull
+  private String getScaleProcessCfCliCommand(
+      CfRequestConfig pcfRequestConfig, String processName, Integer processInstances) {
+    return CfCliCommandResolver.getScaleProcessCommand(pcfRequestConfig.getCfCliPath(),
+        pcfRequestConfig.getCfCliVersion(), pcfRequestConfig.getApplicationName(), processName, processInstances);
   }
 
   @Override

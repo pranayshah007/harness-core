@@ -917,10 +917,36 @@ public class PcfStateHelper {
     return maxCount;
   }
 
-  public Integer fetchMaxCountFromManifest(PcfManifestsPackage pcfManifestsPackage, Integer maxInstances) {
+  public List<String> fetchProcessesFromManifest(PcfManifestsPackage pcfManifestsPackage) {
     Map<String, Object> applicationYamlMap = getApplicationYamlMap(pcfManifestsPackage.getManifestYml());
     Map<String, Object> treeMap = generateCaseInsensitiveTreeMap(applicationYamlMap);
-    Object maxCount = fetchInstanceCountFromProcesses(treeMap, WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT);
+    List<String> allProcesses = new ArrayList<>();
+    if (treeMap.containsKey(PROCESSES_MANIFEST_YML_ELEMENT)) {
+      Object processes = treeMap.get(PROCESSES_MANIFEST_YML_ELEMENT);
+      if (processes instanceof ArrayList<?>) {
+        try {
+          ArrayList<Map<String, Object>> filteredProcesses = (ArrayList<Map<String, Object>>) processes;
+          for (Map<String, Object> process : filteredProcesses) {
+            if (!isNull(process) && process.containsKey(PROCESSES_TYPE_MANIFEST_YML_ELEMENT)) {
+              Object p = process.get(PROCESSES_TYPE_MANIFEST_YML_ELEMENT);
+              if ((p instanceof String) && !p.toString().equals(WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT)) {
+                allProcesses.add(p.toString());
+              }
+            }
+          }
+        } catch (Exception e) {
+          log.warn("Unable to parse processes info in the manifest: {}", e.getMessage());
+        }
+      }
+    }
+    return allProcesses;
+  }
+
+  public Integer fetchMaxCountFromManifest(
+      PcfManifestsPackage pcfManifestsPackage, Integer maxInstances, String processName) {
+    Map<String, Object> applicationYamlMap = getApplicationYamlMap(pcfManifestsPackage.getManifestYml());
+    Map<String, Object> treeMap = generateCaseInsensitiveTreeMap(applicationYamlMap);
+    Object maxCount = fetchInstanceCountFromProcesses(treeMap, processName);
 
     String maxVal;
     if (maxCount instanceof Integer) {

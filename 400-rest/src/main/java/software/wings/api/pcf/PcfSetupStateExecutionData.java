@@ -17,6 +17,7 @@ import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
+import io.harness.pcf.model.PcfProcessInstances;
 
 import software.wings.api.ExecutionDataValue;
 import software.wings.api.pcf.PcfSetupExecutionSummary.PcfSetupExecutionSummaryBuilder;
@@ -53,6 +54,7 @@ public class PcfSetupStateExecutionData extends StateExecutionData implements De
   private CfCommandRequest pcfCommandRequest;
   private String commandName;
   private Integer maxInstanceCount;
+  private Map<String, PcfProcessInstances> processInstancesCount;
   private boolean useCurrentRunningInstanceCount;
   private Integer currentRunningInstanceCount;
   private List<String> routeMaps;

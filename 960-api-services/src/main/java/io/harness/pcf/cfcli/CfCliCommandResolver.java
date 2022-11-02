@@ -22,6 +22,7 @@ import io.harness.pcf.cfcli.command.MapRouteCliCommand.MapRouteOptions;
 import io.harness.pcf.cfcli.command.PluginsCliCommand;
 import io.harness.pcf.cfcli.command.PushCliCommand;
 import io.harness.pcf.cfcli.command.PushCliCommand.PushOptions;
+import io.harness.pcf.cfcli.command.ScaleProcessCliCommand;
 import io.harness.pcf.cfcli.command.SetEnvCliCommand;
 import io.harness.pcf.cfcli.command.StartAppCliCommand;
 import io.harness.pcf.cfcli.command.TargetCliCommand;
@@ -153,6 +154,20 @@ public interface CfCliCommandResolver {
         .cliPath(cfCliPath)
         .cliVersion(cfCliVersion)
         .arguments(Collections.singletonList(appName))
+        .build()
+        .getCommand();
+  }
+
+  static String getScaleProcessCommand(final String cfCliPath, CfCliVersion cfCliVersion, final String appName,
+      final String processName, final Integer processInstances) {
+    return ScaleProcessCliCommand.builder()
+        .cliPath(cfCliPath)
+        .cliVersion(cfCliVersion)
+        .arguments(Collections.singletonList(appName))
+        .options(ScaleProcessCliCommand.ScaleProcessOptions.builder()
+                     .processName(processName)
+                     .instances(processInstances.toString())
+                     .build())
         .build()
         .getCommand();
   }

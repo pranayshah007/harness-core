@@ -1693,23 +1693,23 @@ public class PcfStateHelperTest extends WingsBaseTest {
     PcfManifestsPackage pcfManifestsPackage =
         PcfManifestsPackage.builder().manifestYml(TEST_APP_MANIFEST).variableYmls(Arrays.asList(TEST_VAR)).build();
 
-    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 1)).isEqualTo(3);
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 1, "web")).isEqualTo(3);
 
     pcfManifestsPackage.setManifestYml(TEST_APP_MANIFEST.replace("((INSTANCES))", "2"));
-    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 3)).isEqualTo(2);
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 3, "web")).isEqualTo(2);
 
     pcfManifestsPackage.setManifestYml(
         TEST_APP_MANIFEST.replace("((INSTANCES))", INSTANCE_PLACEHOLDER_TOKEN_DEPRECATED));
-    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4)).isEqualTo(4);
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4, "web")).isEqualTo(4);
 
     pcfManifestsPackage.setManifestYml(TEST_APP_MANIFEST.replace("((INSTANCES))", INSTANCE_PLACEHOLDER_TOKEN_DEPRECATED)
                                            .replace("instances", "INSTANCES"));
-    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4)).isEqualTo(4);
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4, "web")).isEqualTo(4);
 
     pcfManifestsPackage.setVariableYmls(emptyList());
     pcfManifestsPackage.setManifestYml(TEST_APP_MANIFEST);
     try {
-      assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 1)).isEqualTo(3);
+      assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 1, "web")).isEqualTo(3);
     } catch (InvalidRequestException e) {
       assertThat(e.getMessage())
           .isEqualTo("No Valid Variable file Found, please verify var file is present and has valid structure");
