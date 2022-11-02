@@ -1458,14 +1458,12 @@ public class UserServiceImpl implements UserService {
     if (!isInviteAcceptanceRequired) {
       addUserToUserGroups(accountId, user, userGroups, false, true);
     }
-    boolean isSSOEnabled = accountService.isSSOEnabled(account);
-    boolean isAutoInviteAcceptanceEnabledWithSSOEnabled = !isInviteAcceptanceRequired && isSSOEnabled;
-    boolean isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled =
-        featureFlagService.isEnabled(FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES, accountId) && isSSOEnabled;
+    boolean isAutoInviteAcceptanceEnabled = !isInviteAcceptanceRequired;
+    boolean isPLNoEmailForSamlAccountInvitesEnabled = accountService.isPLNoEmailForSamlAccountInvitesEnabled(accountId);
 
-    if (!(isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled && !user.isTwoFactorAuthenticationEnabled())) {
-      if (isAutoInviteAcceptanceEnabledWithSSOEnabled
-          || (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled && user.isTwoFactorAuthenticationEnabled())) {
+    if (!(isPLNoEmailForSamlAccountInvitesEnabled && !user.isTwoFactorAuthenticationEnabled())) {
+      if (isAutoInviteAcceptanceEnabled
+          || (isPLNoEmailForSamlAccountInvitesEnabled && user.isTwoFactorAuthenticationEnabled())) {
         sendUserInvitationToOnlySsoAccountMail(account, user);
       } else {
         sendNewInvitationMail(userInvite, account, user);
@@ -1477,7 +1475,7 @@ public class UserServiceImpl implements UserService {
     userGroups.forEach(userGroupAdded
         -> auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, userGroupAdded, Type.ADD));
 
-    if (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled && !user.isTwoFactorAuthenticationEnabled()) {
+    if (isPLNoEmailForSamlAccountInvitesEnabled && !user.isTwoFactorAuthenticationEnabled()) {
       return USER_INVITE_NOT_REQUIRED;
     } else {
       eventPublishHelper.publishUserInviteFromAccountEvent(accountId, userInvite.getEmail());
