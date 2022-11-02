@@ -323,11 +323,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
             .build();
 
     List<NodeExecution> stageNodeExecutions =
-        nodeExecutions.stream()
-            .filter(nodeExecution
-                -> nodeExecution.getStepType().getStepCategory() == StepCategory.STAGE
-                    || nodeExecution.getStepType().getStepCategory() == StepCategory.FORK)
-            .collect(Collectors.toList());
+        nodeExecutions.stream().filter(OrchestrationUtils::isStageOrParallelStageNode).collect(Collectors.toList());
     cacheOrchestrationGraph(graph);
     pmsExecutionSummaryService.regenerateStageLayoutGraph(planExecutionId, stageNodeExecutions);
     return graph;
