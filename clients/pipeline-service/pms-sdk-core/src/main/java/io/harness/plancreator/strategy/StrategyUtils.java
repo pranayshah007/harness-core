@@ -163,6 +163,44 @@ public class StrategyUtils {
     return stageYamlFieldMap;
   }
 
+  public Map<String, GraphLayoutNode> modifyStageLayoutNodeGraph(YamlField yamlField, String nextNodeUuid) {
+    Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
+    EdgeLayoutList edgeLayoutList;
+    String planNodeId = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getUuid();
+    if (nextNodeUuid == null) {
+      edgeLayoutList = EdgeLayoutList.newBuilder().addCurrentNodeChildren(planNodeId).build();
+    } else {
+      edgeLayoutList = EdgeLayoutList.newBuilder().addNextIds(nextNodeUuid).addCurrentNodeChildren(planNodeId).build();
+    }
+
+    StrategyType strategyType = StrategyType.LOOP;
+    if (yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getField("matrix") != null) {
+      strategyType = StrategyType.MATRIX;
+    } else if (yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getField("parallelism")
+        != null) {
+      strategyType = StrategyType.PARALLELISM;
+    }
+    stageYamlFieldMap.put(yamlField.getNode().getUuid(),
+        GraphLayoutNode.newBuilder()
+            .setNodeUUID(yamlField.getNode().getUuid())
+            .setNodeType(strategyType.name())
+            .setName(yamlField.getId())
+            .setNodeGroup(StepOutcomeGroup.STRATEGY.name())
+            .setNodeIdentifier(yamlField.getId())
+            .setEdgeLayoutList(edgeLayoutList)
+            .build());
+    stageYamlFieldMap.put(planNodeId,
+        GraphLayoutNode.newBuilder()
+            .setNodeUUID(planNodeId)
+            .setNodeType(yamlField.getNode().getType())
+            .setName(yamlField.getName())
+            .setNodeGroup(StepOutcomeGroup.STAGE.name())
+            .setNodeIdentifier(yamlField.getName())
+            .setEdgeLayoutList(EdgeLayoutList.newBuilder().build())
+            .build());
+    return stageYamlFieldMap;
+  }
+
   public List<AdviserObtainment> getAdviserObtainmentFromMetaDataForStep(
       KryoSerializer kryoSerializer, YamlField currentField) {
     if (currentField.checkIfParentIsParallel(STEPS)) {
