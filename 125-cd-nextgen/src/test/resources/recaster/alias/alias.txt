@@ -545,3 +545,5 @@ io.harness.cdng.common.capacity.Capacity
 io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepNode
 io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepParameters
 io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo
+io.harness.cdng.elastigroup.ElastigroupSetupStepInfo
+io.harness.cdng.elastigroup.ElastigroupSetupStepNode
