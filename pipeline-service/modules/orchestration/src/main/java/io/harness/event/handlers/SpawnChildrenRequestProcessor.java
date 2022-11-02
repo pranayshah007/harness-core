@@ -10,6 +10,7 @@ package io.harness.event.handlers;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.OrchestrationPublisherName;
+import io.harness.PipelineSettingsService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrency.ConcurrentChildInstance;
@@ -51,6 +52,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
   @Inject private PmsGraphStepDetailsService nodeExecutionInfoService;
   @Inject private OrchestrationEngine orchestrationEngine;
+  @Inject private PipelineSettingsService pipelineSettingsService;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
 
   @Override
@@ -61,14 +63,15 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       List<String> callbackIds = new ArrayList<>();
       int currentChild = 0;
-      int maxConcurrency = (int) request.getChildren().getMaxConcurrency();
-      // If maxConcurrency is not defined then we will run all children in parallel therefore maxConcurrency should be
-      // number of children
-      if (maxConcurrency == 0) {
-        maxConcurrency = request.getChildren().getChildrenCount();
-      }
       for (int i = 0; i < request.getChildren().getChildrenList().size(); i++) {
         callbackIds.add(generateUuid());
+      }
+      int maxConcurrencyLimit = pipelineSettingsService.getMaxConcurrencyBasedOnEdition(
+          AmbianceUtils.getAccountId(ambiance), callbackIds.size());
+      int maxConcurrency = maxConcurrencyLimit;
+      if (request.getChildren().getMaxConcurrency() > 0
+          && request.getChildren().getMaxConcurrency() < maxConcurrencyLimit) {
+        maxConcurrency = (int) request.getChildren().getMaxConcurrency();
       }
 
       if (callbackIds.isEmpty()) {

@@ -65,7 +65,7 @@ import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -106,7 +106,7 @@ public class ExecutionHelper {
   RetryExecutionHelper retryExecutionHelper;
   PlanCreatorMergeService planCreatorMergeService;
   OrchestrationService orchestrationService;
-  PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
+  PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   PlanService planService;
   PlanExecutionMetadataService planExecutionMetadataService;
   PMSPipelineTemplateHelper pipelineTemplateHelper;

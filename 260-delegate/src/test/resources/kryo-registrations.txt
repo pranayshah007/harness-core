@@ -965,6 +965,8 @@
 7492:io.harness.k8s.model.response.CEK8sDelegatePrerequisite.Rule
 7501:software.wings.helpers.ext.ecs.request.EcsRunTaskDeployRequest
 7502:software.wings.helpers.ext.ecs.response.EcsRunTaskDeployResponse
+7510:io.harness.jira.JiraFieldSchema
+
 8030:io.harness.delegate.beans.storeconfig.FetchType
 8035:software.wings.service.impl.azure.manager.AzureVMSSCommandRequest
 8058:software.wings.helpers.ext.helm.request.HelmChartCollectionParams
@@ -1827,6 +1829,7 @@
 73989:io.harness.delegate.NoEligibleDelegatesInAccountException
 73990:io.harness.delegate.beans.NoAvailableDelegatesException
 73991:io.harness.delegate.beans.NoDelegatesException
+73992:io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails
 80302:software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds
 80303:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile
 80304:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo

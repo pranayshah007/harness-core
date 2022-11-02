@@ -50,7 +50,9 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
               .contains(batchJobType.getBatchJobBucket())) {
         Instant connectorCreationTime =
             Instant.ofEpochMilli(Instant.now().toEpochMilli()).truncatedTo(ChronoUnit.DAYS).minus(1, ChronoUnit.DAYS);
-        if (ImmutableSet.of(BatchJobType.AWS_ECS_CLUSTER_SYNC, BatchJobType.AWS_ECS_SERVICE_RECOMMENDATION)
+        if (ImmutableSet
+                .of(BatchJobType.AWS_ECS_CLUSTER_SYNC, BatchJobType.AWS_EC2_SERVICE_RECOMMENDATION,
+                    BatchJobType.AWS_ECS_SERVICE_RECOMMENDATION)
                 .contains(batchJobType)) {
           Instant startInstant = Instant.now().minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
           connectorCreationTime = startInstant.isAfter(connectorCreationTime) ? startInstant : connectorCreationTime;
@@ -105,7 +107,10 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
     }
 
     if (null != instant
-        && ImmutableSet.of(BatchJobType.RERUN_JOB, BatchJobType.AWS_ECS_CLUSTER_SYNC).contains(batchJobType)) {
+        && ImmutableSet
+               .of(BatchJobType.RERUN_JOB, BatchJobType.AWS_ECS_CLUSTER_SYNC,
+                   BatchJobType.AWS_EC2_SERVICE_RECOMMENDATION)
+               .contains(batchJobType)) {
       Instant startInstant = Instant.now().minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
       instant = startInstant.isAfter(instant) ? startInstant : instant;
     }
@@ -113,7 +118,9 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
     if (null != instant
         && ImmutableSet.of(BatchJobBucket.OUT_OF_CLUSTER, BatchJobBucket.OUT_OF_CLUSTER_ECS)
                .contains(batchJobType.getBatchJobBucket())
-        && !ImmutableSet.of(BatchJobType.AWS_ECS_CLUSTER_SYNC, BatchJobType.AWS_ECS_SERVICE_RECOMMENDATION)
+        && !ImmutableSet
+                .of(BatchJobType.AWS_ECS_CLUSTER_SYNC, BatchJobType.AWS_EC2_SERVICE_RECOMMENDATION,
+                    BatchJobType.AWS_ECS_SERVICE_RECOMMENDATION)
                 .contains(batchJobType)) {
       Instant startInstant = Instant.now().minus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
       instant = startInstant.isAfter(instant) ? startInstant : instant;

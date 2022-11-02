@@ -109,6 +109,7 @@ public class PipelineEntity
                  .field(PipelineEntityKeys.repo)
                  .descSortField(PipelineEntityKeys.createdAt)
                  .build())
+        .add(CompoundMongoIndex.builder().name("accountId_idx").field(PipelineEntityKeys.accountId).build())
         .build();
   }
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;

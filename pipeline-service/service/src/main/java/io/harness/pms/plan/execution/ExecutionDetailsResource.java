@@ -21,6 +21,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -163,6 +164,10 @@ public class ExecutionDetailsResource {
         filterIdentifier, (PipelineExecutionFilterPropertiesDTO) filterProperties, moduleName, searchTerm, statusesList,
         myDeployments, false, gitSyncBranchContext, true);
     Pageable pageRequest;
+    if (page < 0 || !(size > 0 && size <= 1000)) {
+      throw new InvalidRequestException(
+          "Please Verify Executions list parameters for page and size, page should be >= 0 and size should be > 0 and <=1000");
+    }
     if (EmptyPredicate.isEmpty(sort)) {
       pageRequest = PageRequest.of(page, size, Sort.by(Direction.DESC, PlanExecutionSummaryKeys.startTs));
     } else {

@@ -9,6 +9,7 @@ package software.wings.service.impl.instance;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
+import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -948,7 +949,8 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                         .filter("executionUuid", lastWE.getUuid())
                         .filter("rollback", true)
                         .filter("stateType", PHASE.getType())
-                        .filter("status", FAILED.name())
+                        .field("status")
+                        .in(List.of(FAILED.name(), SKIPPED.name()))
                         .get();
         }
       } else {

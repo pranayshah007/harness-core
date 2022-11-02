@@ -135,10 +135,10 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     resolveExpressions(ambiance, artifacts);
 
     final Set<String> taskIds = new HashSet<>();
-    String primaryArtifactTaskId = null;
     final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
     final List<ArtifactConfig> artifactConfigMapForNonDelegateTaskTypes = new ArrayList<>();
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    String primaryArtifactTaskId = null;
     if (artifacts.getPrimary() != null) {
       if (shouldCreateDelegateTask(artifacts.getPrimary().getSourceType(), artifacts.getPrimary().getSpec())) {
         primaryArtifactTaskId = createDelegateTask(
@@ -174,22 +174,26 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       return;
     }
     PrimaryArtifact primary = artifacts.getPrimary();
-    if (artifacts.getPrimary().getSpec() == null && ParameterField.isNotNull(primary.getPrimaryArtifactRef())
-        && !primary.getPrimaryArtifactRef().isExpression() && isNotEmpty(primary.getSources())) {
-      Optional<ArtifactSource> primaryArtifact =
-          primary.getSources()
-              .stream()
-              .filter(s -> primary.getPrimaryArtifactRef().getValue().equals(s.getIdentifier()))
-              .findFirst();
-      primaryArtifact.ifPresent(p -> {
-        p.getSpec().setPrimaryArtifact(true);
-        p.getSpec().setIdentifier(YamlTypes.PRIMARY_ARTIFACT);
-        artifacts.setPrimary(PrimaryArtifact.builder()
-                                 .spec(p.getSpec())
-                                 .sourceType(p.getSourceType())
-                                 .metadata(p.getMetadata())
-                                 .build());
-      });
+    if (artifacts.getPrimary().getSpec() == null && ParameterField.isNotNull(primary.getPrimaryArtifactRef())) {
+      if (!primary.getPrimaryArtifactRef().isExpression() && isNotEmpty(primary.getSources())) {
+        Optional<ArtifactSource> primaryArtifact =
+            primary.getSources()
+                .stream()
+                .filter(s -> primary.getPrimaryArtifactRef().getValue().equals(s.getIdentifier()))
+                .findFirst();
+        primaryArtifact.ifPresent(p -> {
+          p.getSpec().setPrimaryArtifact(true);
+          p.getSpec().setIdentifier(YamlTypes.PRIMARY_ARTIFACT);
+          artifacts.setPrimary(PrimaryArtifact.builder()
+                                   .spec(p.getSpec())
+                                   .sourceType(p.getSourceType())
+                                   .metadata(p.getMetadata())
+                                   .build());
+        });
+      } else if (primary.getPrimaryArtifactRef().isExpression()) {
+        throw new InvalidRequestException(String.format(
+            "primaryArtifactRef [%s] could not be resolved", primary.getPrimaryArtifactRef().getExpressionValue()));
+      }
     }
   }
 

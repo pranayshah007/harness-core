@@ -57,7 +57,6 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.springdata.TransactionHelper;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
@@ -77,6 +76,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -89,16 +90,16 @@ import org.springframework.data.mongodb.core.query.Update;
 public class NodeExecutionServiceImpl implements NodeExecutionService {
   private static final int MAX_BATCH_SIZE = 1000;
 
-  private static final Set<String> GRAPH_FIELDS =
-      ImmutableSet.of(NodeExecutionKeys.mode, NodeExecutionKeys.progressData, NodeExecutionKeys.unitProgresses,
-          NodeExecutionKeys.executableResponses, NodeExecutionKeys.interruptHistories, NodeExecutionKeys.retryIds,
-          NodeExecutionKeys.oldRetry, NodeExecutionKeys.failureInfo, NodeExecutionKeys.endTs);
+  private static final Set<String> GRAPH_FIELDS = Set.of(NodeExecutionKeys.mode, NodeExecutionKeys.progressData,
+      NodeExecutionKeys.unitProgresses, NodeExecutionKeys.executableResponses, NodeExecutionKeys.interruptHistories,
+      NodeExecutionKeys.retryIds, NodeExecutionKeys.oldRetry, NodeExecutionKeys.failureInfo, NodeExecutionKeys.endTs);
   @Inject private MongoTemplate mongoTemplate;
   @Inject private OrchestrationEventEmitter eventEmitter;
   @Inject private PlanExecutionMetadataService planExecutionMetadataService;
   @Inject private TransactionHelper transactionHelper;
   @Inject private OrchestrationLogPublisher orchestrationLogPublisher;
   @Inject private OrchestrationLogConfiguration orchestrationLogConfiguration;
+  @Inject private NodeExecutionReadHelper nodeExecutionReadHelper;
 
   @Getter private final Subject<NodeStatusUpdateObserver> stepStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
@@ -161,7 +162,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public Optional<NodeExecution> getByNodeIdentifier(String nodeIdentifier, String planExecutionId) {
+  public Optional<NodeExecution> getByNodeIdentifier(@NotNull String nodeIdentifier, @NotNull String planExecutionId) {
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.identifier).in(nodeIdentifier));
     return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecution.class));
@@ -176,17 +177,20 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<NodeExecution> findByParentIdAndStatusIn(String parentId, EnumSet<Status> flowingStatuses) {
-    Query query = query(where(NodeExecutionKeys.parentId).is(parentId))
-                      .addCriteria(where(NodeExecutionKeys.status).in(flowingStatuses))
-                      .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
-    return mongoTemplate.find(query, NodeExecution.class);
+  public long findCountByParentIdAndStatusIn(String parentId, Set<Status> flowingStatuses) {
+    return nodeExecutionReadHelper.findCountByParentIdAndStatusIn(parentId, flowingStatuses);
   }
 
   @Override
-  public List<NodeExecution> fetchNodeExecutions(String planExecutionId) {
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId));
-    return mongoTemplate.find(query, NodeExecution.class);
+  public Page<NodeExecution> fetchAllStepNodeExecutions(
+      String planExecutionId, Set<String> fieldsToInclude, Pageable pageable) {
+    validateQueryFieldsForNodeExecution(fieldsToInclude);
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.stepCategory).is(StepCategory.STEP));
+    for (String fieldName : fieldsToInclude) {
+      query.fields().include(fieldName);
+    }
+    return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
   }
 
   @Override
@@ -219,6 +223,38 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
+  public Page<NodeExecution> fetchWithoutRetriesAndStatusIn(
+      String planExecutionId, EnumSet<Status> statuses, Set<String> fieldsToInclude, Pageable pageable) {
+    return fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
+        planExecutionId, statuses, fieldsToInclude, Collections.emptySet(), pageable);
+  }
+
+  @Override
+  public Page<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
+      String planExecutionId, EnumSet<Status> statuses, Set<String> fieldsToBeIncluded, Pageable pageable) {
+    return fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
+        planExecutionId, statuses, fieldsToBeIncluded, Collections.emptySet(), pageable);
+  }
+
+  @Override
+  public Page<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(String planExecutionId,
+      EnumSet<Status> statuses, Set<String> fieldsToBeIncluded, Set<String> fieldsToBeExcluded, Pageable pageable) {
+    validateQueryFieldsForNodeExecution(fieldsToBeIncluded);
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
+    for (String field : fieldsToBeIncluded) {
+      query.fields().include(field);
+    }
+    for (String field : fieldsToBeExcluded) {
+      query.fields().exclude(field);
+    }
+    if (isNotEmpty(statuses)) {
+      query.addCriteria(where(NodeExecutionKeys.status).in(statuses));
+    }
+    return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
+  }
+
+  @Override
   public List<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(String planExecutionId,
       EnumSet<Status> statuses, boolean shouldUseProjections, Set<String> fieldsToBeIncluded,
       Set<String> fieldsToBeExcluded) {
@@ -241,6 +277,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Override
   public List<NodeExecution> fetchChildrenNodeExecutions(
       String planExecutionId, String parentId, Set<String> fieldsToBeIncluded) {
+    validateQueryFieldsForNodeExecution(fieldsToBeIncluded);
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.parentId).is(parentId))
                       .with(Sort.by(Direction.DESC, NodeExecutionKeys.createdAt));
@@ -255,6 +292,18 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.status).is(status));
     return mongoTemplate.find(query, NodeExecution.class);
+  }
+
+  @Override
+  public Page<NodeExecution> fetchNodeExecutionsByStatus(
+      String planExecutionId, Status status, Set<String> fieldsToBeIncluded, Pageable pageable) {
+    validateQueryFieldsForNodeExecution(fieldsToBeIncluded);
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.status).is(status));
+    for (String field : fieldsToBeIncluded) {
+      query.fields().include(field);
+    }
+    return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
   }
 
   /**
@@ -871,5 +920,11 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     nodeExecutions.forEach(
         nodeExecution -> nodeExecutionIdToPlanNode.put(nodeExecution.getUuid(), nodeExecution.getNode()));
     return nodeExecutionIdToPlanNode;
+  }
+
+  private void validateQueryFieldsForNodeExecution(Set<String> fieldsToInclude) {
+    if (EmptyPredicate.isEmpty(fieldsToInclude)) {
+      throw new InvalidRequestException("Projection fields for NodeExecution in fetchNodeExecutions is required");
+    }
   }
 }

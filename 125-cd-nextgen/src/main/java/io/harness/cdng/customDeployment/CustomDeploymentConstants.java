@@ -15,4 +15,5 @@ public class CustomDeploymentConstants {
   public static final String TEMPLATE = "template";
   public static final String VALUE = "value";
   public static final String VARIABLES = "variables";
+  public static final String INFRASTRUCTURE_DEFINITION = "infrastructureDefinition";
 }

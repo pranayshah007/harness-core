@@ -144,9 +144,9 @@ public class FileFailsafeServiceImplTest extends CategoryTest {
     when(transactionTemplate.execute(any()))
         .thenThrow(new IllegalArgumentException("The given entity must not be null!"));
 
-    boolean deletedFileDTO = fileFailsafeService.deleteAndPublish(ngFile);
-
-    assertThat(deletedFileDTO).isFalse();
+    assertThatThrownBy(() -> fileFailsafeService.deleteAndPublish(ngFile))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("The given entity must not be null!");
   }
 
   @Test

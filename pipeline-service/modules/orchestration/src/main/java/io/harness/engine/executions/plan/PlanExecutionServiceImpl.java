@@ -9,6 +9,7 @@ package io.harness.engine.executions.plan;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy.ENFORCEMENT_CALLBACK_ID;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -30,6 +31,7 @@ import io.harness.observer.Subject;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.repositories.PlanExecutionRepository;
@@ -40,6 +42,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,6 +51,8 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -60,6 +65,8 @@ import org.springframework.data.mongodb.core.query.Update;
 @Slf4j
 @Singleton
 public class PlanExecutionServiceImpl implements PlanExecutionService {
+  private static int MAX_NODES_BATCH_SIZE = 1000;
+
   @Inject private PlanExecutionRepository planExecutionRepository;
   @Inject private MongoTemplate mongoTemplate;
   @Inject private NodeStatusUpdateHandlerFactory nodeStatusUpdateHandlerFactory;
@@ -108,7 +115,8 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
       emitEvent(updated);
     }
     if (StatusUtils.isFinalStatus(status)) {
-      waitNotifyEngine.doneWith(planExecutionId, StringNotifyResponseData.builder().build());
+      waitNotifyEngine.doneWith(
+          String.format(ENFORCEMENT_CALLBACK_ID, planExecutionId), StringNotifyResponseData.builder().build());
     }
     return updated;
   }
@@ -174,8 +182,22 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
 
   @Override
   public Status calculateStatusExcluding(String planExecutionId, String excludedNodeExecutionId) {
-    List<NodeExecution> nodeExecutions =
-        nodeExecutionService.fetchWithoutRetriesAndStatusIn(planExecutionId, EnumSet.noneOf(Status.class));
+    int currentPage = 0;
+    int totalPages = 0;
+
+    List<NodeExecution> nodeExecutions = new LinkedList<>();
+    do {
+      Page<NodeExecution> paginatedNodeExecutions =
+          nodeExecutionService.fetchWithoutRetriesAndStatusIn(planExecutionId, EnumSet.noneOf(Status.class),
+              NodeProjectionUtils.withStatus, PageRequest.of(currentPage, MAX_NODES_BATCH_SIZE));
+      if (paginatedNodeExecutions == null || paginatedNodeExecutions.getTotalElements() == 0) {
+        break;
+      }
+      totalPages = paginatedNodeExecutions.getTotalPages();
+      nodeExecutions.addAll(new LinkedList<>(paginatedNodeExecutions.getContent()));
+      currentPage++;
+    } while (currentPage < totalPages);
+
     List<Status> filtered = nodeExecutions.stream()
                                 .filter(ne -> !ne.getUuid().equals(excludedNodeExecutionId))
                                 .map(NodeExecution::getStatus)
@@ -230,7 +252,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
-  public long findRunningExecutionsForGivenPipeline(
+  public long countRunningExecutionsForGivenPipeline(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
     Criteria criteria = new Criteria()
                             .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)

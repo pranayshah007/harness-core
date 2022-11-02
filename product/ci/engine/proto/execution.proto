@@ -180,6 +180,10 @@ message ExecuteStepRequest {
   UnitStep step = 2;
   string tmp_file_path = 3;
   string delegate_svc_endpoint = 4;
+  string manager_svc_endpoint = 5;
+  string account_key = 6;
+  string manager_url = 7;
+  string delegate_id = 8;
 }
 
 message ExecuteStepResponse {}

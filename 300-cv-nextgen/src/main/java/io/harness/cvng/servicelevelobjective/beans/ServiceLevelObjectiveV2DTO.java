@@ -49,7 +49,7 @@ public class ServiceLevelObjectiveV2DTO implements YamlDTO {
   @Size(max = 128) Map<String, String> tags;
   @ApiModelProperty(required = true) @NotNull List<String> userJourneyRefs;
   @Valid @NotNull SLOTargetDTO sloTarget;
-  @ApiModelProperty(required = true) @NotNull @EntityIdentifier ServiceLevelObjectiveType type;
+  @ApiModelProperty(required = true) @NotNull ServiceLevelObjectiveType type;
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = SLO_SPEC, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
   @Valid
   @NotNull

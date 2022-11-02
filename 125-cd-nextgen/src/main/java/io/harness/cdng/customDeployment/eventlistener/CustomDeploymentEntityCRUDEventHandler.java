@@ -10,8 +10,10 @@ package io.harness.cdng.customDeployment.eventlistener;
 import static software.wings.beans.AccountType.log;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 
 import io.harness.EntityType;
+import io.harness.beans.IdentifierRef;
 import io.harness.beans.InfraDefReference;
 import io.harness.beans.Scope;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
@@ -57,27 +59,24 @@ public class CustomDeploymentEntityCRUDEventHandler {
     Map<String, List<String>> envToOrgProjectIdMap = new HashMap<>();
     Map<String, List<String>> envToInfraMap = new HashMap<>();
 
+    String templateYaml =
+        customDeploymentInfrastructureHelper.getTemplateYaml(accountRef, orgRef, projectRef, identifier, versionLabel);
     for (EntitySetupUsageDTO entitySetupUsage : entitySetupUsages) {
-      if (entitySetupUsage != null && entitySetupUsage.getReferredByEntity() != null
-          && entitySetupUsage.getReferredByEntity().getEntityRef() instanceof InfraDefReference) {
+      if (!isNull(entitySetupUsage) && !isNull(entitySetupUsage.getReferredByEntity())) {
         String infraId = entitySetupUsage.getReferredByEntity().getEntityRef().getIdentifier();
-        String environment =
-            ((InfraDefReference) entitySetupUsage.getReferredByEntity().getEntityRef()).getEnvIdentifier();
+        String environment = getEnvironment(entitySetupUsage);
         String orgIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getOrgIdentifier();
         String projectIdentifierEnv = entitySetupUsage.getReferredByEntity().getEntityRef().getProjectIdentifier();
-        envToOrgProjectIdMap.put(environment, Arrays.asList(orgIdentifierEnv, projectIdentifierEnv));
-        envToInfraMap.computeIfAbsent(environment, k -> new ArrayList<>()).add(infraId);
+        String infraYaml = getInfraYaml(entitySetupUsage, accountRef);
+        boolean updateRequired =
+            customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(infraYaml, templateYaml, accountRef);
+        if (updateRequired) {
+          envToOrgProjectIdMap.put(environment, Arrays.asList(orgIdentifierEnv, projectIdentifierEnv));
+          envToInfraMap.computeIfAbsent(environment, k -> new ArrayList<>()).add(infraId);
+        }
       }
     }
-
-    String infraYaml = getInfraYaml(entitySetupUsages.get(0), accountRef);
-    String templateYaml = customDeploymentInfrastructureHelper.getTemplateYaml(
-        accountRef, orgRef, projectRef, identifier, versionLabel.equals(STABLE_VERSION) ? null : versionLabel);
-    boolean updateRequired =
-        customDeploymentInfrastructureHelper.checkIfInfraIsObselete(infraYaml, templateYaml, accountRef);
-    if (updateRequired) {
-      updateInfrasAsObsolete(envToInfraMap, accountRef, envToOrgProjectIdMap);
-    }
+    updateInfrasAsObsolete(envToInfraMap, accountRef, envToOrgProjectIdMap);
     return true;
   }
 
@@ -85,7 +84,7 @@ public class CustomDeploymentEntityCRUDEventHandler {
     String infraId = entitySetupUsage.getReferredByEntity().getEntityRef().getIdentifier();
     String orgId = entitySetupUsage.getReferredByEntity().getEntityRef().getOrgIdentifier();
     String projectId = entitySetupUsage.getReferredByEntity().getEntityRef().getProjectIdentifier();
-    String environment = ((InfraDefReference) entitySetupUsage.getReferredByEntity().getEntityRef()).getEnvIdentifier();
+    String environment = getEnvironment(entitySetupUsage);
     Optional<InfrastructureEntity> infrastructureOptional =
         infrastructureEntityService.get(entitySetupUsage.getReferredByEntity().getEntityRef().getAccountIdentifier(),
             orgId, projectId, environment, infraId);
@@ -97,6 +96,13 @@ public class CustomDeploymentEntityCRUDEventHandler {
     return infrastructure.getYaml();
   }
 
+  private String getEnvironment(EntitySetupUsageDTO entitySetupUsage) {
+    if (entitySetupUsage.getReferredByEntity().getEntityRef() instanceof InfraDefReference) {
+      return ((InfraDefReference) entitySetupUsage.getReferredByEntity().getEntityRef()).getEnvIdentifier();
+    } else {
+      return ((IdentifierRef) entitySetupUsage.getReferredByEntity().getEntityRef()).getMetadata().get("envId");
+    }
+  }
   public void updateInfrasAsObsolete(Map<String, List<String>> envToInfraMap, String accountIdentifier,
       Map<String, List<String>> envToOrgProjectIdMap) {
     for (String environment : envToInfraMap.keySet()) {

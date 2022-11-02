@@ -27,4 +27,10 @@ public class JiraStatus {
     this.description = jsonObject.getString(JiraStatusKeys.description);
     this.statusCategory = new JiraStatusCategory(jsonObject.getJSONObject(JiraStatusKeys.statusCategory));
   }
+
+  public JiraStatus(JiraStatusNG jiraStatusNG) {
+    this.id = jiraStatusNG.getId();
+    this.name = jiraStatusNG.getName();
+    this.statusCategory = new JiraStatusCategory(jiraStatusNG.getStatusCategory());
+  }
 }

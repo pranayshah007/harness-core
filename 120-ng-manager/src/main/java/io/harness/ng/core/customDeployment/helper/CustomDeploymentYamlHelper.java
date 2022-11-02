@@ -98,20 +98,24 @@ public class CustomDeploymentYamlHelper {
 
   public boolean isDeploymentTemplateService(
       String deploymentTemplateIdentifier, String versionLabel, ServiceEntity serviceEntity) {
-    String yaml = serviceEntity.getYaml();
-    YamlConfig yamlConfig = new YamlConfig(yaml);
-    JsonNode service = yamlConfig.getYamlMap().get("service");
-    if (!isNull(service)) {
-      JsonNode serviceDef = service.get("serviceDefinition");
-      if (!isNull(serviceDef)) {
-        JsonNode serviceSpec = serviceDef.get("spec");
-        if (!isNull(serviceSpec)) {
-          JsonNode customDeploymentRef = serviceSpec.get("customDeploymentRef");
-          if (!isNull(customDeploymentRef)) {
-            JsonNode ref = customDeploymentRef.get("templateRef");
-            JsonNode versionLabelNode = customDeploymentRef.get("versionLabel");
-            String versionLabelRef = isNull(versionLabelNode) ? "" : versionLabelNode.asText();
-            return ref.asText().equals(deploymentTemplateIdentifier) && versionLabelRef.equals(versionLabel);
+    if (!isNull(serviceEntity)) {
+      String yaml = serviceEntity.getYaml();
+      if (!isNull(yaml)) {
+        YamlConfig yamlConfig = new YamlConfig(yaml);
+        JsonNode service = yamlConfig.getYamlMap().get("service");
+        if (!isNull(service)) {
+          JsonNode serviceDef = service.get("serviceDefinition");
+          if (!isNull(serviceDef)) {
+            JsonNode serviceSpec = serviceDef.get("spec");
+            if (!isNull(serviceSpec)) {
+              JsonNode customDeploymentRef = serviceSpec.get("customDeploymentRef");
+              if (!isNull(customDeploymentRef)) {
+                JsonNode ref = customDeploymentRef.get("templateRef");
+                JsonNode versionLabelNode = customDeploymentRef.get("versionLabel");
+                String versionLabelRef = isNull(versionLabelNode) ? "" : versionLabelNode.asText();
+                return ref.asText().equals(deploymentTemplateIdentifier) && versionLabelRef.equals(versionLabel);
+              }
+            }
           }
         }
       }

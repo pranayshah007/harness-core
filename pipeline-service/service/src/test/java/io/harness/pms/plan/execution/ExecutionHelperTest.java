@@ -66,7 +66,7 @@ import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagHelper;
 
@@ -103,7 +103,7 @@ public class ExecutionHelperTest extends CategoryTest {
   @Mock OrchestrationService orchestrationService;
   @Mock PlanExecutionMetadataService planExecutionMetadataService;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
-  @Mock PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
+  @Mock PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   @Mock PmsFeatureFlagHelper featureFlagService;
 
   String accountId = "accountId";

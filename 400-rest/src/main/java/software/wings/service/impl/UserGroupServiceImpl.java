@@ -651,9 +651,6 @@ public class UserGroupServiceImpl implements UserGroupService {
             actionSet.add(EXECUTE_WORKFLOW_ROLLBACK);
             actionSet.add(ABORT_WORKFLOW);
           }
-          if (action != null && action.equals(EXECUTE_WORKFLOW)) {
-            actionSet.add(ABORT_WORKFLOW);
-          }
           actionSet.add(action);
         });
         appPermission.setActions(actionSet);

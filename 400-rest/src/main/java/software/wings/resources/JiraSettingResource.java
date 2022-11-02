@@ -92,9 +92,10 @@ public class JiraSettingResource {
   @ExceptionMetered
   public RestResponse<JiraCreateMetaResponse> getCreateMetadata(@QueryParam("appId") String appId,
       @QueryParam("accountId") @NotEmpty String accountId, @PathParam("connectorId") String connectorId,
-      @QueryParam("expand") String expand, @QueryParam("project") String project) {
+      @QueryParam("expand") String expand, @QueryParam("project") String project,
+      @QueryParam("issueType") String issueType) {
     return new RestResponse<>(jiraHelperService.getCreateMetadata(
-        connectorId, expand, project, accountId, appId, DEFAULT_SYNC_CALL_TIMEOUT, null));
+        connectorId, expand, project, accountId, appId, DEFAULT_SYNC_CALL_TIMEOUT, issueType));
   }
 
   @GET

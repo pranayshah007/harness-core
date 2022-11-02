@@ -108,7 +108,7 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
   }
 
   @Override
-  public List<FreezeSummaryResponseDTO> shouldDisableDeployment(
+  public List<FreezeSummaryResponseDTO> getActiveFreezeEntities(
       String accountId, String orgIdentifier, String projectIdentifier) {
     List<FreezeSummaryResponseDTO> activeFreezeList = new LinkedList<>();
     activeFreezeList.addAll(anyGlobalFreezeActive(accountId, orgIdentifier, projectIdentifier));
