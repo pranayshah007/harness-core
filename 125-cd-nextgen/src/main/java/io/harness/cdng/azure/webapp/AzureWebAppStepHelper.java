@@ -22,6 +22,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAM
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.AMAZONS3;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.NEXUS3_REGISTRY;
 
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
@@ -29,6 +30,7 @@ import static java.util.Collections.singletonList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
@@ -52,6 +54,7 @@ import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
@@ -78,11 +81,15 @@ import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig.AzureContainerArtifactConfigBuilder;
 import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig.AzurePackageArtifactConfigBuilder;
+import io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.encryption.SecretRefHelper;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.WingsException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
@@ -107,6 +114,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.beans.TaskType;
+import software.wings.utils.RepositoryFormat;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -137,6 +145,7 @@ public class AzureWebAppStepHelper {
   @Inject private NGEncryptedDataService ngEncryptedDataService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public ExecutionInfoKey getExecutionInfoKey(Ambiance ambiance, AzureWebAppInfraDelegateConfig infraDelegateConfig) {
     ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
@@ -346,6 +355,9 @@ public class AzureWebAppStepHelper {
         return !(artifactOutcome instanceof ArtifactoryArtifactOutcome);
       case AMAZON_S3_NAME:
         return artifactOutcome instanceof S3ArtifactOutcome;
+      case NEXUS3_REGISTRY_NAME:
+        NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
+        return !RepositoryFormat.docker.name().equals(nexusArtifactOutcome.getRepositoryFormat());
       default:
         return false;
     }
@@ -450,6 +462,27 @@ public class AzureWebAppStepHelper {
                                                   .build());
         connectorInfoDTO = cdStepHelper.getConnector(s3ArtifactOutcome.getConnectorRef(), ambiance);
         break;
+      case NEXUS3_REGISTRY_NAME:
+        NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
+        if (!cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.AZURE_WEB_APP_NG_NEXUS_PACKAGE)) {
+          throw new AccessDeniedException(
+              format(
+                  "Nexus artifact source with repository format '%s' not enabled for account '%s'. Please contact harness customer care to enable FF '%s'.",
+                  nexusArtifactOutcome.getRepositoryFormat(), AmbianceUtils.getAccountId(ambiance),
+                  FeatureName.AZURE_WEB_APP_NG_NEXUS_PACKAGE.name()),
+              ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+        }
+        artifactConfigBuilder.sourceType(NEXUS3_REGISTRY);
+        artifactConfigBuilder.artifactDetails(NexusAzureArtifactRequestDetails.builder()
+                                                  .identifier(nexusArtifactOutcome.getIdentifier())
+                                                  .certValidationRequired(false)
+                                                  .artifactUrl(nexusArtifactOutcome.getMetadata().get("url"))
+                                                  .metadata(nexusArtifactOutcome.getMetadata())
+                                                  .repositoryFormat(nexusArtifactOutcome.getRepositoryFormat())
+                                                  .build());
+        connectorInfoDTO = cdStepHelper.getConnector(nexusArtifactOutcome.getConnectorRef(), ambiance);
+        break;
       default:
         throw new InvalidArgumentsException(
             Pair.of("artifacts", format("Unsupported artifact type %s", artifactOutcome.getArtifactType())));
@@ -522,6 +555,16 @@ public class AzureWebAppStepHelper {
     }
 
     return null;
+  }
+
+  public String getTaskTypeVersion(ArtifactOutcome artifactOutcome) {
+    switch (artifactOutcome.getArtifactType()) {
+      case NEXUS3_REGISTRY_NAME:
+        return isPackageArtifactType(artifactOutcome) ? TaskType.AZURE_WEB_APP_TASK_NG_V2.name()
+                                                      : TaskType.AZURE_WEB_APP_TASK_NG.name();
+      default:
+        return TaskType.AZURE_WEB_APP_TASK_NG.name();
+    }
   }
 
   private AppSettingsFile fetchFileContentFromFileStore(Ambiance ambiance, String settingsType, String filePath) {

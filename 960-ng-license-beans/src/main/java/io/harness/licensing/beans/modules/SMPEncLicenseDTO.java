@@ -31,4 +31,5 @@ import lombok.experimental.SuperBuilder;
 @Schema(name = "SMPLicense", description = "This contains details of the SMP License defined in Harness")
 public class SMPEncLicenseDTO {
   String encryptedLicense;
+  boolean decrypt;
 }

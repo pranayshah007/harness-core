@@ -75,7 +75,7 @@ public class StageCleanupUtility {
     if (type == StageInfraDetails.Type.K8) {
       K8StageInfraDetails k8StageInfraDetails = (K8StageInfraDetails) stageInfraDetails;
       return buildK8CleanupParameters(k8StageInfraDetails, ambiance);
-    } else if (type == StageInfraDetails.Type.VM || type == StageInfraDetails.Type.DOCKER) {
+    } else if (type == StageInfraDetails.Type.VM) {
       VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
       return buildVmCleanupParameters(ambiance, vmStageInfraDetails);
     } else if (stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM) {
