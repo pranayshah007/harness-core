@@ -26,6 +26,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData;
 import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData.AzureSlotDeploymentPassThroughDataBuilder;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
@@ -97,6 +98,7 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
                                                .build();
 
   @VisibleForTesting static final String FETCH_PREDEPLOYMENT_DATA_TASK_NAME = "Save App Service Configurations Task";
+  @VisibleForTesting static final String V2_TASK_SUFFIX = " V2";
 
   @Inject private AzureWebAppStepHelper azureWebAppStepHelper;
   @Inject private CDStepHelper cdStepHelper;
@@ -118,13 +120,15 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
               infrastructure.getKind())));
     }
 
+    ArtifactOutcome artifactOutcome = azureWebAppStepHelper.getPrimaryArtifactOutcome(ambiance);
     AzureSlotDeploymentPassThroughDataBuilder passThroughDataBuilder =
         AzureSlotDeploymentPassThroughData.builder()
             .infrastructure((AzureWebAppInfrastructureOutcome) infrastructure)
             .configs(emptyMap())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .unprocessedConfigs(emptyMap())
-            .primaryArtifactOutcome(azureWebAppStepHelper.getPrimaryArtifactOutcome(ambiance));
+            .primaryArtifactOutcome(artifactOutcome)
+            .taskType(azureWebAppStepHelper.getTaskTypeVersion(artifactOutcome));
 
     if (isNotEmpty(webAppConfig)) {
       return processAndFetchWebAppConfigs(
@@ -307,11 +311,15 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
             .commandUnitsProgress(passThroughData.getCommandUnitsProgress())
             .build();
 
+    TaskType taskType = isNotEmpty(passThroughData.getTaskType()) ? TaskType.valueOf(passThroughData.getTaskType())
+                                                                  : TaskType.AZURE_WEB_APP_TASK_NG;
+    String taskDisplayName = TaskType.AZURE_WEB_APP_TASK_NG_V2 == taskType
+        ? FETCH_PREDEPLOYMENT_DATA_TASK_NAME + V2_TASK_SUFFIX
+        : FETCH_PREDEPLOYMENT_DATA_TASK_NAME;
     return TaskChainResponse.builder()
         .chainEnd(false)
         .taskRequest(azureWebAppStepHelper.prepareTaskRequest(stepElementParameters, ambiance,
-            fetchPreDeploymentDataRequest, TaskType.AZURE_WEB_APP_TASK_NG, FETCH_PREDEPLOYMENT_DATA_TASK_NAME,
-            getCommandUnits(passThroughData, false)))
+            fetchPreDeploymentDataRequest, taskType, taskDisplayName, getCommandUnits(passThroughData, false)))
         .passThroughData(passThroughData)
         .build();
   }
@@ -347,10 +355,12 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
                 && Boolean.TRUE.equals(prevExecutionDetails.getUserChangedStartupCommand()))
             .build();
 
+    TaskType taskType = isNotEmpty(passThroughData.getTaskType()) ? TaskType.valueOf(passThroughData.getTaskType())
+                                                                  : TaskType.AZURE_WEB_APP_TASK_NG;
     return TaskChainResponse.builder()
         .chainEnd(true)
-        .taskRequest(azureWebAppStepHelper.prepareTaskRequest(stepElementParameters, ambiance, slotDeploymentRequest,
-            TaskType.AZURE_WEB_APP_TASK_NG, getCommandUnits(passThroughData, false)))
+        .taskRequest(azureWebAppStepHelper.prepareTaskRequest(
+            stepElementParameters, ambiance, slotDeploymentRequest, taskType, getCommandUnits(passThroughData, false)))
         .passThroughData(passThroughData)
         .build();
   }

@@ -97,6 +97,7 @@ public class ClasspathParser {
       if (result.isSuccessful()) {
         cu = result.getResult().get();
       } else {
+        logger.error("Failed parsing a path {}. The issue was {}", classPath, result.getProblems());
         throw new ParseProblemException(result.getProblems());
       }
     } catch (IOException exception) {

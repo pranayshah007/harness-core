@@ -11,8 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
+import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.docker.DockerCapabilityHelper;
+import io.harness.delegate.beans.connector.nexusconnector.NexusCapabilityHelper;
+import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
@@ -22,6 +25,7 @@ import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestTyp
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactType;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
+import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
 import io.harness.expression.ExpressionEvaluator;
 
 import java.util.List;
@@ -79,6 +83,24 @@ public class AzureWebAppSlotDeploymentRequest extends AbstractSlotDataRequest {
           case ACR:
             capabilities.addAll(AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
                 azureContainerArtifactConfig.getConnectorConfig(), maskingEvaluator));
+            break;
+          default:
+            // no capabilities to add
+        }
+      } else if (artifactConfig.getArtifactType() == AzureArtifactType.PACKAGE) {
+        AzurePackageArtifactConfig azurePackageArtifactConfig = (AzurePackageArtifactConfig) artifactConfig;
+        switch (azurePackageArtifactConfig.getSourceType()) {
+          case ARTIFACTORY_REGISTRY:
+            capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
+                azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
+            break;
+          case AMAZONS3:
+            capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+                azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
+            break;
+          case NEXUS3_REGISTRY:
+            capabilities.addAll(NexusCapabilityHelper.fetchRequiredExecutionCapabilities(
+                maskingEvaluator, (NexusConnectorDTO) azurePackageArtifactConfig.getConnectorConfig()));
             break;
           default:
             // no capabilities to add

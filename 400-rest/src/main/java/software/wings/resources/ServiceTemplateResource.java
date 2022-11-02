@@ -22,8 +22,8 @@ import io.harness.security.annotations.DelegateAuth;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.ConfigFile;
-import software.wings.beans.ConfigFileDto;
 import software.wings.beans.ServiceTemplate;
+import software.wings.beans.configfile.ConfigFileDto;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;

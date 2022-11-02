@@ -90,8 +90,12 @@ public interface AccountClient {
   @GET(HARNESS_USER_GROUP_API + "/supportEnabledStatus")
   Call<RestResponse<Boolean>> checkIfHarnessSupportEnabledForAccount(@Query("accountId") String accountId);
 
-  @GET(ACCOUNT_API + "/isAutoInviteAcceptanceEnabled")
+  @GET(ACCOUNT_API + "/is-auto-invite-acceptance-enabled")
   Call<RestResponse<Boolean>> checkAutoInviteAcceptanceEnabledForAccount(@Query("accountId") String accountId);
+
+  @GET(ACCOUNT_API + "/is-pl-no-email-invite-acceptance-enabled")
+  Call<RestResponse<Boolean>> checkPLNoEmailForSamlAccountInvitesEnabledForAccount(
+      @Query("accountId") String accountId);
 
   @GET(ACCOUNT_API + "/is-sso-enabled") Call<RestResponse<Boolean>> isSSOEnabled(@Query("accountId") String accountId);
 

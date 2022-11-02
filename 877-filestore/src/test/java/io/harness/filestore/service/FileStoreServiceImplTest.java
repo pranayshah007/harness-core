@@ -218,7 +218,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     FileDTO file = fileDTO.get();
     assertThat(file.getType()).isEqualTo(NGFileType.FILE);
     assertThat(file.getName()).isEqualTo("oldName");
-    assertThat(file.getIdentifier()).isEqualTo("identifier1");
+    assertThat(file.getIdentifier()).isEqualTo(FILE_IDENTIFIER);
     assertThat(file.getLastModifiedBy()).isEqualTo(getEmbeddedUserDetailsDTO());
     assertThat(file.getLastModifiedAt()).isEqualTo(1L);
   }
@@ -439,7 +439,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(() -> fileStoreService.create(fileDTO, getStreamWithDummyContent()))
         .isInstanceOf(DuplicateFieldException.class)
-        .hasMessageContaining("Try another identifier, file with identifier [identifier] already exists.");
+        .hasMessageContaining("Try another identifier, file with identifier [fileIdentifier] already exists.");
   }
 
   @Test
@@ -933,7 +933,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
 
     assertThat(fileNodeDTO.getDescription()).isEqualTo("oldDescription");
     assertThat(fileNodeDTO.getName()).isEqualTo("oldName");
-    assertThat(fileNodeDTO.getIdentifier()).isEqualTo("identifier1");
+    assertThat(fileNodeDTO.getIdentifier()).isEqualTo(FILE_IDENTIFIER);
     assertThat(fileNodeDTO.getFileUsage()).isEqualTo(FileUsage.MANIFEST_FILE);
     assertThat(fileNodeDTO.getMimeType()).isEqualTo(YML_MIME_TYPE);
     assertThat(fileNodeDTO.getParentIdentifier()).isEqualTo(PARENT_IDENTIFIER);
@@ -1037,9 +1037,62 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .doesNotThrowAnyException();
   }
 
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testDeleteBatchFile() {
+    NGFile ngFile = createNgFileTypeFile();
+    List<String> fileIdentifiers = Collections.singletonList(FILE_IDENTIFIER);
+    doNothing().when(fileService).deleteFile(any(), any(FileBucket.class));
+    when(fileFailsafeService.deleteAndPublish(any())).thenReturn(true);
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_IDENTIFIER))
+        .thenReturn(Optional.of(ngFile));
+
+    final ArgumentCaptor<String> fileChunksIdCaptor = ArgumentCaptor.forClass(String.class);
+    fileStoreService.deleteBatch(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, fileIdentifiers);
+
+    verify(fileService, times(1)).deleteFile(fileChunksIdCaptor.capture(), any(FileBucket.class));
+    verify(fileFailsafeService, times(1)).deleteAndPublish(ngFile);
+
+    String fileChunksId = fileChunksIdCaptor.getValue();
+    assertThat(fileChunksId).isEqualTo(FILE_UUID);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testDeleteBatchFolder() {
+    NGFile ngFile = createNgFileTypeFolder();
+    List<String> fileIdentifiers = Collections.singletonList(FOLDER_IDENTIFIER);
+    when(fileFailsafeService.deleteAndPublish(any())).thenReturn(true);
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FOLDER_IDENTIFIER))
+        .thenReturn(Optional.of(ngFile));
+
+    fileStoreService.deleteBatch(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, fileIdentifiers);
+
+    verify(fileFailsafeService, times(1)).deleteAndPublish(ngFile);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testDeleteBatchWithException() {
+    List<String> fileIdentifiers = Collections.singletonList(FOLDER_IDENTIFIER);
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FOLDER_IDENTIFIER))
+        .thenThrow(new InvalidRequestException("Error msg"));
+
+    assertThatThrownBy(
+        () -> fileStoreService.deleteBatch(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, fileIdentifiers))
+        .hasMessage("Error msg")
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
   private static FileDTO aFileDto() {
     return FileDTO.builder()
-        .identifier(FOLDER_IDENTIFIER)
+        .identifier(FILE_IDENTIFIER)
         .accountIdentifier("account-ident")
         .description("some description")
         .name("file-name")
@@ -1099,7 +1152,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .type(NGFileType.FILE)
         .name("oldName")
         .description("oldDescription")
-        .identifier("identifier1")
+        .identifier(FILE_IDENTIFIER)
         .fileUuid(FILE_UUID)
         .fileUsage(FileUsage.MANIFEST_FILE)
         .parentIdentifier(PARENT_IDENTIFIER)

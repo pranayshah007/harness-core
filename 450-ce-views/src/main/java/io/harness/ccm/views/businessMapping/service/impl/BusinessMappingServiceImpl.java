@@ -111,7 +111,7 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
         costTargetNames.add(unallocatedCost.getLabel());
       }
     }
-    Collections.sort(costTargetNames);
+    Collections.sort(costTargetNames, String.CASE_INSENSITIVE_ORDER);
 
     return costTargetNames;
   }

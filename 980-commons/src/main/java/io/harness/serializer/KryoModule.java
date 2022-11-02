@@ -34,14 +34,14 @@ public class KryoModule extends AbstractModule {
     return instance;
   }
 
-  public void testAutomaticSearch(Provider<Set<Class<? extends KryoRegistrar>>> registrarsProvider) {
-    Reflections reflections = new Reflections("io.harness.serializer.kryo");
+  public void testAutomaticSearch(final Provider<Set<Class<? extends KryoRegistrar>>> registrarsProvider) {
+    final Reflections reflections = new Reflections("io.harness.serializer.kryo");
 
     // Reflections have race issue and rarely but from time to time returns less.
     // We are checking here only if we missed something, not exact match on purpose
-    Set<Class<? extends KryoRegistrar>> reflectionRegistrars = reflections.getSubTypesOf(KryoRegistrar.class);
+    final Set<Class<? extends KryoRegistrar>> reflectionRegistrars = reflections.getSubTypesOf(KryoRegistrar.class);
 
-    Set<Class<? extends KryoRegistrar>> registrars = registrarsProvider.get();
+    final Set<Class<? extends KryoRegistrar>> registrars = registrarsProvider.get();
 
     reflectionRegistrars.removeAll(registrars);
     if (isNotEmpty(reflectionRegistrars)) {
@@ -52,9 +52,9 @@ public class KryoModule extends AbstractModule {
   @Override
   protected void configure() {
     if (!binder().currentStage().name().equals("TOOL")) {
-      Provider<Set<Class<? extends KryoRegistrar>>> provider =
+      final Provider<Set<Class<? extends KryoRegistrar>>> provider =
           getProvider(Key.get(new TypeLiteral<Set<Class<? extends KryoRegistrar>>>() {}));
-      MapBinder<String, TestExecution> testExecutionMapBinder =
+      final MapBinder<String, TestExecution> testExecutionMapBinder =
           MapBinder.newMapBinder(binder(), String.class, TestExecution.class);
       testExecutionMapBinder.addBinding("Kryo test registration").toInstance(() -> testAutomaticSearch(provider));
     }
@@ -63,7 +63,7 @@ public class KryoModule extends AbstractModule {
   @Provides
   @Named("referenceFalseKryoSerializer")
   @Singleton
-  public KryoSerializer getKryoSerializer(Provider<Set<Class<? extends KryoRegistrar>>> provider) {
+  public KryoSerializer getKryoSerializer(final Provider<Set<Class<? extends KryoRegistrar>>> provider) {
     return new KryoSerializer(provider.get(), false, false);
   }
 }

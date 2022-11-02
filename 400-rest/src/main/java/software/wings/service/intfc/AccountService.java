@@ -243,6 +243,8 @@ public interface AccountService {
 
   boolean isAutoInviteAcceptanceEnabled(String accountId);
 
+  boolean isPLNoEmailForSamlAccountInvitesEnabled(String accountId);
+
   Void setDefaultExperience(String accountId, DefaultExperience defaultExperience);
 
   AuthenticationInfo getAuthenticationInfo(String accountId);
