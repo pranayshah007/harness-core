@@ -8,6 +8,7 @@
 package io.harness.pcf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pcf.PcfUtils.encodeColor;
 import static io.harness.pcf.PcfUtils.getIntegerSafe;
 import static io.harness.pcf.PcfUtils.getRevisionFromServiceName;
@@ -155,10 +156,22 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     try {
       ApplicationDetail applicationDetail = cfSdkClient.getApplicationByName(pcfRequestConfig);
       cfSdkClient.scaleApplications(pcfRequestConfig);
+      if (!isEmpty(pcfRequestConfig.getProcessInstancesCount())) {
+        upsizeProcesses(pcfRequestConfig, executionLogCallback);
+      }
       if (pcfRequestConfig.getDesiredCount() >= 0 && applicationDetail.getInstances() == 0) {
         cfCliClient.startAppByCli(pcfRequestConfig, executionLogCallback);
       }
       return cfSdkClient.getApplicationByName(pcfRequestConfig);
+    } catch (Exception e) {
+      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
+    }
+  }
+
+  public void upsizeProcesses(CfRequestConfig pcfRequestConfig, LogCallback executionLogCallback)
+      throws PivotalClientApiException {
+    try {
+      cfCliClient.scaleProcessesByCli(pcfRequestConfig, executionLogCallback);
     } catch (Exception e) {
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
     }

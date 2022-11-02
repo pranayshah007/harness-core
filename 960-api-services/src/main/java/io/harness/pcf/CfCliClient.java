@@ -40,6 +40,8 @@ public interface CfCliClient {
    */
   void startAppByCli(CfRequestConfig cfRequestConfig, LogCallback logCallback) throws PivotalClientApiException;
 
+  void scaleProcessesByCli(CfRequestConfig cfRequestConfig, LogCallback logCallback) throws PivotalClientApiException;
+
   /**
    * Configure Autoscaler service.
    *

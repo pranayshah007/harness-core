@@ -26,6 +26,7 @@ import static io.harness.pcf.model.PcfConstants.DEFAULT_PCF_TASK_TIMEOUT_MIN;
 import static io.harness.pcf.model.PcfConstants.INFRA_ROUTE;
 import static io.harness.pcf.model.PcfConstants.PCF_INFRA_ROUTE;
 import static io.harness.pcf.model.PcfConstants.VARS_YML;
+import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.TaskType.CUSTOM_MANIFEST_FETCH_TASK;
@@ -61,7 +62,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.pcf.model.CfCliVersion;
 import io.harness.pcf.model.PcfConstants;
+import io.harness.pcf.model.PcfProcessInstances;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.tasks.ResponseData;
 
@@ -293,6 +296,11 @@ public class PcfSetupState extends State {
     List<String> tempRouteMaps = fetchTempRoutes(context, pcfInfrastructureMapping);
     List<String> routeMaps = fetchRouteMaps(context, pcfManifestsPackage, pcfInfrastructureMapping);
     Integer maxCount = fetchMaxCount(pcfManifestsPackage);
+    Map<String, PcfProcessInstances> pcfProcessInstancesMap = null;
+    if (blueGreen
+        && pcfStateHelper.getCfCliVersionOrDefault(app.getAppId(), serviceElement.getUuid()).equals(CfCliVersion.V7)) {
+      pcfProcessInstancesMap = fetchMaxCountForAllProcesses(pcfManifestsPackage);
+    }
     boolean isWebProcessCountZero = maxCount == 0;
     Map<String, String> serviceVariables = context.getServiceVariables().entrySet().stream().collect(
         Collectors.toMap(Entry::getKey, e -> e.getValue().toString()));
@@ -338,6 +346,7 @@ public class PcfSetupState extends State {
             .serviceVariables(serviceVariables)
             .timeoutIntervalInMin(timeoutIntervalInMinutes == null ? Integer.valueOf(5) : timeoutIntervalInMinutes)
             .maxCount(maxCount)
+            .processInstancesCount(pcfProcessInstancesMap)
             .useCurrentCount(useCurrentRunningCount)
             .currentRunningCount(getCurrentRunningCountForSetupRequest())
             .blueGreen(blueGreen)
@@ -372,6 +381,7 @@ public class PcfSetupState extends State {
             .pcfCommandRequest(cfCommandSetupRequest)
             .commandName(PCF_SETUP_COMMAND)
             .maxInstanceCount(maxCount)
+            .processInstancesCount(pcfProcessInstancesMap)
             .useCurrentRunningInstanceCount(useCurrentRunningCount)
             .currentRunningInstanceCount(getCurrentRunningCountForSetupRequest())
             .desireActualFinalCount(useCurrentRunningCount ? getCurrentRunningCountForSetupRequest() : maxCount)
@@ -453,10 +463,32 @@ public class PcfSetupState extends State {
     maxInstances = maxInstances == null || maxInstances < 0
         ? Integer.valueOf(PcfConstants.MANIFEST_INSTANCE_COUNT_DEFAULT)
         : maxInstances;
-    maxCount = pcfStateHelper.fetchMaxCountFromManifest(
-        pcfManifestsPackage, Integer.valueOf(PcfConstants.MANIFEST_INSTANCE_COUNT_DEFAULT));
+    maxCount = pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage,
+        Integer.valueOf(PcfConstants.MANIFEST_INSTANCE_COUNT_DEFAULT), WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT);
 
     return maxCount;
+  }
+
+  @VisibleForTesting
+  Map<String, PcfProcessInstances> fetchMaxCountForAllProcesses(PcfManifestsPackage pcfManifestsPackage) {
+    List<String> allProcesses = pcfStateHelper.fetchProcessesFromManifest(pcfManifestsPackage);
+    Map<String, PcfProcessInstances> processInstancesMap = new HashMap<>();
+    maxInstances = maxInstances == null || maxInstances < 0
+        ? Integer.valueOf(PcfConstants.MANIFEST_INSTANCE_COUNT_DEFAULT)
+        : maxInstances;
+
+    for (String processName : allProcesses) {
+      if (processInstancesMap.containsKey(processName)) {
+        throw new InvalidRequestException("Duplicate process name exists in the manifest yml");
+      }
+      processInstancesMap.put(processName,
+          PcfProcessInstances.builder()
+              .type(processName)
+              .instanceCount(pcfStateHelper.fetchMaxCountFromManifest(
+                  pcfManifestsPackage, PcfConstants.MANIFEST_INSTANCE_COUNT_DEFAULT, processName))
+              .build());
+    }
+    return processInstancesMap;
   }
 
   /*
@@ -687,6 +719,7 @@ public class PcfSetupState extends State {
                     ? AppNamingStrategy.VERSIONING.name()
                     : cfSetupCommandResponse.getExistingAppNamingStrategy())
             .isWebProcessCountZero(stateExecutionData.isWebProcessCountZero())
+            .processInstancesCount(stateExecutionData.getProcessInstancesCount())
             .isUseCfCli(true);
 
     if (!isPcfSetupCommandResponseNull) {

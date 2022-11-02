@@ -18,11 +18,13 @@ import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
+import io.harness.pcf.model.PcfProcessInstances;
 
 import software.wings.api.pcf.InfoVariables.InfoVariablesBuilder;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -40,6 +42,7 @@ public class SetupSweepingOutputPcf implements SweepingOutput {
   private String name;
   private String commandName;
   private Integer maxInstanceCount;
+  private Map<String, PcfProcessInstances> processInstancesCount;
   private boolean useCurrentRunningInstanceCount;
   private Integer currentRunningInstanceCount;
   private ResizeStrategy resizeStrategy;

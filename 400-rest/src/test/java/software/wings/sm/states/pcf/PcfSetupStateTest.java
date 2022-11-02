@@ -1028,7 +1028,7 @@ public class PcfSetupStateTest extends WingsBaseTest {
         + "  path: /vars/foo\n"
         + "  ROUTES:\n"
         + "  - route: /hello/my-route";
-    doReturn(2).when(pcfStateHelper).fetchMaxCountFromManifest(any(), any());
+    doReturn(2).when(pcfStateHelper).fetchMaxCountFromManifest(any(), any(), any());
     assertThat(pcfSetupState.fetchMaxCount(PcfManifestsPackage.builder().manifestYml(manifestYamlContent).build()))
         .isEqualTo(2);
   }

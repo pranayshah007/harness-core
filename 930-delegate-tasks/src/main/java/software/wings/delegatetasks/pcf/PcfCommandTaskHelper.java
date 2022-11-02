@@ -60,6 +60,7 @@ import io.harness.exception.WingsException;
 import io.harness.logging.LogCallback;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.PivotalClientApiException;
+import io.harness.pcf.model.CfCliVersion;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 
 import software.wings.beans.AwsConfig;
@@ -316,8 +317,12 @@ public class PcfCommandTaskHelper {
         ArrayList<Map<String, Object>> allProcesses = (ArrayList<Map<String, Object>>) processes;
         for (Map<String, Object> process : allProcesses) {
           Object p = process.get(PROCESSES_TYPE_MANIFEST_YML_ELEMENT);
-          if ((p instanceof String) && (p.toString().equals(WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT))) {
+          if (cfCommandSetupRequest.isBlueGreen() && cfCommandSetupRequest.getCfCliVersion().equals(CfCliVersion.V7)) {
             process.put(INSTANCE_MANIFEST_YML_ELEMENT, 0);
+          } else {
+            if ((p instanceof String) && p.toString().equals(WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT)) {
+              process.put(INSTANCE_MANIFEST_YML_ELEMENT, 0);
+            }
           }
         }
       }

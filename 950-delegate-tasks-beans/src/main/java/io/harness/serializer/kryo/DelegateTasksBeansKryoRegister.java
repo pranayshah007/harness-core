@@ -767,6 +767,7 @@ import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
 import io.harness.ng.core.dto.secrets.WinRmAuthDTO;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.notification.remote.SmtpConfigResponse;
+import io.harness.pcf.model.PcfProcessInstances;
 import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
@@ -1889,5 +1890,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(NoDelegatesException.class, 73991);
     kryo.register(DelegateTaskExpiredException.class, 980036);
     kryo.register(S3BuildsResponse.class, 1010101);
+
+    kryo.register(PcfProcessInstances.class, 543530);
   }
 }
