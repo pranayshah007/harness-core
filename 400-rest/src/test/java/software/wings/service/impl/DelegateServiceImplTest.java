@@ -1486,7 +1486,6 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = JOHANNES)
   @Category(UnitTests.class)
   public void testFinalizeTemplateParametersWithMtlsIfRequiredSmokeTest() {
-
     final String accountId = "abc21";
     this.persistence.save(
         AgentMtlsEndpoint.builder().accountId(accountId).fqdn("customer.agent.ut.harness.io").build());

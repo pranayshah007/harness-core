@@ -10,6 +10,9 @@ import software.wings.beans.Account.AccountKeys;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
@@ -19,6 +22,10 @@ public class AddImmutableDelegateEnabledFieldToAccountCollection implements Migr
   @Inject private WingsPersistence wingsPersistence;
 
   @Inject private FeatureFlagService featureFlagService;
+
+  private List<String> immutableDelegateEnabledAccounts = new ArrayList<>();
+  private List<String> immutableDelegateDisabledAccounts = new ArrayList<>();
+
 
   @Override
   public void migrate() {
@@ -30,14 +37,19 @@ public class AddImmutableDelegateEnabledFieldToAccountCollection implements Migr
     try (HIterator<Account> accounts = new HIterator<>(query.fetch())) {
       for (Account account : accounts) {
         if (accountIds.contains(account.getUuid())) {
-          wingsPersistence.updateField(
-              Account.class, account.getUuid(), AccountKeys.immutableDelegateEnabled, Boolean.TRUE);
+          immutableDelegateEnabledAccounts.add(account.getUuid());
         } else {
-          wingsPersistence.updateField(
-              Account.class, account.getUuid(), AccountKeys.immutableDelegateEnabled, Boolean.FALSE);
+          immutableDelegateDisabledAccounts.add(account.getUuid());
         }
       }
     }
+
+    Query<Account> immutableEnabledQuery = wingsPersistence.createQuery(Account.class).field(AccountKeys.uuid).hasAnyOf(immutableDelegateEnabledAccounts);
+    Query<Account> immutableDisabledQuery = wingsPersistence.createQuery(Account.class).field(AccountKeys.uuid).hasAnyOf(immutableDelegateDisabledAccounts);
+
+    wingsPersistence.update(immutableEnabledQuery, wingsPersistence.createUpdateOperations(Account.class).set(AccountKeys.immutableDelegateEnabled, true));
+    wingsPersistence.update(immutableDisabledQuery, wingsPersistence.createUpdateOperations(Account.class).set(AccountKeys.immutableDelegateEnabled, false));
+
     log.info("Migration for adding ImmutableDelegateField to account collection finished, {} accounts set to immutable",
         accountIds.size());
   }
