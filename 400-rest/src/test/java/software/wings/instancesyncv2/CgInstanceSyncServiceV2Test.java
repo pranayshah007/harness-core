@@ -14,7 +14,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.PerpetualTaskId;
+import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
+import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
+import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -36,6 +40,7 @@ import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.settings.SettingVariableTypes;
 
+import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Rule;
 import org.junit.Test;
@@ -124,6 +129,8 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   }
 
   @Rule public ExpectedException expectedEx = ExpectedException.none();
+
+  @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testHandleInstanceSyncNegativeCase() {
@@ -173,7 +180,78 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
     doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
     doReturn(false).when(k8sHandler).isDeploymentInfoTypeSupported(any());
 
-    ArgumentCaptor<PerpetualTaskId> captor = ArgumentCaptor.forClass(PerpetualTaskId.class);
     cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testFetchTaskDetails() {
+    doReturn(Arrays.asList(InstanceSyncTaskDetails.builder()
+                               .perpetualTaskId("perpetualTaskId")
+                               .accountId("accountId")
+                               .appId("appId")
+                               .cloudProviderId("cpID")
+                               .build()))
+        .when(taskDetailsService)
+        .fetchAllForPerpetualTask(anyString(), anyString());
+
+    doReturn(SettingAttribute.Builder.aSettingAttribute()
+                 .withAccountId("accountId")
+                 .withAppId("appId")
+                 .withValue(KubernetesClusterConfig.builder().accountId("accountId").masterUrl("masterURL").build())
+                 .build())
+        .when(cloudProviderService)
+        .get(anyString());
+
+    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
+    doReturn(true).when(k8sHandler).isDeploymentInfoTypeSupported(any());
+
+    InstanceSyncTrackedDeploymentDetails instanceSyncTrackedDeploymentDetails =
+        cgInstanceSyncServiceV2.fetchTaskDetails("perpetualTaskId", "accountId");
+
+    assertThat(instanceSyncTrackedDeploymentDetails.getPerpetualTaskId()).isEqualTo("perpetualTaskId");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testProcessInstanceSyncResult() {
+    InstanceSyncData instanceSyncData = InstanceSyncData.newBuilder()
+                                            .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+                                            .setTaskDetailsId("taskId")
+                                            .build();
+
+    CgInstanceSyncResponse.Builder builder = CgInstanceSyncResponse.newBuilder()
+                                                 .setPerpetualTaskId("taskId")
+                                                 .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+                                                 .setAccountId("accountId");
+
+    builder.addInstanceData(instanceSyncData);
+    doReturn(new byte[] {}).when(kryoSerializer).asBytes(any());
+    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+    doReturn(InstanceSyncTaskDetails.builder()
+                 .perpetualTaskId("perpetualTaskId")
+                 .accountId("accountId")
+                 .appId("appId")
+                 .cloudProviderId("cpId")
+                 .build())
+        .when(taskDetailsService)
+        .getForId(anyString());
+
+    doReturn(SettingAttribute.Builder.aSettingAttribute()
+                 .withAccountId("accountId")
+                 .withAppId("appId")
+                 .withValue(KubernetesClusterConfig.builder().accountId("accountId").masterUrl("masterURL").build())
+                 .build())
+        .when(cloudProviderService)
+        .get(anyString());
+
+    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
+    doReturn(true).when(k8sHandler).isDeploymentInfoTypeSupported(any());
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", builder.build());
+    verify(taskDetailsService, times(1)).updateLastRun(captor.capture());
+    assertThat(captor.getValue()).isEqualTo("taskId");
   }
 }
