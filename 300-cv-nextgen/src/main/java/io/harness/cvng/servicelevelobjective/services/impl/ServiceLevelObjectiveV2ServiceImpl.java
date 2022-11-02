@@ -390,7 +390,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
 
   @Override
   public PageResponse<AbstractServiceLevelObjective> getSLOForListView(ProjectParams projectParams,
-      SLODashboardApiFilter filter, PageParams pageParams, String filterByName, SLOTargetDTO sloTargetDTO) {
+      SLODashboardApiFilter filter, PageParams pageParams, String filterByName, SLOTargetDTO filterBySLOTargetDTO) {
     return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(), filterByName,
         Filter.builder()
             .monitoredServiceIdentifier(filter.getMonitoredServiceIdentifier())
@@ -399,9 +399,10 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .errorBudgetRisks(filter.getErrorBudgetRisks())
             .targetTypes(filter.getTargetTypes())
             .sloType(filter.getType())
-            .sloTarget(sloTargetDTO != null ? sloTargetTypeSLOTargetTransformerMap.get(sloTargetDTO.getType())
-                                                  .getSLOTarget(sloTargetDTO.getSpec())
-                                            : null)
+            .sloTarget(filterBySLOTargetDTO != null
+                    ? sloTargetTypeSLOTargetTransformerMap.get(filterBySLOTargetDTO.getType())
+                          .getSLOTarget(filterBySLOTargetDTO.getSpec())
+                    : null)
             .build());
   }
 

@@ -333,7 +333,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(serviceLevelObjective.getNotificationRuleRefs().size());
     assertThat(sloDashboardWidget.getServiceName()).isEqualTo("Mocked service name");
     assertThat(sloDashboardWidget.getEnvironmentName()).isEqualTo("Mocked env name");
-    assertThat(sloDashboardWidget.getUserJourneyIdentifiers()).isEqualTo(serviceLevelObjective.getUserJourneyRefs());
   }
 
   @Test
