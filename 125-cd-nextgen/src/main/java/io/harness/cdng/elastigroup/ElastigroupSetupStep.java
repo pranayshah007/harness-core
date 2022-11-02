@@ -11,40 +11,22 @@ import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.ecs.EcsStepCommonHelper;
-import io.harness.cdng.ecs.EcsStepExecutor;
-import io.harness.cdng.ecs.EcsStepHelperImpl;
-import io.harness.cdng.ecs.beans.EcsBlueGreenCreateServiceDataOutcome;
-import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
-import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
-import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
-import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
-import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
 import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
-import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.task.ecs.EcsCommandTypeNG;
-import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
-import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
-import io.harness.delegate.task.ecs.request.EcsBlueGreenPrepareRollbackRequest;
-import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.Misc;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -59,14 +41,10 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.spotinst.model.ElastiGroup;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import lombok.extern.slf4j.Slf4j;
-import software.wings.utils.ServiceVersionConvention;
-
-import java.util.List;
-
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -77,6 +55,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
                                                .build();
 
   private final String ELASTIGROUP_SETUP_COMMAND_NAME = "ElastigroupSetup";
+  public static final int DEFAULT_CURRENT_RUNNING_INSTANCE_COUNT = 2;
 
   @Inject private ElastigroupStepCommonHelper elastigroupStepCommonHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
@@ -158,11 +137,23 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
           .build();
     }
 
-//    ElastigroupSetupResult elastigroupSetupResult =
-//            elastigroupSetupResponse.getElastigroupSetupResult();
+    ElastigroupSetupResult elastigroupSetupResult =
+            elastigroupSetupResponse.getElastigroupSetupResult();
+    ElastiGroup oldElastiGroup = elastigroupStepCommonHelper.fetchOldElasticGroup(elastigroupSetupResult);
     ElastigroupSetupDataOutcome elastigroupSetupDataOutcome =
             ElastigroupSetupDataOutcome.builder()
-            .build();
+                    .resizeStrategy(elastigroupSetupResult.getResizeStrategy())
+                    .elstiGroupNamePrefix(elastigroupSetupResult.getElstiGroupNamePrefix())
+                    .maxInstanceCount(elastigroupSetupResult.getMaxInstanceCount())
+                    .isBlueGreen(elastigroupSetupResult.isBlueGreen())
+                    .oldElastiGroupOriginalConfig(oldElastiGroup)
+                    .newElastiGroupOriginalConfig(elastigroupSetupResult.getNewElastiGroup())
+                    .build();
+    if (oldElastiGroup != null && oldElastiGroup.getCapacity() != null) {
+      elastigroupSetupDataOutcome.setCurrentRunningInstanceCount(oldElastiGroup.getCapacity().getTarget());
+    } else {
+      elastigroupSetupDataOutcome.setCurrentRunningInstanceCount(DEFAULT_CURRENT_RUNNING_INSTANCE_COUNT);
+    }
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME,
             elastigroupSetupDataOutcome, StepOutcomeGroup.STEP.name());

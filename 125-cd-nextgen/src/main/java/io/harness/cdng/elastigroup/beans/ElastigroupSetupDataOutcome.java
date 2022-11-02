@@ -11,23 +11,28 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.spotinst.model.ElastiGroup;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
-@Value
+@Data
 @Builder
 @TypeAlias("elastigroupSetupDataOutcome")
 @JsonTypeName("elastigroupSetupDataOutcome")
-@RecasterAlias("io.harness.cdng.elastigroup.ElastigroupSetupDataOutcome")
+@RecasterAlias("io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome")
 public class ElastigroupSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
-  boolean isNewServiceCreated;
-  String serviceName;
-  String loadBalancer;
-  String listenerArn;
-  String listenerRuleArn;
-  String targetGroupArn;
+
+  private Integer maxInstanceCount;
+  private boolean useCurrentRunningInstanceCount;
+  private Integer currentRunningInstanceCount;
+  private ResizeStrategy resizeStrategy;
+  private boolean isBlueGreen;
+  private ElastiGroup newElastiGroupOriginalConfig;
+  private ElastiGroup oldElastiGroupOriginalConfig;
+  private String elstiGroupNamePrefix;
 }

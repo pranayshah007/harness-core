@@ -8,29 +8,8 @@
 package io.harness.cdng.elastigroup;
 
 import com.google.inject.Inject;
-import io.harness.beans.DelegateTask;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.ecs.EcsCanaryDeployStep;
-import io.harness.cdng.ecs.EcsEntityHelper;
-import io.harness.cdng.ecs.EcsRollingDeployStep;
-import io.harness.cdng.ecs.EcsRunTaskStepParameters;
-import io.harness.cdng.ecs.EcsSpecParameters;
-import io.harness.cdng.ecs.EcsStepExecutor;
-import io.harness.cdng.ecs.EcsStepHelper;
-import io.harness.cdng.ecs.EcsStepUtils;
-import io.harness.cdng.ecs.beans.EcsBlueGreenPrepareRollbackDataOutcome;
-import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
-import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
-import io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData;
-import io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData.EcsGitFetchPassThroughDataBuilder;
-import io.harness.cdng.ecs.beans.EcsManifestsContent;
-import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
-import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome;
-import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome.EcsRollingRollbackDataOutcomeBuilder;
-import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
-import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData;
@@ -40,69 +19,23 @@ import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
-import io.harness.cdng.manifest.ManifestType;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
-import io.harness.cdng.manifest.yaml.EcsRunTaskRequestDefinitionManifestOutcome;
-import io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome;
-import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
-import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
-import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
-import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
-import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
-import io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult;
-import io.harness.delegate.beans.ecs.EcsBlueGreenSwapTargetGroupsResult;
-import io.harness.delegate.beans.ecs.EcsCanaryDeployResult;
-import io.harness.delegate.beans.ecs.EcsPrepareRollbackDataResult;
-import io.harness.delegate.beans.ecs.EcsRollingDeployResult;
-import io.harness.delegate.beans.ecs.EcsRollingRollbackResult;
-import io.harness.delegate.beans.ecs.EcsRunTaskResult;
-import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
-import io.harness.delegate.beans.instancesync.mapper.EcsTaskToServerInstanceInfoMapper;
-import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.exception.TaskNGDataException;
-import io.harness.delegate.task.ecs.EcsGitFetchFileConfig;
-import io.harness.delegate.task.ecs.EcsGitFetchRunTaskFileConfig;
-import io.harness.delegate.task.ecs.EcsInfraConfig;
-import io.harness.delegate.task.ecs.request.EcsCommandRequest;
-import io.harness.delegate.task.ecs.request.EcsGitFetchRequest;
-import io.harness.delegate.task.ecs.request.EcsGitFetchRunTaskRequest;
-import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
-import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
-import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
-import io.harness.delegate.task.ecs.response.EcsBlueGreenSwapTargetGroupsResponse;
-import io.harness.delegate.task.ecs.response.EcsCanaryDeployResponse;
-import io.harness.delegate.task.ecs.response.EcsCommandResponse;
-import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
-import io.harness.delegate.task.ecs.response.EcsGitFetchRunTaskResponse;
-import io.harness.delegate.task.ecs.response.EcsPrepareRollbackDataResponse;
-import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
-import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
-import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.delegate.task.git.TaskStatus;
-import io.harness.delegate.task.spotinst.request.SpotInstSetupTaskParameters;
-import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
-import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
-import io.harness.git.model.FetchFilesResult;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -118,7 +51,6 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
@@ -126,29 +58,19 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
+import io.harness.spotinst.model.ElastiGroup;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.hibernate.validator.constraints.NotEmpty;
 import software.wings.beans.TaskType;
-import software.wings.sm.ExecutionResponse;
-import software.wings.sm.states.spotinst.SpotInstSetupStateExecutionData;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
-import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.LogLevel.INFO;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 import static java.lang.String.format;
 
@@ -166,7 +88,23 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     // Get ManifestsOutcome
     Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
 
-    StartupScriptOutcome startupScriptOutcome = resolveStartupScriptOutcome(ambiance);
+    OptionalOutcome startupScriptOptionalOutcome = outcomeService.resolveOptional(
+            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.STARTUP_SCRIPT));
+
+    LogCallback logCallback = getLogCallback(ElastigroupCommandUnitConstants.fetchStartupScript.toString(), ambiance, true);
+
+    String startupScript = null;
+
+    if(startupScriptOptionalOutcome.isFound()) {
+      StartupScriptOutcome startupScriptOutcome = (StartupScriptOutcome) startupScriptOptionalOutcome.getOutcome();
+
+      if (ManifestStoreType.HARNESS.equals(startupScriptOutcome.getStore().getKind())) {
+        startupScript =
+                fetchFilesContentFromLocalStore(ambiance, startupScriptOutcome, logCallback).get(0);
+      } else if (ManifestStoreType.INLINE.equals(startupScriptOutcome.getStore().getKind())) {
+        startupScript = ((InlineStoreConfig) startupScriptOutcome.getStore()).extractContent();
+      }
+    }
 
     // Get InfrastructureOutcome
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
@@ -177,7 +115,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
             artifactOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 
     return prepareStartupScriptFetchTask(
-            elastigroupStepExecutor, ambiance, stepElementParameters, infrastructureOutcome, startupScriptOutcome);
+            elastigroupStepExecutor, ambiance, stepElementParameters, infrastructureOutcome, startupScript);
   }
 
   public StartupScriptOutcome resolveStartupScriptOutcome(Ambiance ambiance) {
@@ -196,20 +134,18 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return (StartupScriptOutcome) startupScriptOutcome.getOutcome();
   }
 
+  public ElastiGroup fetchOldElasticGroup(ElastigroupSetupResult elastigroupSetupResult) {
+    if (isEmpty(elastigroupSetupResult.getGroupToBeDownsized())) {
+      return null;
+    }
+
+    return elastigroupSetupResult.getGroupToBeDownsized().get(0);
+  }
+
   private TaskChainResponse prepareStartupScriptFetchTask(ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance,
       StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
-      StartupScriptOutcome startupScriptOutcome) {
+      String startupScript) {
 
-    LogCallback logCallback = getLogCallback(ElastigroupCommandUnitConstants.fetchStartupScript.toString(), ambiance, true);
-
-    String startupScript = null;
-
-    if (ManifestStoreType.HARNESS.equals(startupScriptOutcome.getStore().getKind())) {
-      startupScript =
-          fetchFilesContentFromLocalStore(ambiance, startupScriptOutcome, logCallback).get(0);
-    } else if (ManifestStoreType.INLINE.equals(startupScriptOutcome.getStore().getKind())) {
-        startupScript = ((InlineStoreConfig)startupScriptOutcome.getStore()).extractContent();
-    }
 
 //     Render expressions for all file content fetched from Harness File Store
     if (startupScript != null) {
@@ -218,7 +154,6 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
     ElastigroupStartupScriptFetchPassThroughData elastigroupStartupScriptFetchPassThroughData = ElastigroupStartupScriptFetchPassThroughData.builder()
             .infrastructureOutcome(infrastructureOutcome)
-            .store(startupScriptOutcome.getStore())
             .startupScript(startupScript)
             .build();
 
