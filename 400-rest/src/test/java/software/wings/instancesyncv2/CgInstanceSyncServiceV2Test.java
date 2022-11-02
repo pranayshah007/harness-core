@@ -124,8 +124,6 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   }
 
   @Rule public ExpectedException expectedEx = ExpectedException.none();
-  //@Test (expected = InvalidRequestException.class, message = "Instance Sync V2 not enabled for deployment info type:
-  //software.wings.api.PcfDeploymentInfo")
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testHandleInstanceSyncNegativeCase() {
