@@ -71,6 +71,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -108,6 +109,7 @@ public class InviteServiceImplTest extends CategoryTest {
   @Mock private UserGroupService userGroupService;
   @Mock private AccountOrgProjectHelper accountOrgProjectHelper;
   @Mock private TelemetryReporter telemetryReporter;
+  @Mock private ScheduledExecutorService executorService;
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Captor private ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor;
 
@@ -119,7 +121,7 @@ public class InviteServiceImplTest extends CategoryTest {
     MongoConfig mongoConfig = MongoConfig.builder().uri("mongodb://localhost:27017/ng-harness").build();
     inviteService = new InviteServiceImpl(USER_VERIFICATION_SECRET, mongoConfig, jwtGeneratorUtils, ngUserService,
         transactionTemplate, inviteRepository, notificationClient, accountClient, outboxService, accessControlClient,
-        userClient, accountOrgProjectHelper, false, telemetryReporter, ngFeatureFlagHelperService);
+        userClient, accountOrgProjectHelper, false, telemetryReporter, ngFeatureFlagHelperService, executorService);
 
     when(accountClient.getAccountDTO(any()).execute())
         .thenReturn(Response.success(new RestResponse(AccountDTO.builder()
@@ -140,7 +142,7 @@ public class InviteServiceImplTest extends CategoryTest {
     when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(false);
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
     when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any())).thenReturn(ffCall);
-    when(accountClient.isSSOEnabled(any())).thenReturn(ffCall);
+    when(accountClient.checkPLNoEmailForSamlAccountInvitesEnabledForAccount(anyString())).thenReturn(ffCall);
     when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
   }
 
@@ -487,7 +489,6 @@ public class InviteServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty());
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
     when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any())).thenReturn(ffCall);
-    when(accountClient.isSSOEnabled(any())).thenReturn(ffCall);
     when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
     Call<RestResponse<Boolean>> userCall = mock(Call.class);
     when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean(), anyBoolean())).thenReturn(userCall);
@@ -514,9 +515,8 @@ public class InviteServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty());
     Call<RestResponse<Boolean>> call = mock(Call.class);
     when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean(), anyBoolean())).thenReturn(call);
-    when(accountClient.isSSOEnabled(any())).thenReturn(call);
+    when(accountClient.checkPLNoEmailForSamlAccountInvitesEnabledForAccount(anyString())).thenReturn(call);
     when(call.execute()).thenReturn(Response.success(new RestResponse<>(true)));
-    when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
 
     InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
 

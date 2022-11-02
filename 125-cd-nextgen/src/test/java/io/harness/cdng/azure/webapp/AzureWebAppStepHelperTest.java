@@ -15,7 +15,10 @@ import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstan
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.AMAZONS3;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
@@ -37,12 +40,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
+import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
@@ -54,6 +60,7 @@ import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -80,6 +87,13 @@ import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
+import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
+import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
+import io.harness.delegate.beans.connector.nexusconnector.NexusAuthenticationDTO;
+import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
@@ -90,9 +104,12 @@ import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactType;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
+import io.harness.delegate.task.azure.artifact.JenkinsAzureArtifactRequestDetails;
+import io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.service.FileStoreService;
@@ -103,6 +120,7 @@ import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
@@ -117,6 +135,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.steps.environment.EnvironmentOutcome;
 
 import software.wings.beans.TaskType;
+import software.wings.utils.RepositoryFormat;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -155,6 +174,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private NGEncryptedDataService ngEncryptedDataService;
   @Mock private StageExecutionInfoService stageExecutionInfoService;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @InjectMocks private AzureWebAppStepHelper stepHelper;
 
@@ -634,6 +654,46 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
+  public void testGetPrimaryPackageArtifactConfigNexus() {
+    final Map<String, String> metadata = ImmutableMap.of("url", "https://nexus.dev/repo/abc/def");
+    final NexusArtifactOutcome nexusArtifactOutcome = NexusArtifactOutcome.builder()
+                                                          .repositoryFormat("maven")
+                                                          .type(NEXUS3_REGISTRY_NAME)
+                                                          .primaryArtifact(true)
+                                                          .metadata(metadata)
+                                                          .identifier("primary")
+                                                          .connectorRef("nexusconnector")
+                                                          .build();
+    final NexusConnectorDTO nexusConnectorDTO =
+        NexusConnectorDTO.builder()
+            .auth(NexusAuthenticationDTO.builder().authType(NexusAuthType.ANONYMOUS).build())
+            .build();
+    final ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.NEXUS).connectorConfig(nexusConnectorDTO).build();
+    final List<EncryptedDataDetail> encryptedDataDetails = singletonList(EncryptedDataDetail.builder().build());
+    doReturn(true)
+        .when(cdFeatureFlagHelper)
+        .isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.AZURE_WEB_APP_NG_NEXUS_PACKAGE);
+
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("nexusconnector", ambiance);
+    doReturn(encryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(NGAccess.class), any());
+
+    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance, nexusArtifactOutcome);
+    assertThat(azureArtifactConfig.getArtifactType()).isEqualTo(AzureArtifactType.PACKAGE);
+    AzurePackageArtifactConfig packageArtifactConfig = (AzurePackageArtifactConfig) azureArtifactConfig;
+
+    NexusAzureArtifactRequestDetails nexusRequestDetails =
+        (NexusAzureArtifactRequestDetails) packageArtifactConfig.getArtifactDetails();
+    assertThat(packageArtifactConfig.getConnectorConfig()).isEqualTo(nexusConnectorDTO);
+    assertThat(nexusRequestDetails.getArtifactUrl()).isEqualTo("https://nexus.dev/repo/abc/def");
+    assertThat(nexusRequestDetails.getRepositoryFormat()).isEqualTo("maven");
+    assertThat(nexusRequestDetails.isCertValidationRequired()).isFalse();
+    assertThat(nexusRequestDetails.getMetadata()).isEqualTo(metadata);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
   public void testFindLastSuccessfulStageExecutionDetails() {
     final AzureWebAppsStageExecutionDetails stageExecutionDetails =
         AzureWebAppsStageExecutionDetails.builder().pipelineExecutionId("pipeline").build();
@@ -656,6 +716,34 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
             StageExecutionInfo.builder().executionDetails(stageExecutionDetails2).build());
 
     testFindLastSuccessfulStageExecutionDetails(stageExecutionInfos, stageExecutionDetails2);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetTaskTypeVersion() {
+    final DockerArtifactOutcome dockerArtifactOutcome =
+        DockerArtifactOutcome.builder().type(DOCKER_REGISTRY_NAME).build();
+    final NexusArtifactOutcome nexusArtifactOutcome = NexusArtifactOutcome.builder()
+                                                          .type(NEXUS3_REGISTRY_NAME)
+                                                          .repositoryFormat(RepositoryFormat.maven.name())
+                                                          .build();
+
+    assertThat(stepHelper.getTaskTypeVersion(dockerArtifactOutcome)).isEqualTo(TaskType.AZURE_WEB_APP_TASK_NG.name());
+    assertThat(stepHelper.getTaskTypeVersion(nexusArtifactOutcome)).isEqualTo(TaskType.AZURE_WEB_APP_TASK_NG_V2.name());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetTaskTypeVersionJenkins() {
+    final DockerArtifactOutcome dockerArtifactOutcome =
+        DockerArtifactOutcome.builder().type(DOCKER_REGISTRY_NAME).build();
+    final JenkinsArtifactOutcome jenkinsArtifactOutcome = JenkinsArtifactOutcome.builder().type(JENKINS_NAME).build();
+
+    assertThat(stepHelper.getTaskTypeVersion(dockerArtifactOutcome)).isEqualTo(TaskType.AZURE_WEB_APP_TASK_NG.name());
+    assertThat(stepHelper.getTaskTypeVersion(jenkinsArtifactOutcome))
+        .isEqualTo(TaskType.AZURE_WEB_APP_TASK_NG_V2.name());
   }
 
   private void testFindLastSuccessfulStageExecutionDetails(
@@ -700,6 +788,53 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
 
     assertThat(executionDetails).isNotNull();
     assertThat(executionDetails).isEqualTo(expectedExecutionDetails);
+  }
+
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetPrimaryPackageArtifactConfigJenkins() {
+    final JenkinsArtifactOutcome jenkinsArtifactOutcome = JenkinsArtifactOutcome.builder()
+                                                              .connectorRef("jenkinsConnector")
+                                                              .artifactPath("testArtifact")
+                                                              .jobName("testJobName")
+                                                              .build("testBuild")
+                                                              .identifier("testIdentifier")
+                                                              .type(JENKINS_NAME)
+                                                              .build();
+
+    final JenkinsUserNamePasswordDTO awsCredentialDTO = JenkinsUserNamePasswordDTO.builder()
+                                                            .username("testUsername")
+                                                            .passwordRef(SecretRefData.builder().build())
+                                                            .build();
+
+    final JenkinsConnectorDTO jenkinsConnectorDTO = JenkinsConnectorDTO.builder()
+                                                        .jenkinsUrl("testJenkinsUrl")
+                                                        .auth(JenkinsAuthenticationDTO.builder()
+                                                                  .authType(JenkinsAuthType.USER_PASSWORD)
+                                                                  .credentials(awsCredentialDTO)
+                                                                  .build())
+                                                        .build();
+
+    final ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.JENKINS).connectorConfig(jenkinsConnectorDTO).build();
+    final List<EncryptedDataDetail> encryptedDataDetails = singletonList(EncryptedDataDetail.builder().build());
+
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("jenkinsConnector", ambiance);
+    doReturn(encryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(NGAccess.class), any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
+    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance, jenkinsArtifactOutcome);
+    assertThat(azureArtifactConfig.getArtifactType()).isEqualTo(AzureArtifactType.PACKAGE);
+    AzurePackageArtifactConfig packageArtifactConfig = (AzurePackageArtifactConfig) azureArtifactConfig;
+
+    JenkinsAzureArtifactRequestDetails azureArtifactRequestDetails =
+        (JenkinsAzureArtifactRequestDetails) packageArtifactConfig.getArtifactDetails();
+
+    assertThat(packageArtifactConfig.getConnectorConfig()).isEqualTo(jenkinsConnectorDTO);
+    assertThat(azureArtifactRequestDetails.getArtifactPath()).isEqualTo("testArtifact");
+    assertThat(azureArtifactRequestDetails.getBuild()).isEqualTo("testBuild");
+    assertThat(azureArtifactRequestDetails.getJobName()).isEqualTo("testJobName");
+    assertThat(packageArtifactConfig.getSourceType()).isEqualTo(JENKINS);
+    assertThat(packageArtifactConfig.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
   }
 
   private GitStore createTestGitStore() {

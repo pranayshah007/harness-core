@@ -38,6 +38,7 @@ public class ValidationUtils {
   @Inject K8InitializeStepUtils k8InitializeStepUtils;
 
   private static String serviceRegex = "^[a-zA-Z][a-zA-Z0-9_]*$";
+  public final String TEMPLATE = "template";
 
   public void validateVmInfraDependencies(List<DependencyElement> dependencyElements) {
     if (isEmpty(dependencyElements)) {
@@ -73,6 +74,9 @@ public class ValidationUtils {
 
   public void validateWindowsK8StageUtil(ExecutionWrapperConfig executionWrapper) {
     if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
+      if (executionWrapper.getStep().has(TEMPLATE)) {
+        return;
+      }
       CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
       validateWindowsK8Step(stepNode);
     } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {

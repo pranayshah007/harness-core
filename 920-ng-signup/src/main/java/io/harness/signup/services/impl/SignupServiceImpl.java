@@ -46,6 +46,7 @@ import io.harness.ng.core.user.UserRequestDTO;
 import io.harness.ng.core.user.UtmInfo;
 import io.harness.notification.templates.PredefinedTemplate;
 import io.harness.repositories.SignupVerificationTokenRepository;
+import io.harness.signup.SignupModule;
 import io.harness.signup.dto.OAuthSignupDTO;
 import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
@@ -85,7 +86,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -112,6 +112,8 @@ public class SignupServiceImpl implements SignupService {
   private final VersionInfoManager versionInfoManager;
   private final FeatureFlagService featureFlagService;
 
+  private final ScheduledExecutorService scheduledExecutor;
+
   public static final String FAILED_EVENT_NAME = "SIGNUP_ATTEMPT_FAILED";
   public static final String SUCCEED_EVENT_NAME = "NEW_SIGNUP";
   public static final String SUCCEED_SIGNUP_INVITE_NAME = "SIGNUP_VERIFY";
@@ -131,7 +133,8 @@ public class SignupServiceImpl implements SignupService {
       SignupNotificationHelper signupNotificationHelper, SignupVerificationTokenRepository verificationTokenRepository,
       @Named("NGSignupNotification") ExecutorService executorService,
       @Named("PRIVILEGED") AccessControlClient accessControlClient, LicenseService licenseService,
-      VersionInfoManager versionInfoManager, FeatureFlagService featureFlagService) {
+      VersionInfoManager versionInfoManager, FeatureFlagService featureFlagService,
+      @Named(SignupModule.NG_SIGNUP_EXECUTOR_SERVICE) ScheduledExecutorService scheduledExecutorService) {
     this.accountService = accountService;
     this.userClient = userClient;
     this.signupValidator = signupValidator;
@@ -144,6 +147,7 @@ public class SignupServiceImpl implements SignupService {
     this.licenseService = licenseService;
     this.versionInfoManager = versionInfoManager;
     this.featureFlagService = featureFlagService;
+    this.scheduledExecutor = scheduledExecutorService;
   }
 
   /**
@@ -638,8 +642,6 @@ public class SignupServiceImpl implements SignupService {
     // flush all events so that event queue is empty
     telemetryReporter.flush();
 
-    // Wait 20 seconds, to ensure identify is sent before track
-    ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
     HashMap<String, Object> trackProperties = properties;
 
     if (userInfo.getIntent() != null && !userInfo.getIntent().equals("")) {
@@ -657,7 +659,9 @@ public class SignupServiceImpl implements SignupService {
     if (gaClientId != null) {
       trackProperties.put("ga_client_id", gaClientId);
     }
-    tempExecutor.schedule(
+
+    // Wait 20 seconds, to ensure identify is sent before track
+    scheduledExecutor.schedule(
         ()
             -> telemetryReporter.sendTrackEvent(SUCCEED_EVENT_NAME, email, accountId, trackProperties,
                 ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), Category.SIGN_UP),
@@ -726,8 +730,7 @@ public class SignupServiceImpl implements SignupService {
         email, properties, ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build());
     telemetryReporter.flush();
 
-    ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
-    tempExecutor.schedule(
+    scheduledExecutor.schedule(
         ()
             -> telemetryReporter.sendTrackEvent(SUCCEED_SIGNUP_INVITE_NAME, email, UNDEFINED_ACCOUNT_ID, properties,
                 ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), Category.SIGN_UP),
