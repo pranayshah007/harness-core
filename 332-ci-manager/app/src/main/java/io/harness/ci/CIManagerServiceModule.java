@@ -192,14 +192,16 @@ public class CIManagerServiceModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return MONGO;
+    return ciManagerConfiguration.getDistributedLockImplementation() == null
+        ? MONGO
+        : ciManagerConfiguration.getDistributedLockImplementation();
   }
 
   @Provides
   @Named("lock")
   @Singleton
   RedisConfig redisConfig() {
-    return ciManagerConfiguration.getEventsFrameworkConfiguration().getRedisConfig();
+    return ciManagerConfiguration.getRedisLockConfig();
   }
 
   @Override

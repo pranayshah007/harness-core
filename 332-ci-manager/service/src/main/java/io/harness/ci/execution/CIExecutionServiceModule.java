@@ -92,6 +92,10 @@ public class CIExecutionServiceModule extends AbstractModule {
   protected void configure() {
     install(CIBeansModule.getInstance());
     bind(ExecutorService.class)
+        .annotatedWith(Names.named("ciRatelimitHandlerExecutor"))
+        .toInstance(ThreadPool.create(
+            20, 300, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("RateLimt-Handler-%d").build()));
+    bind(ExecutorService.class)
         .annotatedWith(Names.named("ciEventHandlerExecutor"))
         .toInstance(ThreadPool.create(
             20, 300, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Event-Handler-%d").build()));

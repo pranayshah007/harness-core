@@ -40,6 +40,8 @@ import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
+import io.harness.ci.license.CILicenseService;
+import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
@@ -75,6 +77,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.TaskExecutableWithRbac;
@@ -124,6 +127,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public static final StepType STEP_TYPE = InitializeStepInfo.STEP_TYPE;
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
   @Inject private CIYAMLSanitizationService sanitizationService;
+  @Inject private CILicenseService ciLicenseService;
+  @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
@@ -225,6 +230,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
 
     String logPrefix = getLogPrefix(ambiance);
+    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
+        accountExecutionMetadataRepository, ciLicenseService, AmbianceUtils.getAccountId(ambiance));
 
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
