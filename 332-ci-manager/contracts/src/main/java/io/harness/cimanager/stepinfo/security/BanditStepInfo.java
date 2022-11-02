@@ -14,6 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -29,4 +31,9 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("banditStepInfo")
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.BanditStepInfo")
-public class BanditStepInfo extends SecurityStepInfo {}
+public class BanditStepInfo extends SecurityStepInfo {
+  @JsonIgnore public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.BANDIT).build();
+  @JsonIgnore
+  public static final StepType STEP_TYPE =
+      StepType.newBuilder().setType(CIStepInfoType.BANDIT.getDisplayName()).setStepCategory(StepCategory.STEP).build();
+}

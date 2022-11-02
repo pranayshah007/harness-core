@@ -13,7 +13,6 @@ import io.harness.beans.steps.STOStepType;
 
 import com.google.common.collect.Sets;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;

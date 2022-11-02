@@ -15,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.steps.STOStepType;
 import io.harness.beans.steps.StepSpecTypeConstants;
-import io.harness.beans.steps.nodes.security.BanditScanNode;
 import io.harness.ci.creator.variables.STOStageVariableCreator;
 import io.harness.ci.creator.variables.STOStepVariableCreator;
 import io.harness.ci.creator.variables.STOStepsVariableCreator;

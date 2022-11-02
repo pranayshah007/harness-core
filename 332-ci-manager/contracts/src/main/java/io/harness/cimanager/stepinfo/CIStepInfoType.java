@@ -10,8 +10,6 @@ package io.harness.beans.steps;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_LITE_ENGINE;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
 
-import io.harness.beans.FeatureName;
-
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
