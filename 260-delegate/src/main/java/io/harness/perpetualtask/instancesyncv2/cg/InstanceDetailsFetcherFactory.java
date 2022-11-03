@@ -16,8 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @OwnedBy(CDP)
 public class InstanceDetailsFetcherFactory {
-  private CgK8sInstancesDetailsFetcher k8sInstancesDetailsFetcher;
-  private ConcurrentHashMap<String, InstanceDetailsFetcher> holder;
+  private final CgK8sInstancesDetailsFetcher k8sInstancesDetailsFetcher;
+  private final ConcurrentHashMap<String, InstanceDetailsFetcher> holder;
 
   @Inject
   public InstanceDetailsFetcherFactory(CgK8sInstancesDetailsFetcher instanceDetailsFetcher) {

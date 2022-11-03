@@ -7,7 +7,6 @@
 
 package software.wings.service.impl.instance;
 
-import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
 import static io.harness.beans.FeatureName.STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_CONTAINER_DEPLOYMENTS;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -87,7 +86,6 @@ import software.wings.beans.infrastructure.instance.key.deployment.K8sDeployment
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.k8s.response.K8sInstanceSyncResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
-import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.ContainerInstanceSyncPerpetualTaskCreator;
 import software.wings.service.InstanceSyncPerpetualTaskCreator;
@@ -140,7 +138,6 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
   @Inject private transient K8sStateHelper k8sStateHelper;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private ContainerInstanceSyncPerpetualTaskCreator taskCreator;
-  @Inject private CgInstanceSyncTaskDetailsService taskDetailsService;
 
   @Override
   public void syncInstances(String appId, String infraMappingId, InstanceSyncFlow instanceSyncFlow) {
@@ -1557,18 +1554,6 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
   @Override
   public void processInstanceSyncResponseFromPerpetualTask(
       InfrastructureMapping infrastructureMapping, DelegateResponseData response) {
-    if (featureFlagService.isEnabled(INSTANCE_SYNC_V2_CG, infrastructureMapping.getAccountId())) {
-      InstanceSyncTaskDetails instanceSyncV2TaskDetails =
-          taskDetailsService.getForInfraMapping(infrastructureMapping.getAccountId(), infrastructureMapping.getUuid());
-      if (Objects.nonNull(instanceSyncV2TaskDetails)) {
-        log.info(
-            "[INSTANCE_SYNC_V2_CG] Instance Sync for infra mapping: [{}] is moved to new Instance Sync V2 framework, and is handled via Perpetual Task Id: [{}], and instance sync task details id: [{}]. Skipping consuming response for this.",
-            infrastructureMapping.getUuid(), instanceSyncV2TaskDetails.getPerpetualTaskId(),
-            instanceSyncV2TaskDetails.getUuid());
-        return;
-      }
-    }
-
     if (!(infrastructureMapping instanceof ContainerInfrastructureMapping)) {
       String msg = "Incompatible infrastructure mapping type found:" + infrastructureMapping.getInfraMappingType();
       log.error(msg);

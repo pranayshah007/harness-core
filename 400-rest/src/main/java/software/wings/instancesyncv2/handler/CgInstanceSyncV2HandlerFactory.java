@@ -15,9 +15,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Singleton
 public class CgInstanceSyncV2HandlerFactory {
-  private K8sInstanceSyncV2HandlerCg k8sHandler;
+  private final K8sInstanceSyncV2HandlerCg k8sHandler;
 
-  private ConcurrentHashMap<SettingVariableTypes, CgInstanceSyncV2Handler> holder;
+  private final ConcurrentHashMap<SettingVariableTypes, CgInstanceSyncV2Handler> holder;
 
   @Inject
   public CgInstanceSyncV2HandlerFactory(K8sInstanceSyncV2HandlerCg k8sHandler) {

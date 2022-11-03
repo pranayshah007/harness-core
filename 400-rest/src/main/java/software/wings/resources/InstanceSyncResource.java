@@ -107,7 +107,7 @@ public class InstanceSyncResource {
   @GET
   @Path("instance-sync-v2/task-details/{perpetualTaskId}")
   @Produces(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
-  public Response processInstanceSyncV2Result(
+  public Response fetchInstanceSyncV2TrackedDeploymentDetails(
       @PathParam("perpetualTaskId") String perpetualTaskId, @QueryParam("accountId") String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {

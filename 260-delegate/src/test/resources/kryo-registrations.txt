@@ -2399,6 +2399,8 @@
 980035:io.harness.exception.ngexception.AzureARMTaskException
 980036:io.harness.delegate.beans.DelegateTaskExpiredException
 980037:io.harness.exception.ngexception.AzureBPTaskException
+980100:software.wings.beans.infrastructure.instance.info.K8sPodInfo
+980101:software.wings.beans.infrastructure.instance.info.K8sContainerInfo
 1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
 9300122:io.harness.yaml.core.timeout.Timeout

@@ -148,26 +148,26 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     Set<CgReleaseIdentifiers> identifiers = new HashSet<>();
     for (CgReleaseIdentifiers newIdentifier : newIdentifiers) {
       if (newIdentifier instanceof CgK8sReleaseIdentifier) {
-        Optional<CgReleaseIdentifiers> matchingIdentifier =
+        CgK8sReleaseIdentifier k8sNewIdentifier = (CgK8sReleaseIdentifier) newIdentifier;
+        Optional<CgK8sReleaseIdentifier> matchingIdentifier =
             existingIdentifiers.parallelStream()
                 .filter(existingIdentifier -> existingIdentifier instanceof CgK8sReleaseIdentifier)
+                .map(CgK8sReleaseIdentifier.class ::cast)
                 .filter(existingIdentifier
-                    -> StringUtils.equals(((CgK8sReleaseIdentifier) existingIdentifier).getReleaseName(),
-                        (((CgK8sReleaseIdentifier) newIdentifier).getReleaseName())))
+                    -> StringUtils.equals(existingIdentifier.getReleaseName(), k8sNewIdentifier.getReleaseName()))
                 .filter(existingIdentifier
-                    -> StringUtils.equals(((CgK8sReleaseIdentifier) existingIdentifier).getClusterName(),
-                        ((CgK8sReleaseIdentifier) newIdentifier).getClusterName()))
+                    -> StringUtils.equals(existingIdentifier.getClusterName(), k8sNewIdentifier.getClusterName()))
                 .filter(existingIdentifier
-                    -> StringUtils.equals(((CgK8sReleaseIdentifier) existingIdentifier).getContainerServiceName(),
-                        ((CgK8sReleaseIdentifier) newIdentifier).getContainerServiceName()))
+                    -> StringUtils.equals(
+                        existingIdentifier.getContainerServiceName(), k8sNewIdentifier.getContainerServiceName()))
                 .findAny();
 
         if (matchingIdentifier.isPresent()) {
-          CgK8sReleaseIdentifier k8sReleaseIdentifier = (CgK8sReleaseIdentifier) matchingIdentifier.get();
-          k8sReleaseIdentifier.getNamespaces().addAll(((CgK8sReleaseIdentifier) newIdentifier).getNamespaces());
+          CgK8sReleaseIdentifier k8sReleaseIdentifier = matchingIdentifier.get();
+          k8sReleaseIdentifier.getNamespaces().addAll(k8sNewIdentifier.getNamespaces());
           identifiers.add(k8sReleaseIdentifier);
         } else {
-          identifiers.add(newIdentifier);
+          identifiers.add(k8sNewIdentifier);
         }
       } else {
         log.error("Unknown release identifier found: [{}]", newIdentifier);
@@ -258,6 +258,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
     return namespacesSet;
   }
+
   @Override
   public List<CgDeploymentReleaseDetails> getDeploymentReleaseDetails(InstanceSyncTaskDetails taskDetails) {
     InfrastructureMapping infraMapping =
@@ -372,6 +373,10 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
   @Override
   public List<Instance> getDeployedInstances(List<InstanceInfo> instanceInfos, Instance lastDiscoveredInstance) {
+    if (CollectionUtils.isEmpty(instanceInfos) || Objects.isNull(lastDiscoveredInstance)) {
+      return Collections.emptyList();
+    }
+
     DeploymentSummary deploymentSummary = generateDeploymentSummaryFromInstance(lastDiscoveredInstance);
     if (lastDiscoveredInstance.getInstanceInfo() instanceof K8sPodInfo) {
       K8sPodInfo instanceInfo = (K8sPodInfo) lastDiscoveredInstance.getInstanceInfo();
@@ -464,6 +469,10 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
   private List<Instance> getInstancesForContainerPods(DeploymentSummary deploymentSummary,
       ContainerInfrastructureMapping containerInfraMapping, List<ContainerInfo> containerInfoList) {
+    if (CollectionUtils.isEmpty(containerInfoList)) {
+      return Collections.emptyList();
+    }
+
     List<Instance> instances = new ArrayList<>();
     for (ContainerInfo containerInfo : containerInfoList) {
       setHelmChartInfoToContainerInfo(
@@ -478,6 +487,10 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
   private List<Instance> getInstancesForK8sPods(
       DeploymentSummary deploymentSummary, InfrastructureMapping infrastructureMapping, List<K8sPodInfo> pods) {
+    if (CollectionUtils.isEmpty(pods)) {
+      return Collections.emptyList();
+    }
+
     List<Instance> instances = new ArrayList<>();
     for (K8sPodInfo pod : pods) {
       HelmChartInfo helmChartInfo =

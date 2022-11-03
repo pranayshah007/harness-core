@@ -338,6 +338,7 @@ import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.PcfInfraStructure;
 import software.wings.infra.PhysicalInfra;
 import software.wings.infra.PhysicalInfraWinrm;
+import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.metrics.TimeSeriesDataRecord;
 import software.wings.prune.PruneEvent;
 import software.wings.resources.DelegateFileResource.FileIdempotentResult;
@@ -850,6 +851,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(AgentMtlsEndpoint.class);
     set.add(ArtifactView.class);
     set.add(LookerEntityReconRecord.class);
+    set.add(InstanceSyncTaskDetails.class);
   }
 
   @Override

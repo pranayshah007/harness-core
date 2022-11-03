@@ -68,6 +68,8 @@ public class CgInstanceSyncServiceV2 {
   private final InstanceService instanceService;
 
   public static final String AUTO_SCALE = "AUTO_SCALE";
+  public static final int PERPETUAL_TASK_INTERVAL = 10;
+  public static final int PERPETUAL_TASK_TIMEOUT = 5;
 
   public void handleInstanceSync(DeploymentEvent event) {
     if (Objects.isNull(event)) {
@@ -113,7 +115,9 @@ public class CgInstanceSyncServiceV2 {
 
           // handle current instances
           List<Instance> deployedInstances = instanceSyncHandler.getDeployedInstances(deploymentSummary);
-          handleInstances(deployedInstances, instanceSyncHandler);
+          if (CollectionUtils.isNotEmpty(deployedInstances)) {
+            handleInstances(deployedInstances, instanceSyncHandler);
+          }
         });
   }
 
@@ -169,8 +173,8 @@ public class CgInstanceSyncServiceV2 {
 
   private PerpetualTaskSchedule preparePerpetualTaskSchedule() {
     return PerpetualTaskSchedule.newBuilder()
-        .setInterval(Durations.fromMinutes(2))
-        .setTimeout(Durations.fromMinutes(5))
+        .setInterval(Durations.fromMinutes(PERPETUAL_TASK_INTERVAL))
+        .setTimeout(Durations.fromMinutes(PERPETUAL_TASK_TIMEOUT))
         .build();
   }
 
