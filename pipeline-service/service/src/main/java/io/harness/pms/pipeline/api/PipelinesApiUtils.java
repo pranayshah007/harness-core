@@ -68,7 +68,7 @@ public class PipelinesApiUtils {
     gitDetails.setBranchName(entityGitDetails.getBranch());
     gitDetails.setCommitId(entityGitDetails.getCommitId());
     gitDetails.setFilePath(entityGitDetails.getFilePath());
-    gitDetails.setEntityIdentifier(entityGitDetails.getObjectId());
+    gitDetails.setObjectId(entityGitDetails.getObjectId());
     gitDetails.setFileUrl(entityGitDetails.getFileUrl());
     gitDetails.setRepoUrl(entityGitDetails.getRepoUrl());
     gitDetails.setRepoName(entityGitDetails.getRepoName());
@@ -113,6 +113,8 @@ public class PipelinesApiUtils {
     pipelineGetResponseBody.setPipelineYaml(pipelineEntity.getYaml());
     pipelineGetResponseBody.setSlug(pipelineEntity.getIdentifier());
     pipelineGetResponseBody.setName(pipelineEntity.getName());
+    pipelineGetResponseBody.setOrg(pipelineEntity.getOrgIdentifier());
+    pipelineGetResponseBody.setProject(pipelineEntity.getProjectIdentifier());
     pipelineGetResponseBody.setDescription(pipelineEntity.getDescription());
     pipelineGetResponseBody.setTags(getTagsFromNGTag(pipelineEntity.getTags()));
     pipelineGetResponseBody.setGitDetails(getGitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity)));
@@ -376,7 +378,7 @@ public class PipelinesApiUtils {
         .branch(gitDetails.getBranchName())
         .filePath(gitDetails.getFilePath())
         .commitMsg(gitDetails.getCommitMessage())
-        .isNewBranch(gitDetails.getBranchName() != null && gitDetails.getBaseBranch() != null)
+        .isNewBranch(isNotEmpty(gitDetails.getBranchName()) && isNotEmpty(gitDetails.getBaseBranch()))
         .baseBranch(gitDetails.getBaseBranch())
         .connectorRef(gitDetails.getConnectorRef())
         .storeType(StoreType.getFromStringOrNull(gitDetails.getStoreType().toString()))
@@ -391,7 +393,7 @@ public class PipelinesApiUtils {
     return GitEntityInfo.builder()
         .branch(gitDetails.getBranchName())
         .commitMsg(gitDetails.getCommitMessage())
-        .isNewBranch(gitDetails.getBranchName() != null && gitDetails.getBaseBranch() != null)
+        .isNewBranch(isNotEmpty(gitDetails.getBranchName()) && isNotEmpty(gitDetails.getBaseBranch()))
         .baseBranch(gitDetails.getBaseBranch())
         .lastCommitId(gitDetails.getLastCommitId())
         .lastObjectId(gitDetails.getLastObjectId())
