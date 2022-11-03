@@ -88,7 +88,6 @@ func FindFile(ctx context.Context, fileRequest *pb.GetFileRequest, log *zap.Suga
 	//Check if base64 encoding required
 	fileContent := string(content.Data)
 	if fileRequest.GetBase64Encoding() {
-		log.Info("Base64Encoding is set to", fileRequest.GetBase64Encoding(), "Encoding content to base64")
 		fileContent = base64.StdEncoding.EncodeToString(content.Data)
 	}
 
@@ -412,7 +411,7 @@ func FindFilesInCommit(ctx context.Context, fileRequest *pb.FindFilesInCommitReq
 	out = &pb.FindFilesInCommitResponse{
 		File: convertContentList(files),
 		Pagination: &pb.PageResponse{
-			Next: int32(response.Page.Next),
+			Next:    int32(response.Page.Next),
 			NextUrl: response.Page.NextURL,
 		},
 	}

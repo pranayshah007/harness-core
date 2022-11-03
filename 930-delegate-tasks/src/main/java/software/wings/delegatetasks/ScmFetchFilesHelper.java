@@ -272,7 +272,7 @@ public class ScmFetchFilesHelper {
     FileContentBatchResponse fileBatchContentResponse;
     if (gitFileConfig.isUseBranch()) {
       fileBatchContentResponse = scmDelegateClient.processScmRequest(c
-          -> scmServiceClient.listFilesBase64(scmConnector, Collections.singleton(gitFileConfig.getFilePath()),
+          -> scmServiceClient.listFilesV2(scmConnector, Collections.singleton(gitFileConfig.getFilePath()),
               gitFileConfig.getBranch(), SCMGrpc.newBlockingStub(c)));
     } else {
       fileBatchContentResponse = scmDelegateClient.processScmRequest(c
