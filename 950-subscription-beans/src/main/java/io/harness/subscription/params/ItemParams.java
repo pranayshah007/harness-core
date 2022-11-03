@@ -15,5 +15,5 @@ import lombok.Data;
 public class ItemParams {
   private String priceId;
   private Long quantity;
-  private boolean priceIncludesQuantity;
+  private boolean quantityIncludedInPrice;
 }
