@@ -8,6 +8,7 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
@@ -449,9 +450,13 @@ public class GovernancePolicyResource {
     } else {
       // Call is from UI for adhoc evaluation. Directly enqueue in this case
       log.info("enqueuing for ad-hoc request");
+      if (isEmpty(accountId)) {
+        throw new InvalidRequestException("Missing accountId");
+      }
       try {
         GovernanceJobDetailsAWS governanceJobDetailsAWS =
             GovernanceJobDetailsAWS.builder()
+                .accountId(accountId)
                 .awsAccountId(governanceJobEnqueueDTO.getTargetAccountId())
                 .externalId(governanceJobEnqueueDTO.getExternalId())
                 .roleArn(governanceJobEnqueueDTO.getRoleArn())

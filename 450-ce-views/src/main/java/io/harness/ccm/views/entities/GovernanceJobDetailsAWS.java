@@ -7,13 +7,14 @@
 
 package io.harness.ccm.views.entities;
 
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
 import io.harness.annotations.dev.OwnedBy;
+
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
-
-import static io.harness.annotations.dev.HarnessTeam.CE;
 
 @Value
 @Builder
@@ -29,4 +30,5 @@ public class GovernanceJobDetailsAWS {
   String roleArn;
   String externalId;
   Boolean isDryRun;
+  String accountId;
 }
