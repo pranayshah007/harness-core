@@ -15,14 +15,13 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
-import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.ng.beans.PageResponse;
 
 public interface SLODashboardService {
   PageResponse<SLODashboardWidget> getSloDashboardWidgets(
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
-  PageResponse<SLOHealthListView> getSloHealthListView(ProjectParams projectParams, SLODashboardApiFilter filter,
-      PageParams pageParams, String filterByName, SLOTargetDTO filterBySLOTargetDTO);
+  PageResponse<SLOHealthListView> getSloHealthListView(
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
 
   SLODashboardDetail getSloDashboardDetail(
       ProjectParams projectParams, String sloIdentifier, Long startTime, Long endTime);

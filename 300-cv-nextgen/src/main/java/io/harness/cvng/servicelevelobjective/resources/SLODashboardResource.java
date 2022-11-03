@@ -20,7 +20,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
-import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -113,10 +112,8 @@ public class SLODashboardResource {
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<SLOHealthListView>>
   getSloHealthListView(@NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter filter,
-      @BeanParam PageParams pageParams,
-      @Parameter(description = "For filtering on the basis of name") @QueryParam("filter") String filterByName) {
-    return ResponseDTO.newResponse(
-        sloDashboardService.getSloHealthListView(projectParams, filter, pageParams, filterByName, null));
+      @BeanParam PageParams pageParams) {
+    return ResponseDTO.newResponse(sloDashboardService.getSloHealthListView(projectParams, filter, pageParams));
   }
 
   @POST
@@ -131,13 +128,9 @@ public class SLODashboardResource {
       })
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<SLOHealthListView>>
-  getSloHealthListViewV2(@NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter filter,
-      @BeanParam PageParams pageParams,
-      @Parameter(description = "For filtering on the basis of name") @QueryParam("filter") String filterByName,
-      @Parameter(
-          description = "For filtering on the basis of SLO Target spec") @Valid @Body SLOTargetDTO sloTargetDTO) {
-    return ResponseDTO.newResponse(
-        sloDashboardService.getSloHealthListView(projectParams, filter, pageParams, filterByName, sloTargetDTO));
+  getSloHealthListViewV2(@NotNull @BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams,
+      @Valid @Body SLODashboardApiFilter filter) {
+    return ResponseDTO.newResponse(sloDashboardService.getSloHealthListView(projectParams, filter, pageParams));
   }
 
   @GET

@@ -23,7 +23,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView.SLOHealthListViewBuilder;
-import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
@@ -97,10 +96,10 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   }
 
   @Override
-  public PageResponse<SLOHealthListView> getSloHealthListView(ProjectParams projectParams, SLODashboardApiFilter filter,
-      PageParams pageParams, String filterByName, SLOTargetDTO filterBySLOTargetDTO) {
-    PageResponse<AbstractServiceLevelObjective> sloPageResponse = serviceLevelObjectiveV2Service.getSLOForListView(
-        projectParams, filter, pageParams, filterByName, filterBySLOTargetDTO);
+  public PageResponse<SLOHealthListView> getSloHealthListView(
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams) {
+    PageResponse<AbstractServiceLevelObjective> sloPageResponse =
+        serviceLevelObjectiveV2Service.getSLOForListView(projectParams, filter, pageParams);
 
     Set<String> monitoredServiceIdentifiers =
         sloPageResponse.getContent()
