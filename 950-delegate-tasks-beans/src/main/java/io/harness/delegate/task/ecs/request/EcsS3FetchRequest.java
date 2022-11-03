@@ -16,6 +16,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
+import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.ecs.EcsS3FetchFileConfig;
 import io.harness.expression.Expression;
@@ -32,7 +33,9 @@ import org.apache.commons.collections.CollectionUtils;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class EcsS3FetchRequest implements TaskParameters, ExecutionCapabilityDemander, NestedAnnotationResolver {
+public class EcsS3FetchRequest
+    implements ActivityAccess, TaskParameters, ExecutionCapabilityDemander, NestedAnnotationResolver {
+  String activityId;
   String accountId;
 
   @NonFinal @Expression(ALLOW_SECRETS) EcsS3FetchFileConfig ecsTaskDefinitionS3FetchFileConfig;
