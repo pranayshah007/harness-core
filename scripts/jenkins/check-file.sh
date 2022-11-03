@@ -11,7 +11,6 @@ REGEX2='^.*.md$'
 #git diff $TargetBranch origin/$TargetBranch --name-only
 #git diff $TargetBranch origin/$TargetBranch --name-only >merge_summary.txt
 
-git diff HEAD@{0} HEAD@{1} --name-only
 git diff HEAD@{0} HEAD@{1} --name-only >merge_summary.txt
 
 cat merge_summary.txt
