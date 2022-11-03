@@ -7,7 +7,6 @@
 
 package io.harness.cdng;
 
-import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.rule.OwnerRule.ABOSII;
@@ -180,7 +179,6 @@ public class CDStepHelperTest extends CategoryTest {
             .build();
     connectorInfoDTO.setConnectorConfig(githubConnectorDTO);
 
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
 
@@ -227,7 +225,6 @@ public class CDStepHelperTest extends CategoryTest {
             .build();
     connectorInfoDTO.setConnectorConfig(githubConnectorDTO);
 
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
 
@@ -259,7 +256,6 @@ public class CDStepHelperTest extends CategoryTest {
         GitConfigDTO.builder().gitConnectionType(GitConnectionType.ACCOUNT).url("http://localhost").build();
     connectorInfoDTO.setConnectorConfig(gitConfigDTO);
 
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
 
     GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
@@ -301,7 +297,6 @@ public class CDStepHelperTest extends CategoryTest {
             .build();
     connectorInfoDTO.setConnectorConfig(githubConnectorDTO);
 
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
 
     GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
@@ -345,7 +340,6 @@ public class CDStepHelperTest extends CategoryTest {
             .build();
     connectorInfoDTO.setConnectorConfig(githubConnectorDTO);
 
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
 
@@ -866,7 +860,6 @@ public class CDStepHelperTest extends CategoryTest {
             .build();
     connectorInfoDTO.setConnectorConfig(bitbucketConnectorDTO);
 
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
 
@@ -913,7 +906,6 @@ public class CDStepHelperTest extends CategoryTest {
             .build();
     connectorInfoDTO.setConnectorConfig(bitbucketConnectorDTO);
 
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
 

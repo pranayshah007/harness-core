@@ -8,7 +8,6 @@
 package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.pcf.ResizeStrategy.RESIZE_NEW_FIRST;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
@@ -1050,7 +1049,6 @@ public class HelmDeployStateTest extends CategoryTest {
     doReturn(appManifestMap)
         .when(applicationManifestUtils)
         .getOverrideApplicationManifests(context, AppManifestKind.VALUES);
-    doReturn(true).when(featureFlagService).isEnabled(eq(OPTIMIZED_GIT_FETCH_FILES), any());
     doReturn(GitFetchFilesTaskParams.builder().build())
         .when(applicationManifestUtils)
         .createGitFetchFilesTaskParams(context, app, appManifestMap);
@@ -1598,7 +1596,6 @@ public class HelmDeployStateTest extends CategoryTest {
     helmDeployState.setGitFileConfig(GitFileConfig.builder().build());
     helmDeployState.setTemplateExpressions(expressions);
 
-    doReturn(true).when(featureFlagService).isEnabled(eq(OPTIMIZED_GIT_FETCH_FILES), any());
     doReturn(helmChartSpec).when(serviceResourceService).getHelmChartSpecification(anyString(), anyString());
     doReturn(expressions.get(0)).when(templateExpressionProcessor).getTemplateExpression(expressions, "connectorId");
     doReturn(attribute)

@@ -7,7 +7,6 @@
 
 package io.harness.cdng;
 
-import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
@@ -245,11 +244,10 @@ public class CDStepHelper {
   }
 
   public boolean isOptimizedFilesFetch(@Nonnull ConnectorInfoDTO connectorDTO, String accountId) {
-    return cdFeatureFlagHelper.isEnabled(accountId, OPTIMIZED_GIT_FETCH_FILES)
-        && ((isGithubTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())
+    return ((isGithubTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())
                 || isGitlabTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
-            || (isAzureRepoTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
-            || (isBitbucketTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
+        || (isAzureRepoTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
+        || (isBitbucketTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
   }
 
   public void addApiAuthIfRequired(ScmConnector scmConnector) {
