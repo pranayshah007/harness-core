@@ -281,7 +281,9 @@ public class K8sPodInfoTasklet implements Tasklet {
           log.info("Time didn't match for instances {} : {} : {}", podUid, instanceStartTime,
               existingInstanceData.getUsageStartTime());
         }
-        instanceStartTime = existingInstanceData.getUsageStartTime();
+        if (compare > 0) {
+          instanceStartTime = existingInstanceData.getUsageStartTime();
+        }
       }
     }
 
