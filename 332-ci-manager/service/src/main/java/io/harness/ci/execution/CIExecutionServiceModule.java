@@ -29,8 +29,6 @@ import io.harness.beans.steps.nodes.S3UploadNode;
 import io.harness.beans.steps.nodes.SaveCacheGCSNode;
 import io.harness.beans.steps.nodes.SaveCacheS3Node;
 import io.harness.beans.steps.nodes.SecurityNode;
-import io.harness.beans.steps.nodes.security.BanditScanNode;
-import io.harness.beans.steps.nodes.security.SnykScanNode;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
@@ -79,8 +77,6 @@ public class CIExecutionServiceModule extends AbstractModule {
       add(RestoreCacheS3Node.class);
       add(PluginStepNode.class);
       add(SecurityNode.class);
-      add(BanditScanNode.class);
-      add(SnykScanNode.class);
       add(ArtifactoryUploadNode.class);
       add(GitCloneStepNode.class);
       add(InitializeStepNode.class);

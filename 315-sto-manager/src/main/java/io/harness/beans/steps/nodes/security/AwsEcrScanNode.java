@@ -37,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.nodes.security.AwsEcrScanNode")
 public class AwsEcrScanNode extends CIAbstractStepNode {
-  @JsonProperty("type") @NotNull AwsEcrScanNode.StepType type = StepType.AwsEcr;
+  @JsonProperty("type") @NotNull AwsEcrScanNode.StepType type = StepType.AWSECR;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
@@ -54,7 +54,7 @@ public class AwsEcrScanNode extends CIAbstractStepNode {
   }
 
   enum StepType {
-    AwsEcr(CIStepInfoType.AWS_ECR.getDisplayName());
+    AWSECR(CIStepInfoType.AWS_ECR.getDisplayName());
     @Getter String name;
 
     StepType(String name) {

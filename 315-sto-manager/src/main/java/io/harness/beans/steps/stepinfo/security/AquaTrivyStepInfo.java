@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIStepInfoType;
-import io.harness.beans.steps.TypeInfo;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -26,13 +25,15 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-@JsonTypeName("Sysdig")
+@JsonTypeName("AquaTrivy")
 @JsonIgnoreProperties(ignoreUnknown = true)
-@TypeAlias("sysdigStepInfo")
+@TypeAlias("aquaTrivyStepInfo")
 @OwnedBy(STO)
-@RecasterAlias("io.harness.beans.steps.stepinfo.security.SysdigStepInfo")
-public class SysdigStepInfo extends SecurityStepInfo {
+@RecasterAlias("io.harness.beans.steps.stepinfo.security.AquaTrivyStepInfo")
+public class AquaTrivyStepInfo extends SecurityStepInfo {
   @JsonIgnore
-  public static final StepType STEP_TYPE =
-      StepType.newBuilder().setType(CIStepInfoType.SYSDIG.getDisplayName()).setStepCategory(StepCategory.STEP).build();
+  public static final StepType STEP_TYPE = StepType.newBuilder()
+                                               .setType(CIStepInfoType.AQUA_TRIVY.getDisplayName())
+                                               .setStepCategory(StepCategory.STEP)
+                                               .build();
 }

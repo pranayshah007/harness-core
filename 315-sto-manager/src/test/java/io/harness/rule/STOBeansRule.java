@@ -7,6 +7,7 @@
 
 package io.harness.rule;
 
+import io.harness.CIBeansModule;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
@@ -64,7 +65,7 @@ public class STOBeansRule implements MethodRule, InjectorRuleMixin {
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
-      List<YamlSchemaRootClass> yamlSchemaRootClasses() {
+      List<YamlSchemaRootClass> yamlSchemaRootClass() {
         return ImmutableList.<YamlSchemaRootClass>builder().addAll(StoBeansRegistrars.yamlSchemaRegistrars).build();
       }
 
@@ -77,6 +78,7 @@ public class STOBeansRule implements MethodRule, InjectorRuleMixin {
         return objectMapper;
       }
     });
+    modules.add(CIBeansModule.getInstance());
     return modules;
   }
 

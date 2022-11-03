@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIStepInfoType;
-import io.harness.beans.steps.TypeInfo;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -26,13 +25,13 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-@JsonTypeName("AWSECR")
+@JsonTypeName("Sysdig")
 @JsonIgnoreProperties(ignoreUnknown = true)
-@TypeAlias("awsEcrStepInfo")
+@TypeAlias("sysdigStepInfo")
 @OwnedBy(STO)
-@RecasterAlias("io.harness.beans.steps.stepinfo.security.AwsEcrStepInfo")
-public class AwsEcrStepInfo extends SecurityStepInfo {
+@RecasterAlias("io.harness.beans.steps.stepinfo.security.SysdigStepInfo")
+public class SysdigStepInfo extends SecurityStepInfo {
   @JsonIgnore
   public static final StepType STEP_TYPE =
-      StepType.newBuilder().setType(CIStepInfoType.AWS_ECR.getDisplayName()).setStepCategory(StepCategory.STEP).build();
+      StepType.newBuilder().setType(CIStepInfoType.SYSDIG.getDisplayName()).setStepCategory(StepCategory.STEP).build();
 }

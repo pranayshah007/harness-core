@@ -153,7 +153,7 @@ public class CiBeansRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
       }
     });
 
-    modules.add(CIBeansModule.getInstance());
+    //    modules.add(CIBeansModule.getInstance());
     modules.add(MorphiaModule.getInstance());
     modules.add(new ProviderModule() {
       @Provides
