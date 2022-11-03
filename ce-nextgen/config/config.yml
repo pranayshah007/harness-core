@@ -237,6 +237,6 @@ governanceConfig:
   useDkron: true
   callbackApiEndpoint: http://localhost:7340/ccm/api/governance/enqueue
   dkronJobEnabled: true
-  awsFaktoryJobType: default
-  awsFaktoryQueueName: default
+  awsFaktoryJobType: aws-governance # This should match with worker
+  awsFaktoryQueueName: aws-governance # This should match with worker
 
