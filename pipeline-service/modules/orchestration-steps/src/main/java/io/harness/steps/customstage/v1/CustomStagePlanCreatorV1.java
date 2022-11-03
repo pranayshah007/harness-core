@@ -7,9 +7,6 @@
 
 package io.harness.steps.customstage.v1;
 
-import com.google.common.base.Preconditions;
-import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -41,6 +38,9 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.customstage.CustomStageSpecParams;
 import io.harness.steps.customstage.CustomStageStep;
 
+import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
