@@ -185,7 +185,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           nodeExecutionIds.add(nodeExecutionId);
           NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
           pmsExecutionSummaryService.addStageNodeInGraphForPipelineRollback(
-                  planExecutionId, nodeExecution, executionSummaryUpdate);
+              planExecutionId, nodeExecution, executionSummaryUpdate);
           updateRequired = pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
                                planExecutionId, nodeExecution, executionSummaryUpdate)
               || updateRequired;
@@ -193,7 +193,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
               pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate)
               || updateRequired;
 
-          if (OrchestrationUtils.isStageOrParallelNode(nodeExecution)
+          if (OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)
               && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
               && StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
             updateRequired =
