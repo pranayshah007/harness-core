@@ -35,7 +35,8 @@ public enum CIStepInfoType {
   RESTORE_CACHE_GCS(CI_LITE_ENGINE, "RestoreCacheGCS"),
   SAVE_CACHE_S3(CI_LITE_ENGINE, "SaveCacheS3"),
   RESTORE_CACHE_S3(CI_LITE_ENGINE, "RestoreCacheS3"),
-  UPLOAD_ARTIFACTORY(CI_LITE_ENGINE, "ArtifactoryUpload");
+  UPLOAD_ARTIFACTORY(CI_LITE_ENGINE, "ArtifactoryUpload"),
+  SCRIPT(CI_LITE_ENGINE, "script");
 
   @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;

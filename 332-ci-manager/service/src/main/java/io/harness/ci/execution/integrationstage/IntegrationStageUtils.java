@@ -24,6 +24,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.WINDOWS_BUILD_MULTIPLIER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
@@ -32,6 +33,10 @@ import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
 import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.DISABLED;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.UUID;
 
 import static java.lang.String.format;
 import static org.springframework.util.StringUtils.trimLeadingCharacter;
@@ -56,10 +61,12 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.license.CILicenseService;
@@ -71,6 +78,7 @@ import io.harness.ci.states.RunStep;
 import io.harness.ci.states.RunTestsStep;
 import io.harness.ci.utils.WebhookTriggerProcessorUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
@@ -93,6 +101,7 @@ import io.harness.k8s.model.ImageDetails;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
@@ -101,7 +110,10 @@ import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
@@ -121,6 +133,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -785,6 +798,55 @@ public class IntegrationStageUtils {
         .scmAuthType(connectorUtils.getScmAuthType(connectorDetails))
         .scmHostType(connectorUtils.getScmHostType(connectorDetails))
         .build();
+  }
+
+  public static ExecutionElementConfig getExecutionElementConfigFromSteps(YamlField stepsField) {
+    List<ExecutionWrapperConfig> steps = new ArrayList<>();
+    ArrayNode stepsFieldNodeList = (ArrayNode) stepsField.getNode().getCurrJsonNode();
+    stepsFieldNodeList.forEach(node -> {
+      ObjectNode stepNode = (ObjectNode) node;
+      stepNode.put(IDENTIFIER, IdentifierGeneratorUtils.getId(String.valueOf(stepNode.get(NAME))));
+      steps.add(ExecutionWrapperConfig.builder().uuid(String.valueOf(stepNode.get(UUID))).step(stepNode).build());
+    });
+    return ExecutionElementConfig.builder().uuid(stepsField.getUuid()).steps(steps).build();
+  }
+
+  // assuming hosted VM infra for unscripted demo
+  public static Infrastructure getInfrastructureV2() {
+    return HostedVmInfraYaml.builder()
+        .spec(HostedVmInfraYaml.HostedVmInfraSpec.builder()
+                  .platform(ParameterField.createValueField(Platform.builder()
+                                                                .arch(ParameterField.createValueField(ArchType.Amd64))
+                                                                .os(ParameterField.createValueField(OSType.Linux))
+                                                                .build()))
+                  .build())
+        .build();
+  }
+
+  public static IntegrationStageNode getIntegrationStageNode(YamlNode config,
+      ExecutionElementConfig executionElementConfig, Infrastructure infrastructure, boolean cloneCodebase) {
+    return IntegrationStageNode.builder()
+        .identifier(IdentifierGeneratorUtils.getId(config.getNodeName()))
+        .name(config.getNodeName())
+        .uuid(config.getUuid())
+        .type(IntegrationStageNode.StepType.CI)
+        .integrationStageConfig(IntegrationStageConfigImpl.builder()
+                                    .execution(executionElementConfig)
+                                    .infrastructure(infrastructure)
+                                    .uuid(generateUuid())
+                                    .cloneCodebase(ParameterField.createValueField(cloneCodebase))
+                                    .serviceDependencies(ParameterField.createValueField(Collections.emptyList()))
+                                    .build())
+        .build();
+  }
+
+  public static boolean shouldClone(YamlField specField) {
+    YamlField cloneField = specField.getNode().getField(YAMLFieldNameConstants.CLONE);
+    if (cloneField != null) {
+      YamlField disabled = cloneField.getNode().getField(DISABLED);
+      return disabled == null || !disabled.getNode().getCurrJsonNode().asBoolean();
+    }
+    return true;
   }
 
   public static Long getStageTtl(CILicenseService ciLicenseService, String accountId, Infrastructure infrastructure) {

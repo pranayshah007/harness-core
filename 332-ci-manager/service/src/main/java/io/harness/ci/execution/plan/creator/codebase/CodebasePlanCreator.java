@@ -45,6 +45,11 @@ public class CodebasePlanCreator {
     return buildCodebasePlanNodes(codeBaseNodeUUID, childNodeId, kryoSerializer, ciCodeBase, executionSource);
   }
 
+  public static List<PlanNode> createPlanForCodeBaseV2(
+      CodeBase codeBase, KryoSerializer kryoSerializer, ExecutionSource executionSource, String childNodeID) {
+    return buildCodebasePlanNodes(codeBase.getUuid(), childNodeID, kryoSerializer, codeBase, executionSource);
+  }
+
   @NotNull
   @VisibleForTesting
   static List<PlanNode> buildCodebasePlanNodes(String ciCodeBaseFieldUuid, String childNodeId,

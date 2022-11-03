@@ -366,6 +366,14 @@ public class YamlNode implements Visitable {
     return uuidValue;
   }
 
+  public String getNodeName() {
+    String name = this.getProperty("name");
+    if (EmptyPredicate.isEmpty(name)) {
+      return getType();
+    }
+    return name;
+  }
+
   private boolean compareFirstChildOfArrayNode(YamlNode firstParent, YamlNode secondParent) {
     List<YamlNode> firstParentChildNodes = firstParent.asArray();
     List<YamlNode> secondParentChildNodes = secondParent.asArray();

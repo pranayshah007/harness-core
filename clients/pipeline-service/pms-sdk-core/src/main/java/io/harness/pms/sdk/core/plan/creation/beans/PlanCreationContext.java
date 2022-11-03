@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.async.AsyncCreatorContext;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -116,6 +117,14 @@ public class PlanCreationContext implements AsyncCreatorContext {
       }
     });
     return stepFields;
+  }
+
+  public PipelineStoreType getPipelineStoreType() {
+    PlanCreationContextValue value = getMetadata();
+    if (value == null) {
+      return PipelineStoreType.UNDEFINED;
+    }
+    return value.getMetadata().getPipelineStoreType();
   }
 
   public String getYamlVersion() {

@@ -432,4 +432,51 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
         RollbackStrategy.PIPELINE_ROLLBACK, GenericPlanCreatorUtils.getRollbackStageNodeId(currentField));
     return rollbackStrategyStringMap;
   }
+
+  protected PlanCreationResponse createPlanForFieldV2(PlanCreationContext ctx, T stepElement) {
+    StepParameters stepParameters = getStepParameters(ctx, stepElement);
+
+    PlanNode.PlanNodeBuilder builder =
+        PlanNode.builder()
+            .uuid(stepElement.getUuid())
+            .name(getName(stepElement))
+            .identifier(stepElement.getIdentifier())
+            .stepType(stepElement.getStepSpecType().getStepType())
+            .group(StepOutcomeGroup.STEP.name())
+            .stepParameters(stepParameters)
+            .facilitatorObtainment(FacilitatorObtainment.newBuilder()
+                                       .setType(FacilitatorType.newBuilder()
+                                                    .setType(stepElement.getStepSpecType().getFacilitatorType())
+                                                    .build())
+                                       .build())
+            .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
+            .whenCondition(RunInfoUtils.getRunCondition(stepElement.getWhen()))
+            .timeoutObtainment(
+                SdkTimeoutObtainment.builder()
+                    .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
+                    .parameters(
+                        AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(stepElement)).build())
+                    .build())
+            .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
+            .expressionMode(stepElement.getStepSpecType().getExpressionMode());
+    AdviserObtainment adviserObtainment = buildAdviserV1(ctx.getDependency());
+    if (adviserObtainment != null) {
+      builder.adviserObtainment(adviserObtainment);
+    }
+    return PlanCreationResponse.builder().planNode(builder.build()).build();
+  }
+
+  private AdviserObtainment buildAdviserV1(Dependency dependency) {
+    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
+        || !dependency.getMetadataMap().containsKey("nextId")) {
+      return null;
+    }
+
+    String nextId = (String) kryoSerializer.asObject(dependency.getMetadataMap().get("nextId").toByteArray());
+    return AdviserObtainment.newBuilder()
+        .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
+        .setParameters(
+            ByteString.copyFrom(kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
+        .build();
+  }
 }
