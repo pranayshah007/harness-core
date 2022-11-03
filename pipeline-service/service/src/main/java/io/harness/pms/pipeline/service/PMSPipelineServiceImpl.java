@@ -49,6 +49,7 @@ import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.ClonePipelineDTO;
 import io.harness.pms.pipeline.CommonStepInfo;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
+import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
@@ -69,12 +70,16 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.PredicateUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -110,6 +115,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Pipeline [%s] under Project[%s], Organization [%s] already exists or has been deleted.";
   private static final String VERSION_FIELD_NAME = "version";
+
+  private static final String REPO_SIZE_EXCEPTION = "The size of unique repository list is greater than 1000";
 
   @Override
   public PipelineCRUDResult create(PipelineEntity pipelineEntity) {
@@ -649,5 +656,19 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     } else {
       return YamlVersion.V0;
     }
+  }
+
+  @Override
+  public PMSPipelineListRepoResponse getListOfRepos(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria =
+        PMSPipelineServiceHelper.buildCriteriaForRepoListing(accountIdentifier, orgIdentifier, projectIdentifier);
+    List<String> uniqueRepos = pmsPipelineRepository.findAllUniqueRepos(criteria);
+    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
+    if (uniqueRepos.size() > 1000) {
+      log.error("The size of unique repositories list is greater than 1000");
+      throw new InternalServerErrorException(REPO_SIZE_EXCEPTION);
+    }
+    return PMSPipelineListRepoResponse.builder().repositories(new HashSet<>(uniqueRepos)).build();
   }
 }

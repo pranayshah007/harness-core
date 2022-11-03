@@ -23,6 +23,7 @@ import io.harness.springdata.PersistenceUtils;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -127,6 +128,13 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
 
     query.with(by(Sort.Direction.DESC, PlanExecutionSummaryKeys.createdAt));
     return mongoTemplate.find(query, PipelineExecutionSummaryEntity.class);
+  }
+
+  @Override
+  public List<String> findAllUniqueRepoOrBranchBasedOnFilter(
+      Criteria criteria, @NotNull String entityGitDetailAttribute) {
+    Query query = new Query(criteria);
+    return pmsExecutionSummaryReadHelper.findUniqueEntityGitDetailAttribute(query, entityGitDetailAttribute);
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

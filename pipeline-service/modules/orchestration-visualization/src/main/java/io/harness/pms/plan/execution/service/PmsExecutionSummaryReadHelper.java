@@ -16,6 +16,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
@@ -32,5 +33,10 @@ public class PmsExecutionSummaryReadHelper {
 
   public List<PipelineExecutionSummaryEntity> find(Query query) {
     return secondaryMongoTemplate.find(query, PipelineExecutionSummaryEntity.class);
+  }
+
+  public List<String> findUniqueEntityGitDetailAttribute(Query query, @NotNull String entityGitDetailAttribute) {
+    return secondaryMongoTemplate.findDistinct(
+        query, entityGitDetailAttribute, PipelineExecutionSummaryEntity.class, String.class);
   }
 }

@@ -182,11 +182,13 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .field(PlanExecutionSummaryKeys.planExecutionId)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_organizationId_projectId_pipelineId")
+                 .name("accountId_organizationId_projectId_pipelineId_branch_repo")
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.orgIdentifier)
                  .field(PlanExecutionSummaryKeys.projectIdentifier)
                  .field(PlanExecutionSummaryKeys.pipelineIdentifier)
+                 .field(PlanExecutionSummaryKeys.entityGitDetailsBranch)
+                 .field(PlanExecutionSummaryKeys.entityGitDetailsRepoName)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_organizationId_projectId_createdAt_idx")
@@ -273,6 +275,10 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         + "rootExecutionId";
     public String parentExecutionId = PlanExecutionSummaryKeys.retryExecutionMetadata + "."
         + "parentExecutionId";
+    public String entityGitDetailsRepoName = PlanExecutionSummaryKeys.entityGitDetails + "."
+        + "repoName";
+    public String entityGitDetailsBranch = PlanExecutionSummaryKeys.entityGitDetails + "."
+        + "branch";
   }
 
   public boolean isStagesExecutionAllowed() {

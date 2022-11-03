@@ -184,7 +184,6 @@ public class ExecutionDetailsResource {
                     e.getEntityGitDetails() != null
                         ? e.getEntityGitDetails()
                         : pmsGitSyncHelper.getEntityGitDetailsFromBytes(e.getGitSyncBranchContext())));
-
     return ResponseDTO.newResponse(planExecutionSummaryDTOS);
   }
 
@@ -386,7 +385,9 @@ public class ExecutionDetailsResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_LIST_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier) {
-    return ResponseDTO.newResponse(PMSPipelineListRepoResponse.builder().build());
+    Criteria criteria = pmsExecutionService.formCriteriaForRepoAndBranchFilter(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, "");
+    return ResponseDTO.newResponse(pmsExecutionService.getListOfRepo(criteria));
   }
 
   @GET
@@ -411,6 +412,8 @@ public class ExecutionDetailsResource {
           NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_LIST_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.REPO_NAME) String repoName) {
-    return ResponseDTO.newResponse(PMSPipelineListBranchesResponse.builder().build());
+    Criteria criteria = pmsExecutionService.formCriteriaForRepoAndBranchFilter(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, repoName);
+    return ResponseDTO.newResponse(pmsExecutionService.getListOfBranches(criteria));
   }
 }
