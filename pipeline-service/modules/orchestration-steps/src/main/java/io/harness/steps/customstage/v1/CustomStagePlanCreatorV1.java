@@ -38,7 +38,6 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.customstage.CustomStageSpecParams;
 import io.harness.steps.customstage.CustomStageStep;
 
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -117,13 +116,7 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
     CustomStageSpecParams params = CustomStageSpecParams.builder().childNodeID(childrenNodeIds.get(0)).build();
-    String name;
-    if (config.getNode().getCurrJsonNode().get("name") != null
-        && config.getNode().getCurrJsonNode().get("name") instanceof TextNode) {
-      name = config.getNode().getCurrJsonNode().get("name").asText();
-    } else {
-      name = config.getId();
-    }
+    String name = config.getNodeName();
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, config.getUuid()))
