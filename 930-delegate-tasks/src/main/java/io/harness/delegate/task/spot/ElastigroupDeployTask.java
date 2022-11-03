@@ -13,8 +13,6 @@ import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STAT
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 
-import static java.util.Collections.emptyList;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.spot.SpotConfig;
 import io.harness.connector.task.spot.SpotNgConfigMapper;
@@ -34,7 +32,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
 import io.harness.spotinst.model.ElastiGroup;
 
-import com.amazonaws.services.ec2.model.Instance;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -98,27 +95,17 @@ public class ElastigroupDeployTask extends AbstractDelegateRunnableTask {
         getLogStreamingTaskClient(), DOWN_SCALE_COMMAND_UNIT, DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT,
         commandUnitsProgress);
 
-    //      List<Instance> newElastigroupInstances = newElastigroup != null
-    //                                               ? getAllEc2InstancesOfElastiGroup(
-    //          awsConfig, deployTaskParameters.getAwsRegion(), spotInstToken, spotInstAccountId,
-    //          newElastigroup.getId())
-    //                                               : emptyList();
-    //
-    //      List<Instance> ec2InstancesForOlderElastiGroup = oldElastigroup != null
-    //                                                       ? getAllEc2InstancesOfElastiGroup(
-    //          awsConfig, deployTaskParameters.getAwsRegion(), spotInstToken, spotInstAccountId,
-    //          oldElastigroup.getId())
-    //                                                       : emptyList();
-
-    List<Instance> newElastigroupInstances = emptyList();
-    List<Instance> ec2InstancesForOlderElastiGroup = emptyList();
+    List<String> newElastigroupInstanceIds =
+        taskHelper.getAllEc2InstanceIdsOfElastigroup(spotInstToken, spotInstAccountId, newElastigroup);
+    List<String> olderElastigroupInstanceIds =
+        taskHelper.getAllEc2InstanceIdsOfElastigroup(spotInstToken, spotInstAccountId, oldElastigroup);
 
     return ElastigroupDeployTaskResponse.builder()
         .status(CommandExecutionStatus.SUCCESS)
         .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
         .errorMessage(getErrorMessage(CommandExecutionStatus.SUCCESS))
-        .ec2InstancesAdded(newElastigroupInstances)
-        .ec2InstancesExisting(ec2InstancesForOlderElastiGroup)
+        .ec2InstanceIdsAdded(newElastigroupInstanceIds)
+        .ec2InstanceIdsExisting(olderElastigroupInstanceIds)
         .build();
   }
 

@@ -15,7 +15,6 @@ import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.logging.CommandExecutionStatus;
 
-import com.amazonaws.services.ec2.model.Instance;
 import java.util.List;
 import lombok.Builder;
 import lombok.Setter;
@@ -31,6 +30,6 @@ public class ElastigroupDeployTaskResponse implements DelegateTaskNotifyResponse
   String errorMessage;
   UnitProgressData unitProgressData;
 
-  List<Instance> ec2InstancesAdded;
-  List<Instance> ec2InstancesExisting;
+  List<String> ec2InstanceIdsAdded;
+  List<String> ec2InstanceIdsExisting;
 }
