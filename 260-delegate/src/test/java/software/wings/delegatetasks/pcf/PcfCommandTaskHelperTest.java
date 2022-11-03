@@ -33,6 +33,10 @@ import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML_LO
 import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML_LOCAL_WITH_TEMP_ROUTES_RESOLVED;
 import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML_NO_ROUTE;
 import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML_NO_ROUTE_RESOLVED;
+import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML_PROCESSES;
+import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML_PROCESSES_ALL_RESOLVED;
+import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML_PROCESSES_WEB_RESOLVED;
+import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML_PROCESSES_WEB_RESOLVED_NON_BG;
 import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML_RANDOM_ROUTE;
 import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML_RANDOM_ROUTE_WITH_HOST;
 import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML_RANDON_ROUTE_RESOLVED;
@@ -53,6 +57,7 @@ import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.logging.LogCallback;
 import io.harness.pcf.CfCliDelegateResolver;
 import io.harness.pcf.CfDeploymentManager;
+import io.harness.pcf.model.CfCliVersion;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.rule.Owner;
@@ -168,6 +173,34 @@ public class PcfCommandTaskHelperTest extends WingsBaseTest {
     cfCommandSetupRequest.setRouteMaps(routes);
     finalManifest = pcfCommandTaskHelper.generateManifestYamlForPush(cfCommandSetupRequest, requestData);
     assertThat(finalManifest).isEqualTo(MANIFEST_YAML_EXTENDED_SUPPORT_REMOTE_RESOLVED);
+
+    // 10. make instances 0 for web process only when non BG deployment with CF CLI 6
+    cfCommandSetupRequest.setManifestYaml(MANIFEST_YAML_PROCESSES);
+    cfCommandSetupRequest.setBlueGreen(false);
+    cfCommandSetupRequest.setCfCliVersion(CfCliVersion.V6);
+    finalManifest = pcfCommandTaskHelper.generateManifestYamlForPush(cfCommandSetupRequest, requestData);
+    assertThat(finalManifest).isEqualTo(MANIFEST_YAML_PROCESSES_WEB_RESOLVED_NON_BG);
+
+    // 11. make instances 0 for web process only when BG deployment with CF CLI 6
+    cfCommandSetupRequest.setManifestYaml(MANIFEST_YAML_PROCESSES);
+    cfCommandSetupRequest.setBlueGreen(true);
+    cfCommandSetupRequest.setCfCliVersion(CfCliVersion.V6);
+    finalManifest = pcfCommandTaskHelper.generateManifestYamlForPush(cfCommandSetupRequest, requestData);
+    assertThat(finalManifest).isEqualTo(MANIFEST_YAML_PROCESSES_WEB_RESOLVED);
+
+    // 12. make instances 0 for web process only when non BG deployment with CF CLI 7
+    cfCommandSetupRequest.setManifestYaml(MANIFEST_YAML_PROCESSES);
+    cfCommandSetupRequest.setBlueGreen(false);
+    cfCommandSetupRequest.setCfCliVersion(CfCliVersion.V7);
+    finalManifest = pcfCommandTaskHelper.generateManifestYamlForPush(cfCommandSetupRequest, requestData);
+    assertThat(finalManifest).isEqualTo(MANIFEST_YAML_PROCESSES_WEB_RESOLVED_NON_BG);
+
+    // 13. make instances 0 for all processes when BG deployment with CF CLI 7
+    cfCommandSetupRequest.setManifestYaml(MANIFEST_YAML_PROCESSES);
+    cfCommandSetupRequest.setBlueGreen(true);
+    cfCommandSetupRequest.setCfCliVersion(CfCliVersion.V7);
+    finalManifest = pcfCommandTaskHelper.generateManifestYamlForPush(cfCommandSetupRequest, requestData);
+    assertThat(finalManifest).isEqualTo(MANIFEST_YAML_PROCESSES_ALL_RESOLVED);
   }
 
   private CfCreateApplicationRequestData generatePcfCreateApplicationRequestData(

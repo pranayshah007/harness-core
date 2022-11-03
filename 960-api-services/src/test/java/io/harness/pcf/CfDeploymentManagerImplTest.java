@@ -13,6 +13,7 @@ import static io.harness.pcf.model.PcfConstants.HARNESS__STATUS__IDENTIFIER;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,6 +41,7 @@ import io.harness.pcf.model.CfConfig;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfRenameRequest;
 import io.harness.pcf.model.CfRequestConfig;
+import io.harness.pcf.model.PcfProcessInstances;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
@@ -272,10 +274,13 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
     ApplicationDetail applicationDetail = generateApplicationDetail(1, new InstanceDetail[] {instanceDetail1});
     doReturn(applicationDetail).when(sdkClient).getApplicationByName(any());
     doNothing().when(sdkClient).scaleApplications(any());
+    doNothing().when(cliClient).scaleProcessesByCli(any(), any());
     ApplicationDetail applicationDetail1 =
         deploymentManager.upsizeApplicationWithSteadyStateCheck(cfRequestConfig, logCallback);
     assertThat(applicationDetail).isEqualTo(applicationDetail1);
     verify(process, times(1)).destroy();
+    verify(cliClient, times(0)).scaleProcessesByCli(any(), any());
+    verify(deploymentManager, times(0)).upsizeProcesses(any(), any());
 
     InstanceDetail instanceDetail2 = InstanceDetail.builder()
                                          .cpu(1.0)
@@ -296,6 +301,53 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
     } catch (PivotalClientApiException e) {
       assertThat(e.getMessage().contains("Failed to reach steady state")).isTrue();
     }
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testUpsizeApplicationWithSteadyStateCheckWithProcesses() throws Exception {
+    StartedProcess startedProcess = mock(StartedProcess.class);
+    Process process = mock(Process.class);
+
+    doReturn(startedProcess).when(deploymentManager).startTailingLogsIfNeeded(any(), any(), any());
+    doReturn(process).when(startedProcess).getProcess();
+    doReturn(process).when(process).destroyForcibly();
+    doNothing().when(process).destroy();
+
+    CfRequestConfig cfRequestConfig = CfRequestConfig.builder()
+                                          .desiredCount(1)
+                                          .timeOutIntervalInMins(1)
+                                          .desiredProcessInstances(Arrays.asList(
+                                              PcfProcessInstances.builder().instanceCount(1).type("worker").build(),
+                                              PcfProcessInstances.builder().instanceCount(2).type("worker1").build()))
+                                          .build();
+    InstanceDetail instanceDetail1 = InstanceDetail.builder()
+                                         .cpu(2.0)
+                                         .diskQuota((long) 2.23)
+                                         .diskUsage((long) 1.23)
+                                         .index("0")
+                                         .memoryQuota((long) 2)
+                                         .memoryUsage((long) 2)
+                                         .state("RUNNING")
+                                         .build();
+    ApplicationDetail applicationDetail = generateApplicationDetail(1, new InstanceDetail[] {instanceDetail1});
+    doReturn(applicationDetail).when(sdkClient).getApplicationByName(any());
+    doNothing().when(sdkClient).scaleApplications(any());
+    doNothing().when(cliClient).scaleProcessesByCli(any(), any());
+
+    ApplicationDetail applicationDetail1 =
+        deploymentManager.upsizeApplicationWithSteadyStateCheck(cfRequestConfig, logCallback);
+    assertThat(applicationDetail).isEqualTo(applicationDetail1);
+
+    ArgumentCaptor<CfRequestConfig> captor = ArgumentCaptor.forClass(CfRequestConfig.class);
+    verify(cliClient).scaleProcessesByCli(captor.capture(), any());
+    CfRequestConfig captorValue = captor.getValue();
+    assertThat(captorValue).isEqualTo(cfRequestConfig);
+
+    verify(process, times(1)).destroy();
+    verify(cliClient, times(1)).scaleProcessesByCli(any(), any());
+    verify(deploymentManager, times(1)).upsizeProcesses(any(), any());
   }
 
   @Test
