@@ -218,7 +218,7 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   private void modifyCEViewAndSetDefaults(CEView ceView) {
-    if (ceView.getViewVisualization() == null) {
+    if (ceView.getViewVisualization() == null || ceView.getViewVisualization().getGroupBy() == null) {
       ceView.setViewVisualization(ViewVisualization.builder()
                                       .granularity(ViewTimeGranularity.DAY)
                                       .chartType(ViewChartType.STACKED_TIME_SERIES)
