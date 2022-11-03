@@ -22,8 +22,8 @@ import io.harness.cdng.ecs.beans.EcsBlueGreenPrepareRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData;
-import io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData.EcsGitFetchPassThroughDataBuilder;
 import io.harness.cdng.ecs.beans.EcsHarnessStoreManifestsContent;
+import io.harness.cdng.ecs.beans.EcsHarnessStoreManifestsContent.EcsHarnessStoreManifestsContentBuilder;
 import io.harness.cdng.ecs.beans.EcsManifestsContent;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
 import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome;
@@ -177,7 +177,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   private EcsHarnessStoreManifestsContent getHarnessStoreManifestFilesContent(Ambiance ambiance,
       List<ManifestOutcome> ecsManifestOutcomes, EcsStepHelper ecsStepHelper, LogCallback logCallback) {
     // Harness Store manifests
-    EcsGitFetchPassThroughDataBuilder ecsGitFetchPassThroughDataBuilder = EcsGitFetchPassThroughData.builder();
+    EcsHarnessStoreManifestsContentBuilder ecsHarnessStoreContentBuilder = EcsHarnessStoreManifestsContent.builder();
 
     // Get Harness Store Task Definition file content
     ManifestOutcome ecsTaskDefinitionManifestOutcome =
@@ -241,7 +241,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         ecsServiceDefinitionHarnessContent =
             ecsServiceDefinitionHarnessContent.replace(TARGET_GROUP_ARN_EXPRESSION, key.toString());
       }
-      ecsGitFetchPassThroughDataBuilder.targetGroupArnKey(key.toString());
+      ecsHarnessStoreContentBuilder.targetGroupArnKey(key.toString());
       ecsServiceDefinitionHarnessContent =
           engineExpressionService.renderExpression(ambiance, ecsServiceDefinitionHarnessContent);
     }
@@ -262,12 +262,10 @@ public class EcsStepCommonHelper extends EcsStepUtils {
               .collect(Collectors.toList());
     }
 
-    return EcsHarnessStoreManifestsContent.builder()
-        .taskDefinitionHarnessContent(ecsTaskDefinitionHarnessContent)
+    return ecsHarnessStoreContentBuilder.taskDefinitionHarnessContent(ecsTaskDefinitionHarnessContent)
         .serviceDefinitionHarnessContent(ecsServiceDefinitionHarnessContent)
         .scalableTargetHarnessContentList(ecsScalableTargetHarnessContentList)
         .scalingPolicyHarnessContentList(ecsScalingPolicyHarnessContentList)
-        .targetGroupArnKey(key.toString())
         .build();
   }
 
