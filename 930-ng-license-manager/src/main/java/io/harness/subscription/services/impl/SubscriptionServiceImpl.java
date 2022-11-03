@@ -171,7 +171,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     subscriptionCreateParams.getItems().forEach(item -> {
       Price price = null;
-      if (item.isPriceIncludeQuantity()) {
+      if (item.isQuantityIncludedInPrice()) {
         price = stripeHelper.getPrice(subscriptionCreateParams.getModuleType(), item.getType(),
             subscriptionCreateParams.getEdition(), subscriptionCreateParams.getPaymentFreq(), item.getQuantity());
 
