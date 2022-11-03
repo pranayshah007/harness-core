@@ -48,7 +48,6 @@ public class DelegateParams implements DelegateHeartbeatParams {
   String token;
 
   boolean ng;
-  boolean sampleDelegate;
   boolean keepAlivePacket;
   boolean pollingModeEnabled;
   boolean proxy;

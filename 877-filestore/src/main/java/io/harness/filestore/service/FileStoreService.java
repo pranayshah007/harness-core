@@ -207,4 +207,15 @@ public interface FileStoreService {
    * @return supported entity types
    */
   List<EntityType> getSupportedEntityTypes();
+
+  /**
+   *  Delete files or folders provided in the list.
+   *  This method doesn't take care of the order or precedence of deleting folders or files.
+   *
+   * @param accountIdentifier the account identifier
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @param identifiers files and folders identifiers to be deleted
+   */
+  void deleteBatch(String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> identifiers);
 }

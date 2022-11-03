@@ -151,7 +151,7 @@ public class SCMGitSyncHelper {
               .setCommitMessage(gitRequest.getCommitMessage())
               .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scope))
               .putAllContextMap(contextMap)
-              .setBaseBranchName(gitRequest.getBaseBranch())
+              .setBaseBranchName((gitRequest.isCommitToNewBranch()) ? gitRequest.getBaseBranch() : "")
               .setPrincipal(getPrincipal())
               .build();
 
@@ -187,9 +187,9 @@ public class SCMGitSyncHelper {
               .setCommitMessage(gitRequest.getCommitMessage())
               .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scope))
               .putAllContextMap(contextMap)
-              .setBaseBranchName(gitRequest.getBaseBranch())
+              .setBaseBranchName((gitRequest.isCommitToNewBranch()) ? gitRequest.getBaseBranch() : "")
               .setOldCommitId(emptyIfNull(gitRequest.getOldCommitId()))
-              .setOldFileSha(gitRequest.getOldFileSha())
+              .setOldFileSha(emptyIfNull(gitRequest.getOldFileSha()))
               .setPrincipal(getPrincipal())
               .build();
 

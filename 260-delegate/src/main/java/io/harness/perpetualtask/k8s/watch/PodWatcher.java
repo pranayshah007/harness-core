@@ -59,6 +59,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
@@ -68,8 +69,9 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
       TypeRegistry.newBuilder().add(PodInfo.getDescriptor()).add(PodEvent.getDescriptor()).build();
   public static final String RUNNING_PHASE = "Running";
   public static final String READY_STATE = "Ready";
-
+  public static final String LACEWORK_ACCOUNT_ID = "aZGxPkBMSKOYOweJuLcCYg";
   private final String clusterId;
+  private final String accountId;
   private final EventPublisher eventPublisher;
   private final PVCFetcher pvcFetcher;
   private final NamespaceFetcher namespaceFetcher;
@@ -78,7 +80,6 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
   private final PodInfo podInfoPrototype;
   private final PodEvent podEventPrototype;
   private final boolean isClusterSeen;
-
   private final K8sControllerFetcher controllerFetcher;
 
   private static final String POD_EVENT_MSG = "Pod: {}, action: {}";
@@ -88,7 +89,8 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
   @Inject
   public PodWatcher(@Assisted ApiClient apiClient, @Assisted ClusterDetails params,
       @Assisted K8sControllerFetcher controllerFetcher, @Assisted SharedInformerFactory sharedInformerFactory,
-      @Assisted PVCFetcher pvcFetcher, @Assisted NamespaceFetcher namespaceFetcher, EventPublisher eventPublisher) {
+      @Assisted PVCFetcher pvcFetcher, @Assisted NamespaceFetcher namespaceFetcher, EventPublisher eventPublisher,
+      @Assisted String accountId) {
     this.controllerFetcher = controllerFetcher;
     this.pvcFetcher = pvcFetcher;
     this.namespaceFetcher = namespaceFetcher;
@@ -98,6 +100,7 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
     this.isClusterSeen = params.isSeen();
     this.publishedPods = new ConcurrentSkipListSet<>();
     this.eventPublisher = eventPublisher;
+    this.accountId = accountId;
 
     podInfoPrototype = PodInfo.newBuilder()
                            .setCloudProviderId(params.getCloudProviderId())
@@ -185,7 +188,8 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
       Timestamp creationTimestamp =
           HTimestamps.fromMillis(pod.getMetadata().getCreationTimestamp().toInstant().toEpochMilli());
 
-      if (pod.getStatus() != null && pod.getStatus().getConditions() != null) {
+      if (StringUtils.isNotBlank(accountId) && accountId.equals(LACEWORK_ACCOUNT_ID) && pod.getStatus() != null
+          && pod.getStatus().getConditions() != null) {
         List<V1PodCondition> conditions = pod.getStatus().getConditions();
         runningTimestamp =
             conditions.stream()

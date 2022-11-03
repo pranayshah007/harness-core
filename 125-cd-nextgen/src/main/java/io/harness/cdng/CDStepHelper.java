@@ -747,6 +747,17 @@ public class CDStepHelper {
   }
 
   @Nonnull
+  public String fetchServiceYamlFromSweepingOutput(Ambiance ambiance) {
+    final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
+    if (!resolveOptional.isFound()) {
+      throw new InvalidRequestException(
+          "Cannot find service. Make sure this is running in a CD stage with service configured");
+    }
+    return ((ServiceSweepingOutput) resolveOptional.getOutput()).getFinalServiceYaml();
+  }
+
+  @Nonnull
   public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(
       TaskRequest taskRequest, TaskData taskData, Set<String> taskSelectors) {
     final SubmitTaskRequest submitTaskRequest = taskRequest.getDelegateTaskRequest().getRequest();

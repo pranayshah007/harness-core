@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.event.reconciliation.service;
 
 import static java.time.Duration.ofMinutes;
@@ -57,8 +64,8 @@ public class LookerEntityReconServiceHelper {
        * This is to prevent a bad record from blocking all further reconciliations
        */
       if (System.currentTimeMillis() - record.getDurationEndTs() > COOL_DOWN_INTERVAL) {
-        log.warn("Found an old record in progress: record: [{}] for accountID:[{}] in duration:[{}-{}]",
-            record.getUuid(), record.getAccountId(), new Date(record.getDurationStartTs()),
+        log.warn("Found an old record in progress for entity [{}]: record: [{}] for accountID:[{}] in duration:[{}-{}]",
+            record.getEntityClass(), record.getUuid(), record.getAccountId(), new Date(record.getDurationStartTs()),
             new Date(record.getDurationEndTs()));
         lookerEntityReconRecordRepository.updateReconStatus(record, ReconciliationStatus.FAILED);
         return true;
@@ -80,8 +87,8 @@ public class LookerEntityReconServiceHelper {
     final long currentTime = System.currentTimeMillis();
     if (((currentTime - record.getReconEndTs()) < COOL_DOWN_INTERVAL)
         && (durationEndTs < currentTime && durationEndTs > (currentTime - COOL_DOWN_INTERVAL))) {
-      log.info("Last recon for accountID:[{}] was run @ [{}], hence not rerunning it again", record.getAccountId(),
-          new Date(record.getReconEndTs()));
+      log.info("Last recon for entity [{}] accountID:[{}] was run @ [{}], hence not rerunning it again",
+          record.getEntityClass(), record.getAccountId(), new Date(record.getReconEndTs()));
       return false;
     }
 
@@ -160,7 +167,8 @@ public class LookerEntityReconServiceHelper {
           } else {
             log.info(
                 "Reconciliation was performed recently at [{}], not running it again for accountID:[{}] entity: [{}] in duration:[{}-{}]",
-                accountId, sourceEntityClass, new Date(durationStartTs), new Date(durationEndTs));
+                record.getReconEndTs(), accountId, sourceEntityClass, new Date(durationStartTs),
+                new Date(durationEndTs));
           }
           return ReconciliationStatus.SUCCESS;
         }
@@ -239,8 +247,8 @@ public class LookerEntityReconServiceHelper {
         persistence.update(record, updateOperations);
 
       } catch (Exception e) {
-        log.error("Exception occurred while running reconciliation for accountID:[{}] in duration:[{}-{}]", accountId,
-            new Date(durationStartTs), new Date(durationEndTs), e);
+        log.error("Exception occurred while running reconciliation for entity:[{}], accountID:[{}] in duration:[{}-{}]",
+            sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs), e);
         if (record != null) {
           UpdateOperations updateOperations = persistence.createUpdateOperations(DeploymentReconRecord.class);
           updateOperations.set(LookerEntityReconRecordKeys.reconciliationStatus, ReconciliationStatus.FAILED);

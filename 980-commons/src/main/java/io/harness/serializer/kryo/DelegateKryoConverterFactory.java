@@ -29,11 +29,16 @@ import retrofit2.Retrofit;
 public class DelegateKryoConverterFactory extends Factory {
   private static final MediaType MEDIA_TYPE = MediaType.parse("application/x-kryo-v2");
 
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
+  private final KryoSerializer kryoSerializer;
+
+  @Inject
+  public DelegateKryoConverterFactory(@Named("referenceFalseKryoSerializer") final KryoSerializer kryoSerializer) {
+    this.kryoSerializer = kryoSerializer;
+  }
 
   @Override
-  public Converter<?, RequestBody> requestBodyConverter(
-      Type type, Annotation[] parameterAnnotations, Annotation[] methodAnnotations, Retrofit retrofit) {
+  public Converter<?, RequestBody> requestBodyConverter(final Type type, final Annotation[] parameterAnnotations,
+      final Annotation[] methodAnnotations, final Retrofit retrofit) {
     if (stream(methodAnnotations)
             .anyMatch(annotation -> annotation.annotationType().isAssignableFrom(KryoRequest.class))) {
       return value -> RequestBody.create(MEDIA_TYPE, kryoSerializer.asBytes(value));
@@ -42,13 +47,15 @@ public class DelegateKryoConverterFactory extends Factory {
   }
 
   @Override
-  public Converter<ResponseBody, ?> responseBodyConverter(Type type, Annotation[] annotations, Retrofit retrofit) {
+  public Converter<ResponseBody, ?> responseBodyConverter(
+      final Type type, final Annotation[] annotations, final Retrofit retrofit) {
     if (stream(annotations).anyMatch(annotation -> annotation.annotationType().isAssignableFrom(KryoResponse.class))) {
       return value -> {
-        try {
+        try (value) {
           return kryoSerializer.asObject(value.bytes());
-        } finally {
-          value.close();
+        } catch (final Exception e) {
+          log.error("Exception deserializing object of type {}", type, e);
+          throw e;
         }
       };
     }

@@ -456,7 +456,8 @@ public class MigrationList {
         .add(Pair.of(373, AddRingDetailsToDelegateRing.class))
         .add(Pair.of(374, AddIsProductLedToAccount.class))
         .add(Pair.of(376, UpdateRebalanceStateToTaskUnAssigned.class))
-        .add(Pair.of(377, SetPropertiesToCloudformationRollbackStackSteps.class))
+        .add(Pair.of(377, BaseMigration.class))
+        .add(Pair.of(378, SetPropertiesToCloudformationRollbackStackSteps.class))
         .build();
   }
 }

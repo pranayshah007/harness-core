@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PipelineDashboardServiceImpl implements PipelineDashboardService {
   @Inject PipelineDashboardQueryService pipelineDashboardQueryService;
 
-  private String tableName_default = "pipeline_execution_summary_ci";
+  private String tableName_default = "pipeline_execution_summary";
   private String CI_TableName = "pipeline_execution_summary_ci";
   private String CD_TableName = "pipeline_execution_summary_cd";
   private static final List<String> FAILED_STATUS_LIST =
