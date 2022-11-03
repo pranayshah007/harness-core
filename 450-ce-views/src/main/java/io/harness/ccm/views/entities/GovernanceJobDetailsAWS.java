@@ -30,5 +30,6 @@ public class GovernanceJobDetailsAWS {
   String roleArn;
   String externalId;
   Boolean isDryRun;
+  Boolean isOOTB;
   String accountId;
 }

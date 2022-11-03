@@ -127,8 +127,7 @@ public class GovernancePolicyPackResource {
       @RequestBody(required = true,
           description = "Request body containing Policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     // rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
-    if(createPolicyPackDTO==null)
-    {
+    if (createPolicyPackDTO == null) {
       throw new InvalidRequestException("Request payload is malformed");
     }
     PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
@@ -141,7 +140,7 @@ public class GovernancePolicyPackResource {
     else {
       policyPack.setAccountId("");
     }
-    policyService.check(policyPack.getPoliciesIdentifier());
+    policyService.check(accountId, policyPack.getPoliciesIdentifier());
     policyPackService.save(policyPack);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
@@ -168,15 +167,14 @@ public class GovernancePolicyPackResource {
       @RequestBody(required = true,
           description = "Request body containing Policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     //  rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
-    if(createPolicyPackDTO==null)
-    {
+    if (createPolicyPackDTO == null) {
       throw new InvalidRequestException("Request payload is malformed");
     }
     PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId(accountId);
     policyPackService.listName(accountId, policyPack.getName(), false);
-    policyService.check(policyPack.getPoliciesIdentifier());
+    policyService.check(accountId, policyPack.getPoliciesIdentifier());
     policyPackService.update(policyPack);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
@@ -202,15 +200,14 @@ public class GovernancePolicyPackResource {
   updatePolicy(@RequestBody(required = true,
       description = "Request body containing Policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     //  rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
-    if(createPolicyPackDTO==null)
-    {
+    if (createPolicyPackDTO == null) {
       throw new InvalidRequestException("Request payload is malformed");
     }
     PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId("");
     policyPackService.listName("", policyPack.getName(), false);
-    policyService.check(policyPack.getPoliciesIdentifier());
+    policyService.check("", policyPack.getPoliciesIdentifier());
     policyPackService.update(policyPack);
     return ResponseDTO.newResponse(policyPack);
   }
@@ -236,7 +233,7 @@ public class GovernancePolicyPackResource {
     PolicyPack query = createPolicyPackDTO.getPolicyPack();
     List<Policy> Policies = new ArrayList<>();
     policyPackService.listName(accountId, query.getName(), false);
-    policyService.check(query.getPoliciesIdentifier());
+    policyService.check(accountId, query.getPoliciesIdentifier());
 
     return ResponseDTO.newResponse(Policies);
   }
@@ -258,12 +255,11 @@ public class GovernancePolicyPackResource {
       @RequestBody(required = true,
           description = "Request body containing policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     // rbacHelper.checkPolicyPackPermission(accountId, null, null);
-    if(createPolicyPackDTO==null)
-    {
+    if (createPolicyPackDTO == null) {
       throw new InvalidRequestException("Request payload is malformed");
     }
-    PolicyPack policyPack= createPolicyPackDTO.getPolicyPack();
-    return ResponseDTO.newResponse(policyPackService.list(accountId,policyPack));
+    PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
+    return ResponseDTO.newResponse(policyPackService.list(accountId, policyPack));
   }
 
   @DELETE

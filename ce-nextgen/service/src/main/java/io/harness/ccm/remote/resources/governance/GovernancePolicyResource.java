@@ -8,17 +8,15 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_DELETE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_UPDATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
 import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_NAME;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import io.harness.telemetry.Category;
 import static io.harness.telemetry.Destination.AMPLITUDE;
-import io.harness.telemetry.TelemetryReporter;
 import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
 import io.harness.NGCommonEntityConstants;
@@ -60,6 +58,8 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.PublicApi;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -138,7 +138,7 @@ public class GovernancePolicyResource {
   public GovernancePolicyResource(GovernancePolicyService governancePolicyService, CCMRbacHelper rbacHelper,
       PolicyEnforcementService policyEnforcementService, PolicyPackService policyPackService,
       ConnectorResourceClient connectorResourceClient, PolicyExecutionService policyExecutionService,
-                                  TelemetryReporter telemetryReporter) {
+      TelemetryReporter telemetryReporter) {
     this.governancePolicyService = governancePolicyService;
     this.rbacHelper = rbacHelper;
     this.policyEnforcementService = policyEnforcementService;
@@ -187,8 +187,8 @@ public class GovernancePolicyResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_NAME, policy.getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_CREATED,null,accountId, properties
-            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_CREATED, null, accountId, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(policy.toDTO());
   }
 
@@ -202,8 +202,8 @@ public class GovernancePolicyResource {
   @Operation(operationId = "updatePolicy", description = "Update a Policy", summary = "Update a Policy",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update an existing Policy",
-            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description = "update an existing Policy", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<Policy>
   updatePolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
@@ -220,8 +220,8 @@ public class GovernancePolicyResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_NAME, policy.getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_UPDATED,null,accountId, properties
-            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_UPDATED, null, accountId, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
     return ResponseDTO.newResponse(governancePolicyService.update(policy, accountId));
   }
@@ -299,14 +299,13 @@ public class GovernancePolicyResource {
       @PathParam("policyID") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyDeletePermission(accountId, null, null);
-    String name= governancePolicyService.listId(accountId, uuid, false).getName();
+    String name = governancePolicyService.listId(accountId, uuid, false).getName();
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(POLICY_NAME,name);
-    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_DELETE,null,accountId, properties
-            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    boolean result =
-            governancePolicyService.delete(accountId, uuid);
+    properties.put(POLICY_NAME, name);
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_DELETE, null, accountId, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    boolean result = governancePolicyService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
 
@@ -368,6 +367,9 @@ public class GovernancePolicyResource {
       // Call is from dkron
       log.info("Policy enforcement config id is {}", policyEnforcementUuid);
       PolicyEnforcement policyEnforcement = policyEnforcementService.get(policyEnforcementUuid);
+      if (policyEnforcement == null) {
+        throw new InvalidRequestException("Invalid policyEnforcementId");
+      }
       PolicyCloudProviderType policyCloudProviderType = policyEnforcement.getCloudProvider();
       if (policyEnforcement == null) {
         log.error("No policy enforcement setting {} found in db. Skipping enqueuing in faktory", policyEnforcementUuid);
@@ -400,7 +402,11 @@ public class GovernancePolicyResource {
         }
       }
       log.info("uniquePolicyIds: {}", uniquePolicyIds);
-
+      List<Policy> policiesList = governancePolicyService.list(accountId, new ArrayList<>(uniquePolicyIds));
+      if (policiesList == null) {
+        log.error("No policies exists in mongo. Nothing to enqueue");
+        return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().policyExecutionId(null).build());
+      }
       // Step-3 Figure out roleArn and externalId from the connector listv2 api call for all target accounts.
       List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
       PageResponse<ConnectorResponseDTO> response = null;
@@ -431,7 +437,7 @@ public class GovernancePolicyResource {
         ConnectorInfoDTO connectorInfo = connector.getConnector();
         CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
         for (String region : policyEnforcement.getTargetRegions()) {
-          for (String policyId : uniquePolicyIds) {
+          for (Policy policy : policiesList) {
             try {
               GovernanceJobDetailsAWS governanceJobDetailsAWS =
                   GovernanceJobDetailsAWS.builder()
@@ -439,10 +445,10 @@ public class GovernancePolicyResource {
                       .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
                       .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
                       .isDryRun(policyEnforcement.getIsDryRun())
-                      .policyId(policyId)
+                      .policyId(policy.getUuid())
                       .region(region)
                       .policyEnforcementId(policyEnforcementUuid)
-                      .policy("") // TODO
+                      .policy(policy.getPolicyYaml())
                       .build();
               Gson gson = new GsonBuilder().create();
               String json = gson.toJson(governanceJobDetailsAWS);
@@ -463,7 +469,7 @@ public class GovernancePolicyResource {
                       .isDryRun(policyEnforcement.getIsDryRun())
                       .policyEnforcementIdentifier(policyEnforcementUuid)
                       .executionCompletedAt(null) // Updated by worker when execution finishes
-                      .policyIdentifier(policyId)
+                      .policyIdentifier(policy.getUuid())
                       .targetAccount(ceAwsConnectorDTO.getAwsAccountId())
                       .targetRegions(Arrays.asList(region))
                       .executionLogBucketType("")
@@ -495,7 +501,8 @@ public class GovernancePolicyResource {
                 .policyId(governanceJobEnqueueDTO.getPolicyId())
                 .region(governanceJobEnqueueDTO.getTargetRegion())
                 .policyEnforcementId("") // This is adhoc run
-                .policy(governanceJobEnqueueDTO.getPolicy()) // TODO
+                .policy(governanceJobEnqueueDTO.getPolicy())
+                .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
                 .build();
         Gson gson = new GsonBuilder().create();
         String json = gson.toJson(governanceJobDetailsAWS);

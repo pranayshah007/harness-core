@@ -168,7 +168,7 @@ public class GovernancePolicyEnforcementResource {
       throw new InvalidRequestException("Policy Enforcement with given name already exits");
     }
     // TODO: Re enable after testing
-    policyService.check(policyEnforcement.getPolicyIds());
+    policyService.check(accountId, policyEnforcement.getPolicyIds());
     policyPackService.check(policyEnforcement.getPolicyPackIDs());
     policyEnforcementService.save(policyEnforcement);
 
@@ -280,7 +280,7 @@ public class GovernancePolicyEnforcementResource {
     policyEnforcement.setAccountId(accountId);
     policyEnforcementService.listName(accountId, policyEnforcement.getName(), false);
     if (policyEnforcement.getPolicyIds() != null) {
-      policyService.check(policyEnforcement.getPolicyIds());
+      policyService.check(accountId, policyEnforcement.getPolicyIds());
     }
     if (policyEnforcement.getPolicyPackIDs() != null) {
       policyPackService.check(policyEnforcement.getPolicyPackIDs());

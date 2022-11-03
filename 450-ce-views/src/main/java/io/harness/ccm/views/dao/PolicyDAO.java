@@ -7,20 +7,21 @@
 
 package io.harness.ccm.views.dao;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import io.harness.ccm.views.entities.GovernancePolicyFilter;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.Policy.PolicyId;
 import io.harness.ccm.views.entities.PolicyExecution;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import java.util.Arrays;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
-
-import java.util.List;
 
 @Slf4j
 @Singleton
@@ -87,8 +88,7 @@ public class PolicyDAO {
                           .equal(name)
                           .asList());
       return policies.get(0);
-    }
-    catch (IndexOutOfBoundsException e) {
+    } catch (IndexOutOfBoundsException e) {
       log.error("No such policy exists,{} accountId {} name {}", e, accountId, name);
       if (create) {
         return null;
@@ -129,7 +129,7 @@ public class PolicyDAO {
                               .equal(policy.getUuid());
     UpdateOperations<Policy> updateOperations = hPersistence.createUpdateOperations(Policy.class);
 
-    if(policy.getName()!=null) {
+    if (policy.getName() != null) {
       updateOperations.set(PolicyId.name, policy.getName());
     }
     if (policy.getDescription() != null) {
@@ -147,13 +147,13 @@ public class PolicyDAO {
     return query.asList().get(0);
   }
 
-
-  public List<Policy> check( List<String> policiesIdentifier) {
-
+  public List<Policy> check(String accountId, List<String> policiesIdentifier) {
     List<Policy> policies = hPersistence.createQuery(Policy.class)
-            .field(PolicyId.uuid)
-            .in(policiesIdentifier)
-            .asList();
+                                .field(PolicyId.accountId)
+                                .in(Arrays.asList(accountId, ""))
+                                .field(PolicyId.uuid)
+                                .in(policiesIdentifier)
+                                .asList();
     log.info("{} ", policies);
     return policies;
   }
