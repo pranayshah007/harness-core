@@ -38,7 +38,6 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.plan.NodeType;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
-import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
