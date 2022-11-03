@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
@@ -28,6 +29,7 @@ import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
+import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
@@ -46,6 +48,7 @@ import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
@@ -169,13 +172,16 @@ public class ArtifactResponseToOutcomeMapper {
         GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
         GarDelegateResponse garDelegateResponse = (GarDelegateResponse) artifactDelegateResponse;
         return getGarArtifactOutcome(googleArtifactRegistryConfig, garDelegateResponse, useDelegateResponse);
-
       case AZURE_ARTIFACTS:
         AzureArtifactsConfig azureArtifactsConfig = (AzureArtifactsConfig) artifactConfig;
         AzureArtifactsDelegateResponse azureArtifactsDelegateResponse =
             (AzureArtifactsDelegateResponse) artifactDelegateResponse;
         return getAzureArtifactsOutcome(azureArtifactsConfig, azureArtifactsDelegateResponse, useDelegateResponse);
-
+      case AMI:
+        AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactConfig;
+        AMIArtifactDelegateResponse amiArtifactDelegateResponse =
+            (AMIArtifactDelegateResponse) artifactDelegateResponse;
+        return getAMIArtifactOutcome(amiArtifactConfig, amiArtifactDelegateResponse);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -198,6 +204,24 @@ public class ArtifactResponseToOutcomeMapper {
         .project(azureArtifactsConfig.getProject().getValue())
         .packageType(azureArtifactsConfig.getPackageType().getValue())
         .scope(azureArtifactsConfig.getScope().getValue())
+        .build();
+  }
+
+  private static AMIArtifactOutcome getAMIArtifactOutcome(
+      AMIArtifactConfig amiArtifactConfig, AMIArtifactDelegateResponse amiArtifactDelegateResponse) {
+    if (amiArtifactDelegateResponse == null) {
+      return null;
+    }
+
+    return AMIArtifactOutcome.builder()
+        .amiId(amiArtifactDelegateResponse.getAmiId())
+        .metadata(amiArtifactDelegateResponse.getMetadata())
+        .version(amiArtifactDelegateResponse.getVersion())
+        .connectorRef(amiArtifactConfig.getConnectorRef().getValue())
+        .type(ArtifactSourceType.AMI.getDisplayName())
+        .identifier(amiArtifactConfig.getIdentifier())
+        .primaryArtifact(amiArtifactConfig.isPrimaryArtifact())
+        .versionRegex(amiArtifactConfig.getVersionRegex().getValue())
         .build();
   }
 
@@ -238,7 +262,9 @@ public class ArtifactResponseToOutcomeMapper {
         .image(getImageValue(dockerDelegateResponse))
         .connectorRef(dockerConfig.getConnectorRef().getValue())
         .imagePath(dockerConfig.getImagePath().getValue())
-        .tag(useDelegateResponse ? dockerDelegateResponse.getTag()
+        .tag(useDelegateResponse ? (dockerDelegateResponse != null
+                     ? dockerDelegateResponse.getTag()
+                     : (dockerConfig.getTag() != null ? dockerConfig.getTag().getValue() : null))
                                  : (dockerConfig.getTag() != null ? dockerConfig.getTag().getValue() : null))
         .tagRegex(dockerConfig.getTagRegex() != null ? dockerConfig.getTagRegex().getValue() : null)
         .identifier(dockerConfig.getIdentifier())

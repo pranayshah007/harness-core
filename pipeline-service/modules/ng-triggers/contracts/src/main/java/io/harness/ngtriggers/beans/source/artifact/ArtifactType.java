@@ -25,7 +25,9 @@ public enum ArtifactType {
   @JsonProperty("Jenkins") JENKINS("Jenkins"),
   @JsonProperty("CustomArtifact") CUSTOM_ARTIFACT("CustomArtifact"),
   @JsonProperty("GoogleArtifactRegistry") GoogleArtifactRegistry("GoogleArtifactRegistry"),
-  @JsonProperty("GithubPackageRegistry") GITHUB_PACKAGES("GithubPackageRegistry");
+  @JsonProperty("GithubPackageRegistry") GITHUB_PACKAGES("GithubPackageRegistry"),
+  @JsonProperty("AzureArtifacts") AZURE_ARTIFACTS("AzureArtifacts");
+
   private String value;
 
   ArtifactType(String value) {

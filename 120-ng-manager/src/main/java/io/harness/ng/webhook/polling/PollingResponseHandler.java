@@ -13,6 +13,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.polling.contracts.Type.ACR;
 import static io.harness.polling.contracts.Type.AMAZON_S3;
 import static io.harness.polling.contracts.Type.ARTIFACTORY;
+import static io.harness.polling.contracts.Type.AZURE_ARTIFACTS;
 import static io.harness.polling.contracts.Type.CUSTOM_ARTIFACT;
 import static io.harness.polling.contracts.Type.DOCKER_HUB;
 import static io.harness.polling.contracts.Type.ECR;
@@ -52,6 +53,7 @@ import io.harness.polling.bean.artifact.AcrArtifactInfo;
 import io.harness.polling.bean.artifact.ArtifactInfo;
 import io.harness.polling.bean.artifact.ArtifactPolledResponse;
 import io.harness.polling.bean.artifact.ArtifactoryRegistryArtifactInfo;
+import io.harness.polling.bean.artifact.AzureArtifactsInfo;
 import io.harness.polling.bean.artifact.CustomArtifactInfo;
 import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
 import io.harness.polling.bean.artifact.EcrArtifactInfo;
@@ -388,9 +390,14 @@ public class PollingResponseHandler {
         polledResponseResultBuilder.name(((GithubPackagesArtifactInfo) artifactInfo).getPackageName());
         polledResponseResultBuilder.type(GITHUB_PACKAGES);
         break;
+      case AZURE_ARTIFACTS:
+        polledResponseResultBuilder.name(((AzureArtifactsInfo) artifactInfo).getPackageName());
+        polledResponseResultBuilder.type(AZURE_ARTIFACTS);
+        break;
       default:
         throw new InvalidRequestException("Unsupported Artifact Type " + artifactInfo.getType().getDisplayName());
     }
+
     return polledResponseResultBuilder.build();
   }
 }

@@ -387,6 +387,8 @@ message FindFilesInCommitRequest {
 message FindFilesInCommitResponse {
   repeated FileChange file = 1;
   PageResponse pagination = 2;
+  int32 status = 3;
+  string error = 4;
 }
 
 enum ContentType {

@@ -30,7 +30,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.yaml.YamlVersion;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.yaml.validator.InvalidYamlException;
@@ -77,13 +77,13 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .projectIdentifier(projectIdentifier)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(YamlVersion.V0)
+                                        .harnessVersion(PipelineVersion.V0)
                                         .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToSave.withStageCount(0);
     PipelineEntity pipelineEntitySaved = pipelineToSaveWithUpdatedInfo.withVersion(0L);
     doReturn(pipelineToSaveWithUpdatedInfo)
         .when(pipelineServiceHelper)
-        .updatePipelineInfo(pipelineToSave, YamlVersion.V0);
+        .updatePipelineInfo(pipelineToSave, PipelineVersion.V0);
     doReturn(pipelineEntitySaved).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
 
     PipelineEntity pipelineEntity = pipelineService.create(pipelineToSave).getPipelineEntity();
@@ -109,7 +109,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     PipelineCRUDResult pipelineCRUDResult = pipelineService.create(pipelineToSave);
     assertThat(pipelineCRUDResult.getPipelineEntity()).isNull();
     assertThat(pipelineCRUDResult.getGovernanceMetadata().getDeny()).isTrue();
-    verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any(), eq(YamlVersion.V0));
+    verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any(), eq(PipelineVersion.V0));
     verify(pipelineRepository, times(0)).saveForOldGitSync(any());
     verify(pipelineRepository, times(0)).save(any());
   }
@@ -141,12 +141,12 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .projectIdentifier(projectIdentifier)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(YamlVersion.V0)
+                                        .harnessVersion(PipelineVersion.V0)
                                         .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToSave.withStageCount(0);
     doReturn(pipelineToSaveWithUpdatedInfo)
         .when(pipelineServiceHelper)
-        .updatePipelineInfo(pipelineToSave, YamlVersion.V0);
+        .updatePipelineInfo(pipelineToSave, PipelineVersion.V0);
     doThrow(new HintException("this is a hint")).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
 
     assertThatThrownBy(() -> pipelineService.create(pipelineToSave))
@@ -242,7 +242,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                           .projectIdentifier(projectIdentifier)
                                           .identifier(pipelineId)
                                           .yaml(pipelineYaml)
-                                          .harnessVersion(YamlVersion.V0)
+                                          .harnessVersion(PipelineVersion.V0)
                                           .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToUpdate.withStageCount(0);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
@@ -250,7 +250,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         .validatePipelineYaml(pipelineToUpdate);
     doReturn(pipelineToSaveWithUpdatedInfo)
         .when(pipelineServiceHelper)
-        .updatePipelineInfo(pipelineToUpdate, YamlVersion.V0);
+        .updatePipelineInfo(pipelineToUpdate, PipelineVersion.V0);
 
     PipelineEntity pipelineEntityUpdated = pipelineToSaveWithUpdatedInfo.withVersion(0L);
     doReturn(pipelineEntityUpdated).when(pipelineRepository).updatePipelineYaml(pipelineToSaveWithUpdatedInfo);
@@ -278,7 +278,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     PipelineCRUDResult pipelineCRUDResult = pipelineService.updatePipelineYaml(pipelineToUpdate, null);
     assertThat(pipelineCRUDResult.getPipelineEntity()).isNull();
     assertThat(pipelineCRUDResult.getGovernanceMetadata().getDeny()).isTrue();
-    verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any(), eq(YamlVersion.V0));
+    verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any(), eq(PipelineVersion.V0));
     verify(pipelineRepository, times(0)).updatePipelineYaml(any());
     verify(pipelineRepository, times(0)).updatePipelineYamlForOldGitSync(any(), any(), any());
   }

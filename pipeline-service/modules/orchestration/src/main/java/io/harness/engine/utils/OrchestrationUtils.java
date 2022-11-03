@@ -57,6 +57,19 @@ public class OrchestrationUtils {
     return currentStepType.getStepCategory() == StepCategory.STAGE;
   }
 
+  public static boolean isStageOrParallelStageNode(NodeExecution nodeExecution) {
+    StepType currentStepType = AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance());
+    if (currentStepType != null && currentStepType.getStepCategory() == StepCategory.STAGE) {
+      return true;
+    }
+    StepType parentStepType = AmbianceUtils.getParentStepType(nodeExecution.getAmbiance());
+    if (currentStepType == null || parentStepType == null) {
+      return false;
+    }
+    return currentStepType.getStepCategory() == StepCategory.FORK
+        && parentStepType.getStepCategory() == StepCategory.STAGES;
+  }
+
   public static boolean isPipelineNode(NodeExecution nodeExecution) {
     StepType currentStepType = Objects.requireNonNull(AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance()));
     return currentStepType.getStepCategory() == StepCategory.PIPELINE;

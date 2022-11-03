@@ -21,4 +21,6 @@ public class ScmErrorHints {
   public static final String REPO_NOT_FOUND = "Please check if the requested Bitbucket repository<REPO> exists.";
   public static final String FILE_NOT_FOUND =
       "Please check the requested file path<FILEPATH> / branch<BRANCH> / repo name<REPO> if they exist or not.";
+  public static final String WRONG_REPO_OR_BRANCH =
+      "Please check if the provided branch<BRANCH> or the Bitbucket repo name<REPO> are valid.";
 }
