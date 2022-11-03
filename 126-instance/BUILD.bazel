@@ -29,6 +29,7 @@ java_library(
 test_dependencies = shared_dependencies + [
     ":module",
     "//960-persistence:supporter-test",
+    "@maven//:org_mockito_mockito_inline"
 ]
 
 java_library(
