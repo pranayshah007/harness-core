@@ -97,7 +97,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
 
-  private static final int MAX_BATCH_SIZE = 1000;
+  private static final int MAX_LIST_SIZE = 1000;
 
   private static final String REPO_SIZE_EXCEPTION = "The size of unique repository list is greater than 1000";
 
@@ -236,7 +236,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     List<String> uniqueRepos = pmsExecutionSummaryRespository.findAllUniqueRepoOrBranchBasedOnFilter(
         criteria, PlanExecutionSummaryKeys.entityGitDetailsRepoName);
     CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
-    if (uniqueRepos.size() > 1000) {
+    if (uniqueRepos.size() > MAX_LIST_SIZE) {
       log.error("The size of unique repositories list is greater than 1000");
       throw new InternalServerErrorException(REPO_SIZE_EXCEPTION);
     }
@@ -248,7 +248,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     List<String> uniqueBranches = pmsExecutionSummaryRespository.findAllUniqueRepoOrBranchBasedOnFilter(
         criteria, PlanExecutionSummaryKeys.entityGitDetailsBranch);
     CollectionUtils.filter(uniqueBranches, PredicateUtils.notNullPredicate());
-    if (uniqueBranches.size() > 1000) {
+    if (uniqueBranches.size() > MAX_LIST_SIZE) {
       log.error("The size of unique branches list is greater than 1000");
       throw new InternalServerErrorException(BRANCH_SIZE_EXCEPTION);
     }

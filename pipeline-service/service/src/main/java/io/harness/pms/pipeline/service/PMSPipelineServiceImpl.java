@@ -117,6 +117,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   private static final String REPO_SIZE_EXCEPTION = "The size of unique repository list is greater than 1000";
 
+  private static final int MAX_LIST_SIZE = 1000;
+
   @Override
   public PipelineCRUDResult create(PipelineEntity pipelineEntity) {
     if (pmsPipelineRepository.countAllPipelinesInAccount(pipelineEntity.getAccountIdentifier())
@@ -661,7 +663,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         PMSPipelineServiceHelper.buildCriteriaForRepoListing(accountIdentifier, orgIdentifier, projectIdentifier);
     List<String> uniqueRepos = pmsPipelineRepository.findAllUniqueRepos(criteria);
     CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
-    if (uniqueRepos.size() > 1000) {
+    if (uniqueRepos.size() > MAX_LIST_SIZE) {
       log.error("The size of unique repositories list is greater than 1000");
       throw new InternalServerErrorException(REPO_SIZE_EXCEPTION);
     }

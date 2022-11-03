@@ -20,7 +20,6 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
-import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 
 import java.util.Optional;
 import org.springframework.data.domain.Page;
