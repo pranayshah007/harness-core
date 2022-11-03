@@ -405,6 +405,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(235, ExecuteWorkflowAbortActionMigration.class))
         .add(Pair.of(236, CorrectingQuartzTriggerFrequency.class))
         .add(Pair.of(237, DisableArtifactCollectionForInactiveAccount.class))
+        .add(Pair.of(238, UpdateRebalanceStateToTaskUnAssigned.class))
         .build();
   }
 }
