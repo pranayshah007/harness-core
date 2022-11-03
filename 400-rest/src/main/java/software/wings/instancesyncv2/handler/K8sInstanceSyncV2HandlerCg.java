@@ -45,6 +45,7 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.Artifact;
+import software.wings.beans.artifact.Artifact.ArtifactKeys;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.Instance.InstanceBuilder;
 import software.wings.beans.infrastructure.instance.info.ContainerInfo;
@@ -586,22 +587,6 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     return containerInstanceKey;
   }
 
-  private boolean updateHelmChartInfoForContainerInstances(
-      ContainerDeploymentInfoWithLabels deploymentInfo, Instance instance) {
-    if (!(instance.getInstanceInfo() instanceof KubernetesContainerInfo)) {
-      return false;
-    }
-
-    KubernetesContainerInfo containerInfo = (KubernetesContainerInfo) instance.getInstanceInfo();
-    if (deploymentInfo.getHelmChartInfo() != null
-        && !deploymentInfo.getHelmChartInfo().equals(containerInfo.getHelmChartInfo())) {
-      containerInfo.setHelmChartInfo(deploymentInfo.getHelmChartInfo());
-      return true;
-    }
-
-    return false;
-  }
-
   void setHelmChartInfoToContainerInfo(HelmChartInfo helmChartInfo, ContainerInfo k8sInfo) {
     Optional.ofNullable(helmChartInfo).ifPresent(chartInfo -> {
       if (KubernetesContainerInfo.class == k8sInfo.getClass()) {
@@ -614,7 +599,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
   private Instance buildInstanceFromPodInfo(
       InfrastructureMapping infraMapping, K8sPodInfo pod, DeploymentSummary deploymentSummary) {
-    Instance.InstanceBuilder builder = buildInstanceBase(infraMapping, deploymentSummary);
+    InstanceBuilder builder = buildInstanceBase(infraMapping, deploymentSummary);
     builder.podInstanceKey(PodInstanceKey.builder().podName(pod.getPodName()).namespace(pod.getNamespace()).build());
     builder.instanceInfo(pod);
 
@@ -627,14 +612,14 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
   private Artifact findArtifactForImage(String artifactStreamId, String appId, String image) {
     return wingsPersistence.createQuery(Artifact.class)
-        .filter(Artifact.ArtifactKeys.artifactStreamId, artifactStreamId)
-        .filter(Artifact.ArtifactKeys.appId, appId)
+        .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
+        .filter(ArtifactKeys.appId, appId)
         .filter("metadata.image", image)
         .disableValidation()
         .get();
   }
 
-  private void updateInstanceWithArtifactSourceAndBuildNum(Instance.InstanceBuilder builder, String image) {
+  private void updateInstanceWithArtifactSourceAndBuildNum(InstanceBuilder builder, String image) {
     String artifactSource;
     String tag;
     String[] splitArray = image.split(":");
@@ -661,7 +646,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     return build1.equals(build2);
   }
 
-  private Instance.InstanceBuilder populateArtifactInInstanceBuilder(Instance.InstanceBuilder builder,
+  private InstanceBuilder populateArtifactInInstanceBuilder(InstanceBuilder builder,
       DeploymentSummary deploymentSummary, InfrastructureMapping infraMapping, K8sPodInfo pod) {
     boolean instanceBuilderUpdated = false;
     Artifact firstValidArtifact = null;
@@ -708,8 +693,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     return null;
   }
 
-  protected Instance.InstanceBuilder buildInstanceBase(
-      InfrastructureMapping infraMapping, DeploymentSummary deploymentSummary) {
+  protected InstanceBuilder buildInstanceBase(InfrastructureMapping infraMapping, DeploymentSummary deploymentSummary) {
     String appId = infraMapping.getAppId();
     Application application = appService.get(appId);
     notNullCheck("Application is null for the given appId: " + appId, application);
