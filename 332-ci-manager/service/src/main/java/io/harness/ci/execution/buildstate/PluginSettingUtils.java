@@ -104,6 +104,8 @@ public class PluginSettingUtils {
 
   public static final String REPOSITORY = "REPOSITORY";
   public static final String PLUGIN_REPO = "PLUGIN_REPO";
+
+  public static final String SUBSCRIPTION_ID = "SUBSCRIPTION_ID";
   public static final String PLUGIN_TAGS = "PLUGIN_TAGS";
   public static final String PLUGIN_DOCKERFILE = "PLUGIN_DOCKERFILE";
   public static final String PLUGIN_CONTEXT = "PLUGIN_CONTEXT";
@@ -306,6 +308,11 @@ public class PluginSettingUtils {
     Map<String, String> map = new HashMap<>();
     String pluginRepo =
         resolveStringParameter(REPOSITORY, "BuildAndPushACR", identifier, stepInfo.getRepository(), true);
+    String subscriptionId =
+        resolveStringParameter(REPOSITORY, "SubscriptionId", identifier, stepInfo.getSubscriptionId(), false);
+    if (StringUtils.isNotBlank(subscriptionId)) {
+      setOptionalEnvironmentVariable(map, SUBSCRIPTION_ID, subscriptionId);
+    }
     String pluginRegistry = StringUtils.substringBefore(pluginRepo, "/");
     setMandatoryEnvironmentVariable(map, PLUGIN_REGISTRY, pluginRegistry);
     setMandatoryEnvironmentVariable(map, PLUGIN_REPO, pluginRepo);
