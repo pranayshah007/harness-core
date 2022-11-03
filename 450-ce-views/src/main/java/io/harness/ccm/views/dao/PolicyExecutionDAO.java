@@ -30,9 +30,8 @@ public class PolicyExecutionDAO {
   @Inject private HPersistence hPersistence;
   private PolicyExecutionService policyExecutionService;
 
-  public boolean save(PolicyExecution policyExecution) {
-    log.info("created: {}", hPersistence.save(policyExecution));
-    return hPersistence.save(policyExecution) != null;
+  public String save(PolicyExecution policyExecution) {
+    return hPersistence.save(policyExecution);
   }
 
   public List<PolicyExecution> list(String accountId) {

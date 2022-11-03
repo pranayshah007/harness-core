@@ -13,9 +13,9 @@ import io.harness.ccm.views.entities.PolicyExecutionFilter;
 import java.util.List;
 
 public interface PolicyExecutionService {
-  boolean save(PolicyExecution policyExecution);
+  String save(PolicyExecution policyExecution);
   PolicyExecution get(String accountId, String uuid);
   List<PolicyExecution> list(String accountId);
-//  List<PolicyExecution> filterAccountName(List<String> Accounts);
+  //  List<PolicyExecution> filterAccountName(List<String> Accounts);
   List<PolicyExecution> filterExecution(PolicyExecutionFilter policyExecutionFilter);
 }

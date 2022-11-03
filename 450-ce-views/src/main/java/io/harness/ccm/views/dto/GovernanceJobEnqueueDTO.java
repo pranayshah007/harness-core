@@ -7,15 +7,24 @@
 
 package io.harness.ccm.views.dto;
 
+import io.harness.ccm.views.entities.PolicyCloudProviderType;
+
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
-
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class GovernanceJobEnqueueDTO {
-    String policyEnforcementId;
+  String policyEnforcementId;
+  String roleArn;
+  String externalId;
+  PolicyCloudProviderType policyCloudProviderType;
+  String policyId;
+  String policy;
+  String targetAccountId;
+  String targetRegion;
+  Boolean isDryRun;
 }

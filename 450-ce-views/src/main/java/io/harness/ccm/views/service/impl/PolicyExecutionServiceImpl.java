@@ -17,27 +17,25 @@ import com.google.inject.Inject;
 import java.util.List;
 
 public class PolicyExecutionServiceImpl implements PolicyExecutionService {
-    @Inject
-    private PolicyExecutionDAO policyExecutionDAO;
-    private GovernancePolicyService policyService;
+  @Inject private PolicyExecutionDAO policyExecutionDAO;
+  private GovernancePolicyService policyService;
 
-    @Override
-    public boolean save(PolicyExecution policyExecution) {
-        return policyExecutionDAO.save(policyExecution);
-    }
+  @Override
+  public String save(PolicyExecution policyExecution) {
+    return policyExecutionDAO.save(policyExecution);
+  }
 
   @Override
   public PolicyExecution get(String accountId, String uuid) {
     return policyExecutionDAO.get(accountId, uuid);
   }
-    @Override
-    public List<PolicyExecution> list(String accountId) {
-        return policyExecutionDAO.list(accountId);
-    }
+  @Override
+  public List<PolicyExecution> list(String accountId) {
+    return policyExecutionDAO.list(accountId);
+  }
 
-
-    @Override
-    public List<PolicyExecution> filterExecution(PolicyExecutionFilter policyExecutionFilter) {
+  @Override
+  public List<PolicyExecution> filterExecution(PolicyExecutionFilter policyExecutionFilter) {
     return policyExecutionDAO.filterExecution(policyExecutionFilter);
-    }
+  }
 }

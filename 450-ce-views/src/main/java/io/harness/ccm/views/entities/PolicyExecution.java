@@ -41,6 +41,7 @@ import org.mongodb.morphia.annotations.Id;
 public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
+  @Schema(description = "faktory job id") String jobId;
   @Schema(description = "policyEnforcementIdentifier") String policyEnforcementIdentifier;
   @Schema(description = "policyIdentifier") String policyIdentifier;
   @Schema(description = "cloudProvider") PolicyCloudProviderType cloudProvider;
@@ -49,6 +50,7 @@ public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAw
   @Schema(description = "targetRegions") List<String> targetRegions;
   @Schema(description = "executionLogPath") String executionLogPath;
   @Schema(description = "executionLogBucketType") String executionLogBucketType;
+  @Schema(description = "executionStatus") PolicyExecutionStatusType executionStatus;
   @Schema(description = "executionCompletedAt") Long executionCompletedAt;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
@@ -88,6 +90,7 @@ public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAw
         .projectIdentifier(getProjectIdentifier())
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())
+        .executionStatus(getExecutionStatus())
         .build();
   }
 }
