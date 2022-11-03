@@ -7,8 +7,10 @@
 
 package io.harness.ccm.remote.resources;
 
+import io.harness.ccm.views.service.PolicyExecutionService;
 import static io.harness.rule.OwnerRule.SAHIBA;
 
+import io.harness.telemetry.TelemetryReporter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -25,11 +27,9 @@ import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ccm.views.service.PolicyEnforcementService;
 import io.harness.ccm.views.service.PolicyPackService;
 import io.harness.connector.ConnectorResourceClient;
-import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Before;
@@ -45,6 +45,8 @@ public class GovernancePolicyResourceTest extends CategoryTest {
   private PolicyEnforcementService policyEnforcementService = mock(PolicyEnforcementService.class);
   private CCMRbacHelper rbacHelper = mock(CCMRbacHelper.class);
   private ConnectorResourceClient connectorResourceClient = mock(ConnectorResourceClient.class);
+  private PolicyExecutionService policyExecutionService = mock(PolicyExecutionService.class);
+  private TelemetryReporter telemetryReporter= mock(TelemetryReporter.class);
 
   private final String ACCOUNT_ID = "ACCOUNT_ID";
   private final String uuid = "UUID";
@@ -83,7 +85,7 @@ public class GovernancePolicyResourceTest extends CategoryTest {
                  .versionLabel(VERSION)
                  .build();
     policyManagement = new GovernancePolicyResource(
-        governancePolicyService, rbacHelper, policyEnforcementService, policyPackService, connectorResourceClient);
+        governancePolicyService, rbacHelper, policyEnforcementService, policyPackService, connectorResourceClient,policyExecutionService,telemetryReporter);
   }
 
   @Test

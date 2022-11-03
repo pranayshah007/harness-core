@@ -14,6 +14,15 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.rbac.CCMRbacHelper;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_CREATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_DELETE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_PACK_CREATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_PACK_DELETE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_PACK_UPDATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_NAME;
+import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_PACK_NAME;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyPackDTO;
 import io.harness.ccm.views.entities.Policy;
@@ -29,6 +38,9 @@ import io.harness.security.annotations.PublicApi;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import io.harness.telemetry.Category;
+import static io.harness.telemetry.Destination.AMPLITUDE;
+import io.harness.telemetry.TelemetryReporter;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -40,6 +52,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -87,14 +101,17 @@ public class GovernancePolicyPackResource {
   private final CCMRbacHelper rbacHelper;
   private final PolicyPackService policyPackService;
   private final GovernancePolicyService policyService;
+  private final TelemetryReporter telemetryReporter;
   @Inject CENextGenConfiguration configuration;
 
   @Inject
   public GovernancePolicyPackResource(
-      PolicyPackService policyPackService, CCMRbacHelper rbacHelper, GovernancePolicyService policyService) {
+      PolicyPackService policyPackService, CCMRbacHelper rbacHelper, GovernancePolicyService policyService
+  , TelemetryReporter telemetryReporter) {
     this.rbacHelper = rbacHelper;
     this.policyPackService = policyPackService;
     this.policyService = policyService;
+    this.telemetryReporter = telemetryReporter;
   }
 
   @POST
@@ -123,11 +140,17 @@ public class GovernancePolicyPackResource {
     }
     if (!policyPack.getIsOOTB()) {
       policyPack.setAccountId(accountId);
-    } else {
+    }
+    else {
       policyPack.setAccountId("");
     }
     policyService.check(policyPack.getPoliciesIdentifier());
     policyPackService.save(policyPack);
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(POLICY_PACK_NAME,policyPack.getName());
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_PACK_CREATED,null,accountId, properties
+            , Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(policyPack.toDTO());
   }
 
@@ -158,6 +181,11 @@ public class GovernancePolicyPackResource {
     policyPackService.listName(accountId, policyPack.getName(), false);
     policyService.check(policyPack.getPoliciesIdentifier());
     policyPackService.update(policyPack);
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(POLICY_PACK_NAME,policyPack.getName());
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_PACK_UPDATED,null,accountId, properties
+            , Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(policyPack);
   }
 
@@ -261,6 +289,11 @@ public class GovernancePolicyPackResource {
       @PathParam("policyPackId") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String name) {
     // rbacHelper.checkPolicyPackDeletePermission(accountId, null, null);
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(POLICY_PACK_NAME,name);
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_PACK_DELETE,null,accountId, properties
+            , Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     boolean result = policyPackService.delete(accountId, policyPackService.listName(accountId, name, false).getUuid());
     return ResponseDTO.newResponse(result);
   }

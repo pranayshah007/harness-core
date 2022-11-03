@@ -8,6 +8,13 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_ENFORCEMENT_CREATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_ENFORCEMENT_DELETE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_ENFORCEMENT_UPDATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_ENFORCEMENT_NAME;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -30,6 +37,8 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.PublicApi;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -46,6 +55,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,16 +116,19 @@ public class GovernancePolicyEnforcementResource {
   private final CCMRbacHelper rbacHelper;
   private final GovernancePolicyService policyService;
   private final PolicyPackService policyPackService;
+  private final TelemetryReporter telemetryReporter;
   @Inject CENextGenConfiguration configuration;
   @Inject SchedulerClient schedulerClient;
 
   @Inject
   public GovernancePolicyEnforcementResource(PolicyEnforcementService policyEnforcementService,
-      CCMRbacHelper rbacHelper, GovernancePolicyService governancePolicyService, PolicyPackService policyPackService) {
+      CCMRbacHelper rbacHelper, GovernancePolicyService governancePolicyService, PolicyPackService policyPackService,
+      TelemetryReporter telemetryReporter) {
     this.policyEnforcementService = policyEnforcementService;
     this.rbacHelper = rbacHelper;
     this.policyService = governancePolicyService;
     this.policyPackService = policyPackService;
+    this.telemetryReporter= telemetryReporter;
   }
 
   @POST
@@ -134,8 +147,7 @@ public class GovernancePolicyEnforcementResource {
       @RequestBody(required = true, description = "Request body containing Policy Enforcement object")
       @Valid CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
     // rbacHelper.checkPolicyEnforcementEditPermission(accountId, null, null);
-    if(createPolicyEnforcementDTO==null)
-    {
+    if (createPolicyEnforcementDTO == null) {
       throw new InvalidRequestException("Request payload is malformed");
     }
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
@@ -159,6 +171,12 @@ public class GovernancePolicyEnforcementResource {
     policyService.check(policyEnforcement.getPolicyIds());
     policyPackService.check(policyEnforcement.getPolicyPackIDs());
     policyEnforcementService.save(policyEnforcement);
+
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(POLICY_ENFORCEMENT_NAME, policyEnforcement.getName());
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_ENFORCEMENT_CREATED, null, accountId, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
     // Insert a record in dkron
     // TODO: Add support for GCP cloud scheduler as well.
@@ -227,6 +245,12 @@ public class GovernancePolicyEnforcementResource {
     boolean result =
         policyEnforcementService.delete(accountId, policyEnforcementService.listName(accountId, name, false).getUuid());
     // TODO: Delete the record from dkron as well.
+
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(POLICY_ENFORCEMENT_NAME, name);
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_ENFORCEMENT_DELETE, null, accountId, properties,
+            Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(result);
   }
 
@@ -249,8 +273,7 @@ public class GovernancePolicyEnforcementResource {
       @RequestBody(required = true, description = "Request body containing policy enforcement object")
       @Valid CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
     //  rbacHelper.checkPolicyEnforcementEditPermission(accountId, null, null);
-    if(createPolicyEnforcementDTO==null)
-    {
+    if (createPolicyEnforcementDTO == null) {
       throw new InvalidRequestException("Request payload is malformed");
     }
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
@@ -263,6 +286,11 @@ public class GovernancePolicyEnforcementResource {
       policyPackService.check(policyEnforcement.getPolicyPackIDs());
     }
     // TODO: Update the record in dkron as well.
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(POLICY_ENFORCEMENT_NAME, policyEnforcement.getName());
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_ENFORCEMENT_UPDATED, null, accountId, properties,
+            Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(policyEnforcementService.update(policyEnforcement));
   }
 
@@ -281,8 +309,8 @@ public class GovernancePolicyEnforcementResource {
   listPolicyEnforcements(
       @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true, description = "Request body containing  Policy Enforcement  object")
-      @Valid @NotNull CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
+      @RequestBody(required = true, description = "Request body containing  Policy Enforcement  object") @Valid
+      @NotNull CreatePolicyEnforcementDTO createPolicyEnforcementDTO) {
     // rbacHelper.checkPolicyEnforcementViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(policyEnforcementService.list(accountId));
   }
@@ -304,8 +332,7 @@ public class GovernancePolicyEnforcementResource {
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing  Policy Enforcement count object")
       @Valid EnforcementCountDTO enforcementCountDTO) {
-    if(enforcementCountDTO==null)
-    {
+    if (enforcementCountDTO == null) {
       throw new InvalidRequestException("Request payload is malformed");
     }
     EnforcementCountRequest enforcementCountRequest = enforcementCountDTO.getEnforcementCountRequest();

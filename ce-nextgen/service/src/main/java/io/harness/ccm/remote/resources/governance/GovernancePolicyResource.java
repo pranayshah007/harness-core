@@ -9,7 +9,16 @@ package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_CREATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_DELETE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_UPDATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_NAME;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import io.harness.telemetry.Category;
+import static io.harness.telemetry.Destination.AMPLITUDE;
+import io.harness.telemetry.TelemetryReporter;
 import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
 import io.harness.NGCommonEntityConstants;
@@ -71,6 +80,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -125,13 +136,15 @@ public class GovernancePolicyResource {
   @Inject
   public GovernancePolicyResource(GovernancePolicyService governancePolicyService, CCMRbacHelper rbacHelper,
       PolicyEnforcementService policyEnforcementService, PolicyPackService policyPackService,
-      ConnectorResourceClient connectorResourceClient, PolicyExecutionService policyExecutionService) {
+      ConnectorResourceClient connectorResourceClient, PolicyExecutionService policyExecutionService,
+                                  TelemetryReporter telemetryReporter) {
     this.governancePolicyService = governancePolicyService;
     this.rbacHelper = rbacHelper;
     this.policyEnforcementService = policyEnforcementService;
     this.policyPackService = policyPackService;
     this.connectorResourceClient = connectorResourceClient;
     this.policyExecutionService = policyExecutionService;
+    this.telemetryReporter = telemetryReporter;
   }
 
   // Internal API for OOTB policy creation
@@ -170,6 +183,11 @@ public class GovernancePolicyResource {
     policy.setVersionLabel("0.0.1");
     policy.setDeleted(false);
     governancePolicyService.save(policy);
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(POLICY_NAME, policy.getName());
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_CREATED,null,accountId, properties
+            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(policy.toDTO());
   }
 
@@ -198,6 +216,12 @@ public class GovernancePolicyResource {
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
     governancePolicyService.listName(accountId, policy.getName(), false);
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(POLICY_NAME, policy.getName());
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_UPDATED,null,accountId, properties
+            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+
     return ResponseDTO.newResponse(governancePolicyService.update(policy, accountId));
   }
 
@@ -274,8 +298,14 @@ public class GovernancePolicyResource {
       @PathParam("policyID") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyDeletePermission(accountId, null, null);
-    governancePolicyService.listId(accountId, uuid, false);
-    boolean result = governancePolicyService.delete(accountId, uuid);
+    String name= governancePolicyService.listId(accountId, uuid, false).getName();
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(POLICY_NAME,name);
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_DELETE,null,accountId, properties
+            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    boolean result =
+            governancePolicyService.delete(accountId, uuid);
     return ResponseDTO.newResponse(result);
   }
 
