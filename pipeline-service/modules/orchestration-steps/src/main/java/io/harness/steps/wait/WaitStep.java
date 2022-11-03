@@ -10,7 +10,9 @@ package io.harness.steps.wait;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -41,7 +43,14 @@ public class WaitStep implements AsyncExecutable<StepElementParameters> {
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     String correlationId = UUIDGenerator.generateUuid();
     WaitStepParameters waitStepParameters = (WaitStepParameters) stepParameters.getSpec();
-    int duration = (int) waitStepParameters.duration.getValue().getTimeoutInMillis();
+    int duration = 0;
+    if (waitStepParameters.getDuration() != null && waitStepParameters.getDuration().getValue() != null) {
+      duration =
+          (int) NGTimeConversionHelper.convertTimeStringToMilliseconds(waitStepParameters.getDuration().getValue());
+    }
+    if (duration <= 0) {
+      throw new InvalidRequestException("Invalid input for duration of wait step, Duration should be greater than 0");
+    }
     waitStepService.save(WaitStepInstance.builder()
                              .waitStepInstanceId(correlationId)
                              .duration(duration)

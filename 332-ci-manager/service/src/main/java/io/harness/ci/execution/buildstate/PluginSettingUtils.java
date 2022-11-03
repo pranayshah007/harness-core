@@ -294,7 +294,7 @@ public class PluginSettingUtils {
       }
 
       setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
-    } else if (infraType == Type.VM || infraType == Type.DOCKER) {
+    } else if (infraType == Type.VM) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
     }
 
@@ -343,7 +343,7 @@ public class PluginSettingUtils {
 
     if (infraType == Type.K8) {
       getACRStepInfoVariablesForK8s(stepInfo, identifier, map);
-    } else if (infraType == Type.VM || infraType == Type.DOCKER) {
+    } else if (infraType == Type.VM) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
     }
     return map;
@@ -428,7 +428,7 @@ public class PluginSettingUtils {
       }
 
       setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
-    } else if (infraType == Type.VM || infraType == Type.DOCKER) {
+    } else if (infraType == Type.VM) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
     }
 
@@ -487,7 +487,7 @@ public class PluginSettingUtils {
         setOptionalEnvironmentVariable(map, PLUGIN_ENABLE_CACHE, "true");
         setOptionalEnvironmentVariable(map, PLUGIN_CACHE_REPO, remoteCacheRepo);
       }
-    } else if (infraType == Type.VM || infraType == Type.DOCKER) {
+    } else if (infraType == Type.VM) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
     }
 

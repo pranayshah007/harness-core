@@ -11,6 +11,7 @@ import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
 import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
+import io.harness.licensing.beans.modules.SMPValidationResultDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 
 import retrofit2.Call;
@@ -44,4 +45,7 @@ public interface AdminLicenseHttpClient {
   @POST(SMP_LICENSE_API + "/generate/{accountIdentifier}")
   Call<ResponseDTO<SMPEncLicenseDTO>> generateSMPLicense(
       @Path("accountIdentifier") String accountIdentifier, @Body SMPLicenseRequestDTO licenseRequestDTO);
+
+  @POST(SMP_LICENSE_API + "/validate")
+  Call<ResponseDTO<SMPValidationResultDTO>> validateSMPLicense(@Body SMPEncLicenseDTO licenseDTO);
 }

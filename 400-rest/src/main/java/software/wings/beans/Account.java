@@ -136,6 +136,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter boolean isProductLed;
 
+  @Getter @Setter private boolean smpAccount;
+
   /**
    * If this flag is set, all encryption/decryption activities will go through LOCAL security manager.
    * No VAULT/KMS secret manager can be configured. This helps for accounts whose delegate can't access
@@ -155,6 +157,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter private AccountPreferences accountPreferences;
 
+  private Long serviceGuardDataCollectionIteration;
+  private Long serviceGuardDataAnalysisIteration;
   @FdIndex private Long workflowDataCollectionIteration;
   @FdIndex private Long usageMetricsTaskIteration;
   @FdIndex private Long licenseExpiryCheckIteration;

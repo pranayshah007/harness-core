@@ -43,7 +43,7 @@ public class MigrateTagLinksToTImeScaleDB implements TimeScaleEntityMigrationInt
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_TAGS");
       return false;
     }
     int count = 0;
@@ -63,10 +63,10 @@ public class MigrateTagLinksToTImeScaleDB implements TimeScaleEntityMigrationInt
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_TAGS", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_TAGS", count);
     }
     return true;
   }
@@ -82,17 +82,16 @@ public class MigrateTagLinksToTImeScaleDB implements TimeScaleEntityMigrationInt
         successful = true;
       } catch (SQLException e) {
         if (retryCount >= MAX_RETRY) {
-          log.error("Failed to save application,[{}]", harnessTagLink.getUuid(), e);
+          log.error("Failed to save tag,[{}]", harnessTagLink.getUuid(), e);
         } else {
-          log.info("Failed to save application,[{}],retryCount=[{}]", harnessTagLink.getUuid(), retryCount);
+          log.info("Failed to save tag,[{}],retryCount=[{}]", harnessTagLink.getUuid(), retryCount);
         }
         retryCount++;
       } catch (Exception e) {
-        log.error("Failed to save application,[{}]", harnessTagLink.getUuid(), e);
+        log.error("Failed to save tag,[{}]", harnessTagLink.getUuid(), e);
         retryCount = MAX_RETRY + 1;
       } finally {
-        log.info(
-            "Total time =[{}] for application:[{}]", System.currentTimeMillis() - startTime, harnessTagLink.getUuid());
+        log.info("Total time =[{}] for tag:[{}]", System.currentTimeMillis() - startTime, harnessTagLink.getUuid());
       }
     }
   }

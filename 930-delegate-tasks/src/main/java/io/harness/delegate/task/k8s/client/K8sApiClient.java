@@ -88,6 +88,8 @@ public class K8sApiClient implements K8sClient {
       return false;
     } finally {
       k8sApiEventWatcher.destroyRunning(futureList);
+      apiClient.getHttpClient().dispatcher().executorService().shutdown();
+      apiClient.getHttpClient().connectionPool().evictAll();
       if (success) {
         if (steadyStateDTO.isDenoteOverallSuccess()) {
           executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);

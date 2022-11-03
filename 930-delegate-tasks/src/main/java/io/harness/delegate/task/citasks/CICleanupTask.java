@@ -48,7 +48,7 @@ public class CICleanupTask extends AbstractDelegateRunnableTask {
     CICleanupTaskParams.Type type = ciCleanupTaskParams.getType();
     if (type == CICleanupTaskParams.Type.GCP_K8) {
       return ciK8CleanupTaskHandler.executeTaskInternal(ciCleanupTaskParams, getTaskId());
-    } else if (type == CICleanupTaskParams.Type.VM || type == CICleanupTaskParams.Type.DOCKER) {
+    } else if (type == CICleanupTaskParams.Type.VM) {
       return ciVmCleanupTaskHandler.executeTaskInternal(ciCleanupTaskParams, getTaskId());
     } else {
       throw new CIStageExecutionException(

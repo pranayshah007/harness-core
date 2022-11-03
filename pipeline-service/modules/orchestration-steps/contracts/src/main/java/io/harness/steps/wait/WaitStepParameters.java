@@ -16,7 +16,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.yaml.core.VariableExpression;
-import io.harness.yaml.core.timeout.Timeout;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
@@ -36,14 +35,14 @@ public class WaitStepParameters implements SpecParameters {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
   @VariableExpression(skipInnerObjectTraversal = true)
-  ParameterField<Timeout> duration;
+  ParameterField<String> duration;
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
 
   @Builder(builderMethodName = "infoBuilder")
-  public WaitStepParameters(ParameterField<Timeout> duration, String uuid) {
+  public WaitStepParameters(ParameterField<String> duration, String uuid) {
     this.duration = duration;
     this.uuid = uuid;
   }
