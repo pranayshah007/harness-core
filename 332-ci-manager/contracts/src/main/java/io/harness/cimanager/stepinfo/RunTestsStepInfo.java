@@ -38,6 +38,7 @@ import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.OutputNGVariable;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -80,7 +81,7 @@ public class RunTestsStepInfo implements CIStepInfo {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String name;
   @VariableExpression(skipVariableExpression = true) @Min(MIN_RETRY) @Max(MAX_RETRY) private int retry;
 
-  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> args;
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) @JsonAlias("build_args") private ParameterField<String> args;
   @NotNull
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.TILanguage")
@@ -88,6 +89,7 @@ public class RunTestsStepInfo implements CIStepInfo {
   @NotNull
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.TIBuildTool")
+  @JsonAlias("build_tool")
   private ParameterField<TIBuildTool> buildTool;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> packages;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> namespaces;
@@ -100,6 +102,7 @@ public class RunTestsStepInfo implements CIStepInfo {
   private ParameterField<TIDotNetVersion> frameworkVersion;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.reports.UnitTestReport")
+  @JsonAlias("test_reports")
   private ParameterField<UnitTestReport> reports;
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
