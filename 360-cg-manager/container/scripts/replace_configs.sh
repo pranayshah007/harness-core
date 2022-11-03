@@ -1012,16 +1012,16 @@ if [[ "" != "$USE_GLOBAL_KMS_AS_BASE_ALGO" ]]; then
   export USE_GLOBAL_KMS_AS_BASE_ALGO; yq -i '.useGlobalKMSAsBaseAlgo=env(USE_GLOBAL_KMS_AS_BASE_ALGO)' $CONFIG_FILE
 fi
 
-if [[ "" != "$SEGMENT_ENABLED_NG" ]]; then
-  export SEGMENT_ENABLED_NG; yq -i '.segmentConfiguration.enabled=env(SEGMENT_ENABLED_NG)' $CONFIG_FILE
+if [[ "" != "$SEGMENT_ENABLED_CG" ]]; then
+  export SEGMENT_ENABLED_CG; yq -i '.segmentConfiguration.enabled=env(SEGMENT_ENABLED_CG)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SEGMENT_URL_NG" ]]; then
   export SEGMENT_URL_NG; yq -i '.segmentConfiguration.url=env(SEGMENT_URL_NG)' $CONFIG_FILE
 fi
 
-if [[ "" != "$SEGMENT_APIKEY_NG" ]]; then
-  export SEGMENT_APIKEY_NG; yq -i '.segmentConfiguration.apiKey=env(SEGMENT_APIKEY_NG)' $CONFIG_FILE
+if [[ "" != "$SEGMENT_APIKEY_CG" ]]; then
+  export SEGMENT_APIKEY_CG; yq -i '.segmentConfiguration.apiKey=env(SEGMENT_APIKEY_CG)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SEGMENT_VERIFY_CERT_NG" ]]; then
