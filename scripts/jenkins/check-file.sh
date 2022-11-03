@@ -14,6 +14,8 @@ REGEX2='^.*.md$'
 git diff HEAD@{0} HEAD@{1} --name-only
 git diff HEAD@{0} HEAD@{1} --name-only >merge_summary.txt
 
+cat merge_summary.txt
+
 while read i; do echo "${i##*/}"; done < merge_summary.txt >committed_files.txt
 while read s; do echo "${s%%/*}"; done < merge_summary.txt >committed_folders.txt
 
