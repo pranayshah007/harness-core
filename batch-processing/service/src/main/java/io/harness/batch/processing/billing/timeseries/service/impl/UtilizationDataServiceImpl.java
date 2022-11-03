@@ -74,6 +74,7 @@ public class UtilizationDataServiceImpl {
 
             if (index % BATCH_SIZE == 0 || index == instanceUtilizationDataList.size()) {
               statement.executeBatch();
+              log.info("statement = {}", statement);
             }
           }
           successfulInsert = true;

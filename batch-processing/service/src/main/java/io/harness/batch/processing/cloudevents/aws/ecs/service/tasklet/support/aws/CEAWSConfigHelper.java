@@ -28,6 +28,7 @@ public class CEAWSConfigHelper {
     List<ConnectorResponseDTO> nextGenConnectors =
         ngConnectorHelper.getNextGenConnectors(accountId, Arrays.asList(ConnectorType.CE_AWS),
             Arrays.asList(CEFeatures.VISIBILITY), Arrays.asList(ConnectivityStatus.SUCCESS));
+    log.info("nextGenConnectors = {}", nextGenConnectors);
     for (ConnectorResponseDTO connector : nextGenConnectors) {
       ConnectorInfoDTO connectorInfo = connector.getConnector();
       CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
@@ -40,6 +41,7 @@ public class CEAWSConfigHelper {
         crossAccountAttributesMap.put(ceAwsConnectorDTO.getAwsAccountId(), crossAccountAttributes);
       }
     }
+    log.info("crossAccountAttributesMap = {}", crossAccountAttributesMap);
     return crossAccountAttributesMap;
   }
 }
