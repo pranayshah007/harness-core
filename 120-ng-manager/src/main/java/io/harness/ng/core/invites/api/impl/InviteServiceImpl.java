@@ -36,7 +36,6 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
@@ -429,16 +428,14 @@ public class InviteServiceImpl implements InviteService {
                           .set(InviteKeys.userGroups, newInvite.getUserGroups());
       inviteRepository.updateInvite(newInvite.getId(), update);
       String accountId = newInvite.getAccountIdentifier();
-      boolean isSSOEnabled = isSSOEnabled(accountId);
-      boolean isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled =
-          isPLNoEmailForSamlAccountInvitesEnabled(accountId) && isSSOEnabled;
-      boolean isAutoInviteAcceptanceEnabledWithSSOEnabled = isAutoInviteAcceptanceEnabled(accountId) && isSSOEnabled;
+      boolean isPLNoEmailForSamlAccountInvitesEnabled = isPLNoEmailForSamlAccountInvitesEnabled(accountId);
+      boolean isAutoInviteAcceptanceEnabled = isAutoInviteAcceptanceEnabled(accountId);
       TwoFactorAuthSettingsInfo twoFactorAuthSettingsInfo =
           getTwoFactorAuthSettingsInfo(accountId, newInvite.getEmail());
 
       try {
-        sendInvitationMail(newInvite, isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled,
-            isAutoInviteAcceptanceEnabledWithSSOEnabled, twoFactorAuthSettingsInfo);
+        sendInvitationMail(newInvite, isPLNoEmailForSamlAccountInvitesEnabled, isAutoInviteAcceptanceEnabled,
+            twoFactorAuthSettingsInfo);
       } catch (URISyntaxException ex) {
         log.error(
             "For invite: {} Mail embed url incorrect, can't sent email due to an exception: ", newInvite.getId(), ex);
@@ -449,8 +446,7 @@ public class InviteServiceImpl implements InviteService {
             newInvite.getId(), ex);
       }
 
-      if (!(isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled
-              && !twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled())) {
+      if (!(isPLNoEmailForSamlAccountInvitesEnabled && !twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled())) {
         ngAuditUserInviteUpdateEvent(newInvite);
       }
       return newInvite;
@@ -568,16 +564,14 @@ public class InviteServiceImpl implements InviteService {
     try (AutoLogContext ignore =
              new NgInviteLogContext(savedInvite.getAccountIdentifier(), savedInvite.getId(), OVERRIDE_ERROR)) {
       String accountId = invite.getAccountIdentifier();
-      boolean isSSOEnabled = isSSOEnabled(accountId);
-      boolean isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled =
-          isPLNoEmailForSamlAccountInvitesEnabled(accountId) && isSSOEnabled;
-      boolean isAutoInviteAcceptanceEnabledWithSSOEnabled = isAutoInviteAcceptanceEnabled(accountId) && isSSOEnabled;
+      boolean isPLNoEmailForSamlAccountInvitesEnabled = isPLNoEmailForSamlAccountInvitesEnabled(accountId);
+      boolean isAutoInviteAcceptanceEnabled = isAutoInviteAcceptanceEnabled(accountId);
       TwoFactorAuthSettingsInfo twoFactorAuthSettingsInfo =
           getTwoFactorAuthSettingsInfo(accountId, savedInvite.getEmail());
 
       try {
-        sendInvitationMail(savedInvite, isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled,
-            isAutoInviteAcceptanceEnabledWithSSOEnabled, twoFactorAuthSettingsInfo);
+        sendInvitationMail(savedInvite, isPLNoEmailForSamlAccountInvitesEnabled, isAutoInviteAcceptanceEnabled,
+            twoFactorAuthSettingsInfo);
       } catch (URISyntaxException ex) {
         log.error("NG User Invite: Mail embed url incorrect, can't sent email due to an exception: ", ex);
       } catch (UnsupportedEncodingException ex) {
@@ -592,13 +586,12 @@ public class InviteServiceImpl implements InviteService {
         createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, true);
       } else if (scimLdapArray[1]) {
         createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, true);
-      } else if (isAutoInviteAcceptanceEnabledWithSSOEnabled || isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled) {
+      } else if (isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
         createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false);
       }
       updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
 
-      if (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled
-          && !twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()) {
+      if (isPLNoEmailForSamlAccountInvitesEnabled && !twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()) {
         return InviteOperationResponse.USER_INVITE_NOT_REQUIRED;
       } else {
         ngAuditUserInviteCreateEvent(savedInvite);
@@ -641,18 +634,10 @@ public class InviteServiceImpl implements InviteService {
     }
   }
 
-  private boolean isSSOEnabled(String accountIdentifier) {
-    try {
-      return CGRestUtils.getResponse(accountClient.isSSOEnabled(accountIdentifier));
-    } catch (Exception ex) {
-      log.error("NG User Invite: while making an accountClient call to check isSSOEnabled failed with exception: ", ex);
-      throw ex;
-    }
-  }
-
   private boolean isPLNoEmailForSamlAccountInvitesEnabled(String accountIdentifier) {
     try {
-      return ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES);
+      return CGRestUtils.getResponse(
+          accountClient.checkPLNoEmailForSamlAccountInvitesEnabledForAccount(accountIdentifier));
     } catch (Exception ex) {
       log.error(
           "NG User Invite: while making an accountClient call to check FF PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES status failed with exception: ",
@@ -680,12 +665,11 @@ public class InviteServiceImpl implements InviteService {
     inviteRepository.updateInvite(invite.getId(), update);
   }
 
-  private void sendInvitationMail(Invite invite, boolean isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled,
-      boolean isAutoInviteAcceptanceEnabledWithSSOEnabled, TwoFactorAuthSettingsInfo twoFactorAuthSettingsInfo)
+  private void sendInvitationMail(Invite invite, boolean isPLNoEmailForSamlAccountInvitesEnabled,
+      boolean isAutoInviteAcceptanceEnabled, TwoFactorAuthSettingsInfo twoFactorAuthSettingsInfo)
       throws URISyntaxException, UnsupportedEncodingException {
     updateJWTTokenInInvite(invite);
-    if (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled
-        && !twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()) {
+    if (isPLNoEmailForSamlAccountInvitesEnabled && !twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()) {
       log.info("NG User Invite: is not required as FF PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES and SSO is enabled");
       return;
     }
@@ -696,9 +680,8 @@ public class InviteServiceImpl implements InviteService {
                                                   .team(Team.PL)
                                                   .userGroups(Collections.emptyList());
 
-    if (isAutoInviteAcceptanceEnabledWithSSOEnabled
-        || (isPLNoEmailForSamlAccountInvitesEnabledWithSSOEnabled
-            && twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled())) {
+    if (isAutoInviteAcceptanceEnabled
+        || (isPLNoEmailForSamlAccountInvitesEnabled && twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled())) {
       emailChannelBuilder.templateId(EMAIL_NOTIFY_TEMPLATE_ID);
     } else {
       emailChannelBuilder.templateId(EMAIL_INVITE_TEMPLATE_ID);

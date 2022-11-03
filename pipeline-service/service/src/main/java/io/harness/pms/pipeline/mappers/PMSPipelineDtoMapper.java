@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.Long.parseLong;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -157,6 +158,28 @@ public class PMSPipelineDtoMapper {
         throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
       }
       BasicPipeline basicPipeline = YamlUtils.read(requestInfoDTO.getYaml(), BasicPipeline.class);
+      if (isNotEmpty(basicPipeline.getIdentifier())
+          && !basicPipeline.getIdentifier().equals(requestInfoDTO.getIdentifier())) {
+        throw new InvalidRequestException(String.format("Expected Pipeline identifier in YAML to be [%s], but was [%s]",
+            requestInfoDTO.getIdentifier(), basicPipeline.getIdentifier()));
+      }
+      if (isNotEmpty(basicPipeline.getName()) && !basicPipeline.getName().equals(requestInfoDTO.getName())) {
+        throw new InvalidRequestException(
+            String.format("Expected updated Pipeline name in YAML to be [%s], but was [%s]", requestInfoDTO.getName(),
+                basicPipeline.getName()));
+      }
+      if (isNotEmpty(basicPipeline.getDescription()) && isNotEmpty(requestInfoDTO.getDescription())
+          && !basicPipeline.getDescription().equals(requestInfoDTO.getDescription())) {
+        throw new InvalidRequestException(
+            String.format("Expected updated Pipeline description in YAML to be [%s], but was [%s]",
+                requestInfoDTO.getDescription(), basicPipeline.getDescription()));
+      }
+      if (isNotEmpty(basicPipeline.getTags()) && isNotEmpty(requestInfoDTO.getTags())
+          && !basicPipeline.getTags().equals(requestInfoDTO.getTags())) {
+        throw new InvalidRequestException(
+            String.format("Expected updated Pipeline tags in YAML to be [%s], but was [%s]", requestInfoDTO.getTags(),
+                basicPipeline.getTags()));
+      }
       PipelineEntity pipelineEntity = PipelineEntity.builder()
                                           .yaml(requestInfoDTO.getYaml())
                                           .accountId(accountId)

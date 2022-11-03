@@ -115,6 +115,13 @@ public class AmbianceUtils {
     return ambiance.getLevelsList().get(ambiance.getLevelsList().size() - 1);
   }
 
+  public static Level obtainParentLevel(Ambiance ambiance) {
+    if (isEmpty(ambiance.getLevelsList()) || ambiance.getLevelsCount() == 1) {
+      return null;
+    }
+    return ambiance.getLevelsList().get(ambiance.getLevelsList().size() - 2);
+  }
+
   public static String obtainStepIdentifier(Ambiance ambiance) {
     Level level = obtainCurrentLevel(ambiance);
     return level == null || isEmpty(level.getIdentifier()) ? null : level.getIdentifier();
@@ -165,6 +172,11 @@ public class AmbianceUtils {
 
   public static StepType getCurrentStepType(Ambiance ambiance) {
     Level level = obtainCurrentLevel(ambiance);
+    return level == null || level.getStepType() == null ? null : level.getStepType();
+  }
+
+  public static StepType getParentStepType(Ambiance ambiance) {
+    Level level = obtainParentLevel(ambiance);
     return level == null || level.getStepType() == null ? null : level.getStepType();
   }
 

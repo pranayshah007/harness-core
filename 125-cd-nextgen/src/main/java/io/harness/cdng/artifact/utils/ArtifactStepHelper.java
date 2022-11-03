@@ -29,6 +29,8 @@ import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.mappers.ArtifactConfigToDelegateReqMapper;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
+import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.NGExpressionUtils;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -64,15 +66,20 @@ import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.beans.TaskType;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -534,5 +541,78 @@ public class ArtifactStepHelper {
       resultantArtifact = resultantArtifact.applyOverrides(artifact);
     }
     return resultantArtifact;
+  }
+
+  public String getArtifactProcessedServiceYaml(String serviceYaml) {
+    try {
+      YamlField yamlField = processArtifactsInYaml(serviceYaml);
+      return YamlUtils.writeYamlString(yamlField);
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Error processing artifact sources in service Yaml", ex);
+    }
+  }
+
+  public YamlField processArtifactsInYaml(String serviceEntityYaml) throws IOException {
+    YamlField yamlField = YamlUtils.readTree(serviceEntityYaml);
+    YamlField serviceDefField =
+        yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getField(YamlTypes.SERVICE_DEFINITION);
+    if (serviceDefField == null) {
+      throw new InvalidRequestException(
+          "Invalid Service being referred as serviceDefinition section is not there in Service");
+    }
+
+    YamlField serviceSpecField = serviceDefField.getNode().getField(YamlTypes.SERVICE_SPEC);
+    if (serviceSpecField == null) {
+      throw new InvalidRequestException(String.format(
+          "Invalid Service being referred as spec inside serviceDefinition section is not there in Service"));
+    }
+
+    YamlField artifactsField = serviceSpecField.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
+    if (artifactsField == null) {
+      return yamlField;
+    }
+
+    YamlField primaryArtifactField = artifactsField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT);
+    if (primaryArtifactField == null) {
+      return yamlField;
+    }
+
+    YamlField primaryArtifactRef = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
+    if (primaryArtifactRef == null) {
+      return yamlField;
+    }
+
+    YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
+    String primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
+
+    if (artifactSourcesField != null && artifactSourcesField.getNode().isArray() && primaryArtifactRefValue != null) {
+      if (EmptyPredicate.isEmpty(primaryArtifactRefValue)) {
+        throw new InvalidRequestException("Primary artifact ref cannot be empty");
+      }
+
+      if (NGExpressionUtils.isRuntimeOrExpressionField(primaryArtifactRefValue)) {
+        throw new InvalidRequestException("Primary artifact ref cannot be runtime or expression inside service");
+      }
+
+      ObjectNode artifactsNode = (ObjectNode) artifactsField.getNode().getCurrJsonNode();
+      List<YamlNode> artifactSources = artifactSourcesField.getNode().asArray();
+      ObjectNode primaryNode = null;
+      for (YamlNode artifactSource : artifactSources) {
+        String artifactSourceIdentifier = artifactSource.getIdentifier();
+        if (primaryArtifactRefValue.equals(artifactSourceIdentifier) && artifactSource.isObject()) {
+          primaryNode = (ObjectNode) artifactSource.getCurrJsonNode();
+          primaryNode.remove(YamlTypes.IDENTIFIER);
+          break;
+        }
+      }
+
+      if (primaryNode != null) {
+        artifactsNode.set(YamlTypes.PRIMARY_ARTIFACT, primaryNode);
+      } else {
+        throw new InvalidRequestException(
+            String.format("No artifact source exists with the identifier %s inside service", primaryArtifactRefValue));
+      }
+    }
+    return yamlField;
   }
 }

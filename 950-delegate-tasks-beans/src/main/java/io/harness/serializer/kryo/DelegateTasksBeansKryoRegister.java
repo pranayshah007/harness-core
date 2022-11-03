@@ -458,6 +458,7 @@ import io.harness.delegate.task.azure.artifact.AzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactType;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
+import io.harness.delegate.task.azure.artifact.JenkinsAzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.request.AzureLoadBalancerDetailForBGDeployment;
 import io.harness.delegate.task.azure.request.AzureVMSSDeployTaskParameters;
@@ -1883,6 +1884,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ShellScriptProvisionTaskNGResponse.class, 55427);
     kryo.register(ArtifactoryFetchImagePathResponse.class, 55428);
     kryo.register(NexusArtifactDelegateConfig.class, 55429);
+    kryo.register(JenkinsAzureArtifactRequestDetails.class, 55430);
     kryo.register(SshConnectivityExecutionCapability.class, 55435);
     kryo.register(NoInstalledDelegatesException.class, 73988);
     kryo.register(NoEligibleDelegatesInAccountException.class, 73989);

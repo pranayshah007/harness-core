@@ -9,14 +9,13 @@ package io.harness.cdng.artifact.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.mappers.ArtifactResponseToOutcomeMapper;
@@ -30,7 +29,6 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
@@ -42,11 +40,20 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
+import io.harness.exception.ngexception.NGTemplateException;
+import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.template.TemplateApplyRequestDTO;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.exception.NGTemplateResolveException;
+import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -62,17 +69,21 @@ import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
 import io.harness.tasks.ResponseData;
+import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.yaml.TemplateRefHelper;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -80,7 +91,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -106,6 +116,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject private TemplateResourceClient templateResourceClient;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -115,12 +126,33 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, EmptyStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    final Optional<NGServiceV2InfoConfig> serviceOptional = cdStepHelper.fetchServiceConfigFromSweepingOutput(ambiance);
-    if (serviceOptional.isEmpty()) {
+    NGServiceConfig ngServiceConfig = null;
+    try {
+      // get service merged with service inputs
+      String mergedServiceYaml = cdStepHelper.fetchServiceYamlFromSweepingOutput(ambiance);
+      if (isEmpty(mergedServiceYaml)) {
+        return AsyncExecutableResponse.newBuilder().build();
+      }
+
+      // process artifact sources in service yaml and select primary
+      String processedServiceYaml = artifactStepHelper.getArtifactProcessedServiceYaml(mergedServiceYaml);
+
+      // resolve template refs in primary and sidecar artifacts
+      String accountId = AmbianceUtils.getAccountId(ambiance);
+      String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+      String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+      mergedServiceYaml =
+          resolveArtifactSourceTemplateRefs(accountId, orgIdentifier, projectIdentifier, processedServiceYaml);
+      ngServiceConfig = YamlUtils.read(mergedServiceYaml, NGServiceConfig.class);
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Failed to read Service yaml into config - ", ex);
+    }
+
+    if (ngServiceConfig == null || ngServiceConfig.getNgServiceV2InfoConfig() == null) {
       return AsyncExecutableResponse.newBuilder().build();
     }
 
-    final NGServiceV2InfoConfig service = serviceOptional.get();
+    final NGServiceV2InfoConfig service = ngServiceConfig.getNgServiceV2InfoConfig();
 
     if (service.getServiceDefinition().getServiceSpec() == null
         || service.getServiceDefinition().getServiceSpec().getArtifacts() == null) {
@@ -129,8 +161,6 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     }
 
     final ArtifactListConfig artifacts = service.getServiceDefinition().getServiceSpec().getArtifacts();
-
-    processArtifactSourcesIfPresent(artifacts);
 
     resolveExpressions(ambiance, artifacts);
 
@@ -169,32 +199,46 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 
-  private void processArtifactSourcesIfPresent(ArtifactListConfig artifacts) {
-    if (artifacts.getPrimary() == null) {
-      return;
-    }
-    PrimaryArtifact primary = artifacts.getPrimary();
-    if (artifacts.getPrimary().getSpec() == null && ParameterField.isNotNull(primary.getPrimaryArtifactRef())) {
-      if (!primary.getPrimaryArtifactRef().isExpression() && isNotEmpty(primary.getSources())) {
-        Optional<ArtifactSource> primaryArtifact =
-            primary.getSources()
-                .stream()
-                .filter(s -> primary.getPrimaryArtifactRef().getValue().equals(s.getIdentifier()))
-                .findFirst();
-        primaryArtifact.ifPresent(p -> {
-          p.getSpec().setPrimaryArtifact(true);
-          p.getSpec().setIdentifier(YamlTypes.PRIMARY_ARTIFACT);
-          artifacts.setPrimary(PrimaryArtifact.builder()
-                                   .spec(p.getSpec())
-                                   .sourceType(p.getSourceType())
-                                   .metadata(p.getMetadata())
-                                   .build());
-        });
-      } else if (primary.getPrimaryArtifactRef().isExpression()) {
-        throw new InvalidRequestException(String.format(
-            "primaryArtifactRef [%s] could not be resolved", primary.getPrimaryArtifactRef().getExpressionValue()));
+  public String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml) {
+    if (TemplateRefHelper.hasTemplateRef(yaml)) {
+      String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given service yaml.";
+      long start = System.currentTimeMillis();
+      try {
+        TemplateMergeResponseDTO templateMergeResponseDTO =
+            NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
+                null, null, null, null, null, null, null, null,
+                TemplateApplyRequestDTO.builder()
+                    .originalEntityYaml(yaml)
+                    .checkForAccess(true)
+                    .getMergedYamlWithTemplateField(false)
+                    .build()));
+        return templateMergeResponseDTO.getMergedPipelineYaml();
+      } catch (InvalidRequestException e) {
+        if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
+          throw new NGTemplateResolveException(
+              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (TemplateInputsErrorMetadataDTO) e.getMetadata(), yaml);
+        } else if (e.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
+          throw new NGTemplateResolveExceptionV2(
+              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (ValidateTemplateInputsResponseDTO) e.getMetadata(), yaml);
+        } else {
+          throw new NGTemplateException(e.getMessage(), e);
+        }
+      } catch (NGTemplateResolveException e) {
+        throw new NGTemplateResolveException(e.getMessage(), USER, e.getErrorResponseDTO(), null);
+      } catch (NGTemplateResolveExceptionV2 e) {
+        throw new NGTemplateResolveExceptionV2(e.getMessage(), USER, e.getValidateTemplateInputsResponseDTO(), null);
+      } catch (UnexpectedException e) {
+        log.error("Error connecting to Template Service", e);
+        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
+      } catch (Exception e) {
+        log.error("Unknown exception in resolving templates", e);
+        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
+      } finally {
+        log.info("[NG_MANAGER] template resolution for service took {}ms for projectId {}, orgId {}, accountId {}",
+            System.currentTimeMillis() - start, projectId, orgId, accountId);
       }
     }
+    return yaml;
   }
 
   private void resolveExpressions(Ambiance ambiance, ArtifactListConfig artifacts) {

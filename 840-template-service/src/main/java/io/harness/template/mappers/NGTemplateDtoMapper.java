@@ -129,6 +129,7 @@ public class NGTemplateDtoMapper {
         .templateScope(templateEntity.getTemplateScope())
         .versionLabel(templateEntity.getVersionLabel())
         .tags(TagMapper.convertToMap(templateEntity.getTags()))
+        .icon(templateEntity.getIcon())
         .version(templateEntity.getVersion())
         .gitDetails(getEntityGitDetailsForListTemplates(templateEntity))
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())

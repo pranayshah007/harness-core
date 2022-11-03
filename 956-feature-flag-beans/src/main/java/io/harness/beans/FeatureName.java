@@ -391,7 +391,6 @@ public enum FeatureName {
       "Filter last deployed artifacts for triggers using serviceId as well", HarnessTeam.SPG),
   PERSIST_MONITORED_SERVICE_TEMPLATE_STEP(
       "Enables saving of monitored service created during template verify step", HarnessTeam.CV),
-  FIX_CORRUPTED_INSTANCES("Used to fix instances mapped to old/wrong infrastructure mapping", HarnessTeam.CDP),
   VALIDATE_PHASES_AND_ROLLBACK("Validate that each phase has your own rollback phase", HarnessTeam.SPG),
   OPTIMIZED_TF_PLAN_NG(
       "Enables uploading Terraform plan to GCS/MongoGridFS instead of saving to sweeping output", HarnessTeam.CDP),
@@ -415,6 +414,8 @@ public enum FeatureName {
       "merge context elements workflow variables while resuming pipeline from a stage", HarnessTeam.SPG),
   USE_TEXT_SEARCH_FOR_EXECUTION(
       "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG),
+  AZURE_WEBAPP_NG_JENKINS_ARTIFACTS(
+      "FF to enable Jenkins as an artifact source option for Azure Web App NG", HarnessTeam.CDP),
   DEL_EVALUATE_SECRET_EXPRESSION_SYNC(
       "FF to disable asynchronous evaluation of secrets. With FF set to true and pipeline has more than one secret, they will get evaluate one after other",
       HarnessTeam.DEL),

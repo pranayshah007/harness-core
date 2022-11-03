@@ -4839,7 +4839,7 @@ plain_artifacts = [
     "io.harness:access-control-server-spec:1.0.9",
     "io.harness:ng-manager-server-spec:1.0.25",
     "io.harness:platform-server-spec:1.0.10",
-    "io.harness:pipeline-server-spec:1.0.16",
+    "io.harness:pipeline-server-spec:1.0.202",
     "io.harness:template-server-spec:1.0.8",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",

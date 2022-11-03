@@ -203,6 +203,8 @@ public class PipelinesApiImplTest extends CategoryTest {
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(yaml, responseBody.getPipelineYaml());
     assertEquals(slug, responseBody.getSlug());
+    assertEquals(org, responseBody.getOrg());
+    assertEquals(project, responseBody.getProject());
     assertEquals(true, responseBody.isValid().booleanValue());
   }
 
@@ -220,6 +222,8 @@ public class PipelinesApiImplTest extends CategoryTest {
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(extraYaml, responseBody.getTemplateAppliedPipelineYaml());
     assertEquals(slug, responseBody.getSlug());
+    assertEquals(org, responseBody.getOrg());
+    assertEquals(project, responseBody.getProject());
     assertEquals(true, responseBody.isValid().booleanValue());
   }
 
