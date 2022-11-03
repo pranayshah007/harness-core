@@ -125,4 +125,5 @@ enum EntityTypeProtoEnum {
   FREEZE = 112;
   ECS_RUN_TASK_STEP = 113;
   CHAOS_STEP = 114;
+  ELASTIGROUP_DEPLOY_STEP = 115;
 }

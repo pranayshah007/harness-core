@@ -533,7 +533,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             task.getBroadcastToDelegateIds());
         addToTaskActivityLog(task, "Task processing completed");
       } catch (Exception exception) {
-        log.info("Task id {} failed with error {}", task.getUuid(), exception);
+        log.error("Task id {} failed with error {}", task.getUuid(), exception);
         printErrorMessageOnTaskFailure(task);
         handleTaskFailureResponse(task, exception);
         if (!task.getData().isAsync()) {
@@ -930,7 +930,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           }
         } catch (ExecutionException e) {
           delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE_FAILED);
-          log.warn("Unable to retrieve the log streaming service account token, while preparing delegate task package");
+          log.error(
+              "Unable to retrieve the log streaming service account token, while preparing delegate task package");
           throw new InvalidRequestException(e.getMessage() + "\nPlease ensure log service is running.", e);
         }
 
@@ -1354,7 +1355,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     if (isEmpty(delegateTasks)) {
       return;
     }
-    log.info("Marking delegate tasks {} failed since delegate went down before completion.",
+    log.warn("Marking delegate tasks {} failed since delegate went down before completion.",
         delegateTasks.stream().map(DelegateTask::getUuid).collect(Collectors.toList()));
     final String errorMessage = "Delegate disconnected while executing the task";
     final DelegateTaskResponse delegateTaskResponse =

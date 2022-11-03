@@ -8,7 +8,6 @@
 package io.harness.cdng.customdeploymentng;
 
 import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
-import static io.harness.ccm.anomaly.graphql.AnomaliesFilter.log;
 import static io.harness.cdng.customDeployment.CustomDeploymentConstants.INFRASTRUCTURE_DEFINITION;
 import static io.harness.cdng.customDeployment.eventlistener.CustomDeploymentEntityCRUDEventHandler.STABLE_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -50,8 +49,6 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.yaml.utils.NGVariablesUtils;
 
-import software.wings.beans.AccountType;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -63,7 +60,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CustomDeploymentInfrastructureHelper {
   @Inject TemplateResourceClient templateResourceClient;
   @Inject protected ExecutionSweepingOutputService executionSweepingOutputService;
@@ -136,7 +135,7 @@ public class CustomDeploymentInfrastructureHelper {
       return variableListSizeNotSame(templateVariables, infraVariables)
           || variablesNameAndTypeNotSame(templateVariables, infraVariables);
     } catch (Exception e) {
-      AccountType.log.error("Error Encountered while validating infra for acc Id :{}: {}", accountId, e);
+      log.error("Error Encountered while validating infra for acc Id :{}: {}", accountId, e);
       throw new InvalidRequestException("Error Encountered while validating infra: " + e.getMessage());
     }
   }
@@ -323,10 +322,13 @@ public class CustomDeploymentInfrastructureHelper {
         projectIdentifier, environmentOutcome.getIdentifier(), infrastructure.getInfraIdentifier());
     if (infraEntity.isPresent()) {
       if (infraEntity.get().getObsolete()) {
-        throw new InvalidRequestException("Infrastructure is obsolete, please update the infrastructure");
+        throw new InvalidRequestException(String.format(
+            "Infrastructure - [%s] is obsolete, please update the infrastructure", infrastructure.getInfraName()));
       }
     } else {
-      throw new InvalidRequestException("Infra does not exist for this infra id and env id");
+      throw new InvalidRequestException(
+          String.format("Infra does not exist for this infra id - [%s], and env id - [%s], infra - [%s]",
+              infrastructure.getInfraIdentifier(), environmentOutcome.getIdentifier(), infrastructure.getInfraName()));
     }
   }
 
@@ -382,7 +384,7 @@ public class CustomDeploymentInfrastructureHelper {
         return yamlConfig;
       }
       for (JsonNode variable : infraVariables) {
-        if (isNull(variable) || isEmpty(variable.get("name").toString()) || isEmpty(variable.get("type").toString())) {
+        if (isNull(variable) || variable.get("name").isNull() || variable.get("type").isNull()) {
           log.error("Error encountered while validating infra, Infra variable: {} is invalid for account id: {}",
               variable, accountId);
           return null;
@@ -422,7 +424,7 @@ public class CustomDeploymentInfrastructureHelper {
         return templateConfig;
       }
       for (JsonNode variable : templateVariableNode) {
-        if (isNull(variable) || isEmpty(variable.get("name").toString()) || isEmpty(variable.get("type").toString())) {
+        if (isNull(variable) || variable.get("name").isNull() || variable.get("type").isNull()) {
           log.error("Error encountered while validating infra, Template variable: {} is invalid for account id: {}",
               variable, accountId);
           return null;
