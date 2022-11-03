@@ -110,6 +110,7 @@ public class ViewsQueryBuilder {
   public static final String LABEL_KEY_ALIAS = "labels_key";
   public static final String LABEL_VALUE_ALIAS = "labels_value";
   private static final String DISTINCT = " DISTINCT(%s)";
+  private static final String LOWER = "LOWER(%s)";
   private static final String COALESCE = " COALESCE(%s, %s)";
   private static final String count = "COUNT(*)";
   private static final String aliasStartTimeMaxMin = "%s_%s";
@@ -686,6 +687,9 @@ public class ViewsQueryBuilder {
           throw new InvalidRequestException("Invalid View Field Identifier " + viewFieldInput.getIdentifier());
       }
       fields.add(filter.getField());
+      if (!sortKey.isEmpty()) {
+        sortKey = String.format(LOWER, sortKey);
+      }
       query.addCustomOrdering(sortKey, OrderObject.Dir.ASCENDING);
     }
     log.info("Query for view filter {}", query);

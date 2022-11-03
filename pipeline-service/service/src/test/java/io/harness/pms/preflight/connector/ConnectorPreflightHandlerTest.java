@@ -8,16 +8,22 @@
 package io.harness.pms.preflight.connector;
 
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.notIn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.NGTemplateReference;
 import io.harness.category.element.UnitTests;
+import io.harness.common.EntityReference;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.ng.core.EntityDetail;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.preflight.PreFlightStatus;
@@ -28,6 +34,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -103,5 +110,154 @@ public class ConnectorPreflightHandlerTest extends CategoryTest {
     assertThat(response.getStageIdentifier()).isEqualTo("qaStage");
     assertThat(response.getStageName()).isEqualTo("qa stage");
     assertThat(response.getErrorInfo()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testFilterConnectorResponseForConnectorForGitFlowPipeline() {
+    EntityReference entityReference1 = NGTemplateReference.builder()
+                                           .branch("main")
+                                           .identifier("con_for_oldGitRemote_pipeline")
+                                           .repoIdentifier("repo")
+                                           .build();
+    EntityReference entityReference2 =
+        NGTemplateReference.builder().identifier("con_for_newGitExpAndInline_pipeline").build();
+
+    List<EntityDetail> connectorUsages = Arrays.asList(EntityDetail.builder().entityRef(entityReference1).build(),
+        EntityDetail.builder().entityRef(entityReference2).build());
+
+    ConnectorResponseDTO connectorResponseDTO1 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("con_for_oldGitRemote_pipeline").build())
+            .gitDetails(EntityGitDetails.builder().branch("main").repoIdentifier("repo").build())
+            .build();
+    ConnectorResponseDTO connectorResponseDTO2 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("con_for_oldGitRemote_pipeline").build())
+            .gitDetails(EntityGitDetails.builder().branch("another_branch").repoIdentifier("repo").build())
+            .build();
+    ConnectorResponseDTO connectorResponseDTO3 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("con_for_newGitExpAndInline_pipeline").build())
+            .build();
+
+    List<ConnectorResponseDTO> unFilteredResponse =
+        Arrays.asList(connectorResponseDTO1, connectorResponseDTO2, connectorResponseDTO3);
+    List<ConnectorResponseDTO> filteredResponse =
+        connectorPreflightHandler.filterConnectorResponse(unFilteredResponse, connectorUsages);
+
+    assertThat(filteredResponse.size()).isEqualTo(2);
+    assertThat(filteredResponse.contains(connectorResponseDTO1));
+    notIn(filteredResponse, connectorResponseDTO2);
+    assertThat(filteredResponse.contains(connectorResponseDTO3));
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testFilterConnectorResponseForNullParamsOfConnectorUsages() {
+    EntityReference entityReference1 = NGTemplateReference.builder().branch("main").identifier("repo_null").build();
+    EntityReference entityReference2 =
+        NGTemplateReference.builder().identifier("branch_null").repoIdentifier("repo").build();
+
+    List<EntityDetail> connectorUsages = Arrays.asList(EntityDetail.builder().entityRef(entityReference1).build(),
+        EntityDetail.builder().entityRef(entityReference2).build());
+
+    ConnectorResponseDTO connectorResponseDTO1 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("con_for_oldGitRemote_pipeline").build())
+            .gitDetails(EntityGitDetails.builder().branch("main").repoIdentifier("repo").build())
+            .build();
+    ConnectorResponseDTO connectorResponseDTO2 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("con_for_oldGitRemote_pipeline").build())
+            .gitDetails(EntityGitDetails.builder().branch("another_branch").repoIdentifier("repo").build())
+            .build();
+
+    List<ConnectorResponseDTO> unFilteredResponse = Arrays.asList(connectorResponseDTO1, connectorResponseDTO2);
+    List<ConnectorResponseDTO> filteredResponse =
+        connectorPreflightHandler.filterConnectorResponse(unFilteredResponse, connectorUsages);
+
+    assertThat(filteredResponse.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testFilterConnectorResponseForJunkValues() {
+    EntityReference entityReference1 = NGTemplateReference.builder()
+                                           .branch("main")
+                                           .identifier("con_for_oldGitRemote_pipeline")
+                                           .repoIdentifier("repo")
+                                           .build();
+    EntityReference entityReference2 =
+        NGTemplateReference.builder().identifier("con_for_newGitExpAndInline_pipeline").build();
+
+    List<EntityDetail> connectorUsages = Arrays.asList(EntityDetail.builder().entityRef(entityReference1).build(),
+        EntityDetail.builder().entityRef(entityReference2).build());
+
+    ConnectorResponseDTO connectorResponseDTO1 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("repo_null").build())
+            .gitDetails(EntityGitDetails.builder().branch("main").build())
+            .build();
+    ConnectorResponseDTO connectorResponseDTO2 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("branch_null").build())
+            .gitDetails(EntityGitDetails.builder().repoIdentifier("repo").build())
+            .build();
+    ConnectorResponseDTO connectorResponseDTO3 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("junk_value").build())
+            .gitDetails(EntityGitDetails.builder().branch("junk_value").repoIdentifier("junk_value").build())
+            .build();
+    ConnectorResponseDTO connectorResponseDTO4 = ConnectorResponseDTO.builder().build();
+
+    List<ConnectorResponseDTO> unFilteredResponse =
+        Arrays.asList(connectorResponseDTO1, connectorResponseDTO2, connectorResponseDTO3, connectorResponseDTO4);
+    List<ConnectorResponseDTO> filteredResponse =
+        connectorPreflightHandler.filterConnectorResponse(unFilteredResponse, connectorUsages);
+
+    assertThat(filteredResponse.size()).isEqualTo(3);
+    assertThat(filteredResponse.contains(connectorResponseDTO1));
+    assertThat(filteredResponse.contains(connectorResponseDTO2));
+    notIn(filteredResponse, connectorResponseDTO3);
+    assertThat(filteredResponse.contains(connectorResponseDTO4));
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testFilterConnectorResponseForEmptyUsagesAndResponse() {
+    EntityReference entityReference1 = NGTemplateReference.builder().branch("main").identifier("repo_null").build();
+    EntityReference entityReference2 =
+        NGTemplateReference.builder().identifier("branch_null").repoIdentifier("repo").build();
+
+    List<EntityDetail> connectorUsages = Arrays.asList(EntityDetail.builder().entityRef(entityReference1).build(),
+        EntityDetail.builder().entityRef(entityReference2).build());
+
+    ConnectorResponseDTO connectorResponseDTO1 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("con_for_oldGitRemote_pipeline").build())
+            .gitDetails(EntityGitDetails.builder().branch("main").repoIdentifier("repo").build())
+            .build();
+    ConnectorResponseDTO connectorResponseDTO2 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("con_for_oldGitRemote_pipeline").build())
+            .gitDetails(EntityGitDetails.builder().branch("another_branch").repoIdentifier("repo").build())
+            .build();
+
+    List<ConnectorResponseDTO> unFilteredResponse = Arrays.asList(connectorResponseDTO1, connectorResponseDTO2);
+    List<ConnectorResponseDTO> filteredResponse1 =
+        connectorPreflightHandler.filterConnectorResponse(Collections.EMPTY_LIST, connectorUsages);
+    List<ConnectorResponseDTO> filteredResponse2 =
+        connectorPreflightHandler.filterConnectorResponse(unFilteredResponse, Collections.EMPTY_LIST);
+    List<ConnectorResponseDTO> filteredResponse3 =
+        connectorPreflightHandler.filterConnectorResponse(Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+
+    assertThat(filteredResponse1.isEmpty());
+    assertThat(filteredResponse2.isEmpty());
+    assertThat(filteredResponse3.isEmpty());
   }
 }
