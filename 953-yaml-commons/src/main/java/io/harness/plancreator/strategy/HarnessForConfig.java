@@ -48,6 +48,7 @@ public class HarnessForConfig {
   @YamlSchemaTypes(value = {expression})
   @JsonProperty("maxConcurrency")
   @Min(value = 0)
+  @Max(value = 256)
   ParameterField<Integer> maxConcurrency;
 
   @YamlSchemaTypes(value = {expression})

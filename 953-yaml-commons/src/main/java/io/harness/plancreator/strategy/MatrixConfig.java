@@ -67,6 +67,7 @@ public class MatrixConfig implements MatrixConfigInterface {
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @JsonProperty("maxConcurrency")
   @Min(value = 0)
+  @Max(value = 256)
   @YamlSchemaTypes(value = {expression})
   ParameterField<Integer> maxConcurrency;
   @JsonAnySetter

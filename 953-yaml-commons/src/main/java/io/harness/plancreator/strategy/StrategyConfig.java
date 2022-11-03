@@ -45,5 +45,6 @@ public class StrategyConfig {
   @YamlSchemaTypes(value = {expression})
   @JsonProperty("parallelism")
   @Min(value = 0)
+  @Max(value = 256)
   ParameterField<Integer> parallelism;
 }
