@@ -624,7 +624,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
-  public FileContentBatchResponse listFilesBase64(
+  public FileContentBatchResponse listFilesV2(
       ScmConnector connector, Set<String> foldersList, String branchName, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     log.info("Fetching files as base64");
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(connector);

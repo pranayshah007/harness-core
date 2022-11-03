@@ -105,7 +105,7 @@ public interface ScmServiceClient {
   FileContentBatchResponse listFiles(
       ScmConnector connector, Set<String> foldersList, String branch, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
-  FileContentBatchResponse listFilesBase64(
+  FileContentBatchResponse listFilesV2(
       ScmConnector connector, Set<String> foldersList, String branch, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
   FileContentBatchResponse listFoldersFilesByCommitId(

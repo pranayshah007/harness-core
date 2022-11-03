@@ -202,7 +202,7 @@ public class ScmFetchFilesHelperNG {
     FileContentBatchResponse fileBatchContentResponse;
     if (gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH) {
       fileBatchContentResponse = scmDelegateClient.processScmRequest(c
-          -> scmServiceClient.listFilesBase64(
+          -> scmServiceClient.listFilesV2(
               scmConnector, filePaths, gitStoreDelegateConfig.getBranch(), SCMGrpc.newBlockingStub(c)));
     } else {
       fileBatchContentResponse = scmDelegateClient.processScmRequest(c
