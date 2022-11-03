@@ -268,7 +268,7 @@ public class StateMachine implements PersistentEntity, UuidAware, CreatedAtAware
         }
       }
 
-      if (pipeline.isRollbackPreviousStages()) {
+      if (pipeline.getRollbackPreviousStages()) {
         adaptStateMachineWithPipelineRollback(originStateName, stateToPipelineStageMap, stencilMap, pipeline);
       }
     }

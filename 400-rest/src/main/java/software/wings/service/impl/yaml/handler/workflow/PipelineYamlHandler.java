@@ -84,7 +84,7 @@ public class PipelineYamlHandler extends BaseYamlHandler<Yaml, Pipeline> {
         .description(yaml.getDescription())
         .name(name)
         .pipelineStages(pipelineStages)
-        .rollbackPreviousStages(yaml.isRollbackPreviousStages())
+        .rollbackPreviousStages(yaml.getRollbackPreviousStages())
         .build();
   }
 
@@ -126,7 +126,7 @@ public class PipelineYamlHandler extends BaseYamlHandler<Yaml, Pipeline> {
                     .harnessApiVersion(getHarnessApiVersion())
                     .description(bean.getDescription())
                     .pipelineStages(pipelineStageYamlList)
-                    .rollbackPreviousStages(bean.isRollbackPreviousStages())
+                    .rollbackPreviousStages(bean.getRollbackPreviousStages())
                     .build();
 
     updateYamlWithAdditionalInfo(bean, appId, yaml);

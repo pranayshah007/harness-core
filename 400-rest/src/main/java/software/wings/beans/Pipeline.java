@@ -102,7 +102,7 @@ public class Pipeline
   public static final String NAME_KEY = "name";
   public static final String DESCRIPTION_KEY = "description";
 
-  public boolean rollbackPreviousStages;
+  public Boolean rollbackPreviousStages;
   @NotNull @EntityName private String name;
   private String description;
   @Valid private List<PipelineStage> pipelineStages = new ArrayList<>();
@@ -195,11 +195,11 @@ public class Pipeline
     private String description;
     private List<PipelineStage.Yaml> pipelineStages = new ArrayList<>();
     private List<FailureStrategy.Yaml> failureStrategies;
-    private boolean rollbackPreviousStages;
+    private Boolean rollbackPreviousStages;
 
     @lombok.Builder
     public Yaml(String harnessApiVersion, String description, List<PipelineStage.Yaml> pipelineStages,
-        boolean rollbackPreviousStages) {
+        Boolean rollbackPreviousStages) {
       super(EntityType.PIPELINE.name(), harnessApiVersion);
       this.description = description;
       this.pipelineStages = pipelineStages;

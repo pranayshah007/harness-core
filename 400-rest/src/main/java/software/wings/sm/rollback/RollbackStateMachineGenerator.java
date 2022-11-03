@@ -167,7 +167,7 @@ public class RollbackStateMachineGenerator {
       if (successfulExecution.getPipelineSummary() != null) {
         Pipeline pipeline = pipelineService.getPipeline(
             successfulExecution.getAppId(), successfulExecution.getPipelineSummary().getPipelineId());
-        if (pipeline.isRollbackPreviousStages()) {
+        if (pipeline.getRollbackPreviousStages()) {
           List<ExecutionStatus> validStatuses = List.of(ExecutionStatus.SUCCESS, ExecutionStatus.FAILED);
           return successfulExecution != null && validStatuses.contains(successfulExecution.getStatus());
         }
