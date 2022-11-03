@@ -8,6 +8,7 @@
 package io.harness.pcf.cfcli;
 
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -74,6 +75,26 @@ public class CfCliCommandResolverTest extends CategoryTest {
 
     assertThat(authCommand).isNotEmpty();
     assertThat(authCommand).isEqualTo("cf auth");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetScaleProcessCommand() {
+    String appName = "app-name";
+    String processName = "process-name";
+    Integer processInstances = 1;
+    String scaleProcessCommand = CfCliCommandResolver.getScaleProcessCommand(
+        cfCliPathV7, cfCliVersionV7, appName, processName, processInstances);
+
+    assertThat(scaleProcessCommand).isNotEmpty();
+    assertThat(scaleProcessCommand).isEqualTo("/path-to-cf-cli7/cf7 scale app-name --process process-name -i 1");
+
+    scaleProcessCommand = CfCliCommandResolver.getScaleProcessCommand(
+        cfCliDefault, cfCliVersionV7, appName, processName, processInstances);
+
+    assertThat(scaleProcessCommand).isNotEmpty();
+    assertThat(scaleProcessCommand).isEqualTo("cf scale app-name --process process-name -i 1");
   }
 
   @Test

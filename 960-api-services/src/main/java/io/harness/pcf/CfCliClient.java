@@ -40,6 +40,13 @@ public interface CfCliClient {
    */
   void startAppByCli(CfRequestConfig cfRequestConfig, LogCallback logCallback) throws PivotalClientApiException;
 
+  /**
+   * Scale process.
+   *
+   * @param cfRequestConfig pcf request config
+   * @param logCallback log callback
+   * @throws PivotalClientApiException
+   */
   void scaleProcessesByCli(CfRequestConfig cfRequestConfig, LogCallback logCallback) throws PivotalClientApiException;
 
   /**

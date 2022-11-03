@@ -112,7 +112,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.pcf.model.CfCliVersion;
 import io.harness.pcf.model.PcfConstants;
+import io.harness.pcf.model.PcfProcessInstances;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
 
@@ -741,6 +743,61 @@ public class PcfSetupStateTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testExecutePcfTask() {
+    doReturn(InfrastructureDefinition.builder().name(INFRA_DEFINITION_ID).build())
+        .when(infrastructureDefinitionService)
+        .get(anyString(), anyString());
+
+    CustomManifestValuesFetchResponse fetchResponse =
+        CustomManifestValuesFetchResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+
+    Map<String, ResponseData> response = new HashMap<>();
+    response.put("activityId", fetchResponse);
+
+    Map<K8sValuesLocation, ApplicationManifest> appManifestMap = new HashMap<>();
+    appManifestMap.put(K8sValuesLocation.Service, ApplicationManifest.builder().storeType(CUSTOM).build());
+    PcfSetupStateExecutionData pcfSetupStateExecutionData =
+        (PcfSetupStateExecutionData) context.getStateExecutionData();
+    pcfSetupStateExecutionData.setTaskType(CUSTOM_MANIFEST_FETCH_TASK);
+    pcfSetupStateExecutionData.setAppManifestMap(appManifestMap);
+    pcfSetupStateExecutionData.setActivityId("activityId");
+
+    doReturn(MANIFEST_YAML_CONTENT).when(pcfStateHelper).fetchManifestYmlString(any(), any());
+    on(context).set("serviceTemplateService", serviceTemplateService);
+
+    doReturn(PcfManifestsPackage.builder().manifestYml(MANIFEST_YAML_CONTENT).build())
+        .when(pcfStateHelper)
+        .generateManifestMap(any(), any(), any(), anyString(), anyString());
+
+    Map<K8sValuesLocation, Collection<String>> valuesFiles = new HashMap<>();
+    valuesFiles.put(K8sValuesLocation.Service, Arrays.asList("Content"));
+    doReturn(valuesFiles)
+        .when(applicationManifestUtils)
+        .getValuesFilesFromCustomFetchValuesResponse(any(), any(), any(), anyString());
+
+    doReturn(CfCliVersion.V6).when(pcfStateHelper).getCfCliVersionOrDefault(anyString(), anyString());
+    pcfSetupState.executePcfTask(context, "activityId", appManifestMap);
+    verify(pcfSetupState, times(0)).fetchMaxCountForAllProcesses(any());
+
+    pcfSetupState.setBlueGreen(true);
+    doReturn(CfCliVersion.V6).when(pcfStateHelper).getCfCliVersionOrDefault(anyString(), anyString());
+    pcfSetupState.executePcfTask(context, "activityId", appManifestMap);
+    verify(pcfSetupState, times(0)).fetchMaxCountForAllProcesses(any());
+
+    pcfSetupState.setBlueGreen(false);
+    doReturn(CfCliVersion.V7).when(pcfStateHelper).getCfCliVersionOrDefault(any(), any());
+    pcfSetupState.executePcfTask(context, "activityId", appManifestMap);
+    verify(pcfSetupState, times(0)).fetchMaxCountForAllProcesses(any());
+
+    pcfSetupState.setBlueGreen(true);
+    doReturn(CfCliVersion.V7).when(pcfStateHelper).getCfCliVersionOrDefault(anyString(), anyString());
+    pcfSetupState.executePcfTask(context, "activityId", appManifestMap);
+    verify(pcfSetupState, times(1)).fetchMaxCountForAllProcesses(any());
+  }
+
+  @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
   public void testHandleAsyncResponseForCustomFetchValuesTaskWrapperInErrorCase() {
@@ -1033,6 +1090,64 @@ public class PcfSetupStateTest extends WingsBaseTest {
         .isEqualTo(2);
   }
 
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testFetchMaxCountForAllProcesses() {
+    String manifestYamlContent = "applications:\n"
+        + "- name: \"AppName\"\n"
+        + "  memory: 1\n"
+        + "  instances: 0\n"
+        + "  path: /vars/foo\n"
+        + "  routes:\n"
+        + "  - route: /hello/my-route\n"
+        + "  processes:\n"
+        + "  - type: web\n"
+        + "    memory: 100M\n"
+        + "    disk_quota: 300M\n"
+        + "    instances: 1\n"
+        + "  - type: worker\n"
+        + "    memory: 150M\n"
+        + "    disk_quota: 350M\n"
+        + "    instances: 2";
+    assertThat(pcfSetupState.fetchMaxCountForAllProcesses(
+                   PcfManifestsPackage.builder().manifestYml(manifestYamlContent).build()))
+        .isEqualTo(singletonList(PcfProcessInstances.builder().instanceCount(2).type("worker").build()));
+    manifestYamlContent = "applications:\n"
+        + "- name: \"AppName\"\n"
+        + "  memory: 1\n"
+        + "  instances: 0\n"
+        + "  path: /vars/foo\n"
+        + "  routes:\n"
+        + "  - route: /hello/my-route";
+    assertThat(pcfSetupState.fetchMaxCountForAllProcesses(
+                   PcfManifestsPackage.builder().manifestYml(manifestYamlContent).build()))
+        .isEqualTo(Collections.emptyList());
+    manifestYamlContent = "applications:\n"
+        + "- name: \"AppName\"\n"
+        + "  memory: 1\n"
+        + "  instances: 0\n"
+        + "  path: /vars/foo\n"
+        + "  routes:\n"
+        + "  - route: /hello/my-route\n"
+        + "  processes:\n"
+        + "  - type: web\n"
+        + "    memory: 100M\n"
+        + "    disk_quota: 300M\n"
+        + "    instances: 1\n"
+        + "  - type: worker\n"
+        + "    memory: 100M\n"
+        + "    disk_quota: 300M\n"
+        + "    instances: 1\n"
+        + "  - type: worker1\n"
+        + "    memory: 150M\n"
+        + "    disk_quota: 350M\n"
+        + "    instances: 2";
+    assertThat(pcfSetupState.fetchMaxCountForAllProcesses(
+                   PcfManifestsPackage.builder().manifestYml(manifestYamlContent).build()))
+        .containsExactlyInAnyOrder(PcfProcessInstances.builder().instanceCount(1).type("worker").build(),
+            PcfProcessInstances.builder().instanceCount(2).type("worker1").build());
+  }
   @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)

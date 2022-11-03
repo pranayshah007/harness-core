@@ -27,6 +27,7 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.RIHAZ;
+import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_KUMAR;
 
@@ -190,6 +191,25 @@ public class PcfStateHelperTest extends WingsBaseTest {
       + "  random-route: true\n"
       + "  level: Service";
 
+  private String PROCESSES_MANIFEST_YML = "applications:\n"
+      + "- name: \"AppName\"\n"
+      + "  memory: 1\n"
+      + "  instances: 0\n"
+      + "  path: /vars/foo\n"
+      + "  routes:\n"
+      + "  - route: /hello/my-route\n"
+      + "  processes:\n"
+      + "  - type: web\n"
+      + "    memory: 100M\n"
+      + "    disk_quota: 300M\n"
+      + "    instances: ((WEB_PROCESS_INSTANCES))\n"
+      + "  - type: worker\n"
+      + "    memory: 100M\n"
+      + "    disk_quota: 300M\n"
+      + "  - type: worker1\n"
+      + "    memory: 150M\n"
+      + "    disk_quota: 350M\n"
+      + "    instances: ((WORKER_PROCESS_INSTANCES))";
   private String TEST_APP_MANIFEST = "applications:\n"
       + "- name: " + REPLACE_ME + "\n"
       + "  memory: ((PCF_APP_MEMORY))\n"
@@ -197,6 +217,12 @@ public class PcfStateHelperTest extends WingsBaseTest {
 
   private String TEST_VAR = "  MY: order\n"
       + "  PCF_APP_NAME : prod\n"
+      + "  INSTANCES : 3";
+
+  private String TEST_VAR_PROCESSES = "  MY: order\n"
+      + "  PCF_APP_NAME : prod\n"
+      + "  WEB_PROCESS_INSTANCES : 1\n"
+      + "  WORKER_PROCESS_INSTANCES : 2\n"
       + "  INSTANCES : 3";
 
   private String TEST_VAR_1 = "  MY: login\n"
@@ -1714,6 +1740,23 @@ public class PcfStateHelperTest extends WingsBaseTest {
       assertThat(e.getMessage())
           .isEqualTo("No Valid Variable file Found, please verify var file is present and has valid structure");
     }
+
+    pcfManifestsPackage.setVariableYmls(Collections.singletonList(TEST_VAR_PROCESSES));
+    pcfManifestsPackage.setManifestYml(PROCESSES_MANIFEST_YML);
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4, "web")).isEqualTo(1);
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4, "worker")).isEqualTo(4);
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4, "worker1")).isEqualTo(2);
+    pcfManifestsPackage.setManifestYml(
+        PROCESSES_MANIFEST_YML.replace("((WEB_PROCESS_INSTANCES))", INSTANCE_PLACEHOLDER_TOKEN_DEPRECATED)
+            .replace("((WORKER_PROCESS_INSTANCES))", INSTANCE_PLACEHOLDER_TOKEN_DEPRECATED));
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4, "web")).isEqualTo(4);
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4, "worker")).isEqualTo(4);
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4, "worker1")).isEqualTo(4);
+    pcfManifestsPackage.setManifestYml(
+        PROCESSES_MANIFEST_YML.replace("((WEB_PROCESS_INSTANCES))", "2").replace("((WORKER_PROCESS_INSTANCES))", "3"));
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4, "web")).isEqualTo(2);
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4, "worker")).isEqualTo(4);
+    assertThat(pcfStateHelper.fetchMaxCountFromManifest(pcfManifestsPackage, 4, "worker1")).isEqualTo(3);
   }
 
   @Test
@@ -3081,5 +3124,63 @@ public class PcfStateHelperTest extends WingsBaseTest {
 
     assertThat(rollbackInfoVariables.getActiveAppName()).isEqualTo(oldAppName);
     assertThat(rollbackInfoVariables.getInActiveAppName()).isEqualTo(prevInActiveAppOldName);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testFetchProcessesFromManifest() {
+    String manifestYamlContent = "applications:\n"
+        + "- name: \"AppName\"\n"
+        + "  memory: 1\n"
+        + "  instances: 0\n"
+        + "  path: /vars/foo\n"
+        + "  routes:\n"
+        + "  - route: /hello/my-route\n"
+        + "  processes:\n"
+        + "  - type: web\n"
+        + "    memory: 100M\n"
+        + "    disk_quota: 300M\n"
+        + "    instances: 1\n"
+        + "  - type: worker\n"
+        + "    memory: 150M\n"
+        + "    disk_quota: 350M\n"
+        + "    instances: 2";
+    assertThat(pcfStateHelper.fetchProcessesFromManifest(
+                   PcfManifestsPackage.builder().manifestYml(manifestYamlContent).build()))
+        .isEqualTo(Map.of("worker", true));
+    manifestYamlContent = "applications:\n"
+        + "- name: \"AppName\"\n"
+        + "  memory: 1\n"
+        + "  instances: 0\n"
+        + "  path: /vars/foo\n"
+        + "  routes:\n"
+        + "  - route: /hello/my-route";
+    assertThat(pcfStateHelper.fetchProcessesFromManifest(
+                   PcfManifestsPackage.builder().manifestYml(manifestYamlContent).build()))
+        .isEqualTo(new HashMap<>());
+    manifestYamlContent = "applications:\n"
+        + "- name: \"AppName\"\n"
+        + "  memory: 1\n"
+        + "  instances: 0\n"
+        + "  path: /vars/foo\n"
+        + "  routes:\n"
+        + "  - route: /hello/my-route\n"
+        + "  processes:\n"
+        + "  - type: web\n"
+        + "    memory: 100M\n"
+        + "    disk_quota: 300M\n"
+        + "    instances: 1\n"
+        + "  - type: worker\n"
+        + "    memory: 100M\n"
+        + "    disk_quota: 300M\n"
+        + "    instances: 1\n"
+        + "  - type: worker1\n"
+        + "    memory: 150M\n"
+        + "    disk_quota: 350M\n"
+        + "    instances: 2";
+    assertThat(pcfStateHelper.fetchProcessesFromManifest(
+                   PcfManifestsPackage.builder().manifestYml(manifestYamlContent).build()))
+        .isEqualTo(Map.of("worker", true, "worker1", true));
   }
 }
