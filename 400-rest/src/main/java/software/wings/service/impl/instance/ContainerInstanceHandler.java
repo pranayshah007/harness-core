@@ -86,7 +86,6 @@ import software.wings.beans.infrastructure.instance.key.deployment.K8sDeployment
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.k8s.response.K8sInstanceSyncResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
-import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.ContainerInstanceSyncPerpetualTaskCreator;
 import software.wings.service.InstanceSyncPerpetualTaskCreator;
 import software.wings.service.impl.ContainerMetadata;
