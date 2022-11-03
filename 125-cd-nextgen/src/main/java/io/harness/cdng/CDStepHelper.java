@@ -244,8 +244,8 @@ public class CDStepHelper {
   }
 
   public boolean isOptimizedFilesFetch(@Nonnull ConnectorInfoDTO connectorDTO, String accountId) {
-    return ((isGithubTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())
-                || isGitlabTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
+    return (isGithubTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())
+        || isGitlabTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())
         || (isAzureRepoTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
         || (isBitbucketTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
   }
