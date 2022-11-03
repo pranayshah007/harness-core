@@ -118,7 +118,7 @@ public class GovernancePolicyExecutionResource {
   public ResponseDTO<PolicyExecution>
   create(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true, description = "Request body containing Policy Execution store object")
+      @RequestBody(required = true, description = "Request body containing Policy Execution  object")
       @Valid CreatePolicyExecutionDTO createPolicyExecutionDTO) {
     // rbacHelper.checkPolicyExecutionEditPermission(accountId, null, null);
     if(createPolicyExecutionDTO==null)
@@ -133,9 +133,9 @@ public class GovernancePolicyExecutionResource {
 
   @POST
   @Path("execution/list")
-  @ApiOperation(value = "Get execution for account", nickname = "getPolicyExecution")
+  @ApiOperation(value = "Get execution for account", nickname = "getPolicyExecutions")
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(operationId = "getPolicyExecution", description = "Fetch PolicyExecution ",
+  @Operation(operationId = "getPolicyExecutions", description = "Fetch PolicyExecution ",
       summary = "Fetch PolicyExecution for account",
       responses =
       {

@@ -131,6 +131,7 @@ public class GovernancePolicyResource {
   private final CCMRbacHelper rbacHelper;
   private final ConnectorResourceClient connectorResourceClient;
   private final PolicyExecutionService policyExecutionService;
+  private final TelemetryReporter telemetryReporter;
   @Inject CENextGenConfiguration configuration;
 
   @Inject
@@ -153,8 +154,8 @@ public class GovernancePolicyResource {
   @Path("policy")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Add a new policy internal api", nickname = "addPolicyNameInternal")
-  @Operation(operationId = "addPolicyNameInternal", summary = "Add a new OOTB policy to be executed",
+  @ApiOperation(value = "Add a new policy ", nickname = "CreateNewPolicy")
+  @Operation(operationId = "CreateNewPolicy", summary = "Add a new  policy",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -164,14 +165,14 @@ public class GovernancePolicyResource {
   create(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
-          description = "Request body containing Policy store object") @Valid CreatePolicyDTO createPolicyDTO) {
+          description = "Request body containing Policy  object") @Valid CreatePolicyDTO createPolicyDTO) {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
     if (createPolicyDTO == null) {
       throw new InvalidRequestException("Request payload is malformed");
     }
     Policy policy = createPolicyDTO.getPolicy();
     if (governancePolicyService.listName(accountId, policy.getName(), true) != null) {
-      throw new InvalidRequestException("Policy  with given name already exits");
+      throw new InvalidRequestException("Policy with given name already exits");
     }
     if (!policy.getIsOOTB()) {
       policy.setAccountId(accountId);
@@ -196,12 +197,12 @@ public class GovernancePolicyResource {
   @Path("policy")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Update a existing OOTB Policy", nickname = "updatePolicy")
+  @ApiOperation(value = "Update a existing Policy", nickname = "updatePolicy")
   @LogAccountIdentifier
   @Operation(operationId = "updatePolicy", description = "Update a Policy", summary = "Update a Policy",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update a existing OOTB Policy",
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update an existing Policy",
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<Policy>
@@ -230,12 +231,12 @@ public class GovernancePolicyResource {
   @Path("policyOOTB")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Update a existing OOTB Policy", nickname = "updatePolicy")
+  @ApiOperation(value = "Update a existing OOTB Policy", nickname = "updateOOTBPolicy")
   @LogAccountIdentifier
-  @Operation(operationId = "updatePolicy", description = "Update a Policy", summary = "Update a Policy",
+  @Operation(operationId = "updateOOTBPolicy", description = "Update a OOTB Policy", summary = "Update a OOTB Policy",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update a existing OOTB Policy",
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update an existing OOTB Policy",
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<Policy>
@@ -258,10 +259,10 @@ public class GovernancePolicyResource {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @ExceptionMetered
-  @ApiOperation(value = "Delete a policy", nickname = "deletePolicy")
+  @ApiOperation(value = "Delete a OOTB policy", nickname = "deleteOOTBPolicy")
   @LogAccountIdentifier
-  @Operation(operationId = "deletePolicy", description = "Delete a Policy for the given a ID.",
-      summary = "Delete a policy",
+  @Operation(operationId = "deleteOOTBPolicy", description = "Delete an OOTB Policy for the given a ID.",
+      summary = "Delete an OOTB Policy for the given a ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -313,7 +314,7 @@ public class GovernancePolicyResource {
 
   @POST
   @Path("policy/list")
-  @ApiOperation(value = "Get OOTB policies for account", nickname = "getPolicies")
+  @ApiOperation(value = "Get policies for given account", nickname = "getPolicies")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(operationId = "getPolicies", description = "Fetch policies ", summary = "Fetch policies for account",

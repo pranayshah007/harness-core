@@ -226,7 +226,7 @@ public class GovernancePolicyEnforcementResource {
   @Path("enforcement/{enforcementID}")
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "Delete a policy", nickname = "deletePolicy")
+  @ApiOperation(value = "Delete a policy", nickname = "deletePolicyEnforcement")
   @LogAccountIdentifier
   @Operation(operationId = "deletePolicyEnforcement", description = "Delete a Policy enforcement for the given a ID.",
       summary = "Delete a policy enforcement",
@@ -318,10 +318,10 @@ public class GovernancePolicyEnforcementResource {
   @POST
   @Path("enforcement/count")
   @Consumes(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Get enforcement list", nickname = "getPolicyEnforcement")
+  @ApiOperation(value = "Get enforcement count", nickname = "getPolicyEnforcementCount")
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(operationId = "getPolicyEnforcement", description = "Fetch Policy Enforcement ",
-      summary = "Fetch Policy Enforcement for account",
+  @Operation(operationId = "getPolicyEnforcementCount", description = "Fetch Policy Enforcement count",
+      summary = "Fetch Policy Enforcement count for account",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns List of policies  Enforcement",

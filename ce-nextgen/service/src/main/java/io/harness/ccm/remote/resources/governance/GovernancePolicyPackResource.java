@@ -14,14 +14,11 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.rbac.CCMRbacHelper;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_CREATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_DELETE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_PACK_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_PACK_DELETE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_PACK_UPDATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
-import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_NAME;
 import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_PACK_NAME;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyPackDTO;
@@ -115,20 +112,20 @@ public class GovernancePolicyPackResource {
   }
 
   @POST
-  @Path("policypack")
+  @Path("policyPack")
   @Consumes(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Add a new policy set", nickname = "addPolicySet")
-  @Operation(operationId = "addPolicyNameInternal", summary = "Add a policy set ",
+  @ApiOperation(value = "Add a new policy set", nickname = "addPolicyPack")
+  @Operation(operationId = "addPolicyPack", summary = "Add a policy pack ",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns newly created policy set")
+        ApiResponse(responseCode = "default", description = "Returns newly created policy pack")
       })
   public ResponseDTO<PolicyPack>
   create(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
-          description = "Request body containing Policy store object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
+          description = "Request body containing Policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     // rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
     if(createPolicyPackDTO==null)
     {
@@ -155,21 +152,21 @@ public class GovernancePolicyPackResource {
   }
 
   @PUT
-  @Path("policypack")
+  @Path("policyPack")
   @Consumes(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Update an existing policy set", nickname = "updatePolicySet")
+  @ApiOperation(value = "Update an existing policy pack", nickname = "updatePolicyPack")
   @LogAccountIdentifier
-  @Operation(operationId = "updatePolicySet", description = "Update a Policy set", summary = "Update a Policy set",
+  @Operation(operationId = "updatePolicyPack", description = "Update a Policy set", summary = "Update a Policy set",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update a existing OOTB Policy",
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update a existing Policy pack",
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<PolicyPack>
   updatePolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
-          description = "Request body containing ceViewFolder object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
+          description = "Request body containing Policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     //  rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
     if(createPolicyPackDTO==null)
     {
@@ -191,19 +188,19 @@ public class GovernancePolicyPackResource {
 
   @PUT
   @Hidden
-  @Path("policypackOOTB")
+  @Path("policyPackOOTB")
   @Consumes(MediaType.APPLICATION_JSON)
-  @ApiOperation(value = "Update an existing policy set", nickname = "updatePolicySet")
+  @ApiOperation(value = "Update an existing policy set", nickname = "updateOOTBPolicyPack")
   @LogAccountIdentifier
-  @Operation(operationId = "updatePolicySet", description = "Update a Policy set", summary = "Update a Policy set",
+  @Operation(operationId = "updateOOTBPolicyPack", description = "Update a  OOTB Policy Pack", summary = "Update a  OOTB Policy Pack",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update a existing OOTB Policy",
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "update an existing OOTB Policy pack",
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<PolicyPack>
   updatePolicy(@RequestBody(required = true,
-      description = "Request body containing ceViewFolder object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
+      description = "Request body containing Policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
     //  rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
     if(createPolicyPackDTO==null)
     {
@@ -219,22 +216,22 @@ public class GovernancePolicyPackResource {
   }
 
   @POST
-  @Path("policypack/list/{id}")
-  @ApiOperation(value = "Get policies for pack", nickname = "getPolicies")
+  @Path("policyPack/list/{id}")
+  @ApiOperation(value = "Get policies for pack", nickname = "getPoliyPacks")
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(operationId = "getPolicies", description = "Fetch policies ", summary = "Fetch policies for account",
+  @Operation(operationId = "getPoliyPacks", description = "Fetch policies packs ", summary = "Fetch policy packs for account",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            description = "Returns List of policies", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+            description = "Returns List of policy packs", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<List<Policy>>
   listPolicy(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
-          description = "Request body containing policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO,
+          description = "Request body containing policy packs object") @Valid CreatePolicyPackDTO createPolicyPackDTO,
       @PathParam("id") @Parameter(
-          required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
+          required = true, description = "Unique identifier for the policy packs") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyPackViewPermission(accountId, null, null);
     PolicyPack query = createPolicyPackDTO.getPolicyPack();
     List<Policy> Policies = new ArrayList<>();
@@ -248,7 +245,7 @@ public class GovernancePolicyPackResource {
   @Path("policypack/list")
   @ApiOperation(value = "list all policy packs", nickname = "listPolicyPacks")
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(operationId = "listPolicyPacks", description = "Fetch policy packs ",
+  @Operation(operationId = "listPolicyPacks", description = "list Policy Packs ",
       summary = "Fetch policy packs for account",
       responses =
       {
@@ -273,9 +270,9 @@ public class GovernancePolicyPackResource {
   @Path("policypack/{policyPackId}")
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "Delete a policy set", nickname = "deletePolicySet")
+  @ApiOperation(value = "Delete a policy set", nickname = "deletePolicyPack")
   @LogAccountIdentifier
-  @Operation(operationId = "deletePolicySet", description = "Delete a Policy set for the given a ID.",
+  @Operation(operationId = "deletePolicyPack", description = "Delete a Policy set for the given a ID.",
       summary = "Delete a policy set",
       responses =
       {
@@ -304,10 +301,10 @@ public class GovernancePolicyPackResource {
   @Timed
   @Produces(MediaType.APPLICATION_JSON)
   @ExceptionMetered
-  @ApiOperation(value = "Delete a policy", nickname = "deletePolicy")
+  @ApiOperation(value = "delete OOTB Policy Pack", nickname = "deleteOOTBPolicyPack")
   @LogAccountIdentifier
-  @Operation(operationId = "deletePolicy", description = "Delete a Policy for the given a ID.",
-      summary = "Delete a policy",
+  @Operation(operationId = "deleteOOTBPolicyPack", description = "delete OOTB Policy Pack for the given a ID.",
+      summary = "delete OOTB Policy Pack",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -316,7 +313,7 @@ public class GovernancePolicyPackResource {
       })
   public ResponseDTO<Boolean>
   deleteOOTB(@PathParam("uuid") @Parameter(
-      required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
+      required = true, description = "Unique identifier for the Policy Pack") @NotNull @Valid String uuid) {
     boolean result = policyPackService.deleteOOTB(uuid);
     return ResponseDTO.newResponse(result);
   }
