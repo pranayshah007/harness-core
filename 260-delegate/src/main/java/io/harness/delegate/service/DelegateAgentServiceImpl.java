@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateTimeBasedUuid;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.app.DelegateApplication.getProcessId;
+import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.clienttools.InstallUtils.areClientToolsInstalled;
 import static io.harness.delegate.clienttools.InstallUtils.setupClientTools;
 import static io.harness.delegate.message.ManagerMessageConstants.MIGRATE;
@@ -285,12 +286,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final String HEARTBEAT_RESPONSE = "{\"eventType\":\"DelegateHeartbeatResponseStreaming\"";
 
   private static final String HOST_NAME = getLocalHostName();
-  private static final String DELEGATE_NAME =
+  private static String DELEGATE_NAME =
       isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
 
-  private static final String DELEGATE_TYPE = System.getenv().get("DELEGATE_TYPE");
+  private static String DELEGATE_TYPE = System.getenv().get("DELEGATE_TYPE");
   private static final boolean IsEcsDelegate = "ECS".equals(DELEGATE_TYPE);
-  private static final String DELEGATE_GROUP_NAME = System.getenv().get("DELEGATE_GROUP_NAME");
+  private static String DELEGATE_GROUP_NAME = System.getenv().get("DELEGATE_GROUP_NAME");
   private final String delegateGroupId = System.getenv().get("DELEGATE_GROUP_ID");
 
   private static final String START_SH = "start.sh";
@@ -301,7 +302,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final String delegateOrgIdentifier = System.getenv().get("DELEGATE_ORG_IDENTIFIER");
   private final String delegateProjectIdentifier = System.getenv().get("DELEGATE_PROJECT_IDENTIFIER");
   private final String delegateDescription = System.getenv().get("DELEGATE_DESCRIPTION");
-  private final boolean delegateNg = isNotBlank(System.getenv().get("DELEGATE_SESSION_IDENTIFIER"))
+  private boolean delegateNg = isNotBlank(System.getenv().get("DELEGATE_SESSION_IDENTIFIER"))
       || (isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN")));
   public static final String JAVA_VERSION = "java.version";
   private final double RESOURCE_USAGE_THRESHOLD = 0.90;
@@ -456,6 +457,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void initDelegateProcess(final boolean watched) {
     try {
+      if (delegateConfiguration.isLocalNgDelegate()) {
+        delegateNg = true;
+        DELEGATE_GROUP_NAME = "localDelegate";
+        // Setting delegate type as kubernetes, as NG doesn't allow shell delegates.
+        DELEGATE_TYPE = KUBERNETES;
+        DELEGATE_NAME = "LocalDelegate";
+      }
       accountId = delegateConfiguration.getAccountId();
       if (perpetualTaskWorker != null) {
         log.info("Starting perpetual task workers");
@@ -1661,6 +1669,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private boolean doRestartDelegate() {
+    if (!acquireTasks.get()) {
+      // Skip checking other cases if Delegate isn't acquiring tasks.
+      return true;
+    }
+
     long now = clock.millis();
 
     boolean heartbeatExpired = ((now - lastHeartbeatSentAt.get()) > HEARTBEAT_TIMEOUT)

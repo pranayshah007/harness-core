@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -35,6 +36,10 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
+import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -49,8 +54,10 @@ import io.harness.nexus.NexusRequest;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 
+import software.wings.helpers.ext.jenkins.Jenkins;
 import software.wings.helpers.ext.nexus.NexusService;
 import software.wings.service.impl.AwsApiHelperService;
+import software.wings.service.impl.jenkins.JenkinsUtils;
 import software.wings.utils.ArtifactType;
 import software.wings.utils.RepositoryFormat;
 
@@ -85,7 +92,6 @@ public class AzureArtifactDownloadServiceImplTest extends CategoryTest {
 
   @Mock private ArtifactoryNgService artifactoryNgService;
   @Mock private ArtifactoryRequestMapper artifactoryRequestMapper;
-
   @Mock private AzureLogCallbackProvider logCallbackProvider;
   @Mock private LogCallback logCallback;
   @Mock private SecretDecryptionService secretDecryptionService;
@@ -93,6 +99,8 @@ public class AzureArtifactDownloadServiceImplTest extends CategoryTest {
   @Mock private AwsNgConfigMapper awsNgConfigMapper;
   @Mock private NexusService nexusService;
   @Mock private NexusMapper nexusMapper;
+  @Mock JenkinsUtils jenkinsUtil;
+  @Mock Jenkins jenkins;
 
   @InjectMocks private AzureArtifactDownloadServiceImpl downloadService;
 
@@ -208,6 +216,101 @@ public class AzureArtifactDownloadServiceImplTest extends CategoryTest {
       assertThatThrownBy(() -> downloadService.download(downloadContext))
           .isInstanceOf(HintException.class)
           .hasMessageContaining("Please review the Artifact Details and check the File/Folder");
+    } finally {
+      FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
+    }
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testDownloadJenkinsArtifact() throws Exception {
+    InputStream is = new ByteArrayInputStream(ARTIFACT_FILE_CONTENT.getBytes());
+
+    when(jenkinsUtil.getJenkins(any())).thenReturn(jenkins);
+    when(jenkins.downloadArtifact(any(), any(), any())).thenReturn(new Pair<String, InputStream>() {
+      @Override
+      public String getLeft() {
+        return "result";
+      }
+      @Override
+      public InputStream getRight() {
+        return is;
+      }
+      @Override
+      public InputStream setValue(InputStream value) {
+        return value;
+      }
+    });
+
+    final JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("testJenkinsUrl")
+            .auth(JenkinsAuthenticationDTO.builder()
+                      .authType(JenkinsAuthType.USER_PASSWORD)
+                      .credentials(JenkinsUserNamePasswordDTO.builder()
+                                       .username("testUsername")
+                                       .passwordRef(SecretRefData.builder().build())
+                                       .build())
+                      .build())
+            .build();
+
+    final JenkinsAzureArtifactRequestDetails requestDetails = JenkinsAzureArtifactRequestDetails.builder()
+                                                                  .jobName("testJobName")
+                                                                  .build("testBuild-123")
+                                                                  .artifactPath("testArtifactPath.war")
+                                                                  .identifier("PACKAGE")
+                                                                  .build();
+
+    final ArtifactDownloadContext downloadContext =
+        createDownloadContext(ArtifactSourceType.JENKINS, requestDetails, jenkinsConnectorDTO);
+
+    try {
+      AzureArtifactDownloadResponse downloadResponse = downloadService.download(downloadContext);
+      List<String> fileContent = Files.readAllLines(downloadResponse.getArtifactFile().toPath());
+      assertThat(fileContent).containsOnly(ARTIFACT_FILE_CONTENT);
+      assertThat(downloadResponse.getArtifactFile().toString()).contains("testArtifactPath.war");
+      assertThat(downloadResponse.getArtifactType()).isEqualTo(ArtifactType.WAR);
+    } finally {
+      FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
+    }
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testDownloadJenkinsArtifactAndExceptionIsThrown() throws Exception {
+    InputStream is = new ByteArrayInputStream(ARTIFACT_FILE_CONTENT.getBytes());
+
+    when(jenkinsUtil.getJenkins(any())).thenReturn(jenkins);
+    doThrow(new RuntimeException()).when(jenkins).downloadArtifact(any(), any(), any());
+
+    final JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("testJenkinsUrl")
+            .auth(JenkinsAuthenticationDTO.builder()
+                      .authType(JenkinsAuthType.USER_PASSWORD)
+                      .credentials(JenkinsUserNamePasswordDTO.builder()
+                                       .username("testUsername")
+                                       .passwordRef(SecretRefData.builder().build())
+                                       .build())
+                      .build())
+            .build();
+
+    final JenkinsAzureArtifactRequestDetails requestDetails = JenkinsAzureArtifactRequestDetails.builder()
+                                                                  .jobName("testJobName")
+                                                                  .build("testBuild-123")
+                                                                  .artifactPath("testArtifactPath.war")
+                                                                  .identifier("PACKAGE")
+                                                                  .build();
+
+    final ArtifactDownloadContext downloadContext =
+        createDownloadContext(ArtifactSourceType.JENKINS, requestDetails, jenkinsConnectorDTO);
+
+    try {
+      assertThatThrownBy(() -> downloadService.download(downloadContext))
+          .isInstanceOf(HintException.class)
+          .hasMessageContaining("Please review the Jenkins Artifact Details and check Path to the artifact");
     } finally {
       FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
     }
