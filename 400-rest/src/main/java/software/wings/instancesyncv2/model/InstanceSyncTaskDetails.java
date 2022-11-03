@@ -53,6 +53,11 @@ public class InstanceSyncTaskDetails implements PersistentEntity, UuidAware, Uui
                  .field(InstanceSyncTaskDetailsKeys.accountId)
                  .field(InstanceSyncTaskDetailsKeys.perpetualTaskId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_cloudProviderId_idx")
+                 .field(InstanceSyncTaskDetailsKeys.accountId)
+                 .field(InstanceSyncTaskDetailsKeys.cloudProviderId)
+                 .build())
         .build();
   }
 
