@@ -15,5 +15,5 @@ import lombok.Data;
 public class SubscriptionItemParams {
   private String type;
   private Long quantity;
-  private boolean priceIncludeQuantity;
+  private boolean quantityIncludedInPrice;
 }
