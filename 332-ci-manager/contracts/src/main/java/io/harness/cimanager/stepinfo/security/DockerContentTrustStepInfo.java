@@ -33,8 +33,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.DockerContentTrustStepInfo")
 public class DockerContentTrustStepInfo extends SecurityStepInfo {
   @JsonIgnore
-  public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.DOCKER_CONTENT_TRUST).build();
-  @JsonIgnore
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(CIStepInfoType.DOCKER_CONTENT_TRUST.getDisplayName())
                                                .setStepCategory(StepCategory.STEP)

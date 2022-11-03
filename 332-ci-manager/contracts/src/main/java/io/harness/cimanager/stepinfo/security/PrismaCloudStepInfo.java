@@ -33,8 +33,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.PrismaCloudStepInfo")
 public class PrismaCloudStepInfo extends SecurityStepInfo {
   @JsonIgnore
-  public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.PRISMA_CLOUD).build();
-  @JsonIgnore
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(CIStepInfoType.PRISMA_CLOUD.getDisplayName())
                                                .setStepCategory(StepCategory.STEP)

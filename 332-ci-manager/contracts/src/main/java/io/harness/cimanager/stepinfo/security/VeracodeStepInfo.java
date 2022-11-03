@@ -32,7 +32,6 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.VeracodeStepInfo")
 public class VeracodeStepInfo extends SecurityStepInfo {
-  @JsonIgnore public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.VERACODE).build();
   @JsonIgnore
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(CIStepInfoType.VERACODE.getDisplayName())

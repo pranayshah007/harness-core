@@ -33,8 +33,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.MetasploitStepInfo")
 public class MetasploitStepInfo extends SecurityStepInfo {
   @JsonIgnore
-  public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.METASPLOIT).build();
-  @JsonIgnore
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(CIStepInfoType.METASPLOIT.getDisplayName())
                                                .setStepCategory(StepCategory.STEP)

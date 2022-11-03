@@ -142,11 +142,7 @@ public class SecurityStepInfo implements PluginCompatibleStep {
 
   @Override
   public TypeInfo getNonYamlInfo() {
-    CIStepInfoType stepInfoType = Arrays.stream(CIStepInfoType.values())
-                                      .filter(value -> value.getDisplayName().equals(getTypeName()))
-                                      .findFirst()
-                                      .orElse(null);
-    return TypeInfo.builder().stepInfoType(stepInfoType).build();
+    return TypeInfo.builder().stepInfoType(CIStepInfoType.SECURITY).build();
   }
 
   private String getTypeName() {

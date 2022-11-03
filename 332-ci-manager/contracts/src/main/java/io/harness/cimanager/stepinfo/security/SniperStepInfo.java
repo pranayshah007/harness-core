@@ -32,7 +32,6 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.SniperStepInfo")
 public class SniperStepInfo extends SecurityStepInfo {
-  @JsonIgnore public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.SNIPER).build();
   @JsonIgnore
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(CIStepInfoType.SNIPER.getDisplayName()).setStepCategory(StepCategory.STEP).build();

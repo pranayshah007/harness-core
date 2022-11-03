@@ -33,8 +33,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.FortifyOnDemandStepInfo")
 public class FortifyOnDemandStepInfo extends SecurityStepInfo {
   @JsonIgnore
-  public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.FORTIFY_ON_DEMAND).build();
-  @JsonIgnore
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(CIStepInfoType.FORTIFY_ON_DEMAND.getDisplayName())
                                                .setStepCategory(StepCategory.STEP)

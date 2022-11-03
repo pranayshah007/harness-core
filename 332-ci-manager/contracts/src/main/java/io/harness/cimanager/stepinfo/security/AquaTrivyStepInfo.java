@@ -33,8 +33,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.AquaTrivyStepInfo")
 public class AquaTrivyStepInfo extends SecurityStepInfo {
   @JsonIgnore
-  public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.AQUA_TRIVY).build();
-  @JsonIgnore
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(CIStepInfoType.AQUA_TRIVY.getDisplayName())
                                                .setStepCategory(StepCategory.STEP)

@@ -32,7 +32,6 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.QualysStepInfo")
 public class QualysStepInfo extends SecurityStepInfo {
-  @JsonIgnore public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.QUALYS).build();
   @JsonIgnore
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(CIStepInfoType.QUALYS.getDisplayName()).setStepCategory(StepCategory.STEP).build();

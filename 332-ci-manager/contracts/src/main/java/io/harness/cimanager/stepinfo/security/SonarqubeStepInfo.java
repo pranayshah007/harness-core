@@ -32,7 +32,6 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.SonarqubeStepInfo")
 public class SonarqubeStepInfo extends SecurityStepInfo {
-  @JsonIgnore public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.SONARQUBE).build();
   @JsonIgnore
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(CIStepInfoType.SONARQUBE.getDisplayName())

@@ -28,6 +28,7 @@ public class STOCreatorUtils {
   public Set<String> getSupportedStepsV2() {
     Set<String> steps = Arrays.stream(STOStepType.values()).map(e -> e.getName()).collect(Collectors.toSet());
     steps.add("Security");
+    steps.add("Run");
 
     return Sets.newHashSet(steps);
   }

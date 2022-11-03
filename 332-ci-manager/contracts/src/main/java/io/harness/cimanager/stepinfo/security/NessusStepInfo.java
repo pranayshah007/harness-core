@@ -32,7 +32,6 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.NessusStepInfo")
 public class NessusStepInfo extends SecurityStepInfo {
-  @JsonIgnore public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.NESSUS).build();
   @JsonIgnore
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(CIStepInfoType.NESSUS.getDisplayName()).setStepCategory(StepCategory.STEP).build();

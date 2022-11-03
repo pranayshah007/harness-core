@@ -12,8 +12,9 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.SecurityStageNode;
-import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.STOStepInfo;
 import io.harness.beans.steps.STOStepType;
+import io.harness.beans.steps.nodes.RunStepNode;
 import io.harness.beans.steps.nodes.SecurityNode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
@@ -70,7 +71,7 @@ public class StoBeansRegistrars {
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
-                   .clazz(CIStepInfo.class)
+                   .clazz(STOStepInfo.class)
                    .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.SECURITY)
@@ -82,6 +83,17 @@ public class StoBeansRegistrars {
                                            .build())
                    .availableAtAccountLevel(false)
                    .clazz(SecurityNode.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.RUN_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .modulesSupported(Collections.singletonList(ModuleType.STO))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .availableAtAccountLevel(false)
+                   .clazz(RunStepNode.class)
                    .build())
           .addAll(createSecurityStepYamlDefinitions())
           .build();
