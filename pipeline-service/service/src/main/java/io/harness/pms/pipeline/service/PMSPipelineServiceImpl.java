@@ -27,7 +27,6 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
-import io.harness.exception.InvalidYamlVersionException;
 import io.harness.exception.ScmException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
@@ -59,9 +58,9 @@ import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.utils.PmsFeatureFlagHelper;
 
@@ -494,7 +493,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
     String importedPipelineYAML =
         pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
-    YamlVersion pipelineVersion = pipelineVersion(accountId, importedPipelineYAML);
+    String pipelineVersion = pipelineVersion(accountId, importedPipelineYAML);
     PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(orgIdentifier, projectIdentifier,
         pipelineIdentifier, pipelineImportRequest, importedPipelineYAML, pipelineVersion);
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
@@ -631,23 +630,20 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public YamlVersion pipelineVersion(String accountId, String yaml) {
-    boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
-    YamlField version;
+  public String pipelineVersion(String accountId, String yaml) {
+    String version;
     try {
       YamlField yamlField = YamlUtils.readTree(yaml);
-      version = yamlField.getNode().getField(VERSION_FIELD_NAME);
+      version = yamlField.getNode().getProperty(VERSION_FIELD_NAME);
     } catch (IOException ioException) {
       throw new InvalidRequestException("Invalid yaml passed.");
     }
+    boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
 
     if (isYamlSimplificationEnabled && version != null) {
-      if (version.getNode() == null) {
-        throw new InvalidYamlVersionException("Invalid yaml version passed.");
-      }
-      return YamlVersion.fromString(version.getNode().toString());
+      return version;
     } else {
-      return YamlVersion.V0;
+      return PipelineVersion.V0;
     }
   }
 }
