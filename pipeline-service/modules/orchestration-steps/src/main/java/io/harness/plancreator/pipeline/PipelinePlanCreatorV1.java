@@ -20,18 +20,12 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
-import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.common.pipeline.PipelineSetupStep;
 import io.harness.steps.common.pipeline.PipelineSetupStepParameters;
-import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
-import io.harness.utils.TimeoutUtils;
 
 import com.google.common.base.Preconditions;
 import java.util.Collections;
@@ -42,18 +36,18 @@ import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class NGPipelinePlanCreator extends ChildrenPlanCreator<PipelineInfoConfig> {
+public class PipelinePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Override
-  public String getStartingNodeId(PipelineInfoConfig field) {
+  public String getStartingNodeId(YamlField field) {
     return field.getUuid();
   }
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
-      PlanCreationContext ctx, PipelineInfoConfig config) {
+      PlanCreationContext ctx, YamlField config) {
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
     Map<String, YamlField> dependencies = new HashMap<>();
-    YamlField stagesYamlNode = Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField("stages"));
+    YamlField stagesYamlNode = Preconditions.checkNotNull(config.getNode().getField("stages"));
     if (stagesYamlNode.getNode() == null) {
       return responseMap;
     }
@@ -65,21 +59,17 @@ public class NGPipelinePlanCreator extends ChildrenPlanCreator<PipelineInfoConfi
   }
 
   @Override
-  public PlanNode createPlanForParentNode(
-      PlanCreationContext ctx, PipelineInfoConfig config, List<String> childrenNodeIds) {
-    String name = config.getName() != null ? config.getName() : config.getIdentifier();
-    YamlNode stagesYamlNode = Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField("stages")).getNode();
-
+  public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
     StepParameters stepParameters =
-        PipelineSetupStepParameters.getStepParameters(ctx, config, stagesYamlNode.getUuid());
+        PipelineSetupStepParameters.newBuilder().childNodeID(childrenNodeIds.get(0)).build();
 
     PlanNodeBuilder planNodeBuilder =
         PlanNode.builder()
             .uuid(config.getUuid())
-            .identifier(YAMLFieldNameConstants.PIPELINE)
+            .identifier(config.getId())
             .stepType(PipelineSetupStep.STEP_TYPE)
             .group(StepOutcomeGroup.PIPELINE.name())
-            .name(name)
+            .name(config.getName())
             .skipUnresolvedExpressionsCheck(true)
             .stepParameters(stepParameters)
             .facilitatorObtainment(
@@ -88,31 +78,21 @@ public class NGPipelinePlanCreator extends ChildrenPlanCreator<PipelineInfoConfi
                     .build())
             .skipExpressionChain(false);
 
-    if (ParameterField.isNotNull(config.getTimeout())) {
-      planNodeBuilder.timeoutObtainment(
-          SdkTimeoutObtainment.builder()
-              .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
-              .parameters(AbsoluteSdkTimeoutTrackerParameters.builder()
-                              .timeout(TimeoutUtils.getTimeoutParameterFieldString(config.getTimeout()))
-                              .build())
-              .build());
-    }
-
     return planNodeBuilder.build();
   }
 
   @Override
-  public Class<PipelineInfoConfig> getFieldClass() {
-    return PipelineInfoConfig.class;
+  public Class<YamlField> getFieldClass() {
+    return YamlField.class;
+  }
+
+  @Override
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V1);
   }
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(YAMLFieldNameConstants.PIPELINE, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
-  }
-
-  @Override
-  public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V0);
   }
 }

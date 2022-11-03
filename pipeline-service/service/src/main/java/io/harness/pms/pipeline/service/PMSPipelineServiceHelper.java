@@ -65,11 +65,11 @@ import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineEntityUtils;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YAMLMetadataFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.serializer.JsonUtils;
 import io.harness.telemetry.TelemetryReporter;
@@ -144,13 +144,14 @@ public class PMSPipelineServiceHelper {
     return criteria;
   }
 
-  public PipelineEntity updatePipelineInfo(PipelineEntity pipelineEntity, YamlVersion pipelineVersion)
-      throws IOException {
+  public PipelineEntity updatePipelineInfo(PipelineEntity pipelineEntity, String pipelineVersion) throws IOException {
     switch (pipelineVersion) {
-      case V1:
+      case PipelineVersion.V1:
         return pipelineEntity;
-      default:
+      case PipelineVersion.V0:
         return updatePipelineInfoInternal(pipelineEntity);
+      default:
+        throw new IllegalStateException("version not supported");
     }
   }
 
@@ -449,14 +450,15 @@ public class PMSPipelineServiceHelper {
 
   public static void checkAndThrowMismatchInImportedPipelineMetadata(String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline,
-      YamlVersion pipelineVersion) {
+      String pipelineVersion) {
     if (EmptyPredicate.isEmpty(importedPipeline)) {
       String errorMessage = PipelineCRUDErrorResponse.errorMessageForEmptyYamlOnGit(
           orgIdentifier, projectIdentifier, pipelineIdentifier, GitAwareContextHelper.getBranchInRequest());
       throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
     }
+    // TODO (prashant) : Check with the team
     switch (pipelineVersion) {
-      case V1:
+      case PipelineVersion.V1:
         return;
       default:
         checkAndThrowMismatchInImportedPipelineMetadataInternal(
