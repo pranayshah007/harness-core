@@ -21,7 +21,6 @@ import io.harness.connector.task.spot.SpotNgConfigMapper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -33,7 +32,6 @@ import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskRes
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
-import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.model.ElastiGroup;
 
 import com.amazonaws.services.ec2.model.Instance;
@@ -73,13 +71,7 @@ public class ElastigroupDeployTask extends AbstractDelegateRunnableTask {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
     try {
-      final ElastigroupDeployTaskParameters elastigroupDeployTaskParameters =
-          (ElastigroupDeployTaskParameters) parameters;
-
-      return elastigroupDeploy(elastigroupDeployTaskParameters.getNewElastigroup(),
-          elastigroupDeployTaskParameters.getOldElastigroup(), elastigroupDeployTaskParameters.getSpotConnector(),
-          elastigroupDeployTaskParameters.getEncryptionDetails(), commandUnitsProgress);
-
+      return elastigroupDeploy((ElastigroupDeployTaskParameters) parameters, commandUnitsProgress);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in elastigroup deploy", sanitizedException);
@@ -90,10 +82,12 @@ public class ElastigroupDeployTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  private ElastigroupDeployTaskResponse elastigroupDeploy(ElastiGroup newElastigroup, ElastiGroup oldElastigroup,
-      SpotConnectorDTO spotConnector, List<EncryptedDataDetail> encryptionDetails,
-      CommandUnitsProgress commandUnitsProgress) throws Exception {
-    SpotConfig spotConfig = ngConfigMapper.mapSpotConfigWithDecryption(spotConnector, encryptionDetails);
+  private ElastigroupDeployTaskResponse elastigroupDeploy(
+      ElastigroupDeployTaskParameters parameters, CommandUnitsProgress commandUnitsProgress) throws Exception {
+    ElastiGroup newElastigroup = parameters.getNewElastigroup();
+    ElastiGroup oldElastigroup = parameters.getOldElastigroup();
+    SpotConfig spotConfig =
+        ngConfigMapper.mapSpotConfigWithDecryption(parameters.getSpotConnector(), parameters.getEncryptionDetails());
     String spotInstAccountId = spotConfig.getCredential().getSpotAccountId();
     String spotInstToken = spotConfig.getCredential().getAppTokenId();
 
