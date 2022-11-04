@@ -151,7 +151,6 @@ public interface YamlTypes {
   String STARTUP_COMMAND = "startupCommand";
 
   String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
-  String ELASTIGROUP_SETUP = StepSpecTypeConstants.ELASTIGROUP_SETUP;
   String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
 
   String APPLICATION_SETTINGS = "applicationSettings";
@@ -166,4 +165,5 @@ public interface YamlTypes {
   String PIPELINE = "pipeline";
   String PARALLEL_STAGE = "parallel";
   String STAGES = "stages";
+  String ELASTIGROUP_SETUP = StepSpecTypeConstants.ELASTIGROUP_SETUP;
 }

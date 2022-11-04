@@ -322,9 +322,6 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
   ECS_BLUE_GREEN_CREATE_SERVICE_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE,
       IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_CREATE_SERVICE),
-  @JsonProperty(EntityTypeConstants.ELASTIGROUP_SETUP)
-  ELASTIGROUP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SETUP,
-          IdentifierRef.class, EntityYamlRootNames.ELASTIGROUP_SETUP),
   @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
   ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS,
       IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
@@ -346,7 +343,10 @@ public enum EntityType {
   CHAOS_STEP(ModuleType.CHAOS, EntityTypeConstants.CHAOS_STEP, IdentifierRef.class, EntityYamlRootNames.CHAOS_STEP),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_DEPLOY_STEP)
   ELASTIGROUP_DEPLOY_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_DEPLOY_STEP, IdentifierRef.class,
-      EntityYamlRootNames.ELASTIGROUP_DEPLOY_STEP);
+      EntityYamlRootNames.ELASTIGROUP_DEPLOY_STEP),
+  @JsonProperty(EntityTypeConstants.ELASTIGROUP_SETUP)
+  ELASTIGROUP_SETUP_STEP(
+      ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SETUP, IdentifierRef.class, EntityYamlRootNames.ELASTIGROUP_SETUP);
 
   private final ModuleType moduleType;
   String yamlName;

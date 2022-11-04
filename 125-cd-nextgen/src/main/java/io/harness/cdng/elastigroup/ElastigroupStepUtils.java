@@ -7,7 +7,13 @@
 
 package io.harness.cdng.elastigroup;
 
-import com.google.inject.Inject;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static software.wings.beans.LogHelper.color;
+
+import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import io.harness.beans.FileReference;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.EcsEntityHelper;
@@ -34,20 +40,17 @@ import io.harness.ng.core.filestore.NGFileType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
+
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static software.wings.beans.LogHelper.color;
 
 public class ElastigroupStepUtils extends CDStepHelper {
   @Inject private EngineExpressionService engineExpressionService;
@@ -82,12 +85,12 @@ public class ElastigroupStepUtils extends CDStepHelper {
   }
 
   public List<String> fetchFilesContentFromLocalStore(
-          Ambiance ambiance, StartupScriptOutcome startupScriptOutcome, LogCallback logCallback) {
+      Ambiance ambiance, StartupScriptOutcome startupScriptOutcome, LogCallback logCallback) {
     Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
     LocalStoreFetchFilesResult localStoreFetchFilesResult = null;
 
-    logCallback.saveExecutionLog(color(
-        format("%nFetching %s from Harness File Store", "startupScript"), LogColor.White, LogWeight.Bold));
+    logCallback.saveExecutionLog(
+        color(format("%nFetching %s from Harness File Store", "startupScript"), LogColor.White, LogWeight.Bold));
     if (ManifestStoreType.HARNESS.equals(startupScriptOutcome.getStore().getKind())) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       localStoreFetchFilesResult = getFileContentsFromStartupScriptOutcome(startupScriptOutcome, ngAccess, logCallback);
@@ -100,24 +103,20 @@ public class ElastigroupStepUtils extends CDStepHelper {
       StartupScriptOutcome startupScriptOutcome, NGAccess ngAccess, LogCallback logCallback) {
     HarnessStore localStoreConfig = (HarnessStore) startupScriptOutcome.getStore();
     List<String> scopedFilePathList = localStoreConfig.getFiles().getValue();
-    return getFileContents(
-        ngAccess, scopedFilePathList, "startupScript", logCallback);
+    return getFileContents(ngAccess, scopedFilePathList, "startupScript", logCallback);
   }
 
-  private LocalStoreFetchFilesResult getFileContents(NGAccess ngAccess, List<String> scopedFilePathList,
-      String manifestType, LogCallback logCallback) {
+  private LocalStoreFetchFilesResult getFileContents(
+      NGAccess ngAccess, List<String> scopedFilePathList, String manifestType, LogCallback logCallback) {
     List<String> fileContents = new ArrayList<>();
     if (isNotEmpty(scopedFilePathList)) {
-      logCallback.saveExecutionLog(
-          color(format("%nFetching %s files", manifestType), LogColor.White,
-              LogWeight.Bold));
+      logCallback.saveExecutionLog(color(format("%nFetching %s files", manifestType), LogColor.White, LogWeight.Bold));
       logCallback.saveExecutionLog(color(format("Fetching following Files :"), LogColor.White));
       printFilesFetchedFromHarnessStore(scopedFilePathList, logCallback);
       logCallback.saveExecutionLog(
           color(format("Successfully fetched following files: "), LogColor.White, LogWeight.Bold));
       for (String scopedFilePath : scopedFilePathList) {
-        Optional<FileStoreNodeDTO> valuesFile =
-            validateAndFetchFileFromHarnessStore(scopedFilePath, ngAccess);
+        Optional<FileStoreNodeDTO> valuesFile = validateAndFetchFileFromHarnessStore(scopedFilePath, ngAccess);
         FileStoreNodeDTO fileStoreNodeDTO = valuesFile.get();
         if (NGFileType.FILE.equals(fileStoreNodeDTO.getType())) {
           FileNodeDTO file = (FileNodeDTO) fileStoreNodeDTO;
@@ -136,11 +135,9 @@ public class ElastigroupStepUtils extends CDStepHelper {
     return LocalStoreFetchFilesResult.builder().LocalStoreFileContents(fileContents).build();
   }
 
-  private Optional<FileStoreNodeDTO> validateAndFetchFileFromHarnessStore(
-      String scopedFilePath, NGAccess ngAccess) {
+  private Optional<FileStoreNodeDTO> validateAndFetchFileFromHarnessStore(String scopedFilePath, NGAccess ngAccess) {
     if (isBlank(scopedFilePath)) {
-      throw new InvalidRequestException(
-          format("File reference cannot be null or empty"));
+      throw new InvalidRequestException(format("File reference cannot be null or empty"));
     }
     FileReference fileReference = FileReference.of(
         scopedFilePath, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
@@ -149,9 +146,8 @@ public class ElastigroupStepUtils extends CDStepHelper {
         fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(), fileReference.getOrgIdentifier(),
             fileReference.getProjectIdentifier(), fileReference.getPath(), true);
     if (!manifestFile.isPresent()) {
-      throw new InvalidRequestException(
-          format("File/Folder not found in File Store with path: [%s], scope: [%s]",
-              fileReference.getPath(), fileReference.getScope()));
+      throw new InvalidRequestException(format("File/Folder not found in File Store with path: [%s], scope: [%s]",
+          fileReference.getPath(), fileReference.getScope()));
     }
     return manifestFile;
   }

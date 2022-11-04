@@ -7,17 +7,16 @@
 
 package io.harness.cdng.elastigroup;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonTypeName;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.host.HostFilterSpec;
-import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 @OwnedBy(CDP)
 @Value

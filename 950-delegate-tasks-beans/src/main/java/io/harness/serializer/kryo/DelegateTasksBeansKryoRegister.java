@@ -1849,13 +1849,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsRunTaskResponse.class, 573543);
     kryo.register(EcsRunTaskResult.class, 573544);
 
-    //Elastigroup
-    kryo.register(ElastigroupStartupScriptFetchRequest.class, 573545);
-    kryo.register(ElastigroupStartupScriptFetchResponse.class, 573546);
-    kryo.register(ElastigroupSetupCommandRequest.class, 573547);
-    kryo.register(ElastigroupSetupResponse.class, 573548);
-    kryo.register(ElastigroupSetupResult.class, 573549);
-
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);
     kryo.register(ArtifactoryAzureArtifactRequestDetails.class, 55412);
@@ -1915,5 +1908,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AMIArtifactDelegateResponse.class, 60012);
     kryo.register(AMITag.class, 60013);
     kryo.register(AMIFilter.class, 60014);
+
+    // Elastigroup
+    kryo.register(ElastigroupStartupScriptFetchRequest.class, 573545);
+    kryo.register(ElastigroupStartupScriptFetchResponse.class, 573546);
+    kryo.register(ElastigroupSetupCommandRequest.class, 573547);
+    kryo.register(ElastigroupSetupResponse.class, 573548);
+    kryo.register(ElastigroupSetupResult.class, 573549);
   }
 }

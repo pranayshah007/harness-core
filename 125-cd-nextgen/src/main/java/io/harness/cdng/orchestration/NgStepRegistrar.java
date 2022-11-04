@@ -170,7 +170,6 @@ public class NgStepRegistrar {
     engineSteps.put(StartupCommandStep.STEP_TYPE, StartupCommandStep.class);
     engineSteps.put(AzureServiceSettingsStep.STEP_TYPE, AzureServiceSettingsStep.class);
     engineSteps.put(ElastigroupServiceSettingsStep.STEP_TYPE, ElastigroupServiceSettingsStep.class);
-    engineSteps.put(ElastigroupSetupStep.STEP_TYPE, ElastigroupSetupStep.class);
     engineSteps.put(ApplicationSettingsStep.STEP_TYPE, ApplicationSettingsStep.class);
     engineSteps.put(ConnectionStringsStep.STEP_TYPE, ConnectionStringsStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
@@ -198,6 +197,7 @@ public class NgStepRegistrar {
     engineSteps.put(ChaosStep.STEP_TYPE, ChaosStep.class);
 
     engineSteps.put(ElastigroupDeployStep.STEP_TYPE, ElastigroupDeployStep.class);
+    engineSteps.put(ElastigroupSetupStep.STEP_TYPE, ElastigroupSetupStep.class);
 
     return engineSteps;
   }

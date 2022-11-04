@@ -7,8 +7,6 @@
 
 package io.harness.cdng.elastigroup;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,15 +21,17 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
-
-import java.util.List;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
@@ -41,8 +41,7 @@ import java.util.List;
 @JsonTypeName(StepSpecTypeConstants.ELASTIGROUP_SETUP)
 @TypeAlias("elastigroupSetupStepInfo")
 @RecasterAlias("io.harness.cdng.elastigroup.ElastigroupSetupStepInfo")
-public class ElastigroupSetupStepInfo
-    extends ElastigroupSetupBaseStepInfo implements CDStepInfo, Visitable {
+public class ElastigroupSetupStepInfo extends ElastigroupSetupBaseStepInfo implements CDStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -51,9 +50,8 @@ public class ElastigroupSetupStepInfo
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public ElastigroupSetupStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                  ParameterField<String> name,
-                                  ElastigroupInstances instances) {
+  public ElastigroupSetupStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> name,
+      ElastigroupInstances instances) {
     super(delegateSelectors, name, instances);
   }
 
@@ -71,8 +69,8 @@ public class ElastigroupSetupStepInfo
   public SpecParameters getSpecParameters() {
     return ElastigroupSetupStepParameters.infoBuilder()
         .delegateSelectors(this.getDelegateSelectors())
-            .name(this.getName())
-            .instances(this.getInstances())
+        .name(this.getName())
+        .instances(this.getInstances())
         .build();
   }
 

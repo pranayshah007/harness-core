@@ -328,9 +328,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new EcsBlueGreenSwapTargetGroupsStepPlanCreator());
     planCreators.add(new EcsBlueGreenRollbackStepPlanCreator());
     planCreators.add(new EcsRunTaskStepPlanCreator());
-    //Elastigroup
-    planCreators.add(new ElastigroupSetupStepPlanCreator());
-    planCreators.add(new ElastigroupDeployStepPlanCreator());
 
     planCreators.add(new AzureCreateARMResourceStepPlanCreator());
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
@@ -340,6 +337,11 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // CHaos
     planCreators.add(new ChaosStepPlanCreator());
+
+    // Elastigroup
+    planCreators.add(new ElastigroupDeployStepPlanCreator());
+    planCreators.add(new ElastigroupSetupStepPlanCreator());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -422,15 +424,17 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new EcsBlueGreenSwapTargetGroupsStepVariableCreator());
     variableCreators.add(new EcsBlueGreenRollbackStepVariableCreator());
     variableCreators.add(new EcsRunTaskStepVariableCreator());
-    // Elastigroup
-    variableCreators.add(new ElastigroupSetupStepVariableCreator());
-    variableCreators.add(new ElastigroupDeployStepVariableCreator());
 
     variableCreators.add(new AzureCreateARMResourceStepVariableCreator());
     variableCreators.add(new AzureCreateBPStepVariableCreator());
     variableCreators.add(new AzureARMRollbackStepVariableCreator());
     variableCreators.add(new ShellScriptProvisionStepVariableCreator());
     variableCreators.add(new ChaosStepVariableCreator());
+
+    // Elastigroup
+    variableCreators.add(new ElastigroupDeployStepVariableCreator());
+    variableCreators.add(new ElastigroupSetupStepVariableCreator());
+
     return variableCreators;
   }
 
@@ -612,14 +616,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setStepMetaData(
                 StepMetaData.newBuilder().addCategory("ServerlessAwsLambda").setFolderPath("Serverless Lambda").build())
             .build();
-
-    StepInfo elastigroupSetup =
-            StepInfo.newBuilder()
-                    .setName("Elastigroup Setup")
-                    .setType(StepSpecTypeConstants.ELASTIGROUP_SETUP)
-                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
-                    .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
-                    .build();
 
     StepInfo ecsRollingDeploy =
         StepInfo.newBuilder()
@@ -832,6 +828,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setStepMetaData(StepMetaData.newBuilder().addCategory(ELASTIGROUP).addFolderPaths("Elastigroup").build())
             .build();
 
+    StepInfo elastigroupSetup =
+        StepInfo.newBuilder()
+            .setName("Elastigroup Setup")
+            .setType(StepSpecTypeConstants.ELASTIGROUP_SETUP)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
+            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
+            .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
@@ -872,13 +876,13 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(azureCreateBPResources);
     stepInfos.add(azureARMRollback);
     stepInfos.add(fetchInstanceScript);
-    stepInfos.add(elastigroupSetup);
     stepInfos.add(ecsBlueGreenCreateService);
     stepInfos.add(ecsBlueGreenSwapTargetGroups);
     stepInfos.add(ecsBlueGreenRollback);
     stepInfos.add(shellScriptProvision);
     stepInfos.add(chaosStep);
     stepInfos.add(elastigroupDeployStep);
+    stepInfos.add(elastigroupSetup);
     return stepInfos;
   }
 }
