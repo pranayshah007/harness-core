@@ -14,7 +14,9 @@ import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ACR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AMAZON_S3;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AMI;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ARTIFACTORY_REGISTRY;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AZURE_ARTIFACTS;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.CUSTOM_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ECR;
@@ -52,6 +54,9 @@ public class GeneratorFactory {
   private final CustomPollingItemGenerator customPollingItemGenerator;
   private final GARPollingItemGenerator garPollingItemGenerator;
   private final GithubPackagesPollingItemGenerator githubPackagesPollingItemGenerator;
+  private final AzureArtifactsPollingItemGenerator azureArtifactsPollingItemGenerator;
+  private final AMIPollingItemGenerator amiPollingItemGenerator;
+
   public PollingItemGenerator retrievePollingItemGenerator(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
     if (ngTriggerEntity.getType() == MANIFEST) {
@@ -87,6 +92,10 @@ public class GeneratorFactory {
       return garPollingItemGenerator;
     } else if (GITHUB_PACKAGES.getValue().equals(buildType)) {
       return githubPackagesPollingItemGenerator;
+    } else if (AZURE_ARTIFACTS.getValue().equals(buildType)) {
+      return azureArtifactsPollingItemGenerator;
+    } else if (AMI.getValue().equals(buildType)) {
+      return amiPollingItemGenerator;
     }
     return null;
   }

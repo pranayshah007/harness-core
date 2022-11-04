@@ -57,7 +57,7 @@ public class PipelinesApiUtilsTest extends CategoryTest {
                                             .repoName("repoName")
                                             .build();
     GitDetails gitDetails = PipelinesApiUtils.getGitDetails(entityGitDetails);
-    assertEquals("objectId", gitDetails.getEntityIdentifier());
+    assertEquals("objectId", gitDetails.getObjectId());
     assertEquals("branch", gitDetails.getBranchName());
     assertEquals("commitId", gitDetails.getCommitId());
     assertEquals("filePath", gitDetails.getFilePath());
@@ -95,10 +95,17 @@ public class PipelinesApiUtilsTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testGetResponseBody() {
-    PipelineEntity pipelineEntity =
-        PipelineEntity.builder().yaml("yaml").createdAt(123456L).lastUpdatedAt(987654L).build();
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .yaml("yaml")
+                                        .identifier(slug)
+                                        .orgIdentifier("org")
+                                        .createdAt(123456L)
+                                        .lastUpdatedAt(987654L)
+                                        .build();
     PipelineGetResponseBody responseBody = PipelinesApiUtils.getGetResponseBody(pipelineEntity);
     assertEquals("yaml", responseBody.getPipelineYaml());
+    assertEquals(slug, responseBody.getSlug());
+    assertEquals("org", responseBody.getOrg());
     assertEquals(123456L, responseBody.getCreated().longValue());
     assertEquals(987654L, responseBody.getUpdated().longValue());
   }

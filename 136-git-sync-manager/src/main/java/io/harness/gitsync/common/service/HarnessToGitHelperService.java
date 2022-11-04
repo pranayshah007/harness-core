@@ -24,6 +24,8 @@ import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.GetRepoUrlRequest;
 import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.IsGitSimplificationEnabledRequest;
+import io.harness.gitsync.ListFilesRequest;
+import io.harness.gitsync.ListFilesResponse;
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.RepoDetails;
@@ -58,4 +60,6 @@ public interface HarnessToGitHelperService {
   Boolean isOldGitSyncEnabledForModule(EntityScopeInfo entityScopeInfo, boolean isNotForFFModule);
 
   GetBranchHeadCommitResponse getBranchHeadCommitDetails(GetBranchHeadCommitRequest getBranchHeadCommitRequest);
+
+  ListFilesResponse listFiles(ListFilesRequest listFilesRequest);
 }

@@ -75,3 +75,4 @@ platform-bazel-cache-dev.json
 test-util.bzl
 
 .tool-versions
+.build-cleaner-index

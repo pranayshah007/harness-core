@@ -8,6 +8,7 @@
 package software.wings.graphql.datafetcher.application;
 
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
+import static io.harness.beans.FeatureName.SPG_ALLOW_DISABLE_TRIGGERS;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 
 import static software.wings.beans.Application.Builder.anApplication;
@@ -61,6 +62,7 @@ public class UpdateApplicationDataFetcher
             .description(existingApplication.getDescription())
             .isManualTriggerAuthorized(existingApplication.getIsManualTriggerAuthorized())
             .areWebHookSecretsMandated(existingApplication.getAreWebHookSecretsMandated())
+            .disableTriggers(existingApplication.getDisableTriggers())
             .yamlGitConfig(existingApplication.getYamlGitConfig()); // yaml config because the way update is written, it
                                                                     // assumes this would be coming
 
@@ -93,6 +95,18 @@ public class UpdateApplicationDataFetcher
       applicationBuilder.areWebHookSecretsMandated(areWebHookSecretsMandated);
     } else if (existingApplication.getAreWebHookSecretsMandated() != null) {
       applicationBuilder.areWebHookSecretsMandated(false);
+    }
+
+    Boolean disableTriggers = qlUpdateApplicationInput.getDisableTriggers();
+
+    if (Boolean.TRUE.equals(disableTriggers)
+        && !featureFlagService.isEnabled(SPG_ALLOW_DISABLE_TRIGGERS, existingApplication.getAccountId())) {
+      throw new InvalidRequestException("Please enable feature flag to disable triggers");
+    }
+    if (disableTriggers != null) {
+      applicationBuilder.disableTriggers(disableTriggers);
+    } else if (existingApplication.getDisableTriggers() != null) {
+      applicationBuilder.disableTriggers(false);
     }
 
     return applicationBuilder.build();

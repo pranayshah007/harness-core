@@ -7,27 +7,35 @@
 
 package io.harness.ngmigration.service.infra;
 
+import static software.wings.api.DeploymentType.HELM;
+import static software.wings.api.DeploymentType.KUBERNETES;
+import static software.wings.api.DeploymentType.SSH;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import software.wings.api.DeploymentType;
 import software.wings.infra.InfrastructureDefinition;
 
-import com.google.inject.Inject;
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public class InfraMapperFactory {
   private static final UnsupportedInfraDefMapper unsupportedInfraDefMapper = new UnsupportedInfraDefMapper();
-  @Inject K8sInfraDefMapper k8sInfraDefMapper;
-  @Inject NativeHelmInfraDefMapper helmInfraDefMapper;
+  private static final InfraDefMapper k8sInfraDefMapper = new K8sInfraDefMapper();
+  private static final InfraDefMapper helmInfraDefMapper = new NativeHelmInfraDefMapper();
+  private static final InfraDefMapper sshInfraDefMapper = new SshInfraDefMapper();
 
-  public InfraDefMapper getInfraDefMapper(InfrastructureDefinition infraDef) {
-    switch (infraDef.getDeploymentType()) {
-      case KUBERNETES:
-        return k8sInfraDefMapper;
-      case HELM:
-        return helmInfraDefMapper;
-      default:
-        return unsupportedInfraDefMapper;
-    }
+  public static final Map<DeploymentType, InfraDefMapper> INFRA_DEF_MAPPER_MAP =
+      ImmutableMap.<DeploymentType, InfraDefMapper>builder()
+          .put(KUBERNETES, k8sInfraDefMapper)
+          .put(HELM, helmInfraDefMapper)
+          .put(SSH, sshInfraDefMapper)
+          .build();
+
+  public static InfraDefMapper getInfraDefMapper(InfrastructureDefinition infraDef) {
+    DeploymentType deploymentType = infraDef.getDeploymentType();
+    return INFRA_DEF_MAPPER_MAP.getOrDefault(deploymentType, unsupportedInfraDefMapper);
   }
 }

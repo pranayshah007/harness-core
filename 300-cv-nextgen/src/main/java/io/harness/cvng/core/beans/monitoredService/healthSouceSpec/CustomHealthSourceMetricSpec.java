@@ -16,6 +16,7 @@ import io.harness.cvng.core.beans.CustomHealthRequestDefinition;
 import io.harness.cvng.core.beans.HealthSourceQueryType;
 import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CustomHealthMetricCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -63,6 +64,12 @@ public class CustomHealthSourceMetricSpec extends MetricHealthSourceSpec {
   private static final String PATH_TYPE_SERVICE_INSTANCE = "service instance";
 
   @UniqueIdentifierCheck List<CustomHealthMetricDefinition> metricDefinitions = new ArrayList<>();
+
+  // Need to be implemented to support metricThresholds
+  @Override
+  public Set<TimeSeriesMetricPackDTO> getMetricPacks() {
+    return null;
+  }
 
   @Data
   @Builder

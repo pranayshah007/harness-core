@@ -22,6 +22,8 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.notification.EmailConfigDTO;
 import io.harness.ng.core.notification.NotificationSettingConfigDTO;
@@ -55,18 +57,22 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
 @OwnedBy(PIPELINE)
-@PrepareForTest(NGRestUtils.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ApprovalNotificationHandlerImpl.class, NGLogCallback.class, NGRestUtils.class})
+@PowerMockIgnore({"javax.net.ssl.*"})
 public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   @Mock private UserGroupClient userGroupClient;
   @Mock private NotificationClient notificationClient;
   @Mock private NotificationHelper notificationHelper;
   @Mock private PMSExecutionService pmsExecutionService;
   @Mock private ApprovalInstance approvalInstance;
+  @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @InjectMocks ApprovalNotificationHandlerImpl approvalNotificationHandler;
   private static String accountId = "accountId";
 
@@ -75,15 +81,19 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   private static String projectIdentifier = "projectIdentifier";
   private static String pipelineIdentifier = "pipelineIdentifier";
   private static String startingNodeId = "startingNodeId";
+  private NGLogCallback ngLogCallback;
+
   @Before
-  public void setUp() {
+  public void setup() throws Exception {
+    ngLogCallback = Mockito.mock(NGLogCallback.class);
+    PowerMockito.whenNew(NGLogCallback.class).withAnyArguments().thenReturn(ngLogCallback);
     //        MockitoAnnotations.initMocks(this);
   }
 
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void testSendNotification() {
+  public void testSendNotification() throws Exception {
     String url =
         "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
     Mockito.mockStatic(NGRestUtils.class);
@@ -123,11 +133,13 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
 
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
+
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
     verify(notificationClient, times(2)).sendNotificationAsync(any());
     verify(pmsExecutionService, times(1))
         .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
     verify(userGroupClient, times(1)).getFilteredUserGroups(any());
+    verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
   }
 
   @Test
@@ -190,6 +202,7 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
     verify(notificationClient, times(2)).sendNotificationAsync(any());
+    verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
   }
 
   @Test
@@ -257,6 +270,7 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
     verify(notificationClient, times(2)).sendNotificationAsync(any());
+    verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
   }
 
   @Test
@@ -324,6 +338,7 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
     verify(notificationClient, times(2)).sendNotificationAsync(any());
+    verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
   }
 
   @Test
@@ -398,5 +413,6 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
     verify(notificationClient, times(2)).sendNotificationAsync(any());
+    verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
   }
 }

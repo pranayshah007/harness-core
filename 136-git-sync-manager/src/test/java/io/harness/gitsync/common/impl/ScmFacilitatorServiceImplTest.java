@@ -19,7 +19,6 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.beans.response.GitFileResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.services.ConnectorService;
@@ -39,6 +38,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmBadRequestException;
+import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.GitSyncTestBase;
@@ -60,12 +60,14 @@ import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.FileContent;
+import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.Arrays;
 import java.util.List;
@@ -102,12 +104,13 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   Scope scope;
   ScmConnector scmConnector;
   @Mock GitClientHelper gitClientHelper;
+  @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
-    scmFacilitatorService =
-        new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService, scmOrchestratorService);
+    scmFacilitatorService = new ScmFacilitatorServiceImpl(
+        gitSyncConnectorHelper, connectorService, scmOrchestratorService, ngFeatureFlagHelperService);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)
@@ -280,14 +283,18 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void testGetFileByBranchWhenSCMAPIsucceeds() {
-    GitFileResponse gitFileResponse = GitFileResponse.builder()
-                                          .branch(branch)
-                                          .commitId(commitId)
-                                          .content(content)
-                                          .objectId(blobId)
-                                          .filepath(filePath)
-                                          .build();
-    when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(gitFileResponse);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    FileContent fileContent = FileContent.newBuilder()
+                                  .setContent(content)
+                                  .setBlobId(blobId)
+                                  .setCommitId("commitIdOfHead")
+                                  .setPath(filePath)
+                                  .build();
+    GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
+        GetLatestCommitOnFileResponse.newBuilder().setCommitId(commitId).build();
+    when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any()))
+        .thenReturn(fileContent)
+        .thenReturn(getLatestCommitOnFileResponse);
     ScmGetFileResponseDTO scmGetFileResponseDTO = scmFacilitatorService.getFileByBranch(
         ScmGetFileByBranchRequestDTO.builder().scope(getDefaultScope()).branchName(branch).build());
     assertThat(scmGetFileResponseDTO.getBlobId()).isEqualTo(blobId);
@@ -299,9 +306,12 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void testGetFileByBranchWhenSCMAPIfails() {
-    GitFileResponse gitFileResponse = GitFileResponse.builder().branch(branch).statusCode(400).build();
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     FileContent fileContent = FileContent.newBuilder().setStatus(400).build();
-    when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(gitFileResponse);
+    GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = GetLatestCommitOnFileResponse.newBuilder().build();
+    when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any()))
+        .thenReturn(fileContent)
+        .thenReturn(getLatestCommitOnFileResponse);
     assertThatThrownBy(
         ()
             -> scmFacilitatorService.getFileByBranch(
@@ -312,7 +322,28 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Test
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
+  public void testGetFileByBranchWhenGetLatestCommitOnFileSCMAPIfails() {
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    FileContent fileContent = FileContent.newBuilder().setStatus(200).build();
+    GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
+        GetLatestCommitOnFileResponse.newBuilder().setError(error).build();
+    when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any()))
+        .thenReturn(fileContent)
+        .thenReturn(getLatestCommitOnFileResponse);
+    try {
+      scmFacilitatorService.getFileByBranch(
+          ScmGetFileByBranchRequestDTO.builder().scope(getDefaultScope()).branchName(branch).build());
+    } catch (Exception exception) {
+      assertThat(exception).isInstanceOf(ScmUnexpectedException.class);
+      assertThat(exception.getMessage()).isEqualTo(error);
+    }
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
   public void testGetFileByCommitIdWhenSCMAPIsucceeds() {
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     FileContent fileContent =
         FileContent.newBuilder().setContent(content).setBlobId(blobId).setCommitId(commitId).setPath(filePath).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(fileContent);
@@ -327,6 +358,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void testGetFileByCommitIdWhenSCMAPIfails() {
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     FileContent fileContent = FileContent.newBuilder().setStatus(400).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(fileContent);
     assertThatThrownBy(

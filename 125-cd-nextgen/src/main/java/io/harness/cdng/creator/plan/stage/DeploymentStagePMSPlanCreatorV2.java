@@ -10,6 +10,7 @@ package io.harness.cdng.creator.plan.stage;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
 
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
@@ -38,6 +39,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.ngexception.NGFreezeException;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
+import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
@@ -81,6 +83,7 @@ import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -138,6 +141,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private EnvGroupPlanCreatorHelper envGroupPlanCreatorHelper;
   @Inject private ServicePlanCreatorHelper servicePlanCreatorHelper;
   @Inject private FreezeEvaluateService freezeEvaluateService;
+  @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -588,9 +592,13 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           && featureFlagHelperService.isEnabled(
               ctx.getMetadata().getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE)) {
         PlanCreationContextValue planCreationContextValue = ctx.getMetadata();
-        projectFreezeConfigs =
-            freezeEvaluateService.getActiveFreezeEntities(planCreationContextValue.getAccountIdentifier(),
-                planCreationContextValue.getOrgIdentifier(), planCreationContextValue.getProjectIdentifier());
+        String accountId = planCreationContextValue.getAccountIdentifier();
+        String orgId = planCreationContextValue.getOrgIdentifier();
+        String projectId = planCreationContextValue.getProjectIdentifier();
+        if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(accountId, orgId, projectId, accessControlClient)) {
+          return;
+        }
+        projectFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
       }
     } catch (Exception e) {
       log.error(

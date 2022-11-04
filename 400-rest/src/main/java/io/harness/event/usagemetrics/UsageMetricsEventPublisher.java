@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -113,7 +114,12 @@ public class UsageMetricsEventPublisher {
 
     if (!Lists.isNullOrEmpty(workflowExecution.getArtifacts())) {
       listData.put(EventProcessor.ARTIFACT_LIST,
-          workflowExecution.getArtifacts().stream().map(Artifact::getBuildNo).collect(Collectors.toList()));
+          workflowExecution.getArtifacts()
+              .stream()
+              .filter(Objects::nonNull)
+              .map(Artifact::getBuildNo)
+              .filter(Objects::nonNull)
+              .collect(Collectors.toList()));
     }
 
     List<String> serviceIds = workflowExecution.getDeployedServices();

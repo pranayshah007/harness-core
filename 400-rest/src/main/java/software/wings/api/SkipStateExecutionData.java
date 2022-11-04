@@ -19,6 +19,8 @@ import software.wings.sm.StateExecutionData;
 
 import java.util.Map;
 import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
@@ -26,13 +28,19 @@ public class SkipStateExecutionData extends StateExecutionData {
   private String skipAssertionExpression;
   private String workflowId;
 
+  @Getter @Setter private Integer pipelineStageParallelIndex;
+  @Getter @Setter private String pipelineStageElementId;
+
   @Builder
   public SkipStateExecutionData(String stateName, String stateType, Long startTs, Long endTs, ExecutionStatus status,
       String errorMsg, Integer waitInterval, ContextElement element, Map<String, Object> stateParams,
-      Map<String, Object> templateVariable, String skipAssertionExpression, String workflowId) {
+      Map<String, Object> templateVariable, String skipAssertionExpression, String workflowId,
+      Integer pipelineStageParallelIndex, String pipelineStageElementId) {
     super(stateName, stateType, startTs, endTs, status, errorMsg, waitInterval, element, stateParams, templateVariable);
     this.skipAssertionExpression = skipAssertionExpression;
     this.workflowId = workflowId;
+    this.pipelineStageParallelIndex = pipelineStageParallelIndex;
+    this.pipelineStageElementId = pipelineStageElementId;
   }
 
   public String getSkipAssertionExpression() {

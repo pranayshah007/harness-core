@@ -24,4 +24,5 @@ public class CDStageModuleInfo implements StageModuleInfo {
   InfraExecutionSummary infraExecutionSummary;
   FreezeExecutionSummary freezeExecutionSummary;
   String nodeExecutionId;
+  long rollbackDuration;
 }
