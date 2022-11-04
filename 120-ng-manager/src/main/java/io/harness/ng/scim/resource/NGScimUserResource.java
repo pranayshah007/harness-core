@@ -10,7 +10,6 @@ package io.harness.ng.scim.resource;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.scim.PatchRequest;
-import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimResource;
 import io.harness.scim.ScimUser;
 import io.harness.scim.service.ScimUserService;
@@ -36,6 +35,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.ServiceUnavailableException;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
@@ -78,12 +78,8 @@ public class NGScimUserResource extends ScimResource {
       })
   public Response
   createUser(ScimUser userQuery, @PathParam("accountIdentifier") String accountIdentifier) {
-    try {
-      return scimUserService.createUser(userQuery, accountIdentifier);
-    } catch (Exception ex) {
-      log.error("NGSCIM: Failed to create the user", ex);
-      return getExceptionResponse(ex, Response.Status.NOT_FOUND.getStatusCode(), Response.Status.CONFLICT);
-    }
+    log.warn("NGSCIM: createScimUser failed for accountId {}", accountIdentifier);
+    throw new ServiceUnavailableException();
   }
 
   @PUT
@@ -99,12 +95,8 @@ public class NGScimUserResource extends ScimResource {
   public Response
   updateUser(@PathParam("userIdentifier") String userIdentifier,
       @PathParam("accountIdentifier") String accountIdentifier, ScimUser userQuery) {
-    try {
-      return scimUserService.updateUser(userIdentifier, accountIdentifier, userQuery);
-    } catch (Exception ex) {
-      log.info("NGSCIM: Failed to update the user with id: {} for account: {}", userIdentifier, accountIdentifier, ex);
-      return getExceptionResponse(ex, Response.Status.NOT_FOUND.getStatusCode(), Response.Status.NOT_FOUND);
-    }
+    log.warn("NGSCIM: updateScimUser failed for accountId {}, userId {}", accountIdentifier, userIdentifier);
+    throw new ServiceUnavailableException();
   }
 
   @GET
@@ -121,14 +113,8 @@ public class NGScimUserResource extends ScimResource {
   public Response
   getUser(
       @PathParam("userIdentifier") String userIdentifier, @PathParam("accountIdentifier") String accountIdentifier) {
-    try {
-      return Response.status(Response.Status.OK)
-          .entity(scimUserService.getUser(userIdentifier, accountIdentifier))
-          .build();
-    } catch (Exception ex) {
-      log.error("NGSCIM: Failed to fetch the user with id: {} for account: {}", userIdentifier, accountIdentifier);
-      return getExceptionResponse(ex, Response.Status.NOT_FOUND.getStatusCode(), Response.Status.NOT_FOUND);
-    }
+    log.warn("NGSCIM: getScimUser failed for accountId {}, userId {}", accountIdentifier, userIdentifier);
+    throw new ServiceUnavailableException();
   }
 
   @GET
@@ -149,15 +135,8 @@ public class NGScimUserResource extends ScimResource {
   public Response
   searchUser(@PathParam("accountIdentifier") String accountIdentifier, @QueryParam("filter") String filter,
       @QueryParam("count") Integer count, @QueryParam("startIndex") Integer startIndex) {
-    try {
-      ScimListResponse<ScimUser> searchUserResponse =
-          scimUserService.searchUser(accountIdentifier, filter, count, startIndex);
-      return Response.status(Response.Status.OK).entity(searchUserResponse).build();
-    } catch (Exception ex) {
-      log.error("NGSCIM: Search user call failed. AccountId: {}, filter: {}, count: {}, startIndex: {}",
-          accountIdentifier, filter, count, startIndex, ex);
-      return getExceptionResponse(ex, Response.Status.NOT_FOUND.getStatusCode(), Response.Status.NOT_FOUND);
-    }
+    log.warn("NGSCIM: searchScimUser failed for accountId {}", accountIdentifier);
+    throw new ServiceUnavailableException();
   }
 
   @DELETE
@@ -173,8 +152,8 @@ public class NGScimUserResource extends ScimResource {
   public Response
   deleteUser(
       @PathParam("userIdentifier") String userIdentifier, @PathParam("accountIdentifier") String accountIdentifier) {
-    scimUserService.deleteUser(userIdentifier, accountIdentifier);
-    return Response.status(Response.Status.NO_CONTENT).build();
+    log.warn("NGSCIM: deleteScimUser failed for accountId {}, userId {}", accountIdentifier, userIdentifier);
+    throw new ServiceUnavailableException();
   }
 
   @PATCH
@@ -190,6 +169,7 @@ public class NGScimUserResource extends ScimResource {
   public ScimUser
   updateUser(@PathParam("accountIdentifier") String accountIdentifier,
       @PathParam("userIdentifier") String userIdentifier, PatchRequest patchRequest) {
-    return scimUserService.updateUser(accountIdentifier, userIdentifier, patchRequest);
+    log.warn("NGSCIM: patchScimUser failed for accountId {}, userId {}", accountIdentifier, userIdentifier);
+    throw new ServiceUnavailableException();
   }
 }
