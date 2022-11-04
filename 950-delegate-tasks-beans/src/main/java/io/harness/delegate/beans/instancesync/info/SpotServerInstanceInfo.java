@@ -16,8 +16,8 @@ import lombok.Builder;
 import lombok.Data;
 
 @JsonTypeName("SpotServerInstanceInfo")
-@Builder
 @Data
+@Builder
 @OwnedBy(HarnessTeam.CDP)
 public class SpotServerInstanceInfo extends ServerInstanceInfo {
   private String serviceType;

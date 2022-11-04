@@ -20,8 +20,8 @@ import lombok.Builder;
 import lombok.Data;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Builder
 @Data
+@Builder
 @OwnedBy(CDP)
 public class SpotDeploymentInfoDTO extends DeploymentInfoDTO {
   @NotNull private String infrastructureKey;

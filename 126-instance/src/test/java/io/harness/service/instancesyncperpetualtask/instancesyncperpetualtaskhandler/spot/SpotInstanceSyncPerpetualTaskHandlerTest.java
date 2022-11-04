@@ -12,7 +12,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
@@ -23,12 +22,10 @@ import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.ssh.SshEntityHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.EncryptionHelper;
-import io.harness.delegate.beans.connector.spotconnector.SpotCapabilityHelper;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
 import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
-import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.SpotDeploymentInfoDTO;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -42,8 +39,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 @OwnedBy(HarnessTeam.CDP)
 public class SpotInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
@@ -94,14 +89,8 @@ public class SpotInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase 
     when(kryoSerializer.asBytes(any())).thenReturn(bytes);
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn(bytes);
 
-    MockedStatic<SpotCapabilityHelper> SpotCapabilityHelperMock = mockStatic(SpotCapabilityHelper.class);
-    when(SpotCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any()))
-        .thenReturn(Arrays.asList(Mockito.mock(ExecutionCapability.class)));
-
     PerpetualTaskExecutionBundle executionBundle = spotInstanceSyncPerpetualTaskHandler.getExecutionBundle(
         infrastructureMappingDTO, Arrays.asList(getDeploymentInfoDto()), outcome);
-
-    SpotCapabilityHelperMock.close();
 
     assertThat(executionBundle.getCapabilitiesList().size()).isEqualTo(1);
     assertThat(executionBundle.getTaskParams().getValue()).isNotNull();
