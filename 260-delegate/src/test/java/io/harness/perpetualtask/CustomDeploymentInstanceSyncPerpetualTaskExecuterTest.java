@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +40,8 @@ import io.harness.shell.ShellExecutionData;
 
 import com.google.protobuf.Any;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -114,15 +117,11 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuterTest extends Deleg
   @Test
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
-  public void testRunOnceSuccess() {
-    Map<String, String> outPutEnvVariables = new HashMap<>();
-    outPutEnvVariables.put(OUTPUT_PATH_KEY, output);
-    ShellExecutionData shellExecutionData =
-        ShellExecutionData.builder().sweepingOutputEnvVariables(outPutEnvVariables).build();
-    ExecuteCommandResponse commandResponse = ExecuteCommandResponse.builder()
-                                                 .commandExecutionData(shellExecutionData)
-                                                 .status(CommandExecutionStatus.SUCCESS)
-                                                 .build();
+  public void testRunOnceSuccess() throws IOException {
+    mockStatic(Files.class);
+    when(Files.readAllBytes(any(Path.class))).thenReturn(output.getBytes());
+    ExecuteCommandResponse commandResponse =
+        ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build();
 
     ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
     doReturn(scriptProcessExecutor).when(shellExecutorFactory).getExecutor(any(), any(), any());
