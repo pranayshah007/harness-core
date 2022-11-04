@@ -8,7 +8,6 @@ import io.harness.ccm.graphql.dto.recommendation.EC2RecommendationDTO;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -28,10 +27,11 @@ public class EC2RecommendationService {
         ec2RecommendationDAO.fetchEC2RecommendationById(accountIdentifier, id);
 
     if (!ec2Recommendation.isPresent()) {
+      log.info("ec2RecommendationDAO.fetchEC2RecommendationById is null");
       return EC2RecommendationDTO.builder().build();
     }
     EC2Recommendation recommendation = ec2Recommendation.get();
-    log.info("recommendation comoing form mongo = {}", recommendation);
+    log.info("recommendation coming form mongo = {}", recommendation);
     EC2RecommendationDTO ec2RecommendationDTO = dtoConverter.convertFromEntity(recommendation);
     log.info("final response after convert = {}", ec2RecommendationDTO);
     List<EC2InstanceUtilizationData> utilData =

@@ -131,9 +131,11 @@ public class RecommendationsOverviewQueryV2 {
   public RecommendationsDTO recommendations(
       @GraphQLArgument(name = "filter", defaultValue = "{\"offset\":0,\"limit\":10, \"minSaving\":0}")
       K8sRecommendationFilterDTO filter, @GraphQLEnvironment final ResolutionEnvironment env) {
-    final String accountId = graphQLUtils.getAccountIdentifier(env);
+    final String accountId = "JQ3KKI5yRTGe37OrCiZaTA";
+    //            graphQLUtils.getAccountIdentifier(env);
 
-    Condition condition = applyAllFilters(filter, accountId);
+    Condition condition = null;
+    //            applyAllFilters(filter, accountId);
 
     List<RecommendationItemDTO> items =
         recommendationService.listAll(accountId, condition, filter.getOffset(), filter.getLimit());
