@@ -23,16 +23,17 @@ import lombok.Value;
 public class SLODashboardWidget {
   @NotNull String sloIdentifier;
   @NotNull String title;
-  @NotNull String monitoredServiceIdentifier;
-  @NotNull String monitoredServiceName;
-  @NotNull String healthSourceIdentifier;
-  @NotNull String healthSourceName;
-  @NotNull String serviceIdentifier;
-  @NotNull String environmentIdentifier;
-  @NotNull String environmentName;
-  @NotNull String serviceName;
+  String monitoredServiceIdentifier;
+  String monitoredServiceName;
+  String healthSourceIdentifier;
+  String healthSourceName;
+  String serviceIdentifier;
+  String serviceName;
+  String environmentIdentifier;
+  String environmentName;
   Map<String, String> tags;
-  @NotNull ServiceLevelIndicatorType type;
+  ServiceLevelIndicatorType type;
+  @NotNull ServiceLevelObjectiveType sloType;
   @NotNull BurnRate burnRate;
   @NotNull int timeRemainingDays;
   @NotNull double errorBudgetRemainingPercentage;
@@ -73,6 +74,7 @@ public class SLODashboardWidget {
         .errorBudgetBurndown(sloGraphData.getErrorBudgetBurndown())
         .sloPerformanceTrend(sloGraphData.getSloPerformanceTrend());
   }
+
   @Value
   @Builder
   public static class SLOGraphData {
