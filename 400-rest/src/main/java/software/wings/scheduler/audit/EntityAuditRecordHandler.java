@@ -48,7 +48,7 @@ public class EntityAuditRecordHandler implements Handler<AuditRecord> {
         MongoPersistenceIterator.<AuditRecord, MorphiaFilterExpander<AuditRecord>>builder()
             .clazz(AuditRecord.class)
             .fieldName(AuditRecordKeys.nextIteration)
-            .targetInterval(ofSeconds(3))
+            .targetInterval(ofMinutes(30))
             .acceptableNoAlertDelay(ofSeconds(45))
             .handler(this)
             .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
