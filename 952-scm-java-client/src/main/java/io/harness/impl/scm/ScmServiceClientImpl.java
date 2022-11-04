@@ -242,9 +242,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType()) && branchName.contains("/");
   }
 
-  private FileBatchContentResponse getContentOfFiles(
-      List<String> filePaths, String slug, Provider gitProvider, String ref, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    GetBatchFileRequest batchFileRequest = createBatchFileRequest(filePaths, slug, ref, gitProvider, false);
+  private FileBatchContentResponse getContentOfFiles(List<String> filePaths, String slug, Provider gitProvider,
+      String ref, SCMGrpc.SCMBlockingStub scmBlockingStub, boolean base64Encoding) {
+    GetBatchFileRequest batchFileRequest = createBatchFileRequest(filePaths, slug, ref, gitProvider, base64Encoding);
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getBatchFile, batchFileRequest);
   }
 
@@ -615,7 +615,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       List<String> getFilesWhichArePartOfHarness =
           getFileNames(foldersList, slug, gitProvider, branchName, latestCommitId, scmBlockingStub);
       final FileBatchContentResponse contentOfFiles =
-          getContentOfFiles(getFilesWhichArePartOfHarness, slug, gitProvider, latestCommitId, scmBlockingStub);
+          getContentOfFiles(getFilesWhichArePartOfHarness, slug, gitProvider, latestCommitId, scmBlockingStub, false);
       return FileContentBatchResponse.builder()
           .fileBatchContentResponse(contentOfFiles)
           .commitId(latestCommitId)
@@ -1048,7 +1048,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     String slug = scmGitProviderHelper.getSlug(connector);
     try (AutoLogContext ignore = new RepoBranchLogContext(slug, branch, commitId, OVERRIDE_ERROR)) {
       final FileBatchContentResponse contentOfFiles =
-          getContentOfFiles(filePaths, slug, gitProvider, commitId, scmBlockingStub);
+          getContentOfFiles(filePaths, slug, gitProvider, commitId, scmBlockingStub, false);
       return FileContentBatchResponse.builder().fileBatchContentResponse(contentOfFiles).commitId(commitId).build();
     }
   }
