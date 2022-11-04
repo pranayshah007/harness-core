@@ -116,7 +116,6 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private String profileResult;
   private boolean profileError;
   private long profileExecutedAt;
-  private boolean sampleDelegate;
   private long expirationTime;
 
   @FdIndex Long capabilitiesCheckNextIteration;
@@ -125,7 +124,9 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   @SchemaIgnore private List<String> keywords;
 
-  @FdIndex Long taskExpiryCheckNextIteration;
+  @FdIndex @Deprecated Long taskExpiryCheckNextIteration;
+
+  @FdIndex Long delegateDisconnectDetectorNextIteration;
 
   Long lastExpiredEventHeartbeatTime;
 
@@ -139,17 +140,18 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
-    if (DelegateKeys.taskExpiryCheckNextIteration.equals(fieldName)) {
-      this.taskExpiryCheckNextIteration = nextIteration;
+    if (DelegateKeys.delegateDisconnectDetectorNextIteration.equals(fieldName)) {
+      this.delegateDisconnectDetectorNextIteration = nextIteration;
       return;
     }
+
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
   @Override
   public Long obtainNextIteration(String fieldName) {
-    if (DelegateKeys.taskExpiryCheckNextIteration.equals(fieldName)) {
-      return this.taskExpiryCheckNextIteration;
+    if (DelegateKeys.delegateDisconnectDetectorNextIteration.equals(fieldName)) {
+      return this.delegateDisconnectDetectorNextIteration;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
@@ -179,7 +181,6 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
         .keepAlivePacket(delegateParams.isKeepAlivePacket())
         .polllingModeEnabled(delegateParams.isPollingModeEnabled())
         .ng(delegateParams.isNg())
-        .sampleDelegate(delegateParams.isSampleDelegate())
         .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
         .location(delegateParams.getLocation())
         .mtls(connectedUsingMtls)

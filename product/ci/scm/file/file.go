@@ -389,16 +389,24 @@ func FindFilesInCommit(ctx context.Context, fileRequest *pb.FindFilesInCommitReq
 		return nil, err
 	}
 	ref := fileRequest.GetRef()
-	files, response, err := client.Contents.List(ctx, fileRequest.GetSlug(), fileRequest.GetPath(), ref, scm.ListOptions{Page: int(fileRequest.GetPagination().GetPage())})
+	files, response, err := client.Contents.List(ctx, fileRequest.GetSlug(), fileRequest.GetPath(), ref, getCustomListOptsFindFilesInCommit(ctx, fileRequest))
 	if err != nil {
 		log.Errorw("FindFilesInCommit failure", "provider", gitclient.GetProvider(*fileRequest.GetProvider()), "slug", fileRequest.GetSlug(), "ref", ref, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
-		return nil, err
+		if response == nil {
+			return nil, err
+		}
+		out = &pb.FindFilesInCommitResponse{
+			Status: int32(response.Status),
+			Error:  err.Error(),
+		}
+		return out, nil
 	}
 	log.Infow("FindFilesInCommit success", "slug", fileRequest.GetSlug(), "ref", ref, "elapsed_time_ms", utils.TimeSince(start))
 	out = &pb.FindFilesInCommitResponse{
 		File: convertContentList(files),
 		Pagination: &pb.PageResponse{
 			Next: int32(response.Page.Next),
+			NextUrl: response.Page.NextURL,
 		},
 	}
 	return out, nil
@@ -499,6 +507,18 @@ func parseCrudResponse(ctx context.Context, client *scm.Client, body io.Reader, 
 }
 
 func getCustomListOptsFindFilesInBranch(ctx context.Context, fileRequest *pb.FindFilesInBranchRequest) scm.ListOptions {
+	opts := &scm.ListOptions{Page: int(fileRequest.GetPagination().GetPage())}
+	switch fileRequest.GetProvider().GetHook().(type) {
+	case *pb.Provider_BitbucketCloud:
+		if fileRequest.GetPagination().GetUrl() != "" {
+			opts = &scm.ListOptions{URL: fileRequest.GetPagination().GetUrl()}
+		}
+	}
+
+	return *opts
+}
+
+func getCustomListOptsFindFilesInCommit(ctx context.Context, fileRequest *pb.FindFilesInCommitRequest) scm.ListOptions {
 	opts := &scm.ListOptions{Page: int(fileRequest.GetPagination().GetPage())}
 	switch fileRequest.GetProvider().GetHook().(type) {
 	case *pb.Provider_BitbucketCloud:

@@ -31,7 +31,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel(value = "Error")
 @Schema(name = "Error", description = "This is Error entity as defined in Harness")
-public class ErrorDTO {
+public class ErrorDTO implements ErrorDTOBase {
   Status status = Status.ERROR; // we won't rely on http codes, clients will figure out error/success with this field
   ErrorCode code; // enum representing what kind of an error this is (e.g.- secret management error)
   String message; // Short message, something which UI can display directly

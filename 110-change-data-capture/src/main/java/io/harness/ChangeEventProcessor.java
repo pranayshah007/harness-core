@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 class ChangeEventProcessor {
   @Inject private Set<CDCEntity<?>> subscribedClasses;
   @Inject private WingsPersistence wingsPersistence;
-  private final BlockingQueue<ChangeEvent<?>> changeEventQueue = new LinkedBlockingQueue<>();
+  private final BlockingQueue<ChangeEvent<?>> changeEventQueue = new LinkedBlockingQueue<>(100);
   private final ExecutorService changeEventExecutorService =
       Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("primary-change-processor").build());
   private final ExecutorService changeEventProcessorWatcher =

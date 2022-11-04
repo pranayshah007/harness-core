@@ -7,7 +7,7 @@
 
 package io.harness.freeze.helpers;
 
-import io.harness.freeze.beans.CurrentOrUpcomingActiveWindow;
+import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.FreezeDuration;
 import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.RecurrenceType;
@@ -16,30 +16,35 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class FreezeTimeUtils {
-  DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a");
+  DateTimeFormatter dtf = new DateTimeFormatterBuilder()
+                              .parseCaseInsensitive()
+                              .appendPattern("yyyy-MM-dd hh:mm a")
+                              .toFormatter(Locale.ENGLISH);
   LocalDateTime now = LocalDateTime.now();
 
-  public CurrentOrUpcomingActiveWindow fetchCurrentOrUpcomingTimeWindow(List<FreezeWindow> freezeWindows) {
-    List<CurrentOrUpcomingActiveWindow> currentOrUpcomingActiveWindows = new LinkedList<>();
+  public CurrentOrUpcomingWindow fetchCurrentOrUpcomingTimeWindow(List<FreezeWindow> freezeWindows) {
+    List<CurrentOrUpcomingWindow> currentOrUpcomingWindows = new LinkedList<>();
     if (freezeWindows == null) {
       return null;
     }
     freezeWindows.stream().forEach(freezeWindow -> {
-      CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow = fetchCurrentOrUpcomingTimeWindow(freezeWindow);
-      currentOrUpcomingActiveWindows.add(currentOrUpcomingActiveWindow);
+      CurrentOrUpcomingWindow currentOrUpcomingWindow = fetchCurrentOrUpcomingTimeWindow(freezeWindow);
+      currentOrUpcomingWindows.add(currentOrUpcomingWindow);
     });
     // Later when more windows are supported write algo that will read through all the pairs and find the first max pair
-    return currentOrUpcomingActiveWindows.get(0);
+    return currentOrUpcomingWindows.get(0);
   }
-  private CurrentOrUpcomingActiveWindow fetchCurrentOrUpcomingTimeWindow(FreezeWindow freezeWindow) {
+  private CurrentOrUpcomingWindow fetchCurrentOrUpcomingTimeWindow(FreezeWindow freezeWindow) {
     TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
     LocalDateTime firstWindowStartTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
     LocalDateTime firstWindowEndTime;
@@ -54,7 +59,7 @@ public class FreezeTimeUtils {
       if (getCurrentTime() > getEpochValueFromDateString(firstWindowEndTime, timeZone)) {
         return null;
       } else {
-        return CurrentOrUpcomingActiveWindow.builder()
+        return CurrentOrUpcomingWindow.builder()
             .startTime(getEpochValueFromDateString(firstWindowStartTime, timeZone))
             .endTime(getEpochValueFromDateString(firstWindowEndTime, timeZone))
             .build();
@@ -76,7 +81,7 @@ public class FreezeTimeUtils {
     }
   }
 
-  private CurrentOrUpcomingActiveWindow fetchCurrentOrUpcomingTimeWindow(LocalDateTime firstWindowStartTime,
+  private CurrentOrUpcomingWindow fetchCurrentOrUpcomingTimeWindow(LocalDateTime firstWindowStartTime,
       LocalDateTime firstWindowEndTime, Long lastWindowEndTimeEpoch, RecurrenceType recurrenceType, TimeZone timeZone) {
     int recurrenceNumber = 0;
     Long currentWindowStartTime = getEpochValue(recurrenceType, firstWindowStartTime, timeZone, recurrenceNumber);
@@ -84,7 +89,7 @@ public class FreezeTimeUtils {
     while (currentWindowStartTime < lastWindowEndTimeEpoch) {
       if (currentWindowIsActive(currentWindowStartTime, currentWindowEndTime)
           || getCurrentTime() < currentWindowStartTime) {
-        return CurrentOrUpcomingActiveWindow.builder()
+        return CurrentOrUpcomingWindow.builder()
             .startTime(currentWindowStartTime)
             .endTime(Math.min(currentWindowEndTime, lastWindowEndTimeEpoch))
             .build();
@@ -101,10 +106,9 @@ public class FreezeTimeUtils {
     return currentTime > windowStartTime && currentTime < windowEndTime;
   }
 
-  public boolean currentWindowIsActive(CurrentOrUpcomingActiveWindow currentOrUpcomingActiveWindow) {
-    return currentOrUpcomingActiveWindow != null
-        && currentWindowIsActive(
-            currentOrUpcomingActiveWindow.getStartTime(), currentOrUpcomingActiveWindow.getEndTime());
+  public boolean currentWindowIsActive(CurrentOrUpcomingWindow currentOrUpcomingWindow) {
+    return currentOrUpcomingWindow != null
+        && currentWindowIsActive(currentOrUpcomingWindow.getStartTime(), currentOrUpcomingWindow.getEndTime());
   }
 
   private Long getEpochValue(RecurrenceType offsetType, LocalDateTime date, TimeZone timeZone, int offsetValue) {

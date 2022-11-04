@@ -27,6 +27,7 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_INVA
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_ADDED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_INVITED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
+import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITE_NOT_REQUIRED;
 import static io.harness.persistence.AccountAccess.ACCOUNT_ID_KEY;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -228,6 +229,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -257,8 +259,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -358,6 +360,9 @@ public class UserServiceImpl implements UserService {
   @Inject private FeatureFlagService featureFlagService;
   @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
   @Inject private TelemetryReporter telemetryReporter;
+
+  private final ScheduledExecutorService scheduledExecutor = new ScheduledThreadPoolExecutor(1,
+      new ThreadFactoryBuilder().setNameFormat("invite-executor-thread-%d").setPriority(Thread.NORM_PRIORITY).build());
 
   private Cache<String, User> getUserCache() {
     if (configurationController.isPrimary()) {
@@ -1416,6 +1421,8 @@ public class UserServiceImpl implements UserService {
     }
 
     List<UserGroup> userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
+    boolean isPLNoEmailForSamlAccountInvitesEnabled = accountService.isPLNoEmailForSamlAccountInvitesEnabled(accountId);
+
     if (isUserAssignedToAccount(user, accountId)) {
       updateUserGroupsOfUser(user.getUuid(), userGroups, accountId, true);
       return USER_ALREADY_ADDED;
@@ -1428,7 +1435,7 @@ public class UserServiceImpl implements UserService {
       user.getAccounts().add(account);
     } else {
       userInvite.setUuid(wingsPersistence.save(userInvite));
-      if (isInviteAcceptanceRequired) {
+      if (isInviteAcceptanceRequired && !isPLNoEmailForSamlAccountInvitesEnabled) {
         user.getPendingAccounts().add(account);
       } else {
         user.getAccounts().add(account);
@@ -1440,9 +1447,15 @@ public class UserServiceImpl implements UserService {
     user.setGivenName(userInvite.getGivenName());
     user.setFamilyName(userInvite.getFamilyName());
     user.setRoles(Collections.emptyList());
+
     if (!user.isEmailVerified()) {
-      user.setEmailVerified(markEmailVerified);
+      if (isPLNoEmailForSamlAccountInvitesEnabled) {
+        user.setEmailVerified(true);
+      } else {
+        user.setEmailVerified(markEmailVerified);
+      }
     }
+
     user.setAppId(GLOBAL_APP_ID);
     user.setImported(userInvite.getImportedByScim());
     user.setExternalUserId(userInvite.getExternalUserId());
@@ -1450,12 +1463,14 @@ public class UserServiceImpl implements UserService {
     user = createUser(user, accountId);
     user = checkIfTwoFactorAuthenticationIsEnabledForAccount(user, account);
 
-    if (!isInviteAcceptanceRequired) {
+    if (!isInviteAcceptanceRequired || isPLNoEmailForSamlAccountInvitesEnabled) {
       addUserToUserGroups(accountId, user, userGroups, false, true);
     }
-    boolean isSSOEnabled = accountService.isSSOEnabled(account);
-    if (!(isSSOEnabled && featureFlagService.isEnabled(FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES, accountId))) {
-      if (!isInviteAcceptanceRequired && isSSOEnabled) {
+    boolean isAutoInviteAcceptanceEnabled = !isInviteAcceptanceRequired;
+
+    if (!(isPLNoEmailForSamlAccountInvitesEnabled && !user.isTwoFactorAuthenticationEnabled())) {
+      if (isAutoInviteAcceptanceEnabled
+          || (isPLNoEmailForSamlAccountInvitesEnabled && user.isTwoFactorAuthenticationEnabled())) {
         sendUserInvitationToOnlySsoAccountMail(account, user);
       } else {
         sendNewInvitationMail(userInvite, account, user);
@@ -1466,7 +1481,12 @@ public class UserServiceImpl implements UserService {
         accountId, null, user, createNewUser ? Type.CREATE : Type.UPDATE);
     userGroups.forEach(userGroupAdded
         -> auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, userGroupAdded, Type.ADD));
-    eventPublishHelper.publishUserInviteFromAccountEvent(accountId, userInvite.getEmail());
+
+    if (isPLNoEmailForSamlAccountInvitesEnabled && !user.isTwoFactorAuthenticationEnabled()) {
+      return USER_INVITE_NOT_REQUIRED;
+    } else {
+      eventPublishHelper.publishUserInviteFromAccountEvent(accountId, userInvite.getEmail());
+    }
 
     return USER_INVITED_SUCCESSFULLY;
   }
@@ -1870,8 +1890,7 @@ public class UserServiceImpl implements UserService {
 
     properties.put("platform", "CG");
     // Wait 20 seconds, to ensure identify is sent before track
-    ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
-    tempExecutor.schedule(
+    scheduledExecutor.schedule(
         ()
             -> telemetryReporter.sendTrackEvent("Invite Accepted", userEmail, accountId, properties,
                 ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), null),
@@ -1891,7 +1910,7 @@ public class UserServiceImpl implements UserService {
     if (!validateNgInvite(userInvite)) {
       throw new InvalidRequestException("User invite token invalid");
     }
-    completeNGInvite(userInvite, false);
+    completeNGInvite(userInvite, false, true);
     return authenticationManager.defaultLogin(userInvite.getEmail(), userInvite.getPassword());
   }
 
@@ -1951,7 +1970,8 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public void completeNGInvite(UserInviteDTO userInvite, boolean isScimInvite) {
+  public void completeNGInvite(
+      UserInviteDTO userInvite, boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail) {
     String accountId = userInvite.getAccountId();
     limitCheck(accountId, userInvite.getEmail());
     Account account = accountService.get(accountId);
@@ -1983,9 +2003,11 @@ public class UserServiceImpl implements UserService {
       user.setPasswordHash(hashpw(userInvite.getPassword(), BCrypt.gensalt()));
     }
     user = createUser(user, accountId);
-    user = checkIfTwoFactorAuthenticationIsEnabledForAccount(user, account);
-    if (user.isTwoFactorAuthenticationEnabled()) {
-      totpAuthHandler.sendTwoFactorAuthenticationResetEmail(user);
+    if (shouldSendTwoFactorAuthResetEmail) {
+      user = checkIfTwoFactorAuthenticationIsEnabledForAccount(user, account);
+      if (user.isTwoFactorAuthenticationEnabled()) {
+        totpAuthHandler.sendTwoFactorAuthenticationResetEmail(user);
+      }
     }
     // Empty user group list because this user invite is from NG and the method adds user to CG user groups
     moveAccountFromPendingToConfirmed(user, account, Collections.emptyList(), true);
@@ -3948,7 +3970,7 @@ public class UserServiceImpl implements UserService {
                                           .name(email.trim())
                                           .token(userInvite.getUuid())
                                           .build();
-        completeNGInvite(userInviteDTO, false);
+        completeNGInvite(userInviteDTO, false, true);
         return ACCOUNT_INVITE_ACCEPTED;
       }
     } else {

@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
@@ -105,7 +106,7 @@ public class QuickFilterTest extends CategoryTest {
     // status
     assertThat(form.getCriteriaObject().get("status").toString()).isEqualTo("Document{{$in=[FAILED, ABORTED]}}");
     assertThat(form.getCriteriaObject().get("$and").toString())
-        .isEqualTo("[Document{{status=Document{{$in=[ABORTED, PAUSED]}}}}, Document{{}}, Document{{}}, Document{{}}]");
+        .isEqualTo("[Document{{status=Document{{$in=[ABORTED, PAUSED]}}}}]");
   }
 
   @Test
@@ -118,7 +119,7 @@ public class QuickFilterTest extends CategoryTest {
             .status(Collections.singletonList(ExecutionStatus.ABORTED))
             .build(),
         null, null, null, true, false, null, true);
-    String documentString = "[Document{{status=Document{{$in=[ABORTED]}}}}, Document{{}}, Document{{}}, Document{{}}]";
+    String documentString = "[Document{{status=Document{{$in=[ABORTED]}}}}]";
     assertThat(form.getCriteriaObject().get("$and").toString()).isEqualTo(documentString);
 
     // filterProperties and filterIdentifier as not null
@@ -153,7 +154,7 @@ public class QuickFilterTest extends CategoryTest {
 
     // Verify that the time range is present in criteria.
     assertEquals(form.getCriteriaObject().get("$and").toString(),
-        "[Document{{createdAt=Document{{$gte=1651480019931, $lte=1651480019931}}}}, Document{{}}, Document{{}}, Document{{}}]");
+        "[Document{{createdAt=Document{{$gte=1651480019931, $lte=1651480019931}}}}]");
 
     // ENdTime not provided in filter. Should throw exception.
 
@@ -183,8 +184,7 @@ public class QuickFilterTest extends CategoryTest {
         false, false, null, true);
 
     // TimeRange Filter should not be present in Criteria.
-    assertEquals(
-        form.getCriteriaObject().get("$and").toString(), "[Document{{}}, Document{{}}, Document{{}}, Document{{}}]");
+    assertNull(form.getCriteriaObject().get("$and"));
   }
 
   @Test
@@ -200,6 +200,6 @@ public class QuickFilterTest extends CategoryTest {
 
     // Verify that tags are present in criteria.
     assertEquals(form.getCriteriaObject().get("$and").toString(),
-        "[Document{{$and=[Document{{$or=[Document{{tags.key=Document{{$in=[key1, val1]}}}}, Document{{tags.value=Document{{$in=[key1, val1]}}}}]}}]}}, Document{{}}, Document{{}}, Document{{}}]");
+        "[Document{{$and=[Document{{$or=[Document{{tags.key=Document{{$in=[key1, val1]}}}}, Document{{tags.value=Document{{$in=[key1, val1]}}}}]}}]}}]");
   }
 }

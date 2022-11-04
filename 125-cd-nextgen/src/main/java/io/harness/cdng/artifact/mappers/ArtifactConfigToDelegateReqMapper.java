@@ -14,6 +14,7 @@ import static software.wings.utils.RepositoryFormat.generic;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
@@ -32,6 +33,7 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfi
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -45,6 +47,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
@@ -90,10 +93,25 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public S3ArtifactDelegateRequest getAmazonS3DelegateRequest(AmazonS3ArtifactConfig artifactConfig,
       AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
-    // If both are empty, regex is latest among all S3 artifacts.
-    String filePathRegex =
-        artifactConfig.getFilePathRegex() != null ? artifactConfig.getFilePathRegex().getValue() : "";
-    String filePath = artifactConfig.getFilePath() != null ? artifactConfig.getFilePath().getValue() : "";
+    String bucket = artifactConfig.getBucketName().getValue();
+    String filePath = artifactConfig.getFilePath().getValue();
+    String filePathRegex = artifactConfig.getFilePathRegex().getValue();
+
+    if (StringUtils.isBlank(bucket)) {
+      throw new InvalidRequestException("Please input bucketName.");
+    }
+
+    if (StringUtils.isAllBlank(filePathRegex, filePath)) {
+      throw new InvalidRequestException("Please input one of the field - filePath or filePathRegex.");
+    }
+
+    if (StringUtils.isBlank(filePath)) {
+      filePath = "";
+    }
+
+    if (StringUtils.isBlank(filePathRegex)) {
+      filePathRegex = "";
+    }
 
     return ArtifactDelegateRequestUtils.getAmazonS3DelegateRequest(artifactConfig.getBucketName().getValue(), filePath,
         filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3,
@@ -145,6 +163,30 @@ public class ArtifactConfigToDelegateReqMapper {
         artifactConfig.getPackageType().getValue(), version, versionRegex, artifactConfig.getProject().getValue(),
         artifactConfig.getScope().getValue(), artifactConfig.getFeed().getValue(), connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.AZURE_ARTIFACTS);
+  }
+
+  public AMIArtifactDelegateRequest getAMIDelegateRequest(AMIArtifactConfig artifactConfig,
+      AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    String versionRegex = artifactConfig.getVersionRegex().getValue();
+
+    if (StringUtils.isBlank(versionRegex)) {
+      versionRegex = "";
+    }
+
+    String version = artifactConfig.getVersion().getValue();
+
+    if (StringUtils.isBlank(version)) {
+      version = "";
+    }
+
+    // If both version and versionRegex are empty, throw exception.
+    if (StringUtils.isAllBlank(version, versionRegex)) {
+      throw new InvalidRequestException("Please specify version or versionRegex. Both cannot be empty.");
+    }
+
+    return ArtifactDelegateRequestUtils.getAMIArtifactDelegateRequest(artifactConfig.getTags(),
+        artifactConfig.getFilters(), artifactConfig.getRegion().getValue(), version, versionRegex, connectorRef,
+        connectorDTO, encryptedDataDetails, ArtifactSourceType.AMI);
   }
 
   public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(JenkinsArtifactConfig artifactConfig,
@@ -241,6 +283,7 @@ public class ArtifactConfigToDelegateReqMapper {
     String classifier = null;
     String port = null;
     String artifactRepositoryUrl = null;
+    String group = null;
     if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("npm")) {
       NexusRegistryNpmConfig nexusRegistryNpmConfig =
           (NexusRegistryNpmConfig) artifactConfig.getNexusRegistryConfigSpec();
@@ -249,6 +292,10 @@ public class ArtifactConfigToDelegateReqMapper {
       NexusRegistryNugetConfig nexusRegistryNugetConfig =
           (NexusRegistryNugetConfig) artifactConfig.getNexusRegistryConfigSpec();
       packageName = nexusRegistryNugetConfig.getPackageName().getValue();
+    } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("raw")) {
+      NexusRegistryRawConfig nexusRegistryRawConfig =
+          (NexusRegistryRawConfig) artifactConfig.getNexusRegistryConfigSpec();
+      group = nexusRegistryRawConfig.getGroup().getValue();
     } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("docker")) {
       NexusRegistryDockerConfig nexusRegistryDockerConfig =
           (NexusRegistryDockerConfig) artifactConfig.getNexusRegistryConfigSpec();
@@ -273,7 +320,7 @@ public class ArtifactConfigToDelegateReqMapper {
     return ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(artifactConfig.getRepository().getValue(), port,
         artifactId, artifactConfig.getRepositoryFormat().getValue(), artifactRepositoryUrl, tag, tagRegex, connectorRef,
         nexusConnectorDTO, encryptedDataDetails, ArtifactSourceType.NEXUS3_REGISTRY, groupId, artifactId, extension,
-        classifier, packageName);
+        classifier, packageName, group);
   }
 
   public NexusArtifactDelegateRequest getNexus2ArtifactDelegateRequest(Nexus2RegistryArtifactConfig artifactConfig,
@@ -310,7 +357,7 @@ public class ArtifactConfigToDelegateReqMapper {
     return ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(artifactConfig.getRepository().getValue(), null,
         null, artifactConfig.getRepositoryFormat().getValue(), null, tag, tagRegex, connectorRef, nexusConnectorDTO,
         encryptedDataDetails, ArtifactSourceType.NEXUS2_REGISTRY, groupId, artifactId, extension, classifier,
-        packageName);
+        packageName, "");
   }
 
   public ArtifactSourceDelegateRequest getArtifactoryArtifactDelegateRequest(

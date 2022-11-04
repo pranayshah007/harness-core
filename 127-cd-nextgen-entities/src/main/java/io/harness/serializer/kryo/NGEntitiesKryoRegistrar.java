@@ -7,6 +7,7 @@
 
 package io.harness.serializer.kryo;
 
+import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
@@ -39,6 +40,8 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfi
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
+import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
@@ -131,6 +134,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.CustomDeploymentServiceSpec;
 import io.harness.cdng.service.beans.EcsServiceSpec;
+import io.harness.cdng.service.beans.ElastigroupServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.beans.ServerlessAwsLambdaServiceSpec;
@@ -275,6 +279,8 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(GithubPackagesArtifactOutcome.class, 130029);
     kryo.register(AzureArtifactsConfig.class, 14700);
     kryo.register(AzureArtifactsOutcome.class, 14701);
+    kryo.register(AMIArtifactConfig.class, 14704);
+    kryo.register(AMIArtifactOutcome.class, 14705);
     kryo.register(EcsServiceDefinitionManifest.class, 140001);
     kryo.register(EcsTaskDefinitionManifest.class, 140002);
     kryo.register(EcsTaskDefinitionManifestOutcome.class, 140003);
@@ -317,5 +323,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(EcsInfrastructure.class, 12612);
     kryo.register(CustomDeploymentInfrastructure.class, 12613);
     kryo.register(ServerlessAwsLambdaInfrastructure.class, 12579);
+    kryo.register(NexusRegistryRawConfig.class, 1400171);
+    kryo.register(ElastigroupServiceSpec.class, 140011);
   }
 }

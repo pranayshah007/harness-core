@@ -17,6 +17,7 @@ import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -35,7 +37,6 @@ import lombok.NoArgsConstructor;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
 @SuperBuilder
@@ -43,8 +44,10 @@ import org.hibernate.validator.constraints.NotEmpty;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "ELKHealthSource", description = "This is the ELK Log Health Source spec entity defined in Harness",
+    hidden = true)
 public class ELKHealthSourceSpec extends HealthSourceSpec {
-  @NotNull String feature;
+  @NotNull @NotEmpty String feature;
 
   @NotNull @NotEmpty @Valid List<QueryDTO> queries;
 
@@ -54,13 +57,13 @@ public class ELKHealthSourceSpec extends HealthSourceSpec {
   @AllArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class QueryDTO {
-    @NotNull String name;
+    @NotNull @NotEmpty String name;
     @NotNull String query;
-    @NotNull String index;
-    @NotNull String serviceInstanceIdentifier;
-    @NotNull String timeStampIdentifier;
-    @NotNull String timeStampFormat;
-    @NotNull String messageIdentifier;
+    @NotNull @NotEmpty String index;
+    @NotNull @NotEmpty String serviceInstanceIdentifier;
+    @NotNull @NotEmpty String timeStampIdentifier;
+    @NotNull @NotEmpty String timeStampFormat;
+    @NotNull @NotEmpty String messageIdentifier;
   }
 
   @Value
@@ -96,7 +99,7 @@ public class ELKHealthSourceSpec extends HealthSourceSpec {
 
   @Override
   public DataSourceType getType() {
-    return DataSourceType.ELK_LOG;
+    return DataSourceType.ELASTICSEARCH;
   }
 
   @Override

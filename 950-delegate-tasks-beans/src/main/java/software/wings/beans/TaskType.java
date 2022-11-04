@@ -19,6 +19,7 @@ import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
@@ -300,6 +301,7 @@ public enum TaskType {
   AMAZON_S3_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   GITHUB_PACKAGES_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   AZURE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Azure Task"),
+  AMI_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "AMI Task"),
   AWS_ROUTE53_TASK(TaskGroup.AWS),
   SHELL_SCRIPT_APPROVAL(TaskGroup.SCRIPT),
   CUSTOM_GET_BUILDS(TaskGroup.CUSTOM),
@@ -315,7 +317,7 @@ public enum TaskType {
   HELM_COLLECT_CHART(TaskGroup.HELM),
   SLACK(TaskGroup.SLACK),
   INITIALIZATION_PHASE(TaskGroup.CI),
-  CI_LE_STATUS(TaskGroup.CI),
+  CI_LE_STATUS(TaskGroup.CI, null, StepStatusTaskResponseData.class, false),
   EXECUTE_COMMAND(TaskGroup.CI),
   CI_CLEANUP(TaskGroup.CI),
   CI_EXECUTE_STEP(TaskGroup.CI),
@@ -390,7 +392,8 @@ public enum TaskType {
   SHELL_SCRIPT_PROVISION(TaskGroup.SHELL_SCRIPT_PROVISION_NG, "Shell Script Provision Task"),
   ECS_GIT_FETCH_RUN_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Run Task"),
   TRIGGER_AUTHENTICATION_TASK(TaskGroup.TRIGGER),
-  SPOT_TASK_NG(TaskGroup.SPOTINST, "Spot NG Task");
+  SPOT_TASK_NG(TaskGroup.SPOTINST, "Spot NG Task"),
+  AZURE_WEB_APP_TASK_NG_V2(TaskGroup.AZURE, "Azure Web App Task V2", true);
 
   private final TaskGroup taskGroup;
   private final String displayName;
@@ -414,6 +417,14 @@ public enum TaskType {
     this.request = null;
     this.response = null;
     this.unsupported = false;
+  }
+
+  TaskType(TaskGroup taskGroup, String displayName, boolean unsupported) {
+    this.taskGroup = taskGroup;
+    this.displayName = displayName;
+    this.request = null;
+    this.response = null;
+    this.unsupported = unsupported;
   }
 
   TaskType(TaskGroup taskGroup, Class<? extends TaskParameters> request, Class<? extends DelegateResponseData> response,

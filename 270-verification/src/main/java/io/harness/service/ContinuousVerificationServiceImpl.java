@@ -18,7 +18,6 @@ import static software.wings.common.VerificationConstants.CRON_POLL_INTERVAL;
 import static software.wings.common.VerificationConstants.CRON_POLL_INTERVAL_IN_MINUTES;
 import static software.wings.common.VerificationConstants.CV_24x7_STATE_EXECUTION;
 import static software.wings.common.VerificationConstants.CV_DATA_COLLECTION_INTERVAL_IN_MINUTE;
-import static software.wings.common.VerificationConstants.DATA_COLLECTION_TASKS_PER_MINUTE;
 import static software.wings.common.VerificationConstants.DUMMY_HOST_NAME;
 import static software.wings.common.VerificationConstants.GET_LOG_FEEDBACKS;
 import static software.wings.common.VerificationConstants.IS_EXPERIMENTAL;
@@ -117,7 +116,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
 import org.bson.types.ObjectId;
@@ -156,35 +154,55 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
   @Override
   @Counted
   @Timed
-  public boolean triggerAPMDataCollection(String accountId) {
-    List<CVConfiguration> cvConfigurations = cvConfigurationService.listConfigurations(accountId);
+  public void triggerDataCollection(CVConfiguration cvConfiguration) {
+    if (cvConfiguration.isEnabled24x7()) {
+      if (getMetricAnalysisStates().contains(cvConfiguration.getStateType())) {
+        triggerAPMDataCollection(cvConfiguration);
+      } else if (getLogAnalysisStates().contains(cvConfiguration.getStateType())) {
+        triggerLogDataCollection(cvConfiguration);
+      } else {
+        throw new IllegalStateException(
+            "Unknown state type when trying to trigger service guard data collection" + cvConfiguration.getStateType());
+      }
+    }
+  }
+
+  @Override
+  @Counted
+  @Timed
+  public void triggerAPMDataCollection(CVConfiguration cvConfiguration) {
     long endMinute = getFlooredTimeForTimeSeries(
         TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis()) - TIME_DELAY_QUERY_MINS, 0);
 
-    AtomicLong totalDataCollectionTasks = new AtomicLong(0);
+    if (cvConfiguration.isEnabled24x7() && getMetricAnalysisStates().contains(cvConfiguration.getStateType())) {
+      if (!shouldCollectData(
+              cvConfiguration, timeSeriesAnalysisService.getCreatedTimeOfLastCollection(cvConfiguration))) {
+        return;
+      }
+      long startTime = getDataCollectionStartMinForAPM(cvConfiguration, endMinute);
+      long endTime = TimeUnit.MINUTES.toMillis(endMinute);
+      if (endTime - startTime >= TimeUnit.MINUTES.toMillis(CV_DATA_COLLECTION_INTERVAL_IN_MINUTE)) {
+        log.info("triggering data collection for state {} config {} startTime {} endTime {} collectionMinute {}",
+            cvConfiguration.getStateType(), cvConfiguration.getUuid(), startTime, endTime, endMinute);
+        if (isCVTaskBasedCollectionEnabled(cvConfiguration)) {
+          createCVTask(cvConfiguration, startTime, endTime);
+        } else {
+          verificationManagerClientHelper.callManagerWithRetry(verificationManagerClient.triggerCVDataCollection(
+              cvConfiguration.getUuid(), cvConfiguration.getStateType(), startTime, endTime));
+        }
+      }
+    }
+  }
+
+  @Override
+  @Counted
+  @Timed
+  public boolean triggerAPMDataCollection(String accountId) {
+    List<CVConfiguration> cvConfigurations = cvConfigurationService.listConfigurations(accountId);
     cvConfigurations.stream()
         .filter(cvConfiguration
             -> cvConfiguration.isEnabled24x7() && getMetricAnalysisStates().contains(cvConfiguration.getStateType()))
-        .forEach(cvConfiguration -> {
-          if (!shouldCollectData(
-                  cvConfiguration, timeSeriesAnalysisService.getCreatedTimeOfLastCollection(cvConfiguration))) {
-            return;
-          }
-          long startTime = getDataCollectionStartMinForAPM(cvConfiguration, endMinute);
-          long endTime = TimeUnit.MINUTES.toMillis(endMinute);
-          if (endTime - startTime >= TimeUnit.MINUTES.toMillis(CV_DATA_COLLECTION_INTERVAL_IN_MINUTE)) {
-            log.info("triggering data collection for state {} config {} startTime {} endTime {} collectionMinute {}",
-                cvConfiguration.getStateType(), cvConfiguration.getUuid(), startTime, endTime, endMinute);
-            if (isCVTaskBasedCollectionEnabled(cvConfiguration)) {
-              createCVTask(cvConfiguration, startTime, endTime);
-            } else {
-              verificationManagerClientHelper.callManagerWithRetry(verificationManagerClient.triggerCVDataCollection(
-                  cvConfiguration.getUuid(), cvConfiguration.getStateType(), startTime, endTime));
-              totalDataCollectionTasks.getAndIncrement();
-            }
-          }
-        });
-    metricRegistry.recordGaugeValue(DATA_COLLECTION_TASKS_PER_MINUTE, null, totalDataCollectionTasks.get());
+        .forEach(cvConfiguration -> { triggerAPMDataCollection(cvConfiguration); });
     return true;
   }
 
@@ -322,6 +340,95 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
       return lastCVAnalysisMinute;
     }
   }
+
+  @Override
+  @Counted
+  @Timed
+  public void triggerServiceGuardAnalysis(CVConfiguration cvConfiguration) {
+    if (cvConfiguration.isEnabled24x7()) {
+      if (getMetricAnalysisStates().contains(cvConfiguration.getStateType())) {
+        log.info("Triggering Timeseries analysis for {}", cvConfiguration.getUuid());
+        triggerTimeseriesAnalysis(cvConfiguration);
+      } else if (getLogAnalysisStates().contains(cvConfiguration.getStateType())) {
+        log.info("Triggering Log analysis for {}", cvConfiguration.getUuid());
+        triggerLogsL1Clustering(cvConfiguration);
+        triggerLogsL2Clustering(cvConfiguration);
+        triggerLogDataAnalysis(cvConfiguration);
+        triggerFeedbackAnalysis(cvConfiguration);
+      } else {
+        throw new IllegalStateException(
+            "Invalid state for cvConfig:" + cvConfiguration.getUuid() + ", " + cvConfiguration.getStateType());
+      }
+    }
+  }
+
+  private void triggerTimeseriesAnalysis(CVConfiguration cvConfiguration) {
+    String accountId = cvConfiguration.getAccountId();
+    try (VerificationLogContext ignored = new VerificationLogContext(cvConfiguration.getAccountId(),
+             cvConfiguration.getUuid(), null, cvConfiguration.getStateType().getDelegateStateType(), OVERRIDE_ERROR)) {
+      try {
+        log.info(
+            "Executing APM data analysis Job for accountId {} and configId {}", accountId, cvConfiguration.getUuid());
+        long lastCVDataCollectionMinute = timeSeriesAnalysisService.getMaxCVCollectionMinute(
+            cvConfiguration.getAppId(), cvConfiguration.getUuid(), cvConfiguration.getAccountId());
+        if (lastCVDataCollectionMinute <= 0) {
+          log.info("For account {} and CV config {} name {} type {} no data has been collected yet. Skipping analysis",
+              cvConfiguration.getAccountId(), cvConfiguration.getUuid(), cvConfiguration.getName(),
+              cvConfiguration.getStateType());
+          return;
+        }
+
+        long lastCVAnalysisMinute =
+            timeSeriesAnalysisService.getLastCVAnalysisMinute(cvConfiguration.getAppId(), cvConfiguration.getUuid());
+
+        if (lastCVAnalysisMinute <= 0) {
+          log.info(
+              "For account {} and CV config {} name {} type {} no analysis has been done yet. This is going to be first analysis",
+              cvConfiguration.getAccountId(), cvConfiguration.getUuid(), cvConfiguration.getName(),
+              cvConfiguration.getStateType());
+        }
+        long analysisStartMinute = getAnalysisStartMinuteForAPM(cvConfiguration, lastCVDataCollectionMinute);
+        if (analysisStartMinute == -1) {
+          log.info(
+              "The last analysis was more than 2 hours ago but there is currently a task running for {}. So exiting.",
+              cvConfiguration.getUuid());
+          return;
+        }
+        if (lastCVDataCollectionMinute - lastCVAnalysisMinute >= TimeUnit.SECONDS.toMinutes(CRON_POLL_INTERVAL)) {
+          long endMinute = analysisStartMinute + TimeUnit.SECONDS.toMinutes(CRON_POLL_INTERVAL);
+
+          // since analysis startMin is inclusive in LE, we  need to add 1.
+          analysisStartMinute += 1;
+
+          Set<String> tags = getTags(cvConfiguration.getUuid());
+          List<MLExperiments> experiments = get24x7Experiments(MLAnalysisType.TIME_SERIES.name());
+          if (isEmpty(tags)) {
+            LearningEngineAnalysisTask learningEngineAnalysisTask =
+                createLearningEngineAnalysisTask(accountId, cvConfiguration, analysisStartMinute, endMinute, null);
+
+            if (learningEngineAnalysisTask != null) {
+              learningEngineService.addLearningEngineAnalysisTask(learningEngineAnalysisTask);
+
+              log.info("Triggering Data Analysis for account {} ", accountId);
+              log.info("Queuing analysis task for state {} config {} and tag {} with startTime {}",
+                  cvConfiguration.getStateType(), cvConfiguration.getUuid(), null, analysisStartMinute);
+
+              for (MLExperiments experiment : experiments) {
+                LearningEngineExperimentalAnalysisTask task = createLearningEngineAnalysisExperimentalTask(
+                    accountId, cvConfiguration, analysisStartMinute, endMinute, null, experiment.getExperimentName());
+                learningEngineService.addLearningEngineExperimentalAnalysisTask(task);
+              }
+            }
+          }
+          timeSeriesLETask(tags, accountId, cvConfiguration, analysisStartMinute, endMinute, experiments);
+        }
+      } catch (Exception ex) {
+        log.error("Exception occurred while triggering metric data collection for cvConfig {}",
+            cvConfiguration.getUuid(), ex);
+      }
+    }
+  }
+
   @Override
   @Counted
   @Timed
@@ -336,74 +443,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
     cvConfigurations.stream()
         .filter(cvConfiguration
             -> cvConfiguration.isEnabled24x7() && getMetricAnalysisStates().contains(cvConfiguration.getStateType()))
-        .forEach(cvConfiguration -> {
-          try (VerificationLogContext ignored =
-                   new VerificationLogContext(cvConfiguration.getAccountId(), cvConfiguration.getUuid(), null,
-                       cvConfiguration.getStateType().getDelegateStateType(), OVERRIDE_ERROR)) {
-            try {
-              log.info("Executing APM data analysis Job for accountId {} and configId {}", accountId,
-                  cvConfiguration.getUuid());
-              long lastCVDataCollectionMinute = timeSeriesAnalysisService.getMaxCVCollectionMinute(
-                  cvConfiguration.getAppId(), cvConfiguration.getUuid(), cvConfiguration.getAccountId());
-              if (lastCVDataCollectionMinute <= 0) {
-                log.info(
-                    "For account {} and CV config {} name {} type {} no data has been collected yet. Skipping analysis",
-                    cvConfiguration.getAccountId(), cvConfiguration.getUuid(), cvConfiguration.getName(),
-                    cvConfiguration.getStateType());
-                return;
-              }
-
-              long lastCVAnalysisMinute = timeSeriesAnalysisService.getLastCVAnalysisMinute(
-                  cvConfiguration.getAppId(), cvConfiguration.getUuid());
-
-              if (lastCVAnalysisMinute <= 0) {
-                log.info(
-                    "For account {} and CV config {} name {} type {} no analysis has been done yet. This is going to be first analysis",
-                    cvConfiguration.getAccountId(), cvConfiguration.getUuid(), cvConfiguration.getName(),
-                    cvConfiguration.getStateType());
-              }
-              long analysisStartMinute = getAnalysisStartMinuteForAPM(cvConfiguration, lastCVDataCollectionMinute);
-              if (analysisStartMinute == -1) {
-                log.info(
-                    "The last analysis was more than 2 hours ago but there is currently a task running for {}. So exiting.",
-                    cvConfiguration.getUuid());
-                return;
-              }
-              if (lastCVDataCollectionMinute - lastCVAnalysisMinute >= TimeUnit.SECONDS.toMinutes(CRON_POLL_INTERVAL)) {
-                long endMinute = analysisStartMinute + TimeUnit.SECONDS.toMinutes(CRON_POLL_INTERVAL);
-
-                // since analysis startMin is inclusive in LE, we  need to add 1.
-                analysisStartMinute += 1;
-
-                Set<String> tags = getTags(cvConfiguration.getUuid());
-                List<MLExperiments> experiments = get24x7Experiments(MLAnalysisType.TIME_SERIES.name());
-                if (isEmpty(tags)) {
-                  LearningEngineAnalysisTask learningEngineAnalysisTask = createLearningEngineAnalysisTask(
-                      accountId, cvConfiguration, analysisStartMinute, endMinute, null);
-
-                  if (learningEngineAnalysisTask != null) {
-                    learningEngineService.addLearningEngineAnalysisTask(learningEngineAnalysisTask);
-
-                    log.info("Triggering Data Analysis for account {} ", accountId);
-                    log.info("Queuing analysis task for state {} config {} and tag {} with startTime {}",
-                        cvConfiguration.getStateType(), cvConfiguration.getUuid(), null, analysisStartMinute);
-
-                    for (MLExperiments experiment : experiments) {
-                      LearningEngineExperimentalAnalysisTask task =
-                          createLearningEngineAnalysisExperimentalTask(accountId, cvConfiguration, analysisStartMinute,
-                              endMinute, null, experiment.getExperimentName());
-                      learningEngineService.addLearningEngineExperimentalAnalysisTask(task);
-                    }
-                  }
-                }
-                timeSeriesLETask(tags, accountId, cvConfiguration, analysisStartMinute, endMinute, experiments);
-              }
-            } catch (Exception ex) {
-              log.error("Exception occurred while triggering metric data collection for cvConfig {}",
-                  cvConfiguration.getUuid(), ex);
-            }
-          }
-        });
+        .forEach(cvConfiguration -> triggerTimeseriesAnalysis(cvConfiguration));
   }
 
   private void timeSeriesLETask(Set<String> tags, String accountId, CVConfiguration cvConfiguration,
@@ -772,65 +812,61 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
     return boundaryMinute < currentMinute;
   }
 
+  void triggerLogDataCollection(CVConfiguration cvConfiguration) {
+    long endMinute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis()) - TIME_DELAY_QUERY_MINS;
+    try {
+      if (!shouldCollectData(cvConfiguration, logAnalysisService.getCreatedTimeOfLastCollection(cvConfiguration))) {
+        log.info("Not collecting data for {} due to backoff.", cvConfiguration.getUuid());
+        return;
+      }
+      LogsCVConfiguration logsCVConfiguration = (LogsCVConfiguration) cvConfiguration;
+      if (logsCVConfiguration.getBaselineStartMinute() < 0 || logsCVConfiguration.getBaselineEndMinute() < 0) {
+        log.error("For {} baseline is not set. Skipping collection", logsCVConfiguration.getUuid());
+        return;
+      }
+      final long maxCVCollectionMinute =
+          logAnalysisService.getMaxCVCollectionMinute(logsCVConfiguration.getAppId(), logsCVConfiguration.getUuid());
+
+      long startTime =
+          TimeUnit.MINUTES.toMillis(getCollectionStartTimeForLogs(logsCVConfiguration, maxCVCollectionMinute));
+      long endTime = startTime + TimeUnit.MINUTES.toMillis(CV_DATA_COLLECTION_INTERVAL_IN_MINUTE) - 1;
+
+      if (PREDICTIVE == cvConfiguration.getComparisonStrategy()
+          && maxCVCollectionMinute >= logsCVConfiguration.getBaselineEndMinute()) {
+        AnalysisContext analysisContext =
+            wingsPersistence.get(AnalysisContext.class, logsCVConfiguration.getContextId());
+        endTime = startTime + TimeUnit.MINUTES.toMillis(1);
+
+        if (maxCVCollectionMinute >= logsCVConfiguration.getBaselineEndMinute() + analysisContext.getTimeDuration()) {
+          log.info("collection for {} is done", analysisContext.getStateExecutionId());
+          return;
+        }
+      }
+      if (endTime < TimeUnit.MINUTES.toMillis(endMinute)) {
+        if (isCVTaskBasedCollectionEnabled(cvConfiguration)) {
+          createCVTask(cvConfiguration, startTime, endTime);
+        } else {
+          log.info("triggering data collection for state {} config {} startTime {} endTime {} collectionMinute {}",
+              cvConfiguration.getStateType(), cvConfiguration.getUuid(), startTime, endTime, endMinute);
+          verificationManagerClientHelper.callManagerWithRetry(verificationManagerClient.triggerCVDataCollection(
+              cvConfiguration.getUuid(), cvConfiguration.getStateType(), startTime, endTime));
+        }
+      }
+    } catch (Exception ex) {
+      log.error("Exception occurred while triggering datacollection for cvConfig {}", cvConfiguration.getUuid(), ex);
+    }
+  }
+
   @Override
   @Counted
   @Timed
   public boolean triggerLogDataCollection(String accountId) {
     List<CVConfiguration> cvConfigurations = cvConfigurationService.listConfigurations(accountId);
-    long endMinute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis()) - TIME_DELAY_QUERY_MINS;
-    AtomicLong totalDataCollectionTasks = new AtomicLong(0);
+
     cvConfigurations.stream()
         .filter(cvConfiguration
             -> cvConfiguration.isEnabled24x7() && getLogAnalysisStates().contains(cvConfiguration.getStateType()))
-        .forEach(cvConfiguration -> {
-          try {
-            if (!shouldCollectData(
-                    cvConfiguration, logAnalysisService.getCreatedTimeOfLastCollection(cvConfiguration))) {
-              log.info("Not collecting data for {} due to backoff.", cvConfiguration.getUuid());
-              return;
-            }
-            LogsCVConfiguration logsCVConfiguration = (LogsCVConfiguration) cvConfiguration;
-            if (logsCVConfiguration.getBaselineStartMinute() < 0 || logsCVConfiguration.getBaselineEndMinute() < 0) {
-              log.error("For {} baseline is not set. Skipping collection", logsCVConfiguration.getUuid());
-              return;
-            }
-            final long maxCVCollectionMinute = logAnalysisService.getMaxCVCollectionMinute(
-                logsCVConfiguration.getAppId(), logsCVConfiguration.getUuid());
-
-            long startTime =
-                TimeUnit.MINUTES.toMillis(getCollectionStartTimeForLogs(logsCVConfiguration, maxCVCollectionMinute));
-            long endTime = startTime + TimeUnit.MINUTES.toMillis(CV_DATA_COLLECTION_INTERVAL_IN_MINUTE) - 1;
-
-            if (PREDICTIVE == cvConfiguration.getComparisonStrategy()
-                && maxCVCollectionMinute >= logsCVConfiguration.getBaselineEndMinute()) {
-              AnalysisContext analysisContext =
-                  wingsPersistence.get(AnalysisContext.class, logsCVConfiguration.getContextId());
-              endTime = startTime + TimeUnit.MINUTES.toMillis(1);
-
-              if (maxCVCollectionMinute
-                  >= logsCVConfiguration.getBaselineEndMinute() + analysisContext.getTimeDuration()) {
-                log.info("collection for {} is done", analysisContext.getStateExecutionId());
-                return;
-              }
-            }
-            if (endTime < TimeUnit.MINUTES.toMillis(endMinute)) {
-              if (isCVTaskBasedCollectionEnabled(cvConfiguration)) {
-                createCVTask(cvConfiguration, startTime, endTime);
-              } else {
-                log.info(
-                    "triggering data collection for state {} config {} startTime {} endTime {} collectionMinute {}",
-                    cvConfiguration.getStateType(), cvConfiguration.getUuid(), startTime, endTime, endMinute);
-                verificationManagerClientHelper.callManagerWithRetry(verificationManagerClient.triggerCVDataCollection(
-                    cvConfiguration.getUuid(), cvConfiguration.getStateType(), startTime, endTime));
-              }
-              totalDataCollectionTasks.getAndIncrement();
-            }
-          } catch (Exception ex) {
-            log.error(
-                "Exception occurred while triggering datacollection for cvConfig {}", cvConfiguration.getUuid(), ex);
-          }
-        });
-    metricRegistry.recordGaugeValue(DATA_COLLECTION_TASKS_PER_MINUTE, null, totalDataCollectionTasks.get());
+        .forEach(cvConfiguration -> { triggerLogDataCollection(cvConfiguration); });
     return true;
   }
 
@@ -922,8 +958,6 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
         AnalysisContext.class, context.getUuid(), AnalysisContextKeys.perMinCollectionFinished, true);
   }
 
-  @Override
-  @Counted
   @Timed
   public void triggerLogsL1Clustering(String accountId) {
     // List all the CV configurations for a given account
@@ -936,145 +970,151 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
         .filter(cvConfiguration
             -> cvConfiguration.isEnabled24x7() && getLogAnalysisStates().contains(cvConfiguration.getStateType())
                 && cvConfiguration.getStateType() != StateType.SPLUNKV2)
-        .forEach(cvConfiguration -> {
-          try (VerificationLogContext ignored =
-                   new VerificationLogContext(cvConfiguration.getAccountId(), cvConfiguration.getUuid(), null,
-                       cvConfiguration.getStateType().getDelegateStateType(), OVERRIDE_ERROR)) {
-            long currentMinute = TimeUnit.MILLISECONDS.toMinutes(Timestamp.currentMinuteBoundary());
-            log.info(
-                "triggering logs L1 Clustering for account {} and cvConfigId {}", accountId, cvConfiguration.getUuid());
-            long lastCVDataCollectionMinute =
-                logAnalysisService.getMaxCVCollectionMinute(cvConfiguration.getAppId(), cvConfiguration.getUuid());
-            if (lastCVDataCollectionMinute <= 0) {
-              log.info(
-                  "For account {} and CV config {} name {} type {} no data has been collected yet. Skipping clustering",
-                  cvConfiguration.getAccountId(), cvConfiguration.getUuid(), cvConfiguration.getName(),
-                  cvConfiguration.getStateType());
-              return;
-            }
-            LogsCVConfiguration logsCVConfiguration = (LogsCVConfiguration) cvConfiguration;
-            long minLogRecordMinute = logAnalysisService.getLogRecordMinute(
-                cvConfiguration.getAppId(), cvConfiguration.getUuid(), ClusterLevel.H0, OrderType.ASC);
-            long maxLogRecordMinute = logAnalysisService.getLogRecordMinute(
-                cvConfiguration.getAppId(), cvConfiguration.getUuid(), ClusterLevel.H0, OrderType.DESC);
-            if (lastCVDataCollectionMinute > logsCVConfiguration.getBaselineStartMinute()
-                && lastCVDataCollectionMinute <= logsCVConfiguration.getBaselineEndMinute()) {
-              log.info(
-                  "For account {} and CV config {} name {} type {} We are currently doing L1 clustering in the baseline window.",
-                  cvConfiguration.getAccountId(), cvConfiguration.getUuid(), cvConfiguration.getName(),
-                  cvConfiguration.getStateType());
-            } else if (isBeforeTwoHours(lastCVDataCollectionMinute, true)
-                || isBeforeTwoHours(maxLogRecordMinute, false)) {
-              log.info(
-                  "For account {} and CV config {} name {} type {} There has been no new data in the past 2 hours. Skipping L1 clustering",
-                  cvConfiguration.getAccountId(), cvConfiguration.getUuid(), cvConfiguration.getName(),
-                  cvConfiguration.getStateType());
-              return;
-            }
+        .forEach(cvConfiguration -> triggerLogsL1Clustering(cvConfiguration));
+  }
 
-            if (isBeforeTwoHours(minLogRecordMinute, false)) {
-              if (minLogRecordMinute >= logsCVConfiguration.getBaselineStartMinute()
-                  && minLogRecordMinute <= logsCVConfiguration.getBaselineEndMinute()) {
-                log.info("For {} MinLogRecord minute is {} and it is within the baseline window",
-                    cvConfiguration.getUuid(), minLogRecordMinute);
-              } else {
-                log.info(
-                    "for {} minLogRecordMinute is more than 2 hours ago but maxLogRecordMinute is less than 2 hours ago. We will start L1 clustering from 2 hours ago.",
-                    cvConfiguration.getUuid());
+  @Counted
+  @Timed
+  private void triggerLogsL1Clustering(CVConfiguration cvConfiguration) {
+    String accountId = cvConfiguration.getAccountId();
 
-                minLogRecordMinute = getCeilingFifteenMinBoundaryTime(currentMinute, PREDECTIVE_HISTORY_MINUTES);
-              }
-            }
+    // for each 24x7 enabled configurations do following
+    // Get last CV Analysis minute on given configuration
+    // Add new learning task for next ANALYSIS_PERIOD_MINUTES period
 
-            log.info("Clustering pending between {} and {}", minLogRecordMinute, lastCVDataCollectionMinute);
+    try (VerificationLogContext ignored = new VerificationLogContext(cvConfiguration.getAccountId(),
+             cvConfiguration.getUuid(), null, cvConfiguration.getStateType().getDelegateStateType(), OVERRIDE_ERROR)) {
+      long currentMinute = TimeUnit.MILLISECONDS.toMinutes(Timestamp.currentMinuteBoundary());
+      log.info("triggering logs L1 Clustering for account {} and cvConfigId {}", accountId, cvConfiguration.getUuid());
+      long lastCVDataCollectionMinute =
+          logAnalysisService.getMaxCVCollectionMinute(cvConfiguration.getAppId(), cvConfiguration.getUuid());
+      if (lastCVDataCollectionMinute <= 0) {
+        log.info("For account {} and CV config {} name {} type {} no data has been collected yet. Skipping clustering",
+            cvConfiguration.getAccountId(), cvConfiguration.getUuid(), cvConfiguration.getName(),
+            cvConfiguration.getStateType());
+        return;
+      }
+      LogsCVConfiguration logsCVConfiguration = (LogsCVConfiguration) cvConfiguration;
+      long minLogRecordMinute = logAnalysisService.getLogRecordMinute(
+          cvConfiguration.getAppId(), cvConfiguration.getUuid(), ClusterLevel.H0, OrderType.ASC);
+      long maxLogRecordMinute = logAnalysisService.getLogRecordMinute(
+          cvConfiguration.getAppId(), cvConfiguration.getUuid(), ClusterLevel.H0, OrderType.DESC);
+      if (lastCVDataCollectionMinute > logsCVConfiguration.getBaselineStartMinute()
+          && lastCVDataCollectionMinute <= logsCVConfiguration.getBaselineEndMinute()) {
+        log.info(
+            "For account {} and CV config {} name {} type {} We are currently doing L1 clustering in the baseline window.",
+            cvConfiguration.getAccountId(), cvConfiguration.getUuid(), cvConfiguration.getName(),
+            cvConfiguration.getStateType());
+      } else if (isBeforeTwoHours(lastCVDataCollectionMinute, true) || isBeforeTwoHours(maxLogRecordMinute, false)) {
+        log.info(
+            "For account {} and CV config {} name {} type {} There has been no new data in the past 2 hours. Skipping L1 clustering",
+            cvConfiguration.getAccountId(), cvConfiguration.getUuid(), cvConfiguration.getName(),
+            cvConfiguration.getStateType());
+        return;
+      }
 
-            for (long logRecordMinute = minLogRecordMinute;
-                 logRecordMinute > 0 && logRecordMinute <= lastCVDataCollectionMinute; logRecordMinute++) {
-              Set<String> hosts = logAnalysisService.getHostsForMinute(cvConfiguration.getAppId(),
-                  LogDataRecordKeys.cvConfigId, cvConfiguration.getUuid(), logRecordMinute, ClusterLevel.L0);
+      if (isBeforeTwoHours(minLogRecordMinute, false)) {
+        if (minLogRecordMinute >= logsCVConfiguration.getBaselineStartMinute()
+            && minLogRecordMinute <= logsCVConfiguration.getBaselineEndMinute()) {
+          log.info("For {} MinLogRecord minute is {} and it is within the baseline window", cvConfiguration.getUuid(),
+              minLogRecordMinute);
+        } else {
+          log.info(
+              "for {} minLogRecordMinute is more than 2 hours ago but maxLogRecordMinute is less than 2 hours ago. We will start L1 clustering from 2 hours ago.",
+              cvConfiguration.getUuid());
 
-              // there can be a race between finding all the host for a min and le finishing the cluster task and
-              // deleting L0 data
-              if (isEmpty(hosts)) {
-                log.info("For {} minute {} did not find hosts for level {} continuing...", cvConfiguration.getUuid(),
-                    logRecordMinute, ClusterLevel.L0);
-                logAnalysisService.saveClusteredLogData(cvConfiguration.getAppId(), cvConfiguration.getUuid(),
-                    ClusterLevel.L1, (int) logRecordMinute, null, Lists.newArrayList());
-                continue;
-              }
-              final String taskId = generateUuid();
-              String inputLogsUrl = "/verification/" + LogAnalysisResource.LOG_ANALYSIS
-                  + LogAnalysisResource.ANALYSIS_GET_24X7_LOG_URL + "?cvConfigId=" + cvConfiguration.getUuid()
-                  + "&appId=" + cvConfiguration.getAppId() + "&clusterLevel=" + ClusterLevel.L0
-                  + "&logCollectionMinute=" + logRecordMinute;
-              String clusteredLogSaveUrl = "/verification/" + LogAnalysisResource.LOG_ANALYSIS
-                  + LogAnalysisResource.ANALYSIS_STATE_SAVE_24X7_CLUSTERED_LOG_URL
-                  + "?cvConfigId=" + cvConfiguration.getUuid() + "&appId=" + cvConfiguration.getAppId()
-                  + "&clusterLevel=" + ClusterLevel.L1 + "&logCollectionMinute=" + logRecordMinute;
-              String failureUrl = "/verification/" + LearningEngineService.RESOURCE_URL
-                  + VerificationConstants.NOTIFY_LEARNING_FAILURE + "?taskId=" + taskId;
+          minLogRecordMinute = getCeilingFifteenMinBoundaryTime(currentMinute, PREDECTIVE_HISTORY_MINUTES);
+        }
+      }
 
-              String stateExecutionIdForLETask = "LOGS_CLUSTER_L1_" + cvConfiguration.getUuid() + "_" + logRecordMinute;
-              learningEngineService.checkAndUpdateFailedLETask(stateExecutionIdForLETask, (int) logRecordMinute);
+      log.info("Clustering pending between {} and {}", minLogRecordMinute, lastCVDataCollectionMinute);
 
-              if (learningEngineService.isEligibleToCreateTask(stateExecutionIdForLETask, cvConfiguration.getUuid(),
-                      logRecordMinute, MLAnalysisType.LOG_CLUSTER)) {
-                int nextBackoffCount = learningEngineService.getNextServiceGuardBackoffCount(
-                    stateExecutionIdForLETask, cvConfiguration.getUuid(), logRecordMinute, MLAnalysisType.LOG_CLUSTER);
-                LearningEngineAnalysisTask analysisTask =
-                    LearningEngineAnalysisTask.builder()
-                        .accountId(accountId)
-                        .control_input_url(inputLogsUrl)
-                        .analysis_save_url(clusteredLogSaveUrl)
-                        .analysis_failure_url(failureUrl)
-                        .state_execution_id(stateExecutionIdForLETask)
-                        .service_id(cvConfiguration.getServiceId())
-                        .control_nodes(hosts)
-                        .sim_threshold(0.99)
-                        .service_guard_backoff_count(nextBackoffCount)
-                        .analysis_minute(logRecordMinute)
-                        .cluster_level(ClusterLevel.L1.getLevel())
-                        .ml_analysis_type(MLAnalysisType.LOG_CLUSTER)
-                        .stateType(cvConfiguration.getStateType())
-                        .query(Lists.newArrayList(((LogsCVConfiguration) cvConfiguration).getQuery()))
-                        .is24x7Task(true)
-                        .priority(1)
-                        .cvConfigId(cvConfiguration.getUuid())
-                        .alertThreshold(getAlertThreshold(cvConfiguration, logRecordMinute))
-                        .build();
-                analysisTask.setAppId(cvConfiguration.getAppId());
-                analysisTask.setUuid(taskId);
+      for (long logRecordMinute = minLogRecordMinute;
+           logRecordMinute > 0 && logRecordMinute <= lastCVDataCollectionMinute; logRecordMinute++) {
+        Set<String> hosts = logAnalysisService.getHostsForMinute(cvConfiguration.getAppId(),
+            LogDataRecordKeys.cvConfigId, cvConfiguration.getUuid(), logRecordMinute, ClusterLevel.L0);
 
-                learningEngineService.addLearningEngineAnalysisTask(analysisTask);
+        // there can be a race between finding all the host for a min and le finishing the cluster task and
+        // deleting L0 data
+        if (isEmpty(hosts)) {
+          log.info("For {} minute {} did not find hosts for level {} continuing...", cvConfiguration.getUuid(),
+              logRecordMinute, ClusterLevel.L0);
+          logAnalysisService.saveClusteredLogData(cvConfiguration.getAppId(), cvConfiguration.getUuid(),
+              ClusterLevel.L1, (int) logRecordMinute, null, Lists.newArrayList());
+          continue;
+        }
+        final String taskId = generateUuid();
+        String inputLogsUrl = "/verification/" + LogAnalysisResource.LOG_ANALYSIS
+            + LogAnalysisResource.ANALYSIS_GET_24X7_LOG_URL + "?cvConfigId=" + cvConfiguration.getUuid()
+            + "&appId=" + cvConfiguration.getAppId() + "&clusterLevel=" + ClusterLevel.L0
+            + "&logCollectionMinute=" + logRecordMinute;
+        String clusteredLogSaveUrl = "/verification/" + LogAnalysisResource.LOG_ANALYSIS
+            + LogAnalysisResource.ANALYSIS_STATE_SAVE_24X7_CLUSTERED_LOG_URL
+            + "?cvConfigId=" + cvConfiguration.getUuid() + "&appId=" + cvConfiguration.getAppId()
+            + "&clusterLevel=" + ClusterLevel.L1 + "&logCollectionMinute=" + logRecordMinute;
+        String failureUrl = "/verification/" + LearningEngineService.RESOURCE_URL
+            + VerificationConstants.NOTIFY_LEARNING_FAILURE + "?taskId=" + taskId;
 
-                List<MLExperiments> experiments = get24x7Experiments(MLAnalysisType.LOG_CLUSTER.name());
-                for (MLExperiments experiment : experiments) {
-                  LearningEngineExperimentalAnalysisTask expTask =
-                      LearningEngineExperimentalAnalysisTask.builder()
-                          .control_input_url(inputLogsUrl)
-                          .analysis_save_url(getSaveUrlForExperimentalTask(taskId))
-                          .state_execution_id(
-                              "LOGS_CLUSTER_L1_" + cvConfiguration.getUuid() + "_" + logRecordMinute + generateUuid())
-                          .service_id(cvConfiguration.getServiceId())
-                          .control_nodes(hosts)
-                          .sim_threshold(0.99)
-                          .analysis_minute(logRecordMinute)
-                          .cluster_level(ClusterLevel.L1.getLevel())
-                          .ml_analysis_type(MLAnalysisType.LOG_CLUSTER)
-                          .stateType(cvConfiguration.getStateType())
-                          .query(Lists.newArrayList(((LogsCVConfiguration) cvConfiguration).getQuery()))
-                          .is24x7Task(true)
-                          .cvConfigId(cvConfiguration.getUuid())
-                          .experiment_name(experiment.getExperimentName())
-                          .alertThreshold(getAlertThreshold(cvConfiguration, logRecordMinute))
-                          .build();
-                  expTask.setAppId(cvConfiguration.getAppId());
-                  learningEngineService.addLearningEngineExperimentalAnalysisTask(expTask);
-                }
-              }
-            }
+        String stateExecutionIdForLETask = "LOGS_CLUSTER_L1_" + cvConfiguration.getUuid() + "_" + logRecordMinute;
+        learningEngineService.checkAndUpdateFailedLETask(stateExecutionIdForLETask, (int) logRecordMinute);
+
+        if (learningEngineService.isEligibleToCreateTask(
+                stateExecutionIdForLETask, cvConfiguration.getUuid(), logRecordMinute, MLAnalysisType.LOG_CLUSTER)) {
+          int nextBackoffCount = learningEngineService.getNextServiceGuardBackoffCount(
+              stateExecutionIdForLETask, cvConfiguration.getUuid(), logRecordMinute, MLAnalysisType.LOG_CLUSTER);
+          LearningEngineAnalysisTask analysisTask =
+              LearningEngineAnalysisTask.builder()
+                  .accountId(accountId)
+                  .control_input_url(inputLogsUrl)
+                  .analysis_save_url(clusteredLogSaveUrl)
+                  .analysis_failure_url(failureUrl)
+                  .state_execution_id(stateExecutionIdForLETask)
+                  .service_id(cvConfiguration.getServiceId())
+                  .control_nodes(hosts)
+                  .sim_threshold(0.99)
+                  .service_guard_backoff_count(nextBackoffCount)
+                  .analysis_minute(logRecordMinute)
+                  .cluster_level(ClusterLevel.L1.getLevel())
+                  .ml_analysis_type(MLAnalysisType.LOG_CLUSTER)
+                  .stateType(cvConfiguration.getStateType())
+                  .query(Lists.newArrayList(((LogsCVConfiguration) cvConfiguration).getQuery()))
+                  .is24x7Task(true)
+                  .priority(1)
+                  .cvConfigId(cvConfiguration.getUuid())
+                  .alertThreshold(getAlertThreshold(cvConfiguration, logRecordMinute))
+                  .build();
+          analysisTask.setAppId(cvConfiguration.getAppId());
+          analysisTask.setUuid(taskId);
+
+          learningEngineService.addLearningEngineAnalysisTask(analysisTask);
+
+          List<MLExperiments> experiments = get24x7Experiments(MLAnalysisType.LOG_CLUSTER.name());
+          for (MLExperiments experiment : experiments) {
+            LearningEngineExperimentalAnalysisTask expTask =
+                LearningEngineExperimentalAnalysisTask.builder()
+                    .control_input_url(inputLogsUrl)
+                    .analysis_save_url(getSaveUrlForExperimentalTask(taskId))
+                    .state_execution_id(
+                        "LOGS_CLUSTER_L1_" + cvConfiguration.getUuid() + "_" + logRecordMinute + generateUuid())
+                    .service_id(cvConfiguration.getServiceId())
+                    .control_nodes(hosts)
+                    .sim_threshold(0.99)
+                    .analysis_minute(logRecordMinute)
+                    .cluster_level(ClusterLevel.L1.getLevel())
+                    .ml_analysis_type(MLAnalysisType.LOG_CLUSTER)
+                    .stateType(cvConfiguration.getStateType())
+                    .query(Lists.newArrayList(((LogsCVConfiguration) cvConfiguration).getQuery()))
+                    .is24x7Task(true)
+                    .cvConfigId(cvConfiguration.getUuid())
+                    .experiment_name(experiment.getExperimentName())
+                    .alertThreshold(getAlertThreshold(cvConfiguration, logRecordMinute))
+                    .build();
+            expTask.setAppId(cvConfiguration.getAppId());
+            learningEngineService.addLearningEngineExperimentalAnalysisTask(expTask);
           }
-        });
+        }
+      }
+    }
   }
 
   /**
@@ -1166,125 +1206,131 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
         .filter(cvConfiguration
             -> cvConfiguration.isEnabled24x7() && getLogAnalysisStates().contains(cvConfiguration.getStateType())
                 && cvConfiguration.getStateType() != StateType.SPLUNKV2)
-        .forEach(cvConfiguration -> {
-          try (VerificationLogContext ignored =
-                   new VerificationLogContext(cvConfiguration.getAccountId(), cvConfiguration.getUuid(), null,
-                       cvConfiguration.getStateType().getDelegateStateType(), OVERRIDE_ERROR)) {
+        .forEach(cvConfiguration -> triggerLogsL2Clustering(cvConfiguration));
+  }
+
+  @Counted
+  @Timed
+  private void triggerLogsL2Clustering(CVConfiguration cvConfiguration) {
+    String accountId = cvConfiguration.getAccountId();
+    // for each 24x7 enabled configurations do following
+    // Get last CV Analysis minute on given configuration
+    // Add new learning task for next ANALYSIS_PERIOD_MINUTES period
+
+    try (VerificationLogContext ignored = new VerificationLogContext(cvConfiguration.getAccountId(),
+             cvConfiguration.getUuid(), null, cvConfiguration.getStateType().getDelegateStateType(), OVERRIDE_ERROR)) {
+      log.info("triggering logs L2 Clustering for account {} and cvConfigId {}", accountId, cvConfiguration.getUuid());
+      try {
+        Optional<Long> potentialL2Minute = getL2ClusteringTime((LogsCVConfiguration) cvConfiguration);
+
+        if (!potentialL2Minute.isPresent()) {
+          log.info("For {} it is not time to do L2 clustering yet", cvConfiguration.getUuid());
+          return;
+        }
+
+        long l2ClusteringMinute = potentialL2Minute.get();
+        long l2StartMinute = potentialL2Minute.get() - CRON_POLL_INTERVAL_IN_MINUTES + 1;
+
+        for (long logRecordMinute = l2StartMinute; logRecordMinute < l2ClusteringMinute; logRecordMinute++) {
+          Set<String> hosts =
+              logAnalysisService.getHostsForMinute(cvConfiguration.getAppId(), LogDataRecordKeys.cvConfigId,
+                  cvConfiguration.getUuid(), logRecordMinute, ClusterLevel.L0, ClusterLevel.H0);
+          if (isNotEmpty(hosts)) {
             log.info(
-                "triggering logs L2 Clustering for account {} and cvConfigId {}", accountId, cvConfiguration.getUuid());
-            try {
-              Optional<Long> potentialL2Minute = getL2ClusteringTime((LogsCVConfiguration) cvConfiguration);
-
-              if (!potentialL2Minute.isPresent()) {
-                log.info("For {} it is not time to do L2 clustering yet", cvConfiguration.getUuid());
-                return;
-              }
-
-              long l2ClusteringMinute = potentialL2Minute.get();
-              long l2StartMinute = potentialL2Minute.get() - CRON_POLL_INTERVAL_IN_MINUTES + 1;
-
-              for (long logRecordMinute = l2StartMinute; logRecordMinute < l2ClusteringMinute; logRecordMinute++) {
-                Set<String> hosts =
-                    logAnalysisService.getHostsForMinute(cvConfiguration.getAppId(), LogDataRecordKeys.cvConfigId,
-                        cvConfiguration.getUuid(), logRecordMinute, ClusterLevel.L0, ClusterLevel.H0);
-                if (isNotEmpty(hosts)) {
-                  log.info(
-                      "For CV config {} there is still node data clustering is pending for {} for minute {}. Skipping L2 clustering",
-                      cvConfiguration.getUuid(), hosts, logRecordMinute);
-                  return;
-                }
-
-                hosts = logAnalysisService.getHostsForMinute(cvConfiguration.getAppId(), LogDataRecordKeys.cvConfigId,
-                    cvConfiguration.getUuid(), logRecordMinute, ClusterLevel.L1, ClusterLevel.H1);
-                if (isEmpty(hosts)) {
-                  log.info("For CV config {} there is no clustering data present for minute {}. Skipping L2 clustering",
-                      cvConfiguration.getUuid(), logRecordMinute);
-                  return;
-                }
-              }
-
-              log.info("for {} for minute from {} to {} everything is in place, proceeding for L2 Clustering",
-                  cvConfiguration.getUuid(), l2StartMinute, l2ClusteringMinute);
-
-              final String taskId = generateUuid();
-              String inputLogsUrl = "/verification/" + LogAnalysisResource.LOG_ANALYSIS
-                  + LogAnalysisResource.ANALYSIS_GET_24X7_ALL_LOGS_URL + "?cvConfigId=" + cvConfiguration.getUuid()
-                  + "&appId=" + cvConfiguration.getAppId() + "&clusterLevel=" + ClusterLevel.L1
-                  + "&startMinute=" + l2StartMinute + "&endMinute=" + l2ClusteringMinute;
-              String clusteredLogSaveUrl = "/verification/" + LogAnalysisResource.LOG_ANALYSIS
-                  + LogAnalysisResource.ANALYSIS_STATE_SAVE_24X7_CLUSTERED_LOG_URL
-                  + "?cvConfigId=" + cvConfiguration.getUuid() + "&appId=" + cvConfiguration.getAppId()
-                  + "&clusterLevel=" + ClusterLevel.L2 + "&logCollectionMinute=" + l2ClusteringMinute;
-
-              String failureUrl = "/verification/" + LearningEngineService.RESOURCE_URL
-                  + VerificationConstants.NOTIFY_LEARNING_FAILURE + "?taskId=" + taskId;
-              String stateExecutionIdForLETask =
-                  "LOGS_CLUSTER_L2_" + cvConfiguration.getUuid() + "_" + l2ClusteringMinute;
-              learningEngineService.checkAndUpdateFailedLETask(stateExecutionIdForLETask, (int) l2ClusteringMinute);
-
-              if (learningEngineService.isEligibleToCreateTask(stateExecutionIdForLETask, cvConfiguration.getUuid(),
-                      l2ClusteringMinute, MLAnalysisType.LOG_CLUSTER)) {
-                int nextBackoffCount = learningEngineService.getNextServiceGuardBackoffCount(stateExecutionIdForLETask,
-                    cvConfiguration.getUuid(), l2ClusteringMinute, MLAnalysisType.LOG_CLUSTER);
-                LearningEngineAnalysisTask analysisTask =
-                    LearningEngineAnalysisTask.builder()
-                        .accountId(accountId)
-                        .control_input_url(inputLogsUrl)
-                        .analysis_save_url(clusteredLogSaveUrl)
-                        .analysis_failure_url(failureUrl)
-                        .state_execution_id(stateExecutionIdForLETask)
-                        .service_id(cvConfiguration.getServiceId())
-                        .control_nodes(Collections.emptySet())
-                        .sim_threshold(0.99)
-                        .service_guard_backoff_count(nextBackoffCount)
-                        .analysis_minute(l2ClusteringMinute)
-                        .cluster_level(ClusterLevel.L2.getLevel())
-                        .ml_analysis_type(MLAnalysisType.LOG_CLUSTER)
-                        .stateType(cvConfiguration.getStateType())
-                        .query(Lists.newArrayList(((LogsCVConfiguration) cvConfiguration).getQuery()))
-                        .is24x7Task(true)
-                        .priority(1)
-                        .cvConfigId(cvConfiguration.getUuid())
-                        .alertThreshold(getAlertThreshold(cvConfiguration, l2ClusteringMinute))
-                        .build();
-                analysisTask.setAppId(cvConfiguration.getAppId());
-                analysisTask.setUuid(taskId);
-
-                final boolean taskQueued = learningEngineService.addLearningEngineAnalysisTask(analysisTask);
-                if (taskQueued) {
-                  log.info("L2 Clustering queued for cvConfig {} from minute {} to minute {}",
-                      cvConfiguration.getUuid(), l2StartMinute, l2ClusteringMinute);
-                }
-                List<MLExperiments> experiments = get24x7Experiments(MLAnalysisType.LOG_CLUSTER.name());
-                for (MLExperiments experiment : experiments) {
-                  LearningEngineExperimentalAnalysisTask expTask =
-                      LearningEngineExperimentalAnalysisTask.builder()
-                          .control_input_url(inputLogsUrl)
-                          .analysis_save_url(getSaveUrlForExperimentalTask(taskId))
-                          .state_execution_id("LOGS_CLUSTER_L2_" + cvConfiguration.getUuid() + "_" + l2ClusteringMinute
-                              + "-" + generateUUID())
-                          .service_id(cvConfiguration.getServiceId())
-                          .control_nodes(Collections.emptySet())
-                          .sim_threshold(0.99)
-                          .analysis_minute(l2ClusteringMinute)
-                          .cluster_level(ClusterLevel.L2.getLevel())
-                          .ml_analysis_type(MLAnalysisType.LOG_CLUSTER)
-                          .stateType(cvConfiguration.getStateType())
-                          .query(Lists.newArrayList(((LogsCVConfiguration) cvConfiguration).getQuery()))
-                          .is24x7Task(true)
-                          .cvConfigId(cvConfiguration.getUuid())
-                          .experiment_name(experiment.getExperimentName())
-                          .alertThreshold(getAlertThreshold(cvConfiguration, l2ClusteringMinute))
-                          .build();
-                  expTask.setAppId(cvConfiguration.getAppId());
-                  learningEngineService.addLearningEngineExperimentalAnalysisTask(expTask);
-                }
-              }
-            } catch (Exception ex) {
-              log.error("Creating L2 task failed for cvConfig " + cvConfiguration.getUuid());
-            }
+                "For CV config {} there is still node data clustering is pending for {} for minute {}. Skipping L2 clustering",
+                cvConfiguration.getUuid(), hosts, logRecordMinute);
+            return;
           }
-        });
+
+          hosts = logAnalysisService.getHostsForMinute(cvConfiguration.getAppId(), LogDataRecordKeys.cvConfigId,
+              cvConfiguration.getUuid(), logRecordMinute, ClusterLevel.L1, ClusterLevel.H1);
+          if (isEmpty(hosts)) {
+            log.info("For CV config {} there is no clustering data present for minute {}. Skipping L2 clustering",
+                cvConfiguration.getUuid(), logRecordMinute);
+            return;
+          }
+        }
+
+        log.info("for {} for minute from {} to {} everything is in place, proceeding for L2 Clustering",
+            cvConfiguration.getUuid(), l2StartMinute, l2ClusteringMinute);
+
+        final String taskId = generateUuid();
+        String inputLogsUrl = "/verification/" + LogAnalysisResource.LOG_ANALYSIS
+            + LogAnalysisResource.ANALYSIS_GET_24X7_ALL_LOGS_URL + "?cvConfigId=" + cvConfiguration.getUuid()
+            + "&appId=" + cvConfiguration.getAppId() + "&clusterLevel=" + ClusterLevel.L1
+            + "&startMinute=" + l2StartMinute + "&endMinute=" + l2ClusteringMinute;
+        String clusteredLogSaveUrl = "/verification/" + LogAnalysisResource.LOG_ANALYSIS
+            + LogAnalysisResource.ANALYSIS_STATE_SAVE_24X7_CLUSTERED_LOG_URL
+            + "?cvConfigId=" + cvConfiguration.getUuid() + "&appId=" + cvConfiguration.getAppId()
+            + "&clusterLevel=" + ClusterLevel.L2 + "&logCollectionMinute=" + l2ClusteringMinute;
+
+        String failureUrl = "/verification/" + LearningEngineService.RESOURCE_URL
+            + VerificationConstants.NOTIFY_LEARNING_FAILURE + "?taskId=" + taskId;
+        String stateExecutionIdForLETask = "LOGS_CLUSTER_L2_" + cvConfiguration.getUuid() + "_" + l2ClusteringMinute;
+        learningEngineService.checkAndUpdateFailedLETask(stateExecutionIdForLETask, (int) l2ClusteringMinute);
+
+        if (learningEngineService.isEligibleToCreateTask(
+                stateExecutionIdForLETask, cvConfiguration.getUuid(), l2ClusteringMinute, MLAnalysisType.LOG_CLUSTER)) {
+          int nextBackoffCount = learningEngineService.getNextServiceGuardBackoffCount(
+              stateExecutionIdForLETask, cvConfiguration.getUuid(), l2ClusteringMinute, MLAnalysisType.LOG_CLUSTER);
+          LearningEngineAnalysisTask analysisTask =
+              LearningEngineAnalysisTask.builder()
+                  .accountId(accountId)
+                  .control_input_url(inputLogsUrl)
+                  .analysis_save_url(clusteredLogSaveUrl)
+                  .analysis_failure_url(failureUrl)
+                  .state_execution_id(stateExecutionIdForLETask)
+                  .service_id(cvConfiguration.getServiceId())
+                  .control_nodes(Collections.emptySet())
+                  .sim_threshold(0.99)
+                  .service_guard_backoff_count(nextBackoffCount)
+                  .analysis_minute(l2ClusteringMinute)
+                  .cluster_level(ClusterLevel.L2.getLevel())
+                  .ml_analysis_type(MLAnalysisType.LOG_CLUSTER)
+                  .stateType(cvConfiguration.getStateType())
+                  .query(Lists.newArrayList(((LogsCVConfiguration) cvConfiguration).getQuery()))
+                  .is24x7Task(true)
+                  .priority(1)
+                  .cvConfigId(cvConfiguration.getUuid())
+                  .alertThreshold(getAlertThreshold(cvConfiguration, l2ClusteringMinute))
+                  .build();
+          analysisTask.setAppId(cvConfiguration.getAppId());
+          analysisTask.setUuid(taskId);
+
+          final boolean taskQueued = learningEngineService.addLearningEngineAnalysisTask(analysisTask);
+          if (taskQueued) {
+            log.info("L2 Clustering queued for cvConfig {} from minute {} to minute {}", cvConfiguration.getUuid(),
+                l2StartMinute, l2ClusteringMinute);
+          }
+          List<MLExperiments> experiments = get24x7Experiments(MLAnalysisType.LOG_CLUSTER.name());
+          for (MLExperiments experiment : experiments) {
+            LearningEngineExperimentalAnalysisTask expTask =
+                LearningEngineExperimentalAnalysisTask.builder()
+                    .control_input_url(inputLogsUrl)
+                    .analysis_save_url(getSaveUrlForExperimentalTask(taskId))
+                    .state_execution_id("LOGS_CLUSTER_L2_" + cvConfiguration.getUuid() + "_" + l2ClusteringMinute + "-"
+                        + generateUUID())
+                    .service_id(cvConfiguration.getServiceId())
+                    .control_nodes(Collections.emptySet())
+                    .sim_threshold(0.99)
+                    .analysis_minute(l2ClusteringMinute)
+                    .cluster_level(ClusterLevel.L2.getLevel())
+                    .ml_analysis_type(MLAnalysisType.LOG_CLUSTER)
+                    .stateType(cvConfiguration.getStateType())
+                    .query(Lists.newArrayList(((LogsCVConfiguration) cvConfiguration).getQuery()))
+                    .is24x7Task(true)
+                    .cvConfigId(cvConfiguration.getUuid())
+                    .experiment_name(experiment.getExperimentName())
+                    .alertThreshold(getAlertThreshold(cvConfiguration, l2ClusteringMinute))
+                    .build();
+            expTask.setAppId(cvConfiguration.getAppId());
+            learningEngineService.addLearningEngineExperimentalAnalysisTask(expTask);
+          }
+        }
+      } catch (Exception ex) {
+        log.error("Creating L2 task failed for cvConfig " + cvConfiguration.getUuid());
+      }
+    }
   }
 
   private Optional<Long> getFeedbackAnalysisMinute(LogsCVConfiguration logsCVConfiguration) {
@@ -1331,60 +1377,63 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
   @Counted
   @Timed
   public void triggerFeedbackAnalysis(String accountId) {
-    if (isFeatureFlagEnabled(FeatureName.DISABLE_LOGML_NEURAL_NET, accountId)) {
-      log.info("DISABLE_LOGML_NEURAL_NET feature flag is enabled for account {}, not going to create a feedback task",
-          accountId);
-      return;
-    }
     List<CVConfiguration> cvConfigurations = cvConfigurationService.listConfigurations(accountId);
 
     cvConfigurations.stream()
         .filter(cvConfiguration
             -> cvConfiguration.isEnabled24x7() && getLogAnalysisStates().contains(cvConfiguration.getStateType()))
+        .forEach(cvConfiguration -> triggerFeedbackAnalysis(cvConfiguration));
+  }
 
-        .forEach(cvConfiguration -> {
-          LogsCVConfiguration logsCVConfiguration = (LogsCVConfiguration) cvConfiguration;
-          if (logsCVConfiguration.isWorkflowConfig()) {
-            log.info("{} is a workflow configuration. Not going to trigger feedback tasks for this.",
-                logsCVConfiguration.getUuid());
-            return;
-          }
+  @Counted
+  @Timed
+  private void triggerFeedbackAnalysis(CVConfiguration cvConfiguration) {
+    String accountId = cvConfiguration.getAccountId();
+    if (isFeatureFlagEnabled(FeatureName.DISABLE_LOGML_NEURAL_NET, accountId)) {
+      log.info("DISABLE_LOGML_NEURAL_NET feature flag is enabled for account {}, not going to create a feedback task",
+          accountId);
+      return;
+    }
 
-          Optional<Long> feedbackAnalysisMinute = getFeedbackAnalysisMinute(logsCVConfiguration);
-          if (!feedbackAnalysisMinute.isPresent()) {
-            return;
-          }
-          long minuteForFeedbackAnalysis = feedbackAnalysisMinute.get();
+    LogsCVConfiguration logsCVConfiguration = (LogsCVConfiguration) cvConfiguration;
+    if (logsCVConfiguration.isWorkflowConfig()) {
+      log.info("{} is a workflow configuration. Not going to trigger feedback tasks for this.",
+          logsCVConfiguration.getUuid());
+      return;
+    }
 
-          if (!logsCVConfiguration.is247LogsV2()
-              && minuteForFeedbackAnalysis <= logsCVConfiguration.getBaselineEndMinute()) {
-            log.info("We are skipping feedback analysis for {} for minute {} since it is in the baseline window.",
-                logsCVConfiguration.getUuid(), minuteForFeedbackAnalysis);
-            return;
-          }
-          Map<FeedbackAction, List<CVFeedbackRecord>> feedbacks =
-              logAnalysisService.getUserFeedback(cvConfiguration.getUuid(), null, cvConfiguration.getAppId());
-          boolean areAllFeedbacksEmpty = feedbacks.entrySet().stream().allMatch(entry -> isEmpty(entry.getValue()));
+    Optional<Long> feedbackAnalysisMinute = getFeedbackAnalysisMinute(logsCVConfiguration);
+    if (!feedbackAnalysisMinute.isPresent()) {
+      return;
+    }
+    long minuteForFeedbackAnalysis = feedbackAnalysisMinute.get();
 
-          if (areAllFeedbacksEmpty) {
-            logAnalysisService.createAndUpdateFeedbackAnalysis(
-                LogMLAnalysisRecordKeys.cvConfigId, cvConfiguration.getUuid(), minuteForFeedbackAnalysis);
-          } else {
-            if (logsCVConfiguration.is247LogsV2()
-                && logsCVConfiguration.getBaselineStartMinute() < minuteForFeedbackAnalysis
-                && minuteForFeedbackAnalysis <= logsCVConfiguration.getBaselineEndMinute()) {
-              logAnalysisService.createAndUpdateFeedbackAnalysis(
-                  LogMLAnalysisRecordKeys.cvConfigId, cvConfiguration.getUuid(), minuteForFeedbackAnalysis);
-              return;
-            }
-            boolean feedbackTask = createFeedbackAnalysisTask(logsCVConfiguration, minuteForFeedbackAnalysis);
-            log.info("Created Feedback analysis task for {} and minute {}", logsCVConfiguration.getUuid(),
-                minuteForFeedbackAnalysis);
-            if (feedbackTask) {
-              createExperimentalFeedbackTask(logsCVConfiguration, minuteForFeedbackAnalysis);
-            }
-          }
-        });
+    if (!logsCVConfiguration.is247LogsV2() && minuteForFeedbackAnalysis <= logsCVConfiguration.getBaselineEndMinute()) {
+      log.info("We are skipping feedback analysis for {} for minute {} since it is in the baseline window.",
+          logsCVConfiguration.getUuid(), minuteForFeedbackAnalysis);
+      return;
+    }
+    Map<FeedbackAction, List<CVFeedbackRecord>> feedbacks =
+        logAnalysisService.getUserFeedback(cvConfiguration.getUuid(), null, cvConfiguration.getAppId());
+    boolean areAllFeedbacksEmpty = feedbacks.entrySet().stream().allMatch(entry -> isEmpty(entry.getValue()));
+
+    if (areAllFeedbacksEmpty) {
+      logAnalysisService.createAndUpdateFeedbackAnalysis(
+          LogMLAnalysisRecordKeys.cvConfigId, cvConfiguration.getUuid(), minuteForFeedbackAnalysis);
+    } else {
+      if (logsCVConfiguration.is247LogsV2() && logsCVConfiguration.getBaselineStartMinute() < minuteForFeedbackAnalysis
+          && minuteForFeedbackAnalysis <= logsCVConfiguration.getBaselineEndMinute()) {
+        logAnalysisService.createAndUpdateFeedbackAnalysis(
+            LogMLAnalysisRecordKeys.cvConfigId, cvConfiguration.getUuid(), minuteForFeedbackAnalysis);
+        return;
+      }
+      boolean feedbackTask = createFeedbackAnalysisTask(logsCVConfiguration, minuteForFeedbackAnalysis);
+      log.info("Created Feedback analysis task for {} and minute {}", logsCVConfiguration.getUuid(),
+          minuteForFeedbackAnalysis);
+      if (feedbackTask) {
+        createExperimentalFeedbackTask(logsCVConfiguration, minuteForFeedbackAnalysis);
+      }
+    }
   }
 
   private boolean isFeatureFlagEnabled(FeatureName featureName, String accountId) {
@@ -1684,12 +1733,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
     } else {
       getUrlBuilder.addParameter("analysisMinute", String.valueOf(logsCVConfiguration.getBaselineEndMinute()));
     }
-    getUrlBuilder.addParameter("compressed",
-        verificationManagerClientHelper
-            .callManagerWithRetry(verificationManagerClient.isFeatureEnabled(
-                FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, logsCVConfiguration.getAccountId()))
-            .getResource()
-            .toString());
+    getUrlBuilder.addParameter("compressed", Boolean.FALSE.toString());
 
     final String logAnalysisGetUrl = getUriString(getUrlBuilder);
 
@@ -1756,117 +1800,117 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
         .filter(cvConfiguration
             -> cvConfiguration.isEnabled24x7() && getLogAnalysisStates().contains(cvConfiguration.getStateType()))
 
-        .forEach(cvConfiguration -> {
-          log.info(
-              "triggering logs Data Analysis for account {} and cvConfigId {}", accountId, cvConfiguration.getUuid());
-          LogsCVConfiguration logsCVConfiguration = (LogsCVConfiguration) cvConfiguration;
+        .forEach(cvConfiguration -> triggerLogDataAnalysis(cvConfiguration));
+  }
 
-          try (VerificationLogContext ignored =
-                   new VerificationLogContext(logsCVConfiguration.getAccountId(), logsCVConfiguration.getUuid(), null,
-                       logsCVConfiguration.getStateType().getDelegateStateType(), OVERRIDE_ERROR)) {
-            try {
-              if (logsCVConfiguration.isWorkflowConfig()) {
-                AnalysisContext context =
-                    wingsPersistence.get(AnalysisContext.class, logsCVConfiguration.getContextId());
-                long analysisLastMin = logAnalysisService.getLogRecordMinute(
-                    logsCVConfiguration.getAppId(), logsCVConfiguration.getUuid(), ClusterLevel.HF, OrderType.DESC);
-                if (analysisLastMin >= logsCVConfiguration.getBaselineEndMinute() + context.getTimeDuration()) {
-                  log.info("Notifying state id: {} , corr id: {}", context.getStateExecutionId(),
-                      context.getCorrelationId());
-                  sendStateNotification(context, false, "", (int) analysisLastMin);
-                  log.info("Disabled 24x7 for CV Configuration with id {}", logsCVConfiguration.getUuid());
-                  wingsPersistence.updateField(
-                      LogsCVConfiguration.class, logsCVConfiguration.getUuid(), "enabled24x7", false);
-                  return;
-                }
-              }
+  @Counted
+  @Timed
+  private void triggerLogDataAnalysis(CVConfiguration cvConfiguration) {
+    // for each 24x7 enabled configurations do following
+    // Get last CV Analysis minute on given configuration
+    // Add new learning task for next ANALYSIS_PERIOD_MINUTES period
+    String accountId = cvConfiguration.getAccountId();
+    log.info("triggering logs Data Analysis for account {} and cvConfigId {}", accountId, cvConfiguration.getUuid());
+    LogsCVConfiguration logsCVConfiguration = (LogsCVConfiguration) cvConfiguration;
 
-              Optional<Long> analysisEnd = getAnalysisEndMinForLogsMLAnalysis(logsCVConfiguration);
-              if (!analysisEnd.isPresent()) {
-                log.info("For {}, we dont have enough to do log_ml analysis yet", logsCVConfiguration.getUuid());
-                return;
-              }
-              long analysisMin = analysisEnd.get();
-              long startMinute = analysisMin - CRON_POLL_INTERVAL_IN_MINUTES + 1;
-
-              if (logsCVConfiguration.isWorkflowConfig()) {
-                // TODO: This should be removed. We do not use predictive analysis for workflow anymore.
-                long lastCVAnalysisMinute = logAnalysisService.getLastCVAnalysisMinute(logsCVConfiguration.getAppId(),
-                    logsCVConfiguration.getUuid(), LogMLAnalysisStatus.LE_ANALYSIS_COMPLETE);
-
-                AnalysisContext context =
-                    wingsPersistence.get(AnalysisContext.class, logsCVConfiguration.getContextId());
-                if (lastCVAnalysisMinute >= logsCVConfiguration.getBaselineEndMinute()) {
-                  analysisMin = lastCVAnalysisMinute + 1;
-                }
-
-                if (analysisMin > logsCVConfiguration.getBaselineEndMinute() + context.getTimeDuration()) {
-                  log.info("Notifying state id: {} , corr id: {}", context.getStateExecutionId(),
-                      context.getCorrelationId());
-                  sendStateNotification(context, false, "", (int) analysisMin);
-                  log.info("Disabled 24x7 for CV Configuration with id {}", logsCVConfiguration.getUuid());
-                  wingsPersistence.updateField(
-                      LogsCVConfiguration.class, logsCVConfiguration.getUuid(), "enabled24x7", false);
-                }
-              }
-
-              for (long l2Min = startMinute, i = 0; l2Min <= analysisMin; l2Min++, i++) {
-                Set<String> hosts = logAnalysisService.getHostsForMinute(cvConfiguration.getAppId(),
-                    LogDataRecordKeys.cvConfigId, cvConfiguration.getUuid(), l2Min, ClusterLevel.L1, ClusterLevel.H1,
-                    ClusterLevel.L0, ClusterLevel.H0);
-
-                if (isNotEmpty(hosts)) {
-                  log.info(
-                      "For CV config {} there is still lustering pending for {} for minute {}. Skipping Log Data Analysis",
-                      cvConfiguration.getUuid(), hosts, l2Min);
-                  return;
-                }
-              }
-
-              log.info("for {} for minute from {} to {} everything is in place, proceeding for analysis",
-                  logsCVConfiguration.getUuid(), startMinute, analysisMin);
-              String stateExecutionIdForLETask =
-                  "LOG_24X7_ANALYSIS_" + logsCVConfiguration.getUuid() + "_" + analysisMin;
-              learningEngineService.checkAndUpdateFailedLETask(stateExecutionIdForLETask, (int) analysisMin);
-              int nextBackoffCount = learningEngineService.getNextServiceGuardBackoffCount(
-                  stateExecutionIdForLETask, cvConfiguration.getUuid(), analysisMin, MLAnalysisType.LOG_ML);
-
-              learningEngineService.addLearningEngineAnalysisTask(
-                  getLogMLAnalysisTask(logsCVConfiguration, analysisMin, nextBackoffCount));
-
-              log.info("Queuing analysis task for state {} config {} with analysisMin {}",
-                  logsCVConfiguration.getStateType(), logsCVConfiguration.getUuid(), analysisMin);
-
-              List<MLExperiments> experiments = get24x7Experiments(MLAnalysisType.LOG_ML.name());
-              for (MLExperiments experiment : experiments) {
-                LearningEngineExperimentalAnalysisTask expTask = getExperimentalLogTask(logsCVConfiguration,
-                    "LOG_24X7_ANALYSIS_" + logsCVConfiguration.getUuid() + "_" + analysisMin + generateUuid(),
-                    analysisMin, experiment);
-                learningEngineService.addLearningEngineExperimentalAnalysisTask(expTask);
-              }
-
-            } catch (Exception ex) {
-              try {
-                if (cvConfiguration.isWorkflowConfig()) {
-                  AnalysisContext context =
-                      wingsPersistence.get(AnalysisContext.class, logsCVConfiguration.getContextId());
-                  log.error("Verification L2 -> Log_ML analysis failed", ex);
-                  final VerificationStateAnalysisExecutionData executionData =
-                      VerificationStateAnalysisExecutionData.builder().build();
-                  executionData.setStatus(ExecutionStatus.ERROR);
-                  executionData.setErrorMsg(ex.getMessage());
-                  log.info("Notifying state id: {} , corr id: {}", context.getStateExecutionId(),
-                      context.getCorrelationId());
-                  verificationManagerClientHelper.notifyManagerForVerificationAnalysis(
-                      context, VerificationDataAnalysisResponse.builder().stateExecutionData(executionData).build());
-                  wingsPersistence.updateField(CVConfiguration.class, cvConfiguration.getUuid(), "enabled24x7", false);
-                }
-              } catch (Exception e) {
-                log.error("Verification cluster manager cleanup failed", e);
-              }
-            }
+    try (VerificationLogContext ignored =
+             new VerificationLogContext(logsCVConfiguration.getAccountId(), logsCVConfiguration.getUuid(), null,
+                 logsCVConfiguration.getStateType().getDelegateStateType(), OVERRIDE_ERROR)) {
+      try {
+        if (logsCVConfiguration.isWorkflowConfig()) {
+          AnalysisContext context = wingsPersistence.get(AnalysisContext.class, logsCVConfiguration.getContextId());
+          long analysisLastMin = logAnalysisService.getLogRecordMinute(
+              logsCVConfiguration.getAppId(), logsCVConfiguration.getUuid(), ClusterLevel.HF, OrderType.DESC);
+          if (analysisLastMin >= logsCVConfiguration.getBaselineEndMinute() + context.getTimeDuration()) {
+            log.info("Notifying state id: {} , corr id: {}", context.getStateExecutionId(), context.getCorrelationId());
+            sendStateNotification(context, false, "", (int) analysisLastMin);
+            log.info("Disabled 24x7 for CV Configuration with id {}", logsCVConfiguration.getUuid());
+            wingsPersistence.updateField(
+                LogsCVConfiguration.class, logsCVConfiguration.getUuid(), "enabled24x7", false);
+            return;
           }
-        });
+        }
+
+        Optional<Long> analysisEnd = getAnalysisEndMinForLogsMLAnalysis(logsCVConfiguration);
+        if (!analysisEnd.isPresent()) {
+          log.info("For {}, we dont have enough to do log_ml analysis yet", logsCVConfiguration.getUuid());
+          return;
+        }
+        long analysisMin = analysisEnd.get();
+        long startMinute = analysisMin - CRON_POLL_INTERVAL_IN_MINUTES + 1;
+
+        if (logsCVConfiguration.isWorkflowConfig()) {
+          // TODO: This should be removed. We do not use predictive analysis for workflow anymore.
+          long lastCVAnalysisMinute = logAnalysisService.getLastCVAnalysisMinute(
+              logsCVConfiguration.getAppId(), logsCVConfiguration.getUuid(), LogMLAnalysisStatus.LE_ANALYSIS_COMPLETE);
+
+          AnalysisContext context = wingsPersistence.get(AnalysisContext.class, logsCVConfiguration.getContextId());
+          if (lastCVAnalysisMinute >= logsCVConfiguration.getBaselineEndMinute()) {
+            analysisMin = lastCVAnalysisMinute + 1;
+          }
+
+          if (analysisMin > logsCVConfiguration.getBaselineEndMinute() + context.getTimeDuration()) {
+            log.info("Notifying state id: {} , corr id: {}", context.getStateExecutionId(), context.getCorrelationId());
+            sendStateNotification(context, false, "", (int) analysisMin);
+            log.info("Disabled 24x7 for CV Configuration with id {}", logsCVConfiguration.getUuid());
+            wingsPersistence.updateField(
+                LogsCVConfiguration.class, logsCVConfiguration.getUuid(), "enabled24x7", false);
+          }
+        }
+
+        for (long l2Min = startMinute, i = 0; l2Min <= analysisMin; l2Min++, i++) {
+          Set<String> hosts =
+              logAnalysisService.getHostsForMinute(cvConfiguration.getAppId(), LogDataRecordKeys.cvConfigId,
+                  cvConfiguration.getUuid(), l2Min, ClusterLevel.L1, ClusterLevel.H1, ClusterLevel.L0, ClusterLevel.H0);
+
+          if (isNotEmpty(hosts)) {
+            log.info(
+                "For CV config {} there is still lustering pending for {} for minute {}. Skipping Log Data Analysis",
+                cvConfiguration.getUuid(), hosts, l2Min);
+            return;
+          }
+        }
+
+        log.info("for {} for minute from {} to {} everything is in place, proceeding for analysis",
+            logsCVConfiguration.getUuid(), startMinute, analysisMin);
+        String stateExecutionIdForLETask = "LOG_24X7_ANALYSIS_" + logsCVConfiguration.getUuid() + "_" + analysisMin;
+        learningEngineService.checkAndUpdateFailedLETask(stateExecutionIdForLETask, (int) analysisMin);
+        int nextBackoffCount = learningEngineService.getNextServiceGuardBackoffCount(
+            stateExecutionIdForLETask, cvConfiguration.getUuid(), analysisMin, MLAnalysisType.LOG_ML);
+
+        learningEngineService.addLearningEngineAnalysisTask(
+            getLogMLAnalysisTask(logsCVConfiguration, analysisMin, nextBackoffCount));
+
+        log.info("Queuing analysis task for state {} config {} with analysisMin {}", logsCVConfiguration.getStateType(),
+            logsCVConfiguration.getUuid(), analysisMin);
+
+        List<MLExperiments> experiments = get24x7Experiments(MLAnalysisType.LOG_ML.name());
+        for (MLExperiments experiment : experiments) {
+          LearningEngineExperimentalAnalysisTask expTask = getExperimentalLogTask(logsCVConfiguration,
+              "LOG_24X7_ANALYSIS_" + logsCVConfiguration.getUuid() + "_" + analysisMin + generateUuid(), analysisMin,
+              experiment);
+          learningEngineService.addLearningEngineExperimentalAnalysisTask(expTask);
+        }
+
+      } catch (Exception ex) {
+        try {
+          if (cvConfiguration.isWorkflowConfig()) {
+            AnalysisContext context = wingsPersistence.get(AnalysisContext.class, logsCVConfiguration.getContextId());
+            log.error("Verification L2 -> Log_ML analysis failed", ex);
+            final VerificationStateAnalysisExecutionData executionData =
+                VerificationStateAnalysisExecutionData.builder().build();
+            executionData.setStatus(ExecutionStatus.ERROR);
+            executionData.setErrorMsg(ex.getMessage());
+            log.info("Notifying state id: {} , corr id: {}", context.getStateExecutionId(), context.getCorrelationId());
+            verificationManagerClientHelper.notifyManagerForVerificationAnalysis(
+                context, VerificationDataAnalysisResponse.builder().stateExecutionData(executionData).build());
+            wingsPersistence.updateField(CVConfiguration.class, cvConfiguration.getUuid(), "enabled24x7", false);
+          }
+        } catch (Exception e) {
+          log.error("Verification cluster manager cleanup failed", e);
+        }
+      }
+    }
   }
 
   private LearningEngineExperimentalAnalysisTask getExperimentalLogTask(
@@ -1909,12 +1953,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
     getUrlBuilder.addParameter("cvConfigId", logsCVConfiguration.getUuid());
     getUrlBuilder.addParameter("appId", logsCVConfiguration.getAppId());
     getUrlBuilder.addParameter("analysisMinute", String.valueOf(logsCVConfiguration.getBaselineEndMinute()));
-    getUrlBuilder.addParameter("compressed",
-        verificationManagerClientHelper
-            .callManagerWithRetry(verificationManagerClient.isFeatureEnabled(
-                FeatureName.SEND_LOG_ANALYSIS_COMPRESSED, logsCVConfiguration.getAccountId()))
-            .getResource()
-            .toString());
+    getUrlBuilder.addParameter("compressed", Boolean.FALSE.toString());
     final String logAnalysisGetUrl = getUriString(getUrlBuilder);
 
     LearningEngineExperimentalAnalysisTask expTask =

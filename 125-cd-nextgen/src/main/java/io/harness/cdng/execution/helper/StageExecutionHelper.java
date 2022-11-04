@@ -21,6 +21,7 @@ import static java.lang.String.join;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.customDeployment.CustomDeploymentExecutionDetails;
 import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.ExecutionInfoKeyOutput;
@@ -87,11 +88,13 @@ public class StageExecutionHelper {
     return InfrastructureKind.PDC.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind)
-        || InfrastructureKind.AZURE_WEB_APP.equals(infrastructureKind);
+        || InfrastructureKind.AZURE_WEB_APP.equals(infrastructureKind)
+        || InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind);
   }
 
   public boolean isRollbackArtifactRequiredPerInfrastructure(String infrastructureKind) {
-    return isSshWinRmInfrastructureKind(infrastructureKind);
+    return isSshWinRmInfrastructureKind(infrastructureKind)
+        || InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind);
   }
 
   public boolean isSshWinRmInfrastructureKind(String infrastructureKind) {
@@ -152,6 +155,11 @@ public class StageExecutionHelper {
       return sshWinRmExecutionDetails.getArtifactsOutcome();
     }
 
+    if (InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind)) {
+      CustomDeploymentExecutionDetails customDeploymentExecutionDetails =
+          (CustomDeploymentExecutionDetails) executionDetails.get();
+      return customDeploymentExecutionDetails.getArtifactsOutcome();
+    }
     throw new InvalidRequestException(
         format("Not supported rollback artifact for infrastructure, infrastructureKind: %s", infrastructureKind));
   }
@@ -286,8 +294,11 @@ public class StageExecutionHelper {
           .build();
     } else if (InfrastructureKind.AZURE_WEB_APP.equals(infrastructureKind)) {
       return AzureWebAppsStageExecutionDetails.builder().pipelineExecutionId(ambiance.getPlanExecutionId()).build();
+    } else if (InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind)) {
+      Optional<ArtifactOutcome> artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance);
+      List<ArtifactOutcome> artifactsOutcome = artifactOutcome.map(Lists::newArrayList).orElse(new ArrayList<>());
+      return CustomDeploymentExecutionDetails.builder().artifactsOutcome(artifactsOutcome).build();
     }
-
     return null;
   }
 

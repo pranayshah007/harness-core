@@ -45,6 +45,11 @@ jobs:
           echo "Building gopath"
           bazel build :gopath --javacopt=' -XepDisableAllChecks'
 
+      - name: Building queue-service code
+        run: |
+          echo "Building golang queue-service code using bazel..."
+          bazel build //queue-service/... --javacopt=' -XepDisableAllChecks'    
+
       - name: Testing commons
         run: |
           echo "Testing golang commons code using bazel..."
@@ -54,6 +59,11 @@ jobs:
         run: |
           echo "Testing golang product code using bazel..."
           bazel test --test_output=all //product/... --javacopt=' -XepDisableAllChecks'
+
+      - name: Testing queue-service
+        run: |
+          echo "Testing golang queue-service code using bazel..."
+          bazel test --test_output=all //queue-service/... --javacopt=' -XepDisableAllChecks'    
 
       - name: Coverage
         run: |

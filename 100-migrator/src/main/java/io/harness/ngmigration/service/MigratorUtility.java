@@ -17,6 +17,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.BaseProvidedInput;
+import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.InputDefaults;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
@@ -76,6 +78,8 @@ public class MigratorUtility {
         return 1;
       case SECRET:
         return SecretFactory.isStoredInHarnessSecretManager(file) ? Integer.MIN_VALUE : 5;
+      case TEMPLATE:
+        return 7;
       case CONNECTOR:
         return 10;
       case MANIFEST:
@@ -86,6 +90,8 @@ public class MigratorUtility {
         return 25;
       case INFRA:
         return 35;
+      case SERVICE_VARIABLE:
+        return 40;
       case PIPELINE:
         return 50;
       default:
@@ -95,13 +101,19 @@ public class MigratorUtility {
 
   public static Scope getDefaultScope(MigrationInputDTO inputDTO, CgEntityId entityId, Scope defaultScope) {
     NGMigrationEntityType entityType = entityId.getType();
+    return getDefaultScope(inputDTO, entityId, defaultScope, entityType);
+  }
+
+  public static Scope getDefaultScope(MigrationInputDTO inputDTO, CgEntityId entityId, Scope defaultScope,
+      NGMigrationEntityType destinationEntityType) {
     if (inputDTO == null) {
       return defaultScope;
     }
     Scope scope = defaultScope;
     Map<NGMigrationEntityType, InputDefaults> defaults = inputDTO.getDefaults();
-    if (defaults != null && defaults.containsKey(entityType) && defaults.get(entityType).getScope() != null) {
-      scope = defaults.get(entityType).getScope();
+    if (defaults != null && defaults.containsKey(destinationEntityType)
+        && defaults.get(destinationEntityType).getScope() != null) {
+      scope = defaults.get(destinationEntityType).getScope();
     }
     Map<CgEntityId, BaseProvidedInput> inputs = inputDTO.getOverrides();
     if (inputs != null && inputs.containsKey(entityId) && inputs.get(entityId).getScope() != null) {
@@ -123,10 +135,15 @@ public class MigratorUtility {
   }
 
   public static SecretRefData getSecretRef(Map<CgEntityId, NGYamlFile> migratedEntities, String secretId) {
-    if (secretId == null) {
+    return getSecretRef(migratedEntities, secretId, SECRET);
+  }
+
+  public static SecretRefData getSecretRef(
+      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    if (entityId == null) {
       return null;
     }
-    CgEntityId secretEntityId = CgEntityId.builder().id(secretId).type(SECRET).build();
+    CgEntityId secretEntityId = CgEntityId.builder().id(entityId).type(entityType).build();
     if (!migratedEntities.containsKey(secretEntityId)) {
       return SecretRefData.builder().identifier("__PLEASE_FIX_ME__").scope(Scope.PROJECT).build();
     }
@@ -135,6 +152,13 @@ public class MigratorUtility {
         .identifier(migratedSecret.getIdentifier())
         .scope(MigratorUtility.getScope(migratedSecret))
         .build();
+  }
+
+  public static String getIdentifierWithScope(
+      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    NgEntityDetail detail =
+        migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build()).getNgEntityDetail();
+    return getIdentifierWithScope(detail);
   }
 
   public static String getIdentifierWithScope(NgEntityDetail entityDetail) {
@@ -216,5 +240,25 @@ public class MigratorUtility {
       throw new InvalidRequestException("Trying to scope entity to Project but org/project identifier(s) are missing");
     }
     return inputDTO.getProjectIdentifier();
+  }
+
+  public static boolean endsWithIgnoreCase(String str, String arg, String... args) {
+    if (str.toLowerCase().endsWith(arg)) {
+      return true;
+    }
+    for (String arg1 : args) {
+      if (str.toLowerCase().endsWith(arg1)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static ParameterField<List<String>> getFileStorePaths(List<NGYamlFile> files) {
+    if (EmptyPredicate.isEmpty(files)) {
+      return ParameterField.ofNull();
+    }
+    return ParameterField.createValueField(
+        files.stream().map(file -> "/" + ((FileYamlDTO) file.getYaml()).getName()).collect(Collectors.toList()));
   }
 }

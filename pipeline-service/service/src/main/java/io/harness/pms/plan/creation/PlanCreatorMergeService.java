@@ -17,6 +17,7 @@ import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.YamlException;
 import io.harness.execution.PlanExecutionMetadata;
@@ -38,6 +39,7 @@ import io.harness.pms.plan.creation.validator.PlanCreationValidator;
 import io.harness.pms.sdk.PmsSdkHelper;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.utils.PmsGrpcClientUtils;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.PmsFeatureFlagService;
@@ -94,6 +96,7 @@ public class PlanCreatorMergeService {
     return PMS_PLAN_CREATION;
   }
 
+  // This is not used currently for future considerations which uses redis/waitNotify for planCreation
   public void createPlanV2(String accountId, String orgIdentifier, String projectIdentifier, String planUuid,
       ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) throws IOException {
     log.info("Starting plan creation");
@@ -123,22 +126,35 @@ public class PlanCreatorMergeService {
         Collections.singletonList(notifyId), Duration.ofMinutes(2));
   }
 
-  public PlanCreationBlobResponse createPlan(String accountId, String orgIdentifier, String projectIdentifier,
-      ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) throws IOException {
+  public PlanCreationBlobResponse createPlanVersioned(String accountId, String orgIdentifier, String projectIdentifier,
+      String version, ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) throws IOException {
     try (AutoLogContext ignore =
              PlanCreatorUtils.autoLogContext(metadata, accountId, orgIdentifier, projectIdentifier)) {
       log.info("[PMS_PlanCreatorMergeService] Starting plan creation");
       Map<String, PlanCreatorServiceInfo> services = pmsSdkHelper.getServices();
 
-      YamlField pipelineField = YamlUtils.extractPipelineField(planExecutionMetadata.getProcessedYaml());
+      YamlField pipelineField;
+      switch (version) {
+        case PipelineVersion.V1:
+          pipelineField = YamlUtils.readTree(planExecutionMetadata.getProcessedYaml());
+          break;
+        case PipelineVersion.V0:
+          pipelineField = YamlUtils.extractPipelineField(planExecutionMetadata.getProcessedYaml());
+          break;
+        default:
+          throw new InvalidYamlException("Invalid version");
+      }
+
       if (pipelineField.getNode().getUuid() == null) {
         throw new YamlException("Processed pipeline yaml does not have uuid for the pipeline field");
       }
+
       Dependencies dependencies =
           Dependencies.newBuilder()
               .setYaml(planExecutionMetadata.getProcessedYaml())
               .putDependencies(pipelineField.getNode().getUuid(), pipelineField.getNode().getYamlPath())
               .build();
+
       PlanCreationBlobResponse finalResponse = createPlanForDependenciesRecursive(accountId, orgIdentifier,
           projectIdentifier, services, dependencies, metadata, planExecutionMetadata.getTriggerPayload());
       planCreationValidator.validate(accountId, finalResponse);
@@ -183,9 +199,10 @@ public class PlanCreatorMergeService {
     try {
       for (int i = 0; i < MAX_DEPTH && EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap());
            i++) {
+        String version = metadata.getHarnessVersion();
         YamlField fullYamlField = YamlUtils.readTree(finalResponseBuilder.getDeps().getYaml());
         PlanCreationBlobResponse currIterationResponse =
-            createPlanForDependencies(services, finalResponseBuilder, fullYamlField);
+            createPlanForDependencies(services, finalResponseBuilder, fullYamlField, version);
         PlanCreationBlobResponseUtils.addNodes(finalResponseBuilder, currIterationResponse.getNodesMap());
         PlanCreationBlobResponseUtils.mergeStartingNodeId(
             finalResponseBuilder, currIterationResponse.getStartingNodeId());
@@ -205,16 +222,17 @@ public class PlanCreatorMergeService {
   }
 
   private PlanCreationBlobResponse createPlanForDependencies(Map<String, PlanCreatorServiceInfo> services,
-      PlanCreationBlobResponse.Builder responseBuilder, YamlField fullYamlField) {
+      PlanCreationBlobResponse.Builder responseBuilder, YamlField fullYamlField, String harnessVersion) {
     PlanCreationBlobResponse.Builder currIterationResponseBuilder = PlanCreationBlobResponse.newBuilder();
     CompletableFutures<PlanCreationResponse> completableFutures = new CompletableFutures<>(executor);
     PlanCreationContextValue metadata = responseBuilder.getContextMap().get("metadata");
+
     try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(metadata.getMetadata(),
              metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
       long start = System.currentTimeMillis();
       Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap =
           new HashMap<>();
-      getServiceToDependenciesMap(services, responseBuilder, fullYamlField, serviceToDependencyMap);
+      getServiceToDependenciesMap(services, responseBuilder, fullYamlField, serviceToDependencyMap, harnessVersion);
 
       // Sending batch dependency requests for a single service in a async fashion.
       executeCreatePlanInBatchDependency(responseBuilder, completableFutures, serviceToDependencyMap);
@@ -271,7 +289,8 @@ public class PlanCreatorMergeService {
   // Collecting which dependencies are supported with which service as a map.
   private void getServiceToDependenciesMap(Map<String, PlanCreatorServiceInfo> services,
       PlanCreationBlobResponse.Builder responseBuilder, YamlField fullYamlField,
-      Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap) {
+      Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap,
+      String harnessVersion) {
     // Initializing the responseMap
     for (Map.Entry<String, PlanCreatorServiceInfo> serviceEntry : services.entrySet()) {
       serviceToDependencyMap.put(serviceEntry, new LinkedList<>());
@@ -286,8 +305,9 @@ public class PlanCreatorMergeService {
               .findFirst()
               .orElseThrow(
                   () -> new InvalidRequestException("Pipeline Service service provider information is missing."));
+
       if (pmsSdkHelper.containsSupportedSingleDependencyByYamlPath(
-              pmsPlanCreatorService.getValue(), fullYamlField, dependencyEntry)) {
+              pmsPlanCreatorService.getValue(), fullYamlField, dependencyEntry, harnessVersion)) {
         serviceToDependencyMap.get(pmsPlanCreatorService).add(dependencyEntry);
       } else {
         for (Map.Entry<String, PlanCreatorServiceInfo> serviceInfoEntry : services.entrySet()) {
@@ -295,7 +315,7 @@ public class PlanCreatorMergeService {
             continue;
           }
           if (pmsSdkHelper.containsSupportedSingleDependencyByYamlPath(
-                  serviceInfoEntry.getValue(), fullYamlField, dependencyEntry)) {
+                  serviceInfoEntry.getValue(), fullYamlField, dependencyEntry, harnessVersion)) {
             serviceToDependencyMap.get(serviceInfoEntry).add(dependencyEntry);
           }
         }

@@ -10,6 +10,8 @@ package io.harness.cdng.creator.plan.environment;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -19,6 +21,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
 import io.harness.cdng.environment.steps.EnvironmentStepParameters;
+import io.harness.freeze.service.FreezeEvaluateService;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -27,6 +31,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -41,11 +46,14 @@ public class EnvironmentStepV2Test extends CategoryTest {
   @Mock private AccessControlClient accessControlClient;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Mock private EnvironmentService environmentService;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Mock private FreezeEvaluateService freezeEvaluateService;
   @InjectMocks private EnvironmentStepV2 environmentStepV2;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
   }
 
   @Test
@@ -62,6 +70,7 @@ public class EnvironmentStepV2Test extends CategoryTest {
     EnvironmentStepParameters environmentStepParameters = EnvironmentStepParameters.builder()
                                                               .name("name")
                                                               .environmentRef(ParameterField.createValueField("ref"))
+                                                              .type(EnvironmentType.Production)
                                                               .identifier("identifier")
                                                               .description("desc")
                                                               .build();

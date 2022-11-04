@@ -13,8 +13,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.PipelineServiceTestBase;
+import io.harness.PipelineSettingsService;
 import io.harness.category.element.UnitTests;
 import io.harness.filter.service.FilterService;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -27,6 +29,7 @@ import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
@@ -54,6 +57,8 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Mock private TelemetryReporter telemetryReporter;
   @Mock private GitSyncSdkService gitSyncSdkService;
   @Inject private PipelineMetadataService pipelineMetadataService;
+
+  @Mock private PipelineSettingsService pipelineSettingsService;
   @InjectMocks private PMSPipelineServiceImpl pmsPipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
 
@@ -84,6 +89,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
                          .identifier(PIPELINE_IDENTIFIER)
                          .name(PIPELINE_IDENTIFIER)
                          .yaml(yaml)
+                         .harnessVersion(PipelineVersion.V0)
                          .stageCount(1)
                          .stageName("qaStage")
                          .version(null)
@@ -103,10 +109,13 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
-    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelperMocked).updatePipelineInfo(pipelineEntity);
+    doReturn(updatedPipelineEntity)
+        .when(pmsPipelineServiceHelperMocked)
+        .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelperMocked)
         .validatePipelineYaml(any());
+    when(pipelineSettingsService.getMaxPipelineCreationCount(any())).thenReturn(Long.MAX_VALUE);
 
     pmsPipelineService.create(pipelineEntity);
 

@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.Long.parseLong;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -38,6 +39,9 @@ import io.harness.pms.pipeline.RecentExecutionInfo;
 import io.harness.pms.pipeline.RecentExecutionInfoDTO;
 import io.harness.pms.pipeline.api.PipelineRequestInfoDTO;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
+import io.harness.pms.pipeline.yaml.PipelineYaml;
+import io.harness.pms.utils.IdentifierGeneratorUtils;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 
 import java.io.IOException;
@@ -110,13 +114,40 @@ public class PMSPipelineDtoMapper {
     }
   }
 
+  public PipelineEntity toSimplifiedPipelineEntity(String accountId, String orgId, String projectId, String yaml) {
+    try {
+      PipelineYaml pipelineYaml = YamlUtils.read(yaml, PipelineYaml.class);
+      String pipelineIdentifier = IdentifierGeneratorUtils.getId(pipelineYaml.getName());
+      if (NGExpressionUtils.matchesInputSetPattern(pipelineIdentifier)) {
+        throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
+      }
+      return PipelineEntity.builder()
+          .yaml(yaml)
+          .accountId(accountId)
+          .orgIdentifier(orgId)
+          .projectIdentifier(projectId)
+          .name(pipelineYaml.getName())
+          .identifier(pipelineIdentifier)
+          .tags(TagMapper.convertToList(null))
+          .build();
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage());
+    }
+  }
+
   public PipelineEntity toPipelineEntity(
-      String accountId, String orgId, String projectId, String yaml, Boolean isDraft) {
-    PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
+      String accountId, String orgId, String projectId, String yaml, Boolean isDraft, String pipelineVersion) {
+    PipelineEntity pipelineEntity;
+    if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
+      pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, yaml);
+    } else {
+      pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
+    }
     if (isDraft == null) {
       isDraft = false;
     }
     pipelineEntity.setIsDraft(isDraft);
+    pipelineEntity.setHarnessVersion(pipelineVersion);
     return pipelineEntity;
   }
 
@@ -127,6 +158,28 @@ public class PMSPipelineDtoMapper {
         throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
       }
       BasicPipeline basicPipeline = YamlUtils.read(requestInfoDTO.getYaml(), BasicPipeline.class);
+      if (isNotEmpty(basicPipeline.getIdentifier())
+          && !basicPipeline.getIdentifier().equals(requestInfoDTO.getIdentifier())) {
+        throw new InvalidRequestException(String.format("Expected Pipeline identifier in YAML to be [%s], but was [%s]",
+            requestInfoDTO.getIdentifier(), basicPipeline.getIdentifier()));
+      }
+      if (isNotEmpty(basicPipeline.getName()) && !basicPipeline.getName().equals(requestInfoDTO.getName())) {
+        throw new InvalidRequestException(
+            String.format("Expected updated Pipeline name in YAML to be [%s], but was [%s]", requestInfoDTO.getName(),
+                basicPipeline.getName()));
+      }
+      if (isNotEmpty(basicPipeline.getDescription()) && isNotEmpty(requestInfoDTO.getDescription())
+          && !basicPipeline.getDescription().equals(requestInfoDTO.getDescription())) {
+        throw new InvalidRequestException(
+            String.format("Expected updated Pipeline description in YAML to be [%s], but was [%s]",
+                requestInfoDTO.getDescription(), basicPipeline.getDescription()));
+      }
+      if (isNotEmpty(basicPipeline.getTags()) && isNotEmpty(requestInfoDTO.getTags())
+          && !basicPipeline.getTags().equals(requestInfoDTO.getTags())) {
+        throw new InvalidRequestException(
+            String.format("Expected updated Pipeline tags in YAML to be [%s], but was [%s]", requestInfoDTO.getTags(),
+                basicPipeline.getTags()));
+      }
       PipelineEntity pipelineEntity = PipelineEntity.builder()
                                           .yaml(requestInfoDTO.getYaml())
                                           .accountId(accountId)
@@ -162,8 +215,8 @@ public class PMSPipelineDtoMapper {
   }
 
   public PipelineEntity toPipelineEntityWithVersion(String accountId, String orgId, String projectId, String pipelineId,
-      String yaml, String ifMatch, Boolean isDraft) {
-    PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml, isDraft);
+      String yaml, String ifMatch, Boolean isDraft, String pipelineVersion) {
+    PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
     PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     if (!Objects.equals(pipelineId, withVersion.getIdentifier())) {
       throw new InvalidRequestException(String.format(

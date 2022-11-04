@@ -52,7 +52,11 @@ public final class HelmCommandFlagConstants {
     FETCH(HelmSubCommandType.FETCH, ImmutableSet.of(DeploymentType.HELM, DeploymentType.KUBERNETES),
         ImmutableSet.of(HelmChartRepo)),
     TEMPLATE(HelmSubCommandType.TEMPLATE, ImmutableSet.of(DeploymentType.HELM, DeploymentType.KUBERNETES),
-        ImmutableSet.of(HelmSourceRepo, HelmChartRepo));
+        ImmutableSet.of(HelmSourceRepo, HelmChartRepo)),
+    REPO_ADD(HelmSubCommandType.REPO_ADD, ImmutableSet.of(DeploymentType.HELM, DeploymentType.KUBERNETES),
+        ImmutableSet.of(HelmChartRepo)),
+    REPO_UPDATE(HelmSubCommandType.REPO_UPDATE, ImmutableSet.of(DeploymentType.HELM, DeploymentType.KUBERNETES),
+        ImmutableSet.of(HelmChartRepo));
 
     private final HelmSubCommandType subCommandType;
     private final Set<DeploymentType> deploymentTypes;

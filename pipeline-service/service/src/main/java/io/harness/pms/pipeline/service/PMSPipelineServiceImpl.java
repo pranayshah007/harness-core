@@ -13,7 +13,9 @@ import static io.harness.pms.pipeline.service.PMSPipelineServiceStepHelper.LIBRA
 
 import static java.lang.String.format;
 
+import io.harness.PipelineSettingsService;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -46,6 +48,7 @@ import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.ClonePipelineDTO;
 import io.harness.pms.pipeline.CommonStepInfo;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
+import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
@@ -56,19 +59,26 @@ import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
+import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.PredicateUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -95,15 +105,22 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final CommonStepInfo commonStepInfo;
   @Inject private final PipelineCloneHelper pipelineCloneHelper;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
+  @Inject private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Inject private final PipelineSettingsService pipelineSettingsService;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Pipeline [%s] under Project[%s], Organization [%s] already exists or has been deleted.";
+  private static final String VERSION_FIELD_NAME = "version";
+
+  private static final int MAX_LIST_SIZE = 1000;
+  private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
   @Override
   public PipelineCRUDResult create(PipelineEntity pipelineEntity) {
+    checkAndThrowIfLimitReached(pipelineEntity.getAccountIdentifier());
     if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
       log.info("Creating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
       return createWithoutValidations(pipelineEntity);
@@ -116,7 +133,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
-      PipelineEntity entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
+      PipelineEntity entityWithUpdatedInfo =
+          pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
       PipelineEntity createdEntity;
       PipelineCRUDResult pipelineCRUDResult = createWithoutValidations(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
@@ -129,6 +147,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   @Override
   public PipelineCRUDResult createWithoutValidations(PipelineEntity pipelineEntity) {
+    checkAndThrowIfLimitReached(pipelineEntity.getAccountIdentifier());
     PipelineEntity createdEntity;
     try {
       if (gitSyncSdkService.isGitSyncEnabled(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
@@ -159,6 +178,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
   @Override
   public PipelineSaveResponse clone(ClonePipelineDTO clonePipelineDTO, String accountId) {
+    checkAndThrowIfLimitReached(accountId);
     PipelineEntity sourcePipelineEntity = getSourcePipelineEntity(clonePipelineDTO, accountId);
 
     String sourcePipelineEntityYaml = sourcePipelineEntity.getYaml();
@@ -339,7 +359,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
         entityWithUpdatedInfo = pipelineEntity;
       } else {
-        entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
+        entityWithUpdatedInfo =
+            pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
       }
       PipelineEntity updatedResult;
       if (isOldFlow) {
@@ -464,18 +485,21 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, Boolean isForceImport) {
+    checkAndThrowIfLimitReached(accountId);
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
     String importedPipelineYAML =
         pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
-    PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(
-        orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineImportRequest, importedPipelineYAML);
-    PipelineEntity pipelineEntity =
-        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier, importedPipelineYAML);
+    String pipelineVersion = pipelineVersion(accountId, importedPipelineYAML);
+    PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(orgIdentifier, projectIdentifier,
+        pipelineIdentifier, pipelineImportRequest, importedPipelineYAML, pipelineVersion);
+    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
+        accountId, orgIdentifier, projectIdentifier, importedPipelineYAML, false, pipelineVersion);
     pipelineEntity.setRepoURL(repoUrl);
 
     try {
-      PipelineEntity entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
+      PipelineEntity entityWithUpdatedInfo =
+          pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineVersion);
       PipelineEntity savedPipelineEntity =
           pmsPipelineRepository.savePipelineEntityForImportedYAML(entityWithUpdatedInfo);
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(savedPipelineEntity, CREATING_PIPELINE);
@@ -600,5 +624,48 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
                         .set(PipelineEntityKeys.rootFolder, gitEntityFilePath.getRootFolder());
     return updatePipelineMetadata(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getProjectIdentifier(), criteria, update);
+  }
+
+  @Override
+  public String pipelineVersion(String accountId, String yaml) {
+    String version;
+    try {
+      YamlField yamlField = YamlUtils.readTree(yaml);
+      version = yamlField.getNode().getProperty(VERSION_FIELD_NAME);
+    } catch (IOException ioException) {
+      throw new InvalidRequestException("Invalid yaml passed.");
+    }
+    boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
+
+    if (isYamlSimplificationEnabled && version != null) {
+      return version;
+    } else {
+      return PipelineVersion.V0;
+    }
+  }
+
+  @Override
+  public PMSPipelineListRepoResponse getListOfRepos(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria =
+        PMSPipelineServiceHelper.buildCriteriaForRepoListing(accountIdentifier, orgIdentifier, projectIdentifier);
+    List<String> uniqueRepos = pmsPipelineRepository.findAllUniqueRepos(criteria);
+    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
+    if (uniqueRepos.size() > MAX_LIST_SIZE) {
+      log.error(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+      throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+    }
+    return PMSPipelineListRepoResponse.builder().repositories(new HashSet<>(uniqueRepos)).build();
+  }
+
+  private void checkAndThrowIfLimitReached(String accountId) {
+    long maxLimit = pipelineSettingsService.getMaxPipelineCreationCount(accountId);
+    if (maxLimit == Long.MAX_VALUE) {
+      return;
+    }
+    if (pmsPipelineRepository.countAllPipelinesInAccount(accountId) >= maxLimit) {
+      throw new InvalidRequestException(
+          "You have created maximum number of pipelines, please upgrade your plan if you want to create more pipelines");
+    }
   }
 }

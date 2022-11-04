@@ -58,6 +58,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -91,7 +92,6 @@ import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -138,12 +138,6 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   public ServiceLevelObjectiveResponse create(
       ProjectParams projectParams, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO) {
     validateCreate(serviceLevelObjectiveDTO, projectParams);
-    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
-        MonitoredServiceParams.builderWithProjectParams(projectParams)
-            .monitoredServiceIdentifier(serviceLevelObjectiveDTO.getMonitoredServiceRef())
-            .build());
-    ServiceLevelObjective serviceLevelObjective =
-        saveServiceLevelObjectiveEntity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
     try {
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
           serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
@@ -152,6 +146,15 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     } catch (Exception e) {
       log.error("[SLO Data Mismatch]: SLOV2 not created", e);
     }
+    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
+        MonitoredServiceParams.builderWithProjectParams(projectParams)
+            .monitoredServiceIdentifier(serviceLevelObjectiveDTO.getMonitoredServiceRef())
+            .build());
+    SimpleServiceLevelObjective serviceLevelObjectiveV2 =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            projectParams, serviceLevelObjectiveDTO.getIdentifier());
+    saveServiceLevelObjectiveEntity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled(),
+        serviceLevelObjectiveV2.getServiceLevelIndicators());
     outboxService.save(ServiceLevelObjectiveCreateEvent.builder()
                            .resourceName(serviceLevelObjectiveDTO.getName())
                            .newServiceLevelObjectiveDTO(serviceLevelObjectiveDTO)
@@ -160,7 +163,6 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                            .orgIdentifier(projectParams.getOrgIdentifier())
                            .projectIdentifier(projectParams.getProjectIdentifier())
                            .build());
-    sloHealthIndicatorService.upsert(serviceLevelObjective);
     return getSLOResponse(serviceLevelObjectiveDTO.getIdentifier(), projectParams);
   }
 
@@ -177,31 +179,21 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
           serviceLevelObjectiveDTO.getIdentifier(), projectParams.getAccountIdentifier(),
           projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
     }
-    ServiceLevelObjectiveDTO existingServiceLevelObjective =
-        serviceLevelObjectiveToServiceLevelObjectiveDTO(serviceLevelObjective);
-    validate(serviceLevelObjectiveDTO, projectParams);
-    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
-    TimePeriod timePeriod = sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getTarget().getType())
-                                .getSLOTarget(serviceLevelObjectiveDTO.getTarget().getSpec())
-                                .getCurrentTimeRange(currentLocalDate);
-    TimePeriod currentTimePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
-    List<String> serviceLevelIndicators = serviceLevelIndicatorService.update(projectParams,
-        serviceLevelObjectiveDTO.getServiceLevelIndicators(), serviceLevelObjectiveDTO.getIdentifier(),
-        serviceLevelObjective.getServiceLevelIndicators(), serviceLevelObjectiveDTO.getMonitoredServiceRef(),
-        serviceLevelObjectiveDTO.getHealthSourceRef(), timePeriod, currentTimePeriod);
     try {
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
           serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
               .getSLOV2DTO(serviceLevelObjectiveDTO);
-      serviceLevelObjectiveV2Service.update(
-          projectParams, identifier, serviceLevelObjectiveV2DTO, serviceLevelIndicators);
+      serviceLevelObjectiveV2Service.update(projectParams, identifier, serviceLevelObjectiveV2DTO);
     } catch (Exception e) {
       log.error("[SLO Data Mismatch]: SLOV2 not updated", e);
     }
-    serviceLevelObjective =
-        updateSLOEntity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO, serviceLevelIndicators);
-    sloHealthIndicatorService.upsert(serviceLevelObjective);
-    sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifier);
+    ServiceLevelObjectiveDTO existingServiceLevelObjective =
+        serviceLevelObjectiveToServiceLevelObjectiveDTO(serviceLevelObjective);
+    validate(serviceLevelObjectiveDTO, projectParams);
+    SimpleServiceLevelObjective updatedSimpleServiceLevelObjective =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, identifier);
+    updateSLOEntity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO,
+        updatedSimpleServiceLevelObjective.getServiceLevelIndicators());
     outboxService.save(ServiceLevelObjectiveUpdateEvent.builder()
                            .resourceName(serviceLevelObjectiveDTO.getName())
                            .oldServiceLevelObjectiveDTO(existingServiceLevelObjective)
@@ -223,14 +215,11 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
           identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
-    serviceLevelIndicatorService.deleteByIdentifier(projectParams, serviceLevelObjective.getServiceLevelIndicators());
-    sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifier);
-    sloHealthIndicatorService.delete(projectParams, serviceLevelObjective.getIdentifier());
-    notificationRuleService.delete(projectParams,
-        serviceLevelObjective.getNotificationRuleRefs()
-            .stream()
-            .map(ref -> ref.getNotificationRuleRef())
-            .collect(Collectors.toList()));
+    try {
+      serviceLevelObjectiveV2Service.delete(projectParams, identifier);
+    } catch (Exception e) {
+      log.error("[SLO Data Mismatch]: SLOV2 not deleted", e);
+    }
     ServiceLevelObjectiveDTO serviceLevelObjectiveDTO =
         serviceLevelObjectiveToServiceLevelObjectiveDTO(serviceLevelObjective);
     outboxService.save(ServiceLevelObjectiveDeleteEvent.builder()
@@ -241,11 +230,6 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                            .orgIdentifier(projectParams.getOrgIdentifier())
                            .projectIdentifier(projectParams.getProjectIdentifier())
                            .build());
-    try {
-      serviceLevelObjectiveV2Service.delete(projectParams, identifier);
-    } catch (Exception e) {
-      log.error("[SLO Data Mismatch]: SLOV2 not deleted", e);
-    }
     return hPersistence.delete(serviceLevelObjective);
   }
 
@@ -352,10 +336,10 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   }
 
   private PageResponse<ServiceLevelObjective> getResponse(
-      ProjectParams projectParams, Integer offset, Integer pageSize, String filterByName, Filter filter) {
+      ProjectParams projectParams, Integer offset, Integer pageSize, Filter filter) {
     List<ServiceLevelObjective> serviceLevelObjectiveList = get(projectParams, filter);
-    if (!isEmpty(filterByName)) {
-      serviceLevelObjectiveList = filterSLOs(serviceLevelObjectiveList, filterByName);
+    if (!isEmpty(filter.getSearchFilter())) {
+      serviceLevelObjectiveList = filterSLOs(serviceLevelObjectiveList, filter.getSearchFilter());
     }
     return PageUtils.offsetAndLimit(serviceLevelObjectiveList, offset, pageSize);
   }
@@ -465,20 +449,21 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
 
   @Override
   public PageResponse<ServiceLevelObjective> getSLOForListView(
-      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName) {
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams) {
     try {
       return getServiceLevelObjectivePageResponseFromV2(pageParams.getSize(), pageParams.getPage(),
-          serviceLevelObjectiveV2Service.getSLOForListView(projectParams, filter, pageParams, filterByName));
+          serviceLevelObjectiveV2Service.getSLOForListView(projectParams, filter, pageParams));
     } catch (Exception ex) {
       log.error("[SLO Data Mismatch]: Get SLO V2 List page failed", ex);
     }
-    return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(), filterByName,
+    return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(),
         Filter.builder()
             .monitoredServiceIdentifier(filter.getMonitoredServiceIdentifier())
             .userJourneys(filter.getUserJourneyIdentifiers())
             .sliTypes(filter.getSliTypes())
             .errorBudgetRisks(filter.getErrorBudgetRisks())
             .targetTypes(filter.getTargetTypes())
+            .searchFilter(filter.getSearchFilter())
             .build());
   }
 
@@ -486,13 +471,13 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   public ServiceLevelObjective getFromSLIIdentifier(
       ProjectParams projectParams, String serviceLevelIndicatorIdentifier) {
     try {
-      AbstractServiceLevelObjective serviceLevelObjectiveV2 =
+      SimpleServiceLevelObjective serviceLevelObjectiveV2 =
           serviceLevelObjectiveV2Service.getFromSLIIdentifier(projectParams, serviceLevelIndicatorIdentifier);
       if (serviceLevelObjectiveV2 == null) {
         throw new InvalidRequestException(String.format(
-            "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
-            serviceLevelObjectiveV2.getIdentifier(), projectParams.getAccountIdentifier(),
-            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
+            "SLO  with sli identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+            serviceLevelIndicatorIdentifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+            projectParams.getProjectIdentifier()));
       }
       return getServiceLevelObjectiveFromV2(serviceLevelObjectiveV2);
     } catch (Exception ex) {
@@ -810,7 +795,6 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
 
   private ServiceLevelObjectiveResponse getSLOResponse(String identifier, ProjectParams projectParams) {
     ServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
-
     return sloEntityToSLOResponse(serviceLevelObjective);
   }
 
@@ -824,8 +808,8 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         .build();
   }
 
-  private ServiceLevelObjective saveServiceLevelObjectiveEntity(
-      ProjectParams projectParams, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO, boolean isEnabled) {
+  private ServiceLevelObjective saveServiceLevelObjectiveEntity(ProjectParams projectParams,
+      ServiceLevelObjectiveDTO serviceLevelObjectiveDTO, boolean isEnabled, List<String> serviceLevelIndicators) {
     ServiceLevelObjective serviceLevelObjective =
         ServiceLevelObjective.builder()
             .accountId(projectParams.getAccountIdentifier())
@@ -835,9 +819,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
             .name(serviceLevelObjectiveDTO.getName())
             .desc(serviceLevelObjectiveDTO.getDescription())
             .type(serviceLevelObjectiveDTO.getType())
-            .serviceLevelIndicators(serviceLevelIndicatorService.create(projectParams,
-                serviceLevelObjectiveDTO.getServiceLevelIndicators(), serviceLevelObjectiveDTO.getIdentifier(),
-                serviceLevelObjectiveDTO.getMonitoredServiceRef(), serviceLevelObjectiveDTO.getHealthSourceRef()))
+            .serviceLevelIndicators(serviceLevelIndicators)
             .notificationRuleRefs(notificationRuleService.getNotificationRuleRefs(projectParams,
                 serviceLevelObjectiveDTO.getNotificationRuleRefs(), NotificationRuleType.SLO, Instant.ofEpochSecond(0)))
             .monitoredServiceIdentifier(serviceLevelObjectiveDTO.getMonitoredServiceRef())
@@ -862,6 +844,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     }
     validate(sloCreateDTO, projectParams);
   }
+
   private void validate(ServiceLevelObjectiveDTO sloCreateDTO, ProjectParams projectParams) {
     monitoredServiceService.get(projectParams, sloCreateDTO.getMonitoredServiceRef());
   }
@@ -951,10 +934,10 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   }
 
   private List<ServiceLevelObjective> filterSLOs(
-      List<ServiceLevelObjective> serviceLevelObjectiveList, String filterByName) {
+      List<ServiceLevelObjective> serviceLevelObjectiveList, String searchFilter) {
     return serviceLevelObjectiveList.stream()
         .filter(serviceLevelObjective
-            -> serviceLevelObjective.getName().toLowerCase().contains(filterByName.trim().toLowerCase()))
+            -> serviceLevelObjective.getName().toLowerCase().contains(searchFilter.trim().toLowerCase()))
         .collect(Collectors.toList());
   }
 
@@ -990,22 +973,24 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
 
   private ServiceLevelObjectiveDTO getServiceLevelObjectiveDTOFromV2(
       ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+        (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
     return ServiceLevelObjectiveDTO.builder()
         .description(serviceLevelObjectiveDTO.getDescription())
         .identifier(serviceLevelObjectiveDTO.getIdentifier())
         .name(serviceLevelObjectiveDTO.getName())
         .orgIdentifier(serviceLevelObjectiveDTO.getOrgIdentifier())
         .projectIdentifier(serviceLevelObjectiveDTO.getProjectIdentifier())
-        .healthSourceRef(serviceLevelObjectiveDTO.getHealthSourceRef())
-        .monitoredServiceRef(serviceLevelObjectiveDTO.getMonitoredServiceRef())
-        .serviceLevelIndicators(serviceLevelObjectiveDTO.getServiceLevelIndicators())
+        .healthSourceRef(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
+        .monitoredServiceRef(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
+        .serviceLevelIndicators(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators())
         .tags(serviceLevelObjectiveDTO.getTags())
         .target(serviceLevelObjectiveDTO.getSloTarget())
         .userJourneyRef(serviceLevelObjectiveDTO.getUserJourneyRefs().size() > 0
                 ? serviceLevelObjectiveDTO.getUserJourneyRefs().get(0)
                 : "")
         .notificationRuleRefs(serviceLevelObjectiveDTO.getNotificationRuleRefs())
-        .type(serviceLevelObjectiveDTO.getServiceLevelIndicatorType())
+        .type(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType())
         .build();
   }
 
@@ -1065,5 +1050,6 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     List<ErrorBudgetRisk> errorBudgetRisks;
     String monitoredServiceIdentifier;
     String notificationRuleRef;
+    String searchFilter;
   }
 }

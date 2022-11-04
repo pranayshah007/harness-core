@@ -58,6 +58,7 @@ serviceScheduler:
   #mongoUri: mongodb://localhost:27017/service_scheduler
 
 enableIterators: ${ENABLE_ITERATORS:-true}
+iteratorConfigPath: ${ITERATOR_CONFIG_PATH:-""}
 trialRegistrationAllowed: true
 eventsFrameworkAvailableInOnPrem: false
 trialRegistrationAllowedForBugathon: false
@@ -330,7 +331,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: e3ee71bd
+scmVersion: c644a110
 
 ngAuthUIEnabled: false
 
@@ -676,14 +677,10 @@ iteratorsConfig:
     threadPoolSize: ${BLOCKING_CAPABILITY_PERMISSIONS_RECORD_ITERATOR_THREAD_COUNT:-5}
   vaultSecretManagerRenewalIteratorConfig:
     threadPoolSize: ${VAULT_SECRET_MANAGER_ITERATOR_THREAD_COUNT:-5}
-  delegateTaskExpiryCheckIteratorConfig:
-    threadPoolSize: ${DELEGATE_TASK_EXPIRY_CHECK_ITERATOR_THREAD_COUNT:-5}
-  perpetualTaskRebalanceIteratorConfig:
-    threadPoolSize: ${PERPETUAL_TASK_REBALANCE_ITERATOR_THREAD_COUNT:-5}
+  delegateDisconnectDetectorIteratorConfig:
+    threadPoolSize: ${DELEGATE_DISCONNECT_DETECTOR_CHECK_ITERATOR_THREAD_COUNT:-2}
   perpetualTaskAssignmentIteratorConfig:
     threadPoolSize: ${PERPETUAL_TASK_ASSIGNMENT_ITERATOR_THREAD_COUNT:-5}
-  delegateTaskRebroadcastIteratorConfig:
-    threadPoolSize: ${DELEGATE_TASK_REBROADCAST_ITERATOR_THREAD_COUNT:-2}
   failDelegateTaskIteratorConfig:
       threadPoolSize: ${FAIL_DELEGATE_TASK_ITERATOR_THREAD_COUNT:-2}
   gitSyncPollingIteratorConfig:
@@ -705,3 +702,5 @@ useGlobalKMSAsBaseAlgo: false
 cdTsDbRetentionPeriodMonths: 7
 
 enableOpentelemetry: false
+
+disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}

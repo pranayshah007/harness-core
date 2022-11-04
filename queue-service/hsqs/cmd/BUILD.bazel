@@ -16,6 +16,7 @@ go_library(
         "//queue-service/hsqs/store/redis",
         "@com_github_joho_godotenv//:godotenv",
         "@com_github_labstack_echo_v4//:echo",
+        "@com_github_rs_zerolog//:zerolog",
         "@com_github_spf13_cobra//:cobra",
         "@com_github_swaggo_echo_swagger//:echo-swagger",
     ],

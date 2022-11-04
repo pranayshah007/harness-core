@@ -47,7 +47,9 @@ import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfileScopingRule;
 import io.harness.delegate.beans.DelegateScope;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
+import io.harness.delegate.beans.DelegateTaskInvalidRequestException;
 import io.harness.delegate.beans.NgSetupFields;
+import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.TaskGroup;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
@@ -65,8 +67,8 @@ import io.harness.service.intfc.DelegateTaskRetryObserver;
 import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.TaskType;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
-import software.wings.delegatetasks.validation.DelegateConnectionResult.DelegateConnectionResultKeys;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult.DelegateConnectionResultKeys;
 import software.wings.service.intfc.AssignDelegateService;
 import software.wings.service.intfc.DelegateSelectionLogsService;
 import software.wings.service.intfc.DelegateService;
@@ -848,7 +850,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   @Override
-  public List<String> getEligibleDelegatesToExecuteTask(DelegateTask task) {
+  public List<String> getEligibleDelegatesToExecuteTask(DelegateTask task) throws WingsException {
     // if task comes with eligibleToExecuteDelegateIds then no need to do assignment logic
     if (isNotEmpty(task.getEligibleToExecuteDelegateIds())) {
       log.info(
@@ -864,14 +866,14 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       if (isEmpty(accountDelegates)) {
         task.getNonAssignableDelegates().putIfAbsent(NO_ACTIVE_DELEGATES, Collections.emptyList());
         delegateTaskServiceClassic.addToTaskActivityLog(task, NO_ACTIVE_DELEGATES);
-        return eligibleDelegateIds;
+        throw new NoAvailableDelegatesException();
       }
 
       List<Delegate> delegates = getDelegatesWithOwnerShipCriteriaMatch(task, accountDelegates);
       if (isEmpty(delegates)) {
         task.getNonAssignableDelegates().put(CAN_NOT_ASSIGN_OWNER, Collections.emptyList());
         delegateTaskServiceClassic.addToTaskActivityLog(task, CAN_NOT_ASSIGN_OWNER);
-        return eligibleDelegateIds;
+        throw new DelegateTaskInvalidRequestException(task.getUuid());
       }
 
       eligibleDelegateIds =

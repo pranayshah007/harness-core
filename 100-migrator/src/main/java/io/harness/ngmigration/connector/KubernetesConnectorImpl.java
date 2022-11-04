@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.connector;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO.builder;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.MANUAL_CREDENTIALS;
@@ -37,8 +38,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 
+@Slf4j
 public class KubernetesConnectorImpl implements BaseConnector {
   @Override
   public List<String> getSecretIds(SettingAttribute settingAttribute) {
@@ -106,6 +109,9 @@ public class KubernetesConnectorImpl implements BaseConnector {
           MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedClientKeyPassphrase());
       credentialDTO = getClientKeyCertCredentials(
           masterUrl, caCertRef, clientCertRef, clientKeyRef, clientKeyPassphraseRef, clusterConfig.getClientKeyAlgo());
+    } else if (authType.equals(KubernetesClusterAuthType.NONE)) {
+      credentialDTO = KubernetesCredentialDTO.builder().build();
+      log.error("The K8s connector is invalid. Kindly fill up the mandatory fields to migrate this connector.");
     } else {
       throw new InvalidRequestException("K8s Auth type not supported");
     }
@@ -115,11 +121,12 @@ public class KubernetesConnectorImpl implements BaseConnector {
 
   private KubernetesCredentialDTO getUsernamePasswordCredentials(
       String masterUrl, char[] username, SecretRefData usernameRef, SecretRefData encryptedPassword) {
-    KubernetesAuthCredentialDTO kubernetesAuthCredentialDTO = KubernetesUserNamePasswordDTO.builder()
-                                                                  .username(new String(username))
-                                                                  .usernameRef(usernameRef)
-                                                                  .passwordRef(encryptedPassword)
-                                                                  .build();
+    KubernetesAuthCredentialDTO kubernetesAuthCredentialDTO =
+        KubernetesUserNamePasswordDTO.builder()
+            .username(isEmpty(username) ? null : new String(username))
+            .usernameRef(usernameRef)
+            .passwordRef(encryptedPassword)
+            .build();
     return getKubernetesCredentialDTO(kubernetesAuthCredentialDTO, masterUrl, KubernetesAuthType.USER_PASSWORD);
   }
 

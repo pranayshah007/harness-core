@@ -7,6 +7,7 @@
 
 package io.harness.plancreator.stages;
 
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
@@ -21,12 +22,15 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StagesStep;
 import io.harness.steps.common.NGSectionStepParameters;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +42,8 @@ import java.util.Optional;
 import java.util.Set;
 
 public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
+  @Inject KryoSerializer kryoSerializer;
+
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, StagesConfig config) {
@@ -50,8 +56,10 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
           PlanCreationResponse.builder()
               .dependencies(DependenciesUtils.toDependenciesProto(stageYamlFieldMap))
               .build());
-      PlanCreationResponse planForRollbackStage = RollbackStagePlanCreator.createPlanForRollbackStage(stageYamlField);
-      responseMap.put(stageYamlField.getNode().getUuid() + "_rollbackStage", planForRollbackStage);
+      PlanCreationResponse planForRollbackStage =
+          RollbackStagePlanCreator.createPlanForRollbackStage(stageYamlField, kryoSerializer);
+      responseMap.put(stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX,
+          planForRollbackStage);
     }
     return responseMap;
   }
@@ -115,6 +123,11 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap("stages", Collections.singleton(PlanCreatorUtils.ANY_TYPE));
+  }
+
+  @Override
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V0);
   }
 
   private List<YamlField> getStageYamlFields(PlanCreationContext planCreationContext) {

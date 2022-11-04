@@ -10,6 +10,7 @@ package io.harness.utils;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ConnectException;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -31,5 +32,14 @@ public class RetryUtils {
             .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
     exceptionClasses.forEach(retryPolicy::handle);
     return retryPolicy;
+  }
+
+  public RetryPolicy<Object> createRetryPolicy(
+      String failedAttemptMessage, Duration retryDelay, int maxRetries, Logger log) {
+    return new RetryPolicy<>()
+        .withDelay(retryDelay)
+        .withMaxAttempts(maxRetries)
+        .onFailedAttempt(event -> log.warn(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .handleIf(throwable -> throwable instanceof ConnectException);
   }
 }

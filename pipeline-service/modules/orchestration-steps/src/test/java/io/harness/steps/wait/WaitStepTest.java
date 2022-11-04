@@ -10,6 +10,7 @@ package io.harness.steps.wait;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -19,6 +20,8 @@ import io.harness.OrchestrationStepsTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.common.NGTimeConversionHelper;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -31,7 +34,6 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.tasks.ResponseData;
 import io.harness.wait.WaitStepInstance;
-import io.harness.yaml.core.timeout.Timeout;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,14 +51,14 @@ public class WaitStepTest extends OrchestrationStepsTestBase {
   @InjectMocks WaitStep waitStep;
   Ambiance ambiance;
   WaitStepParameters waitStepParameters;
-  Timeout duration;
+  String duration;
   String nodeExecutionId;
   StepElementParameters stepElementParameters;
   @Before
   public void setup() {
     nodeExecutionId = generateUuid();
     ambiance = Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build()).build();
-    duration = Timeout.builder().timeoutString("10m").build();
+    duration = "10m";
     waitStepParameters = WaitStepParameters.infoBuilder().duration(ParameterField.createValueField(duration)).build();
     stepElementParameters = StepElementParameters.builder().spec(waitStepParameters).build();
   }
@@ -118,7 +120,17 @@ public class WaitStepTest extends OrchestrationStepsTestBase {
   public void testExecuteAsync() {
     doReturn(null).when(waitStepService).save(any());
     AsyncExecutableResponse response = waitStep.executeAsync(ambiance, stepElementParameters, null, null);
-    assertEquals(response.getTimeout(), duration.getTimeoutInMillis());
+    assertEquals(response.getTimeout(),
+        (int) NGTimeConversionHelper.convertTimeStringToMilliseconds(waitStepParameters.getDuration().getValue()));
+    assertThatThrownBy(
+        ()
+            -> waitStep.executeAsync(ambiance,
+                StepElementParameters.builder()
+                    .spec(WaitStepParameters.infoBuilder().duration(ParameterField.createValueField("0s")).build())
+                    .build(),
+                null, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Invalid input for duration of wait step, Duration should be greater than 0");
   }
 
   @Test

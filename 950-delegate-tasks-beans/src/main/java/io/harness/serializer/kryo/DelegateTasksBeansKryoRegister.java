@@ -186,6 +186,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidateTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidationParams;
+import io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsValidationParams;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerValidationParams;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCapabilityHelper;
@@ -237,9 +238,11 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowValidationParams
 import io.harness.delegate.beans.connector.servicenow.connection.ServiceNowTestConnectionTaskNGResponse;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskParams;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskResponse;
+import io.harness.delegate.beans.connector.spotconnector.SpotDelegateTaskResponse;
 import io.harness.delegate.beans.connector.spotconnector.SpotTaskParams;
 import io.harness.delegate.beans.connector.spotconnector.SpotTaskType;
 import io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse;
+import io.harness.delegate.beans.connector.spotconnector.SpotValidationParams;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
@@ -347,6 +350,10 @@ import io.harness.delegate.task.ListNotifyResponseData;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryBaseArtifactDelegateRequest;
@@ -455,6 +462,8 @@ import io.harness.delegate.task.azure.artifact.AzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactType;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
+import io.harness.delegate.task.azure.artifact.JenkinsAzureArtifactRequestDetails;
+import io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.request.AzureLoadBalancerDetailForBGDeployment;
 import io.harness.delegate.task.azure.request.AzureVMSSDeployTaskParameters;
 import io.harness.delegate.task.azure.request.AzureVMSSGetVirtualMachineScaleSetParameters;
@@ -1292,6 +1301,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(SpotValidateTaskResponse.class, 21006);
     kryo.register(SpotTaskParams.class, 21007);
     kryo.register(SpotTaskType.class, 21008);
+    kryo.register(SpotValidationParams.class, 21009);
+    kryo.register(SpotDelegateTaskResponse.class, 21010);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
@@ -1877,11 +1888,18 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ShellScriptProvisionTaskNGResponse.class, 55427);
     kryo.register(ArtifactoryFetchImagePathResponse.class, 55428);
     kryo.register(NexusArtifactDelegateConfig.class, 55429);
+    kryo.register(JenkinsAzureArtifactRequestDetails.class, 55430);
     kryo.register(SshConnectivityExecutionCapability.class, 55435);
     kryo.register(NoInstalledDelegatesException.class, 73988);
     kryo.register(NoEligibleDelegatesInAccountException.class, 73989);
     kryo.register(NoAvailableDelegatesException.class, 73990);
     kryo.register(NoDelegatesException.class, 73991);
+    kryo.register(NexusAzureArtifactRequestDetails.class, 73992);
     kryo.register(DelegateTaskExpiredException.class, 980036);
+    kryo.register(S3BuildsResponse.class, 1010101);
+    kryo.register(AMIArtifactDelegateRequest.class, 60011);
+    kryo.register(AMIArtifactDelegateResponse.class, 60012);
+    kryo.register(AMITag.class, 60013);
+    kryo.register(AMIFilter.class, 60014);
   }
 }

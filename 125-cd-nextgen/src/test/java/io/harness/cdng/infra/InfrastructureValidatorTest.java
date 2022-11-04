@@ -7,18 +7,27 @@
 
 package io.harness.cdng.infra;
 
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.YOGESH;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.elastigroup.ElastigroupConfiguration;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure.ElastigroupInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -198,6 +207,35 @@ public class InfrastructureValidatorTest extends CategoryTest {
                                                        .stage(ParameterField.createValueField(""))
                                                        .build();
     assertThatThrownBy(() -> validator.validate(emptyStage));
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testElastigroupInfraMapper() {
+    assertThatThrownBy(() -> validator.validate(getElastigroupInfrastructure(true, false)))
+        .isInstanceOf(InvalidArgumentsException.class);
+    assertThatThrownBy(() -> validator.validate(getElastigroupInfrastructure(true, true)))
+        .isInstanceOf(InvalidArgumentsException.class);
+    assertThatThrownBy(() -> validator.validate(getElastigroupInfrastructure(false, true)))
+        .isInstanceOf(InvalidArgumentsException.class);
+    assertThatCode(() -> validator.validate(getElastigroupInfrastructure(false, false))).doesNotThrowAnyException();
+  }
+
+  private ElastigroupInfrastructure getElastigroupInfrastructure(boolean emptyConnector, boolean emptyConfiguration) {
+    StoreConfig storeConfig =
+        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
+    ElastigroupInfrastructureBuilder builder = ElastigroupInfrastructure.builder();
+    if (!emptyConnector) {
+      builder.connectorRef(ParameterField.createValueField("connector"));
+    }
+    if (!emptyConfiguration) {
+      builder.configuration(
+          ElastigroupConfiguration.builder()
+              .store(StoreConfigWrapper.builder().type(StoreConfigType.INLINE).spec(storeConfig).build())
+              .build());
+    }
+    return builder.build();
   }
 
   @Test

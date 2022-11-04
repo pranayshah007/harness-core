@@ -18,8 +18,8 @@ import io.harness.delegate.beans.connector.spotconnector.SpotTaskParams;
 import io.harness.delegate.beans.connector.spotconnector.SpotTaskType;
 import io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.InvalidRequestException;
 import io.harness.security.encryption.EncryptedDataDetail;
 

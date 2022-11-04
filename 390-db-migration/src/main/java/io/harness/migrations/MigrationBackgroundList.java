@@ -53,6 +53,7 @@ import io.harness.migrations.all.AddEnableIteratorsToGovernanceConfig;
 import io.harness.migrations.all.AddHarnessOwnedToResourceConstraint;
 import io.harness.migrations.all.AddInfraMappingNameToInstanceData;
 import io.harness.migrations.all.AddIsDefaultFlagToUserGroup;
+import io.harness.migrations.all.AddMisfireInstructionToQuartz;
 import io.harness.migrations.all.AddNotificationGroupReferenceToUserGroups;
 import io.harness.migrations.all.AddOrchestrationToWorkflows;
 import io.harness.migrations.all.AddPipelinesReferenceToUserGroups;
@@ -91,6 +92,7 @@ import io.harness.migrations.all.DeleteStaleDelegateInsightsSummaryMigration;
 import io.harness.migrations.all.DeleteStaleSlackConfigs;
 import io.harness.migrations.all.DeleteStaleThirdPartyApiCallLogsMigration;
 import io.harness.migrations.all.DeletedAccountStatusMigration;
+import io.harness.migrations.all.DisableArtifactCollectionForInactiveAccount;
 import io.harness.migrations.all.DisableServiceGuardsWithDeletedConnectorsMigration;
 import io.harness.migrations.all.ExecuteWorkflowAbortActionMigration;
 import io.harness.migrations.all.ExecuteWorkflowRollbackActionMigration;
@@ -403,6 +405,8 @@ public class MigrationBackgroundList {
         .add(Pair.of(234, SettingAttributesServiceAccountTokenMigration.class))
         .add(Pair.of(235, ExecuteWorkflowAbortActionMigration.class))
         .add(Pair.of(236, CorrectingQuartzTriggerFrequency.class))
+        .add(Pair.of(237, DisableArtifactCollectionForInactiveAccount.class))
+        .add(Pair.of(238, AddMisfireInstructionToQuartz.class))
         .build();
   }
 }

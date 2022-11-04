@@ -251,6 +251,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         .getDefaultSecretManager(any());
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
     doReturn(true).when(featureFlagService).isEnabled(eq(FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR), anyString());
+    doReturn(true).when(featureFlagService).isEnabled(eq(FeatureName.SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR), anyString());
     doReturn(WORKFLOW_EXECUTION_ID).when(executionContext).getWorkflowExecutionId();
     doReturn(gitConfig).when(gitUtilsManager).getGitConfig(any());
   }
@@ -387,6 +388,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     assertParametersVariables(parameters);
     assertParametersBackendConfigs(parameters);
     assertThat(parameters.isUseActivityIdBasedTfBaseDir()).isTrue();
+    assertThat(parameters.isSyncGitCloneAndCopyToDestDir()).isTrue();
   }
 
   @Test
@@ -667,6 +669,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         (TerraformProvisionParameters) delegateTaskCaptor.getValue().getData().getParameters()[0];
     assertThat(parameters.getEncryptedTfPlan()).isNotNull();
     assertThat(parameters.isUseActivityIdBasedTfBaseDir()).isTrue();
+    assertThat(parameters.isSyncGitCloneAndCopyToDestDir()).isTrue();
   }
 
   @Test
@@ -800,6 +803,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     Map<String, ResponseData> response = new HashMap<>();
     TerraformExecutionData terraformExecutionData = TerraformExecutionData.builder()
                                                         .executionStatus(ExecutionStatus.SUCCESS)
+                                                        .entityId("entityId")
                                                         .tfPlanJson("")
                                                         .environmentVariables(getTerraformPlanSummaryVariables(true))
                                                         .build();
@@ -812,7 +816,10 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         .prepareSweepingOutputBuilder(any(SweepingOutputInstance.Scope.class));
 
     ExecutionResponse executionResponse = state.handleAsyncResponse(executionContext, response);
+    TerraformProvisionInheritPlanElement terraformProvisionInheritPlanElement =
+        (TerraformProvisionInheritPlanElement) executionResponse.getNotifyElements().get(0);
     assertThat(executionResponse.getStateExecutionData()).isEqualTo(terraformExecutionData);
+    assertThat(terraformProvisionInheritPlanElement.getEntityId()).isEqualTo(terraformExecutionData.getEntityId());
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     assertThat(
         ((TerraformProvisionInheritPlanElement) executionResponse.getContextElements().get(0)).getProvisionerId())
@@ -967,6 +974,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     assertThat(parameters.getAwsRoleArn()).isEqualTo("arn");
     assertThat(parameters.getAwsRegion()).isEqualTo("region");
     assertThat(parameters.isUseActivityIdBasedTfBaseDir()).isTrue();
+    assertThat(parameters.isSyncGitCloneAndCopyToDestDir()).isTrue();
   }
 
   @Test

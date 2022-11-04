@@ -11,8 +11,12 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.freeze.beans.FreezeReference;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
+import io.harness.freeze.beans.response.ShouldDisableDeploymentFreezeResponseDTO;
+import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -30,6 +34,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.LinkedList;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -76,6 +81,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FreezeEvalutationResource {
   private final FreezeEvaluateService freezeEvaluateService;
+  private final AccessControlClient accessControlClient;
 
   @GET
   @Path("/isGlobalFreezeActive")
@@ -105,19 +111,36 @@ public class FreezeEvalutationResource {
   @Operation(operationId = "isGlobalFreezeActive", summary = "If to disable run button for deployment",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns true if run button is t be disabled")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Returns true along with metadata if run button is to be disabled")
       })
   @Hidden
-  public ResponseDTO<Boolean>
+  public ResponseDTO<ShouldDisableDeploymentFreezeResponseDTO>
   shouldDisableDeployment(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                               NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
+    if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(accountId, orgId, projectId, accessControlClient)) {
+      return ResponseDTO.newResponse(ShouldDisableDeploymentFreezeResponseDTO.builder()
+                                         .shouldDisable(false)
+                                         .freezeReferences(new LinkedList<>())
+                                         .build());
+    }
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTO =
-        freezeEvaluateService.shouldDisableDeployment(accountId, orgId, projectId);
-    return ResponseDTO.newResponse(!EmptyPredicate.isEmpty(freezeSummaryResponseDTO));
+        freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
+    List<FreezeReference> freezeReferences = new LinkedList<>();
+    freezeSummaryResponseDTO.stream().forEach(freeze
+        -> freezeReferences.add(FreezeReference.builder()
+                                    .freezeScope(freeze.getFreezeScope())
+                                    .identifier(freeze.getIdentifier())
+                                    .type(freeze.getType())
+                                    .build()));
+    boolean shouldDisableDeployment = !EmptyPredicate.isEmpty(freezeSummaryResponseDTO);
+    return ResponseDTO.newResponse(ShouldDisableDeploymentFreezeResponseDTO.builder()
+                                       .shouldDisable(shouldDisableDeployment)
+                                       .freezeReferences(freezeReferences)
+                                       .build());
   }
 }

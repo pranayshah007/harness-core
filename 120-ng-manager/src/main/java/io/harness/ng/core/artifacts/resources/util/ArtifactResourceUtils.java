@@ -15,7 +15,17 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusConstant;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
+import io.harness.cdng.artifact.resources.nexus.dtos.NexusResponseDTO;
+import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -41,6 +51,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -52,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -62,6 +74,7 @@ public class ArtifactResourceUtils {
   @Inject TemplateResourceClient templateResourceClient;
   @Inject ServiceEntityService serviceEntityService;
   @Inject EnvironmentService environmentService;
+  @Inject NexusResourceService nexusResourceService;
 
   // Checks whether field is fixed value or not, if empty then also we return false for fixed value.
   public static boolean isFieldFixedValue(String fieldValue) {
@@ -224,5 +237,92 @@ public class ArtifactResourceUtils {
     @JsonProperty("spec")
     @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
     ArtifactConfig spec;
+  }
+
+  public NexusResponseDTO getBuildDetails(String nexusConnectorIdentifier, String repositoryName, String repositoryPort,
+      String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
+      String projectIdentifier, String groupId, String artifactId, String extension, String classifier,
+      String packageName, String pipelineIdentifier, String fqnPath, GitEntityFindInfoDTO gitEntityBasicInfo,
+      String runtimeInputYaml, String serviceRef, String accountId, String group) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactSpecFromService;
+      switch (nexusRegistryArtifactConfig.getRepositoryFormat().getValue()) {
+        case NexusConstant.DOCKER:
+          NexusRegistryDockerConfig nexusRegistryDockerConfig =
+              (NexusRegistryDockerConfig) nexusRegistryArtifactConfig.getNexusRegistryConfigSpec();
+          if (isEmpty(repositoryPort)) {
+            repositoryPort = (String) nexusRegistryDockerConfig.getRepositoryPort().fetchFinalValue();
+          }
+
+          if (isEmpty(artifactPath)) {
+            artifactPath = (String) nexusRegistryDockerConfig.getArtifactPath().fetchFinalValue();
+          }
+
+          if (isEmpty(artifactRepositoryUrl)) {
+            artifactRepositoryUrl = (String) nexusRegistryDockerConfig.getRepositoryUrl().fetchFinalValue();
+          }
+          break;
+        case NexusConstant.NPM:
+          NexusRegistryNpmConfig nexusRegistryNpmConfig =
+              (NexusRegistryNpmConfig) nexusRegistryArtifactConfig.getNexusRegistryConfigSpec();
+          if (isEmpty(packageName)) {
+            packageName = (String) nexusRegistryNpmConfig.getPackageName().fetchFinalValue();
+          }
+          break;
+        case NexusConstant.NUGET:
+          NexusRegistryNugetConfig nexusRegistryNugetConfig =
+              (NexusRegistryNugetConfig) nexusRegistryArtifactConfig.getNexusRegistryConfigSpec();
+          if (isEmpty(packageName)) {
+            packageName = (String) nexusRegistryNugetConfig.getPackageName().fetchFinalValue();
+          }
+          break;
+        case NexusConstant.MAVEN:
+          NexusRegistryMavenConfig nexusRegistryMavenConfig =
+              (NexusRegistryMavenConfig) nexusRegistryArtifactConfig.getNexusRegistryConfigSpec();
+          if (isEmpty(artifactId)) {
+            artifactId = (String) nexusRegistryMavenConfig.getArtifactId().fetchFinalValue();
+          }
+          if (isEmpty(groupId)) {
+            groupId = (String) nexusRegistryMavenConfig.getGroupId().fetchFinalValue();
+          }
+          if (isEmpty(classifier)) {
+            classifier = (String) nexusRegistryMavenConfig.getClassifier().fetchFinalValue();
+          }
+          if (isEmpty(extension)) {
+            extension = (String) nexusRegistryMavenConfig.getExtension().fetchFinalValue();
+          }
+          break;
+        case NexusConstant.RAW:
+          NexusRegistryRawConfig nexusRegistryRawConfig =
+              (NexusRegistryRawConfig) nexusRegistryArtifactConfig.getNexusRegistryConfigSpec();
+          if (isEmpty(group)) {
+            group = (String) nexusRegistryRawConfig.getGroup().fetchFinalValue();
+          }
+          break;
+        default:
+          throw new NotFoundException(String.format(
+              "Repository Format [%s] is not supported", nexusRegistryArtifactConfig.getRepositoryFormat().getValue()));
+      }
+
+      if (isEmpty(repositoryName)) {
+        repositoryName = (String) nexusRegistryArtifactConfig.getRepository().fetchFinalValue();
+      }
+      if (isEmpty(repositoryFormat)) {
+        repositoryFormat = (String) nexusRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
+      }
+
+      if (isEmpty(nexusConnectorIdentifier)) {
+        nexusConnectorIdentifier = nexusRegistryArtifactConfig.getConnectorRef().getValue();
+      }
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    artifactPath = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
+    return nexusResourceService.getBuildDetails(connectorRef, repositoryName, repositoryPort, artifactPath,
+        repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, groupId, artifactId, extension,
+        classifier, packageName, group);
   }
 }

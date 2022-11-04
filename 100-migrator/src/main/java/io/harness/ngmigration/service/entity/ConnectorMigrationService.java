@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.entity;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
+import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -24,8 +25,11 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
+import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -34,6 +38,7 @@ import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.ConnectorSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.connector.BaseConnector;
 import io.harness.ngmigration.connector.ConnectorFactory;
 import io.harness.ngmigration.dto.ImportError;
@@ -45,8 +50,6 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
-import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -55,7 +58,6 @@ import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.SettingsService;
-import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -129,13 +131,12 @@ public class ConnectorMigrationService extends NgMigrationService {
                           .map(secret -> CgEntityId.builder().id(secret).type(NGMigrationEntityType.SECRET).build())
                           .collect(Collectors.toList()));
     }
-    if (SettingVariableTypes.AMAZON_S3_HELM_REPO.equals(settingAttribute.getValue().getSettingType())) {
-      AmazonS3HelmRepoConfig s3HelmRepoConfig = (AmazonS3HelmRepoConfig) settingAttribute.getValue();
-      children.add(CgEntityId.builder().id(s3HelmRepoConfig.getConnectorId()).type(CONNECTOR).build());
-    }
-    if (SettingVariableTypes.GCS_HELM_REPO.equals(settingAttribute.getValue().getSettingType())) {
-      GCSHelmRepoConfig gcsHelmRepoConfig = (GCSHelmRepoConfig) settingAttribute.getValue();
-      children.add(CgEntityId.builder().id(gcsHelmRepoConfig.getConnectorId()).type(CONNECTOR).build());
+    List<String> connectorIds = ConnectorFactory.getConnector(settingAttribute).getConnectorIds(settingAttribute);
+    if (EmptyPredicate.isNotEmpty(connectorIds)) {
+      children.addAll(connectorIds.stream()
+                          .filter(StringUtils::isNotBlank)
+                          .map(connectorId -> CgEntityId.builder().id(connectorId).type(CONNECTOR).build())
+                          .collect(Collectors.toList()));
     }
     return DiscoveryNode.builder().children(children).entityNode(connectorNode).build();
   }
@@ -167,7 +168,7 @@ public class ConnectorMigrationService extends NgMigrationService {
 
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
       return MigrationImportSummaryDTO.builder()
           .errors(Collections.singletonList(ImportError.builder()
@@ -184,48 +185,87 @@ public class ConnectorMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
-      NgEntityDetail ngEntityDetail) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     SettingAttribute settingAttribute = (SettingAttribute) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, settingAttribute.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
     Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
-
+    NgEntityDetail ngEntityDetail = NgEntityDetail.builder()
+                                        .identifier(identifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .build();
     List<NGYamlFile> files = new ArrayList<>();
     Set<CgEntityId> childEntities = graph.get(entityId);
     BaseConnector connectorImpl = ConnectorFactory.getConnector(settingAttribute);
-    ConnectorType connectorType = connectorImpl.getConnectorType(settingAttribute);
-    if (connectorType == null) {
-      return Collections.emptyList();
+    NGYamlFile yamlFile = null;
+    try {
+      if (connectorImpl.getSecretType() != null) {
+        // We are overriding this because these are connectors in CG but in NG they are secrets.
+        // So when we migrate we should infer them as secrets
+        scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT, SECRET);
+        projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
+        orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
+        ngEntityDetail = NgEntityDetail.builder()
+                             .identifier(identifier)
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .build();
+        SecretSpecDTO secretSpecDTO = connectorImpl.getSecretSpecDTO(settingAttribute, migratedEntities);
+        yamlFile = NGYamlFile.builder()
+                       .type(NGMigrationEntityType.SECRET)
+                       .filename("secret/" + name + ".yaml")
+                       .yaml(CustomSecretRequestWrapper.builder()
+                                 .secret(SecretDTOV2.builder()
+                                             .identifier(identifier)
+                                             .projectIdentifier(projectIdentifier)
+                                             .orgIdentifier(orgIdentifier)
+                                             .name(name)
+                                             .spec(secretSpecDTO)
+                                             .type(connectorImpl.getSecretType())
+                                             .build())
+                                 .build())
+                       .ngEntityDetail(ngEntityDetail)
+                       .cgBasicInfo(settingAttribute.getCgBasicInfo())
+                       .build();
+        return files;
+      }
+      ConnectorType connectorType = connectorImpl.getConnectorType(settingAttribute);
+      if (connectorType == null) {
+        return Collections.emptyList();
+      }
+      yamlFile = NGYamlFile.builder()
+                     .type(CONNECTOR)
+                     .filename("connector/" + settingAttribute.getName() + ".yaml")
+                     .yaml(ConnectorDTO.builder()
+                               .connectorInfo(ConnectorInfoDTO.builder()
+                                                  .name(name)
+                                                  .identifier(identifier)
+                                                  .description(null)
+                                                  .tags(null)
+                                                  .orgIdentifier(orgIdentifier)
+                                                  .projectIdentifier(projectIdentifier)
+                                                  .connectorType(connectorType)
+                                                  .connectorConfig(connectorImpl.getConfigDTO(
+                                                      settingAttribute, childEntities, migratedEntities))
+                                                  .build())
+                               .build())
+                     .ngEntityDetail(ngEntityDetail)
+                     .cgBasicInfo(settingAttribute.getCgBasicInfo())
+                     .build();
+      return files;
+    } finally {
+      if (yamlFile != null) {
+        files.add(yamlFile);
+        migratedEntities.putIfAbsent(entityId, yamlFile);
+      }
     }
-    NGYamlFile ngYamlFile = NGYamlFile.builder()
-                                .type(CONNECTOR)
-                                .filename("connector/" + settingAttribute.getName() + ".yaml")
-                                .yaml(ConnectorDTO.builder()
-                                          .connectorInfo(ConnectorInfoDTO.builder()
-                                                             .name(name)
-                                                             .identifier(identifier)
-                                                             .description(null)
-                                                             .tags(null)
-                                                             .orgIdentifier(orgIdentifier)
-                                                             .projectIdentifier(projectIdentifier)
-                                                             .connectorType(connectorType)
-                                                             .connectorConfig(connectorImpl.getConfigDTO(
-                                                                 settingAttribute, childEntities, migratedEntities))
-                                                             .build())
-                                          .build())
-                                .ngEntityDetail(NgEntityDetail.builder()
-                                                    .identifier(identifier)
-                                                    .orgIdentifier(orgIdentifier)
-                                                    .projectIdentifier(projectIdentifier)
-                                                    .build())
-                                .cgBasicInfo(settingAttribute.getCgBasicInfo())
-                                .build();
-    files.add(ngYamlFile);
-    migratedEntities.putIfAbsent(entityId, ngYamlFile);
-    return files;
+  }
+
+  private List<NGYamlFile> generateSSHConfigFiles() {
+    return Collections.emptyList();
   }
 
   @Override

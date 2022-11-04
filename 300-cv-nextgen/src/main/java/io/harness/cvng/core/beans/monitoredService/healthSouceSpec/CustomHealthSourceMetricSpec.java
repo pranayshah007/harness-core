@@ -16,6 +16,7 @@ import io.harness.cvng.core.beans.CustomHealthRequestDefinition;
 import io.harness.cvng.core.beans.HealthSourceQueryType;
 import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CustomHealthMetricCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -29,6 +30,7 @@ import io.harness.exception.DataFormatException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +50,8 @@ import org.apache.commons.lang3.StringUtils;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "CustomHealthSourceMetric",
+    description = "This is the Custom Metric Health Source spec entity defined in Harness")
 public class CustomHealthSourceMetricSpec extends MetricHealthSourceSpec {
   private static final String JSON_PATH_ARRAY_DELIMITER = ".[*].";
   private static final String INVALID_DATA_PATH_ERROR_MESSAGE = "Json paths do not match.";
@@ -60,6 +64,12 @@ public class CustomHealthSourceMetricSpec extends MetricHealthSourceSpec {
   private static final String PATH_TYPE_SERVICE_INSTANCE = "service instance";
 
   @UniqueIdentifierCheck List<CustomHealthMetricDefinition> metricDefinitions = new ArrayList<>();
+
+  // Need to be implemented to support metricThresholds
+  @Override
+  public Set<TimeSeriesMetricPackDTO> getMetricPacks() {
+    return null;
+  }
 
   @Data
   @Builder

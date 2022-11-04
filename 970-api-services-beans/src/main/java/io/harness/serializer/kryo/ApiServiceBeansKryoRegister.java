@@ -9,6 +9,7 @@ package io.harness.serializer.kryo;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
+import io.harness.ami.AMITagsResponse;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryImagePath;
@@ -63,6 +64,7 @@ import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraFieldAllowedValueNG;
 import io.harness.jira.JiraFieldNG;
+import io.harness.jira.JiraFieldSchema;
 import io.harness.jira.JiraFieldSchemaNG;
 import io.harness.jira.JiraFieldTypeNG;
 import io.harness.jira.JiraIssueCreateMetadataNG;
@@ -175,6 +177,7 @@ import software.wings.helpers.ext.gcb.models.VerifyOption;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.helpers.ext.kustomize.KustomizeConfig;
+import software.wings.helpers.ext.nexus.NexusRepositories;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.utils.RepositoryFormat;
 import software.wings.utils.RepositoryType;
@@ -345,6 +348,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(JiraIssueType.class, 7199);
     kryo.register(JiraField.class, 7200);
     kryo.register(JiraCreateMetaResponse.class, 7201);
+    kryo.register(JiraFieldSchema.class, 7510);
 
     kryo.register(AwsConfig.class, 1428);
     kryo.register(CrossAccountAccess.class, 1429);
@@ -472,5 +476,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureDevopsProjects.class, 80310);
     kryo.register(ArtifactoryImagePath.class, 80311);
     kryo.register(WebhookSecretData.class, 80312);
+    kryo.register(AMITagsResponse.class, 81001);
+    kryo.register(NexusRepositories.class, 9000312);
   }
 }

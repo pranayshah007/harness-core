@@ -101,6 +101,11 @@ public class BudgetServiceImpl implements BudgetService {
   }
 
   @Override
+  public void updatePerspectiveName(String accountId, String perspectiveId, String perspectiveName) {
+    budgetDao.updatePerspectiveName(accountId, perspectiveId, perspectiveName);
+  }
+
+  @Override
   public List<Budget> list(String accountId) {
     return budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0);
   }
@@ -190,17 +195,19 @@ public class BudgetServiceImpl implements BudgetService {
     if (updateNgBudgetCosts(budget)) {
       return;
     }
+    double actualCost = 0.0D;
+    double forecastCost = 0.0D;
+    double lastMonthCost = 0.0D;
     try {
-      Double actualCost = getActualCostForPerspectiveBudget(budget);
-      Double forecastCost = getForecastCostForPerspectiveBudget(budget);
-      Double lastMonthCost = getLastMonthCostForPerspectiveBudget(budget);
-
-      budget.setActualCost(actualCost);
-      budget.setForecastCost(forecastCost);
-      budget.setLastMonthCost(lastMonthCost);
+      actualCost = getActualCostForPerspectiveBudget(budget);
+      forecastCost = getForecastCostForPerspectiveBudget(budget);
+      lastMonthCost = getLastMonthCostForPerspectiveBudget(budget);
     } catch (Exception e) {
       log.error("Error occurred while updating costs of budget: {}, Exception : {}", budget.getUuid(), e);
     }
+    budget.setActualCost(actualCost);
+    budget.setForecastCost(forecastCost);
+    budget.setLastMonthCost(lastMonthCost);
   }
 
   private double getActualCostForPerspectiveBudget(Budget budget) {

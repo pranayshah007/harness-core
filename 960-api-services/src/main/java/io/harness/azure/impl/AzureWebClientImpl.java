@@ -989,7 +989,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
 
   public SiteConfigResourceInner updateSlotConfigurationWithAppCommandLineScript(
       AzureWebClientContext context, final String slotName, final String startupCommand) {
-    if (isBlank(startupCommand)) {
+    if (startupCommand == null) {
       return null;
     }
     if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equals(slotName)) {

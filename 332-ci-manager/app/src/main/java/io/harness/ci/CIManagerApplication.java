@@ -28,6 +28,7 @@ import io.harness.app.migration.CIManagerMigrationProvider;
 import io.harness.cache.CacheModule;
 import io.harness.ci.app.InspectCommand;
 import io.harness.ci.enforcement.BuildRestrictionUsageImpl;
+import io.harness.ci.enforcement.BuildsPerDayRestrictionUsageImpl;
 import io.harness.ci.enforcement.BuildsPerMonthRestrictionUsageImpl;
 import io.harness.ci.enforcement.TotalBuildsRestrictionUsageImpl;
 import io.harness.ci.execution.ObserverEventConsumer;
@@ -548,6 +549,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
                     .put(FeatureRestrictionName.ACTIVE_COMMITTERS, CIActiveCommitterUsageImpl.class)
                     .put(FeatureRestrictionName.MAX_TOTAL_BUILDS, TotalBuildsRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MAX_BUILDS_PER_MONTH, BuildsPerMonthRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MAX_BUILDS_PER_DAY, BuildsPerDayRestrictionUsageImpl.class)
                     .build())
             .build();
     injector.getInstance(EnforcementSdkRegisterService.class)

@@ -12,15 +12,17 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileContentBatchResponse;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.ListFilesInCommitRequest;
 import io.harness.beans.response.GitFileResponse;
+import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.product.ci.scm.proto.FileContent;
 import io.harness.product.ci.scm.proto.SCMGrpc;
@@ -103,6 +105,18 @@ public class ScmGitFileTask extends AbstractDelegateRunnableTask {
         return GitFileTaskResponseData.builder()
             .gitFileTaskType(scmGitFileTaskParams.getGitFileTaskType())
             .gitFileResponse(gitFileResponse)
+            .build();
+      case GET_FILE_GIT_DETAILS_LIST_IN_COMMIT:
+        ListFilesInCommitResponse listFilesInCommitResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.listFilesInCommit(scmGitFileTaskParams.getScmConnector(),
+                ListFilesInCommitRequest.builder()
+                    .ref(scmGitFileTaskParams.getRef())
+                    .fileDirectoryPath(scmGitFileTaskParams.getFilePathsList().get(0))
+                    .build(),
+                SCMGrpc.newBlockingStub(c)));
+        return GitFileTaskResponseData.builder()
+            .gitFileTaskType(scmGitFileTaskParams.getGitFileTaskType())
+            .listFilesInCommitResponse(listFilesInCommitResponse)
             .build();
       default:
         throw new UnknownEnumTypeException("GitFileTaskType", scmGitFileTaskParams.getGitFileTaskType().toString());

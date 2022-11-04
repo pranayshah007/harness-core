@@ -43,7 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 @Path("/scim/account/{accountIdentifier}")
 @Hidden
 @Consumes({"application/scim+json", "application/json"})
-@Produces("application/scim+json")
+@Produces({"application/scim+json", "application/json"})
 @Slf4j
 @ScimAPI
 @ApiResponses(value =

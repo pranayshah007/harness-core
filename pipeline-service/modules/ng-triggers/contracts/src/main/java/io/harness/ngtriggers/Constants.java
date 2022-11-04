@@ -100,6 +100,7 @@ public interface Constants {
   String CUSTOM_ARTIFACT = "CustomArtifact";
   String GOOGLE_ARTIFACT_REGISTRY = "GoogleArtifactRegistry";
   String GITHUB_PACKAGES = "GithubPackageRegistry";
+  String AZURE_ARTIFACTS = "AzureArtifacts";
 
   String MANIFEST_VERSION = "<+trigger.manifest.version>";
   String ARTIFACT_VERSION = "<+trigger.artifact.build>";
@@ -109,4 +110,5 @@ public interface Constants {
   String CD_TRIGGERS_MANDATE_GITHUB_AUTHENTICATION = "mandate_webhook_secrets_for_github_triggers_CD";
   String CI_TRIGGERS_MANDATE_GITHUB_AUTHENTICATION = "mandate_webhook_secrets_for_github_triggers_CI";
   String MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE = "true";
+  String PIPELINE_INPUTS_VALIDATION_ERROR = "PipelineInputsErrorMetadataV2";
 }

@@ -1574,6 +1574,62 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "Capacity": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Count"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CountCapacitySpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Percentage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/PercentageCapacitySpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CapacitySpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ChaosStepInfo": {
       "allOf": [
         {
@@ -1586,6 +1642,9 @@
             "experimentRef"
           ],
           "properties": {
+            "assertion": {
+              "type": "string"
+            },
             "expectedResilienceScore": {
               "type": "number",
               "format": "double"
@@ -2294,6 +2353,33 @@
               "enum": [
                 "Artifact",
                 "Config"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CountCapacitySpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CapacitySpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+                  "minLength": 1
+                }
               ]
             }
           }
@@ -3014,7 +3100,8 @@
             "ServerlessAwsLambda",
             "AzureWebApp",
             "CustomDeployment",
-            "ECS"
+            "ECS",
+            "Elastigroup"
           ]
         },
         "environment": {
@@ -3557,7 +3644,7 @@
             "runTaskRequestDefinition": {
               "$ref": "#/definitions/StoreConfigWrapper"
             },
-            "skiSteadyStateCheck": {
+            "skipSteadyStateCheck": {
               "oneOf": [
                 {
                   "type": "boolean"
@@ -3665,6 +3752,109 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ElastigroupConfiguration": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "newService": {
+              "$ref": "#/definitions/Capacity"
+            },
+            "oldService": {
+              "$ref": "#/definitions/Capacity"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupInfrastructure": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration",
+            "connectorRef"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/ElastigroupConfiguration"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupServiceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ServiceSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "startupScript": {
+              "$ref": "#/definitions/StartupScriptConfiguration"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EnvironmentGroupMetadata": {
+      "type": "object",
+      "properties": {
+        "parallel": {
+          "type": "boolean"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "EnvironmentGroupYaml": {
       "type": "object",
       "required": [
@@ -3705,7 +3895,7 @@
           ]
         },
         "metadata": {
-          "type": "string"
+          "$ref": "#/definitions/EnvironmentGroupMetadata"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4762,7 +4952,9 @@
             "History",
             "Delete",
             "Uninstall",
-            "List"
+            "List",
+            "Add",
+            "Update"
           ]
         },
         "flag": {
@@ -5059,7 +5251,8 @@
             "AzureWebApp",
             "SshWinRmAws",
             "CustomDeployment",
-            "ECS"
+            "ECS",
+            "Elastigroup"
           ]
         }
       },
@@ -5109,6 +5302,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/EcsInfrastructure"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Elastigroup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupInfrastructure"
               }
             }
           }
@@ -6875,6 +7084,22 @@
           }
         },
         {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "raw"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryRawConfig"
+              }
+            }
+          }
+        },
+        {
           "oneOf": [
             {
               "required": [
@@ -6922,7 +7147,8 @@
                 "docker",
                 "maven",
                 "npm",
-                "nuget"
+                "nuget",
+                "raw"
               ]
             },
             "repositoryPort": {
@@ -7006,6 +7232,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/NexusRegistryNugetConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "raw"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryRawConfig"
               }
             }
           }
@@ -7137,6 +7379,25 @@
           ],
           "properties": {
             "packageName": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NexusRegistryRawConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/NexusRegistryConfigSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "group"
+          ],
+          "properties": {
+            "group": {
               "type": "string"
             }
           }
@@ -7769,6 +8030,34 @@
           "additionalProperties": false
         }
       ]
+    },
+    "PercentageCapacitySpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CapacitySpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "percentage": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                {
+                  "type": "string",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "PercentageInstanceSelection": {
       "allOf": [
@@ -8646,7 +8935,8 @@
             "ServerlessAwsLambda",
             "AzureWebApp",
             "CustomDeployment",
-            "ECS"
+            "ECS",
+            "Elastigroup"
           ]
         }
       },
@@ -8696,6 +8986,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/EcsServiceSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Elastigroup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupServiceSpec"
               }
             }
           }
@@ -9559,6 +9865,21 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "StartupScriptConfiguration": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "StepElementConfig": {
       "type": "object",
       "required": [
@@ -9916,6 +10237,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/EcsRunTaskStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ElastigroupDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupDeployStepInfo"
               }
             }
           }

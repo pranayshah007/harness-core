@@ -148,7 +148,9 @@ public class ExecutionResource {
       @DefaultValue("false") @QueryParam("includeIndirectExecutions") boolean includeIndirectExecutions,
       @QueryParam("tagFilter") String tagFilter, @QueryParam("withTags") @DefaultValue("false") boolean withTags) {
     // NOTE: Any new filters added here should also be added in ExportExecutionsResource.
+    workflowExecutionOptimizationHelper.enforceAppIdFromChildrenEntities(pageRequest, accountId);
     workflowExecutionTimeFilterHelper.updatePageRequestForTimeFilter(pageRequest, accountId);
+
     List<String> authorizedAppIds;
     if (isNotEmpty(appIds)) {
       authorizedAppIds = appIds;
@@ -193,10 +195,6 @@ public class ExecutionResource {
     pageRequest.setOptions(options);
     // We will ask for one more than limit, and if its not exactly one more, we know we are at the end of the list.
     pageRequest.setLimit(Integer.toString(Integer.parseInt(pageRequest.getLimit()) + 1));
-
-    if (featureFlagService.isEnabled(FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING, accountId)) {
-      workflowExecutionOptimizationHelper.enforceAppIdFromChildrenEntities(pageRequest);
-    }
 
     PageResponse<WorkflowExecution> workflowExecutions =
         workflowExecutionService.listExecutions(pageRequest, includeGraph, true, true, false, true);
@@ -357,7 +355,7 @@ public class ExecutionResource {
     notNullCheck("No Workflow Execution exist for Id: " + workflowExecutionId, workflowExecution);
     deploymentAuthHandler.authorizeRollback(appId, workflowExecution);
     WorkflowExecution rollbackWorkflowExecution =
-        workflowExecutionService.triggerRollbackExecutionWorkflow(appId, workflowExecution);
+        workflowExecutionService.triggerRollbackExecutionWorkflow(appId, workflowExecution, false);
     rollbackWorkflowExecution.setStateMachine(null);
     return new RestResponse<>(rollbackWorkflowExecution);
   }
@@ -395,10 +393,16 @@ public class ExecutionResource {
       @PathParam("workflowExecutionId") String workflowExecutionId, ExecutionInterrupt executionInterrupt) {
     executionInterrupt.setAppId(appId);
     executionInterrupt.setExecutionUuid(workflowExecutionId);
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getExecutionDetailsWithoutGraph(appId, workflowExecutionId);
     if (ExecutionInterruptType.ROLLBACK.equals(executionInterrupt.getExecutionInterruptType())
         || ExecutionInterruptType.ROLLBACK_PROVISIONER_AFTER_PHASES.equals(
             executionInterrupt.getExecutionInterruptType())) {
       deploymentAuthHandler.authorizeRollback(appId, workflowExecutionId);
+    } else if ((ExecutionInterruptType.ABORT_ALL.equals(executionInterrupt.getExecutionInterruptType())
+                   || ExecutionInterruptType.ABORT.equals(executionInterrupt.getExecutionInterruptType()))
+        && workflowExecution.getWorkflowType().equals(WorkflowType.ORCHESTRATION)) {
+      deploymentAuthHandler.authorizeAbortWorkflow(appId, workflowExecution);
     } else {
       deploymentAuthHandler.authorize(appId, workflowExecutionId);
     }

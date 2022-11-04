@@ -16,6 +16,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.remote.client.CGRestUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.net.URL;
@@ -40,7 +41,8 @@ public class PipelineExpressionHelper {
         moduleName, orgId, projectId, ambiance.getMetadata().getPipelineIdentifier());
   }
 
-  private String getModuleName(Ambiance ambiance) {
+  @VisibleForTesting
+  String getModuleName(Ambiance ambiance) {
     String moduleName = "cd";
 
     if (!EmptyPredicate.isEmpty(ambiance.getMetadata().getModuleType())) {
@@ -81,7 +83,8 @@ public class PipelineExpressionHelper {
     return EmptyPredicate.isEmpty(moduleName) ? defaultValue : moduleName;
   }
 
-  private static String getBaseUrl(String defaultBaseUrl, String vanityUrl) {
+  @VisibleForTesting
+  static String getBaseUrl(String defaultBaseUrl, String vanityUrl) {
     // e.g Prod Default Base URL - 'https://app.harness.io/ng/#'
     if (EmptyPredicate.isEmpty(vanityUrl)) {
       return defaultBaseUrl;
@@ -100,7 +103,8 @@ public class PipelineExpressionHelper {
     }
   }
 
-  private String getVanityUrl(String accountIdentifier) {
+  @VisibleForTesting
+  String getVanityUrl(String accountIdentifier) {
     return CGRestUtils.getResponse(accountClient.getVanityUrl(accountIdentifier));
   }
 }

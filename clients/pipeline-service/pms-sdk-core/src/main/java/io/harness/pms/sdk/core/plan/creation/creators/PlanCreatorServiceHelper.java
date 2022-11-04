@@ -30,11 +30,14 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class PlanCreatorServiceHelper {
-  public Optional<PartialPlanCreator<?>> findPlanCreator(List<PartialPlanCreator<?>> planCreators, YamlField field) {
+  public Optional<PartialPlanCreator<?>> findPlanCreator(
+      List<PartialPlanCreator<?>> planCreators, YamlField field, String yamlVersion) {
     return planCreators.stream()
         .filter(planCreator -> {
           Map<String, Set<String>> supportedTypes = planCreator.getSupportedTypes();
-          return PlanCreatorUtils.supportsField(supportedTypes, field);
+          Set<String> supportedVersions = planCreator.getSupportedYamlVersions();
+          return supportedVersions.contains(yamlVersion)
+              && PlanCreatorUtils.supportsField(supportedTypes, field, yamlVersion);
         })
         .findFirst();
   }

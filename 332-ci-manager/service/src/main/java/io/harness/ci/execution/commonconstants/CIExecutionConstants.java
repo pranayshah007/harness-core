@@ -151,6 +151,8 @@ public class CIExecutionConstants {
   // All FFs go here
   public static final String HARNESS_CI_INDIRECT_LOG_UPLOAD_FF = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF";
 
+  public static final String HARNESS_LE_STATUS_REST_ENABLED = "HARNESS_LE_STATUS_REST_ENABLED";
+
   // Deprecated
   public static final List<String> SH_COMMAND = Collections.unmodifiableList(Arrays.asList("sh", "-c", "--"));
   public static final List<String> PWSH_COMMAND = Collections.unmodifiableList(Arrays.asList("pwsh", "-Command"));
@@ -167,4 +169,9 @@ public class CIExecutionConstants {
 
   public static final String MEMORY = "MEMORY";
   public static final String CPU = "CPU";
+
+  // build multiplier values
+  public static final Double MACOS_BUILD_MULTIPLIER = 10.0;
+  public static final Double WINDOWS_BUILD_MULTIPLIER = 2.0;
+  public static final Double DEFAULT_BUILD_MULTIPLIER = 1.0;
 }

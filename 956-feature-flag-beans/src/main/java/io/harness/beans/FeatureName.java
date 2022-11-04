@@ -20,6 +20,7 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   SPG_NG_GITHUB_WEBHOOK_AUTHENTICATION("Enables authentication for GitHub webhook triggers in NG", HarnessTeam.SPG),
+  SPG_ALLOW_DISABLE_TRIGGERS("Allow disabling triggers at application level for CG", HarnessTeam.SPG),
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
       "Flag to support deployment freeze exclusions. Depends on NEW_DEPLOYMENT_FREEZE", HarnessTeam.SPG),
   SPG_ENABLE_EMAIL_VALIDATION("Enable email validation in GraphQL approveOrRejectApprovals mutation", HarnessTeam.SPG),
@@ -35,9 +36,7 @@ public enum FeatureName {
   ARTIFACT_STREAM_DELEGATE_SCOPING,
   ARTIFACT_STREAM_DELEGATE_TIMEOUT,
   AUTO_ACCEPT_SAML_ACCOUNT_INVITES,
-  AZURE_VMSS,
   AZURE_WEBAPP,
-  AUDIT_TRAIL_ENHANCEMENT,
   BIND_FETCH_FILES_TASK_TO_DELEGATE,
   CCM_SUSTAINABILITY("Sustainability Feature in CCM Module", HarnessTeam.CE),
   CDNG_ENABLED,
@@ -51,11 +50,12 @@ public enum FeatureName {
   CF_ROLLBACK_CONFIG_FILTER,
   CING_ENABLED,
   CI_INDIRECT_LOG_UPLOAD,
+  CI_LE_STATUS_REST_ENABLED(
+      "Used for sending step status for CI via REST APIs instead of gRPC from Lite Engine to manager", HarnessTeam.CI),
   CUSTOM_APM_24_X_7_CV_TASK,
   CUSTOM_APM_CV_TASK,
   CUSTOM_DASHBOARD,
   CUSTOM_DEPLOYMENT_ARTIFACT_FROM_INSTANCE_JSON,
-  NG_DEPLOYMENT_TEMPLATE,
   CUSTOM_MAX_PAGE_SIZE,
   EXTRA_LARGE_PAGE_SIZE,
   CVNG_ENABLED,
@@ -93,16 +93,13 @@ public enum FeatureName {
   GCP_WORKLOAD_IDENTITY,
   GIT_HOST_CONNECTIVITY,
   GLOBAL_COMMAND_LIBRARY,
-  GLOBAL_CV_DASH,
   GLOBAL_DISABLE_HEALTH_CHECK(Scope.GLOBAL),
   GRAPHQL_DEV,
   HARNESS_TAGS,
   HELM_CHART_AS_ARTIFACT,
-  HELM_STEADY_STATE_CHECK_1_16,
   HELM_CHART_NAME_SPLIT,
   HELM_MERGE_CAPABILITIES("Add helm merge capabilities", HarnessTeam.CDP),
   INLINE_SSH_COMMAND,
-  IGNORE_PCF_CONNECTION_CONTEXT_CACHE,
   LIMIT_PCF_THREADS,
   OPA_FF_GOVERNANCE,
   OPA_GIT_GOVERNANCE,
@@ -130,7 +127,6 @@ public enum FeatureName {
   REJECT_TRIGGER_IF_ARTIFACTS_NOT_MATCH,
   ROLLBACK_NONE_ARTIFACT,
   SEARCH_REQUEST,
-  SEND_LOG_ANALYSIS_COMPRESSED,
   SEND_SLACK_NOTIFICATION_FROM_DELEGATE,
   SIDE_NAVIGATION,
   SKIP_SWITCH_ACCOUNT_REAUTHENTICATION,
@@ -181,7 +177,6 @@ public enum FeatureName {
   ENHANCED_GCR_CONNECTIVITY_CHECK,
   USE_TF_CLIENT,
   GITHUB_WEBHOOK_AUTHENTICATION,
-  NG_SIGNUP(Scope.GLOBAL),
   NG_LICENSES_ENABLED,
   ECS_BG_DOWNSIZE,
   LIMITED_ACCESS_FOR_HARNESS_USER_GROUP,
@@ -189,7 +184,6 @@ public enum FeatureName {
   CI_OVERVIEW_PAGE("UI flag to show CI overview page", HarnessTeam.CI),
   SKIP_BASED_ON_STACK_STATUSES,
   WF_VAR_MULTI_SELECT_ALLOWED_VALUES,
-  LDAP_GROUP_SYNC_JOB_ITERATOR,
   CF_CLI7,
   CF_APP_NON_VERSIONING_INACTIVE_ROLLBACK,
   CF_ALLOW_SPECIAL_CHARACTERS,
@@ -216,7 +210,6 @@ public enum FeatureName {
   CVNG_VERIFY_STEP_LOGS_UI_V2,
   MANIFEST_INHERIT_FROM_CANARY_TO_PRIMARY_PHASE,
   USE_LATEST_CHARTMUSEUM_VERSION,
-  KUBERNETES_EXPORT_MANIFESTS,
   NEW_KUSTOMIZE_BINARY,
   KUSTOMIZE_PATCHES_CG,
   SSH_JSCH_LOGS,
@@ -235,15 +228,14 @@ public enum FeatureName {
   TERRAFORM_AWS_CP_AUTHENTICATION,
   CI_DOCKER_INFRASTRUCTURE,
   CI_TESTTAB_NAVIGATION,
+  CI_DISABLE_GIT_SAFEDIR,
   OPTIMIZED_TF_PLAN,
   SELF_SERVICE_ENABLED,
   CHI_CUSTOM_HEALTH,
   CHI_CUSTOM_HEALTH_LOGS,
-  AZURE_SAML_150_GROUPS_SUPPORT,
   CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES,
   CLOUDFORMATION_CHANGE_SET,
   FAIL_WORKFLOW_IF_SECRET_DECRYPTION_FAILS,
-  ERROR_TRACKING_ENABLED,
   DEPLOY_TO_INLINE_HOSTS,
   HONOR_DELEGATE_SCOPING,
   CG_LICENSE_USAGE,
@@ -315,7 +307,6 @@ public enum FeatureName {
   ENABLE_DEFAULT_TIMEFRAME_IN_DEPLOYMENTS,
   EXPORT_TF_PLAN_JSON_NG,
   ADD_MANIFEST_COLLECTION_STEP,
-  NG_FILE_STORE,
   ACCOUNT_BASIC_ROLE,
   CVNG_TEMPLATE_MONITORED_SERVICE,
   CVNG_TEMPLATE_VERIFY_STEP,
@@ -370,7 +361,7 @@ public enum FeatureName {
       HarnessTeam.SPG),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   CD_ONBOARDING_ENABLED,
-  ECS_NG,
+  SPOT_ELASTIGROUP_NG("Enables Spot Elastigroup implementation on NG", HarnessTeam.CDP),
   ATTRIBUTE_TYPE_ACL_ENABLED("Enable attribute filter on NG UI for ACL", HarnessTeam.PL),
   CREATE_DEFAULT_PROJECT("Enables auto create default project after user signup", HarnessTeam.GTM),
   ANALYSE_TF_PLAN_SUMMARY(
@@ -396,13 +387,11 @@ public enum FeatureName {
   SORT_ARTIFACTS_IN_UPDATED_ORDER("Sort the collected artifacts by lastUpdatedAt", HarnessTeam.SPG),
   ENABLE_CHECK_STATE_EXECUTION_STARTING(
       "Used to allow create retry state execution when event is status equals to STARTING", HarnessTeam.SPG),
-  NG_DEFAULT_K8S_MANIFESTS("Sample k8s manifests at account level file store", HarnessTeam.CDP, Scope.GLOBAL),
   CI_TI_DASHBOARDS_ENABLED,
   SERVICE_ID_FILTER_FOR_TRIGGERS(
       "Filter last deployed artifacts for triggers using serviceId as well", HarnessTeam.SPG),
   PERSIST_MONITORED_SERVICE_TEMPLATE_STEP(
       "Enables saving of monitored service created during template verify step", HarnessTeam.CV),
-  FIX_CORRUPTED_INSTANCES("Used to fix instances mapped to old/wrong infrastructure mapping", HarnessTeam.CDP),
   VALIDATE_PHASES_AND_ROLLBACK("Validate that each phase has your own rollback phase", HarnessTeam.SPG),
   OPTIMIZED_TF_PLAN_NG(
       "Enables uploading Terraform plan to GCS/MongoGridFS instead of saving to sweeping output", HarnessTeam.CDP),
@@ -415,6 +404,7 @@ public enum FeatureName {
   UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
   ELK_HEALTH_SOURCE("Will enable ELK health source in SRM", HarnessTeam.CV),
   SERVICE_LEVEL_OBJECTIVE_V2("Enable Service Level Objectives V2 in SRM", HarnessTeam.CV, Scope.GLOBAL),
+  SRM_COMPOSITE_SLO("Flag to start creating composite SLOs", HarnessTeam.CV),
   WAIT_STEP(
       "Automatically pause a pipeline execution for a specific amount of time, after time expires the pipeline proceeds and eventually completes",
       HarnessTeam.PIPELINE),
@@ -425,6 +415,8 @@ public enum FeatureName {
       "merge context elements workflow variables while resuming pipeline from a stage", HarnessTeam.SPG),
   USE_TEXT_SEARCH_FOR_EXECUTION(
       "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG),
+  AZURE_WEBAPP_NG_JENKINS_ARTIFACTS(
+      "FF to enable Jenkins as an artifact source option for Azure Web App NG", HarnessTeam.CDP),
   DEL_EVALUATE_SECRET_EXPRESSION_SYNC(
       "FF to disable asynchronous evaluation of secrets. With FF set to true and pipeline has more than one secret, they will get evaluate one after other",
       HarnessTeam.DEL),
@@ -454,8 +446,10 @@ public enum FeatureName {
       "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
   CD_SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
-  PL_CONNECTOR_ENCRYPTION_PRIVILEGED_CALL("make the encryption/decryption call as pirvileged call", HarnessTeam.PL),
+  SRM_HOST_SAMPLING_ENABLE("Enables Host Sampling feature for Learning Engine.", HarnessTeam.CV),
   CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS),
+  SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
+  PL_CONNECTOR_ENCRYPTION_PRIVILEGED_CALL("make the encryption/decryption call as pirvileged call", HarnessTeam.PL),
   SPG_DASHBOARD_STATS_OPTIMIZE_DEPLOYMENTS(
       "Dashboard stats slow api call optimization. Also solves MOM issue in CG.", HarnessTeam.SPG),
   SPG_DASHBOARD_STATS_OPTIMIZE_ACTIVE_SERVICES(
@@ -464,8 +458,27 @@ public enum FeatureName {
   TI_MFE_ENABLED("Migrating TI UI to Microfrontend. This feature flag is needed to test/control the new architecture",
       HarnessTeam.CI),
   CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI),
-  USE_INSTANCES_PURGE_ITERATOR_FW(
-      "Switch to use iterator fw instead of quartz scheduler for InstancesPurgeJob", HarnessTeam.CDP);
+  SPG_ENFORCE_TIME_RANGE_DEPLOYMENTS_WITHOUT_APP_ID(
+      "This feature flag enforces maximum time range for workflow execution queries without appId", HarnessTeam.SPG),
+  SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS(
+      "Gradually reducing the amount of keywords being stored on workflow executions", HarnessTeam.SPG),
+  SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR(
+      "This feature flag helps in synchronizing the git clone of repo and copying the files then to destination directory",
+      HarnessTeam.CDP),
+  ECS_ROLLBACK_MAX_DESIRED_COUNT("Changes ECS Rollback Desired Count to Max(OldService, NewService)", HarnessTeam.CDP),
+  CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI),
+  SRM_ET_EXPERIMENTAL("Feature flag for SRM only Error Tracking development", HarnessTeam.CV),
+  SRM_ENABLE_HEALTHSOURCE_AWS_PROMETHEUS("UI FF to enable AWS Managed Prometheus healthsource", HarnessTeam.CV),
+  DEL_SECRET_EVALUATION_VERBOSE_LOGGING(
+      "FF to enable verbose logging for the manager process when secret gets evaluated", HarnessTeam.DEL),
+  CI_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CI UI", HarnessTeam.CI),
+  CF_ROLLBACK_CUSTOM_STACK_NAME(
+      "Use custom stack name and region to find lates successful couldformation rollback data", HarnessTeam.CDP),
+  AZURE_WEB_APP_NG_NEXUS_PACKAGE("Enable support for Nexus package artifact in Azure Web App NG", HarnessTeam.CDP),
+  USE_GET_FILE_V2_GIT_CALL(
+      "FF for customers on updated delegate to use GetFileV2 call which is more performance efficient",
+      HarnessTeam.PIPELINE),
+  ;
 
   @Deprecated
   FeatureName() {

@@ -15,6 +15,7 @@ import io.harness.git.model.ChangeType;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.pipeline.ClonePipelineDTO;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
+import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.StepCategory;
@@ -74,4 +75,8 @@ public interface PMSPipelineService {
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 
   PipelineEntity updateGitFilePath(PipelineEntity pipelineEntity, String newFilePath);
+
+  String pipelineVersion(String accountId, String yaml);
+
+  PMSPipelineListRepoResponse getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

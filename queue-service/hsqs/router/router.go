@@ -16,11 +16,12 @@ import (
 	"strings"
 )
 
-var envConfig config.Config
+var secret string
 
 func New(config *config.Config) *echo.Echo {
 	e := echo.New()
 	lvl := log.INFO
+	secret = config.Secret
 	envConfig := config
 	if envConfig.Debug {
 		lvl = log.DEBUG
@@ -49,7 +50,7 @@ func getParseTokenFunc(token string, c echo.Context) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(envConfig.Secret), nil
+		return []byte(secret), nil
 	})
 
 	if err != nil {
@@ -71,6 +72,8 @@ func getParseTokenFunc(token string, c echo.Context) (interface{}, error) {
 // skip swagger url's from JWT Auth
 func skipperFunc(c echo.Context) bool {
 	if strings.Contains(c.Request().URL.Path, "swagger") {
+		return true
+	} else if strings.Contains(c.Request().URL.Path, "healthz") {
 		return true
 	}
 	return false

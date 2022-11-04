@@ -19,6 +19,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
@@ -27,8 +28,8 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
   ServiceLevelObjectiveV2Response create(
       ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO);
 
-  ServiceLevelObjectiveV2Response update(ProjectParams projectParams, String identifier,
-      ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO, List<String> serviceLevelIndicators);
+  ServiceLevelObjectiveV2Response update(
+      ProjectParams projectParams, String identifier, ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO);
 
   AbstractServiceLevelObjective getEntity(ProjectParams projectParams, String identifier);
 
@@ -56,13 +57,14 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
       ProjectParams projectParams, String identifier, SLILogsFilter sliLogsFilter, PageParams pageParams);
 
   PageResponse<AbstractServiceLevelObjective> getSLOForListView(
-      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName);
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
 
-  AbstractServiceLevelObjective getFromSLIIdentifier(
-      ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
+  SimpleServiceLevelObjective getFromSLIIdentifier(ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
 
   PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String sloIdentifier, PageParams pageParams);
 
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
+
+  AbstractServiceLevelObjective get(String sloId);
 }

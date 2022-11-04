@@ -55,6 +55,8 @@ public interface YamlTypes {
   String SERVERLESS_AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK;
   String COMMAND = StepSpecTypeConstants.COMMAND;
 
+  String ELASTIGROUP_DEPLOY = StepSpecTypeConstants.ELASTIGROUP_DEPLOY;
+
   String ECS_ROLLING_DEPLOY = StepSpecTypeConstants.ECS_ROLLING_DEPLOY;
   String ECS_ROLLING_ROLLBACK = StepSpecTypeConstants.ECS_ROLLING_ROLLBACK;
   String ECS_CANARY_DEPLOY = StepSpecTypeConstants.ECS_CANARY_DEPLOY;
@@ -89,6 +91,7 @@ public interface YamlTypes {
   String STAGE_OVERRIDES_CONFIG = "stageOverrides";
   String PATH_CONNECTOR = VisitorParentPathUtils.PATH_CONNECTOR;
   String CONNECTOR_REF = "connectorRef";
+  String CONFIGURATION = "configuration";
   String TAG = "tag";
   String TAG_REGEX = "tagRegex";
   String IMAGE_PATH = "imagePath";
@@ -148,6 +151,7 @@ public interface YamlTypes {
   String STARTUP_COMMAND = "startupCommand";
 
   String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
+  String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
 
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";

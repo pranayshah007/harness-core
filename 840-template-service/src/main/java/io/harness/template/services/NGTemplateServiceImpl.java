@@ -52,8 +52,10 @@ import io.harness.grpc.utils.StringValueUtils;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.project.remote.ProjectClient;
 import io.harness.repositories.NGTemplateRepository;
@@ -63,8 +65,6 @@ import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateImportRequestDTO;
-import io.harness.template.beans.TemplateResponseDTO;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -333,6 +333,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                                             .withTags(templateEntity.getTags())
                                             .withOrgIdentifier(templateEntity.getOrgIdentifier())
                                             .withProjectIdentifier(templateEntity.getProjectIdentifier())
+                                            .withIcon(templateEntity.getIcon())
                                             .withFullyQualifiedIdentifier(templateEntity.getFullyQualifiedIdentifier())
                                             .withLastUpdatedTemplate(updateLastUpdatedTemplateFlag)
                                             .withIsEntityInvalid(false);
@@ -559,7 +560,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       isEntityReferenced =
           execute(entitySetupUsageClient.isEntityReferenced(accountId, referredEntityFQN, EntityType.TEMPLATE));
     } catch (Exception ex) {
-      log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception",
+      log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception.",
           templateId, ex);
       throw new UnexpectedException(
           String.format("Error while checking references for template %s with version label: %s : %s", templateId,

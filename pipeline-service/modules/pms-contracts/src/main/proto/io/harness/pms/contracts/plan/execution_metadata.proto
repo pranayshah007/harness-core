@@ -12,7 +12,7 @@ option java_multiple_files = true;
 import "io/harness/pms/contracts/plan/trigger_info.proto";
 import "io/harness/pms/contracts/plan/principal_info.proto";
 
-// next ID: 16
+// next ID: 18
 message ExecutionMetadata {
   int32 runSequence = 1;
   ExecutionTriggerInfo triggerInfo = 2;
@@ -25,12 +25,23 @@ message ExecutionMetadata {
   bool isNotificationConfigured = 13;
   PipelineStoreType pipelineStoreType = 14;
   string pipelineConnectorRef = 15;
+  PipelineStageInfo pipelineStageInfo = 16;
+  string harnessVersion = 17;
 }
 
 message RetryExecutionInfo {
   bool isRetry = 1;
   string rootExecutionId = 2;
   string parentRetryId = 3;
+}
+
+message PipelineStageInfo {
+  bool hasParentPipeline = 1;
+  string stageNodeExecutionId = 2;
+  string executionId = 3;
+  string identifier = 4;
+  string projectId = 5;
+  string orgId = 6;
 }
 
 enum PipelineStoreType {

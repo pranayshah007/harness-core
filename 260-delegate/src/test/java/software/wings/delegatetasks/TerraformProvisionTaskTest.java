@@ -31,6 +31,7 @@ import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -54,6 +55,7 @@ import io.harness.delegate.task.terraform.TerraformBaseHelperImpl;
 import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.filesystem.FileIo;
+import io.harness.logging.LogCallback;
 import io.harness.provision.TerraformPlanSummary;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -106,11 +108,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.zeroturnaround.exec.stream.LogOutputStream;
+import wiremock.org.apache.commons.io.FileUtils;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
 @RunWith(JUnitParamsRunner.class)
 public class TerraformProvisionTaskTest extends WingsBaseTest {
+  @Mock private LogCallback logCallback;
   @Mock private EncryptionService mockEncryptionService;
   @Mock private GitClient gitClient;
   @Mock private DelegateLogService logService;
@@ -183,6 +187,14 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
 
     sourceRepoEncryptionDetails = new ArrayList<>();
     sourceRepoEncryptionDetails.add(EncryptedDataDetail.builder().build());
+
+    doAnswer(invocation -> {
+      String dest = invocation.getArgument(1);
+      FileUtils.copyDirectory(new File(GIT_REPO_DIRECTORY), new File(dest));
+      return null;
+    })
+        .when(gitClient)
+        .cloneRepoAndCopyToDestDir(any(GitOperationContext.class), anyString(), any(LogCallback.class));
 
     doReturn(GIT_REPO_DIRECTORY).when(gitClientHelper).getRepoDirectory(any(GitOperationContext.class));
 
@@ -433,7 +445,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
   }
 
   /**
-   *  should not skip refresh since not using approved plan
+   * should not skip refresh since not using approved plan
    */
   @Test
   @Owner(developers = OwnerRule.YOGESH)
@@ -509,7 +521,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
   }
 
   /**
-   *  should not skip refresh since not using approved plan
+   * should not skip refresh since not using approved plan
    */
   @Test
   @Owner(developers = OwnerRule.YOGESH)
@@ -937,7 +949,8 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
         .useOptimizedTfPlanJson(useOptimizedTfPlan)
         .skipRefreshBeforeApplyingPlan(skipRefresh)
         .secretManagerConfig(KmsConfig.builder().name("config").uuid("uuid").build())
-        .analyseTfPlanSummary(shouldAnalyseTfPlanSummary);
+        .analyseTfPlanSummary(shouldAnalyseTfPlanSummary)
+        .syncGitCloneAndCopyToDestDir(false);
   }
 
   @Test

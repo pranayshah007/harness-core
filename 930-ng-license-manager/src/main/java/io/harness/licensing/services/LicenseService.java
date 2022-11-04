@@ -13,6 +13,7 @@ import io.harness.licensing.beans.EditionActionDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
 import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
+import io.harness.licensing.beans.modules.SMPValidationResultDTO;
 import io.harness.licensing.beans.modules.StartTrialDTO;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
@@ -22,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 public interface LicenseService extends LicenseCrudService {
-  ModuleLicenseDTO startFreeLicense(String accountIdentifier, ModuleType moduleType, String referer);
+  ModuleLicenseDTO startFreeLicense(String accountIdentifier, ModuleType moduleType, String referer, String gaClientId);
 
   ModuleLicenseDTO startCommunityLicense(String accountIdentifier, ModuleType moduleType);
 
@@ -43,6 +44,8 @@ public interface LicenseService extends LicenseCrudService {
   Map<ModuleType, Long> getLastUpdatedAtMap(String accountIdentifier);
 
   List<ModuleLicenseDTO> getAllModuleLicences(String accountIdentifier);
+
+  SMPValidationResultDTO validateSMPLicense(SMPEncLicenseDTO licenseDTO);
 
   SMPEncLicenseDTO generateSMPLicense(String accountId, SMPLicenseRequestDTO licenseRequest);
 }

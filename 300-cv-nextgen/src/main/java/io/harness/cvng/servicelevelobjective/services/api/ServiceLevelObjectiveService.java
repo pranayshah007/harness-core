@@ -48,7 +48,7 @@ public interface ServiceLevelObjectiveService extends DeleteEntityByHandler<Serv
   PageResponse<ServiceLevelObjectiveResponse> getSLOForDashboard(
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
   PageResponse<ServiceLevelObjective> getSLOForListView(
-      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName);
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
 
   ServiceLevelObjective getFromSLIIdentifier(ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
   Map<ServiceLevelObjective, SLOGraphData> getSLOGraphData(List<ServiceLevelObjective> serviceLevelObjectiveList);

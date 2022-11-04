@@ -84,6 +84,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
     handler = "PipelineExecutionSummaryEntityCD")
 @ChangeDataCapture(table = "service_infra_info", dataStore = "pms-harness", fields = {},
     handler = "PipelineExecutionSummaryEntityServiceAndInfra")
+@ChangeDataCapture(table = "stage_execution_summary_ci", dataStore = "pms-harness", fields = {},
+    handler = "PipelineExecutionSummaryEntityCIStage")
 public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
   public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;
@@ -180,11 +182,13 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .field(PlanExecutionSummaryKeys.planExecutionId)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_organizationId_projectId_pipelineId")
+                 .name("accountId_organizationId_projectId_pipelineId_branch_repo")
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.orgIdentifier)
                  .field(PlanExecutionSummaryKeys.projectIdentifier)
                  .field(PlanExecutionSummaryKeys.pipelineIdentifier)
+                 .field(PlanExecutionSummaryKeys.entityGitDetailsBranch)
+                 .field(PlanExecutionSummaryKeys.entityGitDetailsRepoName)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_organizationId_projectId_createdAt_idx")
@@ -220,6 +224,44 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .field(PlanExecutionSummaryKeys.rootExecutionId)
                  .descSortField(PlanExecutionSummaryKeys.createdAt)
                  .build())
+        // Sort queries are added for list page
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_startTs_modules_isLatestExecution_idx")
+                 .field(PlanExecutionSummaryKeys.accountId)
+                 .field(PlanExecutionSummaryKeys.orgIdentifier)
+                 .field(PlanExecutionSummaryKeys.projectIdentifier)
+                 .descSortField(PlanExecutionSummaryKeys.startTs)
+                 .field(PlanExecutionSummaryKeys.modules)
+                 .field(PlanExecutionSummaryKeys.isLatestExecution)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_name_modules_isLatestExecution_idx")
+                 .field(PlanExecutionSummaryKeys.accountId)
+                 .field(PlanExecutionSummaryKeys.orgIdentifier)
+                 .field(PlanExecutionSummaryKeys.projectIdentifier)
+                 .descSortField(PlanExecutionSummaryKeys.name)
+                 .field(PlanExecutionSummaryKeys.modules)
+                 .field(PlanExecutionSummaryKeys.isLatestExecution)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_status_modules_isLatestExecution_idx")
+                 .field(PlanExecutionSummaryKeys.accountId)
+                 .field(PlanExecutionSummaryKeys.orgIdentifier)
+                 .field(PlanExecutionSummaryKeys.projectIdentifier)
+                 .descSortField(PlanExecutionSummaryKeys.status)
+                 .field(PlanExecutionSummaryKeys.modules)
+                 .field(PlanExecutionSummaryKeys.isLatestExecution)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_startTs_status_modules_isLatestExecution_idx")
+                 .field(PlanExecutionSummaryKeys.accountId)
+                 .field(PlanExecutionSummaryKeys.orgIdentifier)
+                 .field(PlanExecutionSummaryKeys.projectIdentifier)
+                 .descSortField(PlanExecutionSummaryKeys.startTs)
+                 .field(PlanExecutionSummaryKeys.status)
+                 .field(PlanExecutionSummaryKeys.modules)
+                 .field(PlanExecutionSummaryKeys.isLatestExecution)
+                 .build())
         .build();
   }
 
@@ -233,6 +275,10 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         + "rootExecutionId";
     public String parentExecutionId = PlanExecutionSummaryKeys.retryExecutionMetadata + "."
         + "parentExecutionId";
+    public String entityGitDetailsRepoName = PlanExecutionSummaryKeys.entityGitDetails + "."
+        + "repoName";
+    public String entityGitDetailsBranch = PlanExecutionSummaryKeys.entityGitDetails + "."
+        + "branch";
   }
 
   public boolean isStagesExecutionAllowed() {

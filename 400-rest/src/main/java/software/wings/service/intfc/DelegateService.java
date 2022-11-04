@@ -36,6 +36,8 @@ import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.beans.FileBucket;
+import io.harness.delegate.utilities.DelegateDeleteResponse;
+import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.validation.Create;
 
@@ -127,13 +129,16 @@ public interface DelegateService extends OwnedByAccount {
       String hostname, String delegateGroupName, String delegateProfile, String tokenName) throws IOException;
   Delegate add(Delegate delegate);
 
-  void delete(String accountId, String delegateId);
+  DelegateDeleteResponse delete(String accountId, String delegateId);
 
   void retainOnlySelectedDelegatesAndDeleteRest(String accountId, List<String> delegatesToRetain);
 
   void deleteDelegateGroup(String accountId, String delegateGroupId);
 
   void deleteDelegateGroupV2(String accountId, String orgId, String projectId, String identifier);
+
+  DelegateGroupDeleteResponse deleteDelegateGroupV3(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String groupIdentifier);
 
   DelegateRegisterResponse register(@Valid Delegate delegate);
 
@@ -163,6 +168,8 @@ public interface DelegateService extends OwnedByAccount {
 
   List<String> obtainDelegateIdsUsingName(String accountId, String delegateName);
 
+  List<Delegate> obtainDelegatesUsingName(String accountId, String delegateName);
+
   boolean filter(String accountId, String delegateId);
 
   Delegate updateHeartbeatForDelegateWithPollingEnabled(Delegate delegate);
@@ -178,19 +185,19 @@ public interface DelegateService extends OwnedByAccount {
 
   void delegateDisconnected(String accountId, String delegateId, String delegateConnectionId);
 
+  void onDelegateDisconnected(String accountId, String delegateId);
+
   void deleteAllDelegatesExceptOne(String accountId, long shutdownInterval);
 
   CEDelegateStatus validateCEDelegate(String accountId, String delegateName);
 
   List<DelegateSizeDetails> fetchAvailableSizes();
 
-  List<String> getConnectedDelegates(String accountId, List<String> delegateIds);
+  List<Delegate> getConnectedDelegates(String accountId, List<Delegate> delegateIds);
 
   List<DelegateInitializationDetails> obtainDelegateInitializationDetails(String accountID, List<String> delegateIds);
 
   DelegateGroup upsertDelegateGroup(String name, String accountId, DelegateSetupDetails delegateSetupDetails);
-
-  boolean sampleDelegateExists(String accountId);
 
   List<Delegate> getNonDeletedDelegatesForAccount(String accountId);
 

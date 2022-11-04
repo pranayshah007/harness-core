@@ -12,6 +12,8 @@ public class FeatureFlagNames {
 
   public static final String CVNG_LICENSE_ENFORCEMENT = "CVNG_LICENSE_ENFORCEMENT";
 
+  public static final String SRM_HOST_SAMPLING_ENABLE = "SRM_HOST_SAMPLING_ENABLE";
+
   public static final String PERSIST_MONITORED_SERVICE_TEMPLATE_STEP = "PERSIST_MONITORED_SERVICE_TEMPLATE_STEP";
 
   public static final String CVNG_SLO_DISABLE_ENABLE = "CVNG_SLO_DISABLE_ENABLE";
@@ -19,4 +21,6 @@ public class FeatureFlagNames {
   public static final String ELK_HEALTH_SOURCE = "ELK_HEALTH_SOURCE";
 
   public static final String SERVICE_LEVEL_OBJECTIVE_V2 = "SERVICE_LEVEL_OBJECTIVE_V2";
+
+  public static final String SRM_COMPOSITE_SLO = "SRM_COMPOSITE_SLO";
 }

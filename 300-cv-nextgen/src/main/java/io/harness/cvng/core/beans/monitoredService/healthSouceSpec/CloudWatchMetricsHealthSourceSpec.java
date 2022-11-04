@@ -22,6 +22,7 @@ import io.harness.cvng.utils.CloudWatchUtils;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -47,10 +49,12 @@ import org.apache.commons.lang3.StringUtils;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "CloudWatchMetricsHealthSource",
+    description = "This is the Cloud Watch Metric Health Source spec entity defined in Harness", hidden = true)
 public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
-  @NotBlank String region;
-  @NotBlank String feature;
-  @Valid Set<TimeSeriesMetricPackDTO> metricThresholds;
+  @NotNull @NotBlank String region;
+  @NotNull @NotBlank String feature;
+  @Valid Set<TimeSeriesMetricPackDTO> metricPacks;
   @Valid @UniqueIdentifierCheck @NotEmpty List<CloudWatchMetricDefinition> metricDefinitions;
 
   @Override
@@ -143,7 +147,7 @@ public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
             .collect(Collectors.toList());
 
     // Add user defined metric thresholds to respective cvConfigs
-    cvConfigs.forEach(cvConfig -> cvConfig.addCustomMetricThresholds(metricThresholds));
+    cvConfigs.forEach(cvConfig -> cvConfig.addCustomMetricThresholds(metricPacks));
 
     cvConfigs.stream()
         .filter(cvConfig -> CollectionUtils.isNotEmpty(cvConfig.getMetricInfos()))
@@ -162,8 +166,8 @@ public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
   @NoArgsConstructor
   @FieldDefaults(level = AccessLevel.PRIVATE)
   public static class CloudWatchMetricDefinition extends HealthSourceMetricDefinition {
-    @NotBlank String groupName;
-    @NotBlank String expression;
+    @NotNull @NotBlank String groupName;
+    @NotNull @NotBlank String expression;
     MetricResponseMapping responseMapping;
   }
 

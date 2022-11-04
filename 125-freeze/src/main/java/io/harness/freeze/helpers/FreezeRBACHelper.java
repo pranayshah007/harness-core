@@ -14,6 +14,7 @@ import io.harness.freeze.beans.EntityConfig;
 import io.harness.freeze.beans.FilterType;
 import io.harness.freeze.beans.FreezeEntityRule;
 import io.harness.freeze.beans.FreezeEntityType;
+import io.harness.freeze.beans.PermissionTypes;
 import io.harness.freeze.beans.yaml.FreezeConfig;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 
@@ -25,6 +26,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 @UtilityClass
 public class FreezeRBACHelper {
+  private static final String DEPLOYMENTFREEZE = "DEPLOYMENTFREEZE";
   public void checkAccess(
       String accountId, String projectId, String orgId, String yaml, AccessControlClient accessControlClient) {
     FreezeConfig freezeConfig = NGFreezeDtoMapper.toFreezeConfig(yaml);
@@ -52,6 +54,14 @@ public class FreezeRBACHelper {
       }
     }
   }
+
+  public boolean checkIfUserHasFreezeOverrideAccess(
+      String accountId, String projectId, String orgId, AccessControlClient accessControlClient) {
+    Resource resource = Resource.of(DEPLOYMENTFREEZE, null);
+    return accessControlClient.hasAccess(
+        ResourceScope.of(accountId, orgId, projectId), resource, PermissionTypes.DEPLOYMENT_FREEZE_OVERRIDE_PERMISSION);
+  }
+
   public Optional<Pair<String, String>> getResourceTypeAndPermission(FreezeEntityType type) {
     Pair<String, String> result = null;
     switch (type) {

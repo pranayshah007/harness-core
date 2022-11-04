@@ -36,6 +36,7 @@ import software.wings.beans.Account;
 import software.wings.beans.Permit;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStream.ArtifactStreamKeys;
+import software.wings.beans.artifact.ArtifactStreamCollectionStatus;
 import software.wings.delegatetasks.buildsource.ArtifactStreamLogContext;
 import software.wings.service.impl.PermitServiceImpl;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
@@ -70,7 +71,7 @@ public class ArtifactCollectionHandler implements Handler<ArtifactStream> {
   @Inject private ArtifactCollectionUtils artifactCollectionUtils;
   @Inject private MorphiaPersistenceRequiredProvider<ArtifactStream> persistenceProvider;
 
-  public void registerIterators(ScheduledThreadPoolExecutor artifactCollectionExecutor) {
+  public void registerIterators(ScheduledThreadPoolExecutor artifactCollectionExecutor, int threadPoolSize) {
     InstrumentedExecutorService instrumentedExecutorService = new InstrumentedExecutorService(
         artifactCollectionExecutor, harnessMetricRegistry.getThreadPoolMetricRegistry(), "Iterator-ArtifactCollection");
     PersistenceIterator iterator = persistenceIteratorFactory.createIterator(ArtifactCollectionHandler.class,
@@ -82,12 +83,16 @@ public class ArtifactCollectionHandler implements Handler<ArtifactStream> {
             .targetInterval(ofMinutes(1))
             .acceptableNoAlertDelay(ofSeconds(30))
             .executorService(instrumentedExecutorService)
-            .semaphore(new Semaphore(25))
+            .semaphore(new Semaphore(threadPoolSize))
             .handler(this)
             .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProvider)
-            .filterExpander(query -> query.field(ArtifactStreamKeys.collectionEnabled).in(Arrays.asList(true, null)))
+            .filterExpander(query
+                -> query.field(ArtifactStreamKeys.collectionEnabled)
+                       .in(Arrays.asList(true, null))
+                       .and(query.criteria(ArtifactStreamKeys.collectionStatus)
+                                .notEqual(ArtifactStreamCollectionStatus.STOPPED)))
             .redistribute(true));
 
     final SecureRandom random = new SecureRandom();
