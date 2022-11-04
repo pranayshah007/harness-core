@@ -7,7 +7,13 @@
 
 package io.harness.ccm.remote.resources.governance;
 
+import com.google.inject.name.Named;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import io.harness.ccm.audittrails.events.PolicyCreateEvent;
+import io.harness.ccm.audittrails.events.PolicyDeleteEvent;
+import io.harness.ccm.audittrails.events.PolicyUpdateEvent;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_DELETE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_UPDATED;
@@ -17,7 +23,9 @@ import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_NAME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import io.harness.outbox.api.OutboxService;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+import io.harness.telemetry.Category;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
@@ -200,14 +208,14 @@ public class GovernancePolicyResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_NAME, policy.getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_CREATED, null, accountId, properties,
-        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_CREATED,null,accountId, properties
+            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(
 
-        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-          outboxService.save(new PolicyCreateEvent(accountId, policy.toDTO()));
-          return governancePolicyService.listName(accountId, policy.getName(), false);
-        })));
+            Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+                      outboxService.save(new PolicyCreateEvent(accountId, policy.toDTO()));
+              return governancePolicyService.listName(accountId, policy.getName(), false);
+            })));
   }
 
   // Update a policy already made
@@ -242,10 +250,10 @@ public class GovernancePolicyResource {
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
     return ResponseDTO.newResponse(
-        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-          outboxService.save(new PolicyUpdateEvent(accountId, policy.toDTO()));
-          return governancePolicyService.update(policy, accountId);
-        })));
+            Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+              outboxService.save(new PolicyUpdateEvent(accountId, policy.toDTO()));
+              return governancePolicyService.update(policy, accountId);
+            })));
   }
 
   @PUT
@@ -324,13 +332,12 @@ public class GovernancePolicyResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_NAME, governancePolicyService.listId(accountId, uuid, false).getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_DELETE, null, accountId, properties,
-        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(
-        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-          outboxService.save(new PolicyDeleteEvent(accountId, governancePolicyService.listId(accountId, uuid, false)));
-          return governancePolicyService.delete(accountId, uuid);
-        })));
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_DELETE,null,accountId, properties
+            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      outboxService.save(new PolicyDeleteEvent(accountId,governancePolicyService.listId(accountId, uuid, false) ));
+      return governancePolicyService.delete(accountId, uuid);
+    })));
   }
 
   // API to list all OOTB Policies
@@ -398,6 +405,12 @@ public class GovernancePolicyResource {
       }
       PolicyCloudProviderType policyCloudProviderType = policyEnforcement.getCloudProvider();
       accountId = policyEnforcement.getAccountId();
+      if (policyEnforcement.getCloudProvider() != PolicyCloudProviderType.AWS) {
+        log.error("Support for non AWS cloud providers is not present atm. Skipping enqueuing in faktory");
+        // TODO: Return simple response to dkron instead of empty for debugging purposes
+        return ResponseDTO.newResponse();
+      }
+
       if (policyEnforcement.getTargetAccounts() == null || policyEnforcement.getTargetAccounts().size() == 0) {
         log.error("For policy enforcement setting {}: need at least one target cloud accountId to work on. "
                 + "Skipping enqueuing in faktory",
