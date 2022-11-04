@@ -438,7 +438,7 @@ public class WatcherServiceImpl implements WatcherService {
   private void startUpgradeCheck() {
     upgradeExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while checking for upgrades", this::syncCheckForWatcherUpgrade), 10,
-        watcherConfiguration.getUpgradeCheckIntervalSeconds(), TimeUnit.SECONDS);
+        10, TimeUnit.SECONDS);
   }
 
   private void syncCheckForWatcherUpgrade() {
@@ -1450,9 +1450,6 @@ public class WatcherServiceImpl implements WatcherService {
             success = true;
             stop();
           }
-        } else {
-          message =  messageService.readMessage(SECONDS.toMillis(2));
-          log.error("Failed to get message from new watcher, current message {}", message.getMessage());
         }
       }
       if (!success) {

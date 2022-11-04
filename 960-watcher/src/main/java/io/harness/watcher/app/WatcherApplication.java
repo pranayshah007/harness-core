@@ -171,8 +171,9 @@ public class WatcherApplication {
       log.info("Message service has been closed.");
       injector.getInstance(ExecutorService.class).shutdown();
       log.info("Executor services have been shut down.");
-      log.info("My watch has ended, flushing logs");
+      log.info("flushing logs");
       LogManager.shutdown();
+      log.info("My watch has ended");
     }));
 
     if (upgrade) {

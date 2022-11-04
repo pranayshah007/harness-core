@@ -139,47 +139,53 @@ public class MessageServiceImpl implements MessageService {
         FileUtils.touch(channel);
       }
       return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMillis(timeout), () -> {
-        while (true) {
-          LineIterator reader = FileUtils.lineIterator(channel);
-          while (reader.hasNext()) {
-            String line = reader.nextLine();
-            if (StringUtils.startsWith(line, (isInput ? IN : OUT) + PRIMARY_DELIMITER)) {
-              List<String> components = Splitter.on(PRIMARY_DELIMITER).splitToList(line);
-              long timestamp = Long.parseLong(components.get(1));
-              if (timestamp > lastReadTimestamp) {
-                MessengerType fromType = MessengerType.valueOf(components.get(2));
-                String fromProcess = components.get(3);
-                String messageName = components.get(4);
-                List<String> msgParams = new ArrayList<>();
-                if (components.size() == 6) {
-                  String params = components.get(5);
-                  if (!params.contains(SECONDARY_DELIMITER)) {
-                    msgParams.add(params);
-                  } else {
-                    msgParams.addAll(Splitter.on(SECONDARY_DELIMITER).splitToList(params));
+        String line="";
+        try {
+          while (true) {
+            LineIterator reader = FileUtils.lineIterator(channel);
+            while (reader.hasNext()) {
+              line = reader.nextLine();
+              if (StringUtils.startsWith(line, (isInput ? IN : OUT) + PRIMARY_DELIMITER)) {
+                List<String> components = Splitter.on(PRIMARY_DELIMITER).splitToList(line);
+                long timestamp = Long.parseLong(components.get(1));
+                if (timestamp > lastReadTimestamp) {
+                  MessengerType fromType = MessengerType.valueOf(components.get(2));
+                  String fromProcess = components.get(3);
+                  String messageName = components.get(4);
+                  List<String> msgParams = new ArrayList<>();
+                  if (components.size() == 6) {
+                    String params = components.get(5);
+                    if (!params.contains(SECONDARY_DELIMITER)) {
+                      msgParams.add(params);
+                    } else {
+                      msgParams.addAll(Splitter.on(SECONDARY_DELIMITER).splitToList(params));
+                    }
                   }
+                  Message message = Message.builder()
+                      .message(messageName)
+                      .params(msgParams)
+                      .timestamp(timestamp)
+                      .fromType(fromType)
+                      .fromProcess(fromProcess)
+                      .build();
+                  if (log.isDebugEnabled()) {
+                    String input =
+                        isInput ? "Read message" : "Retrieved message from " + sourceType + " " + sourceProcessId;
+                    log.debug("{}: {}", input, message);
+                  }
+                  messageTimestamps.put(channel, timestamp);
+                  reader.close();
+                  return message;
                 }
-                Message message = Message.builder()
-                                      .message(messageName)
-                                      .params(msgParams)
-                                      .timestamp(timestamp)
-                                      .fromType(fromType)
-                                      .fromProcess(fromProcess)
-                                      .build();
-                if (log.isDebugEnabled()) {
-                  String input =
-                      isInput ? "Read message" : "Retrieved message from " + sourceType + " " + sourceProcessId;
-                  log.debug("{}: {}", input, message);
-                }
-                messageTimestamps.put(channel, timestamp);
-                reader.close();
-                return message;
               }
             }
+            reader.close();
+            Thread.sleep(200L);
           }
-          reader.close();
-          Thread.sleep(200L);
+        } catch (Exception ex) {
+          log.error("Encountered error while reading from channel line:{}", line, ex);
         }
+        return null;
       });
     } catch (UncheckedTimeoutException e) {
       log.debug("Timed out reading message from channel {} {}", sourceType, sourceProcessId);
