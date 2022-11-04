@@ -336,10 +336,10 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   }
 
   private PageResponse<ServiceLevelObjective> getResponse(
-      ProjectParams projectParams, Integer offset, Integer pageSize, String filterByName, Filter filter) {
+      ProjectParams projectParams, Integer offset, Integer pageSize, Filter filter) {
     List<ServiceLevelObjective> serviceLevelObjectiveList = get(projectParams, filter);
-    if (!isEmpty(filterByName)) {
-      serviceLevelObjectiveList = filterSLOs(serviceLevelObjectiveList, filterByName);
+    if (!isEmpty(filter.getSearchFilter())) {
+      serviceLevelObjectiveList = filterSLOs(serviceLevelObjectiveList, filter.getSearchFilter());
     }
     return PageUtils.offsetAndLimit(serviceLevelObjectiveList, offset, pageSize);
   }
@@ -449,20 +449,21 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
 
   @Override
   public PageResponse<ServiceLevelObjective> getSLOForListView(
-      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName) {
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams) {
     try {
       return getServiceLevelObjectivePageResponseFromV2(pageParams.getSize(), pageParams.getPage(),
-          serviceLevelObjectiveV2Service.getSLOForListView(projectParams, filter, pageParams, filterByName));
+          serviceLevelObjectiveV2Service.getSLOForListView(projectParams, filter, pageParams));
     } catch (Exception ex) {
       log.error("[SLO Data Mismatch]: Get SLO V2 List page failed", ex);
     }
-    return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(), filterByName,
+    return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(),
         Filter.builder()
             .monitoredServiceIdentifier(filter.getMonitoredServiceIdentifier())
             .userJourneys(filter.getUserJourneyIdentifiers())
             .sliTypes(filter.getSliTypes())
             .errorBudgetRisks(filter.getErrorBudgetRisks())
             .targetTypes(filter.getTargetTypes())
+            .searchFilter(filter.getSearchFilter())
             .build());
   }
 
@@ -933,10 +934,10 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   }
 
   private List<ServiceLevelObjective> filterSLOs(
-      List<ServiceLevelObjective> serviceLevelObjectiveList, String filterByName) {
+      List<ServiceLevelObjective> serviceLevelObjectiveList, String searchFilter) {
     return serviceLevelObjectiveList.stream()
         .filter(serviceLevelObjective
-            -> serviceLevelObjective.getName().toLowerCase().contains(filterByName.trim().toLowerCase()))
+            -> serviceLevelObjective.getName().toLowerCase().contains(searchFilter.trim().toLowerCase()))
         .collect(Collectors.toList());
   }
 
@@ -1049,5 +1050,6 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     List<ErrorBudgetRisk> errorBudgetRisks;
     String monitoredServiceIdentifier;
     String notificationRuleRef;
+    String searchFilter;
   }
 }

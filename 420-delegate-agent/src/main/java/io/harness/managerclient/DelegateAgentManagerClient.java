@@ -35,6 +35,8 @@ import io.harness.logging.AccessTokenBean;
 import io.harness.perpetualtask.HeartbeatRequest;
 import io.harness.perpetualtask.HeartbeatResponse;
 import io.harness.perpetualtask.PerpetualTaskContextResponse;
+import io.harness.perpetualtask.PerpetualTaskFailureRequest;
+import io.harness.perpetualtask.PerpetualTaskFailureResponse;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
 import io.harness.rest.RestResponse;
 import io.harness.serializer.kryo.KryoRequest;
@@ -199,6 +201,11 @@ public interface DelegateAgentManagerClient {
   @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/perpetual-task/heartbeat")
   Call<HeartbeatResponse> heartbeat(@Query("accountId") String accountId, @Body HeartbeatRequest heartbeatRequest);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/perpetual-task/failure")
+  Call<PerpetualTaskFailureResponse> recordPerpetualTaskFailure(
+      @Query("accountId") String accountId, @Body PerpetualTaskFailureRequest perpetualTaskFailureRequest);
 
   @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/task-progress/progress-update")

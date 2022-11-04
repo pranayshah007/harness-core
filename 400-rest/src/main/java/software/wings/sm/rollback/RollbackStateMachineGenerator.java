@@ -35,6 +35,7 @@ import software.wings.beans.GraphNode;
 import software.wings.beans.OrchestrationWorkflow;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.PhaseStepType;
+import software.wings.beans.Pipeline;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowPhase;
@@ -43,6 +44,7 @@ import software.wings.exception.InvalidRollbackException;
 import software.wings.service.impl.workflow.queuing.WorkflowConcurrencyHelper;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.InfrastructureDefinitionService;
+import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.sm.StateMachine;
@@ -51,6 +53,7 @@ import software.wings.sm.states.StagingOriginalExecution.StagingOriginalExecutio
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 
 @OwnedBy(CDC)
@@ -60,6 +63,7 @@ public class RollbackStateMachineGenerator {
   private static final String STAGING_PHASE_STEP_NAME = "Stage Rollback";
   private static final String STAGING_STEP_NAME = "Staging Original Execution";
   public static final String WHITE_SPACE = " ";
+  @Inject private PipelineService pipelineService;
 
   @Inject private WorkflowService workflowService;
   @Inject private WorkflowExecutionService workflowExecutionService;
@@ -159,6 +163,16 @@ public class RollbackStateMachineGenerator {
   }
 
   private boolean validForRollback(WorkflowExecution successfulExecution) {
+    if (featureFlagService.isEnabled(FeatureName.SPG_PIPELINE_ROLLBACK, successfulExecution.getAccountId())) {
+      if (successfulExecution.getPipelineSummary() != null) {
+        Pipeline pipeline = pipelineService.getPipeline(
+            successfulExecution.getAppId(), successfulExecution.getPipelineSummary().getPipelineId());
+        if (pipeline.isRollbackPreviousStages()) {
+          List<ExecutionStatus> validStatuses = List.of(ExecutionStatus.SUCCESS, ExecutionStatus.FAILED);
+          return successfulExecution != null && validStatuses.contains(successfulExecution.getStatus());
+        }
+      }
+    }
     return successfulExecution != null && ExecutionStatus.SUCCESS == successfulExecution.getStatus();
   }
 

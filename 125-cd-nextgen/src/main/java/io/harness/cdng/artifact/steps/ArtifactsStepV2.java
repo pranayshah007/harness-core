@@ -37,6 +37,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
+import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
@@ -293,8 +294,15 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
       switch (taskResponse.getCommandExecutionStatus()) {
         case SUCCESS:
-          ArtifactOutcome artifactOutcome = ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig,
-              taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0), true);
+
+          ArtifactDelegateResponse artifactDelegateResponses = null;
+          if (!EmptyPredicate.isEmpty(taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses())) {
+            artifactDelegateResponses =
+                taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0);
+          }
+
+          ArtifactOutcome artifactOutcome =
+              ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponses, true);
           if (isPrimary) {
             outcomeBuilder.primary(artifactOutcome);
           } else {
@@ -397,7 +405,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
           LogColor.Cyan, LogWeight.Bold));
     }
     if (taskResponse != null && taskResponse.getArtifactTaskExecutionResponse() != null
-        && taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses() != null) {
+        && EmptyPredicate.isNotEmpty(taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses())) {
       logCallback.saveExecutionLog(LogHelper.color(
           taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0).describe(),
           LogColor.Green, LogWeight.Bold));

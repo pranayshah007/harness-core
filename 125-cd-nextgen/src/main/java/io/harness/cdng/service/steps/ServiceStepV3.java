@@ -14,6 +14,7 @@ import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvir
 
 import static java.lang.String.format;
 
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -34,6 +35,7 @@ import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
+import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
@@ -85,6 +87,7 @@ import software.wings.beans.LogHelper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -117,6 +120,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private ServiceStepOverrideHelper serviceStepOverrideHelper;
   @Inject private FreezeEvaluateService freezeEvaluateService;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
 
   @Override
   public Class<ServiceStepV3Parameters> getStepParametersClass() {
@@ -477,12 +481,16 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   protected ChildrenExecutableResponse executeFreezePart(
       Ambiance ambiance, Map<FreezeEntityType, List<String>> entityMap) {
     if (ngFeatureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_DEPLOYMENT_FREEZE)) {
+      String accountId = AmbianceUtils.getAccountId(ambiance);
+      String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+      String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(accountId, orgId, projectId, accessControlClient)) {
+        return null;
+      }
       List<FreezeSummaryResponseDTO> globalFreezeConfigs;
       List<FreezeSummaryResponseDTO> manualFreezeConfigs;
-      globalFreezeConfigs = freezeEvaluateService.anyGlobalFreezeActive(AmbianceUtils.getAccountId(ambiance),
-          AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-      manualFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(AmbianceUtils.getAccountId(ambiance),
-          AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), entityMap);
+      globalFreezeConfigs = freezeEvaluateService.anyGlobalFreezeActive(accountId, orgId, projectId);
+      manualFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId, entityMap);
       if (globalFreezeConfigs.size() + manualFreezeConfigs.size() > 0) {
         sweepingOutputService.consume(ambiance, FREEZE_SWEEPING_OUTPUT,
             FreezeOutcome.builder()

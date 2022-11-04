@@ -58,9 +58,6 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.beans.FeatureName;
 import io.harness.cache.HarnessCacheManager;
-import io.harness.capability.CapabilityRequirement;
-import io.harness.capability.CapabilityTaskSelectionDetails;
-import io.harness.capability.service.CapabilityService;
 import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.NoGlobalDelegateAccountException;
@@ -273,7 +270,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private LogStreamingServiceRestClient logStreamingServiceRestClient;
   @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
   @Inject private DelegateCache delegateCache;
-  @Inject private CapabilityService capabilityService;
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateMetricsService delegateMetricsService;
@@ -533,7 +529,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             task.getBroadcastToDelegateIds());
         addToTaskActivityLog(task, "Task processing completed");
       } catch (Exception exception) {
-        log.info("Task id {} failed with error {}", task.getUuid(), exception);
+        log.error("Task id {} failed with error {}", task.getUuid(), exception);
         printErrorMessageOnTaskFailure(task);
         handleTaskFailureResponse(task, exception);
         if (!task.getData().isAsync()) {
@@ -574,48 +570,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                         .accountId(task.getAccountId())
                                         .build();
     delegateTaskService.handleResponse(task, taskQuery, response);
-  }
-
-  @VisibleForTesting
-  public List<CapabilityRequirement> createCapabilityRequirementInstances(
-      String accountId, List<ExecutionCapability> agentCapabilities) {
-    List<CapabilityRequirement> capabilityRequirements = new ArrayList<>();
-    for (ExecutionCapability agentCapability : agentCapabilities) {
-      CapabilityRequirement capabilityRequirement =
-          capabilityService.buildCapabilityRequirement(accountId, agentCapability);
-
-      if (capabilityRequirement != null) {
-        capabilityRequirements.add(capabilityRequirement);
-      }
-    }
-
-    return capabilityRequirements;
-  }
-
-  /**
-   * This method is intended to be used whenever we need to extract delegate selection related data from delegate task.
-   * It assumes all data related to scoping and selectors
-   */
-  @VisibleForTesting
-  public CapabilityTaskSelectionDetails createCapabilityTaskSelectionDetailsInstance(
-      DelegateTask task, CapabilityRequirement capabilityRequirement, List<String> assignableDelegateIds) {
-    // Get all selector capabilities(this already contains all task tags)
-    List<SelectorCapability> selectorCapabilities = null;
-    if (task.getExecutionCapabilities() != null) {
-      selectorCapabilities = task.getExecutionCapabilities()
-                                 .stream()
-                                 .filter(c -> c instanceof SelectorCapability)
-                                 .map(c -> (SelectorCapability) c)
-                                 .collect(toList());
-    }
-
-    // TaskGroup is also required for scoping check
-    TaskGroup taskGroup = task.getData() != null && isNotBlank(task.getData().getTaskType())
-        ? TaskType.valueOf(task.getData().getTaskType()).getTaskGroup()
-        : null;
-
-    return capabilityService.buildCapabilityTaskSelectionDetails(
-        capabilityRequirement, taskGroup, task.getSetupAbstractions(), selectorCapabilities, assignableDelegateIds);
   }
 
   private void verifyTaskSetupAbstractions(DelegateTask task) {
@@ -930,7 +884,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           }
         } catch (ExecutionException e) {
           delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE_FAILED);
-          log.warn("Unable to retrieve the log streaming service account token, while preparing delegate task package");
+          log.error(
+              "Unable to retrieve the log streaming service account token, while preparing delegate task package");
           throw new InvalidRequestException(e.getMessage() + "\nPlease ensure log service is running.", e);
         }
 
@@ -1354,7 +1309,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     if (isEmpty(delegateTasks)) {
       return;
     }
-    log.info("Marking delegate tasks {} failed since delegate went down before completion.",
+    log.warn("Marking delegate tasks {} failed since delegate went down before completion.",
         delegateTasks.stream().map(DelegateTask::getUuid).collect(Collectors.toList()));
     final String errorMessage = "Delegate disconnected while executing the task";
     final DelegateTaskResponse delegateTaskResponse =
@@ -1424,6 +1379,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Override
   public void onReconnected(Delegate delegate) {
+    // do nothing
+  }
+
+  @Override
+  public void onDelegateTagsUpdated(String accountId) {
     // do nothing
   }
 }

@@ -4,7 +4,6 @@ directories:
   260-delegate
   400-rest
   420-delegate-service
-  460-capability
   470-alert
   910-delegate-service-driver
   910-delegate-task-grpc-service

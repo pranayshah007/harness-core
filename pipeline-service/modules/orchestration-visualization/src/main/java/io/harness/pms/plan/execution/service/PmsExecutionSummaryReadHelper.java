@@ -33,4 +33,15 @@ public class PmsExecutionSummaryReadHelper {
   public List<PipelineExecutionSummaryEntity> find(Query query) {
     return secondaryMongoTemplate.find(query, PipelineExecutionSummaryEntity.class);
   }
+
+  public List<String> findListOfUniqueBranches(Query query) {
+    return secondaryMongoTemplate.findDistinct(query,
+        PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.entityGitDetailsBranch,
+        PipelineExecutionSummaryEntity.class, String.class);
+  }
+  public List<String> findListOfUniqueRepositories(Query query) {
+    return secondaryMongoTemplate.findDistinct(query,
+        PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.entityGitDetailsRepoName,
+        PipelineExecutionSummaryEntity.class, String.class);
+  }
 }

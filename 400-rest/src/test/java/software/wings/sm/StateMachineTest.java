@@ -10,6 +10,7 @@ package software.wings.sm;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.VIKAS_S;
 
@@ -33,6 +34,9 @@ import software.wings.beans.GraphNode;
 import software.wings.beans.OrchestrationWorkflow;
 import software.wings.beans.PhaseStep.PhaseStepBuilder;
 import software.wings.beans.PhaseStepType;
+import software.wings.beans.Pipeline;
+import software.wings.beans.PipelineStage;
+import software.wings.beans.PipelineStage.PipelineStageElement;
 import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowBuilder;
 import software.wings.common.InstanceExpressionProcessor;
@@ -41,6 +45,7 @@ import software.wings.sm.StateMachineTestBase.StateSync;
 import software.wings.sm.states.ForkState;
 import software.wings.sm.states.RepeatState;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -724,5 +729,47 @@ public class StateMachineTest extends WingsBaseTest {
       assertThat(futures.get(i).get()).isEqualTo(Boolean.TRUE);
     }
     assertThat(stateMachine.getStates().size()).isEqualTo(numIterationsPerThread * numOfThreads);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testStateMachineWithPipelineRollback() {
+    Map<String, StateTypeDescriptor> stencilMap = new HashMap<>();
+    stencilMap.put("APPROVAL", StateType.APPROVAL);
+    stencilMap.put("ENV_STATE", StateType.ENV_STATE);
+    stencilMap.put("FORK", StateType.FORK);
+    stencilMap.put("ENV_ROLLBACK_STATE", StateType.ENV_ROLLBACK_STATE);
+
+    PipelineStageElement pse1 = PipelineStageElement.builder()
+                                    .type("ENV_STATE")
+                                    .properties(new HashMap<>())
+                                    .name("TEST_STEP_1")
+                                    .valid(true)
+                                    .build();
+    PipelineStageElement pse2 = PipelineStageElement.builder()
+                                    .type("APPROVAL")
+                                    .properties(new HashMap<>())
+                                    .name("TEST_STEP_APPROVAL")
+                                    .valid(true)
+                                    .build();
+    PipelineStageElement pse3 = PipelineStageElement.builder()
+                                    .type("ENV_STATE")
+                                    .properties(new HashMap<>())
+                                    .name("TEST_STEP_3")
+                                    .valid(true)
+                                    .build();
+    PipelineStage pipelineStage1 =
+        PipelineStage.builder().pipelineStageElements(Arrays.asList(pse1)).valid(true).name("TEST_STAGE_1").build();
+    PipelineStage pipelineStage2 =
+        PipelineStage.builder().pipelineStageElements(Arrays.asList(pse2)).valid(true).name("TEST_STAGE_2").build();
+    PipelineStage pipelineStage3 =
+        PipelineStage.builder().pipelineStageElements(Arrays.asList(pse3)).valid(true).name("TEST_STAGE_3").build();
+    Pipeline pipeline = Pipeline.builder()
+                            .rollbackPreviousStages(true)
+                            .pipelineStages(Arrays.asList(pipelineStage1, pipelineStage2, pipelineStage3))
+                            .build();
+    StateMachine sm = new StateMachine(pipeline, stencilMap);
+    assertThat(sm).isNotNull();
   }
 }

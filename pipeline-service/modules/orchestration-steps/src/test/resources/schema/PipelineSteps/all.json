@@ -555,9 +555,6 @@
                 }
               ]
             },
-            "metadata": {
-              "type": "string"
-            },
             "subject": {
               "type": "string"
             },

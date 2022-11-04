@@ -12,6 +12,7 @@ import static io.harness.beans.ExecutionInterruptType.ABORT;
 import static io.harness.beans.ExecutionInterruptType.END_EXECUTION;
 import static io.harness.beans.ExecutionInterruptType.MARK_FAILED;
 import static io.harness.beans.ExecutionInterruptType.MARK_SUCCESS;
+import static io.harness.beans.ExecutionInterruptType.ROLLBACK_PREVIOUS_STAGES_ON_PIPELINE;
 import static io.harness.beans.ExecutionInterruptType.WAITING_FOR_MANUAL_INTERVENTION;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.NEW;
@@ -25,11 +26,13 @@ import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.TMACARI;
 
+import static software.wings.api.EnvStateExecutionData.Builder.anEnvStateExecutionData;
 import static software.wings.api.InstanceElement.Builder.anInstanceElement;
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.CanaryOrchestrationWorkflow.CanaryOrchestrationWorkflowBuilder.aCanaryOrchestrationWorkflow;
@@ -41,6 +44,11 @@ import static software.wings.common.NotificationMessageResolver.NotificationMess
 import static software.wings.common.NotificationMessageResolver.NotificationMessageType.RUNTIME_INPUTS_PROVIDED;
 import static software.wings.sm.ExecutionEventAdvice.ExecutionEventAdviceBuilder.anExecutionEventAdvice;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
+import static software.wings.sm.StateMachine.StateMachineBuilder.aStateMachine;
+import static software.wings.sm.StateType.ENV_ROLLBACK_STATE;
+import static software.wings.sm.StateType.ENV_STATE;
+import static software.wings.sm.StateType.PHASE;
+import static software.wings.sm.Transition.Builder.aTransition;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.NOTIFICATION_GROUP_ID;
 import static software.wings.utils.WingsTestConstants.PIPELINE_WORKFLOW_EXECUTION_ID;
@@ -55,6 +63,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -75,6 +84,7 @@ import io.harness.testlib.RealMongo;
 import io.harness.waiter.OrchestrationNotifyEventListener;
 
 import software.wings.WingsBaseTest;
+import software.wings.api.EnvStateExecutionData;
 import software.wings.api.SkipStateExecutionData;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.Notification;
@@ -97,7 +107,9 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.sm.StateMachineTestBase.StateAsync;
 import software.wings.sm.StateMachineTestBase.StateSync;
+import software.wings.sm.states.EnvRollbackState;
 import software.wings.sm.states.ForkState;
+import software.wings.sm.states.ForkState.ForkStateExecutionData;
 
 import com.google.inject.Inject;
 import java.text.DateFormat;
@@ -173,16 +185,10 @@ public class StateMachineExecutorTest extends WingsBaseTest {
     sm.addState(stateC);
     sm.setInitialStateName(stateA.getName());
 
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateA)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateC)
-                         .build());
+    sm.addTransition(
+        aTransition().withFromState(stateA).withTransitionType(TransitionType.SUCCESS).withToState(stateB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateB).withTransitionType(TransitionType.SUCCESS).withToState(stateC).build());
 
     sm = workflowService.createStateMachine(sm);
     assertThat(sm).isNotNull().extracting(StateMachine::getUuid).isNotNull();
@@ -230,21 +236,12 @@ public class StateMachineExecutorTest extends WingsBaseTest {
     sm.addState(stateD);
     sm.setInitialStateName(stateA.getName());
 
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateA)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateC)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateB)
-                         .withTransitionType(TransitionType.FAILURE)
-                         .withToState(stateD)
-                         .build());
+    sm.addTransition(
+        aTransition().withFromState(stateA).withTransitionType(TransitionType.SUCCESS).withToState(stateB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateB).withTransitionType(TransitionType.SUCCESS).withToState(stateC).build());
+    sm.addTransition(
+        aTransition().withFromState(stateB).withTransitionType(TransitionType.FAILURE).withToState(stateD).build());
 
     sm = workflowService.createStateMachine(sm);
     assertThat(sm).isNotNull().extracting(StateMachine::getUuid).isNotNull();
@@ -294,21 +291,12 @@ public class StateMachineExecutorTest extends WingsBaseTest {
     sm.addState(stateD);
     sm.setInitialStateName(stateA.getName());
 
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateA)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateC)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateC)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateD)
-                         .build());
+    sm.addTransition(
+        aTransition().withFromState(stateA).withTransitionType(TransitionType.SUCCESS).withToState(stateB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateB).withTransitionType(TransitionType.SUCCESS).withToState(stateC).build());
+    sm.addTransition(
+        aTransition().withFromState(stateC).withTransitionType(TransitionType.SUCCESS).withToState(stateD).build());
 
     sm = workflowService.createStateMachine(sm);
     assertThat(sm).isNotNull().extracting(StateMachine::getUuid).isNotNull();
@@ -360,26 +348,14 @@ public class StateMachineExecutorTest extends WingsBaseTest {
 
     sm.setInitialStateName(stateA.getName());
 
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateA)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateAB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateBC)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateBC)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateC)
-                         .build());
+    sm.addTransition(
+        aTransition().withFromState(stateA).withTransitionType(TransitionType.SUCCESS).withToState(stateAB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.SUCCESS).withToState(stateB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateB).withTransitionType(TransitionType.SUCCESS).withToState(stateBC).build());
+    sm.addTransition(
+        aTransition().withFromState(stateBC).withTransitionType(TransitionType.SUCCESS).withToState(stateC).build());
 
     sm = workflowService.createStateMachine(sm);
     assertThat(sm).isNotNull().extracting(StateMachine::getUuid).isNotNull();
@@ -429,21 +405,12 @@ public class StateMachineExecutorTest extends WingsBaseTest {
 
     sm.setInitialStateName(stateA.getName());
 
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateA)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateAB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.FAILURE)
-                         .withToState(stateC)
-                         .build());
+    sm.addTransition(
+        aTransition().withFromState(stateA).withTransitionType(TransitionType.SUCCESS).withToState(stateAB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.SUCCESS).withToState(stateB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.FAILURE).withToState(stateC).build());
 
     sm = workflowService.createStateMachine(sm);
     assertThat(sm).isNotNull().extracting(StateMachine::getUuid).isNotNull();
@@ -503,21 +470,12 @@ public class StateMachineExecutorTest extends WingsBaseTest {
 
     sm.setInitialStateName(stateA.getName());
 
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateA)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateAB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.FAILURE)
-                         .withToState(stateC)
-                         .build());
+    sm.addTransition(
+        aTransition().withFromState(stateA).withTransitionType(TransitionType.SUCCESS).withToState(stateAB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.SUCCESS).withToState(stateB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.FAILURE).withToState(stateC).build());
 
     sm = workflowService.createStateMachine(sm);
     assertThat(sm).isNotNull().extracting(StateMachine::getUuid).isNotNull();
@@ -567,21 +525,12 @@ public class StateMachineExecutorTest extends WingsBaseTest {
 
     sm.setInitialStateName(stateA.getName());
 
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateA)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateAB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.FAILURE)
-                         .withToState(stateC)
-                         .build());
+    sm.addTransition(
+        aTransition().withFromState(stateA).withTransitionType(TransitionType.SUCCESS).withToState(stateAB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.SUCCESS).withToState(stateB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.FAILURE).withToState(stateC).build());
 
     sm = workflowService.createStateMachine(sm);
     assertThat(sm).isNotNull().extracting(StateMachine::getUuid).isNotNull();
@@ -631,21 +580,12 @@ public class StateMachineExecutorTest extends WingsBaseTest {
 
     sm.setInitialStateName(stateA.getName());
 
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateA)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateAB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.FAILURE)
-                         .withToState(stateC)
-                         .build());
+    sm.addTransition(
+        aTransition().withFromState(stateA).withTransitionType(TransitionType.SUCCESS).withToState(stateAB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.SUCCESS).withToState(stateB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.FAILURE).withToState(stateC).build());
 
     sm = workflowService.createStateMachine(sm);
     assertThat(sm).isNotNull().extracting(StateMachine::getUuid).isNotNull();
@@ -692,21 +632,12 @@ public class StateMachineExecutorTest extends WingsBaseTest {
 
     sm.setInitialStateName(stateA.getName());
 
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateA)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateAB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateC)
-                         .build());
+    sm.addTransition(
+        aTransition().withFromState(stateA).withTransitionType(TransitionType.SUCCESS).withToState(stateAB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.SUCCESS).withToState(stateB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateB).withTransitionType(TransitionType.SUCCESS).withToState(stateC).build());
 
     sm = workflowService.createStateMachine(sm);
     assertThat(sm).isNotNull().extracting(StateMachine::getUuid).isNotNull();
@@ -752,21 +683,12 @@ public class StateMachineExecutorTest extends WingsBaseTest {
 
     sm.setInitialStateName(stateA.getName());
 
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateA)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateAB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.FAILURE)
-                         .withToState(stateC)
-                         .build());
+    sm.addTransition(
+        aTransition().withFromState(stateA).withTransitionType(TransitionType.SUCCESS).withToState(stateAB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.SUCCESS).withToState(stateB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.FAILURE).withToState(stateC).build());
 
     sm = workflowService.createStateMachine(sm);
     assertThat(sm).isNotNull().extracting(StateMachine::getUuid).isNotNull();
@@ -816,11 +738,8 @@ public class StateMachineExecutorTest extends WingsBaseTest {
 
     sm.setInitialStateName(stateA.getName());
 
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateA)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(fork1)
-                         .build());
+    sm.addTransition(
+        aTransition().withFromState(stateA).withTransitionType(TransitionType.SUCCESS).withToState(fork1).build());
 
     sm = workflowService.createStateMachine(sm);
     assertThat(sm).isNotNull().extracting(StateMachine::getUuid).isNotNull();
@@ -866,21 +785,12 @@ public class StateMachineExecutorTest extends WingsBaseTest {
 
     sm.setInitialStateName(stateA.getName());
 
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateA)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateAB)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(stateAB)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(fork1)
-                         .build());
-    sm.addTransition(Transition.Builder.aTransition()
-                         .withFromState(fork1)
-                         .withTransitionType(TransitionType.SUCCESS)
-                         .withToState(stateC)
-                         .build());
+    sm.addTransition(
+        aTransition().withFromState(stateA).withTransitionType(TransitionType.SUCCESS).withToState(stateAB).build());
+    sm.addTransition(
+        aTransition().withFromState(stateAB).withTransitionType(TransitionType.SUCCESS).withToState(fork1).build());
+    sm.addTransition(
+        aTransition().withFromState(fork1).withTransitionType(TransitionType.SUCCESS).withToState(stateC).build());
 
     sm = workflowService.createStateMachine(sm);
     assertThat(sm).isNotNull().extracting(StateMachine::getUuid).isNotNull();
@@ -1321,5 +1231,139 @@ public class StateMachineExecutorTest extends WingsBaseTest {
     assertThat(stateExecutionInstance.getStatus()).isEqualTo(NEW);
     assertThat(stateExecutionInstance.isRetry()).isEqualTo(true);
     assertThat(stateExecutionInstance.getRetryCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testRollbackPreviousStagesAdvice() {
+    EnvRollbackState envRollbackState = new EnvRollbackState("Rollback-stage 1");
+    StateMachine sm = aStateMachine().addState(envRollbackState).build();
+    StateExecutionInstance initialInstance = aStateExecutionInstance()
+                                                 .uuid("uuid")
+                                                 .stateType(ENV_ROLLBACK_STATE.getType())
+                                                 .executionUuid("executionUuid")
+                                                 .build();
+    initialInstance.setUuid("uuid");
+    ExecutionEventAdvice executionEventAdvice = anExecutionEventAdvice()
+                                                    .withNextStateName(envRollbackState.getName())
+                                                    .withExecutionInterruptType(ROLLBACK_PREVIOUS_STAGES_ON_PIPELINE)
+                                                    .build();
+    EnvStateExecutionData envStateExecutionData = anEnvStateExecutionData().build();
+
+    doReturn(sm).when(context).getStateMachine();
+    doReturn(initialInstance).when(context).getStateExecutionInstance();
+    doReturn(envStateExecutionData).when(context).getStateExecutionData();
+
+    StateExecutionInstance newInstance =
+        stateMachineExecutor.handleExecutionEventAdvice(context, initialInstance, RUNNING, executionEventAdvice);
+    assertThat(newInstance).isNotNull();
+    assertThat(newInstance.getStateName()).isEqualTo(envRollbackState.getName());
+    assertThat(newInstance.getStateType()).isEqualTo(ENV_ROLLBACK_STATE.getType());
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testRollbackPreviousStagesAdvice_ShouldSkipExecutionWithRollbackInstances() {
+    StateExecutionInstance rollbackInstance =
+        aStateExecutionInstance().rollback(true).executionUuid("executionUuid").build();
+    wingsPersistence.save(rollbackInstance);
+    EnvRollbackState envRollbackState = new EnvRollbackState("Rollback-stage 1");
+    EnvRollbackState envRollbackState2 = new EnvRollbackState("Rollback-stage 2");
+    StateMachine sm = aStateMachine()
+                          .addState(envRollbackState)
+                          .addState(envRollbackState2)
+                          .addTransition(aTransition()
+                                             .withTransitionType(TransitionType.SUCCESS)
+                                             .withToState(envRollbackState2)
+                                             .withFromState(envRollbackState)
+                                             .build())
+                          .build();
+
+    StateExecutionInstance initialInstance =
+        aStateExecutionInstance().uuid("uuid").executionUuid("executionUuid").build();
+    initialInstance.setUuid("uuid");
+    ExecutionEventAdvice executionEventAdvice = anExecutionEventAdvice()
+                                                    .withNextStateName(envRollbackState.getName())
+                                                    .withExecutionInterruptType(ROLLBACK_PREVIOUS_STAGES_ON_PIPELINE)
+                                                    .build();
+    EnvStateExecutionData envStateExecutionData =
+        anEnvStateExecutionData().withWorkflowExecutionId("executionUuid").build();
+
+    doReturn(sm).when(context).getStateMachine();
+    doReturn(initialInstance).when(context).getStateExecutionInstance();
+    doReturn(envStateExecutionData).when(context).getStateExecutionData();
+
+    StateExecutionInstance newInstance =
+        stateMachineExecutor.handleExecutionEventAdvice(context, initialInstance, RUNNING, executionEventAdvice);
+    assertThat(newInstance).isNotNull();
+    assertThat(newInstance.getStateType()).isEqualTo(ENV_ROLLBACK_STATE.getType());
+    assertThat(newInstance.getStateName()).isEqualTo(envRollbackState2.getName());
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testRollbackPreviousStagesAdvice_withForkInstance() {
+    StateExecutionInstance rollbackInstance =
+        aStateExecutionInstance().rollback(true).stateType(PHASE.getType()).executionUuid("executionUuid1").build();
+    StateExecutionInstance failedEnvInstance1 = aStateExecutionInstance()
+                                                    .displayName("1")
+                                                    .uuid("uuid1")
+                                                    .stateName("stage 1")
+                                                    .status(FAILED)
+                                                    .stateType(ENV_STATE.getType())
+                                                    .parentInstanceId("parentId")
+                                                    .executionUuid("executionUuid1")
+                                                    .build();
+    StateExecutionInstance failedEnvInstance2 = aStateExecutionInstance()
+                                                    .displayName("2")
+                                                    .uuid("uuid2")
+                                                    .status(FAILED)
+                                                    .stateType(ENV_STATE.getType())
+                                                    .stateName("stage 2")
+                                                    .parentInstanceId("parentId")
+                                                    .executionUuid("executionUuid2")
+                                                    .build();
+    EnvStateExecutionData envStateExecutionData1 =
+        anEnvStateExecutionData().withWorkflowExecutionId("executionUuid1").build();
+    EnvStateExecutionData envStateExecutionData2 =
+        anEnvStateExecutionData().withWorkflowExecutionId("executionUuid2").build();
+    Map<String, StateExecutionData> stateExecutionMap = new HashMap<>();
+    stateExecutionMap.put("1", envStateExecutionData1);
+    stateExecutionMap.put("2", envStateExecutionData2);
+    failedEnvInstance1.setStateExecutionMap(stateExecutionMap);
+    failedEnvInstance2.setStateExecutionMap(stateExecutionMap);
+    wingsPersistence.save(rollbackInstance);
+    wingsPersistence.save(failedEnvInstance1);
+    wingsPersistence.save(failedEnvInstance2);
+
+    EnvRollbackState envRollbackState = new EnvRollbackState("Rollback-stage 1");
+    EnvRollbackState envRollbackState2 = new EnvRollbackState("Rollback-stage 2");
+    ForkState forkState = new ForkState("Rollback-fork");
+    forkState.addForkState(envRollbackState);
+    forkState.addForkState(envRollbackState2);
+
+    StateMachine sm =
+        aStateMachine().addState(envRollbackState).addState(envRollbackState2).addState(forkState).build();
+
+    StateExecutionInstance initialInstance =
+        aStateExecutionInstance().uuid("parentId").executionUuid("executionUuid").build();
+    ExecutionEventAdvice executionEventAdvice = anExecutionEventAdvice()
+                                                    .withNextStateName(forkState.getName())
+                                                    .withExecutionInterruptType(ROLLBACK_PREVIOUS_STAGES_ON_PIPELINE)
+                                                    .build();
+    ForkStateExecutionData forkStateExecutionData = mock(ForkStateExecutionData.class);
+
+    doReturn(sm).when(context).getStateMachine();
+    doReturn(initialInstance).when(context).getStateExecutionInstance();
+    doReturn(forkStateExecutionData).when(context).getStateExecutionData();
+
+    StateExecutionInstance newInstance =
+        stateMachineExecutor.handleExecutionEventAdvice(context, initialInstance, RUNNING, executionEventAdvice);
+    assertThat(newInstance).isNotNull();
+    assertThat(forkState.getForkStateNames().size()).isEqualTo(1);
+    assertThat(forkState.getForkStateNames().get(0)).isEqualTo(envRollbackState2.getName());
   }
 }

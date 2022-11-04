@@ -350,6 +350,10 @@ import io.harness.delegate.task.ListNotifyResponseData;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryBaseArtifactDelegateRequest;
@@ -1893,5 +1897,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(NexusAzureArtifactRequestDetails.class, 73992);
     kryo.register(DelegateTaskExpiredException.class, 980036);
     kryo.register(S3BuildsResponse.class, 1010101);
+    kryo.register(AMIArtifactDelegateRequest.class, 60011);
+    kryo.register(AMIArtifactDelegateResponse.class, 60012);
+    kryo.register(AMITag.class, 60013);
+    kryo.register(AMIFilter.class, 60014);
   }
 }

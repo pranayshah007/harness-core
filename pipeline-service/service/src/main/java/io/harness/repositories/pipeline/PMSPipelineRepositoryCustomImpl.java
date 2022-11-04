@@ -383,4 +383,10 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFileUniquenessCheck(accountId, repoURL, filePath);
     return countAllPipelines(criteria);
   }
+
+  @Override
+  public List<String> findAllUniqueRepos(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findDistinct(query, PipelineEntityKeys.repo, PipelineEntity.class, String.class);
+  }
 }

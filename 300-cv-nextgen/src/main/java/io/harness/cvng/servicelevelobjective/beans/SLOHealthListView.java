@@ -7,6 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -17,18 +18,17 @@ import lombok.Value;
 public class SLOHealthListView {
   @NotNull String sloIdentifier;
   @NotNull String name;
-  @NotNull String monitoredServiceIdentifier;
-  @NotNull String monitoredServiceName;
-  @NotNull String healthSourceIdentifier;
-  @NotNull String healthSourceName;
-  @NotNull String serviceIdentifier;
-  @NotNull String environmentIdentifier;
-  @NotNull String environmentName;
-  @NotNull String serviceName;
+  String monitoredServiceIdentifier;
+  String monitoredServiceName;
+  String healthSourceIdentifier;
+  String healthSourceName;
+  String serviceIdentifier;
+  String serviceName;
+  String environmentIdentifier;
+  String environmentName;
   Map<String, String> tags;
   String description;
-  @NotNull String userJourneyIdentifier;
-  @NotNull String userJourneyName;
+  @NotNull List<UserJourneyDTO> userJourneys;
   @NotNull double burnRate;
   @NotNull double errorBudgetRemainingPercentage;
   @NotNull int errorBudgetRemaining;
@@ -36,7 +36,7 @@ public class SLOHealthListView {
   @NotNull SLOTargetType sloTargetType;
   @NotNull double sloTargetPercentage;
   @NotNull int noOfActiveAlerts;
-  @NotNull int noOfMaximumAlerts;
+  ServiceLevelObjectiveType type;
   @NotNull
   public ErrorBudgetRisk getErrorBudgetRisk() {
     return ErrorBudgetRisk.getFromPercentage(errorBudgetRemainingPercentage);

@@ -14,7 +14,6 @@ directories:
   430-cv-nextgen-commons
   440-connector-nextgen
   450-ce-views
-  460-capability
   470-alert
   490-ce-commons
   pipeline-service

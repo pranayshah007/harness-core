@@ -17,7 +17,9 @@ import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.ListFilesInCommitRequest;
 import io.harness.beans.response.GitFileResponse;
+import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -79,12 +81,15 @@ public interface ScmServiceClient {
   FindFilesInCommitResponse findFilesInCommit(
       ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
+  ListFilesInCommitResponse listFilesInCommit(
+      ScmConnector scmConnector, ListFilesInCommitRequest request, SCMGrpc.SCMBlockingStub scmBlockingStub);
+
   FindFilesInPRResponse findFilesInPR(ScmConnector scmConnector, int prNumber, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
   GetLatestCommitResponse getLatestCommit(
       ScmConnector scmConnector, String branch, String ref, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
-  FindFilesInCommitResponse findFilesInCommit(
+  FindFilesInCommitResponse listFilesInCommit(
       ScmConnector scmConnector, String commitHash, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
   ListBranchesResponse listBranches(ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub);
