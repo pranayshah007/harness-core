@@ -188,8 +188,9 @@ apiUrl: "https://localhost:9080"
 deployMode: KUBERNETES
 envPath: ""
 
-kubectlVersion: v1.13.2
-scmVersion: ff17c219
+
+scmVersion: 139d8c67
+
 
 portal:
   url: https://localhost:8000
