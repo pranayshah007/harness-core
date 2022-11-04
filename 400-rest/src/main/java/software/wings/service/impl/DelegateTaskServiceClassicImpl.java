@@ -58,9 +58,6 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.beans.FeatureName;
 import io.harness.cache.HarnessCacheManager;
-import io.harness.capability.CapabilityRequirement;
-import io.harness.capability.CapabilityTaskSelectionDetails;
-import io.harness.capability.service.CapabilityService;
 import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.NoGlobalDelegateAccountException;
@@ -273,7 +270,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private LogStreamingServiceRestClient logStreamingServiceRestClient;
   @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
   @Inject private DelegateCache delegateCache;
-  @Inject private CapabilityService capabilityService;
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateMetricsService delegateMetricsService;
@@ -574,48 +570,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                         .accountId(task.getAccountId())
                                         .build();
     delegateTaskService.handleResponse(task, taskQuery, response);
-  }
-
-  @VisibleForTesting
-  public List<CapabilityRequirement> createCapabilityRequirementInstances(
-      String accountId, List<ExecutionCapability> agentCapabilities) {
-    List<CapabilityRequirement> capabilityRequirements = new ArrayList<>();
-    for (ExecutionCapability agentCapability : agentCapabilities) {
-      CapabilityRequirement capabilityRequirement =
-          capabilityService.buildCapabilityRequirement(accountId, agentCapability);
-
-      if (capabilityRequirement != null) {
-        capabilityRequirements.add(capabilityRequirement);
-      }
-    }
-
-    return capabilityRequirements;
-  }
-
-  /**
-   * This method is intended to be used whenever we need to extract delegate selection related data from delegate task.
-   * It assumes all data related to scoping and selectors
-   */
-  @VisibleForTesting
-  public CapabilityTaskSelectionDetails createCapabilityTaskSelectionDetailsInstance(
-      DelegateTask task, CapabilityRequirement capabilityRequirement, List<String> assignableDelegateIds) {
-    // Get all selector capabilities(this already contains all task tags)
-    List<SelectorCapability> selectorCapabilities = null;
-    if (task.getExecutionCapabilities() != null) {
-      selectorCapabilities = task.getExecutionCapabilities()
-                                 .stream()
-                                 .filter(c -> c instanceof SelectorCapability)
-                                 .map(c -> (SelectorCapability) c)
-                                 .collect(toList());
-    }
-
-    // TaskGroup is also required for scoping check
-    TaskGroup taskGroup = task.getData() != null && isNotBlank(task.getData().getTaskType())
-        ? TaskType.valueOf(task.getData().getTaskType()).getTaskGroup()
-        : null;
-
-    return capabilityService.buildCapabilityTaskSelectionDetails(
-        capabilityRequirement, taskGroup, task.getSetupAbstractions(), selectorCapabilities, assignableDelegateIds);
   }
 
   private void verifyTaskSetupAbstractions(DelegateTask task) {

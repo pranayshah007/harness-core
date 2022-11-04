@@ -5,16 +5,21 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.task.email;
+package io.harness.gitsync.common.dtos;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.tasks.ResponseData;
 
+import java.util.List;
+import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
-@Data
+@OwnedBy(HarnessTeam.PL)
+@Getter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-@OwnedBy(HarnessTeam.CDC)
-public class EmailStepResponse implements ResponseData {}
+public class ScmListFilesResponseDTO {
+  List<ScmFileGitDetailsDTO> fileGitDetailsDTOList;
+}

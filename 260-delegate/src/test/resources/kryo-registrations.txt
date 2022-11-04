@@ -2360,6 +2360,9 @@
 955014:io.harness.beans.HookEventType
 955015:io.harness.beans.gitsync.GitFilePathDetails
 955016:io.harness.beans.response.GitFileResponse
+955017:io.harness.beans.response.ListFilesInCommitResponse
+955018:io.harness.beans.FileGitDetails
+955019:io.harness.beans.ContentType
 970001:io.harness.request.RequestContextData
 970002:io.harness.request.RequestContext
 970003:io.harness.gitsync.interceptor.GitSyncBranchContext

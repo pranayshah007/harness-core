@@ -283,6 +283,27 @@ public class AccountResource {
   }
 
   @PUT
+  @Path("{accountId}/is-product-led")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") @NotEmpty String accountId,
+      @QueryParam("isProductLed") @DefaultValue("false") boolean isProductLed) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(accountService.updateIsProductLed(accountId, isProductLed));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder().message("User not allowed to update account product-led status").build()))
+          .build();
+    }
+  }
+
+  @PUT
   @Path("{accountId}/sales-contacts")
   @Timed
   @ExceptionMetered

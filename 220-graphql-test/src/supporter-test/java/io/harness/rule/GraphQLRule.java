@@ -20,7 +20,6 @@ import io.harness.app.GraphQLModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
-import io.harness.capability.CapabilityModule;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
@@ -301,7 +300,6 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
 
     modules.add(new ValidationModule(validatorFactory));
     modules.add(new DelegateServiceModule());
-    modules.add(new CapabilityModule());
     modules.add(new AbstractRemoteObserverModule() {
       @Override
       public boolean noOpProducer() {

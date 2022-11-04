@@ -10,21 +10,29 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionInterruptType.MARK_FAILED;
 import static io.harness.beans.ExecutionInterruptType.PAUSE_FOR_INPUTS;
+import static io.harness.beans.ExecutionInterruptType.ROLLBACK_PREVIOUS_STAGES_ON_PIPELINE;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.PAUSED;
+import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.api.EnvStateExecutionData.Builder.anEnvStateExecutionData;
 import static software.wings.sm.ExecutionEventAdvice.ExecutionEventAdviceBuilder.anExecutionEventAdvice;
+import static software.wings.sm.StateType.APPROVAL;
 import static software.wings.sm.StateType.ENV_LOOP_STATE;
+import static software.wings.sm.StateType.ENV_ROLLBACK_STATE;
 import static software.wings.sm.StateType.ENV_STATE;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.context.ContextElementType;
+import io.harness.ff.FeatureFlagService;
+import io.harness.persistence.HPersistence;
 
 import software.wings.api.EnvStateExecutionData;
+import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.sm.ExecutionContextImpl;
@@ -34,6 +42,8 @@ import software.wings.sm.ExecutionEventAdvisor;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.State;
 import software.wings.sm.StateExecutionInstance;
+import software.wings.sm.StateMachine;
+import software.wings.sm.TransitionType;
 import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.states.WorkflowState;
 
@@ -45,8 +55,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class PipelineStageExecutionAdvisor implements ExecutionEventAdvisor {
+  @Inject private transient FeatureFlagService featureFlagService;
   @Inject private transient WorkflowExecutionService workflowExecutionService;
   @Inject private transient WorkflowService workflowService;
+  @Inject private transient PipelineService pipelineService;
+  @Inject private transient HPersistence hPersistence;
+
+  private static final String ROLLBACK_PREFIX = "Rollback ";
+  private static final String ROLLBACK_FORK_PREFIX = "rollback-";
 
   @Override
   public ExecutionEventAdvice onExecutionEvent(ExecutionEvent executionEvent) {
@@ -55,6 +71,21 @@ public class PipelineStageExecutionAdvisor implements ExecutionEventAdvisor {
     WorkflowExecution workflowExecution =
         workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
     StateExecutionInstance stateExecutionInstance = context.getStateExecutionInstance();
+
+    if (shouldRollback(
+            context.getAppId(), workflowExecution.getPipelineSummary().getPipelineId(), stateExecutionInstance)) {
+      StateMachine sm = context.getStateMachine();
+      State rollbackState = sm.getRollbackState(state.getName());
+
+      if (rollbackState == null) {
+        return null;
+      }
+
+      return anExecutionEventAdvice()
+          .withExecutionInterruptType(ROLLBACK_PREVIOUS_STAGES_ON_PIPELINE)
+          .withNextStateName(rollbackState.getName())
+          .build();
+    }
 
     if (!ENV_STATE.name().equals(state.getStateType()) && !ENV_LOOP_STATE.name().equals(state.getStateType())) {
       return null;
@@ -97,5 +128,23 @@ public class PipelineStageExecutionAdvisor implements ExecutionEventAdvisor {
     }
 
     return null;
+  }
+
+  private boolean shouldRollback(String appId, String pipelineId, StateExecutionInstance instance) {
+    if (featureFlagService.isEnabled(FeatureName.SPG_PIPELINE_ROLLBACK, instance.getAccountId())) {
+      Pipeline pipeline = pipelineService.getPipeline(appId, pipelineId);
+      return pipeline.rollbackPreviousStages
+          && (FAILED.equals(instance.getStatus()) || REJECTED.equals(instance.getStatus()))
+          && instance.getParentInstanceId() == null && !ENV_ROLLBACK_STATE.getType().equals(instance.getStateType());
+    }
+    return false;
+  }
+
+  private State getNextStateFromApproval(State approvalState, StateMachine sm) {
+    State nextState = sm.getNextState(approvalState.getName(), TransitionType.SUCCESS);
+    if (nextState != null && APPROVAL.getType().equals(nextState.getStateType())) {
+      return getNextStateFromApproval(nextState, sm);
+    }
+    return nextState;
   }
 }

@@ -21,6 +21,8 @@ import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
+import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
 import io.harness.ng.beans.PageRequest;
@@ -58,4 +60,6 @@ public interface ScmFacilitatorService {
 
   ScmGetBranchHeadCommitResponseDTO getBranchHeadCommitDetails(
       ScmGetBranchHeadCommitRequestDTO scmGetBranchHeadCommitRequestDTO);
+
+  ScmListFilesResponseDTO listFiles(ScmListFilesRequestDTO scmListFilesRequestDTO);
 }

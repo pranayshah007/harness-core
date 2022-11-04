@@ -7,4 +7,4 @@
 
 package io.harness.beans.request;
 
-public abstract class scmBaseRequest {}
+public abstract class ScmBaseRequest {}

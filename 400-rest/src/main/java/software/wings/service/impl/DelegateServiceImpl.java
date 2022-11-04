@@ -84,8 +84,6 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
-import io.harness.capability.CapabilityRequirement;
-import io.harness.capability.service.CapabilityService;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.data.structure.EmptyPredicate;
@@ -125,7 +123,6 @@ import io.harness.delegate.beans.DuplicateDelegateException;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
 import io.harness.delegate.beans.K8sConfigDetails;
-import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.events.DelegateGroupDeleteEvent;
 import io.harness.delegate.events.DelegateGroupUpsertEvent;
 import io.harness.delegate.events.DelegateRegisterEvent;
@@ -394,7 +391,6 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private DelegateTaskSelectorMapService taskSelectorMapService;
   @Inject private SettingsService settingsService;
   @Inject private DelegateCache delegateCache;
-  @Inject private CapabilityService capabilityService;
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateTokenService delegateTokenService;
@@ -3097,22 +3093,6 @@ public class DelegateServiceImpl implements DelegateService {
       log.error("Could not get delegates from DB.", e);
       return null;
     }
-  }
-
-  @VisibleForTesting
-  public List<CapabilityRequirement> createCapabilityRequirementInstances(
-      String accountId, List<ExecutionCapability> agentCapabilities) {
-    List<CapabilityRequirement> capabilityRequirements = new ArrayList<>();
-    for (ExecutionCapability agentCapability : agentCapabilities) {
-      CapabilityRequirement capabilityRequirement =
-          capabilityService.buildCapabilityRequirement(accountId, agentCapability);
-
-      if (capabilityRequirement != null) {
-        capabilityRequirements.add(capabilityRequirement);
-      }
-    }
-
-    return capabilityRequirements;
   }
 
   @Override

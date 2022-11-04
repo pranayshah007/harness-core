@@ -38,7 +38,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.GraphQLModule;
 import io.harness.artifact.ArtifactCollectionPTaskServiceClient;
 import io.harness.cache.CacheModule;
-import io.harness.capability.CapabilityModule;
 import io.harness.ccm.CEPerpetualTaskHandler;
 import io.harness.ccm.KubernetesClusterHandler;
 import io.harness.ccm.cluster.ClusterRecordHandler;
@@ -881,7 +880,6 @@ public class WingsApplication extends Application<MainConfiguration> {
       }
     });
     modules.add(new DelegateServiceModule());
-    modules.add(new CapabilityModule());
     modules.add(MigrationModule.getInstance());
     registerRemoteObserverModule(configuration, modules);
     modules.add(new WingsModule(configuration, startupMode));

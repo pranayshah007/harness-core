@@ -131,7 +131,7 @@ ciExecutionServiceConfig:
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
   addonImage: harness/ci-addon:1.14.19
-  liteEngineImage: harness/ci-lite-engine:1.14.19
+  liteEngineImage: harness/ci-lite-engine:1.14.20
   isLocal: false
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
