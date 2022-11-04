@@ -297,10 +297,6 @@ message GetBatchFileRequest {
   repeated GetFileRequest findRequest = 1;
 }
 
-message GetBatchFileRequestV2 {
-  repeated GetFileRequest findRequest = 1;
-}
-
 message GetLatestFileRequest {
   string slug = 1;
   string path = 2;
@@ -769,7 +765,6 @@ service SCM {
   // File functions
   rpc GetFile(GetFileRequest) returns (FileContent);
   rpc GetBatchFile(GetBatchFileRequest) returns (FileBatchContentResponse);
-  rpc GetBatchFilesV2(GetBatchFileRequest) returns (FileBatchContentResponse);
   rpc GetLatestFile(GetLatestFileRequest) returns (FileContent);
   rpc IsLatestFile(IsLatestFileRequest) returns (IsLatestFileResponse);
   rpc FindFilesInBranch(FindFilesInBranchRequest) returns (FindFilesInBranchResponse);

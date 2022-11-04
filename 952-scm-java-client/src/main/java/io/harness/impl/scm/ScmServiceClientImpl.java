@@ -251,7 +251,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   private FileBatchContentResponse getContentOfFilesV2(
       List<String> filePaths, String slug, Provider gitProvider, String ref, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     GetBatchFileRequest batchFileRequest = createBatchFileRequest(filePaths, slug, ref, gitProvider, true);
-    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getBatchFilesV2, batchFileRequest);
+    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getBatchFile, batchFileRequest);
   }
 
   @Override
