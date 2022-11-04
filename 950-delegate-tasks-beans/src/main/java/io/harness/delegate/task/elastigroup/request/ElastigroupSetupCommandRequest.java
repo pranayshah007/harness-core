@@ -21,9 +21,18 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Value;
 import lombok.experimental.NonFinal;
 
-@Data
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
+@Value
 @Builder
 @OwnedBy(CDP)
 public class ElastigroupSetupCommandRequest
