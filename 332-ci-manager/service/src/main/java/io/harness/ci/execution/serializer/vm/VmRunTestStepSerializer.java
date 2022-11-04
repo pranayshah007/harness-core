@@ -92,7 +92,13 @@ public class VmRunTestStepSerializer {
         resolveMapParameter("envVariables", stepName, identifier, runTestsStepInfo.getEnvVariables(), false);
 
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runTestsStepInfo.getShell());
-    preCommand = earlyExitCommand + preCommand;
+    String gradleEnv = "\nexport GRADLE_USER_HOME=/harness/harnesscache\n";
+    earlyExitCommand += gradleEnv;
+    if (preCommand != null && !preCommand.equals("null")) {
+      preCommand = earlyExitCommand + preCommand;
+    } else {
+      preCommand = earlyExitCommand;
+    }
 
     VmRunTestStepBuilder runTestStepBuilder =
         VmRunTestStep.builder()
