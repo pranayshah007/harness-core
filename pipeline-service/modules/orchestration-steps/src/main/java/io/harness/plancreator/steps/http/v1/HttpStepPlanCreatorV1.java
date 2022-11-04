@@ -13,20 +13,24 @@ import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.http.HttpStepNode;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
+import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
+import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
@@ -41,6 +45,8 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
@@ -62,6 +68,13 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField field) {
     HttpStepNode stepNode = YamlUtils.read(field.getNode().toString(), HttpStepNode.class);
+    Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
+    Map<String, ByteString> metadataMap = new HashMap<>();
+
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getId(),
+        field.getName(), dependenciesNodeMap, metadataMap,
+        StrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()));
+
     StepElementParameters parameters =
         StepElementParameters.builder()
             .timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepNode.getTimeout())))
@@ -70,9 +83,9 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
 
     PlanNodeBuilder builder =
         PlanNode.builder()
-            .uuid(stepNode.getUuid())
-            .name(field.getNodeName())
-            .identifier(field.getId())
+            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stepNode.getUuid()))
+            .name(StrategyUtils.getIdentifierWithExpression(ctx, field.getNodeName()))
+            .identifier(StrategyUtils.getIdentifierWithExpression(ctx, field.getId()))
             .stepType(stepNode.getStepSpecType().getStepType())
             .group(StepOutcomeGroup.STEP.name())
             .stepParameters(parameters)
@@ -97,9 +110,31 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
       builder.adviserObtainment(adviserObtainment);
     }
 
-    return PlanCreationResponse.builder().planNode(builder.build()).build();
+    return PlanCreationResponse.builder()
+        .planNode(builder.build())
+        .graphLayoutResponse(getLayoutNodeInfo(ctx, field))
+        .dependencies(
+            DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                .toBuilder()
+                .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                .build())
+        .build();
   }
 
+  public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, YamlField config) {
+    Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
+    YamlField stageYamlField = context.getCurrentField();
+    String nextNodeUuid = null;
+    if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
+        && context.getDependency().getMetadataMap().containsKey("nextId")) {
+      nextNodeUuid =
+          (String) kryoSerializer.asObject(context.getDependency().getMetadataMap().get("nextId").toByteArray());
+    }
+    if (StrategyUtils.isWrappedUnderStrategy(context.getCurrentField())) {
+      stageYamlFieldMap = StrategyUtils.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);
+    }
+    return GraphLayoutResponse.builder().layoutNodes(stageYamlFieldMap).build();
+  }
   @Override
   public Set<String> getSupportedYamlVersions() {
     return Set.of(PipelineVersion.V1);
