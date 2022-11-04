@@ -22,7 +22,8 @@ public class EC2RecommendationService {
 
   @Nullable
   public EC2RecommendationDTO getEC2RecommendationById(@NonNull final String accountIdentifier, String id) {
-    log.info("request came to EC2RecommendationService");
+    log.info("request came to EC2RecommendationService {} {}", accountIdentifier, id);
+
     final Optional<EC2Recommendation> ec2Recommendation =
         ec2RecommendationDAO.fetchEC2RecommendationById(accountIdentifier, id);
 
@@ -36,6 +37,7 @@ public class EC2RecommendationService {
     log.info("final response after convert = {}", ec2RecommendationDTO);
     List<EC2InstanceUtilizationData> utilData =
         ec2RecommendationDAO.fetchInstanceDate(accountIdentifier, ec2RecommendationDTO.getId());
+    log.info("utilData.size() = {}", utilData.size());
     log.info("utilData = {}", utilData);
     return ec2RecommendationDTO;
   }

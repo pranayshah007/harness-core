@@ -10,6 +10,7 @@ import com.amazonaws.services.costexplorer.model.RecommendationTarget;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -26,16 +27,18 @@ public class EC2RecommendationDTOConverter extends Converter<EC2RecommendationDT
         recommendation.getRecommendationInfo()
             .stream()
             .filter(recommendationDetail
-                -> RecommendationTarget.SAME_INSTANCE_FAMILY.equals(recommendationDetail.getRecommendationType()))
-            .findFirst();
+                -> RecommendationTarget.SAME_INSTANCE_FAMILY.name().equals(
+                    recommendationDetail.getRecommendationType()))
+            .findAny();
     log.info(
         "sameFamilyRecommendation = {}", sameFamilyRecommendation.isPresent() ? sameFamilyRecommendation.get() : null);
     Optional<EC2RecommendationDetail> crossFamilyRecommendation =
         recommendation.getRecommendationInfo()
             .stream()
             .filter(recommendationDetail
-                -> RecommendationTarget.CROSS_INSTANCE_FAMILY.equals(recommendationDetail.getRecommendationType()))
-            .findFirst();
+                -> RecommendationTarget.CROSS_INSTANCE_FAMILY.name().equals(
+                    recommendationDetail.getRecommendationType()))
+            .findAny();
     log.info("crossFamilyRecommendation = {}",
         crossFamilyRecommendation.isPresent() ? crossFamilyRecommendation.get() : null);
     return EC2RecommendationDTO.builder()

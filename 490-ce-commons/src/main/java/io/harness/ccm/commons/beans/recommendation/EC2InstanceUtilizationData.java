@@ -14,6 +14,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CE)
 public class EC2InstanceUtilizationData {
+  long starttime;
   double maxcpu;
   double maxmemory;
 }

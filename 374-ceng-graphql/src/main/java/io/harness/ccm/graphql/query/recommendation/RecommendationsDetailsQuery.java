@@ -74,7 +74,8 @@ public class RecommendationsDetailsQuery {
       @GraphQLArgument(name = "endTime", description = "defaults to Now()") OffsetDateTime endTime,
       @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0")
       Long bufferPercentage, @GraphQLEnvironment final ResolutionEnvironment env) {
-    final String accountIdentifier = graphQLUtils.getAccountIdentifier(env);
+    final String accountIdentifier = "JQ3KKI5yRTGe37OrCiZaTA";
+    //    graphQLUtils.getAccountIdentifier(env);
 
     return recommendationDetailsInternal(accountIdentifier, resourceType, id, startTime, endTime, bufferPercentage);
   }
