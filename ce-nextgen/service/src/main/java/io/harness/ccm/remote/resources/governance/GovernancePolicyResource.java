@@ -7,15 +7,24 @@
 
 package io.harness.ccm.remote.resources.governance;
 
+import com.google.inject.name.Named;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import io.harness.ccm.audittrails.events.PolicyCreateEvent;
+import io.harness.ccm.audittrails.events.PolicyDeleteEvent;
+import io.harness.ccm.audittrails.events.PolicyUpdateEvent;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_DELETE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_UPDATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
 import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_NAME;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import io.harness.outbox.api.OutboxService;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+import io.harness.telemetry.Category;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
@@ -97,7 +106,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
 @Service
@@ -133,6 +145,9 @@ public class GovernancePolicyResource {
   private final PolicyExecutionService policyExecutionService;
   private final TelemetryReporter telemetryReporter;
   @Inject CENextGenConfiguration configuration;
+  @Inject private OutboxService outboxService;
+  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   @Inject
   public GovernancePolicyResource(GovernancePolicyService governancePolicyService, CCMRbacHelper rbacHelper,
@@ -187,9 +202,14 @@ public class GovernancePolicyResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_NAME, policy.getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_CREATED, null, accountId, properties,
-        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(policy.toDTO());
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_CREATED,null,accountId, properties
+            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(
+
+            Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+                      outboxService.save(new PolicyCreateEvent(accountId, policy.toDTO()));
+              return governancePolicyService.listName(accountId, policy.getName(), false);
+            })));
   }
 
   // Update a policy already made
@@ -223,7 +243,11 @@ public class GovernancePolicyResource {
     telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
-    return ResponseDTO.newResponse(governancePolicyService.update(policy, accountId));
+    return ResponseDTO.newResponse(
+            Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+              outboxService.save(new PolicyUpdateEvent(accountId, policy.toDTO()));
+              return governancePolicyService.update(policy, accountId);
+            })));
   }
 
   @PUT
@@ -299,14 +323,15 @@ public class GovernancePolicyResource {
       @PathParam("policyID") @Parameter(
           required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyDeletePermission(accountId, null, null);
-    String name = governancePolicyService.listId(accountId, uuid, false).getName();
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(POLICY_NAME, name);
-    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_DELETE, null, accountId, properties,
-        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    boolean result = governancePolicyService.delete(accountId, uuid);
-    return ResponseDTO.newResponse(result);
+    properties.put(POLICY_NAME, governancePolicyService.listId(accountId, uuid, false).getName());
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_DELETE,null,accountId, properties
+            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      outboxService.save(new PolicyDeleteEvent(accountId,governancePolicyService.listId(accountId, uuid, false) ));
+      return governancePolicyService.delete(accountId, uuid);
+    })));
   }
 
   // API to list all OOTB Policies

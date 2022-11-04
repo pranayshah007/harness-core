@@ -29,9 +29,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.UtilityClass;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
 
 @Data
 @Builder
@@ -60,8 +63,8 @@ public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware
   @Schema(description = "deleted") Boolean deleted;
   @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
   @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
-  @Schema(description = "created by") private EmbeddedUser createdBy;
-  @Schema(description = "updated by") private EmbeddedUser lastUpdatedBy;
+  @CreatedBy @Schema private EmbeddedUser createdBy;
+  @LastModifiedBy @Schema private EmbeddedUser lastUpdatedBy;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -79,24 +82,25 @@ public final class Policy implements PersistentEntity, UuidAware, CreatedAtAware
   }
   public Policy toDTO() {
     return Policy.builder()
-        .uuid(getUuid())
-        .accountId(getAccountId())
-        .name(getName())
-        .description(getDescription())
-        .policyYaml(getPolicyYaml())
-        .cloudProvider(getCloudProvider())
-        .versionLabel(getVersionLabel())
-        .isStablePolicy(getIsStablePolicy())
-        .storeType(getStoreType())
-        .isOOTB(getIsOOTB())
-        .tags(getTags())
-        .deleted(getDeleted())
-        .orgIdentifier(getOrgIdentifier())
-        .projectIdentifier(getProjectIdentifier())
-        .createdAt(getCreatedAt())
-        .lastUpdatedAt(getLastUpdatedAt())
-        .createdBy(getCreatedBy())
-        .lastUpdatedBy(getLastUpdatedBy())
-        .build();
+            .uuid(getUuid())
+            .accountId(getAccountId())
+            .name(getName())
+            .description(getDescription())
+            .policyYaml(getPolicyYaml())
+            .cloudProvider(getCloudProvider())
+            .versionLabel(getVersionLabel())
+            .isStablePolicy(getIsStablePolicy())
+            .storeType(getStoreType())
+            .isOOTB(getIsOOTB())
+            .tags(getTags())
+            .deleted(getDeleted())
+            .orgIdentifier(getOrgIdentifier())
+            .projectIdentifier(getProjectIdentifier())
+            .createdAt(getCreatedAt())
+            .lastUpdatedAt(getLastUpdatedAt())
+            .createdBy(getCreatedBy())
+            .lastUpdatedBy(getLastUpdatedBy())
+            .build();
   }
+
 }

@@ -54,6 +54,11 @@ public class PolicyEnforcementServiceImpl implements PolicyEnforcementService {
   }
 
   @Override
+  public PolicyEnforcement listId(String accountId, String uuid, boolean create) {
+    { return policyEnforcementDAO.listid(accountId, uuid, create); }
+  }
+
+  @Override
   public List<PolicyEnforcement> list(String accountId) {
     { return policyEnforcementDAO.list(accountId); }
   }

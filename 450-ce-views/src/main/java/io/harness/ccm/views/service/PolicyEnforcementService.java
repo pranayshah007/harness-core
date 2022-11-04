@@ -20,6 +20,7 @@ public interface PolicyEnforcementService {
   boolean delete(String accountId, String uuid);
   PolicyEnforcement update(PolicyEnforcement policyEnforcement);
   PolicyEnforcement listName(String accountId, String name, boolean create);
+  PolicyEnforcement listId(String accountId, String uuid, boolean create);
   List<PolicyEnforcement> list(String accountId);
   EnforcementCount getCount(String accountId, EnforcementCountRequest enforcementCountRequest );
 }

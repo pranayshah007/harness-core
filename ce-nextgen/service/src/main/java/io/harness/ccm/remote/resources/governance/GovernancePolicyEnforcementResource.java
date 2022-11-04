@@ -7,13 +7,21 @@
 
 package io.harness.ccm.remote.resources.governance;
 
+import com.google.inject.name.Named;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import io.harness.ccm.audittrails.events.PolicyEnforcementCreateEvent;
+import io.harness.ccm.audittrails.events.PolicyEnforcementDeleteEvent;
+import io.harness.ccm.audittrails.events.PolicyEnforcementUpdateEvent;
+import io.harness.ccm.audittrails.events.PolicyPackCreateEvent;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_ENFORCEMENT_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_ENFORCEMENT_DELETE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_ENFORCEMENT_UPDATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
 import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_ENFORCEMENT_NAME;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import io.harness.outbox.api.OutboxService;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
@@ -72,10 +80,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import net.minidev.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.springframework.scheduling.support.CronSequenceGenerator;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 import retrofit2.Response;
 
 @Slf4j
@@ -119,6 +130,9 @@ public class GovernancePolicyEnforcementResource {
   private final TelemetryReporter telemetryReporter;
   @Inject CENextGenConfiguration configuration;
   @Inject SchedulerClient schedulerClient;
+  @Inject private OutboxService outboxService;
+  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   @Inject
   public GovernancePolicyEnforcementResource(PolicyEnforcementService policyEnforcementService,
@@ -128,7 +142,7 @@ public class GovernancePolicyEnforcementResource {
     this.rbacHelper = rbacHelper;
     this.policyService = governancePolicyService;
     this.policyPackService = policyPackService;
-    this.telemetryReporter= telemetryReporter;
+    this.telemetryReporter = telemetryReporter;
   }
 
   @POST
@@ -218,7 +232,10 @@ public class GovernancePolicyEnforcementResource {
         log.info("{}", e.toString());
       }
     }
-    return ResponseDTO.newResponse(policyEnforcement.toDTO());
+    return ResponseDTO.newResponse(Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      outboxService.save(new PolicyEnforcementCreateEvent(accountId, policyEnforcement));
+      return policyEnforcementService.listName(accountId, policyEnforcement.getName(), false);
+    })));
   }
 
   @DELETE
@@ -240,18 +257,20 @@ public class GovernancePolicyEnforcementResource {
   delete(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("enforcementID") @Parameter(
-          required = true, description = "Unique identifier for the policy enforcement") @NotNull @Valid String name) {
+          required = true, description = "Unique identifier for the policy enforcement") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyEnforcementDeletePermission(accountId, null, null);
-    boolean result =
-        policyEnforcementService.delete(accountId, policyEnforcementService.listName(accountId, name, false).getUuid());
-    // TODO: Delete the record from dkron as well.
+
+       // TODO: Delete the record from dkron as well.
 
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(POLICY_ENFORCEMENT_NAME, name);
+    properties.put(POLICY_ENFORCEMENT_NAME, policyEnforcementService.listId(accountId, uuid, false).getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_ENFORCEMENT_DELETE, null, accountId, properties,
-            Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(result);
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      outboxService.save(new PolicyEnforcementDeleteEvent(accountId, policyEnforcementService.listId(accountId, uuid, false)));
+      return   policyEnforcementService.delete(accountId, uuid);
+    })));
   }
 
   @PUT
@@ -290,8 +309,11 @@ public class GovernancePolicyEnforcementResource {
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_ENFORCEMENT_NAME, policyEnforcement.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_ENFORCEMENT_UPDATED, null, accountId, properties,
-            Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(policyEnforcementService.update(policyEnforcement));
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      outboxService.save(new PolicyEnforcementUpdateEvent(accountId, policyEnforcement));
+      return policyEnforcementService.update(policyEnforcement);
+    })));
   }
 
   @POST

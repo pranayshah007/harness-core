@@ -11,6 +11,8 @@ import io.harness.ccm.views.entities.Policy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.Valid;
+
+import io.harness.gitsync.beans.YamlDTO;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -19,6 +21,6 @@ import lombok.experimental.FieldDefaults;
 @Value
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreatePolicyDTO {
+public class CreatePolicyDTO implements YamlDTO {
   @JsonProperty("policies") @Valid Policy policy;
 }

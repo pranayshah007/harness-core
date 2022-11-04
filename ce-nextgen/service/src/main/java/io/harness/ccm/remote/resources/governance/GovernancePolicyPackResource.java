@@ -7,12 +7,17 @@
 
 package io.harness.ccm.remote.resources.governance;
 
+import com.google.inject.name.Named;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
+import io.harness.ccm.audittrails.events.PolicyCreateEvent;
+import io.harness.ccm.audittrails.events.PolicyPackCreateEvent;
+import io.harness.ccm.audittrails.events.PolicyPackDeleteEvent;
+import io.harness.ccm.audittrails.events.PolicyPackUpdateEvent;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_PACK_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_PACK_DELETE;
@@ -30,11 +35,14 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import io.harness.telemetry.Category;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 import io.harness.telemetry.TelemetryReporter;
@@ -64,7 +72,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Api("governance")
 @Path("governance")
@@ -100,6 +111,10 @@ public class GovernancePolicyPackResource {
   private final GovernancePolicyService policyService;
   private final TelemetryReporter telemetryReporter;
   @Inject CENextGenConfiguration configuration;
+  @Inject private OutboxService outboxService;
+  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
+
 
   @Inject
   public GovernancePolicyPackResource(
@@ -147,7 +162,10 @@ public class GovernancePolicyPackResource {
     properties.put(POLICY_PACK_NAME,policyPack.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_PACK_CREATED,null,accountId, properties
             , Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(policyPack.toDTO());
+    return ResponseDTO.newResponse(Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      outboxService.save(new PolicyPackCreateEvent(accountId, policyPack.toDTO()));
+      return policyPackService.listName(accountId, policyPack.getName(), false);
+    })));
   }
 
   @PUT
@@ -181,7 +199,10 @@ public class GovernancePolicyPackResource {
     properties.put(POLICY_PACK_NAME,policyPack.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_PACK_UPDATED,null,accountId, properties
             , Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(policyPack);
+    return ResponseDTO.newResponse(Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      outboxService.save(new PolicyPackUpdateEvent(accountId, policyPack.toDTO()));
+      return policyPackService.listName(accountId, policyPack.getName(), false);
+    })));
   }
 
   @PUT
@@ -263,7 +284,7 @@ public class GovernancePolicyPackResource {
   }
 
   @DELETE
-  @Path("policypack/{policyPackId}")
+  @Path("policyPack/{policyPackId}")
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "Delete a policy set", nickname = "deletePolicyPack")
@@ -280,20 +301,22 @@ public class GovernancePolicyPackResource {
   delete(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("policyPackId") @Parameter(
-          required = true, description = "Unique identifier for the policy") @NotNull @Valid String name) {
+          required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyPackDeletePermission(accountId, null, null);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(POLICY_PACK_NAME,name);
+    properties.put(POLICY_PACK_NAME,policyPackService.listId(accountId,uuid,false).getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_PACK_DELETE,null,accountId, properties
             , Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    boolean result = policyPackService.delete(accountId, policyPackService.listName(accountId, name, false).getUuid());
-    return ResponseDTO.newResponse(result);
+    return ResponseDTO.newResponse(Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      outboxService.save(new PolicyPackDeleteEvent(accountId, policyPackService.listId(accountId,uuid,false) ));
+      return policyPackService.delete(accountId,uuid);
+    })));
   }
 
   @DELETE
   @Hidden
-  @Path("policypackOOTB/{uuid}")
+  @Path("policyPackOOTB/{uuid}")
   @Timed
   @Produces(MediaType.APPLICATION_JSON)
   @ExceptionMetered

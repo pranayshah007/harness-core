@@ -16,6 +16,7 @@ public interface PolicyPackService {
   boolean delete(String accountId, String uuid);
   PolicyPack update(PolicyPack policyPack);
   PolicyPack listName(String accountId, String name, boolean create);
+  PolicyPack listId(String accountId, String uuid, boolean create);
   List<PolicyPack> list(String accountId, PolicyPack policyPack);
   void check( List<String> policyPackIdentifier);
   boolean deleteOOTB(String uuid);

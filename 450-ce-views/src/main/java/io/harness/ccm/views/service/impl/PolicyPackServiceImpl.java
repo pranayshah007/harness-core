@@ -45,9 +45,15 @@ public class PolicyPackServiceImpl implements PolicyPackService {
   }
 
   @Override
-  public PolicyPack listName(String accountId, String name, boolean create) {
+  public PolicyPack listName(String accountId, String uuid, boolean create) {
     {
-      return policyPackDAO.listName(accountId, name, create); }
+      return policyPackDAO.listName(accountId, uuid, create); }
+  }
+
+ @Override
+  public PolicyPack listId(String accountId, String name, boolean create) {
+    {
+      return policyPackDAO.listid(accountId, name, create); }
   }
 
   @Override
