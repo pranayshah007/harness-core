@@ -626,7 +626,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   @Override
   public FileContentBatchResponse listFilesV2(
       ScmConnector connector, Set<String> foldersList, String branchName, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    log.info("Fetching files as base64");
+    log.info("Fetching Optimized files via V2 API and base64 encoded data");
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(connector);
     String slug = scmGitProviderHelper.getSlug(connector);
     final GetLatestCommitResponse latestCommitResponse =
