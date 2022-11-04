@@ -5,6 +5,8 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
+#Run the TI,FT and other bazel builds based on the commit
+
 >merge_summary.txt
 >committed_files.txt
 
@@ -13,9 +15,6 @@ export SourceBranch=`echo ${ghprbSourceBranch}`
 
 REGEX1='^.*.sh$'
 REGEX2='^.*.md$'
-
-#git diff $TargetBranch origin/$TargetBranch --name-only
-#git diff $TargetBranch origin/$TargetBranch --name-only >merge_summary.txt
 
 git diff HEAD@{0} HEAD@{1} --name-only >merge_summary.txt
 
