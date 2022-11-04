@@ -24,6 +24,7 @@ import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Value;
 import lombok.experimental.NonFinal;
 
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import java.util.Set;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
-@Data
+@Value
 @Builder
 @OwnedBy(CDP)
 public class ElastigroupSetupCommandRequest implements ElastigroupCommandRequest, ExpressionReflectionUtils.NestedAnnotationResolver {
