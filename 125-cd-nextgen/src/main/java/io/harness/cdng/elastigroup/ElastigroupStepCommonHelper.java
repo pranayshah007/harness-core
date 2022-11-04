@@ -201,7 +201,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     UnitProgressData unitProgressData = null;
     TaskChainResponse taskChainResponse = null;
     try {
-      if (responseData instanceof ElastigroupStartupScriptFetchResponse) { // if EcsGitFetchResponse is received
+      if (responseData instanceof ElastigroupStartupScriptFetchResponse) { // if ElastigroupStartupScriptFetchResponse is received
 
         ElastigroupStartupScriptFetchResponse elastigroupStartupScriptFetchResponse = (ElastigroupStartupScriptFetchResponse) responseData;
         ElastigroupStartupScriptFetchPassThroughData elastigroupStartupScriptFetchPassThroughData = (ElastigroupStartupScriptFetchPassThroughData) passThroughData;

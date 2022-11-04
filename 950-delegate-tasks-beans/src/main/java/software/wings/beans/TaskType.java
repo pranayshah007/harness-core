@@ -387,14 +387,14 @@ public enum TaskType {
   NG_LDAP_TEST_AUTHENTICATION(TaskGroup.LDAP),
   ECS_GIT_FETCH_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Task"),
   ECS_COMMAND_TASK_NG(TaskGroup.ECS, "ECS Command Task"),
-  ELASTIGROUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Command Task"),
   WIN_RM_SHELL_SCRIPT_TASK_NG(TaskGroup.SHELL_SCRIPT_NG, "Shell Script Task"),
   SHELL_SCRIPT_PROVISION(TaskGroup.SHELL_SCRIPT_PROVISION_NG, "Shell Script Provision Task"),
   ECS_GIT_FETCH_RUN_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Run Task"),
-  ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Startup Script Fetch Run Task"),
   TRIGGER_AUTHENTICATION_TASK(TaskGroup.TRIGGER),
   SPOT_TASK_NG(TaskGroup.SPOTINST, "Spot NG Task"),
-  AZURE_WEB_APP_TASK_NG_V2(TaskGroup.AZURE, "Azure Web App Task V2", true);
+  AZURE_WEB_APP_TASK_NG_V2(TaskGroup.AZURE, "Azure Web App Task V2", true),
+  ELASTIGROUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Command Task"),
+  ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Startup Script Fetch Run Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;
