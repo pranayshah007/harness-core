@@ -61,6 +61,7 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
+import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
@@ -836,6 +837,7 @@ public class IntegrationStageUtils {
                                     .uuid(generateUuid())
                                     .cloneCodebase(ParameterField.createValueField(cloneCodebase))
                                     .serviceDependencies(ParameterField.createValueField(Collections.emptyList()))
+                                    .caching(Caching.builder().enabled(ParameterField.createValueField(true)).build())
                                     .build())
         .build();
   }

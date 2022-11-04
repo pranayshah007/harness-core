@@ -7,13 +7,19 @@
 
 package io.harness.beans.yaml.extended.reports;
 
+import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
+
 import io.harness.annotation.RecasterAlias;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -31,9 +37,12 @@ public class UnitTestReport {
   @ApiModelProperty(hidden = true)
   private String uuid;
   private UnitTestReportType type;
-  @JsonTypeInfo(
-      use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
+  //  @JsonTypeInfo(
+  //      use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
   private UnitTestReportSpec spec;
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
+  ParameterField<List<String>> paths;
 
   @Builder
   public UnitTestReport(UnitTestReportType type, UnitTestReportSpec spec) {

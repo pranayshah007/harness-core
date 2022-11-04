@@ -54,6 +54,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
+import io.harness.yaml.extended.ci.codebase.Build.BuildBuilder;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
@@ -188,18 +189,17 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<YamlFi
     GitSyncBranchContext gitSyncBranchContext = deserializeGitSyncBranchContext(ctx.getGitSyncBranchContext());
     switch (pipelineStoreType) {
       case REMOTE:
+        BuildBuilder builder =
+            Build.builder()
+                .type(BuildType.BRANCH)
+                .spec(BranchBuildSpec.builder()
+                          .branch(ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getBranch()))
+                          .build());
         return CodeBase.builder()
             .uuid(generateUuid())
             .connectorRef(ParameterField.createValueField(ctx.getMetadata().getMetadata().getPipelineConnectorRef()))
             .repoName(ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getRepoName()))
-            .build(
-                ParameterField.createValueField(Build.builder()
-                                                    .type(BuildType.BRANCH)
-                                                    .spec(BranchBuildSpec.builder()
-                                                              .branch(ParameterField.createValueField(
-                                                                  gitSyncBranchContext.getGitBranchInfo().getBranch()))
-                                                              .build())
-                                                    .build()))
+            .build(ParameterField.createValueField(builder.build()))
             .depth(ParameterField.createValueField(GIT_CLONE_MANUAL_DEPTH))
             .prCloneStrategy(ParameterField.createValueField(null))
             .sslVerify(ParameterField.createValueField(null))

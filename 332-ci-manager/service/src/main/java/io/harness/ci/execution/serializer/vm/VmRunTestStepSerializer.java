@@ -104,7 +104,7 @@ public class VmRunTestStepSerializer {
             .packages(packages)
             .namespaces(namespaces)
             .testAnnotations(testAnnotations)
-            .runOnlySelectedTests(runOnlySelectedTests)
+            .runOnlySelectedTests(true)
             .preCommand(preCommand)
             .postCommand(postCommand)
             .envVariables(envVars)
@@ -128,9 +128,10 @@ public class VmRunTestStepSerializer {
 
     if (runTestsStepInfo.getReports().getValue() != null) {
       if (runTestsStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {
-        JUnitTestReport junitTestReport = (JUnitTestReport) runTestsStepInfo.getReports().getValue().getSpec();
-        List<String> resolvedReport =
-            RunTimeInputHandler.resolveListParameter("paths", stepName, identifier, junitTestReport.getPaths(), false);
+        //        JUnitTestReport junitTestReport = (JUnitTestReport)
+        //        runTestsStepInfo.getReports().getValue().getSpec();
+        List<String> resolvedReport = RunTimeInputHandler.resolveListParameter(
+            "paths", stepName, identifier, runTestsStepInfo.getReports().getValue().getPaths(), false);
         runTestStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
       }
     }
