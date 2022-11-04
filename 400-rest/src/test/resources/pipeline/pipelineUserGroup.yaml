@@ -22,3 +22,4 @@ pipelineStages:
     sweepingOutputName: ''
   skipCondition:
     type: DO_NOT_SKIP
+rollbackPreviousStages: false

@@ -38,7 +38,6 @@ import io.harness.pms.contracts.service.VariablesServiceGrpc;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.rule.Owner;
-import io.harness.spec.server.template.model.TemplateFilterProperties;
 import io.harness.spec.server.template.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.model.TemplateResponse;
 import io.harness.spec.server.template.model.TemplateUpdateStableResponse;
@@ -64,7 +63,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -333,12 +331,6 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.createdAt));
     PageImpl<TemplateEntity> templateEntities =
         new PageImpl<>(Collections.singletonList(entityWithMongoVersion), pageable, 1);
-    //        ArrayList<Link> links = new ArrayList<>();
-    //        links.add(
-    //                Link.fromUri(fromPath(format("/v1/orgs/%s/projects/%s/templates", ORG_IDENTIFIER,
-    //                PROJ_IDENTIFIER)).queryParam(PAGE, 0).queryParam(PAGE_SIZE, 10).build()).rel(SELF_REL).build());
-    ResponseBuilder responseBuilder = Response.ok();
-    //       ResponseBuilder finalResponseBuilder = responseBuilder.links(links.toArray(new Link[links.size()]));
     TemplateMetadataSummaryResponse templateMetadataSummaryResponse = new TemplateMetadataSummaryResponse();
     templateMetadataSummaryResponse.setAccount(entity.getAccountId());
     templateMetadataSummaryResponse.setOrg(entity.getOrgIdentifier());
@@ -355,10 +347,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     templateMetadataSummaryResponse.setConnectorRef(entity.getConnectorRef());
     templateMetadataSummaryResponse.setStableTemplate(entity.isStableTemplate());
     when(templateResourceApiMapper.mapToTemplateMetadataResponse(any())).thenReturn(templateMetadataSummaryResponse);
-    //        doReturn(responseBuilder).when(templateResourceApiMapper).addLinksHeader(any(),any(),any(),any(),any());
-    //        when(templateResourceApiMapper.addLinksHeader(any(ResponseBuilder.class),any(),any(),any(),any())).thenReturn(responseBuilder);
     doReturn(templateEntities).when(templateService).listTemplateMetadata(any(), any(), any(), any(), any());
-    TemplateFilterProperties templateFilterProperties = new TemplateFilterProperties();
     Response response = templateResourceApiUtils.getTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, 0, 25, null,
         null, null, TemplateListType.ALL_TEMPLATE_TYPE.toString(), false, null, null, null,
         Collections.singletonList("Stage"), null);

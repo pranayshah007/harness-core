@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsTaskHandler;
@@ -66,6 +67,8 @@ public class ArtifactCollectionServiceRegistryNg {
         return GARArtifactTaskHandler.class;
       case AZURE_ARTIFACTS:
         return AzureArtifactsTaskHandler.class;
+      case AMI:
+        return AMIArtifactTaskHandler.class;
       default:
         throw new InvalidRequestException("Unknown artifact source type: " + artifactSourceType);
     }

@@ -171,7 +171,7 @@ public class MailServiceImpl implements ChannelService {
 
   private void validateEmptyEmails(EmailDTO emailDTO, List<String> emails, List<String> ccEmails, String errorMessage) {
     if (emails.isEmpty() && ccEmails.isEmpty()) {
-      String emptyEmailMessage = String.format("No email id encountered for %s.", emailDTO.getNotificationId());
+      String emptyEmailMessage = String.format("No email id encountered");
       if (StringUtils.isNotEmpty(errorMessage)) {
         emptyEmailMessage = errorMessage + " " + emptyEmailMessage;
       }
@@ -198,7 +198,8 @@ public class MailServiceImpl implements ChannelService {
         errorMessage = errorMessage.concat(" ");
       }
       errorMessage = errorMessage.concat(String.format(
-          "Emails %s are not present in account %s.", StringUtils.join(notPresentEmails, ", "), accountId));
+          "Emails %s are not present in account, Emails can be sent only to email addresses of Harness users in the account.",
+          StringUtils.join(notPresentEmails, ", ")));
     }
     return errorMessage;
   }

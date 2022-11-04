@@ -9,6 +9,7 @@ package io.harness.serializer.kryo;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
+import io.harness.ami.AMITagsResponse;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryImagePath;
@@ -475,6 +476,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureDevopsProjects.class, 80310);
     kryo.register(ArtifactoryImagePath.class, 80311);
     kryo.register(WebhookSecretData.class, 80312);
+    kryo.register(AMITagsResponse.class, 81001);
     kryo.register(NexusRepositories.class, 9000312);
   }
 }

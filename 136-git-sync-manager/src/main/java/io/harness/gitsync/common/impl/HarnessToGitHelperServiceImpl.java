@@ -19,7 +19,6 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.common.EntityReference;
 import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
@@ -36,6 +35,7 @@ import io.harness.gitsync.CreateFileRequest;
 import io.harness.gitsync.CreatePRRequest;
 import io.harness.gitsync.CreatePRResponse;
 import io.harness.gitsync.ErrorDetails;
+import io.harness.gitsync.FileGitDetails;
 import io.harness.gitsync.FileInfo;
 import io.harness.gitsync.GetBranchHeadCommitRequest;
 import io.harness.gitsync.GetBranchHeadCommitResponse;
@@ -45,6 +45,8 @@ import io.harness.gitsync.GetRepoUrlRequest;
 import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.GitMetaData;
 import io.harness.gitsync.IsGitSimplificationEnabledRequest;
+import io.harness.gitsync.ListFilesRequest;
+import io.harness.gitsync.ListFilesResponse;
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.RepoDetails;
@@ -59,10 +61,14 @@ import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
+import io.harness.gitsync.common.dtos.ScmFileContentTypeDTO;
+import io.harness.gitsync.common.dtos.ScmFileGitDetailsDTO;
 import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
+import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
@@ -96,16 +102,16 @@ import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.security.Principal;
 import io.harness.security.dto.UserPrincipal;
-import io.harness.tasks.DecryptGitApiAccessHelper;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
@@ -114,8 +120,6 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(DX)
 public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService {
-  private final ConnectorService connectorService;
-  private final DecryptGitApiAccessHelper decryptScmApiAccess;
   private final GitEntityService gitEntityService;
   private final YamlGitConfigService yamlGitConfigService;
   private final EntityDetailProtoToRestMapper entityDetailRestToProtoMapper;
@@ -134,17 +138,14 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   private final AccountClient accountClient;
 
   @Inject
-  public HarnessToGitHelperServiceImpl(@Named("connectorDecoratorService") ConnectorService connectorService,
-      DecryptGitApiAccessHelper decryptScmApiAccess, GitEntityService gitEntityService,
-      YamlGitConfigService yamlGitConfigService, EntityDetailProtoToRestMapper entityDetailRestToProtoMapper,
-      ExecutorService executorService, GitBranchService gitBranchService, GitFilePathHelper gitFilePathHelper,
+  public HarnessToGitHelperServiceImpl(GitEntityService gitEntityService, YamlGitConfigService yamlGitConfigService,
+      EntityDetailProtoToRestMapper entityDetailRestToProtoMapper, ExecutorService executorService,
+      GitBranchService gitBranchService, GitFilePathHelper gitFilePathHelper,
       ScmOrchestratorService scmOrchestratorService, GitBranchSyncService gitBranchSyncService,
       GitCommitService gitCommitService, UserProfileHelper userProfileHelper, GitSyncErrorService gitSyncErrorService,
       GitSyncConnectorHelper gitSyncConnectorHelper, FullSyncJobService fullSyncJobService,
       ScmFacilitatorService scmFacilitatorService, GitSyncSettingsService gitSyncSettingsService,
       AccountClient accountClient) {
-    this.connectorService = connectorService;
-    this.decryptScmApiAccess = decryptScmApiAccess;
     this.gitEntityService = gitEntityService;
     this.yamlGitConfigService = yamlGitConfigService;
     this.entityDetailRestToProtoMapper = entityDetailRestToProtoMapper;
@@ -547,6 +548,53 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
           .setError(prepareDefaultErrorDetails(ex))
           .build();
     }
+  }
+
+  @Override
+  public ListFilesResponse listFiles(ListFilesRequest listFilesRequest) {
+    try {
+      Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(listFilesRequest.getScopeIdentifiers());
+      ScmListFilesResponseDTO response =
+          scmFacilitatorService.listFiles(ScmListFilesRequestDTO.builder()
+                                              .connectorRef(listFilesRequest.getConnectorRef())
+                                              .ref(listFilesRequest.getRef())
+                                              .fileDirectoryPath(listFilesRequest.getFileDirectoryPath())
+                                              .scope(scope)
+                                              .build());
+      return prepareListFilesResponse(response);
+    } catch (WingsException ex) {
+      ScmException scmException = ScmExceptionUtils.getScmException(ex);
+      if (scmException == null) {
+        return ListFilesResponse.newBuilder()
+            .setStatusCode(ex.getCode().getStatus().getCode())
+            .setError(prepareDefaultErrorDetails(ex))
+            .build();
+      }
+      return ListFilesResponse.newBuilder()
+          .setStatusCode(ScmErrorCodeToHttpStatusCodeMapping.getHttpStatusCode(scmException.getCode()))
+          .setError(prepareDefaultErrorDetails(ex))
+          .build();
+    }
+  }
+
+  private ListFilesResponse prepareListFilesResponse(ScmListFilesResponseDTO response) {
+    return ListFilesResponse.newBuilder()
+        .setStatusCode(HTTP_200)
+        .addAllFileGitDetails(toFileGitDetails(response.getFileGitDetailsDTOList()))
+        .build();
+  }
+
+  private List<FileGitDetails> toFileGitDetails(List<ScmFileGitDetailsDTO> fileGitDetailsDTOList) {
+    List<FileGitDetails> fileGitDetailsList = new ArrayList<>();
+    fileGitDetailsDTOList.forEach(scmFileGitDetailsDTO
+        -> fileGitDetailsList.add(
+            FileGitDetails.newBuilder()
+                .setBlobId(scmFileGitDetailsDTO.getBlobId())
+                .setCommitId(scmFileGitDetailsDTO.getCommitId())
+                .setPath(scmFileGitDetailsDTO.getPath())
+                .setContentType(ScmFileContentTypeDTO.getProtoContentType(scmFileGitDetailsDTO.getContentType()))
+                .build()));
+    return fileGitDetailsList;
   }
 
   private InfoForGitPush getInfoForGitPush(

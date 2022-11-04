@@ -92,7 +92,7 @@ planExecutionsSummary {"name": "accountId_orgId_projectId_startTs_status_modules
 planExecutionsSummary {"name": "accountId_orgId_projectId_status_modules_isLatestExecution_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "modules": 1, "isLatestExecution": 1, "status": -1}
 planExecutionsSummary {"name": "accountId_organizationId_projectId_createdAt_idx", "background": true} {"projectIdentifier": 1, "orgIdentifier": 1, "accountId": 1, "createdAt": 1}
 planExecutionsSummary {"name": "accountId_organizationId_projectId_createdAt_modules_idx", "background": true} {"modules": 1, "projectIdentifier": 1, "orgIdentifier": 1, "accountId": 1, "createdAt": 1}
-planExecutionsSummary {"name": "accountId_organizationId_projectId_pipelineId", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineIdentifier": 1}
+planExecutionsSummary {"name": "accountId_organizationId_projectId_pipelineId_branch_repo", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineIdentifier": 1, "entityGitDetails.branch": 1, "entityGitDetails.repoName": 1}
 planExecutionsSummary {"name": "accountId_organizationId_projectId_pipelineId_createdAt_idx", "background": true} {"pipelineIdentifier": 1, "projectIdentifier": 1, "orgIdentifier": 1, "accountId": 1, "createdAt": 1}
 planExecutionsSummary {"name": "createdAt_1", "background": true} {"createdAt": 1}
 planExecutionsSummary {"name": "planExecutionId_1", "unique": true} {"planExecutionId": 1}

@@ -7,9 +7,6 @@
 
 package io.harness.perpetualtask;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
-import io.harness.grpc.utils.HTimestamps;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.rest.CallbackWithRetry;
 import io.harness.util.DelegateRestUtils;
@@ -17,7 +14,6 @@ import io.harness.util.DelegateRestUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -62,24 +58,22 @@ public class PerpetualTaskServiceAgentClient {
     return null;
   }
 
-  public void heartbeat(
-      PerpetualTaskId taskId, Instant taskStartTime, PerpetualTaskResponse perpetualTaskResponse, String accountId) {
+  public void recordPerpetualTaskFailure(
+      PerpetualTaskId taskId, String accountId, PerpetualTaskResponse perpetualTaskResponse) {
     try {
-      HeartbeatRequest heartbeatRequest = HeartbeatRequest.newBuilder()
-                                              .setId(taskId.getId())
-                                              .setHeartbeatTimestamp(HTimestamps.fromInstant(taskStartTime))
-                                              .setResponseCode(perpetualTaskResponse.getResponseCode())
-                                              .setResponseMessage(perpetualTaskResponse.getResponseMessage())
-                                              .build();
-      if (isEmpty(accountId)) {
-        log.warn("Account id is null while sending heartbeat");
-      }
-      Call<HeartbeatResponse> call = delegateAgentManagerClient.heartbeat(accountId, heartbeatRequest);
-      HeartbeatResponse response = DelegateRestUtils.executeRestCall(call);
+      PerpetualTaskFailureRequest perpetualTaskFailureRequest =
+          PerpetualTaskFailureRequest.newBuilder()
+              .setId(taskId.getId())
+              .setExceptionMessage(perpetualTaskResponse.getResponseMessage())
+              .build();
+
+      Call<PerpetualTaskFailureResponse> call =
+          delegateAgentManagerClient.recordPerpetualTaskFailure(accountId, perpetualTaskFailureRequest);
+      PerpetualTaskFailureResponse perpetualTaskFailureResponse = DelegateRestUtils.executeRestCall(call);
     } catch (IOException ex) {
       log.error(ex.getMessage());
     } catch (Exception e) {
-      log.error("Error on PT heartbeat ", e);
+      log.error("Error during recording PT task failure ", e);
     }
   }
 
