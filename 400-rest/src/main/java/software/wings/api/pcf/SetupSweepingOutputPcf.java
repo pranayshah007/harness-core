@@ -24,7 +24,6 @@ import software.wings.api.pcf.InfoVariables.InfoVariablesBuilder;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
