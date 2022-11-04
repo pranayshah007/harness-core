@@ -25,4 +25,5 @@ import org.springframework.data.annotation.TypeAlias;
 public class EcsS3FetchPassThroughData implements PassThroughData {
   String targetGroupS3ArnKey;
   InfrastructureOutcome infrastructureOutcome;
+  EcsManifestsContent ecsOtherManifestsContent;
 }
