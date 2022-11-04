@@ -1443,9 +1443,10 @@ public class WatcherServiceImpl implements WatcherService {
             log.info(
                 "[Old] Retrieved watcher-started message from new watcher {}. Sending go-ahead", newWatcherProcess);
             messageService.writeMessageToChannel(WATCHER, newWatcherProcess, WATCHER_GO_AHEAD);
-            log.info("[Old] Watcher upgraded. Stopping");
+            log.info("[Old] Watcher upgraded. Cleaning up watcher dirs");
             removeWatcherVersionFromCapsule(version, newVersion);
             cleanupOldWatcherVersionFromBackup(version, newVersion);
+            log.info("[Old] Stopping");
             success = true;
             stop();
           }
@@ -1498,7 +1499,9 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void cleanupOldWatcherVersionFromBackup(String version, String newVersion) {
     try {
-      cleanup(new File(System.getProperty(USER_DIR)), newHashSet(version, newVersion), "watcherBackup.");
+      if (isNotEmpty(System.getProperty(USER_DIR))) {
+        cleanup(new File(System.getProperty(USER_DIR)), newHashSet(version, newVersion), "watcherBackup.");
+      }
     } catch (Exception ex) {
       log.error("Failed to clean watcher version from Backup", ex);
     }
@@ -1506,7 +1509,9 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void removeWatcherVersionFromCapsule(String version, String newVersion) {
     try {
-      cleanup(new File(System.getProperty("capsule.dir")).getParentFile(), newHashSet(version, newVersion), "watcher-");
+      if (isNotEmpty(System.getProperty("capsule.dir"))) {
+        cleanup(new File(System.getProperty("capsule.dir")).getParentFile(), newHashSet(version, newVersion), "watcher-");
+      }
     } catch (Exception ex) {
       log.error("Failed to clean watcher version from Capsule", ex);
     }
@@ -1514,8 +1519,10 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void cleanupOldDelegateVersions(Set<String> keepVersions) {
     try {
-      cleanupVersionFolders(new File(System.getProperty(USER_DIR)), keepVersions);
-      cleanup(new File(System.getProperty(USER_DIR)), keepVersions, "backup.");
+      if (isNotEmpty(System.getProperty(USER_DIR))) {
+        cleanupVersionFolders(new File(System.getProperty(USER_DIR)), keepVersions);
+        cleanup(new File(System.getProperty(USER_DIR)), keepVersions, "backup.");
+      }
     } catch (Exception ex) {
       log.error("Failed to clean delegate version from Backup", ex);
     }
@@ -1523,7 +1530,9 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void removeDelegateVersionsFromCapsule(Set<String> keepVersions) {
     try {
-      cleanup(new File(System.getProperty("capsule.dir")).getParentFile(), keepVersions, "delegate-");
+      if (isNotEmpty(System.getProperty("capsule.dir"))) {
+        cleanup(new File(System.getProperty("capsule.dir")).getParentFile(), keepVersions, "delegate-");
+      }
     } catch (Exception ex) {
       log.error("Failed to clean delegate version from Capsule", ex);
     }
