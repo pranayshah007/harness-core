@@ -17,12 +17,11 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.NGSectionStepParameters;
+import io.harness.steps.fork.ForkStepParameters;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import io.harness.steps.fork.ForkStepParameters;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -179,7 +178,7 @@ public class RollbackStagePlanCreatorTest extends CategoryTest {
     assertThat(parallelPlanNode.getName()).isEqualTo("Parallel Block(Rollback Stage)");
     assertThat(parallelPlanNode.getStepType().getType()).isEqualTo("NG_FORK");
     assertThat(((ForkStepParameters) parallelPlanNode.getStepParameters()).getParallelNodeIds())
-            .containsExactly("uuid2_rollbackStage", "uuid3_rollbackStage");
+        .containsExactly("uuid2_rollbackStage", "uuid3_rollbackStage");
     assertThat(parallelPlanNode.getAdviserObtainments()).hasSize(1);
   }
 }
