@@ -470,7 +470,11 @@ public enum FeatureName {
       "FF to enable verbose logging for the manager process when secret gets evaluated", HarnessTeam.DEL),
   CI_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CI UI", HarnessTeam.CI),
   CF_ROLLBACK_CUSTOM_STACK_NAME(
-      "Use custom stack name and region to find lates successful couldformation rollback data", HarnessTeam.CDP);
+      "Use custom stack name and region to find lates successful couldformation rollback data", HarnessTeam.CDP),
+  USE_GET_FILE_V2_GIT_CALL(
+      "FF for customers on updated delegate to use GetFileV2 call which is more performance efficient",
+      HarnessTeam.PIPELINE),
+  ;
 
   @Deprecated
   FeatureName() {
