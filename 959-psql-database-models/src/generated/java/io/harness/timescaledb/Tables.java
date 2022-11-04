@@ -24,6 +24,7 @@ import io.harness.timescaledb.tables.Pipelines;
 import io.harness.timescaledb.tables.PodInfo;
 import io.harness.timescaledb.tables.ServiceInfraInfo;
 import io.harness.timescaledb.tables.Services;
+import io.harness.timescaledb.tables.UtilizationData;
 import io.harness.timescaledb.tables.WorkloadInfo;
 
 /**
@@ -103,6 +104,11 @@ public class Tables {
    * The table <code>public.services</code>.
    */
   public static final Services SERVICES = Services.SERVICES;
+
+  /**
+   * The table <code>public.utilization_data</code>.
+   */
+  public static final UtilizationData UTILIZATION_DATA = UtilizationData.UTILIZATION_DATA;
 
   /**
    * The table <code>public.workload_info</code>.

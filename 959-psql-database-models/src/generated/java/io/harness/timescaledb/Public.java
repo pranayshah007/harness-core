@@ -24,6 +24,7 @@ import io.harness.timescaledb.tables.Pipelines;
 import io.harness.timescaledb.tables.PodInfo;
 import io.harness.timescaledb.tables.ServiceInfraInfo;
 import io.harness.timescaledb.tables.Services;
+import io.harness.timescaledb.tables.UtilizationData;
 import io.harness.timescaledb.tables.WorkloadInfo;
 
 import java.util.Arrays;
@@ -118,6 +119,11 @@ public class Public extends SchemaImpl {
   public final Services SERVICES = Services.SERVICES;
 
   /**
+   * The table <code>public.utilization_data</code>.
+   */
+  public final UtilizationData UTILIZATION_DATA = UtilizationData.UTILIZATION_DATA;
+
+  /**
    * The table <code>public.workload_info</code>.
    */
   public final WorkloadInfo WORKLOAD_INFO = WorkloadInfo.WORKLOAD_INFO;
@@ -141,6 +147,7 @@ public class Public extends SchemaImpl {
         NgInstanceStats.NG_INSTANCE_STATS, NodeInfo.NODE_INFO, NodePoolAggregated.NODE_POOL_AGGREGATED,
         PipelineExecutionSummaryCd.PIPELINE_EXECUTION_SUMMARY_CD,
         PipelineExecutionSummaryCi.PIPELINE_EXECUTION_SUMMARY_CI, Pipelines.PIPELINES, PodInfo.POD_INFO,
-        ServiceInfraInfo.SERVICE_INFRA_INFO, Services.SERVICES, WorkloadInfo.WORKLOAD_INFO);
+        ServiceInfraInfo.SERVICE_INFRA_INFO, Services.SERVICES, UtilizationData.UTILIZATION_DATA,
+        WorkloadInfo.WORKLOAD_INFO);
   }
 }
