@@ -99,7 +99,7 @@ public class ArtifactCollectionHandler implements Handler<ArtifactStream> {
 
     if (iterator != null) {
       artifactCollectionExecutor.scheduleAtFixedRate(
-          () -> iterator.process(), random.nextInt((int) ofSeconds(10).toMillis()), 10, TimeUnit.SECONDS);
+          () -> iterator.process(), random.nextInt(10), 10, TimeUnit.SECONDS);
     }
   }
 
