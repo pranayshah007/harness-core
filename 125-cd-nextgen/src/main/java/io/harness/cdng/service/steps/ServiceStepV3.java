@@ -369,7 +369,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           stepParameters.getDeploymentType().getYamlName(), serviceEntity.getType().getYamlName()));
     }
 
-    final String mergedServiceYaml;
+    String mergedServiceYaml;
     if (stepParameters.getInputs() != null && isNotEmpty(stepParameters.getInputs().getValue())) {
       mergedServiceYaml = mergeServiceInputsIntoService(serviceEntity.getYaml(), stepParameters.getInputs().getValue());
     } else {

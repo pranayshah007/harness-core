@@ -11,6 +11,8 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifactory.service.ArtifactoryRegistryService;
 import io.harness.artifactory.service.ArtifactoryRegistryServiceImpl;
+import io.harness.artifacts.ami.service.AMIRegistryService;
+import io.harness.artifacts.ami.service.AMIRegistryServiceImpl;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl;
 import io.harness.artifacts.docker.service.DockerRegistryService;
@@ -23,6 +25,7 @@ import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactor
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactoryImpl;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryServiceImpl;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
@@ -47,6 +50,7 @@ public class NGDelegateModule extends AbstractModule {
     bind(GcrApiService.class).to(GcrApiServiceImpl.class);
     bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);
     bind(GithubPackagesRegistryService.class).to(GithubPackagesRegistryServiceImpl.class);
+    bind(AMIRegistryService.class).to(AMIRegistryServiceImpl.class);
     bind(GarApiService.class).to(GARApiServiceImpl.class);
     bind(HttpService.class).to(HttpServiceImpl.class);
     bind(DockerArtifactTaskHandler.class);
@@ -55,5 +59,6 @@ public class NGDelegateModule extends AbstractModule {
     bind(NexusArtifactTaskHandler.class);
     bind(ArtifactoryArtifactTaskHandler.class);
     bind(AzureArtifactsTaskHandler.class);
+    bind(AMIArtifactTaskHandler.class);
   }
 }

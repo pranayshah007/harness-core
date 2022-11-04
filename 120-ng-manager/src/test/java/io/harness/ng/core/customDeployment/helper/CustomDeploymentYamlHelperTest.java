@@ -8,6 +8,7 @@
 package io.harness.ng.core.customDeployment.helper;
 
 import static io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.RISHABH;
 
 import static software.wings.beans.Service.ServiceKeys;
@@ -43,6 +44,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import lombok.SneakyThrows;
@@ -283,6 +285,25 @@ public class CustomDeploymentYamlHelperTest extends CategoryTest {
     assertThat(customDeploymentYamlHelper.getFilteredServiceEntities(
                    0, 10, new ArrayList<>(), "account.OpenStack", "", serviceEntities))
         .containsExactly(serviceWithStableDT);
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testGetFilteredServiceEntitiesWithInValidServiceTemplate() {
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, ServiceKeys.createdAt));
+    ServiceEntity service =
+        ServiceEntity.builder().yaml(readFile("service.yaml", SERVICE_RESOURCE_PATH_PREFIX)).build();
+
+    assertThat(customDeploymentYamlHelper.isDeploymentTemplateService("id", "V1", service)).isFalse();
+    assertThat(customDeploymentYamlHelper.isDeploymentTemplateService("id", "V1", null)).isFalse();
+    assertThat(customDeploymentYamlHelper.isDeploymentTemplateService("id", "1", null)).isFalse();
+
+    service.setYaml(null);
+    Page<ServiceEntity> serviceEntities = new PageImpl<>(Collections.singletonList(service), pageable, 1);
+    assertThat(customDeploymentYamlHelper.getFilteredServiceEntities(
+                   0, 10, new ArrayList<>(), "account.OpenStack", "", serviceEntities))
+        .isEmpty();
   }
 
   @Test

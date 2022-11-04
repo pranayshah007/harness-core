@@ -22,6 +22,7 @@ import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.AcrPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.ArtifactoryRegistryPollingItemGenerator;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.AzureArtifactsPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.CustomPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.DockerRegistryPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.EcrPollingItemGenerator;
@@ -87,11 +88,14 @@ public class GeneratorFactoryTest extends CategoryTest {
     ArtifactoryRegistryPollingItemGenerator artifactoryRegistryPollingItemGenerator =
         new ArtifactoryRegistryPollingItemGenerator(buildTriggerHelper);
     GARPollingItemGenerator garPollingItemGenerator = new GARPollingItemGenerator(buildTriggerHelper);
+    AzureArtifactsPollingItemGenerator azureArtifactsPollingItemGenerator =
+        new AzureArtifactsPollingItemGenerator(buildTriggerHelper);
+
     generatorFactory = new GeneratorFactory(buildTriggerHelper, httpHelmPollingItemGenerator,
         s3HelmPollingItemGenerator, s3PollingItemGenerator, gcsHelmPollingItemGenerator, gcrPollingItemGenerator,
         ecrPollingItemGenerator, dockerRegistryPollingItemGenerator, artifactoryRegistryPollingItemGenerator,
         acrPollingItemGenerator, jenkinsPollingItemGenerator, gitPollingItemGenerator, customPollingItemGenerator,
-        garPollingItemGenerator, githubPackagesPollingItemGenerator);
+        garPollingItemGenerator, githubPackagesPollingItemGenerator, azureArtifactsPollingItemGenerator);
     classLoader = getClass().getClassLoader();
   }
 

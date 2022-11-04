@@ -184,7 +184,15 @@ public class PrometheusServiceImpl implements PrometheusService {
 
   private List<String> toListOfString(OnboardingResponseDTO onboardingResponseDTO) {
     try {
-      return ((Map<String, List<String>>) onboardingResponseDTO.getResult()).get("data");
+      if (onboardingResponseDTO.getResult() instanceof Map) {
+        return ((Map<String, List<String>>) onboardingResponseDTO.getResult()).get("data");
+      } else if (onboardingResponseDTO.getResult() instanceof List) {
+        // to support backward compatibility, till delegate with new DSL changes are deployed
+        return (List<String>) onboardingResponseDTO.getResult();
+      } else {
+        throw new IllegalStateException(
+            "Data collection returned unexpected data type: " + onboardingResponseDTO.getResult().getClass());
+      }
     } catch (Exception ex) {
       throw new DataCollectionException(ex);
     }

@@ -1,0 +1,20 @@
+service:
+  name: artsource
+  identifier: artsource
+  tags: {}
+  serviceDefinition:
+    spec:
+      artifacts:
+        primary:
+          sources:
+            - name: fromtemp1
+              identifier: fromtemp1
+              template:
+                templateRef: art_temp1
+                versionLabel: v1
+                templateInputs:
+                  type: DockerRegistry
+                  spec:
+                    tag: latest
+    type: Kubernetes
+  gitOpsEnabled: false

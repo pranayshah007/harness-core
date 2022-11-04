@@ -12,16 +12,19 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.strategy.StrategyValidationUtils;
 
 import com.cronutils.utils.StringUtils;
@@ -299,5 +302,13 @@ public class AmbianceUtils {
   public String getEmail(Ambiance ambiance) {
     TriggeredBy triggeredBy = ambiance.getMetadata().getTriggerInfo().getTriggeredBy();
     return triggeredBy.getExtraInfoOrDefault("email", null);
+  }
+
+  public static String getPipelineVersion(Ambiance ambiance) {
+    ExecutionMetadata metadata = ambiance.getMetadata();
+    if (EmptyPredicate.isEmpty(metadata.getHarnessVersion())) {
+      return PipelineVersion.V0;
+    }
+    return metadata.getHarnessVersion();
   }
 }

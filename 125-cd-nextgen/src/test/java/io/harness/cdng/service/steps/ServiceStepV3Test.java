@@ -93,6 +93,11 @@ public class ServiceStepV3Test {
   @Mock private ServiceStepOverrideHelper serviceStepOverrideHelper;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private FreezeEvaluateService freezeEvaluateService;
+
+  private static final String ACCOUNT_ID = "accountId";
+  private static final String PROJECT_ID = "projectId";
+  private static final String ORG_ID = "orgId";
+
   private AutoCloseable mocks;
   @InjectMocks private ServiceStepV3 step = new ServiceStepV3();
 

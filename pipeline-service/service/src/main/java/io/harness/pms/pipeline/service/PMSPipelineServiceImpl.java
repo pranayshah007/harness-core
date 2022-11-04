@@ -27,7 +27,6 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
-import io.harness.exception.InvalidYamlVersionException;
 import io.harness.exception.ScmException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
@@ -49,6 +48,7 @@ import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.ClonePipelineDTO;
 import io.harness.pms.pipeline.CommonStepInfo;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
+import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
@@ -59,9 +59,9 @@ import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.utils.PmsFeatureFlagHelper;
 
@@ -69,12 +69,16 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.PredicateUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -111,13 +115,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       "Pipeline [%s] under Project[%s], Organization [%s] already exists or has been deleted.";
   private static final String VERSION_FIELD_NAME = "version";
 
+  private static final int MAX_LIST_SIZE = 1000;
+  private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
+
   @Override
   public PipelineCRUDResult create(PipelineEntity pipelineEntity) {
-    if (pmsPipelineRepository.countAllPipelinesInAccount(pipelineEntity.getAccountIdentifier())
-        > pipelineSettingsService.getMaxPipelineCreationCount(pipelineEntity.getAccountId())) {
-      throw new InvalidRequestException(
-          "You have created maximum number of pipelines, please upgrade if you want to create more pipelines");
-    }
+    checkAndThrowIfLimitReached(pipelineEntity.getAccountIdentifier());
     if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
       log.info("Creating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
       return createWithoutValidations(pipelineEntity);
@@ -144,11 +147,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   @Override
   public PipelineCRUDResult createWithoutValidations(PipelineEntity pipelineEntity) {
-    if (pmsPipelineRepository.countAllPipelinesInAccount(pipelineEntity.getAccountIdentifier())
-        > pipelineSettingsService.getMaxPipelineCreationCount(pipelineEntity.getAccountId())) {
-      throw new InvalidRequestException(
-          "You have created maximum number of pipelines, please upgrade if you want to create more pipelines");
-    }
+    checkAndThrowIfLimitReached(pipelineEntity.getAccountIdentifier());
     PipelineEntity createdEntity;
     try {
       if (gitSyncSdkService.isGitSyncEnabled(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
@@ -179,11 +178,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
   @Override
   public PipelineSaveResponse clone(ClonePipelineDTO clonePipelineDTO, String accountId) {
-    if (pmsPipelineRepository.countAllPipelinesInAccount(accountId)
-        > pipelineSettingsService.getMaxPipelineCreationCount(accountId)) {
-      throw new InvalidRequestException(
-          "You have created maximum number of pipelines, please upgrade if you want to create more pipelines");
-    }
+    checkAndThrowIfLimitReached(accountId);
     PipelineEntity sourcePipelineEntity = getSourcePipelineEntity(clonePipelineDTO, accountId);
 
     String sourcePipelineEntityYaml = sourcePipelineEntity.getYaml();
@@ -490,11 +485,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, Boolean isForceImport) {
+    checkAndThrowIfLimitReached(accountId);
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
     String importedPipelineYAML =
         pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
-    YamlVersion pipelineVersion = pipelineVersion(accountId, importedPipelineYAML);
+    String pipelineVersion = pipelineVersion(accountId, importedPipelineYAML);
     PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(orgIdentifier, projectIdentifier,
         pipelineIdentifier, pipelineImportRequest, importedPipelineYAML, pipelineVersion);
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
@@ -631,23 +627,45 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public YamlVersion pipelineVersion(String accountId, String yaml) {
-    boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
-    YamlField version;
+  public String pipelineVersion(String accountId, String yaml) {
+    String version;
     try {
       YamlField yamlField = YamlUtils.readTree(yaml);
-      version = yamlField.getNode().getField(VERSION_FIELD_NAME);
+      version = yamlField.getNode().getProperty(VERSION_FIELD_NAME);
     } catch (IOException ioException) {
       throw new InvalidRequestException("Invalid yaml passed.");
     }
+    boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
 
     if (isYamlSimplificationEnabled && version != null) {
-      if (version.getNode() == null) {
-        throw new InvalidYamlVersionException("Invalid yaml version passed.");
-      }
-      return YamlVersion.fromString(version.getNode().toString());
+      return version;
     } else {
-      return YamlVersion.V0;
+      return PipelineVersion.V0;
+    }
+  }
+
+  @Override
+  public PMSPipelineListRepoResponse getListOfRepos(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria =
+        PMSPipelineServiceHelper.buildCriteriaForRepoListing(accountIdentifier, orgIdentifier, projectIdentifier);
+    List<String> uniqueRepos = pmsPipelineRepository.findAllUniqueRepos(criteria);
+    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
+    if (uniqueRepos.size() > MAX_LIST_SIZE) {
+      log.error(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+      throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+    }
+    return PMSPipelineListRepoResponse.builder().repositories(new HashSet<>(uniqueRepos)).build();
+  }
+
+  private void checkAndThrowIfLimitReached(String accountId) {
+    long maxLimit = pipelineSettingsService.getMaxPipelineCreationCount(accountId);
+    if (maxLimit == Long.MAX_VALUE) {
+      return;
+    }
+    if (pmsPipelineRepository.countAllPipelinesInAccount(accountId) >= maxLimit) {
+      throw new InvalidRequestException(
+          "You have created maximum number of pipelines, please upgrade your plan if you want to create more pipelines");
     }
   }
 }

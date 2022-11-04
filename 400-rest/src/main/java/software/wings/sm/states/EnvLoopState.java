@@ -123,7 +123,8 @@ public class EnvLoopState extends State implements WorkflowState {
       childStateExecutionInstance.setStateName(state);
       childStateExecutionInstance.setParentLoopedState(true);
       childStateExecutionInstance.setLoopedStateParams(getLoopStateParams(loopedValue, state));
-      childStateExecutionInstance.setStateType(StateType.ENV_STATE.getName());
+      childStateExecutionInstance.setStateType(
+          isRollback() ? StateType.ENV_ROLLBACK_STATE.getType() : StateType.ENV_STATE.getType());
       childStateExecutionInstance.setNotifyId(element.getUuid());
       executionResponseBuilder.stateExecutionInstance(childStateExecutionInstance);
       correlationIds.add(element.getUuid());
@@ -158,7 +159,8 @@ public class EnvLoopState extends State implements WorkflowState {
                                                        .disable(disable)
                                                        .disableAssertion(disableAssertion)
                                                        .stepName(name)
-                                                       .workflowId(workflowId);
+                                                       .workflowId(workflowId)
+                                                       .isRollback(isRollback());
 
     if (workflowVariables != null) {
       Map<String, String> newWV = new HashMap<>(workflowVariables);

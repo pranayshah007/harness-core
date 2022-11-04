@@ -29,6 +29,7 @@ message PollingPayloadData {
     GithubPackagesPollingPayload githubPackagesPollingPayload = 16;
     CustomPayload customPayload = 17;
     NGVariable ngVariable = 18;
+    AzureArtifactsPayload azureArtifactsPayload = 19;
   }
 }
 
@@ -49,6 +50,7 @@ enum Type {
   GOOGLE_ARTIFACT_REGISTRY = 13;
   GITHUB_PACKAGES = 14;
   CUSTOM_ARTIFACT = 15;
+  AZURE_ARTIFACTS = 16;
 }
 
 message HttpHelmPayload {
@@ -151,4 +153,13 @@ message GithubPackagesPollingPayload {
   string org = 1;
   string packageName = 2;
   string packageType = 3;
+}
+
+message AzureArtifactsPayload {
+  string project = 1;
+  string feed = 2;
+  string packageName = 3;
+  string packageType = 4;
+  string versionRegex = 5;
+  string version = 6;
 }

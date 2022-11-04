@@ -33,6 +33,7 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
@@ -367,7 +368,7 @@ public class AmbianceUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = VIVEK_DIXIT)
   @Category(UnitTests.class)
-  public void testgetEmail() {
+  public void testGetEmail() {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setMetadata(ExecutionMetadata.newBuilder()
@@ -380,5 +381,24 @@ public class AmbianceUtilsTest extends CategoryTest {
                              .build())
             .build();
     assertThat(AmbianceUtils.getEmail(ambiance)).isEqualTo("expected@harness.io");
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void getGetVersionWhenNotPresent() {
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    String version = AmbianceUtils.getPipelineVersion(ambiance);
+    assertThat(version).isEqualTo(PipelineVersion.V0);
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void getGetVersionWhenPresent() {
+    Ambiance ambiance =
+        Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().setHarnessVersion("1").build()).build();
+    String version = AmbianceUtils.getPipelineVersion(ambiance);
+    assertThat(version).isEqualTo(PipelineVersion.V1);
   }
 }

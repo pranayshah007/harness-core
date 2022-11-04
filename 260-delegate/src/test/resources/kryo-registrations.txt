@@ -1807,6 +1807,10 @@
 57502:io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest
 57503:io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse
 57504:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCapabilityHelper
+60011:io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest
+60012:io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse
+60013:io.harness.delegate.task.artifacts.ami.AMITag
+60014:io.harness.delegate.task.artifacts.ami.AMIFilter
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
 71102:software.wings.beans.Log
@@ -1841,6 +1845,7 @@
 80310:software.wings.helpers.ext.azure.devops.AzureDevopsProjects
 80311:io.harness.artifactory.ArtifactoryImagePath
 80312:io.harness.ngtriggers.WebhookSecretData
+81001:io.harness.ami.AMITagsResponse
 83071:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest
 83072:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse
 83073:software.wings.service.impl.aws.model.AwsEC2Instance

@@ -10,10 +10,12 @@ package software.wings.yaml.handler;
 import static io.harness.annotations.dev.HarnessModule._955_CG_YAML;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
+import static io.harness.beans.FeatureName.SPG_ALLOW_DISABLE_TRIGGERS;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.LALIT;
 import static io.harness.rule.OwnerRule.RAMA;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.VUK;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -79,6 +81,8 @@ public class ApplicationYamlHandlerTest extends YamlHandlerTestBase {
       "harnessApiVersion: '1.0'\ntype: APPLICATION\ndescription: valid application yaml\nisGitSyncEnabled: false\nisManualTriggerAuthorized: true";
   private String validYamlContentWithWebHookSecretsMandated =
       "harnessApiVersion: '1.0'\ntype: APPLICATION\nareWebHookSecretsMandated: true\ndescription: valid application yaml\nisGitSyncEnabled: false";
+  private String validYamlContentWithDisableTriggers =
+      "harnessApiVersion: '1.0'\ntype: APPLICATION\ndescription: valid application yaml\ndisableTriggers: true\nisGitSyncEnabled: false";
   private String validYamlFilePath = "Setup/Applications/" + APP_NAME + "/Index.yaml";
   private String invalidYamlFilePath = "Setup/ApplicationsInvalid/" + APP_NAME + "/Index.yaml";
 
@@ -290,6 +294,27 @@ public class ApplicationYamlHandlerTest extends YamlHandlerTestBase {
   public void testCRUDAndGetWithoutWebHookSecretsMandatedField() throws IOException {
     when(limitCheckerFactory.getInstance(Mockito.any())).thenReturn(mockChecker());
     when(featureFlagService.isEnabled(GITHUB_WEBHOOK_AUTHENTICATION, ACCOUNT_ID)).thenReturn(true);
+
+    testCRUDAndGet(validYamlContent);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCRUDAndGetWithDisableTriggers() throws IOException {
+    when(limitCheckerFactory.getInstance(Mockito.any())).thenReturn(mockChecker());
+    when(featureFlagService.isEnabled(SPG_ALLOW_DISABLE_TRIGGERS, ACCOUNT_ID)).thenReturn(true);
+    application.setDisableTriggers(true);
+
+    testCRUDAndGet(validYamlContentWithDisableTriggers);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCRUDAndGetWithoutDisableTriggers() throws IOException {
+    when(limitCheckerFactory.getInstance(Mockito.any())).thenReturn(mockChecker());
+    when(featureFlagService.isEnabled(SPG_ALLOW_DISABLE_TRIGGERS, ACCOUNT_ID)).thenReturn(true);
 
     testCRUDAndGet(validYamlContent);
   }

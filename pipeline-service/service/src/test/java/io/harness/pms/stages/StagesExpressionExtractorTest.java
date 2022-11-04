@@ -8,8 +8,13 @@
 package io.harness.pms.stages;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SHALINI;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -18,8 +23,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.utils.YamlPipelineUtils;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -267,5 +276,41 @@ public class StagesExpressionExtractorTest extends CategoryTest {
         + "  name: \"" + name + "\"\n"
         + "  type: \"" + type + "\"\n"
         + "  field: \"" + field + "\"\n";
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetBasicStageInfoWithYaml() throws IOException {
+    BasicStageInfo basicStageInfo =
+        StagesExpressionExtractor.getBasicStageInfoWithYaml(YamlUtils.readTree(getPipelineYaml())
+                                                                .getNode()
+                                                                .getField(YAMLFieldNameConstants.PIPELINE)
+                                                                .getNode()
+                                                                .getField(STAGES)
+                                                                .getNode()
+                                                                .asArray()
+                                                                .get(0));
+    assertEquals("a1", basicStageInfo.getIdentifier());
+    assertEquals("a1", basicStageInfo.getName());
+    assertEquals("Approval", basicStageInfo.getType());
+    assertEquals(YamlPipelineUtils.getYamlString(YamlUtils.readTree(getPipelineYaml())
+                                                     .getNode()
+                                                     .getField(YAMLFieldNameConstants.PIPELINE)
+                                                     .getNode()
+                                                     .getField(STAGES)
+                                                     .getNode()
+                                                     .asArray()
+                                                     .get(0)
+                                                     .getCurrJsonNode()),
+        basicStageInfo.getYaml());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testIsReferringToNonStageValue() {
+    assertTrue(StagesExpressionExtractor.isReferringToNonStageValue("<+pipeline.variables.test>"));
+    assertFalse(StagesExpressionExtractor.isReferringToNonStageValue("<+pipeline.stages.s1.variables.test>"));
   }
 }

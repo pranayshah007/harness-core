@@ -7,17 +7,23 @@
 
 package io.harness.notification.notificationclient;
 
+import io.harness.delegate.beans.NotificationTaskResponse;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.remote.dto.TemplateDTO;
 import io.harness.notification.templates.PredefinedTemplate;
 
+import java.io.IOException;
 import java.util.List;
+import retrofit2.Response;
 
 public interface NotificationClient {
   NotificationResult sendNotificationAsync(NotificationChannel notificationChannel);
   List<NotificationResult> sendBulkNotificationAsync(List<NotificationChannel> notificationChannels);
   boolean testNotificationChannel(NotificationSettingDTO notificationSettingDTO);
   TemplateDTO saveNotificationTemplate(Team team, PredefinedTemplate template, Boolean harnessManaged);
+  Response<ResponseDTO<NotificationTaskResponse>> sendEmail(EmailDTO emailDTO) throws IOException;
 }
