@@ -294,8 +294,25 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
     Criteria criteria =
         getInfrastructureEqualityCriteriaForEnv(accountId, orgIdentifier, projectIdentifier, envIdentifier);
-    DeleteResult deleteResult = infrastructureRepository.delete(criteria);
-    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0;
+
+    List<InfrastructureEntity> infrastructureEntityListForEnvIdentifier =
+        getAllInfrastructureFromEnvIdentifier(accountId, orgIdentifier, projectIdentifier, envIdentifier);
+
+    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      DeleteResult deleteResult = infrastructureRepository.delete(criteria);
+
+      if (deleteResult.wasAcknowledged()) {
+        for (InfrastructureEntity infra : infrastructureEntityListForEnvIdentifier) {
+          infrastructureEntitySetupUsageHelper.deleteSetupUsages(infra);
+        }
+      } else {
+        log.error(
+            String.format("Infrastructures under Environment [%s], Project[%s], Organization [%s] couldn't be deleted.",
+                envIdentifier, projectIdentifier, orgIdentifier));
+      }
+
+      return deleteResult.wasAcknowledged();
+    }));
   }
 
   @Override
@@ -305,8 +322,23 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     checkArgument(isNotEmpty(projectIdentifier), "project id must be present");
 
     Criteria criteria = getInfrastructureEqualityCriteriaForProject(accountId, orgIdentifier, projectIdentifier);
-    DeleteResult deleteResult = infrastructureRepository.delete(criteria);
-    return deleteResult.wasAcknowledged();
+    List<InfrastructureEntity> infrastructureEntityListForProjectIdentifier =
+        getAllInfrastructureFromProjectIdentifier(accountId, orgIdentifier, projectIdentifier);
+
+    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      DeleteResult deleteResult = infrastructureRepository.delete(criteria);
+
+      if (deleteResult.wasAcknowledged()) {
+        for (InfrastructureEntity infra : infrastructureEntityListForProjectIdentifier) {
+          infrastructureEntitySetupUsageHelper.deleteSetupUsages(infra);
+        }
+      } else {
+        log.error(String.format("Infrastructures under Project[%s], Organization [%s] couldn't be deleted.",
+            projectIdentifier, orgIdentifier));
+      }
+
+      return deleteResult.wasAcknowledged();
+    }));
   }
 
   private void setObsoleteAsFalse(InfrastructureEntity requestInfra) {
@@ -375,6 +407,11 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier) {
     return infrastructureRepository.findAllFromEnvIdentifier(
         accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
+  }
+  @Override
+  public List<InfrastructureEntity> getAllInfrastructureFromProjectIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return infrastructureRepository.findAllFromProjectIdentifier(accountIdentifier, orgIdentifier, projectIdentifier);
   }
   @Override
   public String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
