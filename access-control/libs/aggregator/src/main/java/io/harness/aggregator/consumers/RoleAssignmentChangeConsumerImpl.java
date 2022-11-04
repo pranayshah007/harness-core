@@ -42,23 +42,25 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
 
   @Override
   public void consumeUpdateEvent(String id, RoleAssignmentDBO updatedRoleAssignmentDBO) {
+    log.info("RoleAssignmentChangeConsumerImpl.consumeUpdateEvent: Starting to update usergroup: {}", id);
     if (!StringUtils.isEmpty(updatedRoleAssignmentDBO.getRoleIdentifier())
         || !StringUtils.isEmpty(updatedRoleAssignmentDBO.getResourceGroupIdentifier())
         || !StringUtils.isEmpty(updatedRoleAssignmentDBO.getPrincipalIdentifier())
         || updatedRoleAssignmentDBO.getDisabled() != null) {
-      log.info("Number of ACLs deleted: {}", deleteACLs(id));
+      log.info("RoleAssignmentChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for {}", deleteACLs(id), id);
       Optional<RoleAssignmentDBO> roleAssignment = roleAssignmentRepository.findById(id);
       if (roleAssignment.isPresent()) {
         long createdCount = createACLs(roleAssignment.get());
-        log.info("Number of ACLs created: {}", createdCount);
+        log.info("RoleAssignmentChangeConsumerImpl.consumeUpdateEvent: Number of ACLs created: {} for {}", createdCount, id);
       }
     }
   }
 
   @Override
   public void consumeDeleteEvent(String id) {
+    log.info("RoleAssignmentChangeConsumerImpl.consumeDeleteEvent: Starting to update usergroup: {}", id);
     roleAssignmentCRUDEventHandler.handleRoleAssignmentDelete(id);
-    log.info("Number of ACLs deleted: {}", deleteACLs(id));
+    log.info("RoleAssignmentChangeConsumerImpl.consumeDeleteEvent: Number of ACLs deleted: {} for {}", deleteACLs(id), id);
   }
 
   private long deleteACLs(String id) {
@@ -74,13 +76,14 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
 
   @Override
   public void consumeCreateEvent(String id, RoleAssignmentDBO newRoleAssignmentDBO) {
+    log.info("RoleAssignmentChangeConsumerImpl.consumeCreateEvent: Starting to update usergroup: {}", id);
     Optional<RoleAssignmentDBO> roleAssignmentOptional = roleAssignmentRepository.findByIdentifierAndScopeIdentifier(
         newRoleAssignmentDBO.getIdentifier(), newRoleAssignmentDBO.getScopeIdentifier());
     if (!roleAssignmentOptional.isPresent()) {
-      log.info("Role assignment has been deleted, not processing role assignment create event for id: {}", id);
+      log.info("RoleAssignmentChangeConsumerImpl.consumeCreateEvent: Role assignment has been deleted, not processing role assignment create event for id: {}", id);
       return;
     }
     roleAssignmentCRUDEventHandler.handleRoleAssignmentCreate(newRoleAssignmentDBO);
-    log.info("Number of ACLs created: {}", createACLs(newRoleAssignmentDBO));
+    log.info("RoleAssignmentChangeConsumerImpl.consumeCreateEvent: Number of ACLs created: {} for {}", createACLs(newRoleAssignmentDBO), id);
   }
 }

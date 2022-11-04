@@ -75,6 +75,7 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
 
   @Override
   public void consumeUpdateEvent(String id, UserGroupDBO updatedUserGroup) {
+    log.info("UserGroupChangeConsumerImpl.consumeUpdateEvent: Starting to update usergroup: {}", id);
     if (updatedUserGroup.getUsers() == null) {
       return;
     }
@@ -122,8 +123,8 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
 
     userGroupCRUDEventHandler.handleUserGroupUpdate(userGroup.get());
 
-    log.info("Number of ACLs created: {}", numberOfACLsCreated);
-    log.info("Number of ACLs deleted: {}", numberOfACLsDeleted);
+    log.info("UserGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs created: {} for {}", numberOfACLsCreated, id);
+    log.info("UserGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for {}", numberOfACLsDeleted, id);
   }
 
   @Override
