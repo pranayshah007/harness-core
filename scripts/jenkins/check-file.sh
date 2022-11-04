@@ -56,5 +56,4 @@ then
   echo "Doing compilation"
 else
   echo "Compilation is Not Required"
-
 fi
