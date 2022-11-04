@@ -629,7 +629,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
 
-    if (version != null) {
+    if (isYamlSimplificationEnabled && version != null) {
       return version;
     } else {
       return PipelineVersion.V0;

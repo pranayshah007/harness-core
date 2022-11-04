@@ -19,11 +19,9 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
-import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
@@ -44,9 +42,10 @@ import io.harness.when.utils.RunInfoUtils;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
@@ -72,8 +71,7 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
     Map<String, ByteString> metadataMap = new HashMap<>();
 
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getId(),
-        field.getName(), dependenciesNodeMap, metadataMap,
-        StrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()));
+        field.getName(), dependenciesNodeMap, metadataMap, buildAdviser(ctx.getDependency()));
 
     StepElementParameters parameters =
         StepElementParameters.builder()
@@ -105,14 +103,12 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
             .skipUnresolvedExpressionsCheck(stepNode.getStepSpecType().skipUnresolvedExpressionsCheck())
             .expressionMode(stepNode.getStepSpecType().getExpressionMode());
 
-    AdviserObtainment adviserObtainment = buildAdviser(ctx.getDependency());
-    if (adviserObtainment != null) {
-      builder.adviserObtainment(adviserObtainment);
+    if (field.getNode().getField("strategy") == null) {
+      builder.adviserObtainments(buildAdviser(ctx.getDependency()));
     }
 
     return PlanCreationResponse.builder()
         .planNode(builder.build())
-        .graphLayoutResponse(getLayoutNodeInfo(ctx, field))
         .dependencies(
             DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                 .toBuilder()
@@ -121,36 +117,25 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
         .build();
   }
 
-  public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, YamlField config) {
-    Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
-    YamlField stageYamlField = context.getCurrentField();
-    String nextNodeUuid = null;
-    if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
-        && context.getDependency().getMetadataMap().containsKey("nextId")) {
-      nextNodeUuid =
-          (String) kryoSerializer.asObject(context.getDependency().getMetadataMap().get("nextId").toByteArray());
-    }
-    if (StrategyUtils.isWrappedUnderStrategy(context.getCurrentField())) {
-      stageYamlFieldMap = StrategyUtils.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);
-    }
-    return GraphLayoutResponse.builder().layoutNodes(stageYamlFieldMap).build();
-  }
   @Override
   public Set<String> getSupportedYamlVersions() {
     return Set.of(PipelineVersion.V1);
   }
 
-  private AdviserObtainment buildAdviser(Dependency dependency) {
+  private List<AdviserObtainment> buildAdviser(Dependency dependency) {
+    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
         || !dependency.getMetadataMap().containsKey("nextId")) {
-      return null;
+      return adviserObtainments;
     }
 
     String nextId = (String) kryoSerializer.asObject(dependency.getMetadataMap().get("nextId").toByteArray());
-    return AdviserObtainment.newBuilder()
-        .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-        .setParameters(
-            ByteString.copyFrom(kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
-        .build();
+    adviserObtainments.add(
+        AdviserObtainment.newBuilder()
+            .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
+            .setParameters(ByteString.copyFrom(
+                kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
+            .build());
+    return adviserObtainments;
   }
 }
