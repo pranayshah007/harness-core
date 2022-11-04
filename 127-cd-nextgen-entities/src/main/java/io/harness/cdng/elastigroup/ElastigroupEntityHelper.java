@@ -50,10 +50,36 @@ import static java.util.Collections.emptyList;
 
 @Singleton
 @OwnedBy(CDP)
-public class ElastigroupEntityHelper {
+public class
+ElastigroupEntityHelper {
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
+  public List<EncryptedDataDetail> getEncryptionDataDetails(
+          @Nonnull ConnectorInfoDTO connectorDTO, @Nonnull NGAccess ngAccess) {
+    switch (connectorDTO.getConnectorType()) {
+      case AWS:
+        AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+        List<DecryptableEntity> awsDecryptableEntities = awsConnectorDTO.getDecryptableEntities();
+        if (isNotEmpty(awsDecryptableEntities)) {
+          return secretManagerClientService.getEncryptionDetails(ngAccess, awsDecryptableEntities.get(0));
+        } else {
+          return emptyList();
+        }
+      case SPOT:
+        SpotConnectorDTO spotConnectorDTO = (SpotConnectorDTO) connectorDTO.getConnectorConfig();
+        List<DecryptableEntity> spotConnectorDTODecryptableEntities = spotConnectorDTO.getDecryptableEntities();
+        if (isNotEmpty(spotConnectorDTODecryptableEntities)) {
+          return secretManagerClientService.getEncryptionDetails(
+                  ngAccess, spotConnectorDTODecryptableEntities.get(0));
+        } else {
+          return emptyList();
+        }
+      default:
+        throw new UnsupportedOperationException(
+                format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
+    }
+  }
 
   // todo: refactor it
   public ConnectorInfoDTO getConnectorInfoDTO(String connectorId, NGAccess ngAccess) {
@@ -71,12 +97,9 @@ public class ElastigroupEntityHelper {
   public SpotInstConfig getSpotInstConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
     ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
     SpotConnectorDTO connectorConfigDTO = (SpotConnectorDTO) connectorDTO.getConnectorConfig();
-    SpotCredentialDTO spotCredentialDTO = connectorConfigDTO.getCredential();
-    SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO = (SpotPermanentTokenConfigSpecDTO) spotCredentialDTO.getConfig();
         return SpotInstConfig.builder()
-                .accountId(spotPermanentTokenConfigSpecDTO.getSpotAccountId())
-                .accountIdRef(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef())
-                .apiTokenRef(spotPermanentTokenConfigSpecDTO.getApiTokenRef())
+                .spotConnectorDTO(connectorConfigDTO)
+                .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
                 .build();
     }
 }

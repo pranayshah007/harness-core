@@ -117,6 +117,8 @@ import io.harness.delegate.ecs.EcsPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRollingDeployCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRollingRollbackCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRunTaskCommandTaskHandler;
+import io.harness.delegate.elastigroup.ElastigroupCommandTaskNGHandler;
+import io.harness.delegate.elastigroup.ElastigroupSetupCommandTaskHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonClientExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonServiceExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AuthenticationExceptionHandler;
@@ -254,6 +256,9 @@ import io.harness.delegate.task.ecs.EcsCommandTaskNG;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsGitFetchRunTask;
 import io.harness.delegate.task.ecs.EcsGitFetchTask;
+import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNG;
+import io.harness.delegate.task.elastigroup.ElastigroupStartupScriptFetchRunTask;
+import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
 import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
@@ -1917,6 +1922,15 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_TASK_NG).toInstance(EcsGitFetchTask.class);
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_RUN_TASK_NG).toInstance(EcsGitFetchRunTask.class);
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
+
+    //Elastigroup NG
+    mapBinder.addBinding(TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG).toInstance(ElastigroupStartupScriptFetchRunTask.class);
+    MapBinder<String, ElastigroupCommandTaskNGHandler> elastigroupCommandTaskNGHandlerMapBinder =
+              MapBinder.newMapBinder(binder(), String.class, ElastigroupCommandTaskNGHandler.class);
+    elastigroupCommandTaskNGHandlerMapBinder.addBinding(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP.name())
+              .to(ElastigroupSetupCommandTaskHandler.class);
+
+      mapBinder.addBinding(TaskType.ELASTIGROUP_COMMAND_TASK_NG).toInstance(ElastigroupCommandTaskNG.class);
 
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);

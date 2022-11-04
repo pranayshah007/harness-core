@@ -24,6 +24,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -37,15 +38,16 @@ public interface ElastigroupCommandRequest extends TaskParameters, ExecutionCapa
 
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    EcsInfraConfig ecsInfraConfig = getEcsInfraConfig();
-    List<EncryptedDataDetail> infraConfigEncryptionDataDetails = ecsInfraConfig.getEncryptionDataDetails();
-
-    List<ExecutionCapability> capabilities =
-        new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-            infraConfigEncryptionDataDetails, maskingEvaluator));
-
-    AwsConnectorDTO awsConnectorDTO = ecsInfraConfig.getAwsConnectorDTO();
-    capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
-    return capabilities;
+//    EcsInfraConfig ecsInfraConfig = getEcsInfraConfig();
+//    List<EncryptedDataDetail> infraConfigEncryptionDataDetails = ecsInfraConfig.getEncryptionDataDetails();
+//
+//    List<ExecutionCapability> capabilities =
+//        new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+//            infraConfigEncryptionDataDetails, maskingEvaluator));
+//
+//    AwsConnectorDTO awsConnectorDTO = ecsInfraConfig.getAwsConnectorDTO();
+//    capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
+//    return capabilities;
+    return Arrays.asList();
   }
 }

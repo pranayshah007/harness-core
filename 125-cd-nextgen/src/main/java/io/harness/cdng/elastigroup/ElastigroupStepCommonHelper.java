@@ -36,6 +36,7 @@ import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -63,6 +64,8 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import lombok.extern.slf4j.Slf4j;
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 import software.wings.beans.TaskType;
 
 import java.util.Optional;
@@ -71,8 +74,10 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.logging.LogLevel.INFO;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 import static java.lang.String.format;
+import static software.wings.beans.LogHelper.color;
 
 @Slf4j
 public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
@@ -102,7 +107,10 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         startupScript =
                 fetchFilesContentFromLocalStore(ambiance, startupScriptOutcome, logCallback).get(0);
       } else if (ManifestStoreType.INLINE.equals(startupScriptOutcome.getStore().getKind())) {
+        logCallback.saveExecutionLog(color(
+                format("%nFetching %s from Inline Store", "startupScript"), LogColor.White, LogWeight.Bold));
         startupScript = ((InlineStoreConfig) startupScriptOutcome.getStore()).extractContent();
+        logCallback.saveExecutionLog("Fetched Startup Script ", INFO, CommandExecutionStatus.SUCCESS);
       }
     }
 

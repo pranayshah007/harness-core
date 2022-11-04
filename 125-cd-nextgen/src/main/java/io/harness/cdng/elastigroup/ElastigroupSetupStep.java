@@ -127,7 +127,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     try {
       elastigroupSetupResponse = (ElastigroupSetupResponse) responseDataSupplier.get();
     } catch (Exception e) {
-      log.error("Error while processing ecs task response: {}", e.getMessage(), e);
+      log.error("Error while processing elastigroup task response: {}", e.getMessage(), e);
       return elastigroupStepCommonHelper.handleTaskException(ambiance, elastigroupExecutionPassThroughData, e);
     }
     StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(

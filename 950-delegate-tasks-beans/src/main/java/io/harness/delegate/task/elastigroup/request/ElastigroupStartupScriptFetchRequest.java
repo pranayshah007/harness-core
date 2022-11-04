@@ -47,7 +47,6 @@ public class ElastigroupStartupScriptFetchRequest implements ActivityAccess, Tas
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    List<ExecutionCapability> capabilities = new ArrayList<>();
-    return capabilities;
+    return new ArrayList<>();
   }
 }
