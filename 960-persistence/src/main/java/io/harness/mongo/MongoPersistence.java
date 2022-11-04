@@ -492,6 +492,8 @@ public class MongoPersistence implements HPersistence {
   @Override
   public <T extends PersistentEntity> T findAndModifySystemData(
       Query<T> query, UpdateOperations<T> updateOperations, FindAndModifyOptions findAndModifyOptions) {
+    log.warn("time out {} ms set for class {}", findAndModifyOptions.getMaxTime(TimeUnit.MILLISECONDS),
+        query.getEntityClass());
     try {
       AdvancedDatastore datastore = getDatastore(query.getEntityClass());
       setMaxTimeInOptions(datastore, findAndModifyOptions);

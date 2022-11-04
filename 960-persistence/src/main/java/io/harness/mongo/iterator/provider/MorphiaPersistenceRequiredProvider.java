@@ -21,6 +21,7 @@ import com.google.inject.Singleton;
 import com.mongodb.BasicDBObject;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.mongodb.morphia.query.FilterOperator;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
@@ -63,8 +64,8 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
 
   @Override
   public T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName,
-      SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander,
-      boolean unsorted) {
+      SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander, boolean unsorted,
+      int maxOperationTimeInMillis) {
     long now = currentTimeMillis();
     Query<T> query = createQuery(now, clazz, fieldName, filterExpander, unsorted);
     UpdateOperations<T> updateOperations = persistence.createUpdateOperations(clazz);
@@ -81,7 +82,8 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
       default:
         unhandled(schedulingType);
     }
-    return persistence.findAndModifySystemData(query, updateOperations, HPersistence.returnOldOptions);
+    return persistence.findAndModifySystemData(query, updateOperations,
+        HPersistence.returnOldOptions.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS));
   }
 
   @Override

@@ -70,7 +70,8 @@ public class SpringPersistenceRequiredProvider<T extends PersistentIterable>
 
   @Override
   public T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName,
-      SchedulingType schedulingType, Duration targetInterval, SpringFilterExpander filterExpander, boolean unsorted) {
+      SchedulingType schedulingType, Duration targetInterval, SpringFilterExpander filterExpander, boolean unsorted,
+      int maxOperationTimeInMillis) {
     long now = currentTimeMillis();
     Query query = createQuery(now, fieldName, filterExpander, unsorted);
     Update update = new Update();

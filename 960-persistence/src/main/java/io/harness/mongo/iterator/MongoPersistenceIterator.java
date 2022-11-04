@@ -76,6 +76,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private Duration acceptableNoAlertDelay;
   private Duration acceptableExecutionTime;
   private Duration throttleInterval;
+  private int maxOperationTimeInMillis;
   private Handler<T> handler;
   private ExecutorService executorService;
   private Semaphore semaphore;
@@ -137,8 +138,8 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
         T entity = null;
         try {
-          entity = persistenceProvider.obtainNextInstance(
-              base, throttled, clazz, fieldName, schedulingType, targetInterval, filterExpander, unsorted);
+          entity = persistenceProvider.obtainNextInstance(base, throttled, clazz, fieldName, schedulingType,
+              targetInterval, filterExpander, unsorted, maxOperationTimeInMillis);
         } finally {
           semaphore.release();
         }
