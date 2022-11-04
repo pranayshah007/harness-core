@@ -9,7 +9,6 @@ package io.harness.ci.validation;
 
 import static io.harness.beans.steps.CIStepInfoType.RUN;
 import static io.harness.beans.steps.CIStepInfoType.RUN_TESTS;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.steps.CIAbstractStepNode;

@@ -52,6 +52,7 @@ import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -436,7 +437,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
   protected PlanCreationResponse createPlanForFieldV2(PlanCreationContext ctx, T stepElement) {
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
 
-    PlanNode.PlanNodeBuilder builder =
+    PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(stepElement.getUuid())
             .name(getName(stepElement))

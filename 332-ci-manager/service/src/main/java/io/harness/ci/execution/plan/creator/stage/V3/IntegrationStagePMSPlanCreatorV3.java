@@ -42,6 +42,7 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
@@ -93,7 +94,7 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<YamlFi
     stageParameters
         .specConfig(IntegrationStageStepParametersPMS.getStepParameters(stageNode, childrenNodeIds.get(0), null, ctx))
         .build();
-    PlanNode.PlanNodeBuilder builder =
+    PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
             .name(stageNode.getName())
