@@ -16,12 +16,14 @@ export SourceBranch=`echo ${ghprbSourceBranch}`
 REGEX1='^.*.sh$'
 REGEX2='^.*.md$'
 
-git diff HEAD@{0} HEAD@{1} --name-only >merge_summary.txt
+arr=(280-batch-processing 879-pms-sdk CONTRIBUTOR_LICENSE_AGREEMENT.md Command LICENSE.md README.md VERSION buf.yaml merge_summary.txt committed_files.txt build.properties cd-community cert.pem data)
 
-cat merge_summary.txt
+git diff HEAD@{0} HEAD@{1} --name-only > ${arr[9]}
 
-while read i; do echo "${i##*/}"; done < merge_summary.txt >committed_files.txt
-while read s; do echo "${s%%/*}"; done < merge_summary.txt >committed_folders.txt
+cat ${arr[9]}
+
+while read i; do echo "${i##*/}"; done < ${arr[9]} > ${arr[10]}
+while read s; do echo "${s%%/*}"; done < ${arr[9]} >committed_folders.txt
 
 sort committed_folders.txt | uniq > committed_folders_1.txt
 
