@@ -66,7 +66,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
     // call aws get-metric-data to get the cpu & memory utilisation data
     Map<String, AwsCrossAccountAttributes> infraAccCrossArnMap = ceawsConfigHelper.getCrossAccountAttributes(accountId);
-
+    log.info("accountId = {}", accountId);
     if (!infraAccCrossArnMap.isEmpty()) {
       for (Map.Entry<String, AwsCrossAccountAttributes> infraAccCrossArn : infraAccCrossArnMap.entrySet()) {
         Instant now = Instant.now().truncatedTo(ChronoUnit.DAYS);
@@ -74,7 +74,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
         EC2RecommendationResponse ec2RecommendationResponse = awsEc2RecommendationService.getRecommendations(
             EC2RecommendationRequest.builder().awsCrossAccountAttributes(infraAccCrossArn.getValue()).build());
         Map<String, List<EC2InstanceRecommendationInfo>> instanceLevelRecommendations = new HashMap<>();
-        log.debug("Ec2RecommendationResponse size = {}", ec2RecommendationResponse);
+        log.info("Ec2RecommendationResponse size = {}", ec2RecommendationResponse);
 
         if (Objects.nonNull(ec2RecommendationResponse) && !ec2RecommendationResponse.getRecommendationMap().isEmpty()) {
           for (Map.Entry<RecommendationTarget, List<RightsizingRecommendation>> rightsizingRecommendations :
@@ -106,7 +106,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               recommendation.setLastUpdatedTime(startTime);
               // Save the ec2 recommendation to mongo and timescale
               EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
-              log.debug("EC2Recommendation saved to mongoDB = {}", ec2Recommendation);
+              log.info("EC2Recommendation saved to mongoDB = {}", ec2Recommendation);
               saveRecommendationInTimeScaleDB(ec2Recommendation);
             }
           }

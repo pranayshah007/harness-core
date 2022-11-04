@@ -14,9 +14,11 @@ import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
 import static io.harness.persistence.HPersistence.upsertReturnNewOptions;
 import static io.harness.persistence.HQuery.excludeValidate;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
+import static io.harness.timescaledb.Tables.UTILIZATION_DATA;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.RetryOnException;
+import io.harness.ccm.commons.beans.recommendation.EC2InstanceUtilizationData;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation.EC2RecommendationKeys;
@@ -26,6 +28,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import lombok.NonNull;
@@ -110,5 +113,13 @@ public class EC2RecommendationDAO {
             toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS - 1, ChronoUnit.DAYS)))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public List<EC2InstanceUtilizationData> fetchInstanceDate(@NonNull String accountId, @NonNull String instanceId) {
+    log.info("fetching the Utilization_data for instanceId");
+    return dslContext.selectFrom(UTILIZATION_DATA)
+        .where(UTILIZATION_DATA.ACCOUNTID.eq(accountId).and(UTILIZATION_DATA.INSTANCEID.eq(instanceId)))
+        .fetchInto(EC2InstanceUtilizationData.class);
   }
 }

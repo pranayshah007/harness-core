@@ -21,11 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.Table;
 
 @Singleton
+@Slf4j
 public class RecommendationService {
   @Inject private K8sRecommendationDAO k8sRecommendationDAO;
 
@@ -39,7 +41,7 @@ public class RecommendationService {
       @NonNull final String accountId, Condition condition, @NonNull Long offset, @NonNull Long limit) {
     final List<CeRecommendations> ceRecommendationsList =
         k8sRecommendationDAO.fetchRecommendationsOverview(accountId, condition, offset, limit);
-
+    log.info("ceRecommendationsList = {}", ceRecommendationsList);
     return ceRecommendationsList.stream()
         .map(ceRecommendations
             -> RecommendationItemDTO.builder()

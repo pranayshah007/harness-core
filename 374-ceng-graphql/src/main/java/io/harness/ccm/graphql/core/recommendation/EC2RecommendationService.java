@@ -1,5 +1,6 @@
 package io.harness.ccm.graphql.core.recommendation;
 
+import io.harness.ccm.commons.beans.recommendation.EC2InstanceUtilizationData;
 import io.harness.ccm.commons.dao.recommendation.EC2RecommendationDAO;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
 import io.harness.ccm.graphql.core.converter.EC2RecommendationDTOConverter;
@@ -7,6 +8,8 @@ import io.harness.ccm.graphql.dto.recommendation.EC2RecommendationDTO;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import lombok.NonNull;
@@ -31,6 +34,9 @@ public class EC2RecommendationService {
     log.info("recommendation comoing form mongo = {}", recommendation);
     EC2RecommendationDTO ec2RecommendationDTO = dtoConverter.convertFromEntity(recommendation);
     log.info("final response after convert = {}", ec2RecommendationDTO);
+    List<EC2InstanceUtilizationData> utilData =
+        ec2RecommendationDAO.fetchInstanceDate(accountIdentifier, ec2RecommendationDTO.getId());
+    log.info("utilData = {}", utilData);
     return ec2RecommendationDTO;
   }
 }

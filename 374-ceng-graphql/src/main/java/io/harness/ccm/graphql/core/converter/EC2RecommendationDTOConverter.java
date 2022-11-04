@@ -28,13 +28,16 @@ public class EC2RecommendationDTOConverter extends Converter<EC2RecommendationDT
             .filter(recommendationDetail
                 -> RecommendationTarget.SAME_INSTANCE_FAMILY.equals(recommendationDetail.getRecommendationType()))
             .findFirst();
+    log.info(
+        "sameFamilyRecommendation = {}", sameFamilyRecommendation.isPresent() ? sameFamilyRecommendation.get() : null);
     Optional<EC2RecommendationDetail> crossFamilyRecommendation =
         recommendation.getRecommendationInfo()
             .stream()
             .filter(recommendationDetail
                 -> RecommendationTarget.CROSS_INSTANCE_FAMILY.equals(recommendationDetail.getRecommendationType()))
             .findFirst();
-
+    log.info("crossFamilyRecommendation = {}",
+        crossFamilyRecommendation.isPresent() ? crossFamilyRecommendation.get() : null);
     return EC2RecommendationDTO.builder()
         .id(recommendation.getInstanceId())
         .awsAccountId(recommendation.getAwsAccountId())
