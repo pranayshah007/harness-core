@@ -7,6 +7,7 @@
 
 package io.harness.pms.yaml;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.plan.YamlFieldBlob;
 import io.harness.serializer.JsonUtils;
 
@@ -72,8 +73,32 @@ public class YamlField {
     return node.getYamlPath();
   }
 
+  public String getType() {
+    return node.getType();
+  }
+
+  public String getNodeName() {
+    String name = node.getProperty("name");
+    if (EmptyPredicate.isEmpty(name)) {
+      return getType();
+    }
+    return name;
+  }
+
+  public String getId() {
+    String id = node.getProperty("id");
+    if (EmptyPredicate.isEmpty(id)) {
+      return getType();
+    }
+    return id;
+  }
+
   public YamlField fromYamlPath(String path) throws IOException {
     YamlNode node = YamlNode.fromYamlPath(this, path);
     return node == null ? null : new YamlField(node);
+  }
+
+  public String getUuid() {
+    return node.getUuid();
   }
 }

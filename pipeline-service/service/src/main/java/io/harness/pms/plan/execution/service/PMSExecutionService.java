@@ -14,6 +14,8 @@ import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplateDTO;
+import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
+import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -54,7 +56,11 @@ public interface PMSExecutionService {
       String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
       String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
       ByteString gitEntityBasicInfo, boolean isLatest);
+  Criteria formCriteriaForRepoAndBranchListing(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String repoName);
 
+  PMSPipelineListRepoResponse getListOfRepo(Criteria criteria);
+  PMSPipelineListBranchesResponse getListOfBranches(Criteria criteria);
   void deleteExecutionsOnPipelineDeletion(PipelineEntity pipelineEntity);
 
   long getCountOfExecutions(Criteria criteria);

@@ -76,6 +76,7 @@ import software.wings.service.impl.workflow.WorkflowServiceHelper;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
+import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
@@ -144,6 +145,7 @@ public class EnvState extends State implements WorkflowState {
 
   @Inject private Injector injector;
   @Transient @Inject private WorkflowService workflowService;
+  @Transient @Inject private PipelineService pipelineService;
   @Transient @Inject private WorkflowExecutionService executionService;
   @Transient @Inject private WorkflowExecutionUpdate executionUpdate;
   @Transient @Inject private ArtifactService artifactService;
@@ -228,6 +230,7 @@ public class EnvState extends State implements WorkflowState {
       }
       WorkflowExecution execution = executionService.triggerOrchestrationExecution(
           appId, null, workflowId, context.getWorkflowExecutionId(), executionArgs, null);
+
       envStateExecutionData.setWorkflowExecutionId(execution.getUuid());
       return ExecutionResponse.builder()
           .async(true)

@@ -7,51 +7,157 @@
 
 package io.harness.steps.email;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.task.email.EmailStepResponse;
+import io.harness.delegate.beans.NotificationTaskResponse;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
+import io.harness.logging.UnitProgress;
+import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.dto.ErrorDTO;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollback;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
+import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
-import io.harness.supplier.ThrowingSupplier;
+import io.harness.steps.StepUtils;
 
 import com.google.inject.Inject;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
-public class EmailStep extends TaskExecutableWithRollback<EmailStepResponse> {
+public class EmailStep implements SyncExecutable<StepElementParameters> {
+  @Inject private NotificationClient notificationClient;
   public static final StepType STEP_TYPE = StepSpecTypeConstants.EMAIL_STEP_TYPE;
 
   @Inject private KryoSerializer kryoSerializer;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Override
+  public List<String> getLogKeys(Ambiance ambiance) {
+    // TODO need to figure out how this should work...
+    return StepUtils.generateLogKeys(ambiance, new ArrayList<>());
+  }
+
+  @Override
+  public StepResponse executeSync(Ambiance ambiance, StepElementParameters stepParameters,
+      StepInputPackage inputPackage, PassThroughData passThroughData) {
+    long startTime = System.currentTimeMillis();
+    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, true);
+    EmailStepParameters emailStepParameters = (EmailStepParameters) stepParameters.getSpec();
+    String toMail = emailStepParameters.to.getValue();
+    String ccMail = emailStepParameters.cc.getValue();
+    Set<String> toRecipients = Collections.emptySet();
+    Set<String> ccRecipients = Collections.emptySet();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String notificationId = generateUuid();
+
+    if (StringUtils.isNotBlank(toMail)) {
+      toRecipients = Stream.of(toMail.trim().split("\\s*,\\s*")).collect(Collectors.toSet());
+    }
+    if (StringUtils.isNotBlank(ccMail)) {
+      ccRecipients = Stream.of(ccMail.trim().split("\\s*,\\s*")).collect(Collectors.toSet());
+    }
+    EmailDTO emailDTO = EmailDTO.builder()
+                            .toRecipients(toRecipients)
+                            .ccRecipients(ccRecipients)
+                            .body(emailStepParameters.body.getValue())
+                            .subject(emailStepParameters.subject.getValue())
+                            .accountId(accountId)
+                            .notificationId(notificationId)
+                            .build();
+    logCallback.saveExecutionLog(String.format("Email step execution started"));
+    try {
+      Response<ResponseDTO<NotificationTaskResponse>> response = notificationClient.sendEmail(emailDTO);
+
+      if (!response.isSuccessful()) {
+        logCallback.saveExecutionLog(
+            String.format("Failed to send the email"), LogLevel.INFO, CommandExecutionStatus.FAILURE);
+        ErrorDTO responseDTO =
+            JsonUtils.asObjectWithExceptionHandlingType(response.errorBody().string(), ErrorDTO.class);
+        FailureData failureData = FailureData.newBuilder()
+                                      .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                      .setLevel(io.harness.eraro.Level.ERROR.name())
+                                      .setCode(GENERAL_ERROR.name())
+                                      .setMessage(responseDTO.getMessage())
+                                      .build();
+        return StepResponse.builder()
+            .status(Status.FAILED)
+            .failureInfo(FailureInfo.newBuilder().addFailureData(failureData).build())
+            .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()
+                                                            .setStatus(UnitStatus.FAILURE)
+                                                            .setStartTime(startTime)
+                                                            .setEndTime(System.currentTimeMillis())
+                                                            .build()))
+            .build();
+      }
+      if (response.body().getStatus() == io.harness.ng.core.Status.SUCCESS
+          && StringUtils.isNotBlank(response.body().getData().getErrorMessage())) {
+        logCallback.saveExecutionLog(String.format(response.body().getData().getErrorMessage()));
+      }
+
+    } catch (IOException e) {
+      logCallback.saveExecutionLog(String.format("Failed to send the email. The reasons could be -\n"
+                                       + "- The SMTP server may not be setup correctly(if configured) \n"
+                                       + "- Delegate unable to reach custom SMTP server(if configured)\n"
+                                       + "- Something went wrong on Harness's end."),
+          LogLevel.INFO, CommandExecutionStatus.FAILURE);
+      log.error("Not able to send emails", e);
+      return StepResponse.builder()
+          .status(Status.FAILED)
+          .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()
+                                                          .setStatus(UnitStatus.FAILURE)
+                                                          .setStartTime(startTime)
+                                                          .setEndTime(System.currentTimeMillis())
+                                                          .build()))
+          .build();
+    }
+
+    logCallback.saveExecutionLog("Email step execution completed", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    return StepResponse.builder()
+        .status(Status.SUCCEEDED)
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(YAMLFieldNameConstants.OUTPUT)
+                         .outcome(EmailOutcome.builder().notificationId(notificationId).build())
+                         .build())
+        .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()
+                                                        .setStatus(UnitStatus.SUCCESS)
+                                                        .setStartTime(startTime)
+                                                        .setEndTime(System.currentTimeMillis())
+                                                        .build()))
+        .build();
+  }
+
+  @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
-  }
-
-  @Override
-  public TaskRequest obtainTask(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return null;
-  }
-
-  @Override
-  public StepResponse handleTaskResult(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<EmailStepResponse> responseDataSupplier) throws Exception {
-    return null;
-  }
-
-  private NGLogCallback getNGLogCallback(LogStreamingStepClientFactory logStreamingStepClientFactory, Ambiance ambiance,
-      String logFix, boolean openStream) {
-    return new NGLogCallback(logStreamingStepClientFactory, ambiance, logFix, openStream);
   }
 }

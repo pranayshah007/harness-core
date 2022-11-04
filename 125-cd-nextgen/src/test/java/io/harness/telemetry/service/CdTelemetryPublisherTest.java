@@ -104,8 +104,8 @@ public class CdTelemetryPublisherTest extends CategoryTest {
         CgActiveServicesUsageInfo.builder()
             .servicesConsumed(2L)
             .serviceLicenseConsumed(3L)
-            .activeServiceUsage(Arrays.asList(
-                new CgServiceUsage("service1", "svcId1", 1, 9), new CgServiceUsage("service2", "svcId2", 2, 22)))
+            .activeServiceUsage(Arrays.asList(new CgServiceUsage("service1", "svcId1", 1, 9, "appId1", "appName1"),
+                new CgServiceUsage("service2", "svcId2", 2, 22, "appId1", "appName1")))
             .build();
     doReturn(cgLicenseUsage).when(telemetryPublisher).getCgLicenseUsageInfo("acc1");
     doReturn(cgLicenseUsage).when(telemetryPublisher).getCgLicenseUsageInfo("acc2");

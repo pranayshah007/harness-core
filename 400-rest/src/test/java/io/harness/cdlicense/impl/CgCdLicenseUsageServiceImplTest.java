@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -69,9 +70,9 @@ public class CgCdLicenseUsageServiceImplTest extends CategoryTest {
         .thenReturn(Arrays.asList("svc1", "svc2"));
     when(cdLicenseUsageQueryHelper.getPercentileInstanceForServices(anyString(), anyList(), anyInt(), anyDouble()))
         .thenReturn(emptyMap());
-    HashMap<String, String> svcNames = new HashMap<>();
-    svcNames.put("svc1", "name1");
-    svcNames.put("svc2", "name2");
+    HashMap<String, Pair<String, String>> svcNames = new HashMap<>();
+    svcNames.put("svc1", Pair.of("name1", "app1"));
+    svcNames.put("svc2", Pair.of("name2", "app2"));
     when(cdLicenseUsageQueryHelper.fetchServicesNames(anyString(), anyList())).thenReturn(svcNames);
     CgActiveServicesUsageInfo activeServiceLicenseUsage =
         cgCdLicenseUsageService.getActiveServiceLicenseUsage(accountIdentifier);
@@ -94,9 +95,9 @@ public class CgCdLicenseUsageServiceImplTest extends CategoryTest {
     when(cdLicenseUsageQueryHelper.getPercentileInstanceForServices(anyString(), anyList(), anyInt(), anyDouble()))
         .thenReturn(cgServiceUsageMap);
 
-    HashMap<String, String> svcNames = new HashMap<>();
-    svcNames.put("svc1", "name1");
-    svcNames.put("svc2", "name2");
+    HashMap<String, Pair<String, String>> svcNames = new HashMap<>();
+    svcNames.put("svc1", Pair.of("name1", "app1"));
+    svcNames.put("svc2", Pair.of("name2", "app2"));
     when(cdLicenseUsageQueryHelper.fetchServicesNames(anyString(), anyList())).thenReturn(svcNames);
 
     CgActiveServicesUsageInfo activeServiceLicenseUsage =

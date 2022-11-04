@@ -117,4 +117,8 @@ public class PlanCreationContext implements AsyncCreatorContext {
     });
     return stepFields;
   }
+
+  public String getYamlVersion() {
+    return getMetadata().getMetadata().getHarnessVersion();
+  }
 }

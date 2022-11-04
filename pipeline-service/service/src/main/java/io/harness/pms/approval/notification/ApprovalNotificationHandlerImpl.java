@@ -10,6 +10,7 @@ package io.harness.pms.approval.notification;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 
 import static java.util.Objects.isNull;
 
@@ -17,7 +18,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
+import io.harness.exception.ExceptionUtils;
 import io.harness.logging.AutoLogContext;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO.UserGroupFilterDTOBuilder;
@@ -74,26 +78,33 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
   private final NotificationClient notificationClient;
   private final NotificationHelper notificationHelper;
   private final PMSExecutionService pmsExecutionService;
+  private final LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Inject
   public ApprovalNotificationHandlerImpl(@Named("PRIVILEGED") UserGroupClient userGroupClient,
       NotificationClient notificationClient, NotificationHelper notificationHelper,
-      PMSExecutionService pmsExecutionService) {
+      PMSExecutionService pmsExecutionService, LogStreamingStepClientFactory logStreamingStepClientFactory) {
     this.userGroupClient = userGroupClient;
     this.notificationClient = notificationClient;
     this.notificationHelper = notificationHelper;
     this.pmsExecutionService = pmsExecutionService;
+    this.logStreamingStepClientFactory = logStreamingStepClientFactory;
   }
 
   @Override
   public void sendNotification(HarnessApprovalInstance approvalInstance, Ambiance ambiance) {
     try (AutoLogContext ignore = approvalInstance.autoLogContext()) {
-      sendNotificationInternal(approvalInstance, ambiance);
+      NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
+      sendNotificationInternal(approvalInstance, ambiance, logCallback);
     }
   }
 
-  private void sendNotificationInternal(HarnessApprovalInstance approvalInstance, Ambiance ambiance) {
+  private void sendNotificationInternal(
+      HarnessApprovalInstance approvalInstance, Ambiance ambiance, NGLogCallback logCallback) {
     try {
+      log.info("Sending notification to user groups for harness approval");
+      logCallback.saveExecutionLog("-----");
+      logCallback.saveExecutionLog("Sending notification to user groups for harness approval");
       PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = getPipelineExecutionSummary(ambiance);
 
       List<UserGroupDTO> userGroups = getUserGroups(approvalInstance);
@@ -116,8 +127,10 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
       if (approvalInstance.isIncludePipelineExecutionHistory()) {
         generateModuleSpecificSummary(approvalSummary, pipelineExecutionSummaryEntity);
       }
-      sendNotificationInternal(approvalInstance, userGroups, approvalSummary.toParams());
+      sendNotificationInternal(approvalInstance, userGroups, approvalSummary.toParams(), logCallback);
     } catch (Exception e) {
+      logCallback.saveExecutionLog(String.format(
+          "Error sending notification to user groups for harness approval: %s", ExceptionUtils.getMessage(e)));
       log.error("Error while sending notification for harness approval", e);
     }
   }
@@ -149,8 +162,8 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     }
   }
 
-  private void sendNotificationInternal(
-      HarnessApprovalInstance instance, List<UserGroupDTO> userGroups, Map<String, String> templateData) {
+  private void sendNotificationInternal(HarnessApprovalInstance instance, List<UserGroupDTO> userGroups,
+      Map<String, String> templateData, NGLogCallback logCallback) {
     for (UserGroupDTO userGroup : userGroups) {
       for (NotificationSettingConfigDTO notificationSettingConfig : userGroup.getNotificationConfigs()) {
         NotificationChannel notificationChannel =
@@ -159,6 +172,9 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
           notificationClient.sendNotificationAsync(notificationChannel);
         } else {
           log.warn("Error constructing NotificationChannel for {}", notificationSettingConfig);
+          logCallback.saveExecutionLog(String.format(
+              "Error sending notification to user groups for harness approval: Error constructing NotificationChannel for {%s}",
+              notificationSettingConfig));
         }
       }
     }

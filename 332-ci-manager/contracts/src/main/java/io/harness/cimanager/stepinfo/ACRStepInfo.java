@@ -83,6 +83,7 @@ public class ACRStepInfo implements PluginCompatibleStep, WithConnectorRef {
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> context;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> dockerfile;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> target;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> subscriptionId;
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
   private ParameterField<Map<String, String>> labels;
@@ -97,15 +98,15 @@ public class ACRStepInfo implements PluginCompatibleStep, WithConnectorRef {
   private ParameterField<List<String>> baseImageConnectorRefs;
 
   @Builder
-  @ConstructorProperties(
-      {"identifier", "name", "retry", "connectorRef", "resources", "repository", "tags", "context", "dockerfile",
-          "target", "labels", "buildArgs", "runAsUser", "optimize", "remoteCacheImage", "baseImageConnectorRefs"})
+  @ConstructorProperties({"identifier", "name", "retry", "connectorRef", "resources", "repository", "tags", "context",
+      "dockerfile", "target", "labels", "buildArgs", "runAsUser", "optimize", "remoteCacheImage",
+      "baseImageConnectorRefs", "subscriptionId"})
   public ACRStepInfo(String identifier, String name, Integer retry, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<String> repository, ParameterField<List<String>> tags,
       ParameterField<String> context, ParameterField<String> dockerfile, ParameterField<String> target,
       ParameterField<Map<String, String>> labels, ParameterField<Map<String, String>> buildArgs,
       ParameterField<Integer> runAsUser, ParameterField<Boolean> optimize, ParameterField<String> remoteCacheImage,
-      ParameterField<List<String>> baseImageConnectorRefs) {
+      ParameterField<List<String>> baseImageConnectorRefs, ParameterField<String> subscriptionId) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
@@ -122,6 +123,7 @@ public class ACRStepInfo implements PluginCompatibleStep, WithConnectorRef {
     this.optimize = optimize;
     this.remoteCacheImage = remoteCacheImage;
     this.baseImageConnectorRefs = baseImageConnectorRefs;
+    this.subscriptionId = subscriptionId;
   }
 
   @Override

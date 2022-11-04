@@ -898,7 +898,8 @@ public class AccountServiceImpl implements AccountService {
             .set(AccountKeys.cloudCostEnabled, account.isCloudCostEnabled())
             .set(AccountKeys.nextGenEnabled, account.isNextGenEnabled())
             .set(AccountKeys.ceAutoCollectK8sEvents, account.isCeAutoCollectK8sEvents())
-            .set("whitelistedDomains", account.getWhitelistedDomains());
+            .set("whitelistedDomains", account.getWhitelistedDomains())
+            .set("isProductLed", account.isProductLed());
 
     if (null != account.getLicenseInfo()) {
       updateOperations.set(AccountKeys.licenseInfo, account.getLicenseInfo());
