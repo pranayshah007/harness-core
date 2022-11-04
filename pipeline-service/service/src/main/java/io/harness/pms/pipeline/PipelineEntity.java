@@ -30,7 +30,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
-import io.harness.pms.yaml.YamlVersion;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -160,7 +160,7 @@ public class PipelineEntity
   @Wither @Setter @NonFinal String repoURL;
 
   // to maintain pipeline version
-  @Setter @NonFinal YamlVersion harnessVersion;
+  @Setter @NonFinal String harnessVersion;
 
   public String getData() {
     return yaml;
@@ -198,7 +198,10 @@ public class PipelineEntity
     return TemplateRefHelper.hasTemplateRefOrCustomDeploymentRef(getData());
   }
 
-  public YamlVersion getHarnessVersion() {
-    return harnessVersion != null ? harnessVersion : YamlVersion.V0;
+  public String getHarnessVersion() {
+    if (harnessVersion == null || harnessVersion.equals("V0")) {
+      return PipelineVersion.V0;
+    }
+    return harnessVersion;
   }
 }

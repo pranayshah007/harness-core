@@ -7,9 +7,11 @@
 
 package io.harness.pms.plan.execution;
 
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAMARTH;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -30,6 +32,8 @@ import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
+import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -42,6 +46,7 @@ import io.harness.rule.Owner;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -231,5 +236,43 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
                            -> executionDetailsResource.getExecutionDetail(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                STAGE_NODE_ID, null, invalidPlanExecutionId))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetListOfRepos() {
+    HashSet<String> repoList = new HashSet<>();
+    repoList.add("testRepo");
+    repoList.add("testRepo2");
+
+    PMSPipelineListRepoResponse pmsPipelineListRepoResponse =
+        PMSPipelineListRepoResponse.builder().repositories(repoList).build();
+
+    doReturn(pmsPipelineListRepoResponse).when(pmsExecutionService).getListOfRepo(any());
+
+    PMSPipelineListRepoResponse uniqueRepos =
+        executionDetailsResource.getListOfRepos(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "").getData();
+    assertEquals(uniqueRepos.getRepositories(), repoList);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetListOfBranch() {
+    HashSet<String> branchList = new HashSet<>();
+    branchList.add("main");
+    branchList.add("main-patch");
+
+    PMSPipelineListBranchesResponse pmsPipelineListBranchesResponse =
+        PMSPipelineListBranchesResponse.builder().branches(branchList).build();
+
+    doReturn(pmsPipelineListBranchesResponse).when(pmsExecutionService).getListOfBranches(any());
+
+    PMSPipelineListBranchesResponse uniqueBranches =
+        executionDetailsResource
+            .getListOfBranches(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "testRepo")
+            .getData();
+    assertEquals(uniqueBranches.getBranches(), branchList);
   }
 }

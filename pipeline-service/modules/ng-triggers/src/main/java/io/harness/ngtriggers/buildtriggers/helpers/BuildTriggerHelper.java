@@ -38,6 +38,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.polling.contracts.AcrPayload;
 import io.harness.polling.contracts.AmazonS3Payload;
 import io.harness.polling.contracts.ArtifactoryRegistryPayload;
+import io.harness.polling.contracts.AzureArtifactsPayload;
 import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.CustomPayload;
 import io.harness.polling.contracts.DockerHubPayload;
@@ -276,8 +277,32 @@ public class BuildTriggerHelper {
       validatePollingItemForGoogleArtifactRegistry(pollingItem);
     } else if (pollingPayloadData.hasGithubPackagesPollingPayload()) {
       validatePollingItemForGithubPackages(pollingItem);
+    } else if (pollingPayloadData.hasAzureArtifactsPayload()) {
+      validatePollingItemForAzureArtifacts(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
+    }
+  }
+
+  private void validatePollingItemForAzureArtifacts(PollingItem pollingItem) {
+    AzureArtifactsPayload azureArtifactsPayload = pollingItem.getPollingPayloadData().getAzureArtifactsPayload();
+
+    String error = checkFiledValueError("feed", azureArtifactsPayload.getFeed());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    error = checkFiledValueError("package", azureArtifactsPayload.getPackageName());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    error = checkFiledValueError("packageType", azureArtifactsPayload.getPackageType());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
     }
   }
 

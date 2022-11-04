@@ -178,7 +178,7 @@ public class ReflectionUtils {
         Object value = field.get(obj);
         fieldNameValueMap.put(fieldName, value);
       } catch (NoSuchFieldException ignored) {
-        log.error(format("Field \"%s\" not available in object \"%s\"", fieldName, obj.toString()));
+        log.warn(format("Field \"%s\" not available in object \"%s\"", fieldName, obj.toString()));
       } catch (IllegalAccessException e) {
         log.error(format("Unable to access field \"%s\"", fieldName));
       }

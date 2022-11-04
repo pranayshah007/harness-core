@@ -138,4 +138,5 @@ public class EntityYamlRootNames {
   public static final String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
   public static final String FREEZE = "freeze";
   public static final String CHAOS_STEP = "Chaos";
+  public static final String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
 }

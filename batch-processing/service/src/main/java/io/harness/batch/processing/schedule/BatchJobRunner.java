@@ -226,8 +226,8 @@ public class BatchJobRunner {
   boolean checkOutOfClusterDependentJobs(String accountId, Instant startAt, Instant endAt, BatchJobType batchJobType) {
     if (ImmutableSet.of(BatchJobType.INSTANCE_BILLING, BatchJobType.INSTANCE_BILLING_HOURLY).contains(batchJobType)) {
       if (batchJobType == BatchJobType.INSTANCE_BILLING_HOURLY) {
-        // adding 3 hrs buffer because sometime last hr data is not present for few instances and we consider cost as 0
-        endAt = endAt.plus(3, ChronoUnit.HOURS);
+        // adding 6 hrs buffer because sometime last hr data is not present for few instances and we consider cost as 0
+        endAt = endAt.plus(6, ChronoUnit.HOURS);
       }
       return customBillingMetaDataService.checkPipelineJobFinished(accountId, startAt, endAt);
     }

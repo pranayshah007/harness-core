@@ -251,7 +251,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
       try {
         String fullyQualifiedName = YamlUtils.getFullyQualifiedName(field.getNode());
         Optional<PartialPlanCreator<?>> planCreatorOptional =
-            PlanCreatorServiceHelper.findPlanCreator(planCreators, field);
+            PlanCreatorServiceHelper.findPlanCreator(planCreators, field, ctx.getYamlVersion());
         if (!planCreatorOptional.isPresent()) {
           return null;
         }

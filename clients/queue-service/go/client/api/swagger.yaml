@@ -1,0 +1,258 @@
+openapi: 3.0.1
+info:
+  title: Swagger Doc- hsqs
+  description: This is a queuing client.
+  termsOfService: http://swagger.io/terms/
+  contact:
+    name: API Support
+    url: http://www.swagger.io/support
+    email: support@swagger.io
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: "1.0"
+servers:
+- url: http://localhost:9091/
+paths:
+  /v1/ack:
+    post:
+      summary: Ack a Redis message
+      description: Ack a Redis message consumed successfully
+      parameters:
+      - name: Authorization
+        in: header
+        description: Authorization
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: query params
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/store.AckRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/store.AckResponse'
+      x-codegen-request-body-name: request
+  /v1/dequeue:
+    post:
+      summary: Dequeue in Redis
+      description: Dequeue a request
+      parameters:
+      - name: Authorization
+        in: header
+        description: Authorization
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: query params
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/store.DequeueRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/store.DequeueResponse'
+      x-codegen-request-body-name: request
+  /v1/healthz:
+    get:
+      summary: Health API for Queue Service
+      description: Health API for Queue Service
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                x-content-type: application/json
+  /v1/queue:
+    post:
+      summary: Enqueue
+      description: Enqueue the request
+      parameters:
+      - name: Authorization
+        in: header
+        description: Authorization
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: query params
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/store.EnqueueRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/store.EnqueueResponse'
+      x-codegen-request-body-name: request
+  /v1/unack:
+    post:
+      summary: UnAck a Redis message or SubTopic
+      description: UnAck a Redis message or SubTopic to stop processing
+      parameters:
+      - name: Authorization
+        in: header
+        description: Authorization
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: query params
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/store.UnAckRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/store.UnAckResponse'
+      x-codegen-request-body-name: request
+components:
+  schemas:
+    store.AckRequest:
+      type: object
+      properties:
+        consumerName:
+          type: string
+        itemID:
+          type: string
+        subTopic:
+          type: string
+        topic:
+          type: string
+    store.AckResponse:
+      type: object
+      properties:
+        itemID:
+          type: string
+      example:
+        itemID: itemID
+    store.DequeueItemMetadata:
+      type: object
+      properties:
+        currentRetryCount:
+          type: integer
+        maxProcessingTime:
+          type: number
+      example:
+        maxProcessingTime: 6.027456183070403
+        currentRetryCount: 0
+    store.DequeueRequest:
+      type: object
+      properties:
+        batchSize:
+          type: integer
+        consumerName:
+          type: string
+        maxWaitDuration:
+          type: integer
+        topic:
+          type: string
+    store.DequeueResponse:
+      type: object
+      properties:
+        itemId:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/store.DequeueItemMetadata'
+        payload:
+          type: array
+          items:
+            type: integer
+        queueKey:
+          type: string
+        timeStamp:
+          type: integer
+      example:
+        timeStamp: 5
+        itemId: itemId
+        metadata:
+          maxProcessingTime: 6.027456183070403
+          currentRetryCount: 0
+        payload:
+        - 1
+        - 1
+        queueKey: queueKey
+    store.EnqueueRequest:
+      type: object
+      properties:
+        payload:
+          type: array
+          items:
+            type: integer
+        producerName:
+          type: string
+        subTopic:
+          type: string
+        topic:
+          type: string
+    store.EnqueueResponse:
+      type: object
+      properties:
+        itemId:
+          type: string
+          description: ItemID is the identifier of the task in the Queue
+      example:
+        itemId: itemId
+    store.UnAckRequest:
+      type: object
+      properties:
+        itemID:
+          type: string
+        retryTimeAfterDuration:
+          type: integer
+          description: Retry topic + subtopic after RetryAfterTimeDuration nanoseconds
+        subTopic:
+          type: string
+        topic:
+          type: string
+        type:
+          type: integer
+    store.UnAckResponse:
+      type: object
+      properties:
+        itemID:
+          type: string
+        subTopic:
+          type: string
+        topic:
+          type: string
+        type:
+          type: integer
+      example:
+        subTopic: subTopic
+        itemID: itemID
+        topic: topic
+        type: 0
+x-original-swagger-version: "2.0"

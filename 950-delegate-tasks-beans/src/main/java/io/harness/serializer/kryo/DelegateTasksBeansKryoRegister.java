@@ -350,6 +350,10 @@ import io.harness.delegate.task.ListNotifyResponseData;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryBaseArtifactDelegateRequest;
@@ -458,6 +462,7 @@ import io.harness.delegate.task.azure.artifact.AzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactType;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
+import io.harness.delegate.task.azure.artifact.JenkinsAzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.request.AzureLoadBalancerDetailForBGDeployment;
 import io.harness.delegate.task.azure.request.AzureVMSSDeployTaskParameters;
@@ -1883,6 +1888,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ShellScriptProvisionTaskNGResponse.class, 55427);
     kryo.register(ArtifactoryFetchImagePathResponse.class, 55428);
     kryo.register(NexusArtifactDelegateConfig.class, 55429);
+    kryo.register(JenkinsAzureArtifactRequestDetails.class, 55430);
     kryo.register(SshConnectivityExecutionCapability.class, 55435);
     kryo.register(NoInstalledDelegatesException.class, 73988);
     kryo.register(NoEligibleDelegatesInAccountException.class, 73989);
@@ -1891,5 +1897,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(NexusAzureArtifactRequestDetails.class, 73992);
     kryo.register(DelegateTaskExpiredException.class, 980036);
     kryo.register(S3BuildsResponse.class, 1010101);
+    kryo.register(AMIArtifactDelegateRequest.class, 60011);
+    kryo.register(AMIArtifactDelegateResponse.class, 60012);
+    kryo.register(AMITag.class, 60013);
+    kryo.register(AMIFilter.class, 60014);
   }
 }

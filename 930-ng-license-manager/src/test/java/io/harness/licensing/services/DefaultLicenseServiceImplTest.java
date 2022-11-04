@@ -56,6 +56,7 @@ import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
 import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
+import io.harness.licensing.beans.modules.SMPValidationResultDTO;
 import io.harness.licensing.beans.modules.StartTrialDTO;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.checks.LicenseComplianceResolver;
@@ -65,11 +66,14 @@ import io.harness.licensing.entities.modules.CIModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.interfaces.ModuleLicenseInterface;
 import io.harness.licensing.mappers.LicenseObjectConverter;
+import io.harness.licensing.mappers.SMPLicenseMapper;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.rule.Owner;
+import io.harness.smp.license.models.SMPLicenseValidationResult;
 import io.harness.smp.license.v1.LicenseGenerator;
+import io.harness.smp.license.v1.LicenseValidator;
 import io.harness.telemetry.TelemetryReporter;
 
 import com.google.common.collect.ImmutableList;
@@ -103,6 +107,8 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
   @Mock LicenseComplianceResolver licenseComplianceResolver;
   @Mock Cache<String, List> cache;
   @Mock LicenseGenerator licenseGenerator;
+  @Mock LicenseValidator licenseValidator;
+  @Mock SMPLicenseMapper smpLicenseMapper;
   @InjectMocks DefaultLicenseServiceImpl licenseService;
 
   private StartTrialDTO startTrialRequestDTO;
@@ -612,6 +618,39 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
     licenseRequestDTO.setAccountOptional(false);
 
     licenseService.generateSMPLicense("test", licenseRequestDTO);
+  }
+
+  @Test
+  @Owner(developers = KAPIL_GARG)
+  @Category(UnitTests.class)
+  public void testValidateSMPLicense() {
+    String license = "some valid license";
+    SMPEncLicenseDTO licenseDTO = SMPEncLicenseDTO.builder().encryptedLicense(license).decrypt(true).build();
+    SMPLicenseValidationResult validationResult = SMPLicenseValidationResult.builder().isValid(true).build();
+
+    when(smpLicenseMapper.toSMPLicenseEnc(licenseDTO)).thenCallRealMethod();
+    when(smpLicenseMapper.toSMPValidationResultDTO(validationResult)).thenCallRealMethod();
+    when(licenseValidator.validate(Mockito.any(), Mockito.eq(licenseDTO.isDecrypt()))).thenReturn(validationResult);
+
+    SMPValidationResultDTO smpValidationResultDTO = licenseService.validateSMPLicense(licenseDTO);
+    assertThat(smpValidationResultDTO).isNotNull();
+    assertThat(smpValidationResultDTO.isValid()).isTrue();
+  }
+
+  @Test(expected = RuntimeException.class)
+  @Owner(developers = KAPIL_GARG)
+  @Category(UnitTests.class)
+  public void testValidateSMPLicenseInternalLibraryError() {
+    String license = "";
+    SMPEncLicenseDTO licenseDTO = SMPEncLicenseDTO.builder().encryptedLicense(license).decrypt(true).build();
+    SMPLicenseValidationResult validationResult = SMPLicenseValidationResult.builder().isValid(true).build();
+
+    when(smpLicenseMapper.toSMPLicenseEnc(licenseDTO)).thenCallRealMethod();
+    when(smpLicenseMapper.toSMPValidationResultDTO(validationResult)).thenCallRealMethod();
+    when(licenseValidator.validate(Mockito.any(), Mockito.eq(licenseDTO.isDecrypt())))
+        .thenThrow(RuntimeException.class);
+
+    licenseService.validateSMPLicense(licenseDTO);
   }
 
   private AccountDTO getAccountDTO() {

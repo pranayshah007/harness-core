@@ -64,6 +64,11 @@ public class KubernetesClusterHandler implements DelegateObserver {
     // do nothing
   }
 
+  @Override
+  public void onDelegateTagsUpdated(String accountId) {
+    // do nothing
+  }
+
   private void createKubernetes(Delegate delegate) {
     KubernetesClusterConfig kubernetesClusterConfig =
         KubernetesClusterConfig.builder()

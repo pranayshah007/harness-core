@@ -13,7 +13,6 @@ import static io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringSe
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.DeploymentSummaryDTO;
@@ -39,7 +38,6 @@ import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.models.constants.InstanceSyncFlow;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
 import io.harness.service.instance.InstanceService;
@@ -137,10 +135,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           InstanceSyncLocalCacheManager.setDeploymentSummary(
               deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO);
 
-          if (CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(
-                  FeatureName.FIX_CORRUPTED_INSTANCES.name(), infrastructureMappingDTO.getAccountIdentifier()))) {
-            fixCorruptedInstances(infrastructureMappingDTO);
-          }
+          // fix instances mapped to old/wrong infrastructure mapping
+          fixCorruptedInstances(infrastructureMappingDTO);
 
           // Sync only for deployment infos / instance sync handler keys from instances from server
           performInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO,

@@ -500,6 +500,24 @@ public class YamlNode implements Visitable {
     return new YamlConfig(currentNode.getParentNode().getCurrJsonNode()).getYaml();
   }
 
+  /**
+   *
+   * This method just returns the textual representation of the poperty
+   * All the cases must be handled by the callers themselves.
+   * This method do not try to interpret any information from the json node
+   *
+   * @param name : name of the property whose value needed to be extrated
+   * @return : String representation of the node ig found else null
+   */
+  public String getProperty(String name) {
+    JsonNode value = getValueInternal(name);
+    if (value == null) {
+      return null;
+    }
+
+    return value.asText();
+  }
+
   // Check if YamlNode matches the nodeId.
   private static boolean getCurrentArrayElementIfMatches(YamlNode yamlNode, String nodeId) {
     return yamlNode.gotoPath("identifier") != null && yamlNode.gotoPath("identifier").asText().equals(nodeId)

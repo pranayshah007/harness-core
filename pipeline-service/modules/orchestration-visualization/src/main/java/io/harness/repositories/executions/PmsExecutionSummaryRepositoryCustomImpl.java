@@ -129,6 +129,18 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
     return mongoTemplate.find(query, PipelineExecutionSummaryEntity.class);
   }
 
+  @Override
+  public List<String> findListOfUniqueBranches(Criteria criteria) {
+    Query query = new Query(criteria);
+    return pmsExecutionSummaryReadHelper.findListOfUniqueBranches(query);
+  }
+
+  @Override
+  public List<String> findListOfUniqueRepositories(Criteria criteria) {
+    Query query = new Query(criteria);
+    return pmsExecutionSummaryReadHelper.findListOfUniqueRepositories(query);
+  }
+
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
   }

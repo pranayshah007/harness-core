@@ -54,7 +54,7 @@ import org.apache.commons.lang3.StringUtils;
 public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
   @NotNull @NotBlank String region;
   @NotNull @NotBlank String feature;
-  @Valid Set<TimeSeriesMetricPackDTO> metricThresholds;
+  @Valid Set<TimeSeriesMetricPackDTO> metricPacks;
   @Valid @UniqueIdentifierCheck @NotEmpty List<CloudWatchMetricDefinition> metricDefinitions;
 
   @Override
@@ -147,7 +147,7 @@ public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
             .collect(Collectors.toList());
 
     // Add user defined metric thresholds to respective cvConfigs
-    cvConfigs.forEach(cvConfig -> cvConfig.addCustomMetricThresholds(metricThresholds));
+    cvConfigs.forEach(cvConfig -> cvConfig.addCustomMetricThresholds(metricPacks));
 
     cvConfigs.stream()
         .filter(cvConfig -> CollectionUtils.isNotEmpty(cvConfig.getMetricInfos()))

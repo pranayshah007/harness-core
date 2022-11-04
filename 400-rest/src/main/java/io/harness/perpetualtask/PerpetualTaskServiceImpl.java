@@ -16,6 +16,8 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_PAUSE;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_RESET;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_UNASSIGNED;
+import static io.harness.perpetualtask.PerpetualTaskState.TASK_NON_ASSIGNABLE;
+import static io.harness.perpetualtask.PerpetualTaskState.TASK_UNASSIGNED;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -387,6 +389,13 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   public void onReconnected(Delegate delegate) {
     log.info("Delegate reconnected/added for account {} delegateId {}", delegate.getAccountId(), delegate.getUuid());
     perpetualTaskRecordDao.updateTaskNonAssignableToAssignable(delegate.getAccountId());
+  }
+
+  @Override
+  public void onDelegateTagsUpdated(String accountId) {
+    log.info(
+        "Marking all the {} perpetual tasks as {} for accountId: {}", TASK_NON_ASSIGNABLE, TASK_UNASSIGNED, accountId);
+    perpetualTaskRecordDao.updateTaskNonAssignableToAssignable(accountId);
   }
 
   @VisibleForTesting
