@@ -42,7 +42,7 @@ import lombok.Setter;
 import lombok.Singular;
 import lombok.With;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -65,7 +65,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 public class FreezeConfigEntity implements PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware,
                                            CreatedByAware, UpdatedByAware {
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
 
   @NotEmpty String accountId;
 

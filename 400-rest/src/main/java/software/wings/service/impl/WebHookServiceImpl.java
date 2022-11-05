@@ -93,7 +93,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @ValidateOnExecution

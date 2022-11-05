@@ -19,8 +19,8 @@ import io.harness.persistence.UuidAware;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data

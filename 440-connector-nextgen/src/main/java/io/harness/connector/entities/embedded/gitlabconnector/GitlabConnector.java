@@ -20,7 +20,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 

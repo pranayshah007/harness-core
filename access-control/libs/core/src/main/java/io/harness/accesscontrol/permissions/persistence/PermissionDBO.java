@@ -31,7 +31,7 @@ import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -54,7 +54,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("permissions")
 @TypeAlias("permissions")
 public class PermissionDBO implements PersistentEntity {
-  @Setter @Id @org.mongodb.morphia.annotations.Id String id;
+  @Setter @Id @dev.morphia.annotations.Id String id;
   @FdUniqueIndex @PermissionIdentifier final String identifier;
   @NGEntityName final String name;
   @NotNull final PermissionStatus status;

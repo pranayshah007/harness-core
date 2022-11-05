@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j

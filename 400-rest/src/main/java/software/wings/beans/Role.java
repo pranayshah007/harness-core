@@ -29,8 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.PostLoad;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.PostLoad;
 
 @StoreIn(DbAliases.HARNESS)
 @Entity(value = "roles", noClassnameStored = true)

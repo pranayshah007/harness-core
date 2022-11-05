@@ -61,9 +61,9 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.Transient;
 
 /**
  * This is a shared persistent entity to track Secret Managers of different type (KMS/AWS Secrets Manager/Vault etc.) in

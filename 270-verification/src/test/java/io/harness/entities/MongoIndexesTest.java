@@ -33,8 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.ObjectFactory;
+import dev.morphia.Morphia;
+import dev.morphia.ObjectFactory;
 
 @Slf4j
 public class MongoIndexesTest extends VerificationBase {

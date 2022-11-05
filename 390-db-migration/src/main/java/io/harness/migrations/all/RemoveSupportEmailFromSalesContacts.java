@@ -20,7 +20,7 @@ import software.wings.licensing.LicenseService;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 /**
  * Migration script to remove support@harness.io from salesContacts info from all accounts

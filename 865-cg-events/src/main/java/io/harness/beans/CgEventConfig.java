@@ -44,7 +44,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 @OwnedBy(CDC)
 @JsonIgnoreProperties(ignoreUnknown = true)

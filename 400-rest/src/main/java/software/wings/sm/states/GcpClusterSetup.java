@@ -42,7 +42,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 /**
  * Created by brett on 4/14/17

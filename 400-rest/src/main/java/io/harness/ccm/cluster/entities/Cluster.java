@@ -19,7 +19,7 @@ import io.harness.annotations.dev.TargetModule;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({

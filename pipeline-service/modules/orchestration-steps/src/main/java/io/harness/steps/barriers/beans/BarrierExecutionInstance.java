@@ -35,7 +35,7 @@ import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -54,7 +54,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public final class BarrierExecutionInstance implements PersistentEntity, UuidAware, PersistentRegularIterable {
   public static final long TTL = 6;
 
-  @Id @org.mongodb.morphia.annotations.Id private String uuid;
+  @Id @dev.morphia.annotations.Id private String uuid;
 
   @NotNull private String name;
   @NotNull private String identifier;

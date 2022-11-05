@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.Morphia;
+import dev.morphia.Morphia;
 
 public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
   @Inject HPersistence persistence;

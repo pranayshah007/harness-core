@@ -20,7 +20,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -36,7 +36,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("ciAccountExecutionMetadata")
 @HarnessEntity(exportable = true)
 public class CIAccountExecutionMetadata {
-  @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Wither @Id @dev.morphia.annotations.Id String uuid;
   String accountId;
   Long executionCount;
   AccountExecutionInfo accountExecutionInfo;

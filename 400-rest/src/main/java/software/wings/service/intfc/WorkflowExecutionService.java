@@ -70,8 +70,8 @@ import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

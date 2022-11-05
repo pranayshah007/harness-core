@@ -15,7 +15,7 @@ import io.harness.ng.DbAliases;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.EqualsAndHashCode;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 /**
  * Created by peeyushaggarwal on 3/22/17.

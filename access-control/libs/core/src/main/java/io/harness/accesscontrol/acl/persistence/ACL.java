@@ -26,7 +26,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -56,7 +56,7 @@ public class ACL implements PersistentEntity {
   public static final String PRIMARY_COLLECTION = "acl";
   public static final String SECONDARY_COLLECTION = "acl_secondary";
 
-  @Id @org.mongodb.morphia.annotations.Id private String id;
+  @Id @dev.morphia.annotations.Id private String id;
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
 

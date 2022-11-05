@@ -126,8 +126,8 @@ import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 /**
  * Created by rsingh on 4/17/17.

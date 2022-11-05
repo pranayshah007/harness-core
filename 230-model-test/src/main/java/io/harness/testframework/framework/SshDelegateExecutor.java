@@ -50,8 +50,8 @@ import java.util.List;
 import javax.ws.rs.core.GenericType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j

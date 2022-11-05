@@ -20,7 +20,7 @@ import java.time.Instant;
 import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 /**
  * Update search lock heartbeat task

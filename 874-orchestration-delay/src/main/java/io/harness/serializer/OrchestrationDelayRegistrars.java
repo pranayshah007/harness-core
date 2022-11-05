@@ -13,7 +13,7 @@ import io.harness.serializer.morphia.OrchestrationDelayMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 
 @UtilityClass
 public class OrchestrationDelayRegistrars {

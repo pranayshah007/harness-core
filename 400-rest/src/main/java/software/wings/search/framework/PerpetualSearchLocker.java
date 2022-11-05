@@ -24,7 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 /**
  * A lock implementation based on

@@ -25,7 +25,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.mongodb.morphia.annotations.NotSaved;
+import dev.morphia.annotations.NotSaved;
 
 /**
  * Created by anubhaw on 11/17/16.

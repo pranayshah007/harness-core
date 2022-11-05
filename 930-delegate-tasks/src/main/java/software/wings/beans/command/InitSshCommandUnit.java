@@ -51,7 +51,7 @@ import java.util.Properties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 /**
  * Created by peeyushaggarwal on 7/26/16.

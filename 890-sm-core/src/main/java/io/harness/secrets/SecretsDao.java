@@ -21,8 +21,8 @@ import java.util.Optional;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.UpdateOperations;
 
 @OwnedBy(PL)
 public interface SecretsDao {

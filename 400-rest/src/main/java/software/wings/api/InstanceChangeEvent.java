@@ -18,7 +18,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 /**
  * This is a wrapper class of Instance to make it extend queuable.

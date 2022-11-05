@@ -64,7 +64,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 public class DeploymentReconServiceImplTest extends WingsBaseTest {
   @Mock TimeScaleDBService timeScaleDBService;

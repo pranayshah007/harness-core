@@ -22,9 +22,9 @@ import com.mongodb.DBCollection;
 import java.util.Date;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 @OwnedBy(HarnessTeam.PL)
 @Singleton

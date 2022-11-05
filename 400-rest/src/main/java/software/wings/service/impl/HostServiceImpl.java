@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.validation.Validator.notNullCheck;
 
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -47,8 +47,8 @@ import java.util.concurrent.ExecutorService;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * Created by anubhaw on 5/9/16.

@@ -16,7 +16,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Id;
 
 @Data
 @Builder

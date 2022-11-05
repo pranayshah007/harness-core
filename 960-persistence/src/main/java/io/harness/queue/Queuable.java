@@ -23,8 +23,8 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.PrePersist;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.PrePersist;
 
 @FieldNameConstants(innerTypeName = "QueuableKeys")
 public abstract class Queuable implements PersistentEntity {

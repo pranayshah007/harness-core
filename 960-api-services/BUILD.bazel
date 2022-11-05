@@ -126,7 +126,7 @@ java_library(
         "@maven//:org_eclipse_jgit_org_eclipse_jgit_ssh_jsch",
         "@maven//:org_jooq_joor",
         "@maven//:org_mockito_mockito_core",
-        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:dev_morphia_morphia_core",
         "@maven//:org_powermock_powermock_api_mockito2",
         "@maven//:org_powermock_powermock_core",
         "@maven//:org_powermock_powermock_module_junit4",

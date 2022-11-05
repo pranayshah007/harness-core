@@ -61,7 +61,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 public class SLIRecordServiceImplTest extends CvNextGenTestBase {
   @Spy @Inject private SLIRecordServiceImpl sliRecordService;

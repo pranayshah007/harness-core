@@ -27,7 +27,7 @@ import java.util.List;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

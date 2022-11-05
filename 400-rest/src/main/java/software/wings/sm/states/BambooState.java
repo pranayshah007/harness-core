@@ -63,7 +63,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 /**
  * Created by sgurubelli on 8/28/17.

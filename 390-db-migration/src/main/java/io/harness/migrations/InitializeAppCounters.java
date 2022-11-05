@@ -21,7 +21,7 @@ import software.wings.service.intfc.AccountService;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Datastore;
+import dev.morphia.Datastore;
 
 /**
  * Populate `limitCounters` collection with current value of applications an account has.

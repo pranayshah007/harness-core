@@ -18,7 +18,7 @@ import software.wings.utils.FileType;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 /**
  * Created by sgurubelli on 5/23/17.

@@ -24,7 +24,7 @@ import io.harness.yaml.schema.beans.YamlSchemaKryoRegistrar;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 
 @OwnedBy(HarnessTeam.PIPELINE)

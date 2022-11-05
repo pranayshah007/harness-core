@@ -54,7 +54,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 @OwnedBy(HarnessTeam.PL)
 @TargetModule(HarnessModule._970_RBAC_CORE)

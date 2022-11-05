@@ -37,8 +37,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 
 public class InstanceStatsCollectorImplTest extends InstancesTestBase {
   private static final String ACCOUNT_ID = "acc";

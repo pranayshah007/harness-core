@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 public class CompositeSLORecordServiceImpl implements CompositeSLORecordService {
   @VisibleForTesting static int MAX_NUMBER_OF_POINTS = 2000;

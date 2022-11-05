@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(HarnessTeam.CDC)
 public class MigratorMappingService {

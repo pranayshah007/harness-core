@@ -39,9 +39,9 @@ import com.mongodb.WriteConcern;
 import java.sql.Date;
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @Singleton
 @OwnedBy(HarnessTeam.PL)

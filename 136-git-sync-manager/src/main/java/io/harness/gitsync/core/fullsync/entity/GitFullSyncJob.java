@@ -31,7 +31,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
@@ -49,7 +49,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldNameConstants(innerTypeName = "GitFullSyncJobKeys")
 @OwnedBy(DX)
 public class GitFullSyncJob implements PersistentEntity, PersistentRegularIterable {
-  @org.springframework.data.annotation.Id @org.mongodb.morphia.annotations.Id String uuid;
+  @org.springframework.data.annotation.Id @dev.morphia.annotations.Id String uuid;
   @FdUniqueIndex String messageId;
   @NotEmpty @NotNull String accountIdentifier;
   String orgIdentifier;

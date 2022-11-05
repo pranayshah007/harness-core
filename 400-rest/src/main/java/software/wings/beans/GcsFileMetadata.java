@@ -32,7 +32,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 /**
  * Since artifacts etc. will be initially dual-written into Mongo GridFs and Google Cloud Storage, and each file id has

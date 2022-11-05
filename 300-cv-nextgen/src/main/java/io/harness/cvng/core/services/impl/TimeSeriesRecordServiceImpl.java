@@ -75,9 +75,9 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.mongodb.morphia.UpdateOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.UpdateOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
 

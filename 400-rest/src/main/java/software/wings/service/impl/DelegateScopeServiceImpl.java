@@ -15,7 +15,7 @@ import static io.harness.mongo.MongoUtils.setUnset;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -44,8 +44,8 @@ import com.mongodb.DuplicateKeyException;
 import java.util.List;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @Singleton
 @ValidateOnExecution

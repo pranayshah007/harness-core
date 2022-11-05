@@ -91,7 +91,7 @@ import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @FieldNameConstants(onlyExplicitlyIncluded = true, innerTypeName = "ShellScriptProvisionStateKeys")
 @OwnedBy(CDP)

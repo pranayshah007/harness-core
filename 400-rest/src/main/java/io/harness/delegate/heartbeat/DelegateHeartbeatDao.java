@@ -21,7 +21,7 @@ import com.google.inject.Singleton;
 import java.util.Date;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 @Slf4j
 @Singleton

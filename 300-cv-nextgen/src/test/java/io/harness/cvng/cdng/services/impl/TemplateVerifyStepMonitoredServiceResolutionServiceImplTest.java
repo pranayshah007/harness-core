@@ -48,7 +48,7 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends CvNextGenTestBase {
   @Inject private TemplateVerifyStepMonitoredServiceResolutionServiceImpl templateService;

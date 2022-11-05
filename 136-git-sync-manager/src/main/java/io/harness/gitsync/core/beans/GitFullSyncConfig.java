@@ -26,7 +26,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -45,7 +45,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldNameConstants(innerTypeName = "GitFullSyncConfigKeys")
 @OwnedBy(DX)
 public class GitFullSyncConfig {
-  @Id @org.mongodb.morphia.annotations.Id private String id;
+  @Id @dev.morphia.annotations.Id private String id;
   @CreatedDate private long createdAt;
   @LastModifiedDate private long lastModifiedAt;
   private String branch;

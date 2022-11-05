@@ -37,7 +37,7 @@ import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -57,7 +57,7 @@ public class Interrupt implements PersistentRegularIterable, UuidAccess {
   public static final long TTL_MONTHS = 4;
   public enum State { REGISTERED, PROCESSING, PROCESSED_SUCCESSFULLY, PROCESSED_UNSUCCESSFULLY, DISCARDED }
 
-  @Wither @Id @org.mongodb.morphia.annotations.Id @NotNull String uuid;
+  @Wither @Id @dev.morphia.annotations.Id @NotNull String uuid;
   @NonNull InterruptType type;
   @NotNull InterruptConfig interruptConfig;
   @NonNull String planExecutionId;

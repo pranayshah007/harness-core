@@ -17,9 +17,9 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import java.util.List;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 
 @OwnedBy(CE)
 public class CECloudAccountDao {

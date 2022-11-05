@@ -73,10 +73,10 @@ import lombok.Builder.Default;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.PrePersist;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.PrePersist;
+import dev.morphia.annotations.Transient;
 
 /**
  * The Class WorkflowExecution.

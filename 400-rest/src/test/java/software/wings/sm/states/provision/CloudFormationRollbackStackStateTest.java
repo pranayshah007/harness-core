@@ -97,9 +97,9 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 @OwnedBy(CDP)
 public class CloudFormationRollbackStackStateTest extends WingsBaseTest {

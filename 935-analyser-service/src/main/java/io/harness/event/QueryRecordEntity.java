@@ -28,7 +28,7 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -57,7 +57,7 @@ public class QueryRecordEntity {
         .build();
   }
 
-  @Wither @Id @org.mongodb.morphia.annotations.Id String id;
+  @Wither @Id @dev.morphia.annotations.Id String id;
   @NonNull String hash;
   @NonNull String fullVersion;
   @NonNull String majorVersion;

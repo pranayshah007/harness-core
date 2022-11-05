@@ -36,8 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.Query;
 
 @Slf4j
 @Singleton

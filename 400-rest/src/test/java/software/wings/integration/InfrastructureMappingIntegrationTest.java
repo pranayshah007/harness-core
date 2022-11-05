@@ -64,7 +64,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 /**
  * Created by anubhaw on 1/16/17.

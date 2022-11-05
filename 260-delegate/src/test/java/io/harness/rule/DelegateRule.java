@@ -40,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)

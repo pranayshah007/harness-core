@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 /**
  * @author rktummala on 07/01/19

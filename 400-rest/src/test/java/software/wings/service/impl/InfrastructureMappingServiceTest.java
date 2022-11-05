@@ -170,9 +170,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.Key;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * Created by anubhaw on 1/10/17.

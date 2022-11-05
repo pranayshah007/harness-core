@@ -58,7 +58,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @JsonTypeName("KUBERNETES_CLUSTER")
 @JsonInclude(Include.NON_NULL)

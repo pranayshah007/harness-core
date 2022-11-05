@@ -27,7 +27,7 @@ import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequest;
@@ -76,8 +76,8 @@ import javax.cache.Cache;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @OwnedBy(PL)
 @Singleton

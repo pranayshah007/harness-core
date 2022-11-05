@@ -60,7 +60,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -90,7 +90,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;
 
-  @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Setter @NonFinal @Id @dev.morphia.annotations.Id String uuid;
 
   @NotEmpty int runSequence;
   @NotEmpty String accountId;

@@ -133,7 +133,7 @@ import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 import retrofit2.Call;
 
 /**

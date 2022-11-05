@@ -16,9 +16,9 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import java.util.List;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 public class CEDataCleanupRequestDao {
   private final HPersistence persistence;

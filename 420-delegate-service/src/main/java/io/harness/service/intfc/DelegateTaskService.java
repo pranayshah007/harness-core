@@ -14,7 +14,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 public interface DelegateTaskService {
   void touchExecutingTasks(String accountId, String delegateId, List<String> delegateTaskIds);

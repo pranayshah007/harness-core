@@ -26,8 +26,8 @@ import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.annotations.Transient;
+import dev.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(CDP)

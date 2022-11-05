@@ -21,7 +21,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CV)

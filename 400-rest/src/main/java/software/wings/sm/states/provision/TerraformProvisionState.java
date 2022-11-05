@@ -197,7 +197,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @FieldNameConstants(onlyExplicitlyIncluded = true, innerTypeName = "TerraformProvisionStateKeys")
 @Slf4j

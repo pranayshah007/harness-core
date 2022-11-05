@@ -28,8 +28,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 
 /**
  * @author Praveen
@@ -53,7 +53,7 @@ public class SupervisedTrainingStatus implements GoogleDataStoreAware, CreatedAt
   @Override
   public com.google.cloud.datastore.Entity convertToCloudStorageEntity(Datastore datastore) {
     Key taskKey = datastore.newKeyFactory()
-                      .setKind(this.getClass().getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
+                      .setKind(this.getClass().getAnnotation(dev.morphia.annotations.Entity.class).value())
                       .newKey(this.uuid == null ? generateUuid() : this.uuid);
 
     com.google.cloud.datastore.Entity.Builder recordBuilder = com.google.cloud.datastore.Entity.newBuilder(taskKey);

@@ -36,7 +36,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService {
   @Inject private HPersistence hPersistence;

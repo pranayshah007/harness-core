@@ -54,8 +54,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @OwnedBy(PL)
 @FieldDefaults(level = AccessLevel.PRIVATE)

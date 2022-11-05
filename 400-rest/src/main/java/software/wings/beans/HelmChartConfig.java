@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @Data
 @Builder

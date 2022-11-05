@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Slf4j
 public class AddMetricIdentifierInCVConfigsAndMetricPacks implements CVNGMigration {

@@ -38,7 +38,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 /**
  * HttpAuditHeader bean class.

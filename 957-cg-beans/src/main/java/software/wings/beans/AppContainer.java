@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import lombok.experimental.FieldNameConstants;
 import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 /**
  * Application bean class.

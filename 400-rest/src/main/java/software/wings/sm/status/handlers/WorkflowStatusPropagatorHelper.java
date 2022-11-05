@@ -36,8 +36,8 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import com.google.inject.Inject;
 import java.util.List;
 import javax.validation.constraints.NotNull;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @OwnedBy(HarnessTeam.CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

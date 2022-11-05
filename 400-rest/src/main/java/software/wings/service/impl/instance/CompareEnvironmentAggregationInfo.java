@@ -16,7 +16,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Id;
 
 @FieldNameConstants(innerTypeName = "CompareEnvironmentAggregationInfoKeys")
 @Data

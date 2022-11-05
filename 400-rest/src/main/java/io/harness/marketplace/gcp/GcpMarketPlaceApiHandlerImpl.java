@@ -59,7 +59,7 @@ import java.util.Map;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 @OwnedBy(GTM)
 @TargetModule(_940_MARKETPLACE_INTEGRATIONS)

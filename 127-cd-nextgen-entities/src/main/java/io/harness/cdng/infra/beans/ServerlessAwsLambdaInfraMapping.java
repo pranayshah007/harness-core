@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Id;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)

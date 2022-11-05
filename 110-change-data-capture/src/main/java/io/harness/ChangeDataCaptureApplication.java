@@ -50,7 +50,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.server.model.Resource;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CE)

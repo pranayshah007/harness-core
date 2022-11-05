@@ -23,10 +23,10 @@ import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
-import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
-import static org.mongodb.morphia.aggregation.Group.grouping;
-import static org.mongodb.morphia.aggregation.Projection.expression;
-import static org.mongodb.morphia.aggregation.Projection.projection;
+import static dev.morphia.aggregation.Accumulator.accumulator;
+import static dev.morphia.aggregation.Group.grouping;
+import static dev.morphia.aggregation.Projection.expression;
+import static dev.morphia.aggregation.Projection.projection;
 
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
@@ -70,10 +70,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.aggregation.AggregationPipeline;
-import org.mongodb.morphia.aggregation.Group;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.aggregation.AggregationPipeline;
+import dev.morphia.aggregation.Group;
+import dev.morphia.query.Query;
 
 @Singleton
 @Slf4j

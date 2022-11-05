@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.ObjectFactory;
+import dev.morphia.ObjectFactory;
 
 @OwnedBy(HarnessTeam.PL)
 public class MorphiaMoveTest extends PersistenceTestBase {

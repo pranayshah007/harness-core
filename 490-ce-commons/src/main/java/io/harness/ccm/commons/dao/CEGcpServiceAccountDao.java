@@ -15,7 +15,7 @@ import io.harness.ccm.commons.entities.billing.CEGcpServiceAccount.CEGcpServiceA
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(CE)
 public class CEGcpServiceAccountDao {

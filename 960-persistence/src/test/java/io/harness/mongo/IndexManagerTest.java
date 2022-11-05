@@ -26,7 +26,7 @@ import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.Morphia;
+import dev.morphia.Morphia;
 
 public class IndexManagerTest extends PersistenceTestBase {
   @Inject HPersistence persistence;

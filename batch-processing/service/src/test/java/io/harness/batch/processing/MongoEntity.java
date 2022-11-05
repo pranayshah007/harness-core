@@ -14,7 +14,7 @@ import software.wings.beans.Base;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 @StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testMongo", noClassnameStored = true)

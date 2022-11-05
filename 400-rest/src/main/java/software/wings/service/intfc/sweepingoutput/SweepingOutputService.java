@@ -21,7 +21,7 @@ import software.wings.sm.StateExecutionInstance;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(HarnessTeam.CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

@@ -125,7 +125,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(CDC)

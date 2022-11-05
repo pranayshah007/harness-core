@@ -58,7 +58,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)

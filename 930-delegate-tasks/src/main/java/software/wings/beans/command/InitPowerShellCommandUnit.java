@@ -23,7 +23,7 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @OwnedBy(CDP)
 @TargetModule(_930_DELEGATE_TASKS)

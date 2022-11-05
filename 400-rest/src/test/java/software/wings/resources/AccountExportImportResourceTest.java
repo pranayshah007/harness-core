@@ -62,9 +62,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.mapping.MapperOptions;
+import dev.morphia.Morphia;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.mapping.MapperOptions;
 
 /**
  * @author marklu on 2019-03-01

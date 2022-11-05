@@ -14,7 +14,7 @@ import static software.wings.beans.AmiDeploymentType.AWS_ASG;
 import static software.wings.beans.AmiDeploymentType.SPOTINST;
 
 import static java.util.stream.Collectors.toList;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -38,8 +38,8 @@ import software.wings.service.intfc.InfrastructureMappingService;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @Slf4j
 public class AmiDeploymentTypeMigration implements Migration {

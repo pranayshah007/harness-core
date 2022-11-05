@@ -69,9 +69,9 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 
 @OwnedBy(CDC)
 @TargetModule(_870_CG_ORCHESTRATION)

@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Value;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._815_CG_TRIGGERS)

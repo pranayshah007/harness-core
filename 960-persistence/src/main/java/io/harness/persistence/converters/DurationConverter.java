@@ -9,9 +9,9 @@ package io.harness.persistence.converters;
 
 import com.google.inject.Singleton;
 import java.time.Duration;
-import org.mongodb.morphia.converters.SimpleValueConverter;
-import org.mongodb.morphia.converters.TypeConverter;
-import org.mongodb.morphia.mapping.MappedField;
+import dev.morphia.converters.SimpleValueConverter;
+import dev.morphia.converters.TypeConverter;
+import dev.morphia.mapping.MappedField;
 
 @Singleton
 public class DurationConverter extends TypeConverter implements SimpleValueConverter {

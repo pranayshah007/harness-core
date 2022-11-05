@@ -35,7 +35,7 @@ import lombok.Data;
 import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -79,7 +79,7 @@ public class ResourceGroup implements PersistentRegularIterable, PersistentEntit
         .build();
   }
 
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;

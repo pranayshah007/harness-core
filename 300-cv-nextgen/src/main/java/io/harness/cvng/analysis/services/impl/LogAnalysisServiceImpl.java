@@ -75,8 +75,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
 
 @Slf4j
 public class LogAnalysisServiceImpl implements LogAnalysisService {

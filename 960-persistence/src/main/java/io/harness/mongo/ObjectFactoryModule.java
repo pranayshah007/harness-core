@@ -15,7 +15,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.ObjectFactory;
+import dev.morphia.ObjectFactory;
 
 @Slf4j
 public class ObjectFactoryModule extends AbstractModule {

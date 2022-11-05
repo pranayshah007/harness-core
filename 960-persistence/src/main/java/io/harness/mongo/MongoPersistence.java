@@ -16,7 +16,7 @@ import static io.harness.persistence.HQuery.allChecks;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofSeconds;
 import static java.util.stream.Collectors.toList;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -61,17 +61,17 @@ import java.util.stream.StreamSupport;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.DatastoreImpl;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.InsertOptions;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.MappedClass;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateOpsImpl;
-import org.mongodb.morphia.query.UpdateResults;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.DatastoreImpl;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.InsertOptions;
+import dev.morphia.Morphia;
+import dev.morphia.mapping.MappedClass;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOpsImpl;
+import dev.morphia.query.UpdateResults;
 
 @Singleton
 @Slf4j

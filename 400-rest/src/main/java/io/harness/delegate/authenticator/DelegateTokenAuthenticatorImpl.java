@@ -72,7 +72,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Slf4j
 @Singleton

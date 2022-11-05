@@ -21,7 +21,7 @@ import io.harness.serializer.morphia.DelegateTasksBeansMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 
 @OwnedBy(DEL)
 @UtilityClass

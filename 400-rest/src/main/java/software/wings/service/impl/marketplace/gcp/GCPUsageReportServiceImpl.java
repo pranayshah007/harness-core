@@ -27,8 +27,8 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
 
 /**
  * Mongo backed implementation for gcpUsage service.

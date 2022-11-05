@@ -19,7 +19,7 @@ import io.harness.mongo.ProcessTimeLogContext;
 import java.util.Iterator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
-import org.mongodb.morphia.query.MorphiaIterator;
+import dev.morphia.query.MorphiaIterator;
 
 // This is a simple wrapper around MorphiaIterator to provide AutoCloseable implementation
 @OwnedBy(PL)

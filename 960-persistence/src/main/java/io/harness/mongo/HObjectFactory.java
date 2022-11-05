@@ -26,12 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.modelmapper.internal.objenesis.Objenesis;
 import org.modelmapper.internal.objenesis.ObjenesisStd;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.annotations.ConstructorArgs;
-import org.mongodb.morphia.mapping.DefaultCreator;
-import org.mongodb.morphia.mapping.MappedField;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.mapping.MappingException;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.annotations.ConstructorArgs;
+import dev.morphia.mapping.DefaultCreator;
+import dev.morphia.mapping.MappedField;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.mapping.MappingException;
 import org.reflections.Reflections;
 import org.slf4j.MDC;
 
@@ -66,7 +66,7 @@ public class HObjectFactory extends DefaultCreator {
       if (morphiaMove != null) {
         for (String source : morphiaMove.getSources()) {
           try {
-            return Class.forName(source, true, getClassLoaderForClass());
+            return Class.forName(source, true, Thread.currentThread().getContextClassLoader());
           } catch (ClassNotFoundException ignore2) {
             // do nothing
           }
@@ -110,7 +110,7 @@ public class HObjectFactory extends DefaultCreator {
         return rollbackClass;
       }
       try {
-        return Class.forName(name, true, getClassLoaderForClass());
+        return Class.forName(name, true, Thread.currentThread().getContextClassLoader());
       } catch (ClassNotFoundException e) {
         log.warn("Class not found defined in dbObj: ", e);
       }

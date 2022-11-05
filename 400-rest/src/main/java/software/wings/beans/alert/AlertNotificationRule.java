@@ -31,7 +31,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 @OwnedBy(PL)
 @Getter

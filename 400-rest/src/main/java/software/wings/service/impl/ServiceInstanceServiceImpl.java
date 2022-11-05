@@ -11,7 +11,7 @@ import static software.wings.beans.ServiceInstance.Builder.aServiceInstance;
 
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -36,8 +36,8 @@ import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Set;
 import javax.validation.executable.ValidateOnExecution;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * Created by anubhaw on 5/26/16.

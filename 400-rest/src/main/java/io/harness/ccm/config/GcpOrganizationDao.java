@@ -18,8 +18,8 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import java.util.List;
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @OwnedBy(CE)
 public class GcpOrganizationDao {

@@ -22,7 +22,7 @@ import software.wings.beans.template.Template.TemplateKeys;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Value
 @Builder

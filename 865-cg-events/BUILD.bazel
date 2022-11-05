@@ -72,7 +72,7 @@ java_library(
         "@maven//:org_jfrog_artifactory_client_artifactory_java_client_httpClient",
         "@maven//:org_jfrog_artifactory_client_artifactory_java_client_services",
         "@maven//:org_jooq_joor",
-        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:dev_morphia_morphia_core",
         "@maven//:org_slf4j_slf4j_api",
         "@maven//:org_sonatype_nexus_plugins_nexus_restlet1x_model",
         "@maven//:org_zeroturnaround_zt_exec",

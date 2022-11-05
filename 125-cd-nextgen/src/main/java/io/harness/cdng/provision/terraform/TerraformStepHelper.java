@@ -107,8 +107,8 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 @Slf4j
 @Singleton

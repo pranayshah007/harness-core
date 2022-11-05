@@ -10,10 +10,10 @@ package software.wings.graphql.datafetcher;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import static org.mongodb.morphia.aggregation.Group.grouping;
-import static org.mongodb.morphia.aggregation.Projection.projection;
-import static org.mongodb.morphia.query.Sort.ascending;
-import static org.mongodb.morphia.query.Sort.descending;
+import static dev.morphia.aggregation.Group.grouping;
+import static dev.morphia.aggregation.Projection.projection;
+import static dev.morphia.query.Sort.ascending;
+import static dev.morphia.query.Sort.descending;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -43,9 +43,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.aggregation.Accumulator;
-import org.mongodb.morphia.aggregation.Group;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.aggregation.Accumulator;
+import dev.morphia.aggregation.Group;
+import dev.morphia.query.Query;
 
 @OwnedBy(DX)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)

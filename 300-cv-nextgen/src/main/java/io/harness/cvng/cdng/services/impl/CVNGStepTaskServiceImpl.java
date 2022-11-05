@@ -46,8 +46,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
   @Inject private HPersistence hPersistence;

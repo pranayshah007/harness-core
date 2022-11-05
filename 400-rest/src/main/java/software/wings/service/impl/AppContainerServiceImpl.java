@@ -45,7 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.validation.executable.ValidateOnExecution;
-import org.mongodb.morphia.mapping.Mapper;
+import dev.morphia.mapping.Mapper;
 
 /**
  * Created by anubhaw on 5/4/16.

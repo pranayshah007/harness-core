@@ -31,7 +31,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -65,7 +65,7 @@ public class OrchestrationEventLog implements PersistentEntity {
         .build();
   }
 
-  @Wither @Id @org.mongodb.morphia.annotations.Id String id;
+  @Wither @Id @dev.morphia.annotations.Id String id;
   String planExecutionId;
   String nodeExecutionId;
   OrchestrationEventType orchestrationEventType;

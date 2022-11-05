@@ -79,9 +79,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mongodb.morphia.aggregation.AggregationPipeline;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.aggregation.AggregationPipeline;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 
 public class ServerlessDashboardServiceImplTest extends CategoryTest {
   public static final String ACCOUNTID = "accountid";

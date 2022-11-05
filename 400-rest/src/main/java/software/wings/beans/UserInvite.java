@@ -37,9 +37,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Reference;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Reference;
+import dev.morphia.annotations.Transient;
 
 /**
  * Created by anubhaw on 3/6/17.

@@ -145,7 +145,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 /**
  * Created by rsingh on 11/3/17.

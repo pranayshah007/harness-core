@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 @Slf4j
 @Singleton

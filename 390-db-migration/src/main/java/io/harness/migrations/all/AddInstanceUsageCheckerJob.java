@@ -18,7 +18,7 @@ import software.wings.scheduler.ServiceInstanceUsageCheckerJob;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 /**
  * Adds ServiceInstanceUsageCheckerJob for all  accounts

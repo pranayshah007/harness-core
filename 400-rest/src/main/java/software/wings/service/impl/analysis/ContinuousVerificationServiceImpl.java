@@ -241,8 +241,8 @@ import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 @ValidateOnExecution
 @Singleton

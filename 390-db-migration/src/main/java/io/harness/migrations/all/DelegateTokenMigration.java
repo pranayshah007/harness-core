@@ -21,7 +21,7 @@ import software.wings.beans.Account.AccountKeys;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)

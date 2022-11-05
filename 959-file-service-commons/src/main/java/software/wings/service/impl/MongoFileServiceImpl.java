@@ -55,7 +55,7 @@ import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.AdvancedDatastore;
+import dev.morphia.AdvancedDatastore;
 
 /**
  * Use Mongo's {@see GridFSFile} as file/blob storage.

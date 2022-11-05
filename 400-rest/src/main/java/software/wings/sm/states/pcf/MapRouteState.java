@@ -69,7 +69,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

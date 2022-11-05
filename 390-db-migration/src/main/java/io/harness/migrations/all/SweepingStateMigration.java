@@ -17,7 +17,7 @@ import io.harness.persistence.HIterator;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 public class SweepingStateMigration implements Migration {
   @Inject private WingsPersistence wingsPersistence;

@@ -42,7 +42,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -78,8 +78,8 @@ import org.mockito.Answers;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * Created by anubhaw on 6/7/16.

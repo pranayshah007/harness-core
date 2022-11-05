@@ -11,7 +11,7 @@ import io.harness.beans.DelegateTask;
 
 import lombok.Builder;
 import lombok.Value;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Value
 @Builder

@@ -111,7 +111,7 @@ import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 import org.slf4j.Logger;
 
 /**

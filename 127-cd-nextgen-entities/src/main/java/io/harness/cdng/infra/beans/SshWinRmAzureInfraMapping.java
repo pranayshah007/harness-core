@@ -16,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Id;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data

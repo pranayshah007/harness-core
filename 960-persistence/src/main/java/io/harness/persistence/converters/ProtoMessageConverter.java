@@ -17,9 +17,9 @@ import com.google.protobuf.Message.Builder;
 import com.google.protobuf.util.JsonFormat;
 import com.mongodb.BasicDBObject;
 import lombok.SneakyThrows;
-import org.mongodb.morphia.converters.SimpleValueConverter;
-import org.mongodb.morphia.converters.TypeConverter;
-import org.mongodb.morphia.mapping.MappedField;
+import dev.morphia.converters.SimpleValueConverter;
+import dev.morphia.converters.TypeConverter;
+import dev.morphia.mapping.MappedField;
 
 @SuppressWarnings("unchecked")
 @Singleton

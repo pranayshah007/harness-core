@@ -21,7 +21,7 @@ import com.mongodb.BasicDBObject;
 import java.time.Duration;
 import java.util.List;
 import org.apache.commons.lang3.NotImplementedException;
-import org.mongodb.morphia.query.FilterOperator;
+import dev.morphia.query.FilterOperator;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;

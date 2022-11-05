@@ -36,7 +36,7 @@ import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -98,7 +98,7 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
         .build();
   }
 
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
   @EntityName String name;
   @EntityIdentifier @NotEmpty String identifier;
   @Size(max = 1024) String description;

@@ -215,11 +215,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * Created by anubhaw on 3/9/16.

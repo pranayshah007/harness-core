@@ -125,8 +125,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Property;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Property;
+import dev.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

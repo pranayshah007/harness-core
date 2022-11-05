@@ -118,9 +118,9 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 
 /**
  * @author rktummala on 06/08/18

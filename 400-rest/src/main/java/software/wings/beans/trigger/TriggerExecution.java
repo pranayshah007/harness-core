@@ -32,7 +32,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._815_CG_TRIGGERS)

@@ -148,7 +148,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.model.Resource;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 import org.reflections.Reflections;
 import ru.vyarus.guice.validator.ValidationModule;
 

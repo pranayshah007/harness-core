@@ -57,9 +57,9 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.atteo.evo.inflector.English.plural;
-import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
-import static org.mongodb.morphia.aggregation.Group.grouping;
-import static org.mongodb.morphia.aggregation.Projection.projection;
+import static dev.morphia.aggregation.Accumulator.accumulator;
+import static dev.morphia.aggregation.Group.grouping;
+import static dev.morphia.aggregation.Projection.projection;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -248,9 +248,9 @@ import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.aggregation.Group;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.aggregation.Group;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 
 @Singleton
 @ValidateOnExecution

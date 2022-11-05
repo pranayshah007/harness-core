@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @Slf4j
 public abstract class ContainerResizeCommandUnit extends AbstractCommandUnit {

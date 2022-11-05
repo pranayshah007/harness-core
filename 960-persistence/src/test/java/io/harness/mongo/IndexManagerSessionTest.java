@@ -35,8 +35,8 @@ import java.util.Date;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.MappedClass;
+import dev.morphia.Morphia;
+import dev.morphia.mapping.MappedClass;
 
 public class IndexManagerSessionTest extends PersistenceTestBase {
   @Inject HPersistence persistence;

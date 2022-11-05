@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 

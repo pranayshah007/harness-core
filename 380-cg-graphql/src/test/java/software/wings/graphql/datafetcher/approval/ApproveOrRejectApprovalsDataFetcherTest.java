@@ -60,7 +60,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(CDC)
 public class ApproveOrRejectApprovalsDataFetcherTest extends AbstractDataFetcherTestBase {

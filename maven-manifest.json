@@ -27468,65 +27468,64 @@
             "org.modelmapper.spi": [
                 "@maven//:org_modelmapper_modelmapper"
             ],
-            "org.mongodb.morphia": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.aggregation": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.aggregation": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.annotations": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.annotations": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.converters": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.converters": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.dao": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.dao": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.geo": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.geo": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.internal": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.internal": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.logging": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.logging": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.logging.jdk": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.logging.jdk": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.logging.slf4j": [
-                "@maven//:org_mongodb_morphia_morphia_logging_slf4j"
+            "dev.morphia.logging.slf4j": [
             ],
-            "org.mongodb.morphia.mapping": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.mapping": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.mapping.cache": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.mapping.cache": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.mapping.lazy": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.mapping.lazy": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.mapping.lazy.proxy": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.mapping.lazy.proxy": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.mapping.validation": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.mapping.validation": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.mapping.validation.classrules": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.mapping.validation.classrules": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.mapping.validation.fieldrules": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.mapping.validation.fieldrules": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.query": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.query": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.query.validation": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.query.validation": [
+                "@maven//:dev_morphia_morphia_core"
             ],
-            "org.mongodb.morphia.utils": [
-                "@maven//:org_mongodb_morphia_morphia"
+            "dev.morphia.utils": [
+                "@maven//:dev_morphia_morphia_core"
             ],
             "org.mozilla.classfile": [
                 "@maven//:org_mozilla_rhino"
@@ -31367,7 +31366,7 @@
                 "@maven//:io_projectreactor_reactor_core"
             ],
             "relocated.morphia.org.apache.commons.collections": [
-                "@maven//:org_mongodb_morphia_morphia"
+                "@maven//:dev_morphia_morphia_core"
             ],
             "retrofit": [
                 "@maven//:com_squareup_retrofit_retrofit"

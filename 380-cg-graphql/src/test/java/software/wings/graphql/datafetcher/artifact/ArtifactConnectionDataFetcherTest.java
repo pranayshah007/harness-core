@@ -50,8 +50,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 
 public class ArtifactConnectionDataFetcherTest extends CategoryTest {
   private DataFetcherUtils utils = mock(DataFetcherUtils.class);

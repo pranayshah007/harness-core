@@ -32,7 +32,7 @@ import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.serializer.registrars.NGCommonsRegistrars;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 
 @OwnedBy(HarnessTeam.PL)
 public class NextGenRegistrars {

@@ -62,10 +62,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.query.CriteriaContainerImpl;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.CriteriaContainer;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 
 @OwnedBy(HarnessTeam.PL)
 @Slf4j
@@ -239,7 +239,7 @@ public class DataFetcherUtils {
     }
   }
 
-  public CriteriaContainerImpl getIdFilterCriteria(Query<?> query, String field, QLIdFilter idFilter) {
+  public CriteriaContainer getIdFilterCriteria(Query<?> query, String field, QLIdFilter idFilter) {
     if (idFilter == null) {
       return null;
     }

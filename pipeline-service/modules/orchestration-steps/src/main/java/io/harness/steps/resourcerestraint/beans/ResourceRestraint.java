@@ -28,7 +28,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -45,7 +45,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("resourceRestraints")
 @TypeAlias("resourceRestraints")
 public class ResourceRestraint {
-  @Id @org.mongodb.morphia.annotations.Id private String uuid;
+  @Id @dev.morphia.annotations.Id private String uuid;
   private EmbeddedUser createdBy;
 
   @FdIndex @CreatedDate private long createdAt;

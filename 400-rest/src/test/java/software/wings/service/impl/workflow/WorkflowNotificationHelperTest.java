@@ -104,7 +104,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.FieldEnd;
+import dev.morphia.query.FieldEnd;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._830_NOTIFICATION_SERVICE)

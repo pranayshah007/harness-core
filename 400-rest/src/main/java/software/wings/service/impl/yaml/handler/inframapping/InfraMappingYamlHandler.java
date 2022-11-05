@@ -39,7 +39,7 @@ import software.wings.service.intfc.SettingsService;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 /**
  * @author rktummala on 10/15/17

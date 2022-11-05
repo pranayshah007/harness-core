@@ -27,7 +27,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -45,7 +45,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @RecasterAlias("io.harness.ci.beans.entities.CITelemetrySentStatus")
 @HarnessEntity(exportable = false)
 public class CITelemetrySentStatus implements UuidAware, PersistentEntity {
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(

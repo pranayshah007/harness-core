@@ -26,7 +26,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.beans.EncryptedData;
 import io.harness.beans.PageRequest;
@@ -74,9 +74,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.util.Lists;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.annotations.Reference;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.annotations.Reference;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * The Class WingsPersistenceTest.

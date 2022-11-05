@@ -47,7 +47,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 @Slf4j
 public class SideKickServiceImplTest extends CvNextGenTestBase {

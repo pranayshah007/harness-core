@@ -18,7 +18,7 @@ import software.wings.scheduler.InstanceStatsCollectorJob;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 /**
  * @author rktummala on 10/08/2018

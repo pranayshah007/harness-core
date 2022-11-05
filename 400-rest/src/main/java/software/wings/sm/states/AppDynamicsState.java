@@ -75,7 +75,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 import org.slf4j.Logger;
 
 /**

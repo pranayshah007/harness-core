@@ -29,7 +29,7 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
+import dev.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton

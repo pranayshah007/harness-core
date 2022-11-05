@@ -34,7 +34,7 @@ import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -57,7 +57,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("usergroups")
 @TypeAlias("usergroups")
 public class UserGroupDBO implements PersistentRegularIterable, AccessControlEntity {
-  @Setter @Id @org.mongodb.morphia.annotations.Id String id;
+  @Setter @Id @dev.morphia.annotations.Id String id;
   @EqualsAndHashCode.Include @NotEmpty final String scopeIdentifier;
   @EqualsAndHashCode.Include @NotEmpty final String identifier;
   @EqualsAndHashCode.Include @NotEmpty final String name;

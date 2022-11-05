@@ -89,8 +89,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Spy;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   @Inject private DataCollectionTaskService dataCollectionTaskService;

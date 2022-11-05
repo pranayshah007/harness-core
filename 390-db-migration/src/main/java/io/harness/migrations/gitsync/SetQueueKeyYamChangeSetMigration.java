@@ -24,8 +24,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @Slf4j
 public class SetQueueKeyYamChangeSetMigration implements OnPrimaryManagerMigration {

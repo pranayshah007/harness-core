@@ -29,7 +29,7 @@ import lombok.Builder.Default;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -45,7 +45,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNodeExecutionMetadata {
   public static final long TTL_MONTHS = 6;
 
-  @Id @org.mongodb.morphia.annotations.Id private String uuid;
+  @Id @dev.morphia.annotations.Id private String uuid;
 
   private String planExecutionId;
 

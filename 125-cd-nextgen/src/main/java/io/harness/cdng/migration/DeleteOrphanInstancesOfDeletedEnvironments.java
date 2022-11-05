@@ -22,7 +22,7 @@ import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.BulkWriteResult;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 public class DeleteOrphanInstancesOfDeletedEnvironments implements NGMigration {
   @Inject private HPersistence persistence;

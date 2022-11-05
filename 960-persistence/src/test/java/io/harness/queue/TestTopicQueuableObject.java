@@ -11,7 +11,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.ng.DbAliases;
 
 import lombok.Value;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 @Value
 @StoreIn(DbAliases.TEST)

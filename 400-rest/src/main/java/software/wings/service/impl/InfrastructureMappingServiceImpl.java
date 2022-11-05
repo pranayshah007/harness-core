@@ -221,8 +221,8 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.FindOptions;
+import dev.morphia.Key;
+import dev.morphia.query.FindOptions;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**

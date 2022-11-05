@@ -42,7 +42,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 public class SecretsDaoImplTest extends SMCoreTestBase {
   @Inject private SecretsDaoImpl secretsDao;

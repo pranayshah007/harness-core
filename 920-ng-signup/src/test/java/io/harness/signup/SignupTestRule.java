@@ -62,8 +62,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.Morphia;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.Morphia;
 
 @OwnedBy(HarnessTeam.GTM)
 @Slf4j

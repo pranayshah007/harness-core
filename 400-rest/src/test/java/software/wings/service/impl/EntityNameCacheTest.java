@@ -31,7 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 public class EntityNameCacheTest extends WingsBaseTest {
   @Mock private WingsPersistence mockWingsPersistence;

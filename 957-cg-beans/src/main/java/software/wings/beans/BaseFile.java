@@ -37,8 +37,8 @@ import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.Transient;
 
 /**
  * Created by anubhaw on 4/13/16.

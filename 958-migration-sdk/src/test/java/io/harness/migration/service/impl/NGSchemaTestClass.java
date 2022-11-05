@@ -17,7 +17,7 @@ import io.harness.migration.entities.NGSchema;
 import io.harness.ng.DbAliases;
 
 import java.util.Map;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mongodb.core.mapping.Document;
 

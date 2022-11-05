@@ -24,13 +24,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Id;
 
 @Data
 @Builder
 @AllArgsConstructor
 @StoreIn(DbAliases.HARNESS)
-@org.mongodb.morphia.annotations.Entity(value = "timeSeriesKeyTransactions", noClassnameStored = true)
+@dev.morphia.annotations.Entity(value = "timeSeriesKeyTransactions", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "TimeSeriesKeyTransactionsKeys")
 public class TimeSeriesKeyTransactions implements PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware,
                                                   UpdatedAtAware, UpdatedByAware, AccountAccess {

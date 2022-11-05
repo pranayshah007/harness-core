@@ -28,7 +28,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
+import dev.morphia.query.FindOptions;
 
 /**
  * This migration will set instances deployed for the last 120 days of top level executions to TimeScaleDB

@@ -114,9 +114,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.Morphia;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.Morphia;
 
 @Singleton
 @Slf4j

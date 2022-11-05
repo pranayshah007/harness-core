@@ -48,7 +48,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.groovy.util.Maps;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Singleton
 public class VerificationTaskServiceImpl implements VerificationTaskService {

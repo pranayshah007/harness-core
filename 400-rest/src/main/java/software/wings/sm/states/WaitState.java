@@ -30,7 +30,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 /**
  * dummy implementation for wait state.

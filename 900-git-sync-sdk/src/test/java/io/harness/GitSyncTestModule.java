@@ -33,7 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 
 @OwnedBy(DX)

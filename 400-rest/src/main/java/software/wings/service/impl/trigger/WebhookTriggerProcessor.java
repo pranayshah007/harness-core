@@ -55,8 +55,8 @@ import java.util.concurrent.TimeUnit;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.Query;
 
 @OwnedBy(CDC)
 @Singleton

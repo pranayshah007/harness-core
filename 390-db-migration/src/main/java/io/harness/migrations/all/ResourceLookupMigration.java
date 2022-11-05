@@ -63,7 +63,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Morphia;
+import dev.morphia.Morphia;
 
 /**
  * This migration will create an entry for any auditable entity into ResourceLookup collection

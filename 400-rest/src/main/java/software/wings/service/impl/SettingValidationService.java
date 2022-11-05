@@ -144,8 +144,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
-import org.mongodb.morphia.mapping.Mapper;
+import dev.morphia.annotations.Transient;
+import dev.morphia.mapping.Mapper;
 
 /**
  * Created by anubhaw on 5/1/17.

@@ -14,9 +14,9 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import java.util.List;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 public class BudgetDao {
   @Inject private HPersistence persistence;

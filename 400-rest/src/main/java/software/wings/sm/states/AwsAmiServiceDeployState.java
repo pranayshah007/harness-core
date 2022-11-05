@@ -123,7 +123,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 @Slf4j
 @OwnedBy(CDP)

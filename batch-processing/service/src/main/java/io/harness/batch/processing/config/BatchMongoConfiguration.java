@@ -17,7 +17,7 @@ import io.harness.persistence.UserProvider;
 import software.wings.security.ThreadLocalUserProvider;
 
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.AdvancedDatastore;
+import dev.morphia.AdvancedDatastore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;

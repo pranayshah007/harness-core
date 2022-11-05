@@ -18,7 +18,7 @@ import software.wings.beans.SettingAttribute.SettingCategory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Singleton
 @OwnedBy(HarnessTeam.CDC)

@@ -15,7 +15,7 @@ import software.wings.beans.EntityType;
 
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @Data
 @Builder

@@ -35,8 +35,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 
 @OwnedBy(CDC)
 @Singleton

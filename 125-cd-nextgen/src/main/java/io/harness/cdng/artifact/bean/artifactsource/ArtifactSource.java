@@ -28,7 +28,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -56,7 +56,7 @@ public abstract class ArtifactSource
         .add(CompoundMongoIndex.builder().name("uniqueHash").unique(true).field(ArtifactSourceKeys.uniqueHash).build())
         .build();
   }
-  @Id @org.mongodb.morphia.annotations.Id private String uuid;
+  @Id @dev.morphia.annotations.Id private String uuid;
   @NotNull private String accountId;
   /** It gives the artifact source type.*/
   @NotNull private ArtifactSourceType sourceType;

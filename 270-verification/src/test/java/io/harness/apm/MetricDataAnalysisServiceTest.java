@@ -115,7 +115,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 import retrofit2.Call;
 import retrofit2.Response;
 

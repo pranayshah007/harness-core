@@ -22,7 +22,7 @@ import software.wings.search.framework.TimeScaleEntity;
 import com.google.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
-import org.mongodb.morphia.query.MorphiaKeyIterator;
+import dev.morphia.query.MorphiaKeyIterator;
 
 public class InfrastructureDefinitionEntityReconServiceImpl implements LookerEntityReconService {
   @Inject TimeScaleDBService timeScaleDBService;

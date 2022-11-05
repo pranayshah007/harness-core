@@ -91,7 +91,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 @OwnedBy(HarnessTeam.CV)
 public class TimeSeriesRecordServiceImplTest extends CvNextGenTestBase {

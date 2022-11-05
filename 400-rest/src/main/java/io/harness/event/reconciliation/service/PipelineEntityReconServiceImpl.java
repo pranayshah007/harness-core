@@ -24,7 +24,7 @@ import com.google.inject.Singleton;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.MorphiaKeyIterator;
+import dev.morphia.query.MorphiaKeyIterator;
 
 @Singleton
 @Slf4j

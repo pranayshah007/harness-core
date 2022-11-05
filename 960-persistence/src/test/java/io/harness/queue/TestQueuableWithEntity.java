@@ -9,7 +9,7 @@ package io.harness.queue;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import org.mongodb.morphia.annotations.Reference;
+import dev.morphia.annotations.Reference;
 
 public class TestQueuableWithEntity extends Queuable {
   @Reference private TestInternalEntity entity;

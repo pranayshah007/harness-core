@@ -57,8 +57,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.UpdateOperations;
 
 public class NotificationDispatcherServiceTest extends WingsBaseTest {
   @Inject @InjectMocks private NotificationDispatcherServiceImpl notificationDispatcherService;

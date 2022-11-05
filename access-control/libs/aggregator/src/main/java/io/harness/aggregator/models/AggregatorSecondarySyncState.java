@@ -18,7 +18,7 @@ import io.harness.mongo.index.FdUniqueIndex;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -35,7 +35,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("aggregatorSecondarySyncState")
 @TypeAlias("aggregatorSecondarySyncState")
 public class AggregatorSecondarySyncState {
-  @Id @org.mongodb.morphia.annotations.Id private String id;
+  @Id @dev.morphia.annotations.Id private String id;
   @FdUniqueIndex private String identifier;
   private SecondarySyncStatus secondarySyncStatus;
 

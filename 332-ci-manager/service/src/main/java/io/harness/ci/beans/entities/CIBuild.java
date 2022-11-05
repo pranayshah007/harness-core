@@ -28,7 +28,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -42,7 +42,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("cibuild")
 @HarnessEntity(exportable = true)
 public class CIBuild implements PersistentEntity, UuidAware, CreatedAtAware {
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
   @NotEmpty Long buildNumber;
   @NotEmpty String pipelineIdentifier;
   @JsonIgnore private transient CIPipelineDetails pipelineDetails;

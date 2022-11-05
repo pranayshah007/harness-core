@@ -25,7 +25,7 @@ import io.harness.serializer.SMCoreRegistrars;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 
 @OwnedBy(HarnessTeam.CI)

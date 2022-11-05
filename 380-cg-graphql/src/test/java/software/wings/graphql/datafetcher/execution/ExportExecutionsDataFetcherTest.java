@@ -46,9 +46,9 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.CriteriaContainer;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.CriteriaContainer;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 
 public class ExportExecutionsDataFetcherTest extends AbstractDataFetcherTestBase {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";

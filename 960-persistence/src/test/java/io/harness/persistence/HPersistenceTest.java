@@ -32,8 +32,8 @@ import java.util.stream.IntStream;
 import org.assertj.core.util.Lists;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 public class HPersistenceTest extends PersistenceTestBase {
   @Inject private HPersistence persistence;

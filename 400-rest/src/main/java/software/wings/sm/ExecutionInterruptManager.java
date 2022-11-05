@@ -97,8 +97,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * The interface State machine event manager.

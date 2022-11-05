@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 @Singleton
 @Slf4j

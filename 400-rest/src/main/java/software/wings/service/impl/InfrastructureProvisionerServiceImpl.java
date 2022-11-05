@@ -147,8 +147,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.Key;
+import dev.morphia.query.Query;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 @OwnedBy(CDP)

@@ -60,9 +60,9 @@ import com.mongodb.DBCursor;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 
 public class ShellScriptTemplateProcessorTest extends TemplateBaseTestHelper {
   @Mock private WorkflowService workflowService;

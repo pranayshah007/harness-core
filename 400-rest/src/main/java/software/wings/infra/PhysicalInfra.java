@@ -32,7 +32,7 @@ import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @JsonTypeName("PHYSICAL_DATA_CENTER_SSH")
 @Data

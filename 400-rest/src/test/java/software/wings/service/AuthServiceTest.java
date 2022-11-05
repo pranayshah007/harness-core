@@ -122,7 +122,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.AdvancedDatastore;
+import dev.morphia.AdvancedDatastore;
 import retrofit2.Call;
 import retrofit2.Response;
 

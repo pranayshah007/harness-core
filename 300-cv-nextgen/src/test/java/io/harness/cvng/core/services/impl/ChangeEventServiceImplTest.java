@@ -46,7 +46,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Inject MonitoredServiceService monitoredServiceService;

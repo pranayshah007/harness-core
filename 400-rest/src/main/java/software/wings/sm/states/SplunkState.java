@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 /**
  * Created by peeyushaggarwal on 7/15/16.

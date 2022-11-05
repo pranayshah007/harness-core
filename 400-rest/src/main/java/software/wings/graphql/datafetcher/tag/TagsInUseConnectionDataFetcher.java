@@ -46,8 +46,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
 public class TagsInUseConnectionDataFetcher

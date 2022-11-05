@@ -18,7 +18,7 @@ import software.wings.verification.CVConfiguration;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateResults;
+import dev.morphia.query.UpdateResults;
 @Slf4j
 public class LogAnalysisDeprecatedRecordMigration implements Migration {
   @Inject private WingsPersistence wingsPersistence;

@@ -35,7 +35,7 @@ import static software.wings.sm.states.AbstractMetricAnalysisState.PARALLEL_PROC
 import static software.wings.sm.states.AbstractMetricAnalysisState.SMOOTH_WINDOW;
 
 import static org.apache.cxf.ws.addressing.ContextUtils.generateUUID;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;

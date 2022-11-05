@@ -13,7 +13,7 @@ import io.harness.annotations.StoreIn;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -27,7 +27,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 @TypeAlias("ciTaskDetails")
 public class CITaskDetails {
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
   String taskId;
   String accountId;
   String stageExecutionId;

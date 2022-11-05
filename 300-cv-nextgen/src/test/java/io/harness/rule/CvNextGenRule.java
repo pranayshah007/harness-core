@@ -102,7 +102,7 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import org.yaml.snakeyaml.Yaml;
 import retrofit2.Call;

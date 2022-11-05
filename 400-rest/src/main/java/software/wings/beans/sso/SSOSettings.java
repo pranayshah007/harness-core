@@ -37,7 +37,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 @OwnedBy(PL)
 @TargetModule(HarnessModule._950_NG_AUTHENTICATION_SERVICE)

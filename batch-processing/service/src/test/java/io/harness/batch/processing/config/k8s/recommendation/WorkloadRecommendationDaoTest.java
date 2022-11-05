@@ -28,8 +28,8 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 @RunWith(MockitoJUnitRunner.class)

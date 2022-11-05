@@ -31,9 +31,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.ObjectFactory;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.Morphia;
+import dev.morphia.ObjectFactory;
 
 @Slf4j
 public class TestMongoModule extends AbstractModule implements MongoRuleMixin {

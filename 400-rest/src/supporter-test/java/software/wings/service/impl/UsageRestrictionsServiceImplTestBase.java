@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 /**
  * @author rktummala on 06/08/18

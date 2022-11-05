@@ -22,7 +22,7 @@ import com.google.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Slf4j
 public class DeleteInvalidOrchestratorsMigration implements CVNGMigration {

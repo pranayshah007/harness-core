@@ -26,7 +26,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -45,7 +45,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class TimeoutInstance implements PersistentRegularIterable, UuidAccess {
   public static final Duration TTL = ofDays(21);
 
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
   @NotNull TimeoutTracker tracker;
   @NotNull TimeoutCallback callback;
 

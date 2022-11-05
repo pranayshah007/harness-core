@@ -29,7 +29,7 @@ import software.wings.service.intfc.ownership.OwnedByService;
 import java.util.List;
 import javax.validation.Valid;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**

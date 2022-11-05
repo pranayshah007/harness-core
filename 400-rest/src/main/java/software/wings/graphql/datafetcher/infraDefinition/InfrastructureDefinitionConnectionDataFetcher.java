@@ -37,8 +37,8 @@ import software.wings.service.intfc.AuthService;
 import com.google.inject.Inject;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.List;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)

@@ -14,7 +14,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 

@@ -33,7 +33,7 @@ import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import org.apache.commons.collections4.CollectionUtils;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 @Value
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

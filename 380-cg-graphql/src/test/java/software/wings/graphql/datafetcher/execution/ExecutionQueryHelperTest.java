@@ -41,8 +41,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 
 public class ExecutionQueryHelperTest extends WingsBaseTest {
   @Mock private DataFetcherUtils utils;

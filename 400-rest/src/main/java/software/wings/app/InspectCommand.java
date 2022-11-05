@@ -39,8 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.sourceforge.argparse4j.inf.Namespace;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.converters.TypeConverter;
 
 public class InspectCommand<T extends io.dropwizard.Configuration> extends ConfiguredCommand<T> {
   private final Class<T> configurationClass;

@@ -29,8 +29,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
 
 /**
  * This migration will set rollback duration for the last 60 days of top level executions to TimeScaleDB

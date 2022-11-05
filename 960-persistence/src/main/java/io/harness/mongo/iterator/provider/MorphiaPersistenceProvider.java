@@ -23,10 +23,10 @@ import com.mongodb.BasicDBObject;
 import java.time.Duration;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FilterOperator;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.FilterOperator;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j

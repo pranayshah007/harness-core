@@ -17,7 +17,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -32,7 +32,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("executionInputInstance")
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ExecutionInputInstance {
-  @Id @org.mongodb.morphia.annotations.Id String inputInstanceId;
+  @Id @dev.morphia.annotations.Id String inputInstanceId;
   @FdUniqueIndex String nodeExecutionId;
   @CreatedDate Long createdAt;
   @CreatedDate Long validUntil;

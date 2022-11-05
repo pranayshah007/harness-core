@@ -24,8 +24,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.EnumSet;
 import javax.validation.executable.ValidateOnExecution;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @OwnedBy(CDC)
 @Singleton

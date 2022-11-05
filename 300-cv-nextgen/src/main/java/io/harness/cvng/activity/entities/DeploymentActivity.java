@@ -29,8 +29,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @JsonTypeName("DEPLOYMENT")
 @FieldNameConstants(innerTypeName = "DeploymentActivityKeys")

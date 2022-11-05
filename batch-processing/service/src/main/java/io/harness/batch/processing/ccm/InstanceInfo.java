@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.PostLoad;
-import org.mongodb.morphia.annotations.PrePersist;
+import dev.morphia.annotations.PostLoad;
+import dev.morphia.annotations.PrePersist;
 
 @Data
 @Builder

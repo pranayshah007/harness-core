@@ -32,7 +32,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -62,7 +62,7 @@ public class Invite implements PersistentEntity {
   }
 
   @NotEmpty String accountIdentifier;
-  @Id @org.mongodb.morphia.annotations.Id @EntityIdentifier String id;
+  @Id @dev.morphia.annotations.Id @EntityIdentifier String id;
   String orgIdentifier;
   String projectIdentifier;
   @NotEmpty String email;

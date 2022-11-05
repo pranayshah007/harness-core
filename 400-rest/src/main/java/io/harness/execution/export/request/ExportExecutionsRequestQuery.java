@@ -16,8 +16,8 @@ import software.wings.beans.WorkflowExecution;
 import com.mongodb.BasicDBObject;
 import lombok.Builder;
 import lombok.Value;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.QueryImpl;
+import dev.morphia.query.Query;
+import dev.morphia.query.QueryImpl;
 
 @OwnedBy(CDC)
 @Value

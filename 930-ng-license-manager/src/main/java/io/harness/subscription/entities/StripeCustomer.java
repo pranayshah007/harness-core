@@ -21,7 +21,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -40,7 +40,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("stripeCustomers")
 @Persistent
 public class StripeCustomer implements PersistentEntity, NGAccountAccess {
-  @Id @org.mongodb.morphia.annotations.Id protected String id;
+  @Id @dev.morphia.annotations.Id protected String id;
   @Trimmed @NotEmpty protected String accountIdentifier;
   @Trimmed @NotEmpty protected String customerId;
   @NotEmpty protected String billingEmail;

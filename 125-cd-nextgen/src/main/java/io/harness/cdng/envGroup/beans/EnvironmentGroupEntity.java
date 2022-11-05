@@ -33,7 +33,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -62,7 +62,7 @@ public class EnvironmentGroupEntity implements PersistentEntity, GitSyncableEnti
                  .build())
         .build();
   }
-  @Wither @Id @org.mongodb.morphia.annotations.Id private String uuid;
+  @Wither @Id @dev.morphia.annotations.Id private String uuid;
 
   // Yaml Of Env Group
   @Wither @NotEmpty String yaml;

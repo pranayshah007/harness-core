@@ -17,7 +17,7 @@ import static io.harness.validation.Validator.notNullCheck;
 import static software.wings.app.ManagerCacheRegistrar.WHITELIST_CACHE;
 import static software.wings.beans.security.access.WhitelistStatus.ACTIVE;
 
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
@@ -48,8 +48,8 @@ import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * @author rktummala on 04/06/18

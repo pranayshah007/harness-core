@@ -101,8 +101,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 
 @OwnedBy(CDC)
 @FieldNameConstants(innerTypeName = "DeploymentStatsDataFetcherTestKeys")

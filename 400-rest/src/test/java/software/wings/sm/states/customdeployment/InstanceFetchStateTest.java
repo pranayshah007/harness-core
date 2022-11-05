@@ -113,7 +113,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 public class InstanceFetchStateTest extends WingsBaseTest {
   @Mock private ExecutionContext context;

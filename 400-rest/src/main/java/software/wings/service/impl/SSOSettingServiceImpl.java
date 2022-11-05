@@ -103,7 +103,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotBlank;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @ValidateOnExecution
 @Singleton

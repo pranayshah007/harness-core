@@ -13,7 +13,7 @@ import java.util.Objects;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Id;
 
 @Data
 @Builder

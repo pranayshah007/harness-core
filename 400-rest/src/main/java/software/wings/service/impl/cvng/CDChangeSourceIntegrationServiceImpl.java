@@ -23,8 +23,8 @@ import com.mongodb.ReadPreference;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 
 @OwnedBy(CV)
 public class CDChangeSourceIntegrationServiceImpl implements CDChangeSourceIntegrationService {

@@ -47,7 +47,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 /**
  * Builder class to build Materialized View of

@@ -14,7 +14,7 @@ import io.harness.ccm.config.GcpServiceAccount.GcpServiceAccountKeys;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(CE)
 public class GcpServiceAccountDao {

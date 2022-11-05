@@ -30,7 +30,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -45,7 +45,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = false)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PreFlightEntity implements UuidAware {
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
 
   String accountIdentifier;
   String orgIdentifier;

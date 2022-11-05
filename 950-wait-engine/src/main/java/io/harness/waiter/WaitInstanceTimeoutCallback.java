@@ -17,7 +17,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j

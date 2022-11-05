@@ -8,7 +8,7 @@
 package software.wings.beans;
 
 import com.google.common.base.MoreObjects;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Id;
 
 /**
  * Created by peeyushaggarwal on 7/13/16.

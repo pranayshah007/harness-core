@@ -46,13 +46,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.ObjectFactory;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.converters.TypeConverter;
-import org.mongodb.morphia.mapping.MappedClass;
-import org.mongodb.morphia.mapping.MappingException;
-import org.mongodb.morphia.utils.ReflectionUtils;
+import dev.morphia.Morphia;
+import dev.morphia.ObjectFactory;
+import dev.morphia.annotations.Entity;
+import dev.morphia.converters.TypeConverter;
+import dev.morphia.mapping.MappedClass;
+import dev.morphia.mapping.MappingException;
+import dev.morphia.utils.ReflectionUtils;
 
 @Slf4j
 public class MorphiaModule extends AbstractModule {
@@ -162,106 +162,106 @@ public class MorphiaModule extends AbstractModule {
   }
 
   // This is a copy of the morphia method that has a bug and does not unescape '%' in the path of the jar file
-  private static Set<Class<?>> getClasses(String packageName, boolean mapSubPackages)
-      throws IOException, ClassNotFoundException {
-    ClassLoader loader = Thread.currentThread().getContextClassLoader();
-
-    Set<Class<?>> classes = new HashSet();
-    String path = packageName.replace('.', '/');
-    Enumeration<URL> resources = loader.getResources(path);
-    if (resources != null) {
-      while (true) {
-        while (true) {
-          String filePath;
-          do {
-            if (!resources.hasMoreElements()) {
-              return classes;
-            }
-
-            filePath = ((URL) resources.nextElement()).getFile();
-            if (filePath.indexOf("%20") > 0) {
-              filePath = filePath.replaceAll("%20", " ");
-            }
-
-            if (filePath.indexOf("%23") > 0) {
-              filePath = filePath.replaceAll("%23", "#");
-            }
-
-            // {{ This is the code that was injected
-            if (filePath.indexOf("%25") > 0) {
-              filePath = filePath.replaceAll("%25", "%");
-            }
-            // }}
-          } while (filePath == null);
-
-          if (filePath.indexOf('!') > 0 && filePath.indexOf(".jar") > 0) {
-            String jarPath = filePath.substring(0, filePath.indexOf('!')).substring(filePath.indexOf(':') + 1);
-            if (jarPath.contains(":")) {
-              jarPath = jarPath.substring(1);
-            }
-
-            classes.addAll(ReflectionUtils.getFromJARFile(loader, jarPath, path, mapSubPackages));
-          } else {
-            classes.addAll(ReflectionUtils.getFromDirectory(loader, new File(filePath), packageName, mapSubPackages));
-          }
-        }
-      }
-    } else {
-      return classes;
-    }
-  }
+//  private static Set<Class<?>> getClasses(String packageName, boolean mapSubPackages)
+//      throws IOException, ClassNotFoundException {
+//    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+//
+//    Set<Class<?>> classes = new HashSet();
+//    String path = packageName.replace('.', '/');
+//    Enumeration<URL> resources = loader.getResources(path);
+//    if (resources != null) {
+//      while (true) {
+//        while (true) {
+//          String filePath;
+//          do {
+//            if (!resources.hasMoreElements()) {
+//              return classes;
+//            }
+//
+//            filePath = ((URL) resources.nextElement()).getFile();
+//            if (filePath.indexOf("%20") > 0) {
+//              filePath = filePath.replaceAll("%20", " ");
+//            }
+//
+//            if (filePath.indexOf("%23") > 0) {
+//              filePath = filePath.replaceAll("%23", "#");
+//            }
+//
+//            // {{ This is the code that was injected
+//            if (filePath.indexOf("%25") > 0) {
+//              filePath = filePath.replaceAll("%25", "%");
+//            }
+//            // }}
+//          } while (filePath == null);
+//
+//          if (filePath.indexOf('!') > 0 && filePath.indexOf(".jar") > 0) {
+//            String jarPath = filePath.substring(0, filePath.indexOf('!')).substring(filePath.indexOf(':') + 1);
+//            if (jarPath.contains(":")) {
+//              jarPath = jarPath.substring(1);
+//            }
+//
+//            classes.addAll(ReflectionUtils.getFromJARFile(loader, jarPath, path, mapSubPackages));
+//          } else {
+//            classes.addAll(ReflectionUtils.getFromDirectory(loader, new File(filePath), packageName, mapSubPackages));
+//          }
+//        }
+//      }
+//    } else {
+//      return classes;
+//    }
+//  }
 
   // This is a copy of the morphia method that calls method with a bug
-  private void mapPackage(Morphia morphia, String packageName) {
-    try {
-      Iterator classes = getClasses(packageName, morphia.getMapper().getOptions().isMapSubPackages()).iterator();
+//  private void mapPackage(Morphia morphia, String packageName) {
+//    try {
+//      Iterator classes = getClasses(packageName, morphia.getMapper().getOptions().isMapSubPackages()).iterator();
+//
+//      while (classes.hasNext()) {
+//        Class clazz = (Class) classes.next();
+//
+//        try {
+//          Entity entityAnn = ReflectionUtils.getClassEntityAnnotation(clazz);
+//          boolean isAbstract = Modifier.isAbstract(clazz.getModifiers());
+//          if (entityAnn != null && !isAbstract) {
+//            morphia.map(clazz);
+//          }
+//        } catch (MappingException exception) {
+//          Switch.unhandled(exception);
+//        }
+//      }
+//    } catch (IOException exception) {
+//      throw new MappingException("Could not get map classes from package " + packageName, exception);
+//    } catch (ClassNotFoundException exception) {
+//      throw new MappingException("Could not get map classes from package " + packageName, exception);
+//    }
+//  }
 
-      while (classes.hasNext()) {
-        Class clazz = (Class) classes.next();
-
-        try {
-          Entity entityAnn = ReflectionUtils.getClassEntityAnnotation(clazz);
-          boolean isAbstract = Modifier.isAbstract(clazz.getModifiers());
-          if (entityAnn != null && !isAbstract) {
-            morphia.map(clazz);
-          }
-        } catch (MappingException exception) {
-          Switch.unhandled(exception);
-        }
-      }
-    } catch (IOException exception) {
-      throw new MappingException("Could not get map classes from package " + packageName, exception);
-    } catch (ClassNotFoundException exception) {
-      throw new MappingException("Could not get map classes from package " + packageName, exception);
-    }
-  }
-
-  public void testAutomaticSearch(Provider<Set<Class>> classesProvider) {
-    Morphia morphia;
-    try {
-      morphia = new Morphia();
-      morphia.getMapper().getOptions().setMapSubPackages(true);
-      mapPackage(morphia, "software.wings");
-      mapPackage(morphia, "io.harness");
-    } catch (NoClassDefFoundError error) {
-      ignoredOnPurpose(error);
-      return;
-    }
-
-    log.info("Checking {} classes", morphia.getMapper().getMappedClasses().size());
-
-    boolean success = true;
-    for (MappedClass cls : morphia.getMapper().getMappedClasses()) {
-      if (!classesProvider.get().contains(cls.getClazz())) {
-        log.error("Class {} is missing in the registrars", cls.getClazz().getName());
-        success = false;
-      }
-    }
-
-    if (!success) {
-      throw new GeneralException("there are classes that are not registered");
-    }
-  }
+//  public void testAutomaticSearch(Provider<Set<Class>> classesProvider) {
+//    Morphia morphia;
+//    try {
+//      morphia = new Morphia();
+//      morphia.getMapper().getOptions().setMapSubPackages(true);
+//      mapPackage(morphia, "software.wings");
+//      mapPackage(morphia, "io.harness");
+//    } catch (NoClassDefFoundError error) {
+//      ignoredOnPurpose(error);
+//      return;
+//    }
+//
+//    log.info("Checking {} classes", morphia.getMapper().getMappedClasses().size());
+//
+//    boolean success = true;
+//    for (MappedClass cls : morphia.getMapper().getMappedClasses()) {
+//      if (!classesProvider.get().contains(cls.getClazz())) {
+//        log.error("Class {} is missing in the registrars", cls.getClazz().getName());
+//        success = false;
+//      }
+//    }
+//
+//    if (!success) {
+//      throw new GeneralException("there are classes that are not registered");
+//    }
+//  }
 
   public void testAllRegistrars(Provider<Set<Class<? extends MorphiaRegistrar>>> registrarsProvider) {
     try {
@@ -290,8 +290,8 @@ public class MorphiaModule extends AbstractModule {
     if (!binder().currentStage().name().equals("TOOL")) {
       Provider<Set<Class>> providerClasses =
           getProvider(Key.get(new TypeLiteral<Set<Class>>() {}, Names.named("morphiaClasses")));
-      testExecutionMapBinder.addBinding("Morphia test registration")
-          .toInstance(() -> testAutomaticSearch(providerClasses));
+//      testExecutionMapBinder.addBinding("Morphia test registration")
+//          .toInstance(() -> testAutomaticSearch(providerClasses));
       Provider<Set<Class<? extends MorphiaRegistrar>>> providerRegistrars =
           getProvider(Key.get(new TypeLiteral<Set<Class<? extends MorphiaRegistrar>>>() {}));
       testExecutionMapBinder.addBinding("Morphia test registrars")

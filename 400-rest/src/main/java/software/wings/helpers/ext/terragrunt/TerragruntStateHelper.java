@@ -82,8 +82,8 @@ import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 @OwnedBy(CDP)
 @Singleton

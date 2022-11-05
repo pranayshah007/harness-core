@@ -109,7 +109,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 @FieldNameConstants(innerTypeName = "InstanceFetchStateKeys")
 @Slf4j

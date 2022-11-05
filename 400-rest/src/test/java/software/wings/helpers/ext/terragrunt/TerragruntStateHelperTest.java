@@ -100,8 +100,8 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

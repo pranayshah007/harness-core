@@ -70,8 +70,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.Morphia;
+import dev.morphia.annotations.Entity;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 

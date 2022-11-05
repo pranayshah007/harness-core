@@ -45,8 +45,8 @@ import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 
 /**
  * The type Workflow execution event.

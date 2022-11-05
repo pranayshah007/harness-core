@@ -19,7 +19,7 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 /**
  * Created by bsollish on 8/30/17

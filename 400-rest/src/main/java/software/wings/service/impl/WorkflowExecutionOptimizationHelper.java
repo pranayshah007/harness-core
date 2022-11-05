@@ -32,8 +32,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.DatastoreImpl;
-import org.mongodb.morphia.mapping.Mapper;
+import dev.morphia.DatastoreImpl;
+import dev.morphia.mapping.Mapper;
 
 @Singleton
 @Slf4j

@@ -32,7 +32,7 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.collections4.CollectionUtils;
 import org.dataloader.MappedBatchLoader;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)

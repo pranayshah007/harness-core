@@ -16,7 +16,7 @@ import software.wings.service.intfc.ServiceVariableService;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 /**
  * Created by rsingh on 6/1/18.

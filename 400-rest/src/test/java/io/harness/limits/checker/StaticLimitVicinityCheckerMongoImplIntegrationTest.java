@@ -27,7 +27,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(PL)
 public class StaticLimitVicinityCheckerMongoImplIntegrationTest extends IntegrationTestBase {

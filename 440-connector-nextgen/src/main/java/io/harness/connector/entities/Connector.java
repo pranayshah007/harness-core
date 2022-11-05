@@ -45,7 +45,7 @@ import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -64,7 +64,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 @OwnedBy(HarnessTeam.DX)
 public abstract class Connector implements PersistentEntity, NGAccountAccess, GitSyncableEntity {
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   @NotEmpty @EntityIdentifier String identifier;
   @NotEmpty @NGEntityName String name;
   @NotEmpty io.harness.encryption.Scope scope;

@@ -175,8 +175,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.Query;
 
 /**
  * Created by rsingh on 9/29/17.

@@ -19,7 +19,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * Prior this migration for each LDAPSetting we were supporting

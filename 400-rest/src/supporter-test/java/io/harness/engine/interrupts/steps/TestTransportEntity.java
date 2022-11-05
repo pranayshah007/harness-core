@@ -13,8 +13,8 @@ import io.harness.persistence.PersistentEntity;
 
 import lombok.Builder;
 import lombok.Value;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 
 @Value
 @Builder

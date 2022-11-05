@@ -31,9 +31,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.PostLoad;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.PostLoad;
 
 @Data
 @StoreIn(DbAliases.CENG)

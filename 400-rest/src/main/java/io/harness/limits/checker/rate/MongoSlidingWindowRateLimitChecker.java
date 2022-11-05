@@ -22,9 +22,9 @@ import com.mongodb.BasicDBObject;
 import java.time.Instant;
 import javax.annotation.Nullable;
 import lombok.Getter;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * Mongo backed implementation for rate limits.

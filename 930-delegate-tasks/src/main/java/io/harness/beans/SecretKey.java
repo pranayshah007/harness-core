@@ -20,7 +20,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 
 @OwnedBy(PL)
@@ -32,7 +32,7 @@ import org.springframework.data.annotation.Id;
 @StoreIn(DbAliases.TEST)
 @Entity(value = "SecretKey", noClassnameStored = true)
 public class SecretKey implements PersistentEntity {
-  @Id @org.mongodb.morphia.annotations.Id private String uuid;
+  @Id @dev.morphia.annotations.Id private String uuid;
   private byte[] key;
   private String algorithm;
 

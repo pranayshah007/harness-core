@@ -23,8 +23,8 @@ import com.google.inject.Inject;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.List;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 @OwnedBy(CE)
 @TargetModule(HarnessModule._375_CE_GRAPHQL)

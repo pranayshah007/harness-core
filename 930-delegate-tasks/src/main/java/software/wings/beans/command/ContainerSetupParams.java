@@ -15,7 +15,7 @@ import com.mongodb.DBObject;
 import java.util.Objects;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.PreLoad;
+import dev.morphia.annotations.PreLoad;
 
 @Data
 @FieldNameConstants(innerTypeName = "ContainerSetupParamsKeys")

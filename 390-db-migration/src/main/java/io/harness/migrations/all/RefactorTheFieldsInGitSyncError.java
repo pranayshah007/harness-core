@@ -25,7 +25,7 @@ import software.wings.yaml.errorhandling.HarnessToGitErrorDetails;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Slf4j
 public class RefactorTheFieldsInGitSyncError implements OnPrimaryManagerMigration {

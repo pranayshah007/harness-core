@@ -254,7 +254,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

@@ -27,7 +27,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Singleton
 @Slf4j

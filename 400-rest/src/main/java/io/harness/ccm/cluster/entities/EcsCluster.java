@@ -21,7 +21,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Data
 @JsonTypeName("AWS_ECS")

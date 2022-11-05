@@ -32,7 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

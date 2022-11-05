@@ -15,7 +15,7 @@ import io.harness.serializer.kryo.ScmJavaClientKryoRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 
 @UtilityClass
 @OwnedBy(DX)

@@ -35,10 +35,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.mapping.MappedClass;
-import org.mongodb.morphia.mapping.MappedField;
-import org.mongodb.morphia.mapping.Mapper;
+import dev.morphia.Key;
+import dev.morphia.mapping.MappedClass;
+import dev.morphia.mapping.MappedField;
+import dev.morphia.mapping.Mapper;
 
 /**
  * PageRequest bean class.

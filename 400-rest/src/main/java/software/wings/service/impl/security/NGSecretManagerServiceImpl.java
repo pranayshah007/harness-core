@@ -67,7 +67,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(PL)
 @TargetModule(_890_SM_CORE)

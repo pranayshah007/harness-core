@@ -34,7 +34,7 @@ import com.google.inject.Inject;
 import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * Callback method for handling notify callback from wait notify engine.

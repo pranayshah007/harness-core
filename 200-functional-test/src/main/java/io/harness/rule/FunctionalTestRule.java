@@ -127,9 +127,9 @@ import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProv
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.Morphia;
+import dev.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 

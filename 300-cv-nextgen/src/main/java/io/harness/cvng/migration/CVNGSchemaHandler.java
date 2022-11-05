@@ -17,7 +17,7 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j

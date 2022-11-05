@@ -57,8 +57,8 @@ import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import org.jetbrains.annotations.Nullable;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton

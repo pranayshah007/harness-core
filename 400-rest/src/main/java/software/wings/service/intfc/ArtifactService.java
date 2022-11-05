@@ -32,7 +32,7 @@ import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 /**
  * The Interface ArtifactService.

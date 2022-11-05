@@ -101,7 +101,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.JexlException.Parsing;
 import org.apache.commons.jexl3.JexlException.Property;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 /**
  * Http state which makes a call to http service.

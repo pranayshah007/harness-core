@@ -23,7 +23,7 @@ import software.wings.dl.WingsPersistence;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * Created by brett on 5/1/18.

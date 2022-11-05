@@ -36,13 +36,13 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
-import static org.mongodb.morphia.aggregation.Group.first;
-import static org.mongodb.morphia.aggregation.Group.grouping;
-import static org.mongodb.morphia.aggregation.Group.sum;
-import static org.mongodb.morphia.aggregation.Projection.projection;
-import static org.mongodb.morphia.query.Sort.ascending;
-import static org.mongodb.morphia.query.Sort.descending;
+import static dev.morphia.aggregation.Accumulator.accumulator;
+import static dev.morphia.aggregation.Group.first;
+import static dev.morphia.aggregation.Group.grouping;
+import static dev.morphia.aggregation.Group.sum;
+import static dev.morphia.aggregation.Projection.projection;
+import static dev.morphia.query.Sort.ascending;
+import static dev.morphia.query.Sort.descending;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -150,11 +150,11 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
-import org.mongodb.morphia.aggregation.AggregationPipeline;
-import org.mongodb.morphia.aggregation.Group;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.aggregation.AggregationPipeline;
+import dev.morphia.aggregation.Group;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 /**
  * @author rktummala on 8/13/17

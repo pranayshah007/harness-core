@@ -69,7 +69,7 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 @Slf4j
 public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineService {

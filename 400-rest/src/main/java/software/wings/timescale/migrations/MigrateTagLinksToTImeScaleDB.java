@@ -25,7 +25,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
+import dev.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton

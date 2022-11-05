@@ -65,7 +65,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AzureKubernetesInfraMappingYamlHandlerTest extends YamlHandlerTestBase {

@@ -49,7 +49,7 @@ import com.mongodb.DuplicateKeyException;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)

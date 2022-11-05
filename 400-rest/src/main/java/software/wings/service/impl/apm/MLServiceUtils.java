@@ -28,7 +28,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 /**
  * Utility files used by Verification services

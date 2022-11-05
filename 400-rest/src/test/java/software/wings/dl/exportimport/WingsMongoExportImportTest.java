@@ -36,8 +36,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.Morphia;
+import dev.morphia.annotations.Entity;
 
 /**
  * @author marklu on 10/24/18

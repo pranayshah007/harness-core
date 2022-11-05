@@ -17,8 +17,8 @@ import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
 
 import com.google.inject.Inject;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @OwnedBy(PL)
 public class AccountDao {

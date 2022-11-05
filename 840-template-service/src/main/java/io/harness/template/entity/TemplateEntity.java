@@ -49,7 +49,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -69,7 +69,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 public class TemplateEntity
     implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
-  @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Setter @NonFinal @Id @dev.morphia.annotations.Id String uuid;
 
   @NotEmpty String accountId;
   @Wither @Trimmed String orgIdentifier;

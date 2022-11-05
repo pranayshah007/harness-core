@@ -38,9 +38,9 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import org.slf4j.Logger;
 
 @OwnedBy(CDC)

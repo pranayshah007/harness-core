@@ -13,7 +13,7 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Id;
 
 @Value
 @Builder

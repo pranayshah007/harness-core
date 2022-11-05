@@ -21,9 +21,9 @@ import com.mongodb.DBCollection;
 import java.util.Map;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.MappedClass;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.Morphia;
+import dev.morphia.mapping.MappedClass;
 
 @Singleton
 @Slf4j

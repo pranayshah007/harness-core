@@ -40,7 +40,7 @@ import java.util.Set;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 /**
  * Builder class to build Materialized View of

@@ -23,7 +23,7 @@ import java.time.Clock;
 import java.util.ConcurrentModificationException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 public class SLIRecordTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;

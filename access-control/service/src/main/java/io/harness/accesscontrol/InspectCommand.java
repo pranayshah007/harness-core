@@ -19,7 +19,7 @@ import io.dropwizard.Application;
 import io.dropwizard.cli.ConfiguredCommand;
 import io.dropwizard.setup.Bootstrap;
 import net.sourceforge.argparse4j.inf.Namespace;
-import org.mongodb.morphia.AdvancedDatastore;
+import dev.morphia.AdvancedDatastore;
 
 public class InspectCommand<T extends io.dropwizard.Configuration> extends ConfiguredCommand<T> {
   private final Class<T> configurationClass;

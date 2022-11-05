@@ -32,7 +32,7 @@ import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 /**
  * Created by anubhaw on 7/25/16.

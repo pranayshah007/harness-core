@@ -38,9 +38,9 @@ import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.PrePersist;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.PrePersist;
 
 /**
  * The Class Host.

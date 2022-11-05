@@ -82,7 +82,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 /**
  * @author rktummala on 1/9/18

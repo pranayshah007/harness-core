@@ -26,8 +26,8 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data

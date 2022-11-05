@@ -41,9 +41,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.ObjectFactory;
-import org.mongodb.morphia.converters.TypeConverter;
-import org.mongodb.morphia.mapping.DefaultCreator;
+import dev.morphia.ObjectFactory;
+import dev.morphia.converters.TypeConverter;
+import dev.morphia.mapping.DefaultCreator;
 
 @Slf4j
 public class DelegateTasksRule implements MethodRule, InjectorRuleMixin {

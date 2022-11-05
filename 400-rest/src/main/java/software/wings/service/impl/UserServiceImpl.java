@@ -58,7 +58,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.mindrot.jbcrypt.BCrypt.checkpw;
 import static org.mindrot.jbcrypt.BCrypt.hashpw;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -278,12 +278,12 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.mindrot.jbcrypt.BCrypt;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.CriteriaContainer;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.CriteriaContainer;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * Created by anubhaw on 3/9/16.

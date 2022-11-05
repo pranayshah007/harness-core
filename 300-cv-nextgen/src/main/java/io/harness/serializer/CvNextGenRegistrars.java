@@ -28,7 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 
 @UtilityClass

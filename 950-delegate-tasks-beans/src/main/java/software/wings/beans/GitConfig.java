@@ -51,7 +51,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Email;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @JsonTypeName("GIT")
 @Data

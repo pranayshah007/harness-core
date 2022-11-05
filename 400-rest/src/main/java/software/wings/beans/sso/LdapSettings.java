@@ -44,7 +44,7 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotBlank;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 /**
  * Bean to store all the ldap sso provider configuration details

@@ -27,7 +27,7 @@ import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 
 public class NotificationClientApplicationModule extends AbstractModule {
   private final NotificationClientApplicationConfiguration appConfig;

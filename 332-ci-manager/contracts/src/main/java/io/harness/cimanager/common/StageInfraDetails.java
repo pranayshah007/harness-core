@@ -18,7 +18,7 @@ import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.TypeAlias;
 
 @JsonIgnoreProperties(ignoreUnknown = true)

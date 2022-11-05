@@ -44,7 +44,7 @@ import com.google.inject.name.Named;
 import java.util.List;
 import java.util.Set;
 import javax.cache.Cache;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 
 @OwnedBy(CI)

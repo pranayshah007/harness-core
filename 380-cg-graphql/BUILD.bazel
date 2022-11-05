@@ -43,7 +43,7 @@ java_library(
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_jetbrains_annotations",
-        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:dev_morphia_morphia_core",
         "@maven//:org_slf4j_slf4j_api",
     ],
 )
@@ -110,7 +110,7 @@ java_library(
         "@maven//:org_jetbrains_annotations",
         "@maven//:org_jooq_joor",
         "@maven//:org_mockito_mockito_core",
-        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:dev_morphia_morphia_core",
         "@maven//:org_powermock_powermock_api_mockito2",
         "@maven//:org_powermock_powermock_module_junit4",
         "@maven//:pl_pragmatists_JUnitParams",

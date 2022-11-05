@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 /**
  * Created by rsingh on 1/9/18.

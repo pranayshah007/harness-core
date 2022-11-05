@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(PL)
 @Singleton

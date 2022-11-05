@@ -33,8 +33,8 @@ import com.google.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 /**
  * Migration script to transform usage restrictions with no restrictions to all app restrictions for setting attributes,

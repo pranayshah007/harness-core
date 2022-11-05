@@ -18,9 +18,9 @@ import software.wings.beans.User;
 
 import com.mongodb.BasicDBObject;
 import java.util.ArrayList;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @OwnedBy(HarnessTeam.PL)
 public class RateLimitProtectionMongoRepository implements RateLimitProtectionRepository {

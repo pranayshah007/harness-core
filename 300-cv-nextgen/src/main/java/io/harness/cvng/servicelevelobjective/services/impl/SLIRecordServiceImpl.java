@@ -45,8 +45,8 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
 
 public class SLIRecordServiceImpl implements SLIRecordService {
   @VisibleForTesting static int MAX_NUMBER_OF_POINTS = 2000;

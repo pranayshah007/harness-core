@@ -18,8 +18,8 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 @Slf4j
 public class RecoverMonitoringSourceWorkerId implements CVNGMigration {
   @Inject private HPersistence hPersistence;

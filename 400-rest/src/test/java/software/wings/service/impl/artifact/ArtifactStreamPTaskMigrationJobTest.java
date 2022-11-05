@@ -50,9 +50,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 
 @OwnedBy(CDC)
 public class ArtifactStreamPTaskMigrationJobTest extends CategoryTest {

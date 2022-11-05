@@ -78,9 +78,9 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @Singleton
 @ValidateOnExecution

@@ -34,7 +34,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(CDC)
 public class ApprovalDetailsDataFetcherTest extends AbstractDataFetcherTestBase {

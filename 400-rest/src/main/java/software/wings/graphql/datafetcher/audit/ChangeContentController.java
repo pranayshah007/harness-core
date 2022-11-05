@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.validation.constraints.NotNull;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @Singleton
 @TargetModule(HarnessModule._380_CG_GRAPHQL)

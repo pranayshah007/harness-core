@@ -44,9 +44,9 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.PrePersist;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.PrePersist;
 
 @FieldNameConstants(innerTypeName = "DataCollectionTaskKeys")
 @Data

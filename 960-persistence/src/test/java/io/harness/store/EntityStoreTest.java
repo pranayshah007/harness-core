@@ -22,7 +22,7 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.AdvancedDatastore;
+import dev.morphia.AdvancedDatastore;
 
 @OwnedBy(HarnessTeam.PL)
 public class EntityStoreTest extends PersistenceTestBase {

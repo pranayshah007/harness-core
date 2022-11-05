@@ -39,7 +39,7 @@ import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 /**
  * Common Class extended by TimeSeries and Experimental Analysis Record.

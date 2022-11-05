@@ -34,7 +34,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -70,7 +70,7 @@ public class UserGroup implements PersistentEntity, NGAccountAccess {
         .build();
   }
 
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   @NotNull String accountIdentifier;
   @EntityIdentifier(allowBlank = true) String orgIdentifier;
   @EntityIdentifier(allowBlank = true) String projectIdentifier;

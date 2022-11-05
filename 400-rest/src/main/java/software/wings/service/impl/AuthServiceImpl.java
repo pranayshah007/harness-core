@@ -141,7 +141,7 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 @Singleton
 @Slf4j

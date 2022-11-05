@@ -76,7 +76,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 @Slf4j
 public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
   private String accountId;

@@ -44,7 +44,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import lombok.NonNull;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(PL)
 @Singleton

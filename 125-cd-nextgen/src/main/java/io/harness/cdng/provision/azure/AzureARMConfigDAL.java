@@ -19,8 +19,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 @Slf4j
 @Singleton

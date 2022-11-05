@@ -39,9 +39,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.PrePersist;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.PrePersist;
+import dev.morphia.annotations.Transient;
 
 /**
  * The Base class is used to extend all the bean classes that requires persistence. The base class

@@ -36,8 +36,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.DatastoreImpl;
-import org.mongodb.morphia.mapping.Mapper;
+import dev.morphia.DatastoreImpl;
+import dev.morphia.mapping.Mapper;
 
 @Singleton
 @Slf4j

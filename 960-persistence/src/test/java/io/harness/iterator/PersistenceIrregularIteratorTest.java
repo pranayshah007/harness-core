@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.FilterOperator;
+import dev.morphia.query.FilterOperator;
 
 @Slf4j
 public class PersistenceIrregularIteratorTest extends PersistenceTestBase {

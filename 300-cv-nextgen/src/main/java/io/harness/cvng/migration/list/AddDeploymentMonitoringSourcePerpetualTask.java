@@ -34,8 +34,8 @@ import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.query.UpdateResults;
+import dev.morphia.annotations.Entity;
+import dev.morphia.query.UpdateResults;
 
 @Slf4j
 public class AddDeploymentMonitoringSourcePerpetualTask implements CVNGMigration {

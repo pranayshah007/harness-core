@@ -140,7 +140,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 @OwnedBy(CDP)
 public class AwsAmiServiceDeployStateTest extends WingsBaseTest {

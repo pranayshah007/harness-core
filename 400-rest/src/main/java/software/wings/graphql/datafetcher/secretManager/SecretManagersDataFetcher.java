@@ -32,9 +32,9 @@ import software.wings.security.annotations.AuthRule;
 import com.google.inject.Inject;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.List;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
 public class SecretManagersDataFetcher

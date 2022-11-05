@@ -23,7 +23,7 @@ import software.wings.service.intfc.instance.licensing.InstanceLimitProvider;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 /**
  * Migration script to update license info for all accounts.

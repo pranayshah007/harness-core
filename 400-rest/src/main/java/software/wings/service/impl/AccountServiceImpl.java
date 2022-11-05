@@ -216,11 +216,11 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.commons.validator.routines.UrlValidator;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
+import dev.morphia.Morphia;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 
 /**
  * Created by peeyushaggarwal on 10/11/16.

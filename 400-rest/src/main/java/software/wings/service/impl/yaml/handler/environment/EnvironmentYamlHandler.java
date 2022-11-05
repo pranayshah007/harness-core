@@ -76,7 +76,7 @@ import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 /**
  * @author rktummala on 11/07/17

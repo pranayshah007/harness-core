@@ -20,7 +20,7 @@ import software.wings.beans.trigger.TriggerExecution;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.Key;
+import dev.morphia.Key;
 
 public class AddAccountIdToTriggerExecutions extends AddAccountIdToAppEntities {
   @Override

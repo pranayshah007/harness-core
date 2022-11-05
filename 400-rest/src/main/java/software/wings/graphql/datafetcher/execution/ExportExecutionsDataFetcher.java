@@ -26,7 +26,7 @@ import software.wings.security.PermissionAttribute.PermissionType;
 import software.wings.security.annotations.AuthRule;
 
 import com.google.inject.Inject;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)

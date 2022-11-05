@@ -45,7 +45,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 @TargetModule(HarnessModule._957_CG_BEANS)
 @OwnedBy(CDC)

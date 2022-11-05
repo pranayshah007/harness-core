@@ -25,7 +25,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -43,7 +43,7 @@ public class SpringCacheEntity implements PersistentEntity {
   public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;
 
-  @Id @org.mongodb.morphia.annotations.Id String canonicalKey;
+  @Id @dev.morphia.annotations.Id String canonicalKey;
   long contextValue;
 
   byte[] entity;

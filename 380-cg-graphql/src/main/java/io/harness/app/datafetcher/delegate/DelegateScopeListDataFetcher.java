@@ -28,8 +28,8 @@ import com.google.inject.Inject;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.List;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 
 public class DelegateScopeListDataFetcher
     extends AbstractConnectionV2DataFetcher<QLDelegateScopeFilter, QLNoOpSortCriteria, QLDelegateScopeList> {
