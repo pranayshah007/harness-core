@@ -88,11 +88,7 @@ public class ArtifactCollectionHandler implements Handler<ArtifactStream> {
             .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProvider)
-            .filterExpander(query
-                -> query.field(ArtifactStreamKeys.collectionEnabled)
-                       .in(Arrays.asList(true, null))
-                       .and(query.criteria(ArtifactStreamKeys.collectionStatus)
-                                .notEqual(ArtifactStreamCollectionStatus.STOPPED)))
+            .filterExpander(query -> query.field(ArtifactStreamKeys.collectionEnabled).in(Arrays.asList(true, null)))
             .redistribute(true));
 
     final SecureRandom random = new SecureRandom();
@@ -107,7 +103,7 @@ public class ArtifactCollectionHandler implements Handler<ArtifactStream> {
   public void handle(ArtifactStream artifactStream) {
     try (AutoLogContext ignore2 = new ArtifactStreamLogContext(
              artifactStream.getUuid(), artifactStream.getArtifactStreamType(), OVERRIDE_ERROR)) {
-      log.info("Received the artifact collection for ArtifactStream");
+      // log.info("Received the artifact collection for ArtifactStream");
       executeInternal(artifactStream);
     }
   }

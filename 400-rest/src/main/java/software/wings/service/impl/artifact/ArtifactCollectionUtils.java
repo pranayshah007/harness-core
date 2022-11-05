@@ -694,7 +694,6 @@ public class ArtifactCollectionUtils {
     List<EncryptedDataDetail> encryptedDataDetails =
         secretManager.getEncryptionDetails((EncryptableSetting) settingValue, null, null);
 
-    log.info("Got encryption details of secrets");
     String appId = artifactStream.fetchAppId();
     boolean multiArtifact = multiArtifactEnabled(settingAttribute.getAccountId());
     ArtifactStreamAttributes artifactStreamAttributes = getArtifactStreamAttributes(artifactStream, multiArtifact);
@@ -820,7 +819,6 @@ public class ArtifactCollectionUtils {
    */
   public Set<String> getArtifactsKeys(
       ArtifactStream artifactStream, ArtifactStreamAttributes artifactStreamAttributes) {
-    log.info("Getting artifact keys from db");
     if (artifactStream == null || artifactStream.getArtifactStreamType() == null) {
       return Collections.emptySet();
     }
@@ -837,7 +835,6 @@ public class ArtifactCollectionUtils {
         }
       }
     }
-    log.info("Got all the artifact keys for given artifact stream. Size of keys is {}", artifactKeys.size());
     return artifactKeys;
   }
 
