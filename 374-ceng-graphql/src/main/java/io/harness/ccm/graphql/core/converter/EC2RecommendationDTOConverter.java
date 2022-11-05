@@ -2,7 +2,6 @@ package io.harness.ccm.graphql.core.converter;
 
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2RecommendationDetail;
-import io.harness.ccm.graphql.core.EC2InstanceDTOConverter;
 import io.harness.ccm.graphql.dto.recommendation.EC2InstanceDTO;
 import io.harness.ccm.graphql.dto.recommendation.EC2RecommendationDTO;
 
@@ -10,13 +9,12 @@ import com.amazonaws.services.costexplorer.model.RecommendationTarget;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
 public class EC2RecommendationDTOConverter extends Converter<EC2RecommendationDTO, EC2Recommendation> {
-  @Inject private static EC2InstanceDTOConverter instanceConverter;
+  @Inject private static EC2InstanceDTOConverter instanceConverter = new EC2InstanceDTOConverter();
 
   public EC2RecommendationDTOConverter() {
     super(EC2RecommendationDTOConverter::convertToEntity, EC2RecommendationDTOConverter::convertToDto);

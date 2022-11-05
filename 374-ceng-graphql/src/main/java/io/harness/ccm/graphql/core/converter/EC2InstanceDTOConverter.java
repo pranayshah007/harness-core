@@ -1,13 +1,10 @@
-package io.harness.ccm.graphql.core;
+package io.harness.ccm.graphql.core.converter;
 
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2RecommendationDetail;
-import io.harness.ccm.graphql.core.converter.Converter;
 import io.harness.ccm.graphql.dto.recommendation.EC2InstanceDTO;
 
-import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
-@Singleton
 @Slf4j
 public class EC2InstanceDTOConverter extends Converter<EC2InstanceDTO, EC2RecommendationDetail> {
   public EC2InstanceDTOConverter() {

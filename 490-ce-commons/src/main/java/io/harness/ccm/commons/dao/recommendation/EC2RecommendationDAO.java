@@ -107,6 +107,7 @@ public class EC2RecommendationDAO {
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
         .doUpdate()
+        .set(CE_RECOMMENDATIONS.NAME, instanceName)
         .set(CE_RECOMMENDATIONS.MONTHLYCOST, monthlyCost)
         .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT,
