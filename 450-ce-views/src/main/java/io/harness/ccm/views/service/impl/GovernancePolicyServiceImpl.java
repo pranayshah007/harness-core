@@ -65,15 +65,15 @@ public class GovernancePolicyServiceImpl implements GovernancePolicyService {
   }
 
   @Override
-  public void check(String accountId, List<String> policiesIdentifier) {
-    List<Policy> policies = policyDao.check(accountId, policiesIdentifier);
-    if (policies.size() != policiesIdentifier.size()) {
+  public void check(String accountId, List<String> policiesIdentifiers) {
+    List<Policy> policies = policyDao.check(accountId, policiesIdentifiers);
+    if (policies.size() != policiesIdentifiers.size()) {
       for (Policy it : policies) {
         log.info("{} {} ", it, it.getUuid());
-        policiesIdentifier.remove(it.getUuid());
+        policiesIdentifiers.remove(it.getUuid());
       }
-      if (policiesIdentifier.size() != 0) {
-        throw new InvalidRequestException("No such policies exist:" + policiesIdentifier.toString());
+      if (policiesIdentifiers.size() != 0) {
+        throw new InvalidRequestException("No such policies exist:" + policiesIdentifiers.toString());
       }
     }
   }

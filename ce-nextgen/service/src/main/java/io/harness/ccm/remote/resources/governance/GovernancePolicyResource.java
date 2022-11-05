@@ -7,24 +7,17 @@
 
 package io.harness.ccm.remote.resources.governance;
 
-import com.google.inject.name.Named;
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
-import io.harness.ccm.audittrails.events.PolicyCreateEvent;
-import io.harness.ccm.audittrails.events.PolicyDeleteEvent;
-import io.harness.ccm.audittrails.events.PolicyUpdateEvent;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_DELETE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_UPDATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
 import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_NAME;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import io.harness.outbox.api.OutboxService;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
-import io.harness.telemetry.Category;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
@@ -32,6 +25,9 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
+import io.harness.ccm.audittrails.events.PolicyCreateEvent;
+import io.harness.ccm.audittrails.events.PolicyDeleteEvent;
+import io.harness.ccm.audittrails.events.PolicyUpdateEvent;
 import io.harness.ccm.governance.faktory.FaktoryProducer;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
@@ -66,6 +62,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.PublicApi;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
@@ -75,6 +72,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -202,14 +200,14 @@ public class GovernancePolicyResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_NAME, policy.getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_CREATED,null,accountId, properties
-            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_CREATED, null, accountId, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(
 
-            Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-                      outboxService.save(new PolicyCreateEvent(accountId, policy.toDTO()));
-              return governancePolicyService.listName(accountId, policy.getName(), false);
-            })));
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new PolicyCreateEvent(accountId, policy.toDTO()));
+          return governancePolicyService.listName(accountId, policy.getName(), false);
+        })));
   }
 
   // Update a policy already made
@@ -244,10 +242,10 @@ public class GovernancePolicyResource {
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
     return ResponseDTO.newResponse(
-            Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-              outboxService.save(new PolicyUpdateEvent(accountId, policy.toDTO()));
-              return governancePolicyService.update(policy, accountId);
-            })));
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new PolicyUpdateEvent(accountId, policy.toDTO()));
+          return governancePolicyService.update(policy, accountId);
+        })));
   }
 
   @PUT
@@ -326,12 +324,13 @@ public class GovernancePolicyResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_NAME, governancePolicyService.listId(accountId, uuid, false).getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_DELETE,null,accountId, properties
-            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new PolicyDeleteEvent(accountId,governancePolicyService.listId(accountId, uuid, false) ));
-      return governancePolicyService.delete(accountId, uuid);
-    })));
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_DELETE, null, accountId, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new PolicyDeleteEvent(accountId, governancePolicyService.listId(accountId, uuid, false)));
+          return governancePolicyService.delete(accountId, uuid);
+        })));
   }
 
   // API to list all OOTB Policies
@@ -393,25 +392,17 @@ public class GovernancePolicyResource {
       log.info("Policy enforcement config id is {}", policyEnforcementUuid);
       PolicyEnforcement policyEnforcement = policyEnforcementService.get(policyEnforcementUuid);
       if (policyEnforcement == null) {
-        throw new InvalidRequestException("Invalid policyEnforcementId");
+        log.error(
+            "For policy enforcement setting {}: not found in db. Skipping enqueuing in faktory", policyEnforcementUuid);
+        return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().policyExecutionId(null).build());
       }
       PolicyCloudProviderType policyCloudProviderType = policyEnforcement.getCloudProvider();
-      if (policyEnforcement == null) {
-        log.error("No policy enforcement setting {} found in db. Skipping enqueuing in faktory", policyEnforcementUuid);
-        // TODO: Return simple response to dkron instead of empty for debugging purposes
-        return ResponseDTO.newResponse();
-      }
       accountId = policyEnforcement.getAccountId();
-      if (policyEnforcement.getCloudProvider() != PolicyCloudProviderType.AWS) {
-        log.error("Support for non AWS cloud providers is not present atm. Skipping enqueuing in faktory");
-        // TODO: Return simple response to dkron instead of empty for debugging purposes
-        return ResponseDTO.newResponse();
-      }
-
       if (policyEnforcement.getTargetAccounts() == null || policyEnforcement.getTargetAccounts().size() == 0) {
-        log.error("Need at least one target cloud accountId to work on. Skipping enqueuing in faktory");
-        // TODO: Return simple response to dkron instead of empty for debugging purposes
-        return ResponseDTO.newResponse();
+        log.error("For policy enforcement setting {}: need at least one target cloud accountId to work on. "
+                + "Skipping enqueuing in faktory",
+            policyEnforcementUuid);
+        return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().policyExecutionId(null).build());
       }
 
       // Step-2 Prep unique policy Ids set from this enforcement
@@ -426,10 +417,11 @@ public class GovernancePolicyResource {
           uniquePolicyIds.addAll(policyPack.getPoliciesIdentifier());
         }
       }
-      log.info("uniquePolicyIds: {}", uniquePolicyIds);
+      log.info("For policy enforcement setting {}: uniquePolicyIds: {}", policyEnforcementUuid, uniquePolicyIds);
       List<Policy> policiesList = governancePolicyService.list(accountId, new ArrayList<>(uniquePolicyIds));
       if (policiesList == null) {
-        log.error("No policies exists in mongo. Nothing to enqueue");
+        log.error("For policy enforcement setting {}: no policies exists in mongo. Nothing to enqueue",
+            policyEnforcementUuid);
         return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().policyExecutionId(null).build());
       }
       // Step-3 Figure out roleArn and externalId from the connector listv2 api call for all target accounts.
@@ -455,7 +447,8 @@ public class GovernancePolicyResource {
         page++;
       } while (response != null && isNotEmpty(response.getContent()));
 
-      log.info("Got connector data: {}", nextGenConnectorResponses);
+      log.info("For policy enforcement setting {}: Got connector data: {}", policyEnforcementUuid,
+          nextGenConnectorResponses);
 
       // Step-4 Enqueue in faktory
       for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
@@ -477,14 +470,14 @@ public class GovernancePolicyResource {
                       .build();
               Gson gson = new GsonBuilder().create();
               String json = gson.toJson(governanceJobDetailsAWS);
-              log.info("Enqueuing job in Faktory {}", json);
-              // TODO: Test bulk enqueue here
-              // jobType, jobQueue, json
+              log.info("For policy enforcement setting {}: Enqueuing job in Faktory {}", policyEnforcementUuid, json);
+              // Bulk enqueue in faktory can lead to difficulties in error handling and retry.
+              // order: jobType, jobQueue, json
               String jid = FaktoryProducer.Push(configuration.getGovernanceConfig().getAwsFaktoryJobType(),
                   configuration.getGovernanceConfig().getAwsFaktoryQueueName(), json);
-              log.info("Pushed job in Faktory: {}", jid);
+              log.info("For policy enforcement setting {}: Pushed job in Faktory: {}", policyEnforcementUuid, jid);
               // Make a record in Mongo
-              // TODO: Test bulk insert when bulk enqueue support is made
+              // TODO: We can bulk insert in mongo for all successfull faktory job pushes
               PolicyExecution policyExecution =
                   PolicyExecution.builder()
                       .accountId(accountId)
