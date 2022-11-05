@@ -107,7 +107,7 @@ public class ArtifactCollectionHandler implements Handler<ArtifactStream> {
   public void handle(ArtifactStream artifactStream) {
     try (AutoLogContext ignore2 = new ArtifactStreamLogContext(
              artifactStream.getUuid(), artifactStream.getArtifactStreamType(), OVERRIDE_ERROR)) {
-      // log.info("Received the artifact collection for ArtifactStream");
+      log.info("Received the artifact collection for ArtifactStream");
       executeInternal(artifactStream);
     }
   }

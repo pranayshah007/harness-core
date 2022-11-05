@@ -131,6 +131,7 @@ public class ArtifactCollectionServiceAsyncImpl implements ArtifactCollectionSer
       delegateTaskBuilder.setupAbstraction(Cd1SetupFields.APP_ID_FIELD, GLOBAL_APP_ID);
     }
 
+    log.info("Getting attributes for given artifactStreamType {}", artifactStreamType);
     if (CUSTOM.name().equals(artifactStreamType)) {
       ArtifactStreamAttributes artifactStreamAttributes =
           artifactCollectionUtils.renderCustomArtifactScriptString((CustomArtifactStream) artifactStream);
@@ -165,11 +166,13 @@ public class ArtifactCollectionServiceAsyncImpl implements ArtifactCollectionSer
         }
         return;
       }
+      log.info("Creating build source request");
 
       accountId = settingAttribute.getAccountId();
       buildSourceRequest =
           artifactCollectionUtils.getBuildSourceParameters(artifactStream, settingAttribute, true, true);
 
+      log.info("Build source request created for artifactStreamId {}", artifactStream.getUuid());
       // Set timeout.
       dataBuilder.parameters(new Object[] {buildSourceRequest}).timeout(DEFAULT_TIMEOUT);
       delegateTaskBuilder.tags(settingsService.getDelegateSelectors(settingAttribute));
