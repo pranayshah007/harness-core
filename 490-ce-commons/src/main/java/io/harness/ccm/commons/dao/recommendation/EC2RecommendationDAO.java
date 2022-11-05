@@ -70,6 +70,7 @@ public class EC2RecommendationDAO {
             .set(EC2RecommendationKeys.accountId, ec2Recommendation.getAccountId())
             .set(EC2RecommendationKeys.awsAccountId, ec2Recommendation.getAwsAccountId())
             .set(EC2RecommendationKeys.instanceId, ec2Recommendation.getInstanceId())
+            .set(EC2RecommendationKeys.vcpu, ec2Recommendation.getVcpu())
             .set(EC2RecommendationKeys.instanceName, ec2Recommendation.getInstanceName())
             .set(EC2RecommendationKeys.instanceType, ec2Recommendation.getInstanceType())
             .set(EC2RecommendationKeys.platform, ec2Recommendation.getPlatform())
@@ -92,6 +93,7 @@ public class EC2RecommendationDAO {
   public void upsertCeRecommendation(@NonNull String uuid, @NonNull String accountId, @NonNull String instanceId,
       @NonNull String awsAccountId, String instanceName, @Nullable Double monthlyCost, @Nullable Double monthlySaving,
       @NonNull Instant lastReceivedUntilAt) {
+    log.info("instanceName = {}", instanceName);
     dslContext.insertInto(CE_RECOMMENDATIONS)
         .set(CE_RECOMMENDATIONS.ACCOUNTID, accountId)
         .set(CE_RECOMMENDATIONS.ID, uuid)
