@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 public class EC2RecommendationService {
   @Inject private EC2RecommendationDAO ec2RecommendationDAO;
   @Inject private EC2RecommendationDTOConverter dtoConverter;
+  @Inject private EC2InstanceUtilizationService ec2InstanceUtilizationService;
 
   @Nullable
   public EC2RecommendationDTO getEC2RecommendationById(@NonNull final String accountIdentifier, String id) {
@@ -36,9 +37,9 @@ public class EC2RecommendationService {
     EC2RecommendationDTO ec2RecommendationDTO = dtoConverter.convertFromEntity(recommendation);
     log.info("final response after convert = {}", ec2RecommendationDTO);
     List<EC2InstanceUtilizationData> utilData =
-        ec2RecommendationDAO.fetchInstanceDate(accountIdentifier, ec2RecommendationDTO.getId());
-    log.info("utilData.size() = {}", utilData.size());
-    log.info("utilData = {}", utilData);
+        ec2InstanceUtilizationService.getEC2InstanceUtilizationData(accountIdentifier, ec2RecommendationDTO.getId());
+    log.info("utilDataa.size() = {}", utilData.size());
+    log.info("utilDataa = {}", utilData);
     return ec2RecommendationDTO;
   }
 }

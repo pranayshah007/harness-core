@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EC2RecommendationDTOConverter extends Converter<EC2RecommendationDTO, EC2Recommendation> {
   @Inject private static EC2InstanceDTOConverter instanceConverter = new EC2InstanceDTOConverter();
-
+  private static final String MODIFY = "Modify";
   public EC2RecommendationDTOConverter() {
     super(EC2RecommendationDTOConverter::convertToEntity, EC2RecommendationDTOConverter::convertToDto);
   }
@@ -42,6 +42,7 @@ public class EC2RecommendationDTOConverter extends Converter<EC2RecommendationDT
     return EC2RecommendationDTO.builder()
         .id(recommendation.getInstanceId())
         .awsAccountId(recommendation.getAwsAccountId())
+        .showTerminated(!(recommendation.getRightsizingType().equalsIgnoreCase(MODIFY)))
         .current(EC2InstanceDTO.builder()
                      .instanceFamily(recommendation.getInstanceType())
                      .memory(recommendation.getMemory())
