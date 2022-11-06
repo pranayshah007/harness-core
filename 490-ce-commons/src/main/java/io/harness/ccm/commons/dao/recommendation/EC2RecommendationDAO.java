@@ -44,6 +44,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class EC2RecommendationDAO {
   private static final int RETRY_COUNT = 3;
   private static final int SLEEP_DURATION = 100;
+  private static final int UTIL_DAYS = 30;
 
   @Inject private HPersistence hPersistence;
   @Inject private DSLContext dslContext;
@@ -123,6 +124,9 @@ public class EC2RecommendationDAO {
     log.info("fetching the Utilization_data for instanceId");
     return dslContext.selectFrom(UTILIZATION_DATA)
         .where(UTILIZATION_DATA.ACCOUNTID.eq(accountId).and(UTILIZATION_DATA.INSTANCEID.eq(instanceId)))
+        .orderBy(UTILIZATION_DATA.STARTTIME.desc().nullsLast())
+        .offset(0)
+        .limit(UTIL_DAYS)
         .fetchInto(EC2InstanceUtilizationData.class);
   }
 }
