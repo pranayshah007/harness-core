@@ -1116,6 +1116,7 @@ public class StateMachineExecutor implements StateInspectionListener {
       StateExecutionInstance parentInstance = context.getStateExecutionInstance();
       List<StateExecutionInstance> childFailedEnvInstances =
           wingsPersistence.createQuery(StateExecutionInstance.class)
+              .filter(StateExecutionInstanceKeys.appId, context.getAppId())
               .filter(StateExecutionInstanceKeys.parentInstanceId, parentInstance.getUuid())
               .filter(StateExecutionInstanceKeys.status, FAILED)
               .filter(StateExecutionInstanceKeys.stateType, ENV_STATE.getType())
@@ -1181,9 +1182,6 @@ public class StateMachineExecutor implements StateInspectionListener {
     StateExecutionInstance cloned = clone(context.getStateExecutionInstance(), null, nextState);
     if (executionEventAdvice.getNextStateDisplayName() != null) {
       cloned.setDisplayName(executionEventAdvice.getNextStateDisplayName());
-    }
-    if (executionEventAdvice.getRollbackPhaseName() != null) {
-      cloned.setRollbackPhaseName(executionEventAdvice.getRollbackPhaseName());
     }
     return triggerExecution(sm, cloned);
   }

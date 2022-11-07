@@ -1047,8 +1047,16 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     stateExecutionInstanceMap.entrySet()
         .stream()
-        .filter(entry -> entry.getValue().getStateType().equals(ENV_ROLLBACK_STATE.getType()))
-        .map(entry -> entry.getValue())
+        .filter(entry -> entry.getValue() != null)
+        .filter(entry -> {
+          StateExecutionData stateExecutionData = entry.getValue().fetchStateExecutionData();
+          if (!(stateExecutionData instanceof SkipStateExecutionData
+                  || stateExecutionData instanceof EnvStateExecutionData)) {
+            return false;
+          }
+          return ENV_ROLLBACK_STATE.getType().equals(entry.getValue().getStateType());
+        })
+        .map(Entry::getValue)
         .sorted(Comparator.comparingInt(instance -> {
           StateExecutionData stateExecutionData = instance.fetchStateExecutionData();
           if (stateExecutionData instanceof SkipStateExecutionData) {
