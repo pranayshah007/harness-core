@@ -85,13 +85,26 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
   private ElastiGroup calculateNewForUpsize(
       Capacity requestedCapacity, ElastiGroup setupElastigroup, boolean isFinalDeployStep) {
     final ElastiGroup result = setupElastigroup.clone();
+
+    result.getCapacity().setTarget(calculateTargetNumberOfInstancesForNew(requestedCapacity, result));
+
+    if (!isFinalDeployStep) {
+      forceElastigroupScale(result);
+    }
+
+    return result;
+  }
+
+  private int calculateTargetNumberOfInstancesForNew(Capacity requestedCapacity, ElastiGroup result)
+      throws InvalidRequestException {
     if (CapacitySpecType.COUNT.equals(requestedCapacity.getType())) {
       CountCapacitySpec spec = (CountCapacitySpec) requestedCapacity.getSpec();
 
       int requestedTarget = ParameterFieldHelper.getParameterFieldValue(spec.getCount());
       int setupTarget = result.getCapacity().getTarget();
 
-      result.getCapacity().setTarget(Math.min(requestedTarget, setupTarget));
+      return Math.min(requestedTarget, setupTarget);
+
     } else if (CapacitySpecType.PERCENTAGE.equals(requestedCapacity.getType())) {
       PercentageCapacitySpec spec = (PercentageCapacitySpec) requestedCapacity.getSpec();
 
@@ -99,17 +112,11 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
       int setupTarget = result.getCapacity().getTarget();
 
       int target = (int) Math.round((requestedPercentage * setupTarget) / 100.0);
+      return Math.max(target, 1);
 
-      result.getCapacity().setTarget(Math.max(target, 1));
     } else {
       throw new InvalidRequestException("Unknown capacity type: " + requestedCapacity.getType());
     }
-
-    if (!isFinalDeployStep) {
-      forceElastigroupScale(result);
-    }
-
-    return result;
   }
 
   private ElastiGroup calculateOldForDownsize(
@@ -121,30 +128,31 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
 
     if (isFinalDeployStep) {
       scaleDownElastigroup(result);
-    } else if (CapacitySpecType.COUNT.equals(requestedCapacity.getType())) {
-      final CountCapacitySpec spec = (CountCapacitySpec) requestedCapacity.getSpec();
-
-      int target = ParameterFieldHelper.getParameterFieldValue(spec.getCount());
-
+    } else {
+      int target = calculateTargetNumberOfInstancesForOld(requestedCapacity, result);
       result.getCapacity().setTarget(target);
       result.getCapacity().setMinimum(target);
       result.getCapacity().setMaximum(target);
+    }
+
+    return result;
+  }
+
+  private Integer calculateTargetNumberOfInstancesForOld(Capacity requestedCapacity, ElastiGroup result) {
+    if (CapacitySpecType.COUNT.equals(requestedCapacity.getType())) {
+      final CountCapacitySpec spec = (CountCapacitySpec) requestedCapacity.getSpec();
+
+      return ParameterFieldHelper.getParameterFieldValue(spec.getCount());
     } else if (CapacitySpecType.PERCENTAGE.equals(requestedCapacity.getType())) {
       final PercentageCapacitySpec spec = (PercentageCapacitySpec) requestedCapacity.getSpec();
 
       int requestedPercentage = Math.min(ParameterFieldHelper.getParameterFieldValue(spec.getPercentage()), 100);
       int setupTarget = result.getCapacity().getTarget();
 
-      int target = (int) Math.round((requestedPercentage * setupTarget) / 100.0);
-
-      result.getCapacity().setTarget(target);
-      result.getCapacity().setMinimum(target);
-      result.getCapacity().setMaximum(target);
+      return (int) Math.round((requestedPercentage * setupTarget) / 100.0);
     } else {
       throw new InvalidRequestException("Unknown capacity type: " + requestedCapacity.getType());
     }
-
-    return result;
   }
 
   private void scaleDownElastigroup(ElastiGroup result) {
