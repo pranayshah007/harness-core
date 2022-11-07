@@ -68,10 +68,7 @@ import static software.wings.beans.LogHelper.color;
 @NoArgsConstructor
 @Slf4j
 public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNGHandler {
-  @Inject private EcsTaskHelperBase ecsTaskHelperBase;
-  @Inject private EcsInfraConfigHelper ecsInfraConfigHelper;
   @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
-  private EcsInfraConfig ecsInfraConfig;
   private long timeoutInMillis;
 
   @Override
@@ -85,7 +82,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
     timeoutInMillis = elastigroupSetupCommandRequest.getTimeoutIntervalInMin() * 60000;
 //    ecsInfraConfig = elastigroupSetupCommandRequest.getEcsInfraConfig();
 
-    LogCallback deployLogCallback = ecsTaskHelperBase.getLogCallback(
+    LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
         iLogStreamingTaskClient, ElastigroupCommandUnitConstants.createSetup.toString(), true, commandUnitsProgress);
     try {
       // Handle canary and basic
