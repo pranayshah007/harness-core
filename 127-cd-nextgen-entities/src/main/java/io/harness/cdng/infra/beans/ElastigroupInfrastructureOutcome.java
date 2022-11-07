@@ -30,7 +30,6 @@ public class ElastigroupInfrastructureOutcome extends InfrastructureOutcomeAbstr
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
   String connectorRef;
-  ElastigroupConfiguration configuration;
 
   @Override
   public String getKind() {

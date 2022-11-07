@@ -27,6 +27,6 @@ public interface ElastigroupSpecParameters extends SpecParameters {
   @Nonnull
   @JsonIgnore
   default List<String> getCommandUnits() {
-    return Arrays.asList(ElastigroupCommandUnitConstants.fetchStartupScript.toString(), ElastigroupCommandUnitConstants.deploy.toString());
+    return Arrays.asList(ElastigroupCommandUnitConstants.fetchStartupScript.toString(), ElastigroupCommandUnitConstants.fetchElastigroupJson.toString(), ElastigroupCommandUnitConstants.deploy.toString());
   }
 }

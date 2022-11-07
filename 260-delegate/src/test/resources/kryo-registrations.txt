@@ -2306,6 +2306,11 @@
 573547:io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest
 573548:io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse
 573549:io.harness.delegate.beans.elastigroup.ElastigroupSetupResult
+573550:io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG
+573551:io.harness.delegate.exception.ElastigroupNGException
+573552:io.harness.delegate.task.elastigroup.response.SpotInstConfig
+573553:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse
+573554:io.harness.delegate.task.elastigroup.request.ElastigroupParametersFetchRequest
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

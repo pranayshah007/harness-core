@@ -158,7 +158,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
       }
       String newElastiGroupName = format("%s%d", prefix, elastiGroupVersion);
 
-      Map<String, Object> finalJson = elastigroupCommandTaskNGHelper.generateFinalJson(elastigroupSetupCommandRequest, newElastiGroupName);
+      String finalJson = elastigroupCommandTaskNGHelper.generateFinalJson(elastigroupSetupCommandRequest, newElastiGroupName);
 
       deployLogCallback.saveExecutionLog(format("Sending request to create Elastigroup with name: [%s]", newElastiGroupName));
       ElastiGroup elastiGroup =
@@ -212,7 +212,15 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
           LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
       ElastigroupSetupResult elastigroupSetupResult = ElastigroupSetupResult.builder()
-              .elstiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
+              .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
+              .newElastiGroup(elastiGroup)
+              .groupToBeDownsized(groupToDownsizeDuringDeploy)
+              .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
+              .isBlueGreen(elastigroupSetupCommandRequest.isBlueGreen())
+              .useCurrentRunningInstanceCount(((ElastigroupSetupCommandRequest) elastigroupCommandRequest).isUseCurrentRunningInstanceCount())
+              .currentRunningInstanceCount(elastigroupSetupCommandRequest.getCurrentRunningInstanceCount())
+              .maxInstanceCount(elastigroupSetupCommandRequest.getMaxInstanceCount())
+              .resizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy())
               .build();
 
       return ElastigroupSetupResponse.builder()

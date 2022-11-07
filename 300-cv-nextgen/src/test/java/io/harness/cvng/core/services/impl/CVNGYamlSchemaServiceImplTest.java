@@ -57,7 +57,7 @@ public class CVNGYamlSchemaServiceImplTest extends CvNextGenTestBase {
     // This is because of the dependency on PMS module. Above ticket is tracking the refactoring of it.
     String partialSchemaJson = Resources.toString(
         CVNGYamlSchemaServiceImplTest.class.getResource("/schema/DeploymentSteps/partialSchemaDTO.json"),
-        Charsets.UTF_8);
+        Charsets.UT]F_8);
     // String s = JsonUtils.asPrettyJson(partialSchemaDTO); // s -- string to be pasted in the .json file
     PartialSchemaDTO expectedPartialSchemaDTO = JsonUtils.asObject(partialSchemaJson, PartialSchemaDTO.class);
     assertThat(partialSchemaDTO.get(0)).isEqualTo(expectedPartialSchemaDTO);

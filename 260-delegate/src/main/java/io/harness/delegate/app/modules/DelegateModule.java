@@ -257,6 +257,7 @@ import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsGitFetchRunTask;
 import io.harness.delegate.task.ecs.EcsGitFetchTask;
 import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNG;
+import io.harness.delegate.task.elastigroup.ElastigroupParametersFetchTask;
 import io.harness.delegate.task.elastigroup.ElastigroupStartupScriptFetchRunTask;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
@@ -1925,6 +1926,7 @@ public class DelegateModule extends AbstractModule {
 
     //Elastigroup NG
     mapBinder.addBinding(TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG).toInstance(ElastigroupStartupScriptFetchRunTask.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG).toInstance(ElastigroupParametersFetchTask.class);
     MapBinder<String, ElastigroupCommandTaskNGHandler> elastigroupCommandTaskNGHandlerMapBinder =
               MapBinder.newMapBinder(binder(), String.class, ElastigroupCommandTaskNGHandler.class);
     elastigroupCommandTaskNGHandlerMapBinder.addBinding(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP.name())

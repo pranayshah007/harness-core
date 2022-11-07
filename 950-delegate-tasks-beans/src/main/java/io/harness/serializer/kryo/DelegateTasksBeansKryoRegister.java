@@ -540,9 +540,11 @@ import io.harness.delegate.task.ecs.response.EcsPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
+import io.harness.delegate.task.elastigroup.request.ElastigroupParametersFetchRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
+import io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse;
 import io.harness.delegate.task.gcp.GcpTaskType;
@@ -1855,6 +1857,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ElastigroupCommandTypeNG.class, 573550);
     kryo.register(ElastigroupNGException.class, 573551);
     kryo.register(io.harness.delegate.task.elastigroup.response.SpotInstConfig.class, 573552);
+    kryo.register(ElastigroupParametersFetchResponse.class, 573553);
+    kryo.register(ElastigroupParametersFetchRequest.class, 573554);
+
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);

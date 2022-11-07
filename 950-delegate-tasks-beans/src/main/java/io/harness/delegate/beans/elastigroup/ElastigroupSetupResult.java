@@ -27,5 +27,7 @@ public class ElastigroupSetupResult {
     private Integer maxInstanceCount;
     private ResizeStrategy resizeStrategy;
     private boolean isBlueGreen;
-    private String elstiGroupNamePrefix;
+    private String elastiGroupNamePrefix;
+    private boolean useCurrentRunningInstanceCount;
+    private Integer currentRunningInstanceCount;
 }
