@@ -131,12 +131,13 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
   }
 
   private String fetchEnvironmentIdentifier(JsonNode fieldValue) {
-    if (Objects.nonNull(fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT_REF).asText())) {
-      return fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT_REF).asText();
-    } else if (Objects.nonNull(fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT).asText())) {
-      return fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT).asText();
-    } else {
-      return null;
+    if (Objects.nonNull(fieldValue.get(INFRASTRUCTURE))) {
+      if (Objects.nonNull(fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT_REF))) {
+        return fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT_REF).asText();
+      } else if (Objects.nonNull(fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT))) {
+        return fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT).asText();
+      }
     }
+    return null;
   }
 }
