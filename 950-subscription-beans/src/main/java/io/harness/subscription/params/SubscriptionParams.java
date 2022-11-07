@@ -21,5 +21,6 @@ public class SubscriptionParams {
   private String paymentMethodId;
   private String moduleType;
   private String paymentFrequency;
+  private boolean premiumSupport;
   private List<ItemParams> items;
 }

@@ -189,6 +189,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         .customerId(customerId)
         .items(subscriptionItems)
         .paymentFrequency(subscriptionCreateParams.getPaymentFreq())
+        .premiumSupport(subscriptionCreateParams.isPremiumSupport())
         .build();
   }
 
@@ -218,16 +219,31 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionCreateParams.getCustomer());
     }
 
+    List<SubscriptionDetail> subscriptionDetails = subscriptionDetailRepository.findByAccountIdentifier(
+        accountIdentifier);
+
+    if(subscriptionCreateParams.isPremiumSupport()) {
+      if(subscriptionDetails.stream().anyMatch(subscriptionDetail -> !subscriptionDetail.isPremiumSupport())) {
+        throw new InvalidRequestException("Cannot create a module subscription without premium support if one exists with premium support.");
+      }
+    } else if(subscriptionDetails.stream().anyMatch(subscriptionDetail -> subscriptionDetail.isPremiumSupport())) {
+      throw new InvalidRequestException("Cannot create a module subscription with premium support if one exists without premium support.");
+    }
+
+    SubscriptionDetail moduleSubscription = subscriptionDetails
+            .stream()
+            .filter(subscriptionDetail -> subscriptionDetail.getModuleType() == subscriptionCreateParams.getModuleType())
+            .findFirst()
+            .get();
+
     // Not allowed for creation if active subscriptionId exists
-    SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findByAccountIdentifierAndModuleType(
-        accountIdentifier, subscriptionCreateParams.getModuleType());
-    if (subscriptionDetail != null) {
-      if (!subscriptionDetail.isIncomplete()) {
+    if (moduleSubscription != null) {
+      if (!moduleSubscription.isIncomplete()) {
         throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
       }
 
       // cancel incomplete subscription
-      cancelSubscription(subscriptionDetail.getAccountIdentifier(), subscriptionDetail.getSubscriptionId());
+      cancelSubscription(moduleSubscription.getAccountIdentifier(), moduleSubscription.getSubscriptionId());
     }
 
     // create Subscription
@@ -242,6 +258,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                           .status(subscription.getStatus())
                                           .latestInvoice(subscription.getLatestInvoice())
                                           .moduleType(subscriptionCreateParams.getModuleType())
+                                          .premiumSupport(subscriptionCreateParams.isPremiumSupport())
                                           .build());
     return subscription;
   }

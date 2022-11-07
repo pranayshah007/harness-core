@@ -50,6 +50,7 @@ public class SubscriptionDetail implements PersistentEntity, NGAccountAccess {
   protected String latestInvoice;
   protected Long cancelAt;
   protected Long canceledAt;
+  protected boolean premiumSupport;
   @CreatedBy protected EmbeddedUser createdBy;
   @LastModifiedBy protected EmbeddedUser lastUpdatedBy;
   @CreatedDate protected Long createdAt;
