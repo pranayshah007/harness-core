@@ -245,6 +245,7 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
     assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
   }
 
+  @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
   public void testExpand_withoutFromStage() throws IOException {
