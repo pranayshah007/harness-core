@@ -798,21 +798,29 @@ public class JenkinsImpl implements Jenkins {
    * @param jobname        job name
    * @return job path details.
    */
-  public JobPathDetails constructJobPathDetails(String jobname) {
+  private JobPathDetails constructJobPathDetails(String jobname) {
     String parentJobName = null;
     String parentJobUrl = null;
     String childJobName;
 
-    String[] jobNameSplit = jobname.split("/");
-    int parts = jobNameSplit.length;
-    if (parts > 1) {
-      parentJobUrl = constructParentJobPath(jobNameSplit);
-      parentJobName = jobNameSplit[parts - 2];
-      childJobName = jobNameSplit[parts - 1];
-    } else {
-      childJobName = jobNameSplit[0];
+    try {
+      String decodedJobName = URLDecoder.decode(jobname, "UTF-8");
+
+      String[] jobNameSplit = decodedJobName.split("/");
+      int parts = jobNameSplit.length;
+      if (parts > 1) {
+        parentJobUrl = constructParentJobPath(jobNameSplit);
+        parentJobName = jobNameSplit[parts - 2];
+        childJobName = jobNameSplit[parts - 1];
+      } else {
+        childJobName = decodedJobName;
+      }
+
+      return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
+
+    } catch (UnsupportedEncodingException e) {
+      throw new ArtifactServerException("Failure in decoding job name: " + ExceptionUtils.getMessage(e), e, USER);
     }
-    return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
   }
 
   /**
@@ -831,7 +839,7 @@ public class JenkinsImpl implements Jenkins {
   }
 
   @Data
-  public class JobPathDetails {
+  private class JobPathDetails {
     String parentJobUrl;
     String parentJobName;
     String childJobName;
