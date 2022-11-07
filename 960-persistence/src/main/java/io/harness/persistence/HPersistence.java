@@ -402,6 +402,17 @@ public interface HPersistence extends HealthMonitor {
   <T> PageResponse<T> querySecondary(Class<T> cls, PageRequest<T> req);
 
   /**
+   * Query. Read preference is set to analytics mongo
+   *
+   * @param <T> the generic type
+   * @param cls the cls
+   * @param req the req
+   * @return the page response
+   */
+
+  <T> PageResponse<T> queryAnalytics(Class<T> cls, PageRequest<T> req);
+
+  /**
    * Query page response.
    *
    * @param <T>          the type parameter
