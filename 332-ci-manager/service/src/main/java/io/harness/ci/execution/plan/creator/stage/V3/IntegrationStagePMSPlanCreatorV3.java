@@ -29,14 +29,14 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
-import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
-import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.TriggerType;
@@ -46,11 +46,13 @@ import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
+import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
+import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -67,6 +69,7 @@ import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -105,9 +108,9 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<YamlFi
         .build();
     PlanNodeBuilder builder =
         PlanNode.builder()
-            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
-            .name(stageNode.getName())
-            .identifier(stageNode.getIdentifier())
+            .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, config.getUuid()))
+            .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, config.getNodeName()))
+            .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, stageNode.getIdentifier()))
             .group(StepOutcomeGroup.STAGE.name())
             .stepParameters(stageParameters.build())
             .stepType(IntegrationStageStepPMS.STEP_TYPE)
@@ -118,25 +121,45 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<YamlFi
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
             .skipExpressionChain(false);
-    AdviserObtainment adviser = getBuild(ctx.getDependency());
-    if (adviser != null) {
-      builder.adviserObtainment(adviser);
+    // If strategy present then don't add advisers. Strategy node will take care of running the stage nodes.
+    if (config.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YAMLFieldNameConstants.STRATEGY)
+        == null) {
+      builder.adviserObtainments(getBuild(ctx.getDependency()));
     }
     return builder.build();
   }
 
-  private AdviserObtainment getBuild(Dependency dependency) {
+  @Override
+  public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, YamlField config) {
+    Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
+    YamlField stageYamlField = context.getCurrentField();
+    String nextNodeUuid = null;
+    if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
+        && context.getDependency().getMetadataMap().containsKey("nextId")) {
+      nextNodeUuid =
+          (String) kryoSerializer.asObject(context.getDependency().getMetadataMap().get("nextId").toByteArray());
+    }
+    if (StrategyUtilsV1.isWrappedUnderStrategy(context.getCurrentField())) {
+      stageYamlFieldMap = StrategyUtilsV1.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);
+    }
+    return GraphLayoutResponse.builder().layoutNodes(stageYamlFieldMap).build();
+  }
+
+  private List<AdviserObtainment> getBuild(Dependency dependency) {
+    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
         || !dependency.getMetadataMap().containsKey("nextId")) {
-      return null;
+      return adviserObtainments;
     }
 
     String nextId = (String) kryoSerializer.asObject(dependency.getMetadataMap().get("nextId").toByteArray());
-    return AdviserObtainment.newBuilder()
-        .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-        .setParameters(
-            ByteString.copyFrom(kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
-        .build();
+    adviserObtainments.add(
+        AdviserObtainment.newBuilder()
+            .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
+            .setParameters(ByteString.copyFrom(
+                kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
+            .build());
+    return adviserObtainments;
   }
 
   @Override
@@ -149,7 +172,9 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<YamlFi
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, YamlField config) {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
+    Map<String, ByteString> strategyMetadataMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
+    Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
 
@@ -161,12 +186,17 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<YamlFi
       createCodeBasePlanCreator(planCreationResponseMap, cloneCodebase, codebase, executionSource, specField.getUuid());
       metadataMap.put("codebase", ByteString.copyFrom(kryoSerializer.asBytes(codebase)));
     }
+    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
+        kryoSerializer, ctx, config.getUuid(), dependenciesNodeMap, strategyMetadataMap, getBuild(ctx.getDependency()));
+    dependenciesNodeMap.put(specField.getUuid(), specField);
     planCreationResponseMap.put(specField.getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(Dependencies.newBuilder()
-                              .putDependencies(specField.getUuid(), specField.getYamlPath())
+            .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                              .toBuilder()
                               .putDependencyMetadata(
                                   specField.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                              .putDependencyMetadata(
+                                  config.getUuid(), Dependency.newBuilder().putAllMetadata(strategyMetadataMap).build())
                               .build())
             .build());
     log.info("Successfully created plan for integration stage {}", config.getNodeName());
