@@ -309,6 +309,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .healthSourceIdentifier(simpleServiceLevelObjective.getHealthSourceIdentifier())
           .healthSourceName(
               getHealthSourceName(monitoredService, simpleServiceLevelObjective.getHealthSourceIdentifier()))
+          .sliType(((SimpleServiceLevelObjective) slo).getServiceLevelIndicatorType())
           .build();
     }
 
@@ -323,6 +324,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         .sloTargetType(serviceLevelObjective.getSloTarget().getType())
         .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
         .userJourneys(userJourneys)
+        .userJourneyName(userJourneys.get(0).getName())
         .tags(TagMapper.convertToMap(serviceLevelObjective.getTags()))
         .description(serviceLevelObjective.getDesc())
         .totalErrorBudget(totalErrorBudgetMinutes)
@@ -330,7 +332,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         .errorBudgetRemainingPercentage(sloHealthIndicator.getErrorBudgetRemainingPercentage())
         .burnRate(sloHealthIndicator.getErrorBudgetBurnRate())
         .noOfActiveAlerts(serviceLevelObjective.getNotificationRuleRefs().size())
-        .type(serviceLevelObjective.getType());
+        .sloType(serviceLevelObjective.getType());
   }
 
   private String getHealthSourceName(MonitoredServiceDTO monitoredServiceDTO, String healthSourceRef) {

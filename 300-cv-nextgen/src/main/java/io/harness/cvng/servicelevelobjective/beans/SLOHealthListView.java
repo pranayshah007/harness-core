@@ -28,15 +28,17 @@ public class SLOHealthListView {
   String environmentName;
   Map<String, String> tags;
   String description;
+  String userJourneyName;
   @NotNull List<UserJourneyDTO> userJourneys;
   @NotNull double burnRate;
   @NotNull double errorBudgetRemainingPercentage;
   @NotNull int errorBudgetRemaining;
   @NotNull int totalErrorBudget;
   @NotNull SLOTargetType sloTargetType;
+  ServiceLevelIndicatorType sliType;
+  @NotNull ServiceLevelObjectiveType sloType;
   @NotNull double sloTargetPercentage;
   @NotNull int noOfActiveAlerts;
-  ServiceLevelObjectiveType type;
   @NotNull
   public ErrorBudgetRisk getErrorBudgetRisk() {
     return ErrorBudgetRisk.getFromPercentage(errorBudgetRemainingPercentage);
