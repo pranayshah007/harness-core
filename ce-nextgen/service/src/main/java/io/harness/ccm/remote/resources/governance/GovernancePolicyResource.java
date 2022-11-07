@@ -542,6 +542,7 @@ public class GovernancePolicyResource {
                                               .targetAccount(governanceJobEnqueueDTO.getTargetAccountId())
                                               .targetRegions(Arrays.asList(governanceJobEnqueueDTO.getTargetRegion()))
                                               .executionLogBucketType("")
+                                              .resourceCount(0)
                                               .executionStatus(PolicyExecutionStatusType.ENQUEUED)
                                               .build();
         enqueuedPolicyExecutionIds.add(policyExecutionService.save(policyExecution));

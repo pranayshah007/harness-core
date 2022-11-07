@@ -49,6 +49,7 @@ public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAw
   @Schema(description = "targetAccounts") String targetAccount;
   @Schema(description = "targetRegions") List<String> targetRegions;
   @Schema(description = "executionLogPath") String executionLogPath;
+  @Schema(description = "resourceCount") long resourceCount;
   @Schema(description = "executionLogBucketType") String executionLogBucketType;
   @Schema(description = "executionStatus") PolicyExecutionStatusType executionStatus;
   @Schema(description = "executionCompletedAt") Long executionCompletedAt;
@@ -84,6 +85,7 @@ public class PolicyExecution implements PersistentEntity, UuidAware, CreatedAtAw
         .targetAccount(getTargetAccount())
         .targetRegions(getTargetRegions())
         .executionLogPath(getExecutionLogPath())
+        .resourceCount(getResourceCount())
         .executionLogBucketType(getExecutionLogBucketType())
         .executionCompletedAt(getExecutionCompletedAt())
         .orgIdentifier(getOrgIdentifier())
