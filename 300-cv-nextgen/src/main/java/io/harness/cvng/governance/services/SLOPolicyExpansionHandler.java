@@ -56,12 +56,16 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
     String projectId = metadata.getProjectId();
     ProjectParams projectParams =
         ProjectParams.builder().accountIdentifier(accountId).projectIdentifier(projectId).orgIdentifier(orgId).build();
-    String serviceRef = fetchServiceIdentifier(fieldValue, metadata);
-    String environmentRef = fetchEnvironmentIdentifier(fieldValue);
-    if (Objects.isNull(serviceRef) || Objects.isNull(environmentRef)) {
+    String serviceRef;
+    String environmentRef;
+    try {
+      serviceRef = fetchServiceIdentifier(fieldValue, metadata);
+      environmentRef = CVNGStepUtils.getEnvRefNode(new YamlNode(fieldValue)).asText();
+    } catch (Exception ex) {
+      log.error("Invalid pipeline:  " + metadata.getYaml() + ex);
       return ExpansionResponse.builder()
           .success(false)
-          .errorMessage("Invalid yaml. Service config or service config reference from other stage not found.")
+          .errorMessage("Invalid yaml. Service config or Environment config from other stage not found.")
           .build();
     }
     ServiceEnvironmentParams serviceEnvironmentParams = builderWithProjectParams(projectParams)
@@ -125,7 +129,7 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
         return CVNGStepUtils.getServiceRefNode(propagateFromStage).asText();
       } catch (IOException e) {
         log.error(e + "pipeline: " + metadata.getYaml());
-        return null;
+        throw new IllegalArgumentException(e);
       }
     }
   }
