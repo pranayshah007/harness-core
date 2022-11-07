@@ -166,8 +166,8 @@ public class StrategyUtils {
   public Map<String, GraphLayoutNode> modifyStageLayoutNodeGraph(YamlField yamlField, String nextNodeUuid) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     EdgeLayoutList edgeLayoutList;
-    String planNodeId =
-        yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getProperty(YamlNode.UUID_FIELD_NAME);
+    YamlNode strategyNode = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode();
+    String planNodeId = strategyNode.getProperty(YamlNode.UUID_FIELD_NAME);
     if (nextNodeUuid == null) {
       edgeLayoutList = EdgeLayoutList.newBuilder().addCurrentNodeChildren(planNodeId).build();
     } else {
@@ -175,17 +175,9 @@ public class StrategyUtils {
     }
 
     StrategyType strategyType = StrategyType.LOOP;
-    if (yamlField.getNode()
-            .getField(YAMLFieldNameConstants.STRATEGY)
-            .getNode()
-            .getProperty(StrategyType.MATRIX.displayName)
-        != null) {
+    if (strategyNode.getProperty(StrategyType.MATRIX.displayName) != null) {
       strategyType = StrategyType.MATRIX;
-    } else if (yamlField.getNode()
-                   .getField(YAMLFieldNameConstants.STRATEGY)
-                   .getNode()
-                   .getProperty(StrategyType.PARALLELISM.displayName)
-        != null) {
+    } else if (strategyNode.getProperty(StrategyType.PARALLELISM.displayName) != null) {
       strategyType = StrategyType.PARALLELISM;
     }
     stageYamlFieldMap.put(yamlField.getNode().getUuid(),
