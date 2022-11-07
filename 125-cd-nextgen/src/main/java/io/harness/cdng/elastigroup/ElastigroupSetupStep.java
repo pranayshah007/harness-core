@@ -101,7 +101,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .accountId(accountId)
             .spotInstConfig(spotInstConfig)
                     .elastiGroupJson(elastigroupStepExecutorParams.getElastigroupParameters())
-            .ecsCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
+            .elastigroupCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
                     .startupScript(elastigroupStepCommonHelper.getBase64EncodedStartupScript(ambiance, elastigroupStepExecutorParams.getStartupScript()))
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))

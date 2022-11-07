@@ -42,7 +42,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 public class ElastigroupSetupCommandRequest implements ElastigroupCommandRequest, ExpressionReflectionUtils.NestedAnnotationResolver {
 
   String accountId;
-  ElastigroupCommandTypeNG ecsCommandType;
+  ElastigroupCommandTypeNG elastigroupCommandType;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   String elastiGroupJson;
@@ -54,7 +54,6 @@ public class ElastigroupSetupCommandRequest implements ElastigroupCommandRequest
   String image;
   boolean blueGreen;
   ResizeStrategy resizeStrategy;
-  @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig ecsInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) SpotInstConfig spotInstConfig;
   @NonFinal @Expression(ALLOW_SECRETS) List<EncryptedDataDetail> spotinstEncryptionDetails;

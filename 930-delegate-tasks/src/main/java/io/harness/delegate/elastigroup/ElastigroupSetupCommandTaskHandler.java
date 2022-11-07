@@ -88,58 +88,6 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
     LogCallback deployLogCallback = ecsTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, ElastigroupCommandUnitConstants.createSetup.toString(), true, commandUnitsProgress);
     try {
-//      String ecsTaskDefinitionManifestContent = ecsCanaryDeployRequest.getEcsTaskDefinitionManifestContent();
-//      String ecsServiceDefinitionManifestContent = ecsCanaryDeployRequest.getEcsServiceDefinitionManifestContent();
-//      List<String> ecsScalableTargetManifestContentList =
-//          ecsCanaryDeployRequest.getEcsScalableTargetManifestContentList();
-//      List<String> ecsScalingPolicyManifestContentList =
-//          ecsCanaryDeployRequest.getEcsScalingPolicyManifestContentList();
-//
-//      RegisterTaskDefinitionRequest.Builder registerTaskDefinitionRequestBuilder =
-//          ecsCommandTaskHelper.parseYamlAsObject(
-//              ecsTaskDefinitionManifestContent, RegisterTaskDefinitionRequest.serializableBuilderClass());
-//      RegisterTaskDefinitionRequest registerTaskDefinitionRequest = registerTaskDefinitionRequestBuilder.build();
-//      CreateServiceRequest.Builder createServiceRequestBuilder = ecsCommandTaskHelper.parseYamlAsObject(
-//          ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass());
-//
-//      deployLogCallback.saveExecutionLog(
-//          format("Creating Task Definition with family %s %n", registerTaskDefinitionRequest.family()), LogLevel.INFO);
-//
-//      RegisterTaskDefinitionResponse registerTaskDefinitionResponse = ecsCommandTaskHelper.createTaskDefinition(
-//          registerTaskDefinitionRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-//      TaskDefinition taskDefinition = registerTaskDefinitionResponse.taskDefinition();
-//      String taskDefinitionName = taskDefinition.family() + ":" + taskDefinition.revision();
-//      String taskDefinitionArn = taskDefinition.taskDefinitionArn();
-//
-//      deployLogCallback.saveExecutionLog(
-//          format("Created Task Definition %s with Arn %s..%n", taskDefinitionName, taskDefinitionArn), LogLevel.INFO);
-//
-//      // replace cluster and task definition
-//      createServiceRequestBuilder.cluster(ecsInfraConfig.getCluster())
-//          .taskDefinition(registerTaskDefinitionResponse.taskDefinition().taskDefinitionArn())
-//          .build();
-//
-//      CreateServiceRequest createServiceRequest = createServiceRequestBuilder.build();
-//
-//      // update canary details in create service request
-//      String canaryServiceName = createServiceRequest.serviceName() + ecsCanaryDeployRequest.getEcsServiceNameSuffix();
-//      createServiceRequest =
-//          createServiceRequest.toBuilder()
-//              .serviceName(canaryServiceName)
-//              .desiredCount(Integer.parseInt(Long.toString(ecsCanaryDeployRequest.getDesiredCountOverride())))
-//              .build();
-//
-//      ecsCommandTaskHelper.createCanaryService(createServiceRequest, ecsScalableTargetManifestContentList,
-//          ecsScalingPolicyManifestContentList, ecsInfraConfig, deployLogCallback, timeoutInMillis);
-//
-//      EcsCanaryDeployResult ecsCanaryDeployResult =
-//          EcsCanaryDeployResult.builder()
-//              .region(ecsInfraConfig.getRegion())
-//              .ecsTasks(ecsCommandTaskHelper.getRunningEcsTasks(ecsInfraConfig.getAwsConnectorDTO(),
-//                  ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion()))
-//              .canaryServiceName(canaryServiceName)
-//              .build();
-
       // Handle canary and basic
       String prefix = format("%s__", elastigroupSetupCommandRequest.getElastigroupNamePrefix());
       int elastiGroupVersion = 1;

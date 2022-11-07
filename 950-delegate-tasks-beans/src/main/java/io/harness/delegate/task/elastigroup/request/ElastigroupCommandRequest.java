@@ -30,10 +30,9 @@ import java.util.List;
 @OwnedBy(HarnessTeam.CDP)
 public interface ElastigroupCommandRequest extends TaskParameters, ExecutionCapabilityDemander {
   String getAccountId();
-  @NotEmpty ElastigroupCommandTypeNG getEcsCommandType();
+  @NotEmpty ElastigroupCommandTypeNG getElastigroupCommandType();
   String getCommandName();
   CommandUnitsProgress getCommandUnitsProgress();
-  EcsInfraConfig getEcsInfraConfig();
   Integer getTimeoutIntervalInMin();
 
   @Override
