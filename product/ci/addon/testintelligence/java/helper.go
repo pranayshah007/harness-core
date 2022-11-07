@@ -78,8 +78,13 @@ func DetectPkgs(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]string, err
 	if err != nil {
 		return plist, err
 	}
-	// Create a list with all *.java and *.kt file paths
+	scalaFiles, err := getFiles(fmt.Sprintf("%s/**/*.scala", wp))
+	if err != nil {
+		return plist, err
+	}
+	// Create a list with all *.java, *.kt and *.scala file paths
 	files = append(files, kotlinFiles...)
+	files = append(files, scalaFiles...)
 	fmt.Println("files: ", files)
 	m := make(map[string]struct{})
 	for _, f := range files {
