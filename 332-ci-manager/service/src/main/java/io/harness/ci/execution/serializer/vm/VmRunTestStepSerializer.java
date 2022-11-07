@@ -13,7 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
-import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.serializer.SerializerUtils;
@@ -33,6 +32,7 @@ import io.harness.yaml.core.variables.OutputNGVariable;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -140,6 +140,8 @@ public class VmRunTestStepSerializer {
             "paths", stepName, identifier, runTestsStepInfo.getReports().getValue().getPaths(), false);
         runTestStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
       }
+    } else {
+      runTestStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(Collections.singletonList("**/*.xml")).build());
     }
 
     return runTestStepBuilder.build();

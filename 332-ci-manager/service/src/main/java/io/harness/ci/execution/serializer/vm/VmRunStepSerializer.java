@@ -31,6 +31,7 @@ import io.harness.yaml.core.variables.OutputNGVariable;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -88,6 +89,9 @@ public class VmRunStepSerializer {
             RunTimeInputHandler.resolveListParameter("paths", "run", identifier, junitTestReport.getPaths(), false);
         runStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
       }
+    } else {
+      List<String> resolvedReport = Collections.singletonList("**/*.xml");
+      runStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
     }
 
     return runStepBuilder.build();

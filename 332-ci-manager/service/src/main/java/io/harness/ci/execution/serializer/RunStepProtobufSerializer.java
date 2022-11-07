@@ -34,6 +34,8 @@ import io.harness.yaml.core.variables.OutputNGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -80,6 +82,9 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
         Report report = Report.newBuilder().setType(Report.Type.JUNIT).addAllPaths(resolvedReport).build();
         runStepBuilder.addReports(report);
       }
+    } else {
+      Report report = Report.newBuilder().setType(Report.Type.JUNIT).addAllPaths(Collections.singleton("**/*.xml")).build();
+      runStepBuilder.addReports(report);
     }
 
     if (isNotEmpty(runStepInfo.getOutputVariables().getValue())) {

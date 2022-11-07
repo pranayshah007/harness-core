@@ -33,6 +33,8 @@ import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.OutputNGVariable;
 
 import com.google.inject.Inject;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -141,6 +143,9 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
         Report report = Report.newBuilder().setType(Report.Type.JUNIT).addAllPaths(resolvedReport).build();
         runTestsStepBuilder.addReports(report);
       }
+    } else {
+      Report report = Report.newBuilder().setType(Report.Type.JUNIT).addAllPaths(Collections.singleton("**/*.xml")).build();
+      runTestsStepBuilder.addReports(report);
     }
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runTestsStepInfo.getDefaultTimeout());
 
