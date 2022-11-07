@@ -63,6 +63,8 @@ public class VmRunStepSerializer {
     }
 
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runStepInfo.getShell());
+    String gradleEnv = "\nexport GRADLE_USER_HOME=/harness/harnesscache\n";
+    earlyExitCommand += gradleEnv;
     command = earlyExitCommand + command;
     VmRunStepBuilder runStepBuilder = VmRunStep.builder()
                                           .image(image)
