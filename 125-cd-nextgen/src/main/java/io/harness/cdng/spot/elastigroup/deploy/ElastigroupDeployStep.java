@@ -25,8 +25,6 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
@@ -46,8 +44,7 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Ela
 
   public static final String UNIT_NAME = "Execute";
 
-  @Inject private KryoSerializer kryoSerializer;
-  @Inject private StepHelper stepHelper;
+  @Inject private ElastigroupDeployStepHelper stepHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -66,7 +63,8 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Ela
         (ElastigroupDeployStepParameters) stepParameters.getSpec();
     validateStepParameters(elastigroupDeployStepParameters);
 
-    ElastigroupDeployTaskParameters taskParameters = ElastigroupDeployTaskParameters.builder().build();
+    ElastigroupDeployTaskParameters taskParameters =
+        stepHelper.getElastigroupDeployTaskParameters(elastigroupDeployStepParameters, ambiance);
 
     TaskData taskData =
         TaskData.builder()
@@ -76,11 +74,10 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Ela
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
             .build();
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.singletonList(UNIT_NAME),
+    return stepHelper.prepareTaskRequest(ambiance, taskData, Collections.singletonList(UNIT_NAME),
         TaskType.ELASTIGROUP_DEPLOY.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(
-            emptyIfNull(getParameterFieldValue(elastigroupDeployStepParameters.getDelegateSelectors()))),
-        stepHelper.getEnvironmentType(ambiance));
+            emptyIfNull(getParameterFieldValue(elastigroupDeployStepParameters.getDelegateSelectors()))));
   }
 
   @Override
