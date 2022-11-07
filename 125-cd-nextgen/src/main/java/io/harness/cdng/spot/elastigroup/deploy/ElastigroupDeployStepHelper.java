@@ -13,7 +13,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.capacity.Capacity;
 import io.harness.cdng.common.capacity.CapacitySpecType;
+import io.harness.cdng.common.capacity.CountCapacitySpec;
+import io.harness.cdng.common.capacity.PercentageCapacitySpec;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskParameters;
@@ -46,9 +49,9 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
     ElastigroupSetupDataOutcome elastigroupSetupOutcome = getElastigroupSetupOutcome(ambiance);
 
     ElastiGroup newElastigroup = calculateNewForUpsize(
-        stepParameters.getNewService(), elastigroupSetupOutcome.getNewElastiGroupOriginalConfig().clone());
+        stepParameters.getNewService(), elastigroupSetupOutcome.getNewElastiGroupOriginalConfig());
     ElastiGroup oldElastigroup = calculateOldForDownsize(
-        stepParameters.getOldService(), elastigroupSetupOutcome.getOldElastiGroupOriginalConfig().clone());
+        stepParameters.getOldService(), elastigroupSetupOutcome.getOldElastiGroupOriginalConfig());
 
     return ElastigroupDeployTaskParameters.builder()
         .spotConnector(getSpotConnector(ambiance, infrastructureOutcome))
@@ -58,21 +61,60 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
         .build();
   }
 
-  private ElastiGroup calculateNewForUpsize(Capacity capacity, ElastiGroup elastiGroup) {
-    if (CapacitySpecType.COUNT.equals(capacity.getType())) {
-    } else if (CapacitySpecType.PERCENTAGE.equals(capacity.getType())) {
+  private ElastiGroup calculateNewForUpsize(Capacity requestedCapacity, ElastiGroup setupElastigroup) {
+    final ElastiGroup result = setupElastigroup.clone();
+    if (CapacitySpecType.COUNT.equals(requestedCapacity.getType())) {
+      CountCapacitySpec spec = (CountCapacitySpec) requestedCapacity.getSpec();
+
+      int requestedTarget = ParameterFieldHelper.getParameterFieldValue(spec.getCount());
+      int setupTarget = result.getCapacity().getTarget();
+
+      result.getCapacity().setTarget(Math.min(requestedTarget, setupTarget));
+    } else if (CapacitySpecType.PERCENTAGE.equals(requestedCapacity.getType())) {
+      PercentageCapacitySpec spec = (PercentageCapacitySpec) requestedCapacity.getSpec();
+
+      int requestedPercentage = Math.min(ParameterFieldHelper.getParameterFieldValue(spec.getPercentage()), 100);
+      int setupTarget = result.getCapacity().getTarget();
+
+      int target = (int) Math.round((requestedPercentage * setupTarget) / 100.0);
+
+      result.getCapacity().setTarget(Math.max(target, 1));
     } else {
-      throw new InvalidRequestException("Unknown capacity type: " + capacity.getType());
+      throw new InvalidRequestException("Unknown capacity type: " + requestedCapacity.getType());
     }
-    return elastiGroup;
+    return result;
   }
 
-  private ElastiGroup calculateOldForDownsize(Capacity capacity, ElastiGroup elastiGroup) {
-    if (elastiGroup == null) {
+  private ElastiGroup calculateOldForDownsize(Capacity requestedCapacity, ElastiGroup setupElastigroup) {
+    final ElastiGroup result = setupElastigroup.clone();
+    if (result == null) {
       return null;
     }
 
-    return elastiGroup;
+    if (CapacitySpecType.COUNT.equals(requestedCapacity.getType())) {
+      final CountCapacitySpec spec = (CountCapacitySpec) requestedCapacity.getSpec();
+
+      int target = ParameterFieldHelper.getParameterFieldValue(spec.getCount());
+
+      result.getCapacity().setTarget(target);
+      result.getCapacity().setMinimum(target);
+      result.getCapacity().setMaximum(target);
+    } else if (CapacitySpecType.PERCENTAGE.equals(requestedCapacity.getType())) {
+      final PercentageCapacitySpec spec = (PercentageCapacitySpec) requestedCapacity.getSpec();
+
+      int requestedPercentage = Math.min(ParameterFieldHelper.getParameterFieldValue(spec.getPercentage()), 100);
+      int setupTarget = result.getCapacity().getTarget();
+
+      int target = (int) Math.round((requestedPercentage * setupTarget) / 100.0);
+
+      result.getCapacity().setTarget(target);
+      result.getCapacity().setMinimum(target);
+      result.getCapacity().setMaximum(target);
+    } else {
+      throw new InvalidRequestException("Unknown capacity type: " + requestedCapacity.getType());
+    }
+
+    return result;
   }
 
   private ElastigroupSetupDataOutcome getElastigroupSetupOutcome(Ambiance ambiance) {
