@@ -118,12 +118,12 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
   }
 
   private ElastigroupSetupDataOutcome getElastigroupSetupOutcome(Ambiance ambiance) {
-    OptionalSweepingOutput optionalInfraOutput = executionSweepingOutputService.resolveOptional(
+    OptionalSweepingOutput optionalSetupDataOutput = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ELASTIGROUP_SETUP_OUTCOME));
-    if (!optionalInfraOutput.isFound()) {
-      throw new InvalidRequestException("No infrastructure output found.");
+    if (!optionalSetupDataOutput.isFound()) {
+      throw new InvalidRequestException("No elastigroup setup output found.");
     }
-    return (ElastigroupSetupDataOutcome) optionalInfraOutput;
+    return (ElastigroupSetupDataOutcome) optionalSetupDataOutput;
   }
 
   private List<EncryptedDataDetail> getEncryptionDetails(
