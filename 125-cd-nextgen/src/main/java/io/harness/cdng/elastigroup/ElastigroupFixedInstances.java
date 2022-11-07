@@ -20,11 +20,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDP)
 @Value
+@Data
 @Builder
 @JsonTypeName("Fixed")
 @TypeAlias("ElastigroupFixedInstances")
