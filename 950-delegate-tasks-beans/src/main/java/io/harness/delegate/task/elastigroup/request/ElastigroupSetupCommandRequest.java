@@ -54,7 +54,6 @@ public class ElastigroupSetupCommandRequest
   String image;
   boolean blueGreen;
   ResizeStrategy resizeStrategy;
-  @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig ecsInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) SpotInstConfig spotInstConfig;
   @NonFinal @Expression(ALLOW_SECRETS) List<EncryptedDataDetail> spotinstEncryptionDetails;
