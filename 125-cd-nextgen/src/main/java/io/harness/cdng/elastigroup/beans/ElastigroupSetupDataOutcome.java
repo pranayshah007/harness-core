@@ -34,5 +34,5 @@ public class ElastigroupSetupDataOutcome implements Outcome, ExecutionSweepingOu
   private boolean isBlueGreen;
   private ElastiGroup newElastiGroupOriginalConfig;
   private ElastiGroup oldElastiGroupOriginalConfig;
-  private String elstiGroupNamePrefix;
+  private String elastiGroupNamePrefix;
 }

@@ -61,5 +61,11 @@ public enum ElastigroupCommandUnitConstants {
     public String toString() {
       return "Run Task";
     }
+  },
+  fetchElastigroupJson {
+    @Override
+    public String toString() {
+      return "Fetch ELastigroup Json";
+    }
   }
 }

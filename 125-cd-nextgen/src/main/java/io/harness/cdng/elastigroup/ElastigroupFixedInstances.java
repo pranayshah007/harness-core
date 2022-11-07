@@ -17,6 +17,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -29,6 +30,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expressio
 
 @OwnedBy(CDP)
 @Value
+@Data
 @Builder
 @JsonTypeName("Fixed")
 @TypeAlias("ElastigroupFixedInstances")
