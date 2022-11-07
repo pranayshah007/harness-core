@@ -164,7 +164,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
-import io.harness.redis.intc.DelegateCacheService;
+import io.harness.redis.DelegateCacheService;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;

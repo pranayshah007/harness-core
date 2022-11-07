@@ -196,10 +196,8 @@ import io.harness.queue.QueueController;
 import io.harness.redis.CompatibleFieldSerializerCodec;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
-import io.harness.redis.impl.DelegateCacheServiceImpl;
-import io.harness.redis.impl.DelegateRedissonCacheManagerImpl;
-import io.harness.redis.intc.DelegateCacheService;
-import io.harness.redis.intc.DelegateRedissonCacheManager;
+import io.harness.redis.DelegateCacheServiceImpl;
+import io.harness.redis.DelegateCacheService;
 import io.harness.remote.client.ClientMode;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.scheduler.SchedulerConfig;
@@ -229,6 +227,7 @@ import io.harness.secrets.setupusage.builders.TriggerSetupUsageBuilder;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.seeddata.SampleDataProviderService;
 import io.harness.seeddata.SampleDataProviderServiceImpl;
+import io.harness.serializer.DelegateServiceCacheRegistrar;
 import io.harness.serializer.YamlUtils;
 import io.harness.service.CgEventHelper;
 import io.harness.service.DelegateServiceDriverModule;
@@ -1168,7 +1167,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DelegateTaskServiceClassic.class).to(DelegateTaskServiceClassicImpl.class);
     bind(DelegateNgTokenService.class).to(DelegateNgTokenServiceImpl.class);
     bind(DelegateCacheService.class).to(DelegateCacheServiceImpl.class);
-    bind(DelegateRedissonCacheManager.class).to(DelegateRedissonCacheManagerImpl.class);
+    //bind(DelegateRedissonCacheManager.class).to(DelegateRedissonCacheManagerImpl.class);
 
     bind(CgCdLicenseUsageService.class).to(CgCdLicenseUsageServiceImpl.class);
 
@@ -1247,6 +1246,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     buildServiceMapBinder.addBinding(AzureArtifactsPATConfig.class).toInstance(AzureArtifactsBuildService.class);
 
     install(new ManagerCacheRegistrar());
+    install(new DelegateServiceCacheRegistrar());
     install(new FactoryModuleBuilder().implement(Jenkins.class, JenkinsImpl.class).build(JenkinsFactory.class));
     install(SecretManagementCoreModule.getInstance());
     install(new InstanceSyncMonitoringModule());

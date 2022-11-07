@@ -13,7 +13,7 @@ import static javax.cache.expiry.Duration.THIRTY_MINUTES;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.HarnessCacheManager;
-import io.harness.redis.intc.DelegateRedissonCacheManager;
+import io.harness.cache.DelegateRedissonCacheManager;
 import io.harness.version.VersionInfoManager;
 
 import software.wings.beans.ApiKeyEntry;
@@ -32,12 +32,11 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.cache.Cache;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
-import org.redisson.api.RLocalCachedMap;
 
 @OwnedBy(PL)
 public class ManagerCacheRegistrar extends AbstractModule {
@@ -52,7 +51,7 @@ public class ManagerCacheRegistrar extends AbstractModule {
   public static final String WHITELIST_CACHE = "whitelistCache";
   public static final String PRIMARY_CACHE_PREFIX = "primary_";
   public static final String SECRET_CACHE = "secretCache";
-  public static final String TASK_CACHE = "taskCache";
+
 
   @Provides
   @Named(AUTH_TOKEN_CACHE)
@@ -133,14 +132,7 @@ public class ManagerCacheRegistrar extends AbstractModule {
         CreatedExpiryPolicy.factoryOf(THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
   }
 
-  @Provides
-  @Named(TASK_CACHE)
-  @Singleton
-  public RLocalCachedMap<String, AtomicInteger> getTaskCache(
-      DelegateRedissonCacheManager cacheManager, VersionInfoManager versionInfoManager) {
-    return cacheManager.getCache(TASK_CACHE, String.class, AtomicInteger.class,
-        CreatedExpiryPolicy.factoryOf(THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
-  }
+
 
   @Override
   protected void configure() {
@@ -172,15 +164,10 @@ public class ManagerCacheRegistrar extends AbstractModule {
     mapBinder.addBinding(SECRET_CACHE).to(Key.get(new TypeLiteral<Cache<String, EncryptedDataDetails>>() {
     }, Names.named(SECRET_CACHE)));
 
-    MapBinder<String, RLocalCachedMap<?, ?>> rmapBinder =
-            MapBinder.newMapBinder(binder(), TypeLiteral.get(String.class), new TypeLiteral<RLocalCachedMap<?, ?>>() {});
-    rmapBinder.addBinding(TASK_CACHE).to(Key.get(new TypeLiteral<RLocalCachedMap<String, AtomicInteger>>() {
-    }, Names.named(TASK_CACHE)));
   }
 
   private void registerRequiredBindings() {
     requireBinding(HarnessCacheManager.class);
     requireBinding(VersionInfoManager.class);
-    requireBinding(DelegateRedissonCacheManager.class);
   }
 }

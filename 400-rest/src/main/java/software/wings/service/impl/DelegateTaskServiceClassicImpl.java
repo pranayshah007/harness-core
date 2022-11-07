@@ -35,8 +35,9 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_N
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_VALIDATION;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import static io.harness.serializer.DelegateServiceCacheRegistrar.TASK_CACHE;
 import static software.wings.app.ManagerCacheRegistrar.SECRET_CACHE;
-import static software.wings.app.ManagerCacheRegistrar.TASK_CACHE;
+
 import static software.wings.expression.SecretManagerModule.EXPRESSION_EVALUATOR_EXECUTOR;
 import static software.wings.service.impl.AssignDelegateServiceImpl.PIPELINE;
 import static software.wings.service.impl.AssignDelegateServiceImpl.STAGE;
@@ -57,6 +58,7 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.beans.FeatureName;
+import io.harness.redis.DelegateCacheService;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.capability.CapabilityRequirement;
 import io.harness.capability.CapabilityTaskSelectionDetails;
@@ -118,6 +120,7 @@ import io.harness.network.SafeHttpCall;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
+import io.harness.cache.DelegateRedissonCacheManager;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -201,7 +204,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
@@ -279,10 +281,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private DelegateGlobalAccountController delegateGlobalAccountController;
   @Inject @Named(SECRET_CACHE) Cache<String, EncryptedDataDetails> secretsCache;
-  @Inject @Named(TASK_CACHE) RLocalCachedMap<String, AtomicInteger> taskCache;
   @Inject @Named(EXPRESSION_EVALUATOR_EXECUTOR) ExecutorService expressionEvaluatorExecutor;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
   @Inject protected HarnessCacheManager harnessCacheManager;
+  @Inject protected DelegateRedissonCacheManager delegateRedissonCacheManager;
+  @Inject private DelegateCacheService delegateCacheService;
+
 
   private static final SecureRandom random = new SecureRandom();
 
@@ -481,10 +485,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           }
           throw new NoEligibleDelegatesInAccountException(errorMessage.toString());
         }
-        Map<String, AtomicInteger> val = taskCache.getCachedMap();
-        AtomicInteger count = val.get(eligibleListOfDelegates.get(0));
-        count.incrementAndGet();
-        taskCache.putIfAbsent(eligibleListOfDelegates.get(0),count);
+
 
         // shuffle the eligible delegates to evenly distribute the load
         Collections.shuffle(eligibleListOfDelegates);
@@ -1101,7 +1102,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             DelegateTaskServiceClassicImpl.class, delegateTask.getAccountId(), taskId, delegateId,
             delegateTask.getStageId(), taskType);
       }
-
+      delegateCacheService.updateDelegateTaskCache(delegateTask.getDelegateId(),true);
       delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
 
       return resolvePreAssignmentExpressions(task, SecretManagerMode.APPLY);

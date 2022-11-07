@@ -1,4 +1,4 @@
-package io.harness.redis.intc;
+package io.harness.cache;
 
 import org.redisson.api.RLocalCachedMap;
 

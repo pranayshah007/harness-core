@@ -13,9 +13,12 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_RESPONSE;
 
 import static java.lang.System.currentTimeMillis;
+import static io.harness.serializer.DelegateServiceCacheRegistrar.TASK_CACHE;
 
+import com.google.inject.name.Named;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
+import io.harness.redis.DelegateCacheService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
@@ -39,6 +42,7 @@ import io.harness.service.intfc.DelegateTaskService;
 import io.harness.version.VersionInfoManager;
 import io.harness.waiter.WaitNotifyEngine;
 
+import org.redisson.api.RLocalCachedMap;
 import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -46,6 +50,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -66,6 +71,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   @Inject private RemoteObserverInformer remoteObserverInformer;
 
   @Inject private DelegateMetricsService delegateMetricsService;
+  @Inject private DelegateCacheService delegateCacheService;
 
   @Override
   public void touchExecutingTasks(String accountId, String delegateId, List<String> delegateTaskIds) {
@@ -151,7 +157,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     if (taskQuery != null) {
       persistence.deleteOnServer(taskQuery);
     }
-
+    delegateCacheService.updateDelegateTaskCache(delegateTask.getDelegateId(),false);
     delegateMetricsService.recordDelegateTaskResponseMetrics(delegateTask, response, DELEGATE_TASK_RESPONSE);
   }
 
