@@ -404,7 +404,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import dev.morphia.query.CriteriaContainerImpl;
+import dev.morphia.query.CriteriaContainer;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
@@ -1737,7 +1737,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     query.field(WorkflowExecutionKeys.startTs).greaterThanOrEq(sixtyDays);
     query.project("serviceIds", true);
     FindOptions findOptions = new FindOptions();
-    findOptions.modifier("$hint", "accountId_startTs_serviceIds");
+    findOptions.hintString("accountId_startTs_serviceIds");
     findOptions.readPreference(ReadPreference.secondaryPreferred());
     List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
     Set<String> flattenedSvcSet = new HashSet<>();
@@ -4629,8 +4629,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     // SubGraphFilterId is the instance (host element) Id.
     // For older execution this will be null.
-    CriteriaContainerImpl nullCriteria = query.criteria(StateExecutionInstanceKeys.subGraphFilterId).doesNotExist();
-    CriteriaContainerImpl existsCriteria =
+    CriteriaContainer nullCriteria = query.criteria(StateExecutionInstanceKeys.subGraphFilterId).doesNotExist();
+    CriteriaContainer existsCriteria =
         query.criteria(StateExecutionInstanceKeys.subGraphFilterId).in(selectedInstances);
     query.or(nullCriteria, existsCriteria);
     return query;
@@ -5687,9 +5687,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     addressInefficientQueries(workflowExecutionQuery);
 
     if (isNotEmpty(workflowExecution.getInfraMappingIds())) {
-      findOptions.modifier("$hint", "appid_status_workflowid_infraMappingIds_createdat");
+      findOptions.hintString("appid_status_workflowid_infraMappingIds_createdat");
     } else {
-      findOptions.modifier("$hint", "appid_workflowid_status_createdat");
+      findOptions.hintString("appid_workflowid_status_createdat");
     }
     return workflowExecutionQuery.order("-createdAt").get(findOptions);
   }
@@ -5718,12 +5718,12 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     if (isNotEmpty(infraMappingList)) {
       if (isInfraBasedArtifact) {
-        findOptions.modifier("$hint", "lastInfraMappingSearch");
+        findOptions.hintString("lastInfraMappingSearch");
       } else {
-        findOptions.modifier("$hint", "appid_status_workflowid_infraMappingIds_createdat");
+        findOptions.hintString("appid_status_workflowid_infraMappingIds_createdat");
       }
     } else {
-      findOptions.modifier("$hint", "appid_workflowid_status_createdat");
+      findOptions.hintString("appid_workflowid_status_createdat");
     }
     return workflowExecutionQuery.order("-createdAt").get(findOptions);
   }

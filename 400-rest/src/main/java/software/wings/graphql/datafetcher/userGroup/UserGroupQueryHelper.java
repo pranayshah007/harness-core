@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import dev.morphia.query.CriteriaContainerImpl;
+import dev.morphia.query.CriteriaContainer;
 import dev.morphia.query.FieldEnd;
 import dev.morphia.query.Query;
 
@@ -51,7 +51,7 @@ public class UserGroupQueryHelper {
 
     Query<UserGroup> memberIdsQuery = populateAccountFilter(UserGroup.class);
 
-    CriteriaContainerImpl memberIdsCriteria = null;
+    CriteriaContainer memberIdsCriteria = null;
 
     for (QLUserGroupFilter filter : filters) {
       if (filter.getUser() != null) {
@@ -89,7 +89,7 @@ public class UserGroupQueryHelper {
     }
 
     Query<UserGroup> userGroupsQuery = populateAccountFilter(UserGroup.class);
-    CriteriaContainerImpl userGroupsCriteria = userGroupsQuery.criteria("_id").in(userGroups);
+    CriteriaContainer userGroupsCriteria = userGroupsQuery.criteria("_id").in(userGroups);
     if (memberIdsCriteria == null) {
       return;
     }

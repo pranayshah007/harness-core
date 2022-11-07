@@ -26,6 +26,7 @@ import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.encryption.Scope;
+import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;

@@ -440,7 +440,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     }
 
     FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
-    findOptions.modifier("$hint", "instance_index7");
+    findOptions.hintString("instance_index7");
     Instance instance = query.get(findOptions);
     if (instance == null) {
       return timestamp;
