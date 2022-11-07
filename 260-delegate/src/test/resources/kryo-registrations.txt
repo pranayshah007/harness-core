@@ -207,8 +207,6 @@
 2012:com.google.api.services.monitoring.v3.model.Distribution
 2013:com.google.api.services.monitoring.v3.model.BucketOptions
 2014:com.google.api.services.monitoring.v3.model.Exponential
-2015:com.mongodb.BasicDBList
-2016:com.mongodb.BasicDBObject
 3001:io.harness.exception.VerificationOperationException
 3002:io.harness.exception.ServiceNowException
 3003:io.harness.encryption.SecretRefData
