@@ -432,7 +432,7 @@ public class GovernancePolicyResource {
               .types(Arrays.asList(ConnectorType.CE_AWS))
               .ccmConnectorFilter(CcmConnectorFilter.builder()
                                       .featuresEnabled(Arrays.asList(CEFeatures.GOVERNANCE))
-                                      .awsAccountId(policyEnforcement.getTargetAccounts())
+                                      .awsAccountIds(policyEnforcement.getTargetAccounts())
                                       .build())
               .build();
       connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);

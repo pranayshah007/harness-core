@@ -313,8 +313,12 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
   private void populateAwsFilters(Criteria criteria, CcmConnectorFilter ccmConnectorFilter) {
     if (ccmConnectorFilter.getAwsAccountId() != null) {
       Set<String> unionOfArrays = new HashSet<>();
-      unionOfArrays.addAll(Arrays.asList(ccmConnectorFilter.getAwsAccountId())); // For backword compatibility
-      unionOfArrays.addAll(ccmConnectorFilter.getAwsAccountIds());
+      if (ccmConnectorFilter.getAwsAccountId() != null) {
+        unionOfArrays.addAll(Arrays.asList(ccmConnectorFilter.getAwsAccountId())); // For backword compatibility
+      }
+      if (ccmConnectorFilter.getAwsAccountIds() != null) {
+        unionOfArrays.addAll(ccmConnectorFilter.getAwsAccountIds());
+      }
       populateInFilter(criteria, CEAwsConfigKeys.awsAccountId, Arrays.asList(unionOfArrays.toArray()));
     }
   }
