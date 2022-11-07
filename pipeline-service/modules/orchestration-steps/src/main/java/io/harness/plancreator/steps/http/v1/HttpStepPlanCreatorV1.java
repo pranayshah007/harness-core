@@ -71,8 +71,8 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
 
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getId(),
-        field.getName(), dependenciesNodeMap, metadataMap, buildAdviser(ctx.getDependency()));
+    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
+        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, metadataMap, buildAdviser(ctx.getDependency()));
 
     StepElementParameters parameters =
         StepElementParameters.builder()

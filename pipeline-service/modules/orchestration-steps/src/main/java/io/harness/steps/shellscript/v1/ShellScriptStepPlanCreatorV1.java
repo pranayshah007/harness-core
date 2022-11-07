@@ -71,8 +71,8 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
     StepParameters stepParameters = ((PMSStepInfo) stepNode.getStepSpecType()).getStepParameters(stepNode, null, ctx);
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getId(),
-        field.getName(), dependenciesNodeMap, metadataMap, buildAdviser(ctx.getDependency()));
+    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
+        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, metadataMap, buildAdviser(ctx.getDependency()));
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stepNode.getUuid()))

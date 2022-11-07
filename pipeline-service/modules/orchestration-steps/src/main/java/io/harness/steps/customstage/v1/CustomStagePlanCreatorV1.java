@@ -82,8 +82,8 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     dependenciesNodeMap.put(stepsField.getNode().getUuid(), stepsField);
 
     // adding support for strategy
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getId(),
-        field.getName(), dependenciesNodeMap, metadataMap, getBuild(ctx.getDependency()));
+    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
+        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, metadataMap, getBuild(ctx.getDependency()));
 
     planCreationResponseMap.put(stepsField.getNode().getUuid(),
         PlanCreationResponse.builder()
