@@ -18,9 +18,9 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "PolicyExecutionFilter", description = "This has the query to list the PolicyExecution")
 public class PolicyExecutionFilter {
   @Schema(description = "accountId") String accountId;
-  @Schema(description = "Account Name") List<String> accountName;
+  @Schema(description = "Account Name") String targetAccount;
   @Schema(description = "region") List<String> region;
-  @Schema(description = "cloudProvider") String cloudProvider;
+  @Schema(description = "cloudProvider") PolicyCloudProviderType cloudProvider;
   @Schema(description = "policyName") List<String> policyName;
   @Schema(description = "policySetName") List<String> policyEnforcementId;
   @Schema(description = "Time") List<CCMTimeFilter> time;
@@ -28,10 +28,10 @@ public class PolicyExecutionFilter {
   @Schema(description = "offset") int offset;
 
   @Builder
-  public PolicyExecutionFilter(String accountId, List<String> accountName, List<String> region, List<String> policyName,
-      String cloudProvider, List<String> policyEnforcementId, List<CCMTimeFilter> time, int limit, int offset) {
+  public PolicyExecutionFilter(String accountId, String accountName, List<String> region, List<String> policyName,
+                               PolicyCloudProviderType cloudProvider, List<String> policyEnforcementId, List<CCMTimeFilter> time, int limit, int offset) {
     this.accountId = accountId;
-    this.accountName = accountName;
+    this.targetAccount = accountName;
     this.region = region;
     this.policyName = policyName;
     this.cloudProvider = cloudProvider;

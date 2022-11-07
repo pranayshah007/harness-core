@@ -58,7 +58,12 @@ public class PolicyDAO {
       policiesOOTB.field(PolicyId.cloudProvider).equal(governancePolicyFilter.getCloudProvider());
       policiesCustom.field(PolicyId.cloudProvider).equal(governancePolicyFilter.getCloudProvider());
     }
+    if(governancePolicyFilter.getPolicyIds()!=null)
+    {
+      policiesOOTB.field(PolicyId.uuid).in(governancePolicyFilter.getPolicyIds());
+      policiesCustom.field(PolicyId.uuid).in(governancePolicyFilter.getPolicyIds());
 
+    }
     if (governancePolicyFilter.getIsOOTB() != null) {
       log.info("IsOOTB IS NOT NULL");
       if (governancePolicyFilter.getIsOOTB()) {
@@ -143,7 +148,6 @@ public class PolicyDAO {
     }
     log.info("Updated policy: {} {} {}", policy.getUuid(), hPersistence.update(query, updateOperations), query);
     hPersistence.update(query, updateOperations);
-    //    return query.asList().get(0);
     return query.asList().get(0);
   }
 

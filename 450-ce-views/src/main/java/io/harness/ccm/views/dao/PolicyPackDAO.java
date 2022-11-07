@@ -11,6 +11,7 @@ import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyEnforcement;
 import io.harness.ccm.views.entities.PolicyPack;
 import io.harness.ccm.views.entities.PolicyPack.PolicySetId;
+import io.harness.ccm.views.entities.PolicyPackFilter;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 
@@ -51,8 +52,8 @@ public class PolicyPackDAO {
     Query<PolicyPack> query = hPersistence.createQuery(PolicyPack.class)
                       .field(PolicySetId.accountId)
                       .equal(policyPack.getAccountId())
-                      .field(PolicySetId.name)
-                      .equal(policyPack.getName());
+                      .field(PolicySetId.uuid)
+                      .equal(policyPack.getUuid());
     UpdateOperations<PolicyPack> updateOperations =
         hPersistence.createUpdateOperations(PolicyPack.class);
                if(policyPack.getName()!=null) {
@@ -88,7 +89,8 @@ public class PolicyPackDAO {
                              .equal(name)
                              .asList());
       return policyPacks.get(0);
-    } catch (IndexOutOfBoundsException e) {
+    }
+    catch (IndexOutOfBoundsException e) {
       log.error("No such policy pack exists,{} accountId{} name {} {}", e, accountId, name, create);
       if (create) {
         log.info("returning null");
@@ -145,7 +147,7 @@ public class PolicyPackDAO {
     return policyPacks;
   }
 
-  public List<PolicyPack> list(String accountId, PolicyPack policyPack) {
+  public List<PolicyPack> list(String accountId, PolicyPackFilter policyPack) {
     Query<PolicyPack> policyPacksOOTB = hPersistence.createQuery(PolicyPack.class)
                                        .field(PolicySetId.accountId)
                                        .equal("")
@@ -154,6 +156,12 @@ public class PolicyPackDAO {
                            .field(PolicySetId.accountId)
                            .equal(accountId)
                            .order(Sort.descending(PolicyEnforcement.PolicyEnforcementId.lastUpdatedAt));
+
+    if(policyPack.getPolicyPackIds()!=null)
+    {
+      policyPacksOOTB.field(PolicySetId.uuid).in(policyPack.getPolicyPackIds());
+      policyPacks.field(PolicySetId.uuid).in(policyPack.getPolicyPackIds());
+    }
     if(policyPack.getCloudProvider()!=null)
     {
       policyPacksOOTB.field(PolicySetId.cloudProvider).equal(policyPack.getCloudProvider());

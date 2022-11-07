@@ -56,8 +56,8 @@ public class PolicyExecutionDAO {
                                        .field(PolicyExecutionKeys.accountId)
                                        .equal(policyExecutionFilter.getAccountId());
     log.info("Added accountId filter");
-    if (policyExecutionFilter.getAccountName() != null) {
-      query.field(PolicyExecutionKeys.targetAccount).in(policyExecutionFilter.getAccountName());
+    if (policyExecutionFilter.getTargetAccount() != null) {
+      query.field(PolicyExecutionKeys.targetAccount).equal(policyExecutionFilter.getTargetAccount());
       log.info("Added target account filter");
     }
     if (policyExecutionFilter.getPolicyName() != null) {

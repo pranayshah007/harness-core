@@ -8,6 +8,7 @@
 package io.harness.ccm.views.service;
 
 import io.harness.ccm.views.entities.PolicyPack;
+import io.harness.ccm.views.entities.PolicyPackFilter;
 
 import java.util.List;
 
@@ -17,7 +18,7 @@ public interface PolicyPackService {
   PolicyPack update(PolicyPack policyPack);
   PolicyPack listName(String accountId, String name, boolean create);
   PolicyPack listId(String accountId, String uuid, boolean create);
-  List<PolicyPack> list(String accountId, PolicyPack policyPack);
+  List<PolicyPack> list(String accountId, PolicyPackFilter policyPack);
   void check( List<String> policyPackIdentifier);
   boolean deleteOOTB(String uuid);
   List<PolicyPack> listPacks(String accountId, List<String> policyPackIDs);

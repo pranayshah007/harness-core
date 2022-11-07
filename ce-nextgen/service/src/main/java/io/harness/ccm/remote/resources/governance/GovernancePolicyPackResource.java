@@ -27,8 +27,10 @@ import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
 import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_PACK_NAME;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyPackDTO;
+import io.harness.ccm.views.dto.CreatePolicyPackFilterDTO;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyPack;
+import io.harness.ccm.views.entities.PolicyPackFilter;
 import io.harness.ccm.views.service.GovernancePolicyService;
 import io.harness.ccm.views.service.PolicyPackService;
 import io.harness.exception.InvalidRequestException;
@@ -191,7 +193,7 @@ public class GovernancePolicyPackResource {
     PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId(accountId);
-    policyPackService.listName(accountId, policyPack.getName(), false);
+    policyPackService.listId(accountId, policyPack.getUuid(), false);
     policyService.check(accountId, policyPack.getPoliciesIdentifier());
     policyPackService.update(policyPack);
     HashMap<String, Object> properties = new HashMap<>();
@@ -227,7 +229,7 @@ public class GovernancePolicyPackResource {
     PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
     policyPack.toDTO();
     policyPack.setAccountId("");
-    policyPackService.listName("", policyPack.getName(), false);
+    policyPackService.listId("", policyPack.getUuid(), false);
     policyService.check("", policyPack.getPoliciesIdentifier());
     policyPackService.update(policyPack);
     return ResponseDTO.newResponse(policyPack);
@@ -260,7 +262,7 @@ public class GovernancePolicyPackResource {
   }
 
   @POST
-  @Path("policypack/list")
+  @Path("policyPack/list")
   @ApiOperation(value = "list all policy packs", nickname = "listPolicyPacks")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(operationId = "listPolicyPacks", description = "list Policy Packs ",
@@ -274,12 +276,12 @@ public class GovernancePolicyPackResource {
   listPolicyPack(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
-          description = "Request body containing policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
+          description = "Request body containing policy pack object") @Valid CreatePolicyPackFilterDTO createPolicyPackFilterDTO) {
     // rbacHelper.checkPolicyPackPermission(accountId, null, null);
-    if (createPolicyPackDTO == null) {
+    if (createPolicyPackFilterDTO == null) {
       throw new InvalidRequestException("Request payload is malformed");
     }
-    PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
+    PolicyPackFilter policyPack = createPolicyPackFilterDTO.getPolicyPackFilter();
     return ResponseDTO.newResponse(policyPackService.list(accountId, policyPack));
   }
 

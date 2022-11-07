@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.PolicyPackDAO;
 import io.harness.ccm.views.entities.Policy;
 import io.harness.ccm.views.entities.PolicyPack;
+import io.harness.ccm.views.entities.PolicyPackFilter;
 import io.harness.ccm.views.service.PolicyPackService;
 
 import com.google.inject.Inject;
@@ -57,7 +58,7 @@ public class PolicyPackServiceImpl implements PolicyPackService {
   }
 
   @Override
-  public List<PolicyPack> list(String accountId,PolicyPack policyPack) {
+  public List<PolicyPack> list(String accountId, PolicyPackFilter policyPack) {
     { return policyPackDAO.list(accountId,policyPack); }
   }
 

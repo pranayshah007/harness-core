@@ -242,7 +242,7 @@ public class GovernancePolicyResource {
     }
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
-    governancePolicyService.listName(accountId, policy.getName(), false);
+    governancePolicyService.listId(accountId, policy.getUuid(), false);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_NAME, policy.getName());
@@ -278,7 +278,7 @@ public class GovernancePolicyResource {
     }
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
-    governancePolicyService.listName("", policy.getName(), false);
+    governancePolicyService.listId("", policy.getUuid(), false);
     return ResponseDTO.newResponse(governancePolicyService.update(policy, ""));
   }
   // Internal API for deletion of OOTB policies
@@ -368,6 +368,7 @@ public class GovernancePolicyResource {
     log.info("assigned {} {}", query.getAccountId(), query.getIsOOTB());
     return ResponseDTO.newResponse(governancePolicyService.list(query));
   }
+
 
   @POST
   @Path("enqueue")

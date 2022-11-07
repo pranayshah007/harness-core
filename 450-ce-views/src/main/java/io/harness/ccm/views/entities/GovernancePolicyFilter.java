@@ -17,6 +17,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -27,17 +29,17 @@ public class GovernancePolicyFilter {
   @Schema(description = "isOOTBPolicy") Boolean isOOTB;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
-  @Schema(description = NGCommonEntityConstants.RESOURCE) String resource;
   @Schema(description = NGCommonEntityConstants.TAGS) String tags;
   @Schema(description = "cloudProvider") String cloudProvider;
+  @Schema(description = "policyIds") List<String> policyIds;
   @Schema(description = "isStablePolicy")Boolean  isStablePolicy;
 
 
   @Builder
-  public GovernancePolicyFilter(String accountId, String cloudProvider, Boolean isOOTB, String resource) {
+  public GovernancePolicyFilter(String accountId, String cloudProvider, Boolean isOOTB, List<String> policyIds) {
     this.accountId = accountId;
     this.cloudProvider = cloudProvider;
     this.isOOTB = isOOTB;
-    this.resource=resource;
+    this.policyIds=policyIds;
   }
 }
