@@ -111,6 +111,7 @@ import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -849,6 +850,18 @@ public class IntegrationStageUtils {
       return disabled == null || !disabled.getNode().getCurrJsonNode().asBoolean();
     }
     return true;
+  }
+
+  public static ExecutionSource buildExecutionSourceV2(
+      PlanCreationContext ctx, CodeBase codeBase, ConnectorUtils connectorUtils, String identifier) {
+    if (codeBase == null) {
+      return null;
+    }
+    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
+    ExecutionTriggerInfo triggerInfo = planCreationContextValue.getMetadata().getTriggerInfo();
+    TriggerPayload triggerPayload = planCreationContextValue.getTriggerPayload();
+    return buildExecutionSource(triggerInfo, triggerPayload, identifier, codeBase.getBuild(),
+        codeBase.getConnectorRef().getValue(), connectorUtils, planCreationContextValue, codeBase);
   }
 
   public static Long getStageTtl(CILicenseService ciLicenseService, String accountId, Infrastructure infrastructure) {

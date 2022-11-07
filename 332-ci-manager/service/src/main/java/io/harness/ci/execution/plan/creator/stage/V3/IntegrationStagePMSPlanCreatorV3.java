@@ -16,12 +16,11 @@ import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.ExecutionSource;
-import io.harness.beans.execution.ManualExecutionSource;
-import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
 import io.harness.ci.states.IntegrationStageStepPMS;
@@ -37,7 +36,11 @@ import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStoreType;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.contracts.plan.TriggerType;
+import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
@@ -47,6 +50,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -58,6 +62,7 @@ import io.harness.yaml.extended.ci.codebase.Build.BuildBuilder;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
+import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -74,6 +79,9 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CI)
 public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<YamlField> {
   @Inject private KryoSerializer kryoSerializer;
+  @Inject private ConnectorUtils connectorUtils;
+  private static final String BRANCH_EXPRESSION = "<+trigger.branch>";
+  public static final String PR_EXPRESSION = "<+trigger.prNumber>";
 
   @Override
   public Class<YamlField> getFieldClass() {
@@ -147,8 +155,10 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<YamlFi
 
     boolean cloneCodebase = IntegrationStageUtils.shouldClone(specField);
     CodeBase codebase = getCodebase(ctx);
+    ExecutionSource executionSource = IntegrationStageUtils.buildExecutionSourceV2(
+        ctx, codebase, connectorUtils, IdentifierGeneratorUtils.getId(config.getNodeName()));
     if (codebase != null) {
-      createCodeBasePlanCreator(planCreationResponseMap, cloneCodebase, codebase, specField.getUuid());
+      createCodeBasePlanCreator(planCreationResponseMap, cloneCodebase, codebase, executionSource, specField.getUuid());
       metadataMap.put("codebase", ByteString.copyFrom(kryoSerializer.asBytes(codebase)));
     }
     planCreationResponseMap.put(specField.getUuid(),
@@ -164,15 +174,8 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<YamlFi
   }
 
   private void createCodeBasePlanCreator(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      boolean cloneCodebase, CodeBase codeBase, String childNode) {
+      boolean cloneCodebase, CodeBase codeBase, ExecutionSource executionSource, String childNode) {
     if (cloneCodebase) {
-      String branchName = null;
-      Build build = RunTimeInputHandler.resolveBuild(codeBase.getBuild());
-      if (build.getType() == BuildType.BRANCH) {
-        ParameterField<String> branch = ((BranchBuildSpec) build.getSpec()).getBranch();
-        branchName = RunTimeInputHandler.resolveStringParameter("branch", "Git Clone", "identifier", branch, false);
-      }
-      ExecutionSource executionSource = ManualExecutionSource.builder().branch(branchName).build();
       List<PlanNode> codeBasePlanNodeList =
           CodebasePlanCreator.createPlanForCodeBaseV2(codeBase, kryoSerializer, executionSource, childNode);
       Collections.reverse(codeBasePlanNodeList);
@@ -189,17 +192,11 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<YamlFi
     GitSyncBranchContext gitSyncBranchContext = deserializeGitSyncBranchContext(ctx.getGitSyncBranchContext());
     switch (pipelineStoreType) {
       case REMOTE:
-        BuildBuilder builder =
-            Build.builder()
-                .type(BuildType.BRANCH)
-                .spec(BranchBuildSpec.builder()
-                          .branch(ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getBranch()))
-                          .build());
         return CodeBase.builder()
             .uuid(generateUuid())
             .connectorRef(ParameterField.createValueField(ctx.getMetadata().getMetadata().getPipelineConnectorRef()))
             .repoName(ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getRepoName()))
-            .build(ParameterField.createValueField(builder.build()))
+            .build(ParameterField.createValueField(getBuild(ctx)))
             .depth(ParameterField.createValueField(GIT_CLONE_MANUAL_DEPTH))
             .prCloneStrategy(ParameterField.createValueField(null))
             .sslVerify(ParameterField.createValueField(null))
@@ -209,12 +206,37 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<YamlFi
     }
   }
 
-  public GitSyncBranchContext deserializeGitSyncBranchContext(ByteString byteString) {
+  private GitSyncBranchContext deserializeGitSyncBranchContext(ByteString byteString) {
     if (isEmpty(byteString)) {
       return null;
     }
     byte[] bytes = byteString.toByteArray();
     return isEmpty(bytes) ? null : (GitSyncBranchContext) kryoSerializer.asInflatedObject(bytes);
+  }
+
+  // TODO: do it properly
+  private Build getBuild(PlanCreationContext ctx) {
+    GitSyncBranchContext gitSyncBranchContext = deserializeGitSyncBranchContext(ctx.getGitSyncBranchContext());
+    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
+    ExecutionTriggerInfo triggerInfo = planCreationContextValue.getMetadata().getTriggerInfo();
+    TriggerPayload triggerPayload = planCreationContextValue.getTriggerPayload();
+    BuildBuilder builder =
+        Build.builder()
+            .type(BuildType.BRANCH)
+            .spec(BranchBuildSpec.builder()
+                      .branch(ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getBranch()))
+                      .build());
+    if (triggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
+      if (triggerPayload.getParsedPayload().hasPr()) {
+        builder = builder.type(BuildType.PR)
+                      .spec(PRBuildSpec.builder().number(ParameterField.createValueField(PR_EXPRESSION)).build());
+      } else if (triggerPayload.getParsedPayload().hasPush()) {
+        builder =
+            builder.type(BuildType.BRANCH)
+                .spec(BranchBuildSpec.builder().branch(ParameterField.createValueField(BRANCH_EXPRESSION)).build());
+      }
+    }
+    return builder.build();
   }
 
   @Override

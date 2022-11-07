@@ -11,9 +11,11 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.CIIntegrationStageModifier;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.license.CILicenseService;
@@ -35,6 +37,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
+import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
@@ -65,6 +68,7 @@ public class CISpecPlanCreator extends ChildrenPlanCreator<YamlField> {
   @Inject private CIIntegrationStageModifier ciIntegrationStageModifier;
   @Inject private CILicenseService ciLicenseService;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject private ConnectorUtils connectorUtils;
 
   @Override
   public Class<YamlField> getFieldClass() {
@@ -134,8 +138,10 @@ public class CISpecPlanCreator extends ChildrenPlanCreator<YamlField> {
 
     YamlNode parentYamlNode = stepsField.getNode().getParentNode();
     CodeBase codeBase = getCodebase(ctx.getDependency());
+    ExecutionSource executionSource = IntegrationStageUtils.buildExecutionSourceV2(
+        ctx, codeBase, connectorUtils, IdentifierGeneratorUtils.getId(parentYamlNode.getParentNode().getNodeName()));
     ExecutionElementConfig modifiedExecutionElementConfig = ciIntegrationStageModifier.modifyExecutionPlan(
-        executionElementConfig, stageNode, ctx, codeBase, infrastructure, null);
+        executionElementConfig, stageNode, ctx, codeBase, infrastructure, executionSource);
 
     try {
       List<JsonNode> steps = new ArrayList<>();
