@@ -17,6 +17,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
@@ -84,9 +85,9 @@ public class RunStepInfo implements CIStepInfo, WithConnectorRef {
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
   private ParameterField<Map<String, String>> envVariables;
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.reports.UnitTestReport")
-  private ParameterField<UnitTestReport> reports;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @JsonAlias("test_reports")
+  ParameterField<List<String>> reports;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
   private ContainerResource resources;
@@ -105,7 +106,7 @@ public class RunStepInfo implements CIStepInfo, WithConnectorRef {
   @ConstructorProperties({"identifier", "name", "retry", "command", "outputVariables", "reports", "envVariables",
       "image", "connectorRef", "resources", "privileged", "runAsUser", "shell", "imagePullPolicy"})
   public RunStepInfo(String identifier, String name, Integer retry, ParameterField<String> command,
-      ParameterField<List<OutputNGVariable>> outputVariables, ParameterField<UnitTestReport> reports,
+      ParameterField<List<OutputNGVariable>> outputVariables, ParameterField<List<String>> reports,
       ParameterField<Map<String, String>> envVariables, ParameterField<String> image,
       ParameterField<String> connectorRef, ContainerResource resources, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<CIShellType> shell,

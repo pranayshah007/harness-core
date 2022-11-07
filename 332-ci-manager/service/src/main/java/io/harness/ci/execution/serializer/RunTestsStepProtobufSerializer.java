@@ -33,6 +33,8 @@ import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.OutputNGVariable;
 
 import com.google.inject.Inject;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -132,16 +134,13 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
       runTestsStepBuilder.setFrameworkVersion(frameworkVersion.toLowerCase());
     }
 
-    UnitTestReport reports = runTestsStepInfo.getReports().getValue();
-    if (reports != null) {
-      if (reports.getType() == UnitTestReportType.JUNIT) {
-        JUnitTestReport junitTestReport = (JUnitTestReport) reports.getSpec();
-        List<String> resolvedReport = RunTimeInputHandler.resolveListParameter(
-            "paths", "runtests", identifier, junitTestReport.getPaths(), false);
-        Report report = Report.newBuilder().setType(Report.Type.JUNIT).addAllPaths(resolvedReport).build();
-        runTestsStepBuilder.addReports(report);
-      }
+    List<String> reports = RunTimeInputHandler.resolveListParameter(
+            "paths", "runtests", identifier, runTestsStepInfo.getReports(), false);
+    if (reports.size() == 0) {
+      reports = new Collections.singletonList("**/*.xml");
     }
+    Report report = Report.newBuilder().setType(Report.Type.JUNIT).addAllPaths(reports).build();
+    runTestsStepBuilder.addReports(report);
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runTestsStepInfo.getDefaultTimeout());
 
     runTestsStepBuilder.setParallelizeTests(resolveBooleanParameter(runTestsStepInfo.getEnableTestSplitting(), false));

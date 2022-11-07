@@ -26,6 +26,7 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.product.ci.engine.proto.Report;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.OutputNGVariable;
@@ -33,6 +34,7 @@ import io.harness.yaml.core.variables.OutputNGVariable;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -132,15 +134,12 @@ public class VmRunTestStepSerializer {
       runTestStepBuilder.testSplitStrategy(SerializerUtils.getTestSplitStrategy(testSplitStrategy));
     }
 
-    if (runTestsStepInfo.getReports().getValue() != null) {
-      if (runTestsStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {
-        //        JUnitTestReport junitTestReport = (JUnitTestReport)
-        //        runTestsStepInfo.getReports().getValue().getSpec();
-        List<String> resolvedReport = RunTimeInputHandler.resolveListParameter(
-            "paths", stepName, identifier, runTestsStepInfo.getReports().getValue().getPaths(), false);
-        runTestStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
-      }
+    List<String> reports = RunTimeInputHandler.resolveListParameter(
+            "paths", stepName, identifier, runTestsStepInfo.getReports(), false);
+    if (reports.size() == 0) {
+      reports = new Collections.singletonList("**/*.xml");
     }
+    runTestStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(reports).build());
 
     return runTestStepBuilder.build();
   }

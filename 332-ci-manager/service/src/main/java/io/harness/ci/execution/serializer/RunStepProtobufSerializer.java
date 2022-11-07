@@ -16,9 +16,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.yaml.extended.CIShellType;
-import io.harness.beans.yaml.extended.reports.JUnitTestReport;
-import io.harness.beans.yaml.extended.reports.UnitTestReport;
-import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -34,6 +31,8 @@ import io.harness.yaml.core.variables.OutputNGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -70,17 +69,14 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
       runStepBuilder.putAllEnvironment(envvars);
     }
 
-    UnitTestReport reports = runStepInfo.getReports().getValue();
-    if (reports != null) {
-      if (reports.getType() == UnitTestReportType.JUNIT) {
-        JUnitTestReport junitTestReport = (JUnitTestReport) reports.getSpec();
-        List<String> resolvedReport =
-            RunTimeInputHandler.resolveListParameter("paths", "run", identifier, junitTestReport.getPaths(), false);
+    List<String> resolvedReport =
+        RunTimeInputHandler.resolveListParameter("paths", "run", identifier, runStepInfo.getReports(), false);
 
-        Report report = Report.newBuilder().setType(Report.Type.JUNIT).addAllPaths(resolvedReport).build();
-        runStepBuilder.addReports(report);
-      }
+    if (resolvedReport.size() == 0) {
+      resolvedReport = new Collections.singletonList("**/*.xml");
     }
+    Report report = Report.newBuilder().setType(Report.Type.JUNIT).addAllPaths(resolvedReport).build();
+    runStepBuilder.addReports(report);
 
     if (isNotEmpty(runStepInfo.getOutputVariables().getValue())) {
       List<String> outputVarNames = runStepInfo.getOutputVariables()

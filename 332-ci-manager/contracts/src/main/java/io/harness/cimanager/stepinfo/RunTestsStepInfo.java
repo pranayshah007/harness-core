@@ -17,6 +17,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
@@ -101,9 +102,9 @@ public class RunTestsStepInfo implements CIStepInfo {
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.TIDotNetVersion")
   private ParameterField<TIDotNetVersion> frameworkVersion;
   @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.reports.UnitTestReport")
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @JsonAlias("test_reports")
-  private ParameterField<UnitTestReport> reports;
+  ParameterField<List<String>> reports;
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> runOnlySelectedTests;
@@ -141,7 +142,7 @@ public class RunTestsStepInfo implements CIStepInfo {
       "runAsUser", "imagePullPolicy", "shell", "testSplitStrategy", "enableTestSplitting"})
   public RunTestsStepInfo(String identifier, String name, Integer retry, ParameterField<String> args,
       ParameterField<TILanguage> language, ParameterField<TIBuildTool> buildTool, ParameterField<String> image,
-      ParameterField<String> connectorRef, ContainerResource resources, ParameterField<UnitTestReport> reports,
+      ParameterField<String> connectorRef, ContainerResource resources, ParameterField<List<String>> reports,
       ParameterField<String> testAnnotations, ParameterField<String> packages, ParameterField<String> namespaces,
       ParameterField<Boolean> runOnlySelectedTests, ParameterField<String> preCommand,
       ParameterField<String> postCommand, ParameterField<List<OutputNGVariable>> outputVariables,
