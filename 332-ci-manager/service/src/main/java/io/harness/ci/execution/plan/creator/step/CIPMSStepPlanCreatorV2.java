@@ -35,6 +35,7 @@ import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.execution.failure.FailureType;
@@ -61,6 +62,7 @@ import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -436,12 +438,18 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
 
   protected PlanCreationResponse createPlanForFieldV2(PlanCreationContext ctx, T stepElement) {
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
+    Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
+    Map<String, ByteString> metadataMap = new HashMap<>();
+    YamlField field = ctx.getCurrentField();
+
+    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
+        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, metadataMap, buildAdviserV1(ctx.getDependency()));
 
     PlanNodeBuilder builder =
         PlanNode.builder()
-            .uuid(stepElement.getUuid())
-            .name(getName(stepElement))
-            .identifier(stepElement.getIdentifier())
+            .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
+            .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, getName(stepElement)))
+            .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, stepElement.getIdentifier()))
             .stepType(stepElement.getStepSpecType().getStepType())
             .group(StepOutcomeGroup.STEP.name())
             .stepParameters(stepParameters)
@@ -460,24 +468,34 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
                     .build())
             .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
             .expressionMode(stepElement.getStepSpecType().getExpressionMode());
-    AdviserObtainment adviserObtainment = buildAdviserV1(ctx.getDependency());
-    if (adviserObtainment != null) {
-      builder.adviserObtainment(adviserObtainment);
+    if (field.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YAMLFieldNameConstants.STRATEGY)
+        == null) {
+      builder.adviserObtainments(buildAdviserV1(ctx.getDependency()));
     }
-    return PlanCreationResponse.builder().planNode(builder.build()).build();
+    return PlanCreationResponse.builder()
+        .planNode(builder.build())
+        .dependencies(
+            DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                .toBuilder()
+                .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                .build())
+        .build();
   }
 
-  private AdviserObtainment buildAdviserV1(Dependency dependency) {
+  private List<AdviserObtainment> buildAdviserV1(Dependency dependency) {
+    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
         || !dependency.getMetadataMap().containsKey("nextId")) {
-      return null;
+      return adviserObtainments;
     }
 
     String nextId = (String) kryoSerializer.asObject(dependency.getMetadataMap().get("nextId").toByteArray());
-    return AdviserObtainment.newBuilder()
-        .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-        .setParameters(
-            ByteString.copyFrom(kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
-        .build();
+    adviserObtainments.add(
+        AdviserObtainment.newBuilder()
+            .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
+            .setParameters(ByteString.copyFrom(
+                kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
+            .build());
+    return adviserObtainments;
   }
 }
