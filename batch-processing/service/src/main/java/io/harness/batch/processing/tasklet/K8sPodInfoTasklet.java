@@ -44,6 +44,7 @@ import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.ClusterRecord;
+import io.harness.ccm.commons.entities.batch.InstanceData;
 import io.harness.ccm.commons.entities.events.PublishedMessage;
 import io.harness.ff.FeatureFlagService;
 import io.harness.grpc.utils.HTimestamps;
@@ -54,6 +55,7 @@ import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -270,6 +272,19 @@ public class K8sPodInfoTasklet implements Tasklet {
     final Resource pricingResource = K8sResourceUtils.getResourceFromAnnotationMap(
         firstNonNull(podInfo.getMetadataAnnotationsMap(), Collections.emptyMap()));
 
+    Instant instanceStartTime = HTimestamps.toInstant(podInfo.getCreationTimestamp());
+    if (!"aZGxPkBMSKOYOweJuLcCYg".equals(accountId)) {
+      InstanceData existingInstanceData = instanceDataService.fetchInstanceData(accountId, clusterId, podUid);
+      if (null != existingInstanceData && null != existingInstanceData.getUsageStartTime()) {
+        int compare = instanceStartTime.compareTo(existingInstanceData.getUsageStartTime());
+        if (compare != 0) {
+          log.info("Time didn't match for instances {} : {} : {}", podUid, instanceStartTime,
+              existingInstanceData.getUsageStartTime());
+        }
+        instanceStartTime = existingInstanceData.getUsageStartTime();
+      }
+    }
+
     return InstanceInfo.builder()
         .accountId(accountId)
         .settingId(podInfo.getCloudProviderId())
@@ -279,7 +294,7 @@ public class K8sPodInfoTasklet implements Tasklet {
         .instanceName(podInfo.getPodName())
         .instanceType(instanceType)
         .instanceState(InstanceState.RUNNING)
-        .usageStartTime(HTimestamps.toInstant(podInfo.getCreationTimestamp()))
+        .usageStartTime(instanceStartTime)
         .resource(resource)
         .resourceLimit(resourceLimit)
         .allocatableResource(resource)
