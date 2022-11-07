@@ -12,8 +12,6 @@ import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.SERVICE_CONFIG_KE
 import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.STAGE_KEY;
 import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.USE_FROM_STAGE_KEY;
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
-import static io.harness.cvng.governance.beans.ExpansionKeysConstants.ENVIRONMENT_REF;
-import static io.harness.cvng.governance.beans.ExpansionKeysConstants.INFRASTRUCTURE;
 
 import io.harness.cvng.cdng.services.impl.CVNGStepUtils;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
