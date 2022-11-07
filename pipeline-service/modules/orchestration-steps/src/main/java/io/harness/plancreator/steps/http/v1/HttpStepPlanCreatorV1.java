@@ -13,7 +13,7 @@ import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.http.HttpStepNode;
-import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -31,6 +31,7 @@ import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
@@ -70,7 +71,7 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
 
-    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getId(),
+    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getId(),
         field.getName(), dependenciesNodeMap, metadataMap, buildAdviser(ctx.getDependency()));
 
     StepElementParameters parameters =
@@ -81,9 +82,9 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
 
     PlanNodeBuilder builder =
         PlanNode.builder()
-            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stepNode.getUuid()))
-            .name(StrategyUtils.getIdentifierWithExpression(ctx, field.getNodeName()))
-            .identifier(StrategyUtils.getIdentifierWithExpression(ctx, field.getId()))
+            .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stepNode.getUuid()))
+            .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, field.getNodeName()))
+            .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, field.getId()))
             .stepType(stepNode.getStepSpecType().getStepType())
             .group(StepOutcomeGroup.STEP.name())
             .stepParameters(parameters)
@@ -103,7 +104,7 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
             .skipUnresolvedExpressionsCheck(stepNode.getStepSpecType().skipUnresolvedExpressionsCheck())
             .expressionMode(stepNode.getStepSpecType().getExpressionMode());
 
-    if (field.getNode().getField("strategy") == null) {
+    if (field.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField("strategy") == null) {
       builder.adviserObtainments(buildAdviser(ctx.getDependency()));
     }
 
