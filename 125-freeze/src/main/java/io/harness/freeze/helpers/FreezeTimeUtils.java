@@ -7,11 +7,15 @@
 
 package io.harness.freeze.helpers;
 
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
 import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.FreezeDuration;
 import io.harness.freeze.beans.FreezeWindow;
+import io.harness.freeze.beans.Recurrence;
 import io.harness.freeze.beans.RecurrenceType;
 
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -31,6 +35,9 @@ public class FreezeTimeUtils {
                               .appendPattern("yyyy-MM-dd hh:mm a")
                               .toFormatter(Locale.ENGLISH);
   LocalDateTime now = LocalDateTime.now();
+
+  private static final long MIN_FREEZE_WINDOW_TIME = 1800000L;
+  private static final long MAX_FREEZE_WINDOW_TIME = 31536000000L;
 
   public CurrentOrUpcomingWindow fetchCurrentOrUpcomingTimeWindow(List<FreezeWindow> freezeWindows) {
     List<CurrentOrUpcomingWindow> currentOrUpcomingWindows = new LinkedList<>();
@@ -149,12 +156,48 @@ public class FreezeTimeUtils {
     return new Date().getTime();
   }
 
-  private Long getEpochValueFromDateString(LocalDateTime date, TimeZone timeZone) {
+  public Long getEpochValueFromDateString(LocalDateTime date, TimeZone timeZone) {
     if (date == null) {
       return null;
     }
 
     ZoneOffset zoneOffset = timeZone.toZoneId().getRules().getOffset(now);
     return date.toInstant(zoneOffset).toEpochMilli();
+  }
+
+  public void validateTimeRange(FreezeWindow freezeWindow) throws ParseException {
+    if (EmptyPredicate.isEmpty(freezeWindow.getTimeZone())) {
+      throw new InvalidRequestException("Time zone cannot be empty");
+    }
+    TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
+    LocalDateTime firstWindowStartTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
+    LocalDateTime firstWindowEndTime;
+    if (freezeWindow.getEndTime() == null) {
+      FreezeDuration freezeDuration = FreezeDuration.fromString(freezeWindow.getDuration());
+      Long endTime = FreezeTimeUtils.getEpochValueFromDateString(firstWindowStartTime, timeZone)
+          + freezeDuration.getTimeoutInMillis();
+      firstWindowEndTime = Instant.ofEpochMilli(endTime).atZone(timeZone.toZoneId()).toLocalDateTime();
+    } else {
+      firstWindowEndTime = LocalDateTime.parse(freezeWindow.getEndTime(), dtf);
+    }
+
+    // Time difference in milliseconds.
+    long timeDifferenceInMilliseconds = FreezeTimeUtils.getEpochValueFromDateString(firstWindowEndTime, timeZone)
+        - FreezeTimeUtils.getEpochValueFromDateString(firstWindowStartTime, timeZone);
+    if (timeDifferenceInMilliseconds < 0) {
+      throw new InvalidRequestException("Window Start time is less than Window end Time");
+    }
+    if (timeDifferenceInMilliseconds < MIN_FREEZE_WINDOW_TIME) {
+      throw new InvalidRequestException("Freeze window time should be at least 30 minutes");
+    }
+    if (timeDifferenceInMilliseconds > MAX_FREEZE_WINDOW_TIME) {
+      throw new InvalidRequestException("Freeze window time should be less than 365 days");
+    }
+    if (freezeWindow.getRecurrence() != null) {
+      Recurrence recurrence = freezeWindow.getRecurrence();
+      if (recurrence.getRecurrenceType() == null) {
+        throw new InvalidRequestException("Recurrence Type cannot be empty");
+      }
+    }
   }
 }

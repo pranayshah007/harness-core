@@ -264,6 +264,7 @@ public class K8sCanaryDeploy extends AbstractK8sState {
 
     stateExecutionData.setNewInstanceStatusSummaries(
         fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
+    stateExecutionData.setPodsList(newPods);
 
     if (shouldSaveManifest(context)) {
       if (null != k8sCanaryDeployResponse.getGitFetchFilesConfig()) {

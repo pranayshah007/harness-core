@@ -61,6 +61,8 @@ public interface PMSExecutionService {
 
   PMSPipelineListRepoResponse getListOfRepo(Criteria criteria);
   PMSPipelineListBranchesResponse getListOfBranches(Criteria criteria);
+  Criteria formCriteriaV2(String accountId, String orgId, String projectId, List<String> pipelineIdentifier);
+
   void deleteExecutionsOnPipelineDeletion(PipelineEntity pipelineEntity);
 
   long getCountOfExecutions(Criteria criteria);

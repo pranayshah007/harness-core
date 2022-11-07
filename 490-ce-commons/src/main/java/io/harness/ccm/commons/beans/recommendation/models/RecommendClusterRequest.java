@@ -30,4 +30,6 @@ public class RecommendClusterRequest {
   @Builder.Default Long sumGpu = 0L;
   Double sumMem;
   String zone;
+  Double minCpu;
+  Double minMem;
 }

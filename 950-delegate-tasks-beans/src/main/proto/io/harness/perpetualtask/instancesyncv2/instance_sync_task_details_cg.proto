@@ -1,0 +1,33 @@
+// Copyright 2022 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.perpetualtask.instancesyncv2;
+
+option java_multiple_files = true;
+
+import "google/protobuf/any.proto";
+
+message InstanceSyncTrackedDeploymentDetails {
+  repeated CgDeploymentReleaseDetails deployment_details = 1;
+  string perpetual_task_id = 2;
+  string account_id = 3;
+}
+
+message CgDeploymentReleaseDetails {
+  string task_details_id = 1;
+  string infra_mapping_type = 2;
+  string infra_mapping_id = 3;
+  google.protobuf.Any release_details = 4;
+}
+
+message DirectK8sInstanceSyncTaskDetails {
+  string release_name = 1;
+  string namespace = 2;
+  bytes k8s_cluster_config = 3;
+  bool is_helm = 4;
+  string container_service_name = 5;
+}

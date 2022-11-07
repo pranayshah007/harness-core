@@ -21,6 +21,8 @@ public class EventListenersCountConfig {
   int deploymentEventListenerCount;
   int instanceEventListenerCount;
   int deploymentTimeSeriesEventListenerCount;
+  int executionInterruptTimeSeriesEventListenerCount;
+  int deploymentStepTimeSeriesEventListenerCount;
   int executionEventListenerCount;
   int generalNotifyEventListenerCount;
   int orchestrationNotifyEventListenerCount;

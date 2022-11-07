@@ -13,9 +13,13 @@ import static java.util.stream.Collectors.groupingBy;
 
 import io.harness.beans.WorkflowType;
 import io.harness.event.timeseries.processor.EventProcessor;
+import io.harness.event.timeseries.processor.StepEventProcessor;
 import io.harness.queue.QueuePublisher;
 
+import software.wings.api.ApprovalStateExecutionData;
+import software.wings.api.DeploymentStepTimeSeriesEvent;
 import software.wings.api.DeploymentTimeSeriesEvent;
+import software.wings.api.ExecutionInterruptTimeSeriesEvent;
 import software.wings.api.InstanceEvent;
 import software.wings.beans.EnvSummary;
 import software.wings.beans.WorkflowExecution;
@@ -26,6 +30,9 @@ import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo;
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo.DataPoint;
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
 import software.wings.service.intfc.WorkflowExecutionService;
+import software.wings.sm.ExecutionInterrupt;
+import software.wings.sm.StateExecutionData;
+import software.wings.sm.StateExecutionInstance;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -48,7 +55,11 @@ public class UsageMetricsEventPublisher {
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private QueuePublisher<DeploymentTimeSeriesEvent> deploymentTimeSeriesEventQueue;
   @Inject private QueuePublisher<InstanceEvent> instanceTimeSeriesEventQueue;
+  @Inject private QueuePublisher<DeploymentStepTimeSeriesEvent> deploymentStepTimeSeriesEventQueue;
+  @Inject private QueuePublisher<ExecutionInterruptTimeSeriesEvent> executionInterruptTimeSeriesEventQueue;
   SimpleDateFormat sdf;
+
+  private String APPROVAL = "APPROVAL";
 
   public UsageMetricsEventPublisher() {
     sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
@@ -64,6 +75,165 @@ public class UsageMetricsEventPublisher {
         log.error("Failed to publish deployment time series event:[{}]", event.getId(), e);
       }
     });
+  }
+
+  public void publishDeploymentStepTimeSeriesEvent(String accountId, StateExecutionInstance stateExecutionInstance) {
+    if (stateExecutionInstance == null) {
+      return;
+    }
+    for (String stateType : StepEventProcessor.STATE_TYPES) {
+      if (stateType.equals(stateExecutionInstance.getStateType())) {
+        return;
+      }
+    }
+    DeploymentStepTimeSeriesEvent event = constructDeploymentStepTimeSeriesEvent(accountId, stateExecutionInstance);
+    if (event.getTimeSeriesEventInfo().getLongData().get(StepEventProcessor.START_TIME) == null) {
+      return;
+    }
+    executorService.submit(() -> {
+      try {
+        deploymentStepTimeSeriesEventQueue.send(event);
+      } catch (Exception e) {
+        log.error("Failed to publish deployment step time series event:[{}]", event.getId(), e);
+      }
+    });
+  }
+
+  public DeploymentStepTimeSeriesEvent constructDeploymentStepTimeSeriesEvent(
+      String accountId, StateExecutionInstance stateExecutionInstance) {
+    log.info("Reporting Step execution");
+    Map<String, String> stringData = new HashMap<>();
+    Map<String, Long> longData = new HashMap<>();
+    Map<String, Boolean> booleanData = new HashMap<>();
+
+    stringData.put(StepEventProcessor.ID, stateExecutionInstance.getUuid());
+    stringData.put(StepEventProcessor.APP_ID, stateExecutionInstance.getAppId());
+    stringData.put(StepEventProcessor.STEP_NAME, stateExecutionInstance.getStateName());
+    stringData.put(StepEventProcessor.STEP_TYPE, stateExecutionInstance.getStateType());
+    if (stateExecutionInstance.getStatus() != null) {
+      stringData.put(StepEventProcessor.STATUS, stateExecutionInstance.getStatus().toString());
+    }
+    stringData.put(StepEventProcessor.STAGE_NAME, stateExecutionInstance.getStageName());
+    stringData.put(StepEventProcessor.EXECUTION_ID, stateExecutionInstance.getExecutionUuid());
+
+    if (stateExecutionInstance.getStateExecutionMap() != null) {
+      if (stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getStateName()) != null) {
+        stringData.put(StepEventProcessor.FAILURE_DETAILS,
+            stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getStateName()).getErrorMsg());
+      } else if (stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getDisplayName()) != null) {
+        stringData.put(StepEventProcessor.FAILURE_DETAILS,
+            stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getDisplayName()).getErrorMsg());
+      }
+    }
+
+    // when we execute shell script step with manual intervention and select retry, then both start time and end time
+    // change to track from first execution to last, we traverse history to calculate the oldest execution start time
+
+    long startTime = stateExecutionInstance.getStartTs() != null ? stateExecutionInstance.getStartTs() : -1L;
+    List<StateExecutionData> stateExecutionDataList = stateExecutionInstance.getStateExecutionDataHistory();
+    if (stateExecutionDataList != null) {
+      for (StateExecutionData stateExecutionData : stateExecutionDataList) {
+        if (stateExecutionData.getStartTs() != null
+            && (startTime == -1L || startTime > stateExecutionData.getStartTs())) {
+          startTime = stateExecutionData.getStartTs();
+        }
+      }
+    }
+    if (startTime != -1L) {
+      longData.put(StepEventProcessor.START_TIME, startTime);
+    }
+
+    longData.put(StepEventProcessor.END_TIME, stateExecutionInstance.getEndTs());
+
+    if (startTime != -1l && stateExecutionInstance.getEndTs() != null) {
+      longData.put(StepEventProcessor.DURATION, stateExecutionInstance.getEndTs() - startTime);
+    }
+
+    if (APPROVAL.equals(stateExecutionInstance.getStateType()) && stateExecutionInstance.getStateExecutionMap() != null
+        && stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getStateName()) != null) {
+      StateExecutionData stateExecutionData =
+          stateExecutionInstance.getStateExecutionMap().get(stateExecutionInstance.getStateName());
+      if (stateExecutionData instanceof ApprovalStateExecutionData) {
+        ApprovalStateExecutionData approvalStateExecutionData = (ApprovalStateExecutionData) stateExecutionData;
+        longData.put(StepEventProcessor.APPROVED_AT, approvalStateExecutionData.getApprovedOn());
+
+        if (approvalStateExecutionData.getStartTs() != null && approvalStateExecutionData.getTimeoutMillis() != null) {
+          longData.put(StepEventProcessor.APPROVAL_EXPIRY,
+              approvalStateExecutionData.getStartTs() + approvalStateExecutionData.getTimeoutMillis());
+        }
+
+        stringData.put(StepEventProcessor.APPROVAL_COMMENT, approvalStateExecutionData.getComments());
+        if (approvalStateExecutionData.getApprovalStateType() != null) {
+          stringData.put(
+              StepEventProcessor.APPROVAL_TYPE, approvalStateExecutionData.getApprovalStateType().toString());
+        }
+        if (approvalStateExecutionData.getApprovedBy() != null) {
+          stringData.put(StepEventProcessor.APPROVED_BY, approvalStateExecutionData.getApprovedBy().getUuid());
+        }
+      }
+    }
+
+    booleanData.put(StepEventProcessor.MANUAL_INTERVENTION, stateExecutionInstance.isWaitingForManualIntervention());
+
+    return DeploymentStepTimeSeriesEvent.builder()
+        .timeSeriesEventInfo(TimeSeriesEventInfo.builder()
+                                 .accountId(accountId)
+                                 .booleanData(booleanData)
+                                 .longData(longData)
+                                 .stringData(stringData)
+                                 .build())
+        .build();
+  }
+
+  public void publishExecutionInterruptTimeSeriesEvent(String accountId, ExecutionInterrupt executionInterrupt) {
+    if (executionInterrupt == null) {
+      return;
+    }
+    ExecutionInterruptTimeSeriesEvent event = constructExecutionInterruptTimeSeriesEvent(accountId, executionInterrupt);
+    if (event.getTimeSeriesEventInfo().getLongData().get(StepEventProcessor.EXECUTION_INTERRUPT_CREATED_AT) == null) {
+      return;
+    }
+    executorService.submit(() -> {
+      try {
+        executionInterruptTimeSeriesEventQueue.send(event);
+      } catch (Exception e) {
+        log.error("Failed to publish execution interrupt time series event:[{}]", event.getId(), e);
+      }
+    });
+  }
+
+  public ExecutionInterruptTimeSeriesEvent constructExecutionInterruptTimeSeriesEvent(
+      String accountId, ExecutionInterrupt executionInterrupt) {
+    log.info("Reporting execution interrupt");
+    Map<String, String> stringData = new HashMap<>();
+    Map<String, Long> longData = new HashMap<>();
+
+    stringData.put(StepEventProcessor.EXECUTION_INTERRUPT_ID, executionInterrupt.getUuid());
+    if (executionInterrupt.getExecutionInterruptType() != null) {
+      stringData.put(
+          StepEventProcessor.EXECUTION_INTERRUPT_TYPE, executionInterrupt.getExecutionInterruptType().toString());
+    }
+
+    stringData.put(StepEventProcessor.EXECUTION_ID, executionInterrupt.getExecutionUuid());
+    stringData.put(StepEventProcessor.APP_ID, executionInterrupt.getAppId());
+    stringData.put(StepEventProcessor.ID, executionInterrupt.getStateExecutionInstanceId());
+
+    if (executionInterrupt.getCreatedBy() != null && executionInterrupt.getCreatedBy().getUuid() != null) {
+      stringData.put(StepEventProcessor.EXECUTION_INTERRUPT_CREATED_BY, executionInterrupt.getCreatedBy().getUuid());
+    }
+
+    if (executionInterrupt.getLastUpdatedBy() != null && executionInterrupt.getLastUpdatedBy().getUuid() != null) {
+      stringData.put(
+          StepEventProcessor.EXECUTION_INTERRUPT_UPDATED_BY, executionInterrupt.getLastUpdatedBy().getUuid());
+    }
+
+    longData.put(StepEventProcessor.EXECUTION_INTERRUPT_CREATED_AT, executionInterrupt.getCreatedAt());
+    longData.put(StepEventProcessor.EXECUTION_INTERRUPT_UPDATED_AT, executionInterrupt.getLastUpdatedAt());
+
+    return ExecutionInterruptTimeSeriesEvent.builder()
+        .timeSeriesEventInfo(
+            TimeSeriesEventInfo.builder().stringData(stringData).longData(longData).accountId(accountId).build())
+        .build();
   }
 
   public DeploymentTimeSeriesEvent constructDeploymentTimeSeriesEvent(

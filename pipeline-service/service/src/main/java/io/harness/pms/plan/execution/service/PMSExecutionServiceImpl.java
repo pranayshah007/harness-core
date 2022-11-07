@@ -253,6 +253,24 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     return PMSPipelineListBranchesResponse.builder().branches(new HashSet<>(uniqueBranches)).build();
   }
 
+  @Override
+  public Criteria formCriteriaV2(String accountId, String orgId, String projectId, List<String> pipelineIdentifier) {
+    Criteria criteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(accountId)) {
+      criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
+    }
+    if (EmptyPredicate.isNotEmpty(orgId)) {
+      criteria.and(PlanExecutionSummaryKeys.orgIdentifier).is(orgId);
+    }
+    if (EmptyPredicate.isNotEmpty(projectId)) {
+      criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectId);
+    }
+    if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
+      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
+    }
+    return criteria;
+  }
+
   private void populatePipelineFilterUsingIdentifier(Criteria criteria, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull String filterIdentifier) {
     FilterDTO pipelineFilterDTO = this.filterService.get(

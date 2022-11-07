@@ -159,6 +159,7 @@ import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.StepGroupVariableCreator;
+import io.harness.cdng.customDeployment.CustomDeploymentConstants;
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
@@ -219,13 +220,16 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String HELM = "Helm";
   private static final String PROVISIONER = "Provisioner";
   private static final String SHELL_SCRIPT_PROVISIONER_STEM_METADATA = "Shell Script Provisioner";
-  private static final String SSH_WINRM = "SshWinRM";
+
+  private static final String CUSTOM = "Custom Deployment";
+  private static final String COMMANDS = "Commands";
   private static final String ELASTIGROUP = "Elastigroup";
 
+  private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
   private static final List<String> CLOUDFORMATION_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, SSH_WINRM, SERVERLESS_AWS_LAMBDA);
+      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
   private static final List<String> TERRAFORM_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, SSH_WINRM, SERVERLESS_AWS_LAMBDA);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
   private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =
@@ -598,7 +602,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.COMMAND)
             .setFeatureRestrictionName(FeatureRestrictionName.COMMAND.name())
             .setFeatureFlag(FeatureName.SSH_NG.name())
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(SSH_WINRM).addFolderPaths("SSH or WinRM").build())
+            .setStepMetaData(
+                StepMetaData.newBuilder().addAllCategory(CUSTOM_DEPLOYMENT_CATEGORY).addFolderPaths(COMMANDS).build())
             .build();
 
     StepInfo serverlessDeploy =
@@ -793,10 +798,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo fetchInstanceScript =
         StepInfo.newBuilder()
-            .setName("Fetch Instance Script")
+            .setName(CustomDeploymentConstants.FETCH_INSTANCE_SCRIPT)
             .setType(StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT)
-            .setStepMetaData(
-                StepMetaData.newBuilder().addCategory("CustomDeployment").addFolderPaths("CustomDeployment").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(CUSTOM_DEPLOYMENT).addFolderPaths(CUSTOM).build())
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 

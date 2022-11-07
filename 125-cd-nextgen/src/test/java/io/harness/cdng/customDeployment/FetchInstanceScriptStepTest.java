@@ -7,6 +7,8 @@
 
 package io.harness.cdng.customDeployment;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.SOURABH;
 
@@ -43,6 +45,8 @@ import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanc
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest;
 import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse;
+import io.harness.encryption.Scope;
+import io.harness.encryption.SecretRefData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.logstreaming.ILogStreamingStepClient;
@@ -52,6 +56,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -84,6 +89,8 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
   @Captor private ArgumentCaptor<List<ServerInstanceInfo>> serverInstanceInfoListCaptor;
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+
+  @Mock private EngineExpressionService engineExpressionService;
   @InjectMocks private FetchInstanceScriptStep fetchInstanceScriptStep;
 
   private FetchInstanceScriptStepParameters parameters =
@@ -142,6 +149,71 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
 
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(FETCH_INSTANCE_SCRIPT_TASK_NG.toString());
     assertThat(requestParameters.getScriptBody()).isEqualTo(infrastructure.getInstanceFetchScript());
+    assertThat(requestParameters.getOutputPathKey()).isEqualTo(FetchInstanceScriptStep.OUTPUT_PATH_KEY);
+    assertThat(requestParameters.getAccountId()).isEqualTo("account");
+    assertThat(requestParameters.getTimeoutInMillis()).isEqualTo(ofMinutes(10).toMillis());
+  }
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacForAllScopesSecret() {
+    String script = "echo <+infra.variables.sec1>\n"
+        + "echo <+infra.variables.sec2>\n"
+        + "echo <+infra.variables.sec3>\n"
+        + "\n"
+        + "echo '{\"a\":[{\"ip\":\"1.1\"}, {\"ip\":\"2.2\"}]}' > $INSTANCE_OUTPUT_PATH";
+
+    Map<String, String> setupAbstractions = new HashMap<>();
+    setupAbstractions.put(SetupAbstractionKeys.accountId, "account");
+    setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org");
+    setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project");
+
+    Ambiance ambiance1 = Ambiance.newBuilder()
+                             .putAllSetupAbstractions(setupAbstractions)
+                             .setStageExecutionId("stageExecutionId")
+                             .build();
+
+    SecretRefData accountLevelSecret = SecretRefData.builder()
+                                           .scope(Scope.ACCOUNT)
+                                           .identifier("secret1")
+                                           .decryptedValue(generateUuid().toCharArray())
+                                           .build();
+
+    SecretRefData orgLevelSecret = SecretRefData.builder()
+                                       .scope(Scope.ORG)
+                                       .identifier("secret2")
+                                       .decryptedValue(generateUuid().toCharArray())
+                                       .build();
+
+    SecretRefData projectLevelSecret = SecretRefData.builder()
+                                           .scope(Scope.PROJECT)
+                                           .identifier("secret3")
+                                           .decryptedValue(generateUuid().toCharArray())
+                                           .build();
+
+    Map<String, Object> variables = new HashMap<>();
+    variables.put("sec1", accountLevelSecret);
+    variables.put("sec2", orgLevelSecret);
+    variables.put("sec3", projectLevelSecret);
+
+    CustomDeploymentInfrastructureOutcome infrastructureOutcome =
+        CustomDeploymentInfrastructureOutcome.builder().variables(variables).instanceFetchScript(script).build();
+
+    doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance1);
+
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    Mockito.mockStatic(StepUtils.class);
+    when(StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+
+    TaskRequest taskRequest =
+        fetchInstanceScriptStep.obtainTaskAfterRbac(ambiance1, stepElementParameters, stepInputPackage);
+    assertThat(taskRequest).isNotNull();
+
+    FetchInstanceScriptTaskNGRequest requestParameters =
+        (FetchInstanceScriptTaskNGRequest) taskDataArgumentCaptor.getValue().getParameters()[0];
+
+    assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(FETCH_INSTANCE_SCRIPT_TASK_NG.toString());
     assertThat(requestParameters.getOutputPathKey()).isEqualTo(FetchInstanceScriptStep.OUTPUT_PATH_KEY);
     assertThat(requestParameters.getAccountId()).isEqualTo("account");
     assertThat(requestParameters.getTimeoutInMillis()).isEqualTo(ofMinutes(10).toMillis());

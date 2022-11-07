@@ -89,6 +89,7 @@ public class GitConnectorTest extends CategoryTest {
             .sshSettingId(RequestField.ofNullable(SSH))
             .usageScope(RequestField.ofNullable(QLUsageScope.builder().build()))
             .passwordSecretId(RequestField.ofNull())
+            .disableUserGitConfig(RequestField.ofNull())
             .build();
 
     SettingAttribute settingAttribute = gitConnector.getSettingAttribute(
@@ -121,6 +122,7 @@ public class GitConnectorTest extends CategoryTest {
             .delegateSelectors(RequestField.ofNull())
             .sshSettingId(RequestField.ofNull())
             .passwordSecretId(RequestField.ofNullable(PASSWORD))
+            .disableUserGitConfig(RequestField.ofNull())
             .build();
 
     SettingAttribute settingAttribute = gitConnector.getSettingAttribute(
@@ -152,6 +154,7 @@ public class GitConnectorTest extends CategoryTest {
             .delegateSelectors(RequestField.ofNullable(Collections.singletonList("primary")))
             .sshSettingId(RequestField.ofNull())
             .passwordSecretId(RequestField.ofNullable(PASSWORD))
+            .disableUserGitConfig(RequestField.ofNull())
             .build();
 
     SettingAttribute settingAttribute = gitConnector.getSettingAttribute(

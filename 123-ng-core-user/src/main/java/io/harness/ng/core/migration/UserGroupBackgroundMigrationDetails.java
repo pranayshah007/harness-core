@@ -37,6 +37,7 @@ public class UserGroupBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(2, NoOpMigration.class))
         .add(Pair.of(3, NoOpMigration.class))
         .add(Pair.of(4, UserGroupSanitizationMigration.class))
+        .add(Pair.of(5, UserGroupNotificationConfigMigration.class))
         .build();
   }
 }

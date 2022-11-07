@@ -725,6 +725,7 @@ import io.harness.delegate.task.ssh.AzureInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
+import io.harness.delegate.task.ssh.EmptyHostDelegateConfig;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
@@ -827,6 +828,8 @@ import software.wings.beans.command.JenkinsTaskParams;
 import software.wings.beans.command.KubernetesResizeParams;
 import software.wings.beans.container.AwsAutoScalarConfig;
 import software.wings.beans.infrastructure.instance.info.EcsContainerInfo;
+import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
+import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
 import software.wings.beans.s3.FetchS3FilesCommandParams;
 import software.wings.beans.s3.FetchS3FilesExecutionResponse;
@@ -1907,11 +1910,14 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(NoDelegatesException.class, 73991);
     kryo.register(NexusAzureArtifactRequestDetails.class, 73992);
     kryo.register(DelegateTaskExpiredException.class, 980036);
+    kryo.register(K8sPodInfo.class, 980100);
+    kryo.register(K8sContainerInfo.class, 980101);
     kryo.register(S3BuildsResponse.class, 1010101);
     kryo.register(AMIArtifactDelegateRequest.class, 60011);
     kryo.register(AMIArtifactDelegateResponse.class, 60012);
     kryo.register(AMITag.class, 60013);
     kryo.register(AMIFilter.class, 60014);
+    kryo.register(EmptyHostDelegateConfig.class, 60015);
 
     // Elastigroup
     kryo.register(ElastigroupStartupScriptFetchRequest.class, 573545);

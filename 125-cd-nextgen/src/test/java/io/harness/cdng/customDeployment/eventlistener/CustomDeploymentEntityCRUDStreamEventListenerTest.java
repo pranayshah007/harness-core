@@ -19,6 +19,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -27,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.rule.Owner;
 
@@ -120,6 +122,12 @@ public class CustomDeploymentEntityCRUDStreamEventListenerTest extends CategoryT
     verify(deploymentTemplateEntityCRUDEventHandler, times(1))
         .updateInfraAsObsolete(
             eq("accountIdentifier"), eq("orgId"), eq("projectId"), eq("deploymentTemplateId"), eq("1"));
+
+    doThrow(InvalidRequestException.class)
+        .when(deploymentTemplateEntityCRUDEventHandler)
+        .updateInfraAsObsolete(
+            eq("accountIdentifier"), eq("orgId"), eq("projectId"), eq("deploymentTemplateId"), eq("1"));
+    assertTrue(deploymentEntityEventListener.handleMessage(message));
   }
 
   @Test
@@ -156,5 +164,31 @@ public class CustomDeploymentEntityCRUDStreamEventListenerTest extends CategoryT
     verify(deploymentTemplateEntityCRUDEventHandler, times(1))
         .updateInfraAsObsolete(
             eq("accountIdentifier"), eq("orgId"), eq("projectId"), eq("deploymentTemplateId"), eq(null));
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testHandleMessageUpdateError() {
+    ByteString bytes = EntityChangeDTO.newBuilder()
+                           .setIdentifier(StringValue.newBuilder().setValue("deploymentTemplateId"))
+                           .setProjectIdentifier(StringValue.newBuilder().setValue("projectId"))
+                           .setOrgIdentifier(StringValue.newBuilder().setValue("orgId"))
+                           .setAccountIdentifier(StringValue.newBuilder().setValue("accountIdentifier"))
+                           .putMetadata("versionLabel", "1")
+                           .putMetadata("isStable", "true")
+                           .putMetadata("templateType", TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.toString())
+                           .build()
+                           .toByteString();
+
+    Message message = Message.newBuilder()
+                          .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
+                                          .putMetadata(ACTION, UPDATE_ACTION)
+                                          .setData(bytes)
+                                          .build())
+                          .build();
+
+    assertTrue(deploymentEntityEventListener.handleMessage(null));
+    assertTrue(deploymentEntityEventListener.handleMessage(message));
   }
 }

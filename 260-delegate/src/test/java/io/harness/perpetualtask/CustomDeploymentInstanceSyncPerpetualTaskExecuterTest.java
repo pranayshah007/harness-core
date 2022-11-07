@@ -55,6 +55,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.runners.MockitoJUnitRunner;
 import retrofit2.Call;
 
@@ -150,6 +151,72 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuterTest extends Deleg
             .map(server -> ((CustomDeploymentServerInstanceInfo) server).getInstanceName())
             .collect(Collectors.toList());
     assertThat(instancesHostNames).contains("1.1", "2.2", "3.3", "4.4");
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testRunOnceFailure() throws IOException {
+    mockStatic(Files.class);
+    when(Files.readAllBytes(any(Path.class))).thenReturn(output.getBytes());
+    ExecuteCommandResponse commandResponse =
+        ExecuteCommandResponse.builder().status(CommandExecutionStatus.FAILURE).build();
+
+    ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
+    doReturn(scriptProcessExecutor).when(shellExecutorFactory).getExecutor(any(), any(), any());
+    doReturn(commandResponse).when(scriptProcessExecutor).executeCommandString(any(), any(), any(), any());
+
+    ArgumentCaptor<CustomDeploymentInstanceSyncPerpetualTaskResponse> argumentCaptor =
+        ArgumentCaptor.forClass(CustomDeploymentInstanceSyncPerpetualTaskResponse.class);
+
+    PerpetualTaskId perpetualTaskId = PerpetualTaskId.newBuilder().setId(taskId).build();
+    PerpetualTaskExecutionParams perpetualTaskParams = getPerpetualTaskParams();
+    PerpetualTaskResponse perpetualTaskResponse = executor.runOnce(perpetualTaskId, perpetualTaskParams, Instant.now());
+
+    assertThat(perpetualTaskResponse.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(perpetualTaskResponse.getResponseMessage()).isEqualTo("success");
+    assertThat(executor.cleanup(perpetualTaskId, perpetualTaskParams)).isEqualTo(false);
+
+    verify(mockDelegateAgentManagerClient)
+        .processInstanceSyncNGResult(eq(taskId), eq(accountId), argumentCaptor.capture());
+    CustomDeploymentInstanceSyncPerpetualTaskResponse argumentCaptorValue = argumentCaptor.getValue();
+    assertThat(argumentCaptorValue).isInstanceOf(CustomDeploymentInstanceSyncPerpetualTaskResponse.class);
+    assertThat(argumentCaptorValue.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    List<ServerInstanceInfo> serverInstanceDetails = argumentCaptorValue.getServerInstanceDetails();
+    assertThat(serverInstanceDetails.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testRunOnceFailureOnReadingOutPutFile() throws IOException {
+    MockedStatic<Files> filesMockedStatic = mockStatic(Files.class);
+    filesMockedStatic.when(() -> Files.readAllBytes(any(Path.class))).thenThrow(IOException.class);
+
+    ExecuteCommandResponse commandResponse =
+        ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build();
+
+    ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
+    doReturn(scriptProcessExecutor).when(shellExecutorFactory).getExecutor(any(), any(), any());
+    doReturn(commandResponse).when(scriptProcessExecutor).executeCommandString(any(), any(), any(), any());
+
+    ArgumentCaptor<CustomDeploymentInstanceSyncPerpetualTaskResponse> argumentCaptor =
+        ArgumentCaptor.forClass(CustomDeploymentInstanceSyncPerpetualTaskResponse.class);
+
+    PerpetualTaskId perpetualTaskId = PerpetualTaskId.newBuilder().setId(taskId).build();
+    PerpetualTaskExecutionParams perpetualTaskParams = getPerpetualTaskParams();
+    PerpetualTaskResponse perpetualTaskResponse = executor.runOnce(perpetualTaskId, perpetualTaskParams, Instant.now());
+    assertThat(perpetualTaskResponse).isNotNull();
+    assertThat(perpetualTaskResponse.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(perpetualTaskResponse.getResponseMessage()).isEqualTo("success");
+    assertThat(executor.cleanup(perpetualTaskId, perpetualTaskParams)).isEqualTo(false);
+    verify(mockDelegateAgentManagerClient)
+        .processInstanceSyncNGResult(eq(taskId), eq(accountId), argumentCaptor.capture());
+    CustomDeploymentInstanceSyncPerpetualTaskResponse argumentCaptorValue = argumentCaptor.getValue();
+    assertThat(argumentCaptorValue).isInstanceOf(CustomDeploymentInstanceSyncPerpetualTaskResponse.class);
+    assertThat(argumentCaptorValue.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    List<ServerInstanceInfo> serverInstanceDetails = argumentCaptorValue.getServerInstanceDetails();
+    assertThat(serverInstanceDetails.size()).isEqualTo(0);
   }
 
   @Test

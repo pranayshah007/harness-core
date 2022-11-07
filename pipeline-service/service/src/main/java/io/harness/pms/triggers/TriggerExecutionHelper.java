@@ -238,7 +238,8 @@ public class TriggerExecutionHelper {
               .setExecutionUuid(executionId)
               .setTriggerInfo(triggerInfo)
               .setRunSequence(pipelineMetadataService.incrementRunSequence(pipelineEntity))
-              .setPipelineIdentifier(pipelineEntity.getIdentifier());
+              .setPipelineIdentifier(pipelineEntity.getIdentifier())
+              .setHarnessVersion(pipelineEntity.getHarnessVersion());
 
       if (gitSyncBranchContextByteString != null) {
         executionMetaDataBuilder.setGitSyncBranchContext(gitSyncBranchContextByteString);

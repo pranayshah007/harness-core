@@ -4837,7 +4837,7 @@ plain_artifacts = [
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.42-RELEASE",
-    "io.harness:ff-java-server-sdk:1.0.5.1",
+    "io.harness:ff-java-server-sdk:1.0.5.2",
     "io.harness:access-control-server-spec:1.0.9",
     "io.harness:common-models:1.0.4",
     "io.harness:ng-manager-server-spec:1.0.25",

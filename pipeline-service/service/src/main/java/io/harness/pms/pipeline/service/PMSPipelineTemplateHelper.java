@@ -134,45 +134,52 @@ public class PMSPipelineTemplateHelper {
         accountId, orgId, projectId, null, null, null, TemplateReferenceRequestDTO.builder().yaml(yaml).build()));
   }
 
-  public RefreshResponseDTO getRefreshedYaml(String accountId, String orgId, String projectId, String yaml) {
+  public RefreshResponseDTO getRefreshedYaml(
+      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     if (gitEntityInfo != null) {
       return NGRestUtils.getResponse(templateResourceClient.getRefreshedYaml(accountId, orgId, projectId,
           gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
-          gitEntityInfo.getYamlGitConfigId(), true, refreshRequest));
+          gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
+          pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+          pipelineEntity.getProjectIdentifier(), refreshRequest));
     }
 
-    return NGRestUtils.getResponse(
-        templateResourceClient.getRefreshedYaml(accountId, orgId, projectId, null, null, null, refreshRequest));
+    return NGRestUtils.getResponse(templateResourceClient.getRefreshedYaml(
+        accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
   }
 
   public ValidateTemplateInputsResponseDTO validateTemplateInputsForGivenYaml(
-      String accountId, String orgId, String projectId, String yaml) {
+      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     if (gitEntityInfo != null) {
       return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(accountId, orgId,
           projectId, gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
-          gitEntityInfo.getYamlGitConfigId(), true, refreshRequest));
+          gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
+          pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+          pipelineEntity.getProjectIdentifier(), refreshRequest));
     }
 
     return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(
-        accountId, orgId, projectId, null, null, null, refreshRequest));
+        accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
   }
 
   public YamlFullRefreshResponseDTO refreshAllTemplatesForYaml(
-      String accountId, String orgId, String projectId, String yaml) {
+      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     if (gitEntityInfo != null) {
       return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(accountId, orgId, projectId,
           gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
-          gitEntityInfo.getYamlGitConfigId(), true, refreshRequest));
+          gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
+          pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+          pipelineEntity.getProjectIdentifier(), refreshRequest));
     }
 
     return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(
-        accountId, orgId, projectId, null, null, null, refreshRequest));
+        accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
   }
 
   private String getConnectorRef() {

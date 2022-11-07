@@ -92,6 +92,7 @@ public class GitSyncServiceImplTest extends WingsBaseTest {
                                           .urlType(GitConfig.UrlType.REPO)
                                           .authenticationScheme(AuthenticationScheme.HTTP_PASSWORD)
                                           .branch("branchName")
+                                          .disableUserGitConfig(false)
                                           .build())
                            .build();
     gitConnectorId = persistence.save(settingAttribute);

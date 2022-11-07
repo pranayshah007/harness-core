@@ -1814,6 +1814,7 @@
 60012:io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse
 60013:io.harness.delegate.task.artifacts.ami.AMITag
 60014:io.harness.delegate.task.artifacts.ami.AMIFilter
+60015:io.harness.delegate.task.ssh.EmptyHostDelegateConfig
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
 71102:software.wings.beans.Log
@@ -2417,6 +2418,8 @@
 980035:io.harness.exception.ngexception.AzureARMTaskException
 980036:io.harness.delegate.beans.DelegateTaskExpiredException
 980037:io.harness.exception.ngexception.AzureBPTaskException
+980100:software.wings.beans.infrastructure.instance.info.K8sPodInfo
+980101:software.wings.beans.infrastructure.instance.info.K8sContainerInfo
 1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
 9300122:io.harness.yaml.core.timeout.Timeout
