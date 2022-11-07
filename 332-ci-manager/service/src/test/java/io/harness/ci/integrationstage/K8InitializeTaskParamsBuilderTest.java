@@ -34,6 +34,7 @@ import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
 
@@ -80,6 +81,8 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     InitializeStepInfo initializeStepInfo = K8InitializeTaskUtilsHelper.getDirectK8Step();
     K8PodDetails k8PodDetails = K8PodDetails.builder().accountId(accountId).stageID(STAGE_ID).build();
 
+    when(executionSweepingOutputResolver.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
     when(executionSweepingOutputResolver.resolve(any(), any())).thenReturn(k8PodDetails);
     when(k8InitializeTaskUtils.generatePodName(STAGE_ID)).thenReturn(podName);
     when(k8InitializeTaskUtils.getBuildLabels(ambiance, k8PodDetails)).thenReturn(new HashMap<>());

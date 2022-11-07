@@ -85,7 +85,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   public TemplateMergeResponseDTO applyTemplatesToYaml(
       String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField) {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
-    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId);
+    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     TemplateInputsErrorMetadataDTO errorResponse = templateMergeServiceHelper.validateLinkedTemplateInputsInYaml(
         accountId, orgId, projectId, yamlNode, templateCacheMap);
@@ -104,7 +104,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   public TemplateMergeResponseDTO applyTemplatesToYamlV2(
       String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField) {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
-    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId);
+    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
         templateInputsValidator.validateNestedTemplateInputsForGivenYaml(

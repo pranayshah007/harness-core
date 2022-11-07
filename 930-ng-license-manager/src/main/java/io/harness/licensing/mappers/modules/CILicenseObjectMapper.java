@@ -20,11 +20,17 @@ import com.google.inject.Singleton;
 public class CILicenseObjectMapper implements LicenseObjectMapper<CIModuleLicense, CIModuleLicenseDTO> {
   @Override
   public CIModuleLicenseDTO toDTO(CIModuleLicense entity) {
-    return CIModuleLicenseDTO.builder().numberOfCommitters(entity.getNumberOfCommitters()).build();
+    return CIModuleLicenseDTO.builder()
+        .numberOfCommitters(entity.getNumberOfCommitters())
+        .hostingCredits(entity.getHostingCredits())
+        .build();
   }
 
   @Override
   public CIModuleLicense toEntity(CIModuleLicenseDTO dto) {
-    return CIModuleLicense.builder().numberOfCommitters(dto.getNumberOfCommitters()).build();
+    return CIModuleLicense.builder()
+        .numberOfCommitters(dto.getNumberOfCommitters())
+        .hostingCredits(dto.getHostingCredits())
+        .build();
   }
 }

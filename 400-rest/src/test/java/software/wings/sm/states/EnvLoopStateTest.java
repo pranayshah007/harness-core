@@ -8,14 +8,17 @@
 package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.POOJA;
 import static io.harness.rule.OwnerRule.PRABU;
 
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
+import static software.wings.sm.StateType.ENV_ROLLBACK_STATE;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,6 +58,7 @@ public class EnvLoopStateTest extends WingsBaseTest {
   @Mock private WorkflowService workflowService;
   @Mock private StateExecutionInstanceHelper stateExecutionInstanceHelper;
   @InjectMocks private EnvLoopState envLoopState = new EnvLoopState("ENV_LOOP_STATE");
+  @InjectMocks private EnvLoopState envLoopStateRollback = new EnvLoopState("ROLLBACK_ENV_LOOP_STATE");
 
   @Before
   public void setUp() throws Exception {
@@ -69,6 +73,16 @@ public class EnvLoopStateTest extends WingsBaseTest {
     Map<String, String> workflowVariables = new HashMap<>();
     workflowVariables.put("infra1", "infraVal1,infralVal2");
     envLoopState.setWorkflowVariables(workflowVariables);
+
+    envLoopStateRollback.setLoopedVarName("infra1");
+    envLoopStateRollback.setLoopedValues(ImmutableList.of("infraVal1", "infraVal2"));
+    envLoopStateRollback.setPipelineId("PIPELINE_ID");
+    envLoopStateRollback.setPipelineStageElementId("PSE_ID");
+    envLoopStateRollback.setPipelineStageParallelIndex(0);
+    envLoopStateRollback.setStageName("STAGE_1");
+    envLoopStateRollback.setWorkflowId("WORKFLOW_ID");
+    envLoopStateRollback.setDisableAssertion(DISABLE_ASSERTION);
+    envLoopStateRollback.setWorkflowVariables(workflowVariables);
     when(context.renderExpression(DISABLE_ASSERTION)).thenReturn("expr");
     when(context.getAppId()).thenReturn(APP_ID);
   }
@@ -151,5 +165,24 @@ public class EnvLoopStateTest extends WingsBaseTest {
     assertThat(executionResponse.getErrorMessage())
         .isEqualTo(
             "The expression ${context.infra} provided for the infra variable doesn't resolve to a valid value. Value should not be null or empty");
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldHaveEnvRollbackStateInstances() {
+    envLoopStateRollback.setRollback(true);
+    StateExecutionInstance stateExecutionInstance = aStateExecutionInstance().uuid("UUID").build();
+    doReturn(stateExecutionInstance).when(context).getStateExecutionInstance();
+    doReturn(stateExecutionInstance).when(stateExecutionInstanceHelper).clone(stateExecutionInstance);
+    Map<String, StateTypeDescriptor> stencilMap = new HashMap<>();
+    stencilMap.put(StateType.ENV_STATE.getType(), StateType.ENV_LOOP_STATE);
+    doReturn(stencilMap).when(workflowService).stencilMap(anyString());
+    ExecutionResponse executionResponse = envLoopStateRollback.execute(context);
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    assertThat(executionResponse.getStateExecutionInstances().get(0).getStateType())
+        .isEqualTo(ENV_ROLLBACK_STATE.getType());
+    assertThat(executionResponse.getStateExecutionInstances().get(1).getStateType())
+        .isEqualTo(ENV_ROLLBACK_STATE.getType());
   }
 }

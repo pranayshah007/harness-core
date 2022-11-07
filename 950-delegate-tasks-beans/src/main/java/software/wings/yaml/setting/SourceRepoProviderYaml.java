@@ -7,8 +7,6 @@
 
 package software.wings.yaml.setting;
 
-import static software.wings.beans.CGConstants.ENCRYPTED_VALUE_STR;
-
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
@@ -29,7 +27,7 @@ import lombok.NoArgsConstructor;
 public abstract class SourceRepoProviderYaml extends SettingValue.Yaml {
   private String url;
   private String username;
-  private String password = ENCRYPTED_VALUE_STR;
+  private String password;
 
   public SourceRepoProviderYaml(String type, String harnessApiVersion, String url, String username, String password,
       UsageRestrictions.Yaml usageRestrictions) {

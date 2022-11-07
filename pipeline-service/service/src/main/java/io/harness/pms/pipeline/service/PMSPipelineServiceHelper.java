@@ -568,4 +568,15 @@ public class PMSPipelineServiceHelper {
         .repoName(scmGitMetaData.getRepoName())
         .build();
   }
+
+  public static Criteria buildCriteriaForRepoListing(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+
+    criteria.and(PipelineEntityKeys.accountId).is(accountIdentifier);
+    criteria.and(PipelineEntityKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(PipelineEntityKeys.projectIdentifier).is(projectIdentifier);
+
+    return criteria;
+  }
 }

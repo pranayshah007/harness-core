@@ -44,6 +44,8 @@ import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.helpers.YamlExpressionResolveHelper;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplateDTO;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
+import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
+import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -64,13 +66,17 @@ import com.google.protobuf.ByteString;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.PredicateUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -90,6 +96,12 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject private ValidateAndMergeHelper validateAndMergeHelper;
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
+
+  private static final int MAX_LIST_SIZE = 1000;
+
+  private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
+
+  private static final String BRANCH_LIST_SIZE_EXCEPTION = "The size of unique branches list is greater than [%d]";
 
   @Override
   public Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
@@ -198,6 +210,63 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
     if (!criteriaList.isEmpty()) {
       criteria.andOperator(criteriaList.toArray(new Criteria[criteriaList.size()]));
+    }
+    return criteria;
+  }
+
+  @Override
+  public Criteria formCriteriaForRepoAndBranchListing(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String repoName) {
+    Criteria criteria = new Criteria();
+    criteria.and(PlanExecutionSummaryKeys.accountId).is(accountIdentifier);
+    criteria.and(PlanExecutionSummaryKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectIdentifier);
+
+    if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
+      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(repoName)) {
+      criteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is(repoName);
+    }
+    return criteria;
+  }
+
+  @Override
+  public PMSPipelineListRepoResponse getListOfRepo(Criteria criteria) {
+    List<String> uniqueRepos = pmsExecutionSummaryRespository.findListOfUniqueRepositories(criteria);
+    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
+    if (uniqueRepos.size() > MAX_LIST_SIZE) {
+      log.error(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+      throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+    }
+    return PMSPipelineListRepoResponse.builder().repositories(new HashSet<>(uniqueRepos)).build();
+  }
+
+  @Override
+  public PMSPipelineListBranchesResponse getListOfBranches(Criteria criteria) {
+    List<String> uniqueBranches = pmsExecutionSummaryRespository.findListOfUniqueBranches(criteria);
+    CollectionUtils.filter(uniqueBranches, PredicateUtils.notNullPredicate());
+    if (uniqueBranches.size() > MAX_LIST_SIZE) {
+      log.error(String.format(BRANCH_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+      throw new InternalServerErrorException(String.format(BRANCH_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+    }
+    return PMSPipelineListBranchesResponse.builder().branches(new HashSet<>(uniqueBranches)).build();
+  }
+
+  @Override
+  public Criteria formCriteriaV2(String accountId, String orgId, String projectId, List<String> pipelineIdentifier) {
+    Criteria criteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(accountId)) {
+      criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
+    }
+    if (EmptyPredicate.isNotEmpty(orgId)) {
+      criteria.and(PlanExecutionSummaryKeys.orgIdentifier).is(orgId);
+    }
+    if (EmptyPredicate.isNotEmpty(projectId)) {
+      criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectId);
+    }
+    if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
+      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
     }
     return criteria;
   }

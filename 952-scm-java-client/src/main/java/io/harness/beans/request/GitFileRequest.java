@@ -16,7 +16,7 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.PL)
 @Value
 @Builder
-public class GitFileRequest extends scmBaseRequest {
+public class GitFileRequest extends ScmBaseRequest {
   String branch;
   String commitId;
   String filepath;

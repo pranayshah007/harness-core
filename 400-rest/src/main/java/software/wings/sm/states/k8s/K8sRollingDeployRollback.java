@@ -213,6 +213,7 @@ public class K8sRollingDeployRollback extends AbstractK8sState {
       stateExecutionData.setNewInstanceStatusSummaries(
           fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
       saveInstanceInfoToSweepingOutput(context, fetchInstanceElementList(pods, true), fetchInstanceDetails(pods, true));
+      stateExecutionData.setPodsList(pods);
 
       return ExecutionResponse.builder()
           .executionStatus(executionStatus)

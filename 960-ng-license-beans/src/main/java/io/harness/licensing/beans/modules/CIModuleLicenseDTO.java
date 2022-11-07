@@ -34,4 +34,5 @@ import lombok.experimental.SuperBuilder;
     name = "CIModuleLicense", description = "This contains details of the Continuous Integration License in Harness")
 public class CIModuleLicenseDTO extends ModuleLicenseDTO {
   Integer numberOfCommitters;
+  Integer hostingCredits;
 }

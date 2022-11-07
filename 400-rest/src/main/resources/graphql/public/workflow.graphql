@@ -36,6 +36,11 @@ type Workflow {
     )
 }
 
+type InputVariable {
+  name: String
+  value: String
+}
+
 type Variable {
   #name of the variable
   name: String

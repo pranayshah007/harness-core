@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
@@ -180,6 +181,26 @@ public class ArtifactStepHelper {
 
         return ArtifactConfigToDelegateReqMapper.getAzureArtifactsDelegateRequest(azureArtifactsConfig,
             azureArtifactsConnectorDTO, encryptedDataDetails, azureArtifactsConfig.getConnectorRef().getValue());
+      case AMI:
+        AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactConfig;
+
+        connectorDTO = getConnector(amiArtifactConfig.getConnectorRef().getValue(), ambiance);
+
+        if (!(connectorDTO.getConnectorConfig() instanceof AwsConnectorDTO)) {
+          throw new InvalidConnectorTypeException("Provided Connector " + amiArtifactConfig.getConnectorRef().getValue()
+                  + " is not compatible with " + amiArtifactConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+
+        AwsConnectorDTO awsConnectorDTO1 = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+
+        if (awsConnectorDTO1.getCredential() != null && awsConnectorDTO1.getCredential().getConfig() != null) {
+          encryptedDataDetails =
+              secretManagerClientService.getEncryptionDetails(ngAccess, awsConnectorDTO1.getCredential().getConfig());
+        }
+
+        return ArtifactConfigToDelegateReqMapper.getAMIDelegateRequest(
+            amiArtifactConfig, awsConnectorDTO1, encryptedDataDetails, amiArtifactConfig.getConnectorRef().getValue());
       case GCR:
         GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(gcrArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -405,6 +426,8 @@ public class ArtifactStepHelper {
         return TaskType.CUSTOM_ARTIFACT_NG;
       case AZURE_ARTIFACTS:
         return TaskType.AZURE_ARTIFACT_TASK_NG;
+      case AMI:
+        return TaskType.AMI_ARTIFACT_TASK_NG;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -513,6 +536,16 @@ public class ArtifactStepHelper {
         connectorDTO = getConnector(azureArtifactsConfig.getConnectorRef().getValue(), ambiance);
 
         return TaskSelectorYaml.toTaskSelector(((AzureArtifactsConnectorDTO) connectorDTO.getConnectorConfig())
+                                                   .getDelegateSelectors()
+                                                   .stream()
+                                                   .map(TaskSelectorYaml::new)
+                                                   .collect(Collectors.toList()));
+      case AMI:
+        AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactConfig;
+
+        connectorDTO = getConnector(amiArtifactConfig.getConnectorRef().getValue(), ambiance);
+
+        return TaskSelectorYaml.toTaskSelector(((AwsConnectorDTO) connectorDTO.getConnectorConfig())
                                                    .getDelegateSelectors()
                                                    .stream()
                                                    .map(TaskSelectorYaml::new)

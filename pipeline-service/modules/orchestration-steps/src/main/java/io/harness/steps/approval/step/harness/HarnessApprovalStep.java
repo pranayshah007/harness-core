@@ -10,6 +10,10 @@ package io.harness.steps.approval.step.harness;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.CollectionUtils;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.AsyncExecutableWithRollback;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -20,6 +24,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.StepUtils;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
@@ -27,6 +32,7 @@ import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -37,40 +43,58 @@ public class HarnessApprovalStep extends AsyncExecutableWithRollback {
   @Inject private ApprovalInstanceService approvalInstanceService;
   @Inject private ApprovalNotificationHandler approvalNotificationHandler;
   @Inject @Named("PipelineExecutorService") ExecutorService executorService;
+  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     HarnessApprovalInstance approvalInstance = HarnessApprovalInstance.fromStepParameters(ambiance, stepParameters);
     HarnessApprovalInstance savedApprovalInstance =
         (HarnessApprovalInstance) approvalInstanceService.save(approvalInstance);
     executorService.submit(() -> approvalNotificationHandler.sendNotification(savedApprovalInstance, ambiance));
 
-    return AsyncExecutableResponse.newBuilder().addCallbackIds(approvalInstance.getId()).build();
+    return AsyncExecutableResponse.newBuilder()
+        .addCallbackIds(approvalInstance.getId())
+        .addAllLogKeys(CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
+            StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))))
+        .build();
   }
 
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    HarnessApprovalResponseData responseData = (HarnessApprovalResponseData) responseDataMap.values().iterator().next();
-    HarnessApprovalInstance instance =
-        (HarnessApprovalInstance) approvalInstanceService.get(responseData.getApprovalInstanceId());
-    return StepResponse.builder()
-        .status(instance.getStatus().toFinalExecutionStatus())
-        .failureInfo(instance.getFailureInfo())
-        .stepOutcome(
-            StepResponse.StepOutcome.builder().name("output").outcome(instance.toHarnessApprovalOutcome()).build())
-        .build();
+    try {
+      HarnessApprovalResponseData responseData =
+          (HarnessApprovalResponseData) responseDataMap.values().iterator().next();
+      HarnessApprovalInstance instance =
+          (HarnessApprovalInstance) approvalInstanceService.get(responseData.getApprovalInstanceId());
+      return StepResponse.builder()
+          .status(instance.getStatus().toFinalExecutionStatus())
+          .failureInfo(instance.getFailureInfo())
+          .stepOutcome(
+              StepResponse.StepOutcome.builder().name("output").outcome(instance.toHarnessApprovalOutcome()).build())
+          .build();
+    } finally {
+      closeLogStream(ambiance);
+    }
   }
 
   @Override
   public void handleAbort(
       Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
     approvalInstanceService.expireByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+    closeLogStream(ambiance);
   }
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
+  }
+
+  private void closeLogStream(Ambiance ambiance) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    logStreamingStepClient.closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 }

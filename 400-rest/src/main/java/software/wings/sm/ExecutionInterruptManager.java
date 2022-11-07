@@ -69,6 +69,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.beans.WorkflowType;
+import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.ExceptionLogger;
@@ -116,6 +117,7 @@ public class ExecutionInterruptManager {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private WorkflowNotificationHelper workflowNotificationHelper;
   @Inject private AppService appService;
+  @Inject private UsageMetricsEventPublisher usageMetricsEventPublisher;
 
   Map<ExecutionInterruptType, List<ExecutionStatus>> acceptableIndividualStatusList =
       ImmutableMap.<ExecutionInterruptType, List<ExecutionStatus>>builder()
@@ -196,6 +198,14 @@ public class ExecutionInterruptManager {
       executionInterrupt.setAccountId(appService.getAccountIdByAppId(executionInterrupt.getAppId()));
     }
     wingsPersistence.save(executionInterrupt);
+
+    try {
+      usageMetricsEventPublisher.publishExecutionInterruptTimeSeriesEvent(
+          executionInterrupt.getAccountId(), executionInterrupt);
+    } catch (Exception e) {
+      log.error("Failed to publish execution interrupt [{}] , [{}]", executionInterrupt, e);
+    }
+
     stateMachineExecutor.handleInterrupt(executionInterrupt);
 
     sendNotificationIfRequired(executionInterrupt);

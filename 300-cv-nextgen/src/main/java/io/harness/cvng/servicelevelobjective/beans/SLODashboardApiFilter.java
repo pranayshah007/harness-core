@@ -40,4 +40,8 @@ public class SLODashboardApiFilter {
   @Parameter(description = CVConstants.ERROR_BUDGET_RISK_PARAM_MESSAGE)
   @QueryParam("errorBudgetRisks")
   List<ErrorBudgetRisk> errorBudgetRisks;
+  @Parameter(description = "For filtering on the basis of name") @QueryParam("filter") String searchFilter;
+  @Parameter(description = "For filtering on the basis of SLO type") ServiceLevelObjectiveType type;
+  @Parameter(description = "For filtering on the basis of SLO target spec") SLOTargetFilterDTO sloTargetFilterDTO;
+  @Parameter(description = "For filtering on the basis of Composite SLO") String compositeSLOIdentifier;
 }

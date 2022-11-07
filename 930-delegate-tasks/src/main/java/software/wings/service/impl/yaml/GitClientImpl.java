@@ -74,6 +74,7 @@ import software.wings.beans.yaml.GitFetchFilesRequest;
 import software.wings.beans.yaml.GitFetchFilesResult;
 import software.wings.beans.yaml.GitFileChange;
 import software.wings.beans.yaml.GitFilesBetweenCommitsRequest;
+import software.wings.misc.CustomUserGitConfigSystemReader;
 import software.wings.service.intfc.yaml.GitClient;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -150,6 +151,7 @@ import org.eclipse.jgit.transport.http.apache.HttpClientConnectionFactory;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.util.FS;
 import org.eclipse.jgit.util.HttpSupport;
+import org.eclipse.jgit.util.SystemReader;
 
 /**
  * Created by anubhaw on 10/16/17.
@@ -198,7 +200,7 @@ public class GitClientImpl implements GitClient {
   }
 
   private void updateRemoteOriginInConfig(GitConfig gitConfig, File gitRepoDirectory) {
-    try (Git git = Git.open(gitRepoDirectory)) {
+    try (Git git = openGit(gitRepoDirectory, gitConfig.getDisableUserGitConfig())) {
       StoredConfig config = git.getRepository().getConfig();
       // Update local remote url if its changed
       String url = gitConfig.getRepoUrl();
@@ -227,7 +229,8 @@ public class GitClientImpl implements GitClient {
                                    .repoName(gitConfig.getRepoUrl())
                                    .gitFileChanges(new ArrayList<>())
                                    .build();
-    try (Git git = Git.open(new File(gitClientHelper.getRepoDirectory(gitOperationContext)))) {
+    try (Git git = openGit(
+             new File(gitClientHelper.getRepoDirectory(gitOperationContext)), gitConfig.getDisableUserGitConfig())) {
       git.checkout().setName(gitConfig.getBranch()).call();
       ((PullCommand) (getAuthConfiguredCommand(git.pull(), gitConfig))).call();
       Repository repository = git.getRepository();
@@ -381,7 +384,8 @@ public class GitClientImpl implements GitClient {
   @VisibleForTesting
   synchronized GitCheckoutResult checkout(GitOperationContext gitOperationContext) throws GitAPIException, IOException {
     GitConfig gitConfig = gitOperationContext.getGitConfig();
-    Git git = Git.open(new File(gitClientHelper.getRepoDirectory(gitOperationContext)));
+    Git git =
+        openGit(new File(gitClientHelper.getRepoDirectory(gitOperationContext)), gitConfig.getDisableUserGitConfig());
     try {
       if (isNotEmpty(gitConfig.getBranch())) {
         Ref ref = git.checkout()
@@ -417,7 +421,8 @@ public class GitClientImpl implements GitClient {
 
   private List<GitFileChange> getFilesCommited(String gitCommitId, GitOperationContext gitOperationContext) {
     GitConfig gitConfig = gitOperationContext.getGitConfig();
-    try (Git git = Git.open(new File(gitClientHelper.getRepoDirectory(gitOperationContext)))) {
+    try (Git git = openGit(
+             new File(gitClientHelper.getRepoDirectory(gitOperationContext)), gitConfig.getDisableUserGitConfig())) {
       ObjectId commitId = ObjectId.fromString(gitCommitId);
       RevCommit currentCommitObject = null;
       try (RevWalk revWalk = new RevWalk(git.getRepository())) {
@@ -600,7 +605,8 @@ public class GitClientImpl implements GitClient {
         checkoutGivenCommitForAllPaths(gitRequest.getNewCommitId(), gitConfig, gitConnectorId);
         List<GitFile> gitFilesFromDiff;
 
-        try (Git git = Git.open(new File(gitClientHelper.getFileDownloadRepoDirectory(gitConfig, gitConnectorId)))) {
+        try (Git git = openGit(new File(gitClientHelper.getFileDownloadRepoDirectory(gitConfig, gitConnectorId)),
+                 gitConfig.getDisableUserGitConfig())) {
           Repository repository = git.getRepository();
 
           ObjectId newCommitHead = repository.resolve(gitRequest.getNewCommitId() + "^{tree}");
@@ -921,7 +927,8 @@ public class GitClientImpl implements GitClient {
   }
 
   private void checkoutGivenCommitForAllPaths(String commitId, GitConfig gitConfig, String gitConnectorId) {
-    try (Git git = Git.open(new File(gitClientHelper.getFileDownloadRepoDirectory(gitConfig, gitConnectorId)))) {
+    try (Git git = openGit(new File(gitClientHelper.getFileDownloadRepoDirectory(gitConfig, gitConnectorId)),
+             gitConfig.getDisableUserGitConfig())) {
       log.info("Checking out commitId: " + commitId);
       CheckoutCommand checkoutCommand = git.checkout().setStartPoint(commitId).setCreateBranch(false).setAllPaths(true);
 
@@ -937,7 +944,8 @@ public class GitClientImpl implements GitClient {
 
   private void checkoutGivenCommitForPath(
       String commitId, List<String> filePaths, GitConfig gitConfig, String gitConnectorId) {
-    try (Git git = Git.open(new File(gitClientHelper.getFileDownloadRepoDirectory(gitConfig, gitConnectorId)))) {
+    try (Git git = openGit(new File(gitClientHelper.getFileDownloadRepoDirectory(gitConfig, gitConnectorId)),
+             gitConfig.getDisableUserGitConfig())) {
       log.info("Checking out commitId: " + commitId);
       CheckoutCommand checkoutCommand = git.checkout().setStartPoint(commitId).setCreateBranch(false);
 
@@ -962,7 +970,8 @@ public class GitClientImpl implements GitClient {
   private String checkoutBranchForPath(String branch, List<String> filePaths, GitConfig gitConfig,
       String gitConnectorId, boolean shouldExportCommitSha) {
     String latestCommitSha = null;
-    try (Git git = Git.open(new File(gitClientHelper.getFileDownloadRepoDirectory(gitConfig, gitConnectorId)))) {
+    try (Git git = openGit(new File(gitClientHelper.getFileDownloadRepoDirectory(gitConfig, gitConnectorId)),
+             gitConfig.getDisableUserGitConfig())) {
       log.info("Checking out Branch: " + branch);
       CheckoutCommand checkoutCommand = git.checkout()
                                             .setCreateBranch(true)
@@ -1001,7 +1010,8 @@ public class GitClientImpl implements GitClient {
   }
 
   private void resetWorkingDir(GitConfig gitConfig, String gitConnectorId) {
-    try (Git git = Git.open(new File(gitClientHelper.getFileDownloadRepoDirectory(gitConfig, gitConnectorId)))) {
+    try (Git git = openGit(new File(gitClientHelper.getFileDownloadRepoDirectory(gitConfig, gitConnectorId)),
+             gitConfig.getDisableUserGitConfig())) {
       log.info("Resetting repo");
       ResetCommand resetCommand = new ResetCommand(git.getRepository()).setMode(ResetType.HARD);
       resetCommand.call();
@@ -1075,7 +1085,7 @@ public class GitClientImpl implements GitClient {
       // Check URL change (ssh, https) and update in .git/config
       updateRemoteOriginInConfig(gitConfig, repoDir);
 
-      try (Git git = Git.open(repoDir)) {
+      try (Git git = openGit(repoDir, gitConfig.getDisableUserGitConfig())) {
         // update ref with latest commits on remote
         FetchResult fetchResult = performGitFetchOperation(gitConfig, logCallback, git); // fetch all remote references
 
@@ -1161,7 +1171,7 @@ public class GitClientImpl implements GitClient {
       // Check URL change (ssh, https) and update in .git/config
       updateRemoteOriginInConfig(gitConfig, repoDir);
 
-      try (Git git = Git.open(repoDir)) {
+      try (Git git = openGit(repoDir, gitConfig.getDisableUserGitConfig())) {
         log.info(getGitLogMessagePrefix(gitConfig.getGitRepoType()) + "Repo exist. do hard sync with remote branch");
 
         FetchResult fetchResult = ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), gitConfig)))
@@ -1314,6 +1324,15 @@ public class GitClientImpl implements GitClient {
     if (gitConfig.getGitRepoType() == null) {
       gitConfig.setGitRepoType(GitRepositoryType.YAML);
     }
+  }
+
+  private Git openGit(File repoDir, Boolean disableUserConfig) throws IOException {
+    if (disableUserConfig != null && disableUserConfig) {
+      SystemReader.setInstance(new CustomUserGitConfigSystemReader(null));
+    } else {
+      SystemReader.setInstance(null);
+    }
+    return Git.open(repoDir);
   }
 
   public static class ApacheHttpConnectionFactory implements HttpConnectionFactory {

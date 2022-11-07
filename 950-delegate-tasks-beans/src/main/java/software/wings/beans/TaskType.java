@@ -301,6 +301,7 @@ public enum TaskType {
   AMAZON_S3_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   GITHUB_PACKAGES_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   AZURE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Azure Task"),
+  AMI_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "AMI Task"),
   AWS_ROUTE53_TASK(TaskGroup.AWS),
   SHELL_SCRIPT_APPROVAL(TaskGroup.SCRIPT),
   CUSTOM_GET_BUILDS(TaskGroup.CUSTOM),
@@ -392,7 +393,8 @@ public enum TaskType {
   ECS_GIT_FETCH_RUN_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Run Task"),
   TRIGGER_AUTHENTICATION_TASK(TaskGroup.TRIGGER),
   SPOT_TASK_NG(TaskGroup.SPOTINST, "Spot NG Task"),
-  AZURE_WEB_APP_TASK_NG_V2(TaskGroup.AZURE, "Azure Web App Task V2", true);
+  FETCH_INSTANCE_SCRIPT_TASK_NG(TaskGroup.CUSTOM_DEPLOYMENT_NG, "Fetch Instance Script Task"),
+  AZURE_WEB_APP_TASK_NG_V2(TaskGroup.AZURE, "Azure Web App Task V2", false);
 
   private final TaskGroup taskGroup;
   private final String displayName;

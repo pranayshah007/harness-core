@@ -45,6 +45,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -263,6 +264,7 @@ public class AccountServiceTest extends WingsBaseTest {
                 CgServiceUsage.builder().name("svc1").serviceId("svcId").instanceCount(1).licensesUsed(1).build()))
             .build();
     when(cgCdLicenseUsageService.getActiveServiceLicenseUsage(anyString())).thenReturn(cgActiveServicesUsageInfo);
+    when(cgCdLicenseUsageService.getActiveServiceInTimePeriod(anyString(), anyInt())).thenReturn(5);
     Account account = setUpDataForTestingSetAccountStatusInternal(AccountType.PAID);
     when(featureFlagService.isEnabled(FeatureName.CG_LICENSE_USAGE, account.getUuid())).thenReturn(true);
 
@@ -273,6 +275,7 @@ public class AccountServiceTest extends WingsBaseTest {
     assertThat(details.isCreatedFromNG()).isEqualTo(false);
     assertThat(details.getLicenseInfo().getAccountType()).isEqualTo(AccountType.PAID);
     assertThat(details.getActiveServicesUsageInfo()).isSameAs(cgActiveServicesUsageInfo);
+    assertThat(details.getActiveServiceCount()).isEqualTo(5);
   }
 
   @Test

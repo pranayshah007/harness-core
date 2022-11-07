@@ -81,7 +81,10 @@ public class AlertCheckJob implements Job {
   private static TriggerBuilder<SimpleTrigger> alertTriggerBuilder(String accountId) {
     return TriggerBuilder.newTrigger()
         .withIdentity(accountId, GROUP)
-        .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(POLL_INTERVAL).repeatForever());
+        .withSchedule(SimpleScheduleBuilder.simpleSchedule()
+                          .withIntervalInSeconds(POLL_INTERVAL)
+                          .repeatForever()
+                          .withMisfireHandlingInstructionFireNow());
   }
 
   public TriggerBuilder<SimpleTrigger> getAlertTriggerBuilder(String accountId) {

@@ -177,6 +177,7 @@ public class K8sScale extends AbstractK8sState {
 
       stateExecutionData.setNewInstanceStatusSummaries(
           fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
+      stateExecutionData.setPodsList(newPods);
 
       return ExecutionResponse.builder()
           .executionStatus(executionStatus)

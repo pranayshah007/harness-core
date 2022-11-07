@@ -290,6 +290,7 @@ message GetFileRequest {
     string ref = 4;
   }
   Provider provider = 5;
+  bool base64Encoding = 6;
 }
 
 message GetBatchFileRequest {

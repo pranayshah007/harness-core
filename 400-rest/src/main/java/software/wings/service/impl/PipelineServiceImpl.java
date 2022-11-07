@@ -269,6 +269,7 @@ public class PipelineServiceImpl implements PipelineService {
     setUnset(ops, "pipelineStages", pipeline.getPipelineStages());
     setUnset(ops, "failureStrategies", pipeline.getFailureStrategies());
     setUnset(ops, "keywords", trimmedLowercaseSet(keywords));
+    setUnset(ops, "rollbackPreviousStages", pipeline.rollbackPreviousStages);
 
     wingsPersistence.update(wingsPersistence.createQuery(Pipeline.class)
                                 .filter("appId", pipeline.getAppId())

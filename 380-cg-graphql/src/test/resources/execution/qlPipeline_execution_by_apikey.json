@@ -27,7 +27,29 @@
       "pipelineStageName":"STAGE 2",
       "workflowExecutionId":null,
       "runtimeInputVariables":null,
-      "status":"PAUSED"
+      "status":"PAUSED",
+      "inputVariables": [
+        {
+          "name": "Environment",
+          "value": "imRBOGz2ReyY89dr4K-vrQ"
+        },
+        {
+          "name": "InfraDefinition_KUBERNETES",
+          "value": "CzcfKUN2Q_eCrlrV66r4ug"
+        },
+        {
+          "name": "message",
+          "value": "${pipelineMessage}"
+        },
+        {
+          "name": "buildNumber",
+          "value": "${pipelineBuildNumber}"
+        },
+        {
+          "name": "ServiceId",
+          "value": "${pipelineService}"
+        }
+      ]
     },
     {
       "pipelineStageElementId":"QI17tOeqQA2okKqcIkPMjg",

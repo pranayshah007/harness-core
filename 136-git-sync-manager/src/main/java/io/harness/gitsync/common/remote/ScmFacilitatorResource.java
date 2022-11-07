@@ -37,6 +37,8 @@ import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
+import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
 import io.harness.gitsync.common.impl.GitUtils;
 import io.harness.gitsync.common.service.HarnessToGitHelperService;
@@ -417,5 +419,37 @@ public class ScmFacilitatorResource {
                       .projectIdentifier(projectIdentifier)
                       .build();
     return ResponseDTO.newResponse(scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName));
+  }
+
+  // TODO Added only for TESTING purpose, remove later
+  @GET
+  @Path("list-files")
+  @ApiOperation(value = "List files", nickname = "listFiles")
+  @Hidden
+  public ResponseDTO<ScmListFilesResponseDTO> listFiles(
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotBlank @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = GitSyncApiConstants.REPO_NAME_PARAM_MESSAGE) @NotBlank @QueryParam(
+          NGCommonEntityConstants.REPO_NAME) String repoName,
+      @Parameter(description = GitSyncApiConstants.GIT_CONNECTOR_REF_PARAM_MESSAGE) @NotBlank @QueryParam(
+          GitSyncApiConstants.CONNECTOR_REF) String connectorRef,
+      @QueryParam(GitSyncApiConstants.BRANCH_KEY) String branchName,
+      @QueryParam(GitSyncApiConstants.FILE_PATH_KEY) String fileDirectory) {
+    Scope scope = Scope.builder()
+                      .accountIdentifier(accountIdentifier)
+                      .orgIdentifier(orgIdentifier)
+                      .projectIdentifier(projectIdentifier)
+                      .build();
+    return ResponseDTO.newResponse(scmFacilitatorService.listFiles(ScmListFilesRequestDTO.builder()
+                                                                       .ref(branchName)
+                                                                       .scope(scope)
+                                                                       .fileDirectoryPath(fileDirectory)
+                                                                       .repoName(repoName)
+                                                                       .connectorRef(connectorRef)
+                                                                       .build()));
   }
 }

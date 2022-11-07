@@ -18,6 +18,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -107,7 +108,7 @@ public class NGTemplateRefreshResource {
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
           "templateIdentifier") @NotNull String templateIdentifier,
       @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
-      String versionLabel, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      String versionLabel, @BeanParam GitEntityUpdateInfoDTO gitEntityUpdateInfoDTO) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
     templateRefreshService.refreshAndUpdateTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
@@ -203,7 +204,7 @@ public class NGTemplateRefreshResource {
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
           "templateIdentifier") @NotNull String templateIdentifier,
       @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
-      String versionLabel, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      String versionLabel, @BeanParam GitEntityUpdateInfoDTO gitEntityUpdateInfoDTO) {
     templateRefreshService.recursivelyRefreshTemplates(accountId, orgId, projectId, templateIdentifier, versionLabel);
     return ResponseDTO.newResponse(true);
   }

@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
 import static java.lang.Boolean.TRUE;
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -50,6 +51,7 @@ import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateDeleteListRequestDTO;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateImportSaveResponse;
+import io.harness.template.beans.TemplateListRepoResponse;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -404,5 +406,24 @@ public class NGTemplateResourceTest extends CategoryTest {
     ResponseDTO<TemplateImportSaveResponse> importTemplateFromGit = templateResource.importTemplateFromGit(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, gitImportInfoDTO, templateImportRequestDTO);
     assertThat(importTemplateFromGit.getData().getTemplateIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetListRepos() {
+    HashSet<String> repos = new HashSet<>();
+    repos.add("testRepo1");
+    repos.add("testRepo2");
+
+    TemplateListRepoResponse templateListRepoResponse = TemplateListRepoResponse.builder().repositories(repos).build();
+
+    doReturn(templateListRepoResponse)
+        .when(templateService)
+        .getListOfRepos(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+
+    ResponseDTO<TemplateListRepoResponse> uniqueListRepos =
+        templateResource.listRepos(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    assertEquals(uniqueListRepos.getData().getRepositories(), repos);
   }
 }

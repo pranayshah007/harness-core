@@ -17,6 +17,8 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
@@ -35,9 +37,11 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.TemplatesResolvedPipelineResponseDTO;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.polling.contracts.AMIPayload;
 import io.harness.polling.contracts.AcrPayload;
 import io.harness.polling.contracts.AmazonS3Payload;
 import io.harness.polling.contracts.ArtifactoryRegistryPayload;
+import io.harness.polling.contracts.AzureArtifactsPayload;
 import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.CustomPayload;
 import io.harness.polling.contracts.DockerHubPayload;
@@ -276,8 +280,44 @@ public class BuildTriggerHelper {
       validatePollingItemForGoogleArtifactRegistry(pollingItem);
     } else if (pollingPayloadData.hasGithubPackagesPollingPayload()) {
       validatePollingItemForGithubPackages(pollingItem);
+    } else if (pollingPayloadData.hasAzureArtifactsPayload()) {
+      validatePollingItemForAzureArtifacts(pollingItem);
+    } else if (pollingPayloadData.hasAmiPayload()) {
+      validatePollingItemForAMI(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
+    }
+  }
+
+  private void validatePollingItemForAzureArtifacts(PollingItem pollingItem) {
+    AzureArtifactsPayload azureArtifactsPayload = pollingItem.getPollingPayloadData().getAzureArtifactsPayload();
+
+    String error = checkFiledValueError("feed", azureArtifactsPayload.getFeed());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    error = checkFiledValueError("package", azureArtifactsPayload.getPackageName());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    error = checkFiledValueError("packageType", azureArtifactsPayload.getPackageType());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForAMI(PollingItem pollingItem) {
+    AMIPayload amiPayload = pollingItem.getPollingPayloadData().getAmiPayload();
+
+    String error = checkFiledValueError("region", amiPayload.getRegion());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
     }
   }
 
@@ -512,6 +552,50 @@ public class BuildTriggerHelper {
       inputs = JsonUtils.asList(evaluateExpression.toString(), new TypeReference<List<NGVariableTrigger>>() {});
     }
     return inputs;
+  }
+
+  public List<AMITag> validateAndFetchTagsListFromJsonNode(BuildTriggerOpsData buildTriggerOpsData, String key) {
+    List<AMITag> tags = buildTriggerOpsData.getPipelineBuildSpecMap().containsKey(key)
+        ? JsonUtils.asList(((JsonNode) buildTriggerOpsData.getPipelineBuildSpecMap().get(key)).asText(),
+            new TypeReference<List<AMITag>>() {})
+        : Collections.emptyList();
+
+    if (isEmpty(tags)) {
+      EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
+
+      Object evaluateExpression =
+          engineExpressionEvaluator.evaluateExpression(key, buildTriggerOpsData.getTriggerSpecMap());
+
+      if (evaluateExpression == null) {
+        return Collections.emptyList();
+      }
+
+      tags = JsonUtils.asList(evaluateExpression.toString(), new TypeReference<List<AMITag>>() {});
+    }
+
+    return tags;
+  }
+
+  public List<AMIFilter> validateAndFetchFiltersListFromJsonNode(BuildTriggerOpsData buildTriggerOpsData, String key) {
+    List<AMIFilter> filters = buildTriggerOpsData.getPipelineBuildSpecMap().containsKey(key)
+        ? JsonUtils.asList(((JsonNode) buildTriggerOpsData.getPipelineBuildSpecMap().get(key)).asText(),
+            new TypeReference<List<AMIFilter>>() {})
+        : Collections.emptyList();
+
+    if (isEmpty(filters)) {
+      EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
+
+      Object evaluateExpression =
+          engineExpressionEvaluator.evaluateExpression(key, buildTriggerOpsData.getTriggerSpecMap());
+
+      if (evaluateExpression == null) {
+        return Collections.emptyList();
+      }
+
+      filters = JsonUtils.asList(evaluateExpression.toString(), new TypeReference<List<AMIFilter>>() {});
+    }
+
+    return filters;
   }
 
   public void verifyStageAndBuildRef(TriggerDetails triggerDetails, String fieldName) {

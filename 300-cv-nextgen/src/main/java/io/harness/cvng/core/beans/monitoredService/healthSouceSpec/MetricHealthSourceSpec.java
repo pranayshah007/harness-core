@@ -8,8 +8,10 @@
 package io.harness.cvng.core.beans.monitoredService.healthSouceSpec;
 
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 
 import java.util.List;
+import java.util.Set;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
@@ -17,4 +19,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public abstract class MetricHealthSourceSpec extends HealthSourceSpec {
   public abstract List<? extends HealthSourceMetricDefinition> getMetricDefinitions();
+
+  public abstract Set<TimeSeriesMetricPackDTO> getMetricPacks();
 }

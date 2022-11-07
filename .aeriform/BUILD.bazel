@@ -170,10 +170,6 @@ aeriform("//450-ce-views:module")
 
 aeriform("//450-ce-views:tests")
 
-aeriform("//460-capability:module")
-
-aeriform("//460-capability:tests")
-
 aeriform("//470-alert:module")
 
 aeriform("//480-pricing-service:module")

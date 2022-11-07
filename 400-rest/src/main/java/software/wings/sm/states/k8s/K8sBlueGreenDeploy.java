@@ -215,6 +215,7 @@ public class K8sBlueGreenDeploy extends AbstractK8sState {
 
     stateExecutionData.setNewInstanceStatusSummaries(
         fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
+    stateExecutionData.setPodsList(newPods);
 
     saveK8sElement(context,
         K8sElement.builder()

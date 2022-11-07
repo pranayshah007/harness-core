@@ -100,6 +100,8 @@ public interface Constants {
   String CUSTOM_ARTIFACT = "CustomArtifact";
   String GOOGLE_ARTIFACT_REGISTRY = "GoogleArtifactRegistry";
   String GITHUB_PACKAGES = "GithubPackageRegistry";
+  String AZURE_ARTIFACTS = "AzureArtifacts";
+  String AMI = "AmazonMachineImage";
 
   String MANIFEST_VERSION = "<+trigger.manifest.version>";
   String ARTIFACT_VERSION = "<+trigger.artifact.build>";

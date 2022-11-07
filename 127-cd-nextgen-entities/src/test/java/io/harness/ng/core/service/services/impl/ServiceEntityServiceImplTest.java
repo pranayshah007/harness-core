@@ -38,6 +38,7 @@ import io.harness.ng.core.entitysetupusage.impl.EntitySetupUsageServiceImpl;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
@@ -664,10 +665,12 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     String oldTemplateInputYaml = readFile("service/serviceInputs-with-few-values-fixed.yaml");
     String mergedTemplateInputsYaml = readFile("service/serviceInputs-merged.yaml");
-    String mergedYaml = serviceEntityService.mergeServiceInputs(
+    ServiceInputsMergedResponseDto responseDto = serviceEntityService.mergeServiceInputs(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, "serviceWithPrimaryArtifactRefRuntime", oldTemplateInputYaml);
+    String mergedYaml = responseDto.getMergedServiceInputsYaml();
     assertThat(mergedYaml).isNotNull().isNotEmpty();
     assertThat(mergedYaml).isEqualTo(mergedTemplateInputsYaml);
+    assertThat(responseDto.getServiceYaml()).isNotNull().isNotEmpty().isEqualTo(yaml);
   }
 
   private String readFile(String filename) {

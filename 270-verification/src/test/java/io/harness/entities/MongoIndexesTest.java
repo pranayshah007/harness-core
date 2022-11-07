@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.SOWMYA;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.VerificationBase;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.mongo.IndexCreator;
 import io.harness.mongo.IndexManagerSession;
@@ -45,6 +46,7 @@ public class MongoIndexesTest extends VerificationBase {
   @Test
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testConfirmAllIndexes() throws IOException {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setObjectFactory(objectFactory);
