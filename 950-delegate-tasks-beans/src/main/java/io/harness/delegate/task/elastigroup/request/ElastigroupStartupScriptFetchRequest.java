@@ -42,7 +42,6 @@ public class ElastigroupStartupScriptFetchRequest
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    List<ExecutionCapability> capabilities = new ArrayList<>();
-    return capabilities;
+    return new ArrayList<>();
   }
 }
