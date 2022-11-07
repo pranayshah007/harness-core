@@ -102,8 +102,8 @@ public class AuthenticationManager {
   @Inject private DeployVariant deployVariant;
   @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
   private UserClient userClient;
-  private static final String LOGIN_ERROR_CODE_INVALIDSSO = "#/login?errorCode=invalidsso";
-  private static final String LOGIN_ERROR_CODE_SAMLTESTSUCCESS = "#/login?errorCode=samltestsuccess";
+  private static final String LOGIN_ERROR_CODE_INVALIDSSO = "auth/#/login?errorCode=invalidsso";
+  private static final String LOGIN_ERROR_CODE_SAMLTESTSUCCESS = "auth/#/login?errorCode=samltestsuccess";
   private static final String EMAIL = "email";
   private static final String ACCOUNT_ID = "accountId";
   public static final int DEFAULT_PAGE_SIZE = 1;
