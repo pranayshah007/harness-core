@@ -36,11 +36,11 @@ public class ElastigroupDelegateTaskHelper {
     CommandUnitsProgress commandUnitsProgress = elastigroupCommandRequest.getCommandUnitsProgress() != null
         ? elastigroupCommandRequest.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();
-    log.info("Starting task execution for command: {}", elastigroupCommandRequest.getEcsCommandType().name());
+    log.info("Starting task execution for command: {}", elastigroupCommandRequest.getElastigroupCommandType().name());
 //    decryptRequestDTOs(elastigroupCommandRequest);
 
     ElastigroupCommandTaskNGHandler commandTaskHandler =
-        commandTaskTypeToTaskHandlerMap.get(elastigroupCommandRequest.getEcsCommandType().name());
+        commandTaskTypeToTaskHandlerMap.get(elastigroupCommandRequest.getElastigroupCommandType().name());
     try {
       ElastigroupCommandResponse elastigroupCommandResponse =
           commandTaskHandler.executeTask(elastigroupCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
@@ -49,7 +49,7 @@ public class ElastigroupDelegateTaskHelper {
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in processing elastigroup task [{}]",
-          elastigroupCommandRequest.getCommandName() + ":" + elastigroupCommandRequest.getEcsCommandType(), sanitizedException);
+          elastigroupCommandRequest.getCommandName() + ":" + elastigroupCommandRequest.getElastigroupCommandType(), sanitizedException);
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     }
