@@ -104,9 +104,13 @@ public class CVNGStepUtils {
     }
   }
 
+  public static YamlNode getEnvRefNodeAtStageLevel(YamlNode stageYaml) {
+    return getEnvRefNode(stageYaml.getField(SPEC_KEY).getNode());
+  }
+
   public static YamlNode getEnvRefNode(YamlNode stageYaml) {
-    YamlField environmentKey = stageYaml.getField(SPEC_KEY).getNode().getField(ENVIRONMENT_KEY);
-    YamlField infrastructureKey = stageYaml.getField(SPEC_KEY).getNode().getField(INFRASTRUCTURE_KEY);
+    YamlField environmentKey = stageYaml.getField(ENVIRONMENT_KEY);
+    YamlField infrastructureKey = stageYaml.getField(INFRASTRUCTURE_KEY);
     try {
       if (environmentKey != null) {
         return environmentKey.getNode().getField(ENVIRONMENT_REF_KEY).getNode();
