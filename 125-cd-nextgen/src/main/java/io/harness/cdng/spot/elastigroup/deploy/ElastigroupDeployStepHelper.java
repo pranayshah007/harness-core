@@ -48,10 +48,12 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
 
     ElastigroupSetupDataOutcome elastigroupSetupOutcome = getElastigroupSetupOutcome(ambiance);
 
+    boolean isFinalDeployStep = isFinalDeployStep(stepParameters, elastigroupSetupOutcome);
+
     ElastiGroup newElastigroup = calculateNewForUpsize(
-        stepParameters.getNewService(), elastigroupSetupOutcome.getNewElastiGroupOriginalConfig());
+        stepParameters.getNewService(), elastigroupSetupOutcome.getNewElastiGroupOriginalConfig(), isFinalDeployStep);
     ElastiGroup oldElastigroup = calculateOldForDownsize(
-        stepParameters.getOldService(), elastigroupSetupOutcome.getOldElastiGroupOriginalConfig());
+        stepParameters.getOldService(), elastigroupSetupOutcome.getOldElastiGroupOriginalConfig(), isFinalDeployStep);
 
     return ElastigroupDeployTaskParameters.builder()
         .spotConnector(getSpotConnector(ambiance, infrastructureOutcome))
@@ -61,7 +63,27 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
         .build();
   }
 
-  private ElastiGroup calculateNewForUpsize(Capacity requestedCapacity, ElastiGroup setupElastigroup) {
+  private boolean isFinalDeployStep(
+      ElastigroupDeployStepParameters stepParameters, ElastigroupSetupDataOutcome elastigroupSetupOutcome) {
+    if (CapacitySpecType.COUNT.equals(stepParameters.getNewService().getType())) {
+      CountCapacitySpec spec = (CountCapacitySpec) stepParameters.getNewService().getSpec();
+
+      int requestedTarget = ParameterFieldHelper.getParameterFieldValue(spec.getCount());
+      int setupTarget = elastigroupSetupOutcome.getNewElastiGroupOriginalConfig().getCapacity().getTarget();
+
+      return requestedTarget >= setupTarget;
+    } else if (CapacitySpecType.PERCENTAGE.equals(stepParameters.getNewService().getType())) {
+      PercentageCapacitySpec spec = (PercentageCapacitySpec) stepParameters.getNewService().getSpec();
+
+      int requestedPercentage = ParameterFieldHelper.getParameterFieldValue(spec.getPercentage());
+
+      return requestedPercentage >= 100;
+    }
+    return false;
+  }
+
+  private ElastiGroup calculateNewForUpsize(
+      Capacity requestedCapacity, ElastiGroup setupElastigroup, boolean isFinalDeployStep) {
     final ElastiGroup result = setupElastigroup.clone();
     if (CapacitySpecType.COUNT.equals(requestedCapacity.getType())) {
       CountCapacitySpec spec = (CountCapacitySpec) requestedCapacity.getSpec();
@@ -82,16 +104,24 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
     } else {
       throw new InvalidRequestException("Unknown capacity type: " + requestedCapacity.getType());
     }
+
+    if (!isFinalDeployStep) {
+      forceElastigroupScale(result);
+    }
+
     return result;
   }
 
-  private ElastiGroup calculateOldForDownsize(Capacity requestedCapacity, ElastiGroup setupElastigroup) {
+  private ElastiGroup calculateOldForDownsize(
+      Capacity requestedCapacity, ElastiGroup setupElastigroup, boolean isFinalDeployStep) {
     final ElastiGroup result = setupElastigroup.clone();
     if (result == null) {
       return null;
     }
 
-    if (CapacitySpecType.COUNT.equals(requestedCapacity.getType())) {
+    if (isFinalDeployStep) {
+      scaleDownElastigroup(result);
+    } else if (CapacitySpecType.COUNT.equals(requestedCapacity.getType())) {
       final CountCapacitySpec spec = (CountCapacitySpec) requestedCapacity.getSpec();
 
       int target = ParameterFieldHelper.getParameterFieldValue(spec.getCount());
@@ -115,6 +145,17 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
     }
 
     return result;
+  }
+
+  private void scaleDownElastigroup(ElastiGroup result) {
+    result.getCapacity().setTarget(0);
+    result.getCapacity().setMinimum(0);
+    result.getCapacity().setMaximum(0);
+  }
+
+  private void forceElastigroupScale(ElastiGroup result) {
+    result.getCapacity().setMinimum(result.getCapacity().getTarget());
+    result.getCapacity().setMaximum(result.getCapacity().getTarget());
   }
 
   private ElastigroupSetupDataOutcome getElastigroupSetupOutcome(Ambiance ambiance) {
