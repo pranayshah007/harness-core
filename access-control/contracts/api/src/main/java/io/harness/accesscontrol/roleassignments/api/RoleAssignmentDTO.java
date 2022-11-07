@@ -18,6 +18,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,9 +44,9 @@ public class RoleAssignmentDTO {
   public static final String MODEL_NAME = "RoleAssignment";
 
   final String identifier;
-  @ApiModelProperty(required = true) final String resourceGroupIdentifier;
-  @ApiModelProperty(required = true) final String roleIdentifier;
-  @ApiModelProperty(required = true) final PrincipalDTO principal;
+  @ApiModelProperty(required = true) @NotEmpty final String resourceGroupIdentifier;
+  @ApiModelProperty(required = true) @NotEmpty final String roleIdentifier;
+  @ApiModelProperty(required = true) @NotNull final PrincipalDTO principal;
   @Setter boolean disabled;
   @Getter(AccessLevel.NONE) final Boolean managed;
 

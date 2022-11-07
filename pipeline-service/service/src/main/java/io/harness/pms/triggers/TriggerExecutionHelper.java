@@ -270,7 +270,10 @@ public class TriggerExecutionHelper {
               InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineYamlBeforeMerge, sanitizedRuntimeInputYaml, true);
         }
       }
-      pipelineYaml = InputSetSanitizer.trimValues(pipelineYaml);
+
+      if (pipelineEntity.getHarnessVersion().equals(PipelineVersion.V0)) {
+        pipelineYaml = InputSetSanitizer.trimValues(pipelineYaml);
+      }
 
       try (PmsGitSyncBranchContextGuard ignore =
                pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(gitSyncBranchContextByteString, false)) {

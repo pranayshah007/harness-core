@@ -50,6 +50,7 @@ import io.harness.polling.contracts.GARPayload;
 import io.harness.polling.contracts.GcrPayload;
 import io.harness.polling.contracts.GithubPackagesPollingPayload;
 import io.harness.polling.contracts.JenkinsPayload;
+import io.harness.polling.contracts.Nexus2RegistryPayload;
 import io.harness.polling.contracts.Nexus3RegistryPayload;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
@@ -281,6 +282,8 @@ public class BuildTriggerHelper {
       validatePollingItemForGoogleArtifactRegistry(pollingItem);
     } else if (pollingPayloadData.hasGithubPackagesPollingPayload()) {
       validatePollingItemForGithubPackages(pollingItem);
+    } else if (pollingPayloadData.hasNexus2RegistryPayload()) {
+      validatePollingItemForNexus2Registry(pollingItem);
     } else if (pollingPayloadData.hasNexus3RegistryPayload()) {
       validatePollingItemForNexus3Registry(pollingItem);
     } else if (pollingPayloadData.hasAzureArtifactsPayload()) {
@@ -351,7 +354,15 @@ public class BuildTriggerHelper {
 
   private void validatePollingItemForNexus3Registry(PollingItem pollingItem) {
     Nexus3RegistryPayload nexus3RegistryPayload = pollingItem.getPollingPayloadData().getNexus3RegistryPayload();
-    String error = checkFiledValueError("artifact Path", nexus3RegistryPayload.getArtifactPath());
+    String error = checkFiledValueError("Repository", nexus3RegistryPayload.getRepository());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForNexus2Registry(PollingItem pollingItem) {
+    Nexus2RegistryPayload nexus2RegistryPayload = pollingItem.getPollingPayloadData().getNexus2RegistryPayload();
+    String error = checkFiledValueError("Repository", nexus2RegistryPayload.getRepository());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }

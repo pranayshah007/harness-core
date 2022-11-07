@@ -193,6 +193,7 @@ public class ExecutionDetailsResource {
   @POST
   @Path("/v2/summary")
   @ApiModelProperty(hidden = true)
+  @Hidden
   @ApiOperation(value = "Gets Executions list for multiple pipeline filters",
       nickname = "getListOfExecutionsForMultiplePipelinesIdentifiers")
   @Operation(operationId = "getListOfExecutionsForMultiplePipelinesIdentifiers",

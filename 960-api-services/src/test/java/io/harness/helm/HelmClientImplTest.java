@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
@@ -71,7 +70,7 @@ public class HelmClientImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(HelmCliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
         .when(helmClient)
-        .executeHelmCLICommand(anyString(), anyLong(), any(OutputStream.class), any());
+        .executeHelmCLICommandNoDefaultTimeout(anyString(), any(OutputStream.class), any());
     buildHelmInstallCommandData();
     buildHelmRollbackCommandData();
     when(k8sGlobalConfigService.getHelmPath(any(HelmVersion.class))).thenReturn("/client-tools/v3.1/helm");
@@ -397,7 +396,7 @@ public class HelmClientImplTest extends CategoryTest {
       throws Exception {
     consumer.accept(request);
     verify(helmClient, Mockito.atLeastOnce())
-        .executeHelmCLICommand(stringCaptor.capture(), anyLong(), nullable(OutputStream.class), any());
+        .executeHelmCLICommandNoDefaultTimeout(stringCaptor.capture(), nullable(OutputStream.class), any());
     buildHelmInstallCommandData();
     buildHelmRollbackCommandData();
     return stringCaptor.getValue();
@@ -410,7 +409,9 @@ public class HelmClientImplTest extends CategoryTest {
     String successCommand = "exit 0";
     String failCommand = "exit 1";
     // Override @Before setup
-    doCallRealMethod().when(helmClient).executeHelmCLICommand(anyString(), anyLong(), any(OutputStream.class), any());
+    doCallRealMethod()
+        .when(helmClient)
+        .executeHelmCLICommandNoDefaultTimeout(anyString(), any(OutputStream.class), any());
 
     assertThat(helmClient.executeHelmCLICommand(successCommand).getCommandExecutionStatus())
         .isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -436,12 +437,16 @@ public class HelmClientImplTest extends CategoryTest {
     String expectedYamlMessage = "Some Yaml File\n";
     String command = "echo 'Some Yaml File'";
     String combinedOutput = errorMsg + " " + expectedYamlMessage;
-    doCallRealMethod().when(helmClient).executeHelmCLICommand(command, 1000000, errorStream1, Collections.emptyMap());
-    doCallRealMethod().when(helmClient).executeHelmCLICommand(command, 1000000, errorStream2, Collections.emptyMap());
+    doCallRealMethod()
+        .when(helmClient)
+        .executeHelmCLICommandNoDefaultTimeout(command, errorStream1, Collections.emptyMap());
+    doCallRealMethod()
+        .when(helmClient)
+        .executeHelmCLICommandNoDefaultTimeout(command, errorStream2, Collections.emptyMap());
     HelmCliResponse helmCliResponse1 =
-        helmClient.executeHelmCLICommand(command, 1000000, errorStream1, Collections.emptyMap());
+        helmClient.executeHelmCLICommandNoDefaultTimeout(command, errorStream1, Collections.emptyMap());
     HelmCliResponse helmCliResponse2 =
-        helmClient.executeHelmCLICommand(command, 1000000, errorStream2, Collections.emptyMap());
+        helmClient.executeHelmCLICommandNoDefaultTimeout(command, errorStream2, Collections.emptyMap());
     assertThat(helmCliResponse1.getOutput().equals(expectedYamlMessage));
     assertThat(helmCliResponse1.getErrorStreamOutput().equals(errorMsg));
     assertThat(helmCliResponse1.getOutputWithErrorStream().equals(combinedOutput));

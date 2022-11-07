@@ -33,6 +33,7 @@ message PollingPayloadData {
     AMIPayload amiPayload = 20;
     AMITagPayload amiTagPayload = 21;
     AMIFilterPayload amiFilterPayload = 22;
+    Nexus2RegistryPayload nexus2RegistryPayload = 23;
   }
 }
 
@@ -55,6 +56,7 @@ enum Type {
   CUSTOM_ARTIFACT = 15;
   AZURE_ARTIFACTS = 16;
   AMI = 17;
+  NEXUS2 = 18;
 }
 
 message HttpHelmPayload {
@@ -108,6 +110,16 @@ message Nexus3RegistryPayload {
   string classifier = 8;
   string extension = 9;
   string repositoryPort = 10;
+}
+
+message Nexus2RegistryPayload {
+  string repository = 1;
+  string repositoryFormat = 3;
+  string artifactId = 4;
+  string groupId = 5;
+  string packageName = 6;
+  string classifier = 8;
+  string extension = 9;
 }
 
 message ArtifactoryRegistryPayload {

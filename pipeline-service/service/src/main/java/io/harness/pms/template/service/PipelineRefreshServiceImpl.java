@@ -39,9 +39,9 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
   public boolean refreshTemplateInputsInPipeline(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
     PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
-    if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
-      RefreshResponseDTO refreshResponseDTO = pmsPipelineTemplateHelper.getRefreshedYaml(
-          accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
+    RefreshResponseDTO refreshResponseDTO = pmsPipelineTemplateHelper.getRefreshedYaml(
+        accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
+    if (refreshResponseDTO != null) {
       updatePipelineWithYaml(pipelineEntity, refreshResponseDTO.getRefreshedYaml());
     }
     return true;
@@ -98,13 +98,11 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
   public boolean recursivelyRefreshAllTemplateInputsInPipeline(String accountId, String orgId, String projectId,
       String pipelineIdentifier, GitEntityUpdateInfoDTO gitEntityBasicInfo) {
     PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
-    if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
-      YamlFullRefreshResponseDTO refreshResponse = pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(
-          accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
-      if (refreshResponse.isShouldRefreshYaml()) {
-        GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-        updatePipelineWithYaml(pipelineEntity, refreshResponse.getRefreshedYaml());
-      }
+    YamlFullRefreshResponseDTO refreshResponse = pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(
+        accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
+    if (refreshResponse != null && refreshResponse.isShouldRefreshYaml()) {
+      GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+      updatePipelineWithYaml(pipelineEntity, refreshResponse.getRefreshedYaml());
     }
     return true;
   }

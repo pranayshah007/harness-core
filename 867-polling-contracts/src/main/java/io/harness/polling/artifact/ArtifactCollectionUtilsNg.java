@@ -22,6 +22,7 @@ import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.nexus.Nexus2ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.exception.InvalidRequestException;
@@ -60,6 +61,8 @@ public class ArtifactCollectionUtilsNg {
         return ((GarDelegateResponse) artifactDelegateResponse).getVersion();
       case GITHUB_PACKAGES:
         return ((GithubPackagesArtifactDelegateResponse) artifactDelegateResponse).getVersion();
+      case NEXUS2_REGISTRY:
+        return ((Nexus2ArtifactDelegateResponse) artifactDelegateResponse).getTag();
       case AZURE_ARTIFACTS:
         return ((AzureArtifactsDelegateResponse) artifactDelegateResponse).getVersion();
       case AMI:

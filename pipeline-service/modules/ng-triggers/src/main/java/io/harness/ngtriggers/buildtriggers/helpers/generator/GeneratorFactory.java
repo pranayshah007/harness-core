@@ -24,6 +24,7 @@ import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GCR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GITHUB_PACKAGES;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GoogleArtifactRegistry;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.JENKINS;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.NEXUS2_REGISTRY;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.NEXUS3_REGISTRY;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -55,6 +56,7 @@ public class GeneratorFactory {
   private final CustomPollingItemGenerator customPollingItemGenerator;
   private final GARPollingItemGenerator garPollingItemGenerator;
   private final GithubPackagesPollingItemGenerator githubPackagesPollingItemGenerator;
+  private final Nexus2RegistryPollingItemGenerator nexus2RegistryPollingItemGenerator;
   private final Nexus3PollingItemGenerator nexus3PollingItemGenerator;
   private final AzureArtifactsPollingItemGenerator azureArtifactsPollingItemGenerator;
   private final AMIPollingItemGenerator amiPollingItemGenerator;
@@ -94,6 +96,8 @@ public class GeneratorFactory {
       return garPollingItemGenerator;
     } else if (GITHUB_PACKAGES.getValue().equals(buildType)) {
       return githubPackagesPollingItemGenerator;
+    } else if (NEXUS2_REGISTRY.getValue().equals(buildType)) {
+      return nexus2RegistryPollingItemGenerator;
     } else if (NEXUS3_REGISTRY.getValue().equals(buildType)) {
       return nexus3PollingItemGenerator;
     } else if (AZURE_ARTIFACTS.getValue().equals(buildType)) {

@@ -31,11 +31,10 @@ pipeline:
             type: "Deployment"
             spec:
               service:
-                serviceRef: "manager"
+                serviceRef: "<+input>"
               environment:
                 envRef: "prod"
-                infrastructureDefinitions:
-                  - identifier: "k8s_infra"
+                infrastructureDefinitions: "<+input>"
               execution:
                 steps:
                   - step:
@@ -86,68 +85,45 @@ pipeline:
         identifier: "qaStage6"
         type: "Deployment"
         spec:
-          service:
-            serviceRef: "manager"
-          environment:
-            envRef: "prod"
-            infrastructureDefinition:
-              identifier: "k8s_infra"
+          spec:
+            service:
+              serviceRef: "<+input>"
+            environment:
+              envRef: "<+input>"
+              infrastructureDefinition: "<+input>"
           execution:
             steps:
               - step:
-                  identifier: "httpStep5"
+                  identifier: "httpStep9"
                   type: "Http"
                   spec:
-                    method: "<+input>"
+                    url: "<+input>.executionInput()"
     - stage:
         identifier: "qaStage7"
         type: "Deployment"
         spec:
-          service:
-            serviceRef: "manager"
-          environment:
-            envRef: "prod"
-            infrastructureDefinitions:
-              - identifier: "k8s_infra_1"
-                inputs:
-                  foo: "bar"
-              - identifier: "k8s_infra_2"
+          spec:
+            service:
+              serviceRef: "<+input>"
+            environment:
+              envRef: "prod"
+              infrastructureDefinitions: "<+input>"
           execution:
             steps:
               - step:
-                  identifier: "httpStep5"
+                  identifier: "httpStep9"
                   type: "Http"
                   spec:
-                    method: "<+input>.executionInput()"
+                    url: "<+input>.executionInput()"
     - stage:
-        identifier: "qaStage8"
-        type: "Deployment"
+        identifier: qaStage8
+        type: Deployment
         spec:
           spec:
             services:
-              values:
-                - serviceRef: svc1
-                  inputs:
-                    foo: bar
+              values: "<+input>"
             environments:
-              values:
-                - envRef: "prod3"
-                  infrastructureDefinition:
-                    identifier: "infra_3"
-                - envRef: "prod4"
-                  infrastructureDefinition:
-                    identifier: "infra_4"
-                    inputs:
-                      foo: "bar"
-                - envRef: "prod5"
-                  infrastructureDefinitions:
-                    - identifier: "infra_5"
-                      inputs:
-                        foo: "bar"
-                - envRef: "prod6"
-                  infrastructureDefinitions:
-                    - identifier: "infra_6"
-                    - identifier: "infra_6_1"
+              values: "<+input>"
           execution:
             steps:
               - step:

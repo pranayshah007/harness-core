@@ -24,6 +24,7 @@ import static io.harness.polling.contracts.Type.GITHUB_PACKAGES;
 import static io.harness.polling.contracts.Type.GOOGLE_ARTIFACT_REGISTRY;
 import static io.harness.polling.contracts.Type.HTTP_HELM;
 import static io.harness.polling.contracts.Type.JENKINS;
+import static io.harness.polling.contracts.Type.NEXUS2;
 import static io.harness.polling.contracts.Type.NEXUS3;
 import static io.harness.polling.contracts.Type.S3_HELM;
 
@@ -63,6 +64,7 @@ import io.harness.polling.bean.artifact.GARArtifactInfo;
 import io.harness.polling.bean.artifact.GcrArtifactInfo;
 import io.harness.polling.bean.artifact.GithubPackagesArtifactInfo;
 import io.harness.polling.bean.artifact.JenkinsArtifactInfo;
+import io.harness.polling.bean.artifact.Nexus2RegistryArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.S3ArtifactInfo;
 import io.harness.polling.bean.gitpolling.GitPollingPolledResponse;
@@ -358,6 +360,10 @@ public class PollingResponseHandler {
       case NEXUS3_REGISTRY:
         polledResponseResultBuilder.name(((NexusRegistryArtifactInfo) artifactInfo).getArtifactPath());
         polledResponseResultBuilder.type(NEXUS3);
+        break;
+      case NEXUS2_REGISTRY:
+        polledResponseResultBuilder.name(((Nexus2RegistryArtifactInfo) artifactInfo).getRepositoryName());
+        polledResponseResultBuilder.type(NEXUS2);
         break;
       case ARTIFACTORY_REGISTRY:
         if (EmptyPredicate.isNotEmpty(((ArtifactoryRegistryArtifactInfo) artifactInfo).getRepositoryFormat())

@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -112,7 +112,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     verify(pmsPipelineService)
         .getPipelineWithoutPerformingValidations(
             ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false, false);
-    verify(pmsPipelineTemplateHelper, never())
+    verify(pmsPipelineTemplateHelper, times(1))
         .getRefreshedYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
   }
 
@@ -276,7 +276,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     verify(pmsPipelineService)
         .getPipelineWithoutPerformingValidations(
             ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false, false);
-    verify(pmsPipelineTemplateHelper, never())
+    verify(pmsPipelineTemplateHelper, times(1))
         .refreshAllTemplatesForYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
   }
 }
