@@ -9,7 +9,6 @@ package io.harness.delegate.beans.elastigroup;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.spotinst.model.ElastiGroup;
 
