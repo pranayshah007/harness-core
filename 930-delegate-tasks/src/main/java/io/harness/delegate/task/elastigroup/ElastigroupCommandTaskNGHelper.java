@@ -15,10 +15,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
 import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.spotinst.SpotInstRestClient;
@@ -92,10 +96,17 @@ public class ElastigroupCommandTaskNGHelper {
     Map<String, Object> computeConfigMap = (Map<String, Object>) elastiGroupConfigMap.get(COMPUTE);
     Map<String, Object> launchSpecificationMap = (Map<String, Object>) computeConfigMap.get(LAUNCH_SPECIFICATION);
 
-    launchSpecificationMap.put(ELASTI_GROUP_IMAGE_CONFIG, image);
+    if (isNotEmpty(image)) {
+      launchSpecificationMap.put(ELASTI_GROUP_IMAGE_CONFIG, image);
+    }
     if (isNotEmpty(userData)) {
       launchSpecificationMap.put(ELASTI_GROUP_USER_DATA_CONFIG, userData);
     }
+  }
+
+  public LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,
+                                    boolean shouldOpenStream, CommandUnitsProgress commandUnitsProgress) {
+    return new NGDelegateLogCallback(logStreamingTaskClient, commandUnitName, shouldOpenStream, commandUnitsProgress);
   }
 
   void updateInitialCapacity(Map<String, Object> elastiGroupConfigMap) {
