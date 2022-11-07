@@ -219,22 +219,25 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionCreateParams.getCustomer());
     }
 
-    List<SubscriptionDetail> subscriptionDetails = subscriptionDetailRepository.findByAccountIdentifier(
-        accountIdentifier);
+    List<SubscriptionDetail> subscriptionDetails =
+        subscriptionDetailRepository.findByAccountIdentifier(accountIdentifier);
 
-    if(subscriptionCreateParams.isPremiumSupport()) {
-      if(subscriptionDetails.stream().anyMatch(subscriptionDetail -> !subscriptionDetail.isPremiumSupport())) {
-        throw new InvalidRequestException("Cannot create a module subscription without premium support if one exists with premium support.");
+    if (subscriptionCreateParams.isPremiumSupport()) {
+      if (subscriptionDetails.stream().anyMatch(subscriptionDetail -> !subscriptionDetail.isPremiumSupport())) {
+        throw new InvalidRequestException(
+            "Cannot create a module subscription without premium support if one exists with premium support.");
       }
-    } else if(subscriptionDetails.stream().anyMatch(subscriptionDetail -> subscriptionDetail.isPremiumSupport())) {
-      throw new InvalidRequestException("Cannot create a module subscription with premium support if one exists without premium support.");
+    } else if (subscriptionDetails.stream().anyMatch(subscriptionDetail -> subscriptionDetail.isPremiumSupport())) {
+      throw new InvalidRequestException(
+          "Cannot create a module subscription with premium support if one exists without premium support.");
     }
 
-    SubscriptionDetail moduleSubscription = subscriptionDetails
-            .stream()
-            .filter(subscriptionDetail -> subscriptionDetail.getModuleType() == subscriptionCreateParams.getModuleType())
+    SubscriptionDetail moduleSubscription =
+        subscriptionDetails.stream()
+            .filter(
+                subscriptionDetail -> subscriptionDetail.getModuleType() == subscriptionCreateParams.getModuleType())
             .findFirst()
-            .get();
+            .orElse(null);
 
     // Not allowed for creation if active subscriptionId exists
     if (moduleSubscription != null) {
