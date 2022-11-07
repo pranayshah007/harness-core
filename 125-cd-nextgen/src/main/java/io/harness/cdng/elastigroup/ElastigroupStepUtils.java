@@ -31,6 +31,7 @@ import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -153,6 +154,8 @@ public class ElastigroupStepUtils extends CDStepHelper {
                 format("The following file %s in Harness File Store has empty content", scopedFilePath));
           }
           logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
+          logCallback.saveExecutionLog(
+                  color(format("Successfully completed fetching all files"), LogColor.White, LogWeight.Bold), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
         } else {
           throw new UnsupportedOperationException("Only File type is supported. Please enter the correct file path");
         }
