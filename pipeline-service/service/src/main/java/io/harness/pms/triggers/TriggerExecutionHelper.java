@@ -34,6 +34,7 @@ import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
@@ -51,6 +52,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.git.GitAware;
 import io.harness.ngtriggers.expressions.TriggerExpressionEvaluator;
 import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
 import io.harness.ngtriggers.utils.WebhookTriggerFilterUtils;
+import io.harness.notification.bean.NotificationRules;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.IssuedBy;
@@ -58,6 +60,7 @@ import io.harness.pms.contracts.interrupts.TriggerIssuer;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.triggers.ParsedPayload;
@@ -79,7 +82,10 @@ import io.harness.pms.pipeline.service.PipelineEnforcementService;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.plan.execution.ExecutionHelper;
+import io.harness.pms.plan.execution.StoreTypeMapper;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
+import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
@@ -95,6 +101,7 @@ import io.harness.utils.PmsFeatureFlagHelper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
@@ -263,6 +270,7 @@ public class TriggerExecutionHelper {
               InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineYamlBeforeMerge, sanitizedRuntimeInputYaml, true);
         }
       }
+      pipelineYaml = InputSetSanitizer.trimValues(pipelineYaml);
 
       try (PmsGitSyncBranchContextGuard ignore =
                pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(gitSyncBranchContextByteString, false)) {
@@ -278,7 +286,28 @@ public class TriggerExecutionHelper {
               : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
         }
 
-        BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
+        List<NotificationRules> notificationRules = Collections.emptyList();
+        String processedYaml;
+
+        switch (pipelineEntity.getHarnessVersion()) {
+          case PipelineVersion.V1:
+            processedYaml = YamlUtils.injectUuidWithType(pipelineYaml, YAMLFieldNameConstants.PIPELINE);
+            PipelineStoreType pipelineStoreType = StoreTypeMapper.fromStoreType(pipelineEntity.getStoreType());
+            if (pipelineStoreType != null) {
+              executionMetaDataBuilder.setPipelineStoreType(pipelineStoreType);
+            }
+            if (pipelineEntity.getConnectorRef() != null) {
+              executionMetaDataBuilder.setPipelineConnectorRef(pipelineEntity.getConnectorRef());
+            }
+            break;
+          case PipelineVersion.V0:
+            BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
+            notificationRules = basicPipeline.getNotificationRules();
+            processedYaml = YamlUtils.injectUuid(pipelineYaml);
+            break;
+          default:
+            throw new InvalidYamlException("Invalid version");
+        }
 
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
 
@@ -287,12 +316,11 @@ public class TriggerExecutionHelper {
             true);
 
         planExecutionMetadataBuilder.yaml(pipelineYaml);
-        planExecutionMetadataBuilder.processedYaml(YamlUtils.injectUuid(pipelineYaml));
+        planExecutionMetadataBuilder.processedYaml(processedYaml);
         planExecutionMetadataBuilder.triggerPayload(triggerPayload);
         planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
 
-        executionMetaDataBuilder.setIsNotificationConfigured(
-            EmptyPredicate.isNotEmpty(basicPipeline.getNotificationRules()));
+        executionMetaDataBuilder.setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules));
         // Set Principle user as pipeline service.
         SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
         pmsYamlSchemaService.validateYamlSchema(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),

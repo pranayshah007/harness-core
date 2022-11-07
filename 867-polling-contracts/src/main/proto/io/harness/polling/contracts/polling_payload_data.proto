@@ -100,7 +100,14 @@ message GcrPayload {
 message Nexus3RegistryPayload {
   string repository = 1;
   string artifactPath = 2;
-  string format = 3;
+  string repositoryFormat = 3;
+  string artifactId = 4;
+  string groupId = 5;
+  string packageName = 6;
+  string repositoryUrl = 7;
+  string classifier = 8;
+  string extension = 9;
+  string repositoryPort = 10;
 }
 
 message ArtifactoryRegistryPayload {

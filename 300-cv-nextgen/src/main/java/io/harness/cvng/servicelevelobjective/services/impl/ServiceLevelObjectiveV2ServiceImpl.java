@@ -68,6 +68,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -131,6 +132,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           (CompositeServiceLevelObjective) saveServiceLevelObjectiveV2Entity(
               projectParams, serviceLevelObjectiveDTO, true);
       sloHealthIndicatorService.upsert(compositeServiceLevelObjective);
+      verificationTaskService.createCompositeSLOVerificationTask(
+          compositeServiceLevelObjective.getAccountId(), compositeServiceLevelObjective.getUuid(), new HashMap<>());
       return getSLOResponse(compositeServiceLevelObjective.getIdentifier(), projectParams);
     }
   }
@@ -241,6 +244,9 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     AbstractServiceLevelObjective serviceLevelObjectiveV2 = checkIfSLOPresent(projectParams, identifier);
 
     if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      if (isReferencedInCompositeSLO((SimpleServiceLevelObjective) serviceLevelObjectiveV2)) {
+        return false;
+      }
       serviceLevelIndicatorService.deleteByIdentifier(
           projectParams, ((SimpleServiceLevelObjective) serviceLevelObjectiveV2).getServiceLevelIndicators());
     }
@@ -462,6 +468,29 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Override
   public AbstractServiceLevelObjective get(String sloId) {
     return hPersistence.get(AbstractServiceLevelObjective.class, sloId);
+  }
+
+  private boolean isReferencedInCompositeSLO(SimpleServiceLevelObjective simpleServiceLevelObjective) {
+    List<AbstractServiceLevelObjective> compositeServiceLevelObjectives =
+        hPersistence.createQuery(AbstractServiceLevelObjective.class)
+            .filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.COMPOSITE)
+            .filter(ServiceLevelObjectiveV2Keys.accountId, simpleServiceLevelObjective.getAccountId())
+            .asList();
+    for (AbstractServiceLevelObjective serviceLevelObjective : compositeServiceLevelObjectives) {
+      CompositeServiceLevelObjective compositeServiceLevelObjective =
+          (CompositeServiceLevelObjective) serviceLevelObjective;
+      for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail :
+          compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
+        if (serviceLevelObjectivesDetail.getServiceLevelObjectiveRef().equals(
+                simpleServiceLevelObjective.getIdentifier())
+            && serviceLevelObjectivesDetail.getOrgIdentifier().equals(simpleServiceLevelObjective.getOrgIdentifier())
+            && serviceLevelObjectivesDetail.getProjectIdentifier().equals(
+                simpleServiceLevelObjective.getProjectIdentifier())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private AbstractServiceLevelObjective updateSLOV2Entity(ProjectParams projectParams,

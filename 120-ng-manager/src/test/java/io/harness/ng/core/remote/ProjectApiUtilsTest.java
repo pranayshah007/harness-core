@@ -17,9 +17,9 @@ import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.entities.Project;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.spec.server.ng.model.CreateProjectRequest;
-import io.harness.spec.server.ng.model.ProjectResponse;
-import io.harness.spec.server.ng.model.UpdateProjectRequest;
+import io.harness.spec.server.ng.v1.model.CreateProjectRequest;
+import io.harness.spec.server.ng.v1.model.ProjectResponse;
+import io.harness.spec.server.ng.v1.model.UpdateProjectRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

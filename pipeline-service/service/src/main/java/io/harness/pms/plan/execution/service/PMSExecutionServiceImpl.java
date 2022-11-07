@@ -174,27 +174,23 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
           Criteria.where(PlanExecutionSummaryKeys.gitSyncBranchContext).is(gitSyncBranchContext);
 
       EntityGitDetails entityGitDetails = pmsGitSyncHelper.getEntityGitDetailsFromBytes(gitSyncBranchContext);
-      Criteria gitCriteriaNew = Criteria
-                                    .where(PlanExecutionSummaryKeys.entityGitDetails + "."
-                                        + "branch")
-                                    .is(entityGitDetails.getBranch());
+      Criteria gitCriteriaNew =
+          Criteria.where(PlanExecutionSummaryKeys.entityGitDetailsBranch).is(entityGitDetails.getBranch());
       if (entityGitDetails.getRepoIdentifier() != null
           && !entityGitDetails.getRepoIdentifier().equals(GitAwareEntityHelper.DEFAULT)) {
-        gitCriteriaNew
-            .and(PlanExecutionSummaryKeys.entityGitDetails + "."
-                + "repoIdentifier")
+        gitCriteriaNew.and(PlanExecutionSummaryKeys.entityGitDetailsRepoIdentifier)
             .is(entityGitDetails.getRepoIdentifier());
       } else if (entityGitDetails.getRepoName() != null
           && !entityGitDetails.getRepoName().equals(GitAwareEntityHelper.DEFAULT)) {
-        gitCriteriaNew
-            .and(PlanExecutionSummaryKeys.entityGitDetails + "."
-                + "repoName")
-            .is(entityGitDetails.getRepoName());
+        gitCriteriaNew.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is(entityGitDetails.getRepoName());
       }
       gitCriteria.orOperator(gitCriteriaDeprecated, gitCriteriaNew);
     }
 
     List<Criteria> criteriaList = new LinkedList<>();
+    if (!gitCriteria.equals(new Criteria())) {
+      criteriaList.add(gitCriteria);
+    }
     if (!filterCriteria.equals(new Criteria())) {
       criteriaList.add(filterCriteria);
     }
@@ -203,9 +199,6 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
     if (!searchCriteria.equals(new Criteria())) {
       criteriaList.add(searchCriteria);
-    }
-    if (!gitCriteria.equals(new Criteria())) {
-      criteriaList.add(gitCriteria);
     }
 
     if (!criteriaList.isEmpty()) {
@@ -282,19 +275,12 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
         criteria, (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties());
   }
 
-  private void populatePipelineFilter(Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO piplineFilter) {
-    if (EmptyPredicate.isNotEmpty(piplineFilter.getPipelineName())) {
-      criteria.orOperator(
-          where(PlanExecutionSummaryKeys.name)
-              .regex(piplineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-          where(PlanExecutionSummaryKeys.pipelineIdentifier)
-              .regex(piplineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
-    }
-    if (piplineFilter.getTimeRange() != null) {
-      TimeRange timeRange = piplineFilter.getTimeRange();
+  private void populatePipelineFilter(Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter) {
+    if (pipelineFilter.getTimeRange() != null) {
+      TimeRange timeRange = pipelineFilter.getTimeRange();
       // Apply filter to criteria if StartTime and EndTime both are not null.
       if (timeRange.getStartTime() != null && timeRange.getEndTime() != null) {
-        criteria.and(PlanExecutionSummaryKeys.createdAt).gte(timeRange.getStartTime()).lte(timeRange.getEndTime());
+        criteria.and(PlanExecutionSummaryKeys.startTs).gte(timeRange.getStartTime()).lte(timeRange.getEndTime());
 
       } else if ((timeRange.getStartTime() != null && timeRange.getEndTime() == null)
           || (timeRange.getStartTime() == null && timeRange.getEndTime() != null)) {
@@ -305,15 +291,25 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       // Ignore TimeRange filter if StartTime and EndTime both are null.
     }
 
-    if (EmptyPredicate.isNotEmpty(piplineFilter.getPipelineTags())) {
-      addPipelineTagsCriteria(criteria, piplineFilter.getPipelineTags());
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getStatus())) {
+      criteria.and(PlanExecutionSummaryKeys.status).in(pipelineFilter.getStatus());
     }
-    if (EmptyPredicate.isNotEmpty(piplineFilter.getStatus())) {
-      criteria.and(PlanExecutionSummaryKeys.status).in(piplineFilter.getStatus());
+
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineName())) {
+      criteria.orOperator(
+          where(PlanExecutionSummaryKeys.pipelineIdentifier)
+              .regex(pipelineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          where(PlanExecutionSummaryKeys.name)
+              .regex(pipelineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
-    if (piplineFilter.getModuleProperties() != null) {
+
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineTags())) {
+      addPipelineTagsCriteria(criteria, pipelineFilter.getPipelineTags());
+    }
+
+    if (pipelineFilter.getModuleProperties() != null) {
       ModuleInfoFilterUtils.processNode(
-          JsonUtils.readTree(piplineFilter.getModuleProperties().toJson()), "moduleInfo", criteria);
+          JsonUtils.readTree(pipelineFilter.getModuleProperties().toJson()), "moduleInfo", criteria);
     }
   }
 
@@ -324,12 +320,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       tags.add(o.getValue());
     });
     Criteria tagsCriteria = new Criteria();
-    tagsCriteria.orOperator(where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.tags + "."
-                                + "key")
-                                .in(tags),
-        where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.tags + "."
-            + "value")
-            .in(tags));
+    tagsCriteria.orOperator(
+        where(PlanExecutionSummaryKeys.tagsKey).in(tags), where(PlanExecutionSummaryKeys.tagsValue).in(tags));
     criteria.andOperator(tagsCriteria);
   }
 

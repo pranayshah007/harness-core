@@ -108,8 +108,8 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
     String gcpProjectId = config.getGcpConfig().getGcpProjectId();
     String cloudProviderTableName = format("%s.%s.%s", gcpProjectId, DATA_SET_NAME, TABLE_NAME);
     long endOfDay = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS).toEpochMilli();
-    String query = format(
-        QUERY_TEMPLATE, cloudProviderTableName, getLicenseStartTime(accountIdentifier), endOfDay, accountIdentifier);
+    long licenseStartTime = getLicenseStartTime(accountIdentifier);
+    String query = format(QUERY_TEMPLATE, cloudProviderTableName, licenseStartTime, endOfDay, accountIdentifier);
 
     BigQuery bigQuery = bigQueryService.get();
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
@@ -123,6 +123,7 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
     }
     HashMap<String, Object> properties = new HashMap<>();
     properties.put("ccm_license_cloud_spend_used", CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(result));
+    properties.put("ccm_license_startTime", licenseStartTime);
     return properties;
   }
 

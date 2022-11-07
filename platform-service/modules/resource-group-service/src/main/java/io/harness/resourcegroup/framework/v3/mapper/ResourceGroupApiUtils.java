@@ -21,11 +21,11 @@ import io.harness.resourcegroup.v2.model.ScopeSelector;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupRequest;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
-import io.harness.spec.server.platform.model.CreateResourceGroupRequest;
-import io.harness.spec.server.platform.model.ResourceGroupFilterRequestBody;
-import io.harness.spec.server.platform.model.ResourceGroupFilterRequestBody.ManagedFilterEnum;
-import io.harness.spec.server.platform.model.ResourceGroupScope;
-import io.harness.spec.server.platform.model.ResourceGroupsResponse;
+import io.harness.spec.server.resourcegroup.v1.model.CreateResourceGroupRequest;
+import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupFilterRequestBody;
+import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupFilterRequestBody.ManagedFilterEnum;
+import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupScope;
+import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupsResponse;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -117,7 +117,7 @@ public class ResourceGroupApiUtils {
   }
 
   public static ResourceFilter getResourceFilterRequest(
-      List<io.harness.spec.server.platform.model.ResourceFilter> filters, boolean includeAllResources) {
+      List<io.harness.spec.server.resourcegroup.v1.model.ResourceFilter> filters, boolean includeAllResources) {
     if (filters == null) {
       return ResourceFilter.builder().includeAllResources(includeAllResources).build();
     }
@@ -127,7 +127,7 @@ public class ResourceGroupApiUtils {
         .build();
   }
 
-  public static ResourceSelector getFilterRequest(io.harness.spec.server.platform.model.ResourceFilter filter) {
+  public static ResourceSelector getFilterRequest(io.harness.spec.server.resourcegroup.v1.model.ResourceFilter filter) {
     if (filter.getAttributeName() == null && filter.getAttributeValues().isEmpty()) {
       return ResourceSelector.builder()
           .resourceType(filter.getResourceType())
@@ -144,7 +144,7 @@ public class ResourceGroupApiUtils {
         .build();
   }
 
-  public static io.harness.spec.server.platform.model.ResourceGroupsResponse getResourceGroupResponse(
+  public static io.harness.spec.server.resourcegroup.v1.model.ResourceGroupsResponse getResourceGroupResponse(
       ResourceGroupResponse response) {
     if (response == null || response.getResourceGroup() == null) {
       return null;
@@ -178,7 +178,7 @@ public class ResourceGroupApiUtils {
     return resourceGroupsResponse;
   }
 
-  private static List<io.harness.spec.server.platform.model.ResourceFilter> getResourceFilters(
+  private static List<io.harness.spec.server.resourcegroup.v1.model.ResourceFilter> getResourceFilters(
       ResourceGroupResponse response) {
     if (response.getResourceGroup().getResourceFilter() == null
         || response.getResourceGroup().getResourceFilter().getResources() == null) {
@@ -216,10 +216,10 @@ public class ResourceGroupApiUtils {
     return resourceGroupScope;
   }
 
-  public static io.harness.spec.server.platform.model.ResourceFilter getResourceFilterResponse(
+  public static io.harness.spec.server.resourcegroup.v1.model.ResourceFilter getResourceFilterResponse(
       ResourceSelector resourceSelector) {
-    io.harness.spec.server.platform.model.ResourceFilter resourceFilter =
-        new io.harness.spec.server.platform.model.ResourceFilter();
+    io.harness.spec.server.resourcegroup.v1.model.ResourceFilter resourceFilter =
+        new io.harness.spec.server.resourcegroup.v1.model.ResourceFilter();
     resourceFilter.setResourceType(resourceSelector.getResourceType());
     resourceFilter.setIdentifiers(resourceSelector.getIdentifiers());
     if (resourceSelector.getAttributeFilter() != null) {
@@ -248,7 +248,7 @@ public class ResourceGroupApiUtils {
   }
 
   public static ResourceSelectorFilter getResourceSelectorFilter(
-      io.harness.spec.server.platform.model.ResourceSelectorFilter resourceSelectorFilter) {
+      io.harness.spec.server.resourcegroup.v1.model.ResourceSelectorFilter resourceSelectorFilter) {
     return ResourceSelectorFilter.builder()
         .resourceType(resourceSelectorFilter.getResourceType())
         .resourceIdentifier(resourceSelectorFilter.getResourceSlug())

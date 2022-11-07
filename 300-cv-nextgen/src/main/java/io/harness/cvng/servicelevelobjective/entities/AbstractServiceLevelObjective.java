@@ -78,6 +78,7 @@ public abstract class AbstractServiceLevelObjective
   private boolean enabled;
   private long lastUpdatedAt;
   private long createdAt;
+  private long startedAt;
   @NotNull private Double sloTargetPercentage;
   @FdIndex private long nextNotificationIteration;
   @FdIndex private long nextVerificationIteration;
@@ -128,7 +129,7 @@ public abstract class AbstractServiceLevelObjective
     long totalErrorBudgetIncrementMinutesFromReset =
         CollectionUtils.emptyIfNull(sloErrorBudgetResets)
             .stream()
-            .mapToLong(sloErrorBudgetResetDTO -> sloErrorBudgetResetDTO.getErrorBudgetIncrementMinutes())
+            .mapToLong(SLOErrorBudgetResetDTO::getErrorBudgetIncrementMinutes)
             .sum();
     return Math.toIntExact(Math.min(getCurrentTimeRange(currentDateTime).totalMinutes(),
         totalErrorBudgetMinutes + totalErrorBudgetIncrementMinutesFromReset));

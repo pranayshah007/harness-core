@@ -184,14 +184,23 @@ public class SshInfraDefMapper implements InfraDefMapper {
   }
 
   private Map<String, String> getAwsTagsMap(List<Tag> tags) {
+    if (tags == null) {
+      return Collections.emptyMap();
+    }
     return tags.stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue));
   }
 
   private Map<String, String> getAzureTagsMap(List<AzureTag> tags) {
+    if (tags == null) {
+      return Collections.emptyMap();
+    }
     return tags.stream().collect(Collectors.toMap(AzureTag::getKey, AzureTag::getValue));
   }
 
   private List<String> getPdcSShHosts(List<Host> hosts) {
+    if (hosts == null) {
+      return Collections.emptyList();
+    }
     return hosts.stream().map(Host::getHostName).collect(Collectors.toList());
   }
 }

@@ -95,6 +95,7 @@ import io.harness.cdng.creator.plan.steps.CloudformationDeleteStackStepPlanCreat
 import io.harness.cdng.creator.plan.steps.CloudformationRollbackStackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CommandStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ElastigroupDeployStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ElastigroupRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.FetchInstanceScriptStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.GitOpsCreatePRStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.GitOpsMergePRStepPlanCreatorV2;
@@ -141,6 +142,7 @@ import io.harness.cdng.creator.variables.EcsRollingDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRunTaskStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupDeployStepVariableCreator;
+import io.harness.cdng.creator.variables.ElastigroupRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
@@ -344,6 +346,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // Elastigroup
     planCreators.add(new ElastigroupDeployStepPlanCreator());
+    planCreators.add(new ElastigroupRollbackStepPlanCreator());
     planCreators.add(new ElastigroupSetupStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
@@ -437,6 +440,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // Elastigroup
     variableCreators.add(new ElastigroupDeployStepVariableCreator());
+    variableCreators.add(new ElastigroupRollbackStepVariableCreator());
     variableCreators.add(new ElastigroupSetupStepVariableCreator());
 
     return variableCreators;
@@ -832,6 +836,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setStepMetaData(StepMetaData.newBuilder().addCategory(ELASTIGROUP).addFolderPaths("Elastigroup").build())
             .build();
 
+    StepInfo elastigroupRollbackStep =
+        StepInfo.newBuilder()
+            .setName("Elastigroup Rollback")
+            .setType(StepSpecTypeConstants.ELASTIGROUP_ROLLBACK)
+            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(ELASTIGROUP).addFolderPaths("Elastigroup").build())
+            .build();
+
     StepInfo elastigroupSetup =
         StepInfo.newBuilder()
             .setName("Elastigroup Setup")
@@ -886,6 +898,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(shellScriptProvision);
     stepInfos.add(chaosStep);
     stepInfos.add(elastigroupDeployStep);
+    stepInfos.add(elastigroupRollbackStep);
     stepInfos.add(elastigroupSetup);
     return stepInfos;
   }

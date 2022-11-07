@@ -14,12 +14,12 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.spec.server.template.OrgTemplateApi;
-import io.harness.spec.server.template.model.GitCreateDetails;
-import io.harness.spec.server.template.model.GitFindDetails;
-import io.harness.spec.server.template.model.GitUpdateDetails;
-import io.harness.spec.server.template.model.TemplateCreateRequestBody;
-import io.harness.spec.server.template.model.TemplateUpdateRequestBody;
+import io.harness.spec.server.template.v1.OrgTemplateApi;
+import io.harness.spec.server.template.v1.model.GitCreateDetails;
+import io.harness.spec.server.template.v1.model.GitFindDetails;
+import io.harness.spec.server.template.v1.model.GitUpdateDetails;
+import io.harness.spec.server.template.v1.model.TemplateCreateRequestBody;
+import io.harness.spec.server.template.v1.model.TemplateUpdateRequestBody;
 
 import com.google.inject.Inject;
 import java.util.List;

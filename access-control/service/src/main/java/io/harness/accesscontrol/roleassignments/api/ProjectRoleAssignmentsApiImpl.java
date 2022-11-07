@@ -39,8 +39,8 @@ import io.harness.exception.WingsException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.outbox.api.OutboxService;
-import io.harness.spec.server.accesscontrol.ProjectRoleAssignmentsApi;
-import io.harness.spec.server.accesscontrol.model.RoleAssignmentResponse;
+import io.harness.spec.server.accesscontrol.v1.ProjectRoleAssignmentsApi;
+import io.harness.spec.server.accesscontrol.v1.model.RoleAssignmentResponse;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -88,8 +88,9 @@ public class ProjectRoleAssignmentsApiImpl implements ProjectRoleAssignmentsApi 
   }
 
   @Override
-  public Response createProjectScopedRoleAssignments(io.harness.spec.server.accesscontrol.model.RoleAssignment request,
-      String org, String project, String harnessAccount) {
+  public Response createProjectScopedRoleAssignments(
+      io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request, String org, String project,
+      String harnessAccount) {
     HarnessScopeParams harnessScopeParams = HarnessScopeParams.builder()
                                                 .accountIdentifier(harnessAccount)
                                                 .orgIdentifier(org)

@@ -37,10 +37,10 @@ import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.spec.server.ng.ProjectConnectorApi;
-import io.harness.spec.server.ng.model.ConnectorRequest;
-import io.harness.spec.server.ng.model.ConnectorResponse;
-import io.harness.spec.server.ng.model.ConnectorTestConnectionResponse;
+import io.harness.spec.server.connector.v1.ProjectConnectorApi;
+import io.harness.spec.server.connector.v1.model.ConnectorRequest;
+import io.harness.spec.server.connector.v1.model.ConnectorResponse;
+import io.harness.spec.server.connector.v1.model.ConnectorTestConnectionResponse;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
