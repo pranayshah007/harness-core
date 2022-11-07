@@ -122,6 +122,31 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testExpand_forEnviornmentV2() throws IOException {
+    SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
+                                    .sloErrorBudgetRemainingPercentage(100D)
+                                    .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
+                                    .slos(sloMappedToTheirHealthIndicators)
+                                    .build();
+    final String yaml = IOUtils.resourceToString(
+        "governance/SLOPolicyExpansionHandlerInputV2.json", StandardCharsets.UTF_8, this.getClass().getClassLoader());
+    JsonNode jsonNode = JsonUtils.asObject(yaml, JsonNode.class);
+    ExpansionRequestMetadata metadataProject =
+        ExpansionRequestMetadata.newBuilder()
+            .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
+            .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
+            .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
+            .build();
+    ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
+    assertThat(expansionResponse.isSuccess()).isTrue();
+    assertThat(expansionResponse.getKey()).isEqualTo(SLO_POLICY);
+    assertThat(expansionResponse.getValue().toJson()).isEqualTo(JsonUtils.asJson(sloPolicyDTO));
+    assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
+  }
+
+  @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testExpand_withServiceKeyInput() throws IOException {
@@ -220,7 +245,7 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
     assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
   public void testExpand_withoutFromStage() throws IOException {
@@ -240,9 +265,6 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
             .setYaml(ByteString.copyFromUtf8(pipelineYaml))
             .build();
     ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
-    assertThat(expansionResponse.isSuccess()).isTrue();
-    assertThat(expansionResponse.getKey()).isEqualTo(SLO_POLICY);
-    assertThat(expansionResponse.getValue().toJson()).isEqualTo(JsonUtils.asJson(sloPolicyDTO));
-    assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
+    assertThat(expansionResponse.isSuccess()).isFalse();
   }
 }
