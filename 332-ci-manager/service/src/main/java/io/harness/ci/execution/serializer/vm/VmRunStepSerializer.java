@@ -89,9 +89,6 @@ public class VmRunStepSerializer {
             RunTimeInputHandler.resolveListParameter("paths", "run", identifier, junitTestReport.getPaths(), false);
         runStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
       }
-    } else {
-      List<String> resolvedReport = Collections.singletonList("**/*.xml");
-      runStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
     }
 
     return runStepBuilder.build();

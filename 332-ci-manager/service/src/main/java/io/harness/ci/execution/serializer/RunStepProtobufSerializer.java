@@ -82,9 +82,6 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
         Report report = Report.newBuilder().setType(Report.Type.JUNIT).addAllPaths(resolvedReport).build();
         runStepBuilder.addReports(report);
       }
-    } else {
-      Report report = Report.newBuilder().setType(Report.Type.JUNIT).addAllPaths(Collections.singleton("**/*.xml")).build();
-      runStepBuilder.addReports(report);
     }
 
     if (isNotEmpty(runStepInfo.getOutputVariables().getValue())) {
