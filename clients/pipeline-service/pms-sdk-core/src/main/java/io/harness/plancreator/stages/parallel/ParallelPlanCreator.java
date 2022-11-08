@@ -154,6 +154,7 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
                .setNodeIdentifier(
                    stageField.getNode().getIdentifier() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
                .setEdgeLayoutList(EdgeLayoutList.newBuilder().build())
+               .setIsRollbackStageNode(true)
                .build()));
 
     GraphLayoutNode parallelNode = GraphLayoutNode.newBuilder()
@@ -171,6 +172,7 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
             .setNodeIdentifier(YAMLFieldNameConstants.PARALLEL + config.getNode().getUuid()
                 + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
             .setEdgeLayoutList(rollbackStagesEdgesBuilder.build())
+            .setIsRollbackStageNode(true)
             .build();
     layoutNodeMap.put(config.getNode().getUuid(), parallelNode);
     layoutNodeMap.put(parallelRollbackNode.getNodeUUID(), parallelRollbackNode);

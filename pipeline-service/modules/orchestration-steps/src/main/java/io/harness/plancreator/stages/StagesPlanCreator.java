@@ -107,6 +107,7 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
                                               .addNextIds(stagesYamlField.get(i - 1).getNode().getUuid()
                                                   + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
                                               .build())
+              .setIsRollbackStageNode(true)
               .build());
     }
     return GraphLayoutResponse.builder()
