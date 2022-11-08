@@ -82,6 +82,7 @@ public class PipelineExecutionSummaryDtoMapper {
         .connectorRef(EmptyPredicate.isEmpty(pipelineExecutionSummaryEntity.getConnectorRef())
                 ? null
                 : pipelineExecutionSummaryEntity.getConnectorRef())
+        .firstRollbackStageGraphId(pipelineExecutionSummaryEntity.getFirstRollbackStageGraphId())
         .build();
   }
 

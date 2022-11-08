@@ -165,6 +165,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       if (!graphLayoutNodeDTOMap.get(prevStage).getIsRollbackStageNode()) {
         List<String> newNextIdList = Collections.singletonList(planNodeUuid);
         update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + prevStage + ".edgeLayoutList.nextIds", newNextIdList);
+        update.set(PlanExecutionSummaryKeys.firstRollbackStageGraphId, planNodeUuid);
       }
     }
     update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + planNodeUuid + ".status",
