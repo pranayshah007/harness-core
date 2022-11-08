@@ -147,9 +147,6 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
   public TaskChainResponse startChainLink(ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance,
                                           StepElementParameters stepElementParameters) {
 
-    // Get ManifestsOutcome
-    Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
-
     OptionalOutcome startupScriptOptionalOutcome = outcomeService.resolveOptional(
             ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.STARTUP_SCRIPT));
 
@@ -193,10 +190,6 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         fetchElastigroupParameters(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData, startupScript, infrastructureOutcome);
       }
     }
-
-    // Update expressions in ManifestsOutcome
-    ExpressionEvaluatorUtils.updateExpressions(
-            artifactOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 
     return prepareStartupScriptFetchTask(
             elastigroupStepExecutor, ambiance, stepElementParameters, infrastructureOutcome, startupScript);
@@ -450,6 +443,12 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
                     .lastActiveUnitProgressData(unitProgressData)
                     .infrastructure(infrastructureOutcome)
                     .build();
+
+    // Get ArtifactsOutcome
+    Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
+    // Update expressions in ArtifactsOutcome
+    ExpressionEvaluatorUtils.updateExpressions(
+            artifactOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 
     ElastigroupStepExecutorParams elastigroupStepExecutorParams =
             ElastigroupStepExecutorParams.builder()
