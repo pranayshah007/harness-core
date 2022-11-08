@@ -61,6 +61,8 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Nullable;
+
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
@@ -90,7 +92,7 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
   public PodWatcher(@Assisted ApiClient apiClient, @Assisted ClusterDetails params,
       @Assisted K8sControllerFetcher controllerFetcher, @Assisted SharedInformerFactory sharedInformerFactory,
       @Assisted PVCFetcher pvcFetcher, @Assisted NamespaceFetcher namespaceFetcher, EventPublisher eventPublisher,
-      @Assisted String accountId) {
+      @Assisted @Nullable String accountId) {
     this.controllerFetcher = controllerFetcher;
     this.pvcFetcher = pvcFetcher;
     this.namespaceFetcher = namespaceFetcher;
