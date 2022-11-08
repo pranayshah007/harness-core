@@ -595,15 +595,19 @@ public class AuditServiceImpl implements AuditService {
         long now = System.currentTimeMillis();
         // Setting createdAt in EntityAuditRecord
         record.setCreatedAt(now);
-        AuditRecord auditRecord = AuditRecord.builder()
-                                      .auditHeaderId(auditHeaderId)
-                                      .entityAuditRecord(record)
-                                      .createdAt(now)
-                                      .accountId(accountId)
-                                      .nextIteration(now + TimeUnit.MINUTES.toMillis(3))
-                                      .build();
+        if (isNotEmpty(accountId)) {
+          AuditRecord auditRecord = AuditRecord.builder()
+                                        .auditHeaderId(auditHeaderId)
+                                        .entityAuditRecord(record)
+                                        .createdAt(now)
+                                        .accountId(accountId)
+                                        .nextIteration(now + TimeUnit.MINUTES.toMillis(3))
+                                        .build();
 
-        wingsPersistence.save(auditRecord);
+          wingsPersistence.save(auditRecord);
+        } else {
+          log.warn("Unable to create audit for entityAuditRecord {} because accountId is {}", record, accountId);
+        }
       } else {
         UpdateOperations<AuditHeader> operations = wingsPersistence.createUpdateOperations(AuditHeader.class);
         operations.addToSet("entityAuditRecords", record);
