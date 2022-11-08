@@ -30,10 +30,10 @@ import io.harness.ng.core.dto.ProjectFilterDTO;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.spec.server.ng.OrgProjectApi;
-import io.harness.spec.server.ng.model.CreateProjectRequest;
-import io.harness.spec.server.ng.model.ProjectResponse;
-import io.harness.spec.server.ng.model.UpdateProjectRequest;
+import io.harness.spec.server.ng.v1.OrgProjectApi;
+import io.harness.spec.server.ng.v1.model.CreateProjectRequest;
+import io.harness.spec.server.ng.v1.model.ProjectResponse;
+import io.harness.spec.server.ng.v1.model.UpdateProjectRequest;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;

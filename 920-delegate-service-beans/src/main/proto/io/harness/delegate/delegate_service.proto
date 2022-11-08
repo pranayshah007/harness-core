@@ -25,7 +25,9 @@ import "google/protobuf/timestamp.proto";
 service DelegateService {
   rpc RegisterCallback(RegisterCallbackRequest) returns (RegisterCallbackResponse);
 
+  rpc SubmitTaskV2(SubmitTaskRequest) returns (SubmitTaskResponse);
   rpc SubmitTask(SubmitTaskRequest) returns (SubmitTaskResponse);
+
   rpc CancelTask(CancelTaskRequest) returns (CancelTaskResponse);
   rpc TaskProgress(TaskProgressRequest) returns (TaskProgressResponse);
   rpc TaskProgressUpdates(TaskProgressUpdatesRequest) returns (stream TaskProgressUpdatesResponse);

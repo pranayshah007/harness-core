@@ -33,11 +33,13 @@ import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
 
+import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AWSConnectorImpl implements BaseConnector {
@@ -63,21 +65,22 @@ public class AWSConnectorImpl implements BaseConnector {
 
     if (clusterConfig.isUseEc2IamCredentials()) {
       awsCredentialDTO = getEc2IamCredentials(clusterConfig);
-    }
-
-    else if (clusterConfig.isUseIRSA()) {
+    } else if (clusterConfig.isUseIRSA()) {
       awsCredentialDTO = getIrsaCredentials(clusterConfig);
-    }
-
-    else {
+    } else {
       awsCredentialDTO = getManualCredentials(clusterConfig, migratedEntities);
     }
 
-    return builder.credential(awsCredentialDTO).build();
+    if (StringUtils.isNotBlank(clusterConfig.getTag())) {
+      builder.delegateSelectors(Collections.singleton(clusterConfig.getTag()));
+    }
+
+    return builder.executeOnDelegate(true).credential(awsCredentialDTO).build();
   }
 
   private AwsCredentialDTO getEc2IamCredentials(AwsConfig clusterConfig) {
-    return getAwsCredentialDTO(INHERIT_FROM_DELEGATE, AwsInheritFromDelegateSpecDTO.builder().build(),
+    return getAwsCredentialDTO(INHERIT_FROM_DELEGATE,
+        AwsInheritFromDelegateSpecDTO.builder().delegateSelectors(Sets.newHashSet(clusterConfig.getTag())).build(),
         clusterConfig.getDefaultRegion(), clusterConfig.getCrossAccountAttributes(),
         clusterConfig.isAssumeCrossAccountRole());
   }

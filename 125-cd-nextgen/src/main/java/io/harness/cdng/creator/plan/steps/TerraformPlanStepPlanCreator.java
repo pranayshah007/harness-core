@@ -10,7 +10,6 @@ package io.harness.cdng.creator.plan.steps;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.TerraformPlanStepNode;
 import io.harness.cdng.provision.terraform.TerraformPlanStepParameters;
@@ -48,12 +47,10 @@ public class TerraformPlanStepPlanCreator extends CDPMSStepPlanCreatorV2<Terrafo
   protected StepParameters getStepParameters(PlanCreationContext ctx, TerraformPlanStepNode stepElement) {
     StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
 
-    if (featureFlagService.isEnabled(ctx.getMetadata().getAccountIdentifier(), FeatureName.EXPORT_TF_PLAN_JSON_NG)) {
-      String stepFqn = YamlUtils.getFullyQualifiedName(ctx.getCurrentField().getNode());
-      TerraformPlanStepParameters terraformPlanStepParameters =
-          (TerraformPlanStepParameters) ((StepElementParameters) stepParameters).getSpec();
-      terraformPlanStepParameters.setStepFqn(stepFqn);
-    }
+    String stepFqn = YamlUtils.getFullyQualifiedName(ctx.getCurrentField().getNode());
+    TerraformPlanStepParameters terraformPlanStepParameters =
+        (TerraformPlanStepParameters) ((StepElementParameters) stepParameters).getSpec();
+    terraformPlanStepParameters.setStepFqn(stepFqn);
 
     return stepParameters;
   }

@@ -14,11 +14,11 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.ami.AMIFilter;
-import io.harness.cdng.artifact.bean.yaml.ami.AMITag;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.yaml.ParameterField;
@@ -71,7 +71,7 @@ public class AMIArtifactConfig implements ArtifactConfig, Visitable, WithConnect
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH,
       allowableValues =
-          "us-east-1, us-east-2, us-west-1, us-west-2, af-south-1, ap-east-1, ap-south-east-3, ap-south-east-2, ap-south-east-1, ap-south-1, ap-northeast-3, ap-north-east-2, ap-north-east-1, ca-central-1, eu-central-1, eu-west-1, eu-west-2, eu-west-3, eu-south-1, eu-north-1, me-south-1, me-central-1, sa-east-1")
+          "us-east-1, us-east-2, us-west-1, us-west-2, af-south-1, ap-east-1, ap-south-east-3, ap-south-east-2, ap-south-east-1, ap-south-1, ap-northeast-3, ap-north-east-2, ap-north-east-1, ca-central-1, eu-central-1, eu-west-1, eu-west-2, eu-west-3, eu-south-1, eu-north-1, me-south-1, me-central-1, sa-east-1, us-gov-east-1, us-gov-west-1")
   @Wither
   ParameterField<String> region;
 

@@ -16,6 +16,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -56,6 +57,7 @@ import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
+import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.rule.Owner;
 
@@ -103,6 +105,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
 
   InputSetEntity inputSetEntity;
   InputSetEntity overlayInputSetEntity;
+  PipelineEntity pipelineEntity;
 
   List<String> stages =
       Arrays.asList("using", "a", "list", "to", "ensure", "that", "this", "param", "is", "not", "ignored");
@@ -152,6 +155,14 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
                                 .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                 .version(1L)
                                 .build();
+    pipelineEntity = PipelineEntity.builder()
+                         .accountId(ACCOUNT_ID)
+                         .orgIdentifier(ORG_IDENTIFIER)
+                         .projectIdentifier(PROJ_IDENTIFIER)
+                         .identifier(PIPELINE_IDENTIFIER)
+                         .yaml(pipelineYaml)
+                         .version(1L)
+                         .build();
   }
 
   @Test
@@ -362,6 +373,9 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testCreateInputSet() {
+    doReturn(Optional.of(pipelineEntity))
+        .when(pipelineService)
+        .get(anyString(), anyString(), anyString(), anyString(), eq(false));
     doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.createInputSet(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);
@@ -389,6 +403,9 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testUpdateInputSet() {
+    doReturn(Optional.of(pipelineEntity))
+        .when(pipelineService)
+        .get(anyString(), anyString(), anyString(), anyString(), eq(false));
     doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID,
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);

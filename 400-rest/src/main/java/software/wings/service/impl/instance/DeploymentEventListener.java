@@ -7,12 +7,18 @@
 
 package software.wings.service.impl.instance;
 
+import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
+
+import io.harness.ff.FeatureFlagService;
 import io.harness.queue.QueueConsumer;
 import io.harness.queue.QueueListener;
 
 import software.wings.api.DeploymentEvent;
+import software.wings.instancesyncv2.CgInstanceSyncServiceV2;
 
 import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 
 /**
  * Receives all the completed phases and their deployment info and fetches from the corresponding servers.
@@ -22,8 +28,11 @@ import com.google.inject.Inject;
  * For sender information,
  * @see software.wings.beans.CanaryWorkflowExecutionAdvisor
  */
+@Slf4j
 public class DeploymentEventListener extends QueueListener<DeploymentEvent> {
   @Inject private InstanceHelper instanceHelper;
+  @Inject private CgInstanceSyncServiceV2 instanceSyncServiceV2;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Inject
   public DeploymentEventListener(QueueConsumer<DeploymentEvent> queueConsumer) {
@@ -35,6 +44,19 @@ public class DeploymentEventListener extends QueueListener<DeploymentEvent> {
    */
   @Override
   public void onMessage(DeploymentEvent deploymentEvent) {
+    if (CollectionUtils.isNotEmpty(deploymentEvent.getDeploymentSummaries())) {
+      String accountId = deploymentEvent.getDeploymentSummaries().get(0).getAccountId();
+      if (featureFlagService.isEnabled(INSTANCE_SYNC_V2_CG, accountId)) {
+        log.info("[INSTANCE_SYNC_V2_CG] Sending deployment event: [{}] to new instance sync flow for accountId: [{}]",
+            deploymentEvent.getId(), accountId);
+        try {
+          instanceSyncServiceV2.handleInstanceSync(deploymentEvent);
+          return;
+        } catch (Exception e) {
+          log.error("[INSTANCE_SYNC_V2_CG] Exception for handling deployment event. Falling back to old flow.", e);
+        }
+      }
+    }
     instanceHelper.processDeploymentEvent(deploymentEvent);
   }
 }

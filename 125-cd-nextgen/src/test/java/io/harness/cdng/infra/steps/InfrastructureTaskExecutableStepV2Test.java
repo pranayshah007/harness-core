@@ -76,6 +76,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
 import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO;
 import io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.EmptyHostDelegateConfig;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
@@ -106,6 +107,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -124,6 +126,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -508,9 +511,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .addRollbackArtifactToStageOutcomeIfPresent(
             any(Ambiance.class), any(StepResponseBuilder.class), any(ExecutionInfoKey.class), eq("SshWinRmAws"));
 
-    Collection<StepResponse.StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
+    Collection<StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
     assertThat(stepOutcomes)
-        .containsAnyOf(StepResponse.StepOutcome.builder()
+        .containsAnyOf(StepOutcome.builder()
                            .outcome(getInstancesOutcome())
                            .name(OutcomeExpressionConstants.INSTANCES)
                            .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
@@ -576,9 +579,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .addRollbackArtifactToStageOutcomeIfPresent(
             any(Ambiance.class), any(StepResponseBuilder.class), any(ExecutionInfoKey.class), eq("SshWinRmAzure"));
 
-    Collection<StepResponse.StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
+    Collection<StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
     assertThat(stepOutcomes)
-        .containsAnyOf(StepResponse.StepOutcome.builder()
+        .containsAnyOf(StepOutcome.builder()
                            .outcome(getInstancesOutcome())
                            .name(OutcomeExpressionConstants.INSTANCES)
                            .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
@@ -606,7 +609,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).hasSize(2);
-    Iterator<StepResponse.StepOutcome> iterator = stepResponse.getStepOutcomes().iterator();
+    Iterator<StepOutcome> iterator = stepResponse.getStepOutcomes().iterator();
     assertThat(iterator.next().getOutcome()).isEqualTo(getInstancesOutcome());
     assertThat(iterator.next().getOutcome())
         .isEqualTo(PdcInfrastructureOutcome.builder()
@@ -717,24 +720,28 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     mockSaveAndGetInstancesOutcomeForTaskStep();
 
+    doReturn(EmptyHostDelegateConfig.builder().hosts(Collections.emptySet()).build())
+        .when(cdStepHelper)
+        .getSshInfraDelegateConfig(any(), any());
+
     StepResponse stepResponse = step.handleAsyncResponse(ambiance,
         InfrastructureTaskExecutableStepV2Params.builder()
             .envRef(ParameterField.createValueField("env-id"))
             .infraRef(ParameterField.createValueField("infra-id"))
             .build(),
-        Map.of("taskId",
-            AwsListEC2InstancesTaskResponse.builder()
-                .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                .instances(List.of(mockAwsInstance("1"), mockAwsInstance("2")))
-                .build()));
+        Collections.emptyMap());
 
     // verify unit progress data
     assertThat(stepResponse.getUnitProgressList().get(0).getUnitName()).isEqualTo("Execute");
     assertThat(stepResponse.getUnitProgressList().get(0).getStatus()).isEqualTo(UnitStatus.SUCCESS);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
-    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    assertThat(stepResponse.getStepOutcomes()).hasSize(2);
 
-    Outcome outcome = stepResponse.getStepOutcomes().iterator().next().getOutcome();
+    Iterator<StepOutcome> iterator = stepResponse.getStepOutcomes().iterator();
+    Outcome outcome = iterator.next().getOutcome();
+    assertThat(outcome).isInstanceOf(InstancesOutcome.class);
+
+    outcome = iterator.next().getOutcome();
     assertThat(outcome).isInstanceOf(CustomDeploymentInfrastructureOutcome.class);
 
     CustomDeploymentInfrastructureOutcome stepOutCome = (CustomDeploymentInfrastructureOutcome) outcome;

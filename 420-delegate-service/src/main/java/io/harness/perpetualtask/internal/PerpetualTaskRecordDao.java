@@ -292,6 +292,17 @@ public class PerpetualTaskRecordDao {
     return update.getUpdatedCount() > 0;
   }
 
+  public void saveTaskFailureExceptionAndCount(String taskId, String exceptionMsg, long failedExecutionCount) {
+    Query<PerpetualTaskRecord> query =
+        persistence.createQuery(PerpetualTaskRecord.class).filter(PerpetualTaskRecordKeys.uuid, taskId);
+
+    UpdateOperations<PerpetualTaskRecord> taskUpdateOperations =
+        persistence.createUpdateOperations(PerpetualTaskRecord.class)
+            .set(PerpetualTaskRecordKeys.exception, exceptionMsg)
+            .set(PerpetualTaskRecordKeys.failedExecutionCount, failedExecutionCount);
+    persistence.update(query, taskUpdateOperations);
+  }
+
   public void markAllTasksOnDelegateForReassignment(String accountId, String delegateId) {
     Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
                                            .filter(PerpetualTaskRecordKeys.accountId, accountId)

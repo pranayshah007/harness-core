@@ -59,6 +59,9 @@ public interface InfrastructureEntityService {
   List<InfrastructureEntity> getAllInfrastructureFromEnvIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
 
+  List<InfrastructureEntity> getAllInfrastructureFromProjectIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
   String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll);
 

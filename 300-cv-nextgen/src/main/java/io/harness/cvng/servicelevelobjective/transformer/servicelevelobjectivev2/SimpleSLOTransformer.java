@@ -64,6 +64,7 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
         .healthSourceIdentifier(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
         .type(ServiceLevelObjectiveType.SIMPLE)
+        .startedAt(System.currentTimeMillis())
         .build();
   }
 
@@ -84,6 +85,7 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .enabled(serviceLevelObjective.isEnabled())
         .lastUpdatedAt(serviceLevelObjective.getLastUpdatedAt())
         .createdAt(serviceLevelObjective.getCreatedAt())
+        .startedAt(serviceLevelObjective.getCreatedAt())
         .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
         .nextNotificationIteration(serviceLevelObjective.getNextNotificationIteration())
         .serviceLevelIndicatorType(serviceLevelObjective.getType())

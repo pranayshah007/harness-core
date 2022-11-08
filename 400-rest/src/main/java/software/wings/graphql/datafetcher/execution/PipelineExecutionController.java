@@ -66,6 +66,7 @@ import software.wings.graphql.schema.type.QLExecuteOptions;
 import software.wings.graphql.schema.type.QLExecutedByAPIKey;
 import software.wings.graphql.schema.type.QLExecutedByTrigger;
 import software.wings.graphql.schema.type.QLExecutedByUser;
+import software.wings.graphql.schema.type.QLInputVariable;
 import software.wings.graphql.schema.type.QLPipelineExecution;
 import software.wings.graphql.schema.type.QLPipelineExecution.QLPipelineExecutionBuilder;
 import software.wings.graphql.schema.type.QLPipelineStageExecution;
@@ -251,7 +252,14 @@ public class PipelineExecutionController {
           log.warn("Exception was thrown try to fetch runtime variables for a paused pipeline stage", e);
         }
       }
+
+      List<QLInputVariable> inputVariables = new ArrayList<>();
+      if (isNotEmpty(execution.getWorkflowExecutions())) {
+        VariableController.populateInputVariables(inputVariables, execution.getWorkflowExecutions().get(0));
+      }
+
       return builder.pipelineStageElementId(execution.getPipelineStageElementId())
+          .inputVariables(inputVariables)
           .pipelineStageName(element.getProperties().get("stageName").toString())
           .pipelineStepName(element.getName())
           .status(ExecutionController.convertStatus(execution.getStatus()))

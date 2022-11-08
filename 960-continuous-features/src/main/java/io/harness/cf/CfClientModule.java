@@ -52,6 +52,8 @@ public class CfClientModule extends AbstractModule {
                               .eventUrl(cfClientConfig.getEventUrl())
                               .readTimeout(cfClientConfig.getReadTimeout())
                               .connectionTimeout(cfClientConfig.getConnectionTimeout())
+                              .streamEnabled(cfClientConfig.isStreamEnabled())
+                              .sseReadTimeout(cfClientConfig.getSseReadTimeout())
                               .build();
 
     final CfClient client = new CfClient(apiKey, config);

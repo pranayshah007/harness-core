@@ -6,6 +6,7 @@ shared_dependencies = [
     "@maven//:com_google_guava_guava",
     "@maven//:io_netty_netty_all",
 ] + [
+    "//840-template-service/contracts/openapi/public/v1:template-server-spec-module",
     "//878-ng-common-utilities:module",
     "//884-pms-commons:module",
     "//890-sm-core:module",
@@ -71,7 +72,6 @@ shared_dependencies = [
     "@maven//:org_springframework_data_spring_data_mongodb",
     "@maven//:org_springframework_spring_context",
     "//:lombok",
-    "@maven//:io_harness_template_server_spec",
     "@maven//:io_swagger_core_v3_swagger_jaxrs2",
     "@maven//:io_swagger_core_v3_swagger_jaxrs2_servlet_initializer_v2",
     "@maven//:io_swagger_core_v3_swagger_core",

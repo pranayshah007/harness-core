@@ -227,6 +227,7 @@ import io.harness.cvng.core.services.impl.monitoredService.HealthSourceServiceIm
 import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.RiskCategoryServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.ServiceDependencyServiceImpl;
+import io.harness.cvng.core.services.impl.sidekickexecutors.CompositeSLORecordsCleanupSideKickExecutor;
 import io.harness.cvng.core.services.impl.sidekickexecutors.DemoActivitySideKickExecutor;
 import io.harness.cvng.core.services.impl.sidekickexecutors.RetryChangeSourceHandleDeleteSideKickExecutor;
 import io.harness.cvng.core.services.impl.sidekickexecutors.VerificationJobInstanceCleanupSideKickExecutor;
@@ -924,6 +925,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     sideKickExecutorMapBinder.addBinding(SideKick.Type.VERIFICATION_JOB_INSTANCE_CLEANUP)
         .to(VerificationJobInstanceCleanupSideKickExecutor.class)
+        .in(Scopes.SINGLETON);
+    sideKickExecutorMapBinder.addBinding(SideKick.Type.COMPOSITE_SLO_RECORDS_CLEANUP)
+        .to(CompositeSLORecordsCleanupSideKickExecutor.class)
         .in(Scopes.SINGLETON);
     bind(NotificationRuleService.class).to(NotificationRuleServiceImpl.class);
     MapBinder<NotificationRuleType, NotificationRuleConditionTransformer>

@@ -10,7 +10,9 @@ package io.harness.ngtriggers.beans.source.artifact;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.Constants.ACR;
 import static io.harness.ngtriggers.Constants.AMAZON_S3;
+import static io.harness.ngtriggers.Constants.AMI;
 import static io.harness.ngtriggers.Constants.ARTIFACTORY_REGISTRY;
+import static io.harness.ngtriggers.Constants.AZURE_ARTIFACTS;
 import static io.harness.ngtriggers.Constants.CUSTOM_ARTIFACT;
 import static io.harness.ngtriggers.Constants.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.Constants.ECR;
@@ -18,6 +20,7 @@ import static io.harness.ngtriggers.Constants.GCR;
 import static io.harness.ngtriggers.Constants.GITHUB_PACKAGES;
 import static io.harness.ngtriggers.Constants.GOOGLE_ARTIFACT_REGISTRY;
 import static io.harness.ngtriggers.Constants.JENKINS;
+import static io.harness.ngtriggers.Constants.NEXUS2_REGISTRY;
 import static io.harness.ngtriggers.Constants.NEXUS3_REGISTRY;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
@@ -36,13 +39,16 @@ import java.util.List;
   , @JsonSubTypes.Type(value = EcrSpec.class, name = ECR),
       @JsonSubTypes.Type(value = DockerRegistrySpec.class, name = DOCKER_REGISTRY),
       @JsonSubTypes.Type(value = NexusRegistrySpec.class, name = NEXUS3_REGISTRY),
+      @JsonSubTypes.Type(value = Nexus2RegistrySpec.class, name = NEXUS2_REGISTRY),
       @JsonSubTypes.Type(value = ArtifactoryRegistrySpec.class, name = ARTIFACTORY_REGISTRY),
       @JsonSubTypes.Type(value = AcrSpec.class, name = ACR),
       @JsonSubTypes.Type(value = AmazonS3RegistrySpec.class, name = AMAZON_S3),
       @JsonSubTypes.Type(value = JenkinsRegistrySpec.class, name = JENKINS),
       @JsonSubTypes.Type(value = CustomArtifactSpec.class, name = CUSTOM_ARTIFACT),
       @JsonSubTypes.Type(value = GarSpec.class, name = GOOGLE_ARTIFACT_REGISTRY),
-      @JsonSubTypes.Type(value = GithubPackagesSpec.class, name = GITHUB_PACKAGES)
+      @JsonSubTypes.Type(value = GithubPackagesSpec.class, name = GITHUB_PACKAGES),
+      @JsonSubTypes.Type(value = AzureArtifactsRegistrySpec.class, name = AZURE_ARTIFACTS),
+      @JsonSubTypes.Type(value = AMIRegistrySpec.class, name = AMI)
 })
 
 @OwnedBy(PIPELINE)

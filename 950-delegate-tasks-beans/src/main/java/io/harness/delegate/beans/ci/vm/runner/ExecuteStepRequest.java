@@ -108,5 +108,7 @@ public class ExecuteStepRequest {
     @JsonProperty("test_annotations") String testAnnotations;
     @JsonProperty("build_environment") String buildEnvironment;
     @JsonProperty("framework_version") String frameworkVersion;
+    @JsonProperty("test_split_strategy") String testSplitStrategy;
+    @JsonProperty("parallelize_tests") boolean parallelizeTests;
   }
 }

@@ -32,7 +32,7 @@ public class GitEntityInfo {
   @Wither @Setter String folderPath;
   @Wither @Setter String filePath;
   @Wither String commitMsg;
-  @Wither String lastObjectId; // required in case of update file
+  @Wither @Setter String lastObjectId; // required in case of update file
   boolean isNewBranch;
   boolean isSyncFromGit;
   @Wither boolean findDefaultFromOtherRepos;
@@ -43,7 +43,7 @@ public class GitEntityInfo {
   @Setter StoreType storeType;
   String connectorRef;
   @Setter String repoName;
-  @Wither String lastCommitId;
+  @Wither @Setter String lastCommitId;
   @Setter String parentEntityRepoUrl;
   @Setter String parentEntityConnectorRef; // connector ref of entity under whose context actions are occurring
   @Setter String parentEntityRepoName; // repo name of entity under whose context actions are occurring

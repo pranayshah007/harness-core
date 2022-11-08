@@ -3,432 +3,324 @@
     "name": "AlertReconciliation",
     "enabled": true,
     "threadPoolSize": 3,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 1,
+    "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 10,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 600,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "ArtifactCollection",
     "enabled": true,
     "threadPoolSize": 20,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 1,
+    "threadPoolIntervalInSeconds": 10,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 1,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 60,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "ArtifactCleanup",
     "enabled": true,
     "threadPoolSize": 5,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 30,
+    "threadPoolIntervalInSeconds": 300,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "HOURS",
-    "targetInterval": 2,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 7200,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "EventDelivery",
     "enabled": true,
     "threadPoolSize": 25,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 1,
+    "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "SECONDS",
-    "targetInterval": 5,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 5,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "InstanceSync",
     "enabled": true,
     "threadPoolSize": 10,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 30,
+    "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 10,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 600,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "LicenseExpiryCheck",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 30,
+    "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 60,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 3600,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "ApprovalPolling",
     "enabled": true,
     "threadPoolSize": 5,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 10,
+    "threadPoolIntervalInSeconds": 10,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 1,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 60,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "GCPBilling",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 30,
+    "threadPoolIntervalInSeconds": 1800,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 60,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 3600,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "SegmentGroupEventJob",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 30,
+    "threadPoolIntervalInSeconds": 1800,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "HOURS",
-    "targetInterval": 24,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 86400,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "BarrierInstanceMonitor",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 1,
+    "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 1,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 60,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "EntityAuditRecordProcessor",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 30,
+    "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 30,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 1800,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "UsageMetricsHandler",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 30,
+    "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "HOURS",
-    "targetInterval": 24,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 86400,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "ResourceConstraint-Backup",
     "enabled": true,
     "threadPoolSize": 10,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 60,
+    "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "SECONDS",
-    "targetInterval": 30,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 30,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "WorkflowExecutionMonitor",
     "enabled": true,
     "threadPoolSize": 5,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 10,
+    "threadPoolIntervalInSeconds": 10,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 1,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 60,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "SettingAttributeValidateConnectivity",
     "enabled": true,
     "threadPoolSize": 5,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 10,
+    "threadPoolIntervalInSeconds": 600,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "HOURS",
-    "targetInterval": 3,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 10800,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "VaultSecretManagerRenewalHandler",
     "enabled": true,
     "threadPoolSize": 5,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 5,
+    "threadPoolIntervalInSeconds": 5,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "SECONDS",
-    "targetInterval": 31,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 31,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "SettingAttributesSecretsMigrationHandler",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 30,
+    "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 30,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 1800,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "GitSyncEntityExpiryCheck",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 10,
+    "threadPoolIntervalInSeconds": 600,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "HOURS",
-    "targetInterval": 12,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 43200,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "ExportExecutionsRequestHandler",
     "enabled": true,
     "threadPoolSize": 3,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 1,
+    "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 30,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 1800,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "ExportExecutionsRequestCleanupHandler",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "HOURS",
-    "threadPoolInterval": 1,
+    "threadPoolIntervalInSeconds": 3600,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 45,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 2700,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "DeploymentFreezeActivities",
     "enabled": true,
     "threadPoolSize": 3,
-    "threadPoolIntervalGranularity": "NONE",
-    "threadPoolInterval": 0,
+    "threadPoolIntervalInSeconds": 0,
     "nextIterationMode": "THROTTLE",
-    "targetIntervalGranularity": "NONE",
-    "targetInterval": 0,
-    "throttleIntervalGranularity": "SECONDS",
-    "throttleInterval": 45
+    "targetIntervalInSeconds": 0,
+    "throttleIntervalInSeconds": 45
   },
   {
     "name": "DeploymentFreezeDeactivation",
     "enabled": true,
     "threadPoolSize": 3,
-    "threadPoolIntervalGranularity": "NONE",
-    "threadPoolInterval": 0,
+    "threadPoolIntervalInSeconds": 0,
     "nextIterationMode": "THROTTLE",
-    "targetIntervalGranularity": "NONE",
-    "targetInterval": 0,
-    "throttleIntervalGranularity": "SECONDS",
-    "throttleInterval": 45
+    "targetIntervalInSeconds": 0,
+    "throttleIntervalInSeconds": 45
   },
   {
     "name": "CeLicenceExpiryProcessor",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "HOURS",
-    "threadPoolInterval": 24,
+    "threadPoolIntervalInSeconds": 86400,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "HOURS",
-    "targetInterval": 24,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 86400,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "DeleteAccountIterator",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 1,
+    "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 300,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 18000,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "DeletedEntityIterator",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 1,
+    "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "HOURS",
-    "targetInterval": 12,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 43200,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "ResourceLookupTagLinkSync",
     "enabled": true,
     "threadPoolSize": 1,
-    "threadPoolIntervalGranularity": "HOURS",
-    "threadPoolInterval": 12,
+    "threadPoolIntervalInSeconds": 43200,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "HOURS",
-    "targetInterval": 12,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 43200,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "AccessRequestHandler",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 5,
+    "threadPoolIntervalInSeconds": 5,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "SECONDS",
-    "targetInterval": 15,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 15,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "ScheduledTrigger",
     "enabled": true,
     "threadPoolSize": 8,
-    "threadPoolIntervalGranularity": "NONE",
-    "threadPoolInterval": 0,
+    "threadPoolIntervalInSeconds": 0,
     "nextIterationMode": "THROTTLE",
-    "targetIntervalGranularity": "NONE",
-    "targetInterval": 0,
-    "throttleIntervalGranularity": "SECONDS",
-    "throttleInterval": 45
+    "targetIntervalInSeconds": 0,
+    "throttleIntervalInSeconds": 45
   },
   {
     "name": "LdapGroupScheduled",
     "enabled": true,
     "threadPoolSize": 8,
-    "threadPoolIntervalGranularity": "NONE",
-    "threadPoolInterval": 0,
+    "threadPoolIntervalInSeconds": 0,
     "nextIterationMode": "THROTTLE",
-    "targetIntervalGranularity": "NONE",
-    "targetInterval": 0,
-    "throttleIntervalGranularity": "SECONDS",
-    "throttleInterval": 45
+    "targetIntervalInSeconds": 0,
+    "throttleIntervalInSeconds": 45
   },
   {
     "name": "EncryptedDataLocalToGcpKmsMigrationHandler",
     "enabled": true,
     "threadPoolSize": 5,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 30,
+    "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "HOURS",
-    "targetInterval": 20,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 72000,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "TimeoutEngine",
     "enabled": true,
     "threadPoolSize": 5,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 10,
+    "threadPoolIntervalInSeconds": 10,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "SECONDS",
-    "targetInterval": 10,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 10,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "GitSyncPollingIterator",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 1,
+    "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 5,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 300,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "PerpetualTaskAssignment",
     "enabled": true,
     "threadPoolSize": 5,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 1,
+    "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 1,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 60,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "DelegateDisconnectDetector",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 1,
+    "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "MINUTES",
-    "targetInterval": 1,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 60,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "DelegateTaskFail",
     "enabled": true,
     "threadPoolSize": 2,
-    "threadPoolIntervalGranularity": "SECONDS",
-    "threadPoolInterval": 30,
+    "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "SECONDS",
-    "targetInterval": 30,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 30,
+    "throttleIntervalInSeconds": 0
   },
   {
     "name": "DelegateTelemetryPublisherIteration",
     "enabled": true,
     "threadPoolSize": 1,
-    "threadPoolIntervalGranularity": "MINUTES",
-    "threadPoolInterval": 10,
+    "threadPoolIntervalInSeconds": 600,
     "nextIterationMode": "TARGET",
-    "targetIntervalGranularity": "HOURS",
-    "targetInterval": 24,
-    "throttleIntervalGranularity": "NONE",
-    "throttleInterval": 0
+    "targetIntervalInSeconds": 86400,
+    "throttleIntervalInSeconds": 0
   }
 ]

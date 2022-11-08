@@ -62,6 +62,7 @@ import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.impl.AnomalyServiceImpl;
 import io.harness.ccm.service.impl.AwsEntityChangeEventServiceImpl;
 import io.harness.ccm.service.impl.AzureEntityChangeEventServiceImpl;
+import io.harness.ccm.service.impl.CCMActiveSpendServiceImpl;
 import io.harness.ccm.service.impl.CCMConnectorDetailsServiceImpl;
 import io.harness.ccm.service.impl.CCMNotificationServiceImpl;
 import io.harness.ccm.service.impl.CEYamlServiceImpl;
@@ -72,6 +73,7 @@ import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.service.intf.AnomalyService;
 import io.harness.ccm.service.intf.AwsEntityChangeEventService;
 import io.harness.ccm.service.intf.AzureEntityChangeEventService;
+import io.harness.ccm.service.intf.CCMActiveSpendService;
 import io.harness.ccm.service.intf.CCMConnectorDetailsService;
 import io.harness.ccm.service.intf.CCMNotificationService;
 import io.harness.ccm.service.intf.CEYamlService;
@@ -327,6 +329,7 @@ public class CENextGenModule extends AbstractModule {
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(CENextGenOutboxEventHandler.class);
     bind(CCMRbacHelper.class).to(CCMRbacHelperImpl.class);
+    bind(CCMActiveSpendService.class).to(CCMActiveSpendServiceImpl.class);
 
     registerEventsFrameworkMessageListeners();
 

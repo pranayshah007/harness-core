@@ -691,7 +691,8 @@ public class WorkflowServiceImpl implements WorkflowService {
                   .build();
 
           List<WorkflowExecution> workflowExecutions =
-              workflowExecutionService.listExecutions(workflowExecutionPageRequest, false, false, false, false, false)
+              workflowExecutionService
+                  .listExecutions(workflowExecutionPageRequest, false, false, false, false, false, true)
                   .getResponse();
 
           workflowExecutions.forEach(we -> we.setStateMachine(null));

@@ -31,21 +31,21 @@ import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
-import io.harness.spec.server.pipeline.model.ExecutionSummary;
-import io.harness.spec.server.pipeline.model.ExecutorInfo;
-import io.harness.spec.server.pipeline.model.ExecutorInfo.TriggerTypeEnum;
-import io.harness.spec.server.pipeline.model.GitCreateDetails;
-import io.harness.spec.server.pipeline.model.GitDetails;
-import io.harness.spec.server.pipeline.model.GitUpdateDetails;
-import io.harness.spec.server.pipeline.model.NodeInfo;
-import io.harness.spec.server.pipeline.model.PipelineCreateRequestBody;
-import io.harness.spec.server.pipeline.model.PipelineGetResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineListResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineListResponseBody.StoreTypeEnum;
-import io.harness.spec.server.pipeline.model.PipelineUpdateRequestBody;
-import io.harness.spec.server.pipeline.model.RecentExecutionInfo;
-import io.harness.spec.server.pipeline.model.RecentExecutionInfo.ExecutionStatusEnum;
-import io.harness.spec.server.pipeline.model.YAMLSchemaErrorWrapper;
+import io.harness.spec.server.pipeline.v1.model.ExecutionSummary;
+import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
+import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
+import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
+import io.harness.spec.server.pipeline.v1.model.GitDetails;
+import io.harness.spec.server.pipeline.v1.model.GitUpdateDetails;
+import io.harness.spec.server.pipeline.v1.model.NodeInfo;
+import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody.StoreTypeEnum;
+import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo;
+import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo.ExecutionStatusEnum;
+import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,7 +68,7 @@ public class PipelinesApiUtils {
     gitDetails.setBranchName(entityGitDetails.getBranch());
     gitDetails.setCommitId(entityGitDetails.getCommitId());
     gitDetails.setFilePath(entityGitDetails.getFilePath());
-    gitDetails.setEntityIdentifier(entityGitDetails.getObjectId());
+    gitDetails.setObjectId(entityGitDetails.getObjectId());
     gitDetails.setFileUrl(entityGitDetails.getFileUrl());
     gitDetails.setRepoUrl(entityGitDetails.getRepoUrl());
     gitDetails.setRepoName(entityGitDetails.getRepoName());
@@ -113,6 +113,8 @@ public class PipelinesApiUtils {
     pipelineGetResponseBody.setPipelineYaml(pipelineEntity.getYaml());
     pipelineGetResponseBody.setSlug(pipelineEntity.getIdentifier());
     pipelineGetResponseBody.setName(pipelineEntity.getName());
+    pipelineGetResponseBody.setOrg(pipelineEntity.getOrgIdentifier());
+    pipelineGetResponseBody.setProject(pipelineEntity.getProjectIdentifier());
     pipelineGetResponseBody.setDescription(pipelineEntity.getDescription());
     pipelineGetResponseBody.setTags(getTagsFromNGTag(pipelineEntity.getTags()));
     pipelineGetResponseBody.setGitDetails(getGitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity)));
@@ -376,7 +378,7 @@ public class PipelinesApiUtils {
         .branch(gitDetails.getBranchName())
         .filePath(gitDetails.getFilePath())
         .commitMsg(gitDetails.getCommitMessage())
-        .isNewBranch(gitDetails.getBranchName() != null && gitDetails.getBaseBranch() != null)
+        .isNewBranch(isNotEmpty(gitDetails.getBranchName()) && isNotEmpty(gitDetails.getBaseBranch()))
         .baseBranch(gitDetails.getBaseBranch())
         .connectorRef(gitDetails.getConnectorRef())
         .storeType(StoreType.getFromStringOrNull(gitDetails.getStoreType().toString()))
@@ -391,7 +393,7 @@ public class PipelinesApiUtils {
     return GitEntityInfo.builder()
         .branch(gitDetails.getBranchName())
         .commitMsg(gitDetails.getCommitMessage())
-        .isNewBranch(gitDetails.getBranchName() != null && gitDetails.getBaseBranch() != null)
+        .isNewBranch(isNotEmpty(gitDetails.getBranchName()) && isNotEmpty(gitDetails.getBaseBranch()))
         .baseBranch(gitDetails.getBaseBranch())
         .lastCommitId(gitDetails.getLastCommitId())
         .lastObjectId(gitDetails.getLastObjectId())

@@ -59,6 +59,7 @@ import software.wings.beans.HttpStateExecutionResponse;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -82,6 +83,8 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
   @Inject private DelegateServiceBlockingStub delegateServiceBlockingStub;
   @Inject private KryoSerializer kryoSerializer;
+
+  @Inject @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer;
   @Inject private DelegateSyncService delegateSyncService;
   @Inject private DelegateAsyncService delegateAsyncService;
   @Inject private DelegateProgressService delegateProgressService;
@@ -101,8 +104,8 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
     ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     scheduledExecutorService.scheduleWithFixedDelay(delegateSyncService, 0L, 2L, TimeUnit.SECONDS);
 
-    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
+    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub,
+        delegateAsyncService, referenceFalseKryoSerializer, kryoSerializer, delegateSyncService, () -> false);
 
     DelegateCallbackToken callbackToken = delegateServiceGrpcClient.registerCallback(
         DelegateCallback.newBuilder()
@@ -156,8 +159,8 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
     ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     scheduledExecutorService.scheduleWithFixedDelay(delegateSyncService, 0L, 2L, TimeUnit.SECONDS);
 
-    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
+    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub,
+        delegateAsyncService, kryoSerializer, referenceFalseKryoSerializer, delegateSyncService, () -> false);
 
     DelegateCallbackToken callbackToken = delegateServiceGrpcClient.registerCallback(
         DelegateCallback.newBuilder()
@@ -214,8 +217,8 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
     ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     scheduledExecutorService.scheduleWithFixedDelay(delegateSyncService, 0L, 2L, TimeUnit.SECONDS);
 
-    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
+    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub,
+        delegateAsyncService, kryoSerializer, referenceFalseKryoSerializer, delegateSyncService, () -> false);
 
     DelegateCallbackToken callbackToken = delegateServiceGrpcClient.registerCallback(
         DelegateCallback.newBuilder()
@@ -264,8 +267,8 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
     ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     scheduledExecutorService.scheduleWithFixedDelay(delegateAsyncService, 0L, 2L, TimeUnit.SECONDS);
 
-    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
+    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub,
+        delegateAsyncService, kryoSerializer, referenceFalseKryoSerializer, delegateSyncService, () -> false);
 
     DelegateCallbackToken callbackToken = delegateServiceGrpcClient.registerCallback(
         DelegateCallback.newBuilder()
@@ -323,8 +326,8 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
     ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     scheduledExecutorService.scheduleWithFixedDelay(delegateAsyncService, 0L, 2L, TimeUnit.SECONDS);
 
-    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
+    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub,
+        delegateAsyncService, kryoSerializer, referenceFalseKryoSerializer, delegateSyncService, () -> false);
 
     DelegateCallbackToken callbackToken = delegateServiceGrpcClient.registerCallback(
         DelegateCallback.newBuilder()
@@ -388,8 +391,8 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
     scheduledExecutorService.scheduleWithFixedDelay(delegateProgressService, 0L, 2L, TimeUnit.SECONDS);
     scheduledExecutorService.scheduleWithFixedDelay(progressUpdateService, 0L, 2L, TimeUnit.SECONDS);
 
-    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
+    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub,
+        delegateAsyncService, kryoSerializer, referenceFalseKryoSerializer, delegateSyncService, () -> false);
     DelegateServiceAgentClient delegateServiceAgentClient = new DelegateServiceAgentClient();
 
     DelegateCallbackToken callbackToken = delegateServiceGrpcClient.registerCallback(

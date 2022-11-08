@@ -27,6 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
+import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
@@ -35,6 +36,11 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCredentialsDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
@@ -101,6 +107,7 @@ public class AzureArtifactDownloadServiceImplTest extends CategoryTest {
   @Mock private NexusMapper nexusMapper;
   @Mock JenkinsUtils jenkinsUtil;
   @Mock Jenkins jenkins;
+  @Mock private AzureArtifactsRegistryService azureArtifactsRegistryService;
 
   @InjectMocks private AzureArtifactDownloadServiceImpl downloadService;
 
@@ -326,6 +333,110 @@ public class AzureArtifactDownloadServiceImplTest extends CategoryTest {
 
     try {
       assertThatThrownBy(() -> downloadService.download(downloadContext)).isInstanceOf(HintException.class);
+    } finally {
+      FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
+    }
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testDownloadAzureDevopsArtifact() throws Exception {
+    InputStream is = new ByteArrayInputStream(ARTIFACT_FILE_CONTENT.getBytes());
+
+    when(azureArtifactsRegistryService.downloadArtifact(any(), any(), any(), any(), any(), any()))
+        .thenReturn(new Pair<String, InputStream>() {
+          @Override
+          public String getLeft() {
+            return "package-test.war";
+          }
+          @Override
+          public InputStream getRight() {
+            return is;
+          }
+          @Override
+          public InputStream setValue(InputStream value) {
+            return value;
+          }
+        });
+
+    final AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
+        AzureArtifactsConnectorDTO.builder()
+            .azureArtifactsUrl("dummyDevopsAzureURL")
+            .auth(AzureArtifactsAuthenticationDTO.builder()
+                      .credentials(
+                          AzureArtifactsCredentialsDTO.builder()
+                              .type(AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN)
+                              .credentialsSpec(
+                                  AzureArtifactsTokenDTO.builder()
+                                      .tokenRef(SecretRefData.builder().decryptedValue("secret".toCharArray()).build())
+                                      .build())
+                              .build())
+                      .build())
+            .build();
+
+    AzureDevOpsArtifactRequestDetails requestDetails = AzureDevOpsArtifactRequestDetails.builder()
+                                                           .feed("testFeed")
+                                                           .scope("org")
+                                                           .packageType("maven")
+                                                           .packageName("test.package.name:package-test")
+                                                           .version("1.0")
+                                                           .identifier("PACKAGE")
+                                                           .build();
+
+    final ArtifactDownloadContext downloadContext =
+        createDownloadContext(ArtifactSourceType.AZURE_ARTIFACTS, requestDetails, azureArtifactsConnectorDTO);
+
+    try {
+      AzureArtifactDownloadResponse downloadResponse = downloadService.download(downloadContext);
+      List<String> fileContent = Files.readAllLines(downloadResponse.getArtifactFile().toPath());
+      assertThat(fileContent).containsOnly(ARTIFACT_FILE_CONTENT);
+      assertThat(downloadResponse.getArtifactFile().toString()).contains("test.package.name");
+      assertThat(downloadResponse.getArtifactType()).isEqualTo(ArtifactType.WAR);
+    } finally {
+      FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
+    }
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testDownloadAzureDevopsArtifactAndExceptionIsThrown() throws Exception {
+    when(azureArtifactsRegistryService.downloadArtifact(any(), any(), any(), any(), any(), any()))
+        .thenThrow(new RuntimeException());
+
+    final AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
+        AzureArtifactsConnectorDTO.builder()
+            .azureArtifactsUrl("dummyDevopsAzureURL")
+            .auth(AzureArtifactsAuthenticationDTO.builder()
+                      .credentials(
+                          AzureArtifactsCredentialsDTO.builder()
+                              .type(AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN)
+                              .credentialsSpec(
+                                  AzureArtifactsTokenDTO.builder()
+                                      .tokenRef(SecretRefData.builder().decryptedValue("secret".toCharArray()).build())
+                                      .build())
+                              .build())
+                      .build())
+            .build();
+
+    AzureDevOpsArtifactRequestDetails requestDetails = AzureDevOpsArtifactRequestDetails.builder()
+                                                           .feed("testFeed")
+                                                           .scope("org")
+                                                           .packageType("maven")
+                                                           .packageName("test.package.name:package-test")
+                                                           .version("1.0")
+                                                           .identifier("PACKAGE")
+                                                           .build();
+
+    final ArtifactDownloadContext downloadContext =
+        createDownloadContext(ArtifactSourceType.AZURE_ARTIFACTS, requestDetails, azureArtifactsConnectorDTO);
+
+    try {
+      assertThatThrownBy(() -> downloadService.download(downloadContext))
+          .isInstanceOf(HintException.class)
+          .hasMessageContaining(
+              "Please review the Artifact Details and check the Azure DevOps project/organization feed of the artifact.");
     } finally {
       FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
     }

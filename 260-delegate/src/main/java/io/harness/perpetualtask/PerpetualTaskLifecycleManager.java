@@ -9,9 +9,12 @@ package io.harness.perpetualtask;
 
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
+import static javax.servlet.http.HttpServletResponse.SC_OK;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.concurrent.HTimeLimiter;
+import io.harness.exception.ExceptionUtils;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.logging.AutoLogContext;
@@ -79,21 +82,29 @@ public class PerpetualTaskLifecycleManager {
     try (AutoLogContext ignore1 = new PerpetualTaskLogContext(taskId.getId(), OVERRIDE_ERROR)) {
       currentlyExecutingPerpetualTasksCount.getAndIncrement();
 
+      // question? some tasks are internally failing on this runOnce and putting failure reason in the
+      // PerpetualTaskResponse.responseMessage, but they are setting responseCode as 200 only, as if nothing failed.
+      // What should we do in that case. for example check AwsCodeDeployInstanceSyncExecutor#getPerpetualTaskResponse
+      // method
       perpetualTaskResponse =
           perpetualTaskExecutor.runOnce(taskId, params, HTimestamps.toInstant(context.getHeartbeatTimestamp()));
 
       decrementTaskCounter();
     } catch (UncheckedTimeoutException tex) {
-      perpetualTaskResponse = PerpetualTaskResponse.builder().responseCode(408).responseMessage("failed").build();
+      perpetualTaskResponse =
+          PerpetualTaskResponse.builder().responseCode(408).responseMessage(ExceptionUtils.getMessage(tex)).build();
       log.debug("Timed out starting task", tex);
 
       decrementTaskCounter();
     } catch (Exception ex) {
-      perpetualTaskResponse = PerpetualTaskResponse.builder().responseCode(500).responseMessage("failed").build();
-      log.error("Exception is ", ex);
+      perpetualTaskResponse =
+          PerpetualTaskResponse.builder().responseCode(500).responseMessage(ExceptionUtils.getMessage(ex)).build();
+      log.error("Exception during execution of perpetual task ", ex);
       decrementTaskCounter();
     }
-    perpetualTaskServiceAgentClient.heartbeat(taskId, taskStartTime, perpetualTaskResponse, accountId);
+    if (perpetualTaskResponse != null && perpetualTaskResponse.getResponseCode() != SC_OK) {
+      perpetualTaskServiceAgentClient.recordPerpetualTaskFailure(taskId, accountId, perpetualTaskResponse);
+    }
     return null;
   }
 

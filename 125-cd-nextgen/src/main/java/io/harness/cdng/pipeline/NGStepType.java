@@ -158,9 +158,7 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE)
   AZURE_ROLLBACK_ARM_RESOURCE("Azure ARM Rollback", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Azure ARM", StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE),
-  @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_SETUP)
-  ELASTIGROUP_SETUP("Elastigroup Setup", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
-          StepSpecTypeConstants.ELASTIGROUP_SETUP),
+
   @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
   ECS_BLUE_GREEN_CREATE_SERVICE("Ecs Blue Green Create Service", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
       StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE),
@@ -172,7 +170,16 @@ public enum NGStepType {
       StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK),
   @JsonProperty(StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
   GITOPS_UPDATE_RELEASE_REPO("Update Release Repo", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
-      StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO);
+      StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO),
+  @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_DEPLOY)
+  ELASTIGROUP_DEPLOY("Elastigroup Deploy", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
+      StepSpecTypeConstants.ELASTIGROUP_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_ROLLBACK)
+  ELASTIGROUP_ROLLBACK("Elastigroup Rollback", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
+      StepSpecTypeConstants.ELASTIGROUP_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_SETUP)
+  ELASTIGROUP_SETUP("Elastigroup Setup", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
+      StepSpecTypeConstants.ELASTIGROUP_SETUP);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

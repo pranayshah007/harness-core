@@ -159,6 +159,7 @@ public class UpdateConnectorDataFetcherTest extends AbstractDataFetcherTestBase 
                                                                      .build()))
                     .delegateSelectors(RequestField.ofNull())
                     .passwordSecretId(RequestField.ofNullable(PASSWORD))
+                    .disableUserGitConfig(RequestField.ofNull())
                     .build())
             .build(),
         MutationContext.builder().accountId(ACCOUNT_ID).build());
@@ -215,6 +216,7 @@ public class UpdateConnectorDataFetcherTest extends AbstractDataFetcherTestBase 
                     .delegateSelectors(RequestField.ofNull())
                     .sshSettingId(RequestField.ofNullable(SSH))
                     .usageScope(RequestField.ofNullable(QLUsageScope.builder().build()))
+                    .disableUserGitConfig(RequestField.ofNull())
                     .build())
             .build(),
         MutationContext.builder().accountId(ACCOUNT_ID).build());
@@ -271,6 +273,7 @@ public class UpdateConnectorDataFetcherTest extends AbstractDataFetcherTestBase 
                                                                      .build()))
                     .delegateSelectors(RequestField.ofNull())
                     .usageScope(RequestField.ofNullable(QLUsageScope.builder().build()))
+                    .disableUserGitConfig(RequestField.ofNull())
                     .build())
             .build(),
         MutationContext.builder().accountId(ACCOUNT_ID).build());

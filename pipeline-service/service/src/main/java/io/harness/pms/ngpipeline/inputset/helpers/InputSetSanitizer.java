@@ -55,7 +55,7 @@ public class InputSetSanitizer {
       runtimeInput = InputSetYamlHelper.getPipelineComponent(runtimeInput);
     }
 
-    String filteredInputSetYaml = InputSetTemplateHelper.removeRuntimeInputFromYaml(runtimeInput);
+    String filteredInputSetYaml = InputSetTemplateHelper.removeRuntimeInputFromYaml(pipelineYaml, runtimeInput);
     if (EmptyPredicate.isEmpty(filteredInputSetYaml)) {
       return "";
     }

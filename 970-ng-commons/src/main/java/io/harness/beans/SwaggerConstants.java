@@ -33,5 +33,5 @@ public interface SwaggerConstants {
   String INFRASTRUCTURE_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH =
       "io.harness.cdng.elastigroup.ElastigroupConfiguration";
   String INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH =
-          "io.harness.cdng.elastigroup.ElastigroupInstances";
+      "io.harness.cdng.elastigroup.ElastigroupInstances";
 }

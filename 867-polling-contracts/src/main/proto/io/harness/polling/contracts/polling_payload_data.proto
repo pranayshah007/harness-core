@@ -29,6 +29,11 @@ message PollingPayloadData {
     GithubPackagesPollingPayload githubPackagesPollingPayload = 16;
     CustomPayload customPayload = 17;
     NGVariable ngVariable = 18;
+    AzureArtifactsPayload azureArtifactsPayload = 19;
+    AMIPayload amiPayload = 20;
+    AMITagPayload amiTagPayload = 21;
+    AMIFilterPayload amiFilterPayload = 22;
+    Nexus2RegistryPayload nexus2RegistryPayload = 23;
   }
 }
 
@@ -49,6 +54,9 @@ enum Type {
   GOOGLE_ARTIFACT_REGISTRY = 13;
   GITHUB_PACKAGES = 14;
   CUSTOM_ARTIFACT = 15;
+  AZURE_ARTIFACTS = 16;
+  AMI = 17;
+  NEXUS2 = 18;
 }
 
 message HttpHelmPayload {
@@ -94,7 +102,24 @@ message GcrPayload {
 message Nexus3RegistryPayload {
   string repository = 1;
   string artifactPath = 2;
-  string format = 3;
+  string repositoryFormat = 3;
+  string artifactId = 4;
+  string groupId = 5;
+  string packageName = 6;
+  string repositoryUrl = 7;
+  string classifier = 8;
+  string extension = 9;
+  string repositoryPort = 10;
+}
+
+message Nexus2RegistryPayload {
+  string repository = 1;
+  string repositoryFormat = 3;
+  string artifactId = 4;
+  string groupId = 5;
+  string packageName = 6;
+  string classifier = 8;
+  string extension = 9;
 }
 
 message ArtifactoryRegistryPayload {
@@ -151,4 +176,30 @@ message GithubPackagesPollingPayload {
   string org = 1;
   string packageName = 2;
   string packageType = 3;
+}
+
+message AzureArtifactsPayload {
+  string project = 1;
+  string feed = 2;
+  string packageName = 3;
+  string packageType = 4;
+  string versionRegex = 5;
+  string version = 6;
+}
+message AMIPayload {
+  string region = 1;
+  string versionRegex = 2;
+  string version = 3;
+  repeated AMITagPayload tags = 4;
+  repeated AMIFilterPayload filters = 5;
+}
+
+message AMITagPayload {
+  string name = 1;
+  string value = 2;
+}
+
+message AMIFilterPayload {
+  string name = 1;
+  string value = 2;
 }

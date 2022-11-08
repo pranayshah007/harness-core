@@ -31,4 +31,6 @@ public class CfClientConfig {
   @Default private int retries = 6;
   @Default private int sleepInterval = 5000;
   @Default private int bufferSize = 10240;
+  @Default private boolean streamEnabled = true;
+  @Default private int sseReadTimeout = 5;
 }

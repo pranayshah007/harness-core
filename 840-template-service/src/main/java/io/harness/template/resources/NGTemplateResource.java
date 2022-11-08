@@ -67,6 +67,7 @@ import io.harness.template.beans.TemplateDeleteListRequestDTO;
 import io.harness.template.beans.TemplateFilterProperties;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateImportSaveResponse;
+import io.harness.template.beans.TemplateListRepoResponse;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
@@ -511,7 +512,6 @@ public class NGTemplateResource {
     FilterParamsDTO filterParamsDTO = NGTemplateDtoMapper.prepareFilterParamsDTO(searchTerm, filterIdentifier,
         templateListType, templateFilterProperties, includeAllTemplatesAccessibleAtScope, getDistinctFromBranches);
     PageParamsDTO pageParamsDTO = NGTemplateDtoMapper.preparePageParamsDTO(page, size, sort);
-
     Page<TemplateMetadataSummaryResponseDTO> templateMetadataSummaryResponseDTOS =
         templateService
             .listTemplateMetadata(accountIdentifier, orgIdentifier, projectIdentifier, filterParamsDTO, pageParamsDTO)
@@ -883,7 +883,7 @@ public class NGTemplateResource {
         ApiResponse(responseCode = "default", description = "Returns a list of all the repositories of all Templates")
       })
 
-  public ResponseDTO<HashSet<String>>
+  public ResponseDTO<TemplateListRepoResponse>
   listRepos(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -892,6 +892,8 @@ public class NGTemplateResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Specify true if all accessible Templates are to be included") @QueryParam(
           INCLUDE_ALL_TEMPLATES_ACCESSIBLE) boolean includeAllTemplatesAccessibleAtScope) {
-    return ResponseDTO.newResponse(new HashSet<>());
+    TemplateListRepoResponse templateListRepoResponse = templateService.getListOfRepos(
+        accountIdentifier, orgIdentifier, projectIdentifier, includeAllTemplatesAccessibleAtScope);
+    return ResponseDTO.newResponse(templateListRepoResponse);
   }
 }

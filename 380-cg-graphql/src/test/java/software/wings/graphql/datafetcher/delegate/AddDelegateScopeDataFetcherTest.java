@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.JENNY;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.datafetcher.delegate.AddDelegateScopeDataFetcher;
 import io.harness.app.schema.mutation.delegate.input.QLAddDelegateScopeInput;
@@ -117,6 +118,7 @@ public class AddDelegateScopeDataFetcherTest extends AbstractDataFetcherTestBase
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testTaskGroupEnumCheck() {
     Set<TaskGroup> taskGroupSet = EnumSet.allOf(TaskGroup.class);
     Set<QLTaskGroup> qlTaskGroupSet = EnumSet.allOf(QLTaskGroup.class);
