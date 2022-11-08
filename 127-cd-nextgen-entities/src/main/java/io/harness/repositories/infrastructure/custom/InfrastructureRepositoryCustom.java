@@ -35,4 +35,7 @@ public interface InfrastructureRepositoryCustom {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
   UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String envIdentifier, List<String> infraIdentifierList, Update update);
+
+  List<InfrastructureEntity> findAllFromProjectIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

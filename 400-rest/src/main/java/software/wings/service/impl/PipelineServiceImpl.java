@@ -221,7 +221,7 @@ public class PipelineServiceImpl implements PipelineService {
                 .build();
         try {
           List<WorkflowExecution> workflowExecutions =
-              workflowExecutionService.listExecutions(innerPageRequest, false, false, false, false, false)
+              workflowExecutionService.listExecutions(innerPageRequest, false, false, false, false, false, true)
                   .getResponse();
           pipeline.setWorkflowExecutions(workflowExecutions);
         } catch (Exception e) {
@@ -269,6 +269,7 @@ public class PipelineServiceImpl implements PipelineService {
     setUnset(ops, "pipelineStages", pipeline.getPipelineStages());
     setUnset(ops, "failureStrategies", pipeline.getFailureStrategies());
     setUnset(ops, "keywords", trimmedLowercaseSet(keywords));
+    setUnset(ops, "rollbackPreviousStages", pipeline.rollbackPreviousStages);
 
     wingsPersistence.update(wingsPersistence.createQuery(Pipeline.class)
                                 .filter("appId", pipeline.getAppId())

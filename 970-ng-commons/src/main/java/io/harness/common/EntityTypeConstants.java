@@ -130,4 +130,6 @@ public interface EntityTypeConstants {
   String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
   String FREEZE = "Freeze";
   String CHAOS_STEP = "Chaos";
+  String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
+  String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
 }

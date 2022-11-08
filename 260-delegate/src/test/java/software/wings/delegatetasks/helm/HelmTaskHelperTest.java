@@ -1074,7 +1074,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
             .serviceId(SERVICE_ID)
             .helmChartConfigParams(getHelmChartConfigParams(httpHelmRepoConfig))
             .build();
-    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelperBase).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelper)
@@ -1125,7 +1125,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .executeCommandWithLogOutput(any(),
             eq(V_3_HELM_SEARCH_REPO_COMMAND + " --repository-config cache/repo-repoName.yaml"), eq("dir"), any(),
             any());
-    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelperBase).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
 
     List<HelmChart> helmCharts = helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000);
     assertThat(helmCharts.size()).isEqualTo(2);
@@ -1210,7 +1210,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
                                                               .serviceId(SERVICE_ID)
                                                               .helmChartConfigParams(helmChartConfigParams)
                                                               .build();
-    doReturn("").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
+    doReturn("").when(helmTaskHelperBase).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
     doReturn("helmHomePath").when(helmTaskHelperBase).getHelmHomePath(anyString());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
@@ -1361,8 +1361,8 @@ public class HelmTaskHelperTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testGetCacheDirForManifestCollection() throws Exception {
-    assertThat(helmTaskHelper.getCacheDirForManifestCollection(V2, "repo", true)).isEmpty();
-    assertThat(helmTaskHelper.getCacheDirForManifestCollection(V3, "repo", true)).endsWith("repo/cache");
-    assertThat(helmTaskHelper.getCacheDirForManifestCollection(V380, "repo", true)).endsWith("repo/cache");
+    assertThat(helmTaskHelperBase.getCacheDirForManifestCollection(V2, "repo", true)).isEmpty();
+    assertThat(helmTaskHelperBase.getCacheDirForManifestCollection(V3, "repo", true)).endsWith("repo/cache");
+    assertThat(helmTaskHelperBase.getCacheDirForManifestCollection(V380, "repo", true)).endsWith("repo/cache");
   }
 }

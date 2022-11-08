@@ -22,7 +22,6 @@ import static software.wings.utils.Utils.urlDecode;
 
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 
-import io.harness.account.ProvisionStep;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
@@ -37,6 +36,7 @@ import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
 import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
+import io.harness.licensing.beans.modules.SMPValidationResultDTO;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -283,6 +283,27 @@ public class AccountResource {
   }
 
   @PUT
+  @Path("{accountId}/is-product-led")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") @NotEmpty String accountId,
+      @QueryParam("isProductLed") @DefaultValue("false") boolean isProductLed) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(accountService.updateIsProductLed(accountId, isProductLed));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder().message("User not allowed to update account product-led status").build()))
+          .build();
+    }
+  }
+
+  @PUT
   @Path("{accountId}/sales-contacts")
   @Timed
   @ExceptionMetered
@@ -319,31 +340,6 @@ public class AccountResource {
   public RestResponse<Void> updateDefaultExperience(
       @PathParam("accountId") @NotEmpty String accountId, Account account) {
     return new RestResponse<>(accountService.setDefaultExperience(accountId, account.getDefaultExperience()));
-  }
-
-  @GET
-  @Path("delegate/active")
-  @Timed
-  @ExceptionMetered
-  public RestResponse<Boolean> checkSampleDelegate(@QueryParam("accountId") @NotEmpty String accountId) {
-    return new RestResponse<>(accountService.sampleDelegateExists(accountId));
-  }
-
-  @GET
-  @Path("delegate/progress")
-  @Timed
-  @ExceptionMetered
-  public RestResponse<List<ProvisionStep>> checkProgressSampleDelegate(
-      @QueryParam("accountId") @NotEmpty String accountId) {
-    return new RestResponse<>(accountService.sampleDelegateProgress(accountId));
-  }
-
-  @POST
-  @Path("delegate/generate")
-  @Timed
-  @ExceptionMetered
-  public RestResponse<String> generateSampleDelegate(@QueryParam("accountId") @NotEmpty String accountId) {
-    return new RestResponse<>(accountService.generateSampleDelegate(accountId));
   }
 
   @POST
@@ -686,6 +682,26 @@ public class AccountResource {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(
               Lists.newArrayList(ResponseMessage.builder().message("User not allowed to generate smp license").build()))
+          .build();
+    }
+  }
+
+  @POST
+  @Path("{accountId}/smp/licenses/validate")
+  @Hidden
+  public RestResponse<SMPValidationResultDTO> validateSMPLicense(
+      @PathParam("accountId") String accountId, @Body SMPEncLicenseDTO licenseDTO) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(getResponse(adminLicenseHttpClient.validateSMPLicense(licenseDTO)));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to validate smp license").build()))
           .build();
     }
   }

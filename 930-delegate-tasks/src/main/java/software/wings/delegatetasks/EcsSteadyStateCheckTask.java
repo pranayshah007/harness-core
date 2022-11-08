@@ -19,8 +19,8 @@ import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TimeoutException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -114,6 +114,7 @@ public class EcsSteadyStateCheckTask extends AbstractDelegateRunnableTask {
               .build();
       ecsContainerService.waitForTasksToBeInRunningStateWithHandledExceptions(updateCountRequestData);
 
+      // Now poll for events API to notify of steady state
       executionLogCallback.saveExecutionLog(
           String.format("Starting to wait for steady state for Ecs service: %s in Ecs cluster: %s.",
               params.getServiceName(), params.getClusterName()));

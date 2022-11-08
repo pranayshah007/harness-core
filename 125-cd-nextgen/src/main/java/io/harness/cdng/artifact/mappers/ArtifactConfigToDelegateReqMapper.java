@@ -14,6 +14,7 @@ import static software.wings.utils.RepositoryFormat.generic;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
@@ -46,6 +47,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
@@ -161,6 +163,30 @@ public class ArtifactConfigToDelegateReqMapper {
         artifactConfig.getPackageType().getValue(), version, versionRegex, artifactConfig.getProject().getValue(),
         artifactConfig.getScope().getValue(), artifactConfig.getFeed().getValue(), connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.AZURE_ARTIFACTS);
+  }
+
+  public AMIArtifactDelegateRequest getAMIDelegateRequest(AMIArtifactConfig artifactConfig,
+      AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    String versionRegex = artifactConfig.getVersionRegex().getValue();
+
+    if (StringUtils.isBlank(versionRegex)) {
+      versionRegex = "";
+    }
+
+    String version = artifactConfig.getVersion().getValue();
+
+    if (StringUtils.isBlank(version)) {
+      version = "";
+    }
+
+    // If both version and versionRegex are empty, throw exception.
+    if (StringUtils.isAllBlank(version, versionRegex)) {
+      throw new InvalidRequestException("Please specify version or versionRegex. Both cannot be empty.");
+    }
+
+    return ArtifactDelegateRequestUtils.getAMIArtifactDelegateRequest(artifactConfig.getTags(),
+        artifactConfig.getFilters(), artifactConfig.getRegion().getValue(), version, versionRegex, connectorRef,
+        connectorDTO, encryptedDataDetails, ArtifactSourceType.AMI);
   }
 
   public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(JenkinsArtifactConfig artifactConfig,

@@ -9,6 +9,7 @@ package io.harness.delegate.task.artifacts.mappers;
 
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCredentialsDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -49,6 +50,28 @@ public class AzureArtifactsRequestResponseMapper {
         .packageId(request.getPackageId())
         .username(username)
         .password(password)
+        .token(token)
+        .build();
+  }
+
+  public AzureArtifactsInternalConfig toAzureArtifactsInternalConfig(
+      AzureArtifactsConnectorDTO azureArtifactsConnectorDTO) {
+    String token = null;
+    String authMechanism = null;
+
+    if (azureArtifactsConnectorDTO.getAuth() != null && azureArtifactsConnectorDTO.getAuth().getCredentials() != null) {
+      AzureArtifactsCredentialsDTO httpDTO = azureArtifactsConnectorDTO.getAuth().getCredentials();
+
+      if (httpDTO.getType() == AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN) {
+        authMechanism = AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN.getDisplayName();
+        AzureArtifactsTokenDTO usernameTokenDTO = httpDTO.getCredentialsSpec();
+        token = new String(usernameTokenDTO.getTokenRef().getDecryptedValue());
+      }
+    }
+
+    return AzureArtifactsInternalConfig.builder()
+        .authMechanism(authMechanism)
+        .registryUrl(azureArtifactsConnectorDTO.getAzureArtifactsUrl())
         .token(token)
         .build();
   }

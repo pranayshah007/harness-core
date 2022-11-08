@@ -14,15 +14,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StageElementParameters;
+import io.harness.plancreator.steps.common.rollback.RollbackUtility;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.tasks.ResponseData;
 
+import com.google.inject.Inject;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,6 +36,8 @@ public class DeploymentStageStep implements ChildExecutable<StageElementParamete
                                                .setType(ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName())
                                                .setStepCategory(StepCategory.STAGE)
                                                .build();
+
+  @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
   public Class<StageElementParameters> getStepParametersClass() {
@@ -52,7 +57,7 @@ public class DeploymentStageStep implements ChildExecutable<StageElementParamete
   public StepResponse handleChildResponse(
       Ambiance ambiance, StageElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("executed deployment stage =[{}]", stepParameters);
-
+    RollbackUtility.publishRollbackInformation(ambiance, responseDataMap, executionSweepingOutputService);
     return createStepResponseFromChildResponse(responseDataMap);
   }
 }

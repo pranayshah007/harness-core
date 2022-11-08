@@ -172,6 +172,8 @@ type WorkflowExecution implements Execution {
   tags: [DeploymentTag]
 
   failureDetails: String
+
+  inputVariables: [InputVariable]
 }
 
 # Type for pipeline execution
@@ -252,6 +254,7 @@ type WorkflowStageExecution implements PipelineStageExecution {
   status: ExecutionStatus
   # List of runtime variables
   runtimeInputVariables: [Variable]
+  inputVariables: [Variable]
 }
 
 enum ApprovalStepType {

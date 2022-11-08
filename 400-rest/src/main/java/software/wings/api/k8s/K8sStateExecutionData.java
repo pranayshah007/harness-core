@@ -14,27 +14,34 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.task.helm.HelmChartInfo;
+import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResourceId;
 
 import software.wings.api.ExecutionDataValue;
 import software.wings.beans.TaskType;
 import software.wings.beans.appmanifest.ApplicationManifest;
+import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
+import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.StateExecutionData;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
+import org.jetbrains.annotations.NotNull;
 
 @Data
 @Builder
@@ -64,6 +71,7 @@ public class K8sStateExecutionData extends StateExecutionData implements Delegat
   private List<KubernetesResourceId> prunedResourcesIds;
   private boolean exportManifests;
   private String zippedManifestFileId;
+  private List<K8sPod> podsList = new ArrayList<>();
 
   @Override
   public Map<String, ExecutionDataValue> getExecutionDetails() {
@@ -113,6 +121,35 @@ public class K8sStateExecutionData extends StateExecutionData implements Delegat
         .prunedResourcesIds(prunedResourcesIds)
         .exportManifests(exportManifests)
         .clusterName(clusterName)
+        .pods(getPods())
         .build();
+  }
+
+  @NotNull
+  private List<K8sPodInfo> getPods() {
+    if (CollectionUtils.isEmpty(podsList)) {
+      return Collections.emptyList();
+    }
+
+    return podsList.parallelStream()
+        .map(pod
+            -> K8sPodInfo.builder()
+                   .releaseName(pod.getReleaseName())
+                   .podName(pod.getName())
+                   .ip(pod.getPodIP())
+                   .namespace(pod.getNamespace())
+                   .helmChartInfo(helmChartInfo)
+                   .blueGreenColor(pod.getColor())
+                   .containers(pod.getContainerList()
+                                   .parallelStream()
+                                   .map(container
+                                       -> K8sContainerInfo.builder()
+                                              .containerId(container.getContainerId())
+                                              .name(container.getName())
+                                              .image(container.getImage())
+                                              .build())
+                                   .collect(Collectors.toList()))
+                   .build())
+        .collect(Collectors.toList());
   }
 }

@@ -90,13 +90,15 @@ public class GitConfig extends SettingValue implements EncryptableSetting {
   @Trimmed private String commitMessage;
   private List<String> delegateSelectors;
   @Default private ProviderType providerType = ProviderType.GIT;
+  @Default private Boolean disableUserGitConfig = false;
 
   @Builder
   public GitConfig(String username, char[] password, String repoUrl, String branch, String accountId,
       String encryptedPassword, String sshSettingId, SettingAttribute sshSettingAttribute, boolean keyAuth,
       AuthenticationScheme authenticationScheme, String description, String webhookToken, GitRepositoryType gitRepoType,
       boolean generateWebhookUrl, String authorName, String authorEmailId, String commitMessage, UrlType urlType,
-      String repoName, String reference, List<String> delegateSelectors, ProviderType providerType) {
+      String repoName, String reference, List<String> delegateSelectors, ProviderType providerType,
+      Boolean disableUserGitConfig) {
     super(SettingVariableTypes.GIT.name());
     this.username = username;
     this.password = password == null ? null : password.clone();
@@ -120,6 +122,7 @@ public class GitConfig extends SettingValue implements EncryptableSetting {
     this.reference = reference;
     this.delegateSelectors = delegateSelectors;
     this.providerType = providerType;
+    this.disableUserGitConfig = disableUserGitConfig;
   }
 
   @Override
@@ -178,12 +181,13 @@ public class GitConfig extends SettingValue implements EncryptableSetting {
     private UrlType urlType;
     private List<String> delegateSelectors;
     private ProviderType providerType;
+    private Boolean disableUserGitConfig;
 
     @Builder
     public Yaml(String type, String harnessApiVersion, String url, String username, String password, String branch,
         String reference, UsageRestrictions.Yaml usageRestrictions, boolean keyAuth, String sshKeyName,
         String description, String authorName, String authorEmailId, String commitMessage, UrlType urlType,
-        List<String> delegateSelectors, ProviderType providerType) {
+        List<String> delegateSelectors, ProviderType providerType, Boolean disableUserGitConfig) {
       super(type, harnessApiVersion, url, username, password, usageRestrictions);
       this.branch = branch;
       this.reference = reference;
@@ -196,6 +200,7 @@ public class GitConfig extends SettingValue implements EncryptableSetting {
       this.urlType = urlType;
       this.delegateSelectors = delegateSelectors;
       this.providerType = providerType;
+      this.disableUserGitConfig = disableUserGitConfig;
     }
   }
 }

@@ -22,6 +22,7 @@ import io.harness.persistence.HIterator;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.beans.Account;
+import software.wings.beans.AccountStatus;
 import software.wings.beans.User;
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.LoginSettingsService;
@@ -88,6 +89,12 @@ public class AccountPasswordExpirationJob implements Job {
           account = accountService.get(user.getDefaultAccountId());
           LoginSettings loginSettings = loginSettingsService.getLoginSettings(account.getUuid());
           PasswordExpirationPolicy passwordExpirationPolicy = loginSettings.getPasswordExpirationPolicy();
+
+          // Skip inactive accounts.
+          if (account.getLicenseInfo() != null
+              && !account.getLicenseInfo().getAccountStatus().equals(AccountStatus.ACTIVE)) {
+            continue;
+          }
 
           // Mails will only be sent if the login mechanism of the account is USER_PASSWORD.
           if (account.getAuthenticationMechanism() == null

@@ -169,13 +169,10 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
 
   @Override
   public AnalysisStatus getExecutionStatus(HostSamplingState analysisState) {
-    if (analysisState.getControlHosts() != null || analysisState.getTestHosts() != null) {
-      return AnalysisStatus.TRANSITION;
-    }
     if (analysisState.getStatus() == AnalysisStatus.SUCCESS) {
       return AnalysisStatus.SUCCESS;
     }
-    return AnalysisStatus.RUNNING;
+    return AnalysisStatus.TRANSITION;
   }
 
   @Override

@@ -9,6 +9,7 @@ package software.wings.service.impl.instance;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
+import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -948,7 +949,8 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                         .filter("executionUuid", lastWE.getUuid())
                         .filter("rollback", true)
                         .filter("stateType", PHASE.getType())
-                        .filter("status", FAILED.name())
+                        .field("status")
+                        .in(List.of(FAILED.name(), SKIPPED.name()))
                         .get();
         }
       } else {
@@ -976,7 +978,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                      .build();
       } else if (stateEI != null) {
         // if is true, there is a rollback failed
-        boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastWE);
+        boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastWE, false);
         Artifact artifactRollback = lastWE.getArtifacts().get(0);
         artifactSummary = getArtifactSummary(artifactRollback.getDisplayName(), artifactRollback.getUuid(),
             artifactRollback.getBuildNo(), artifactRollback.getArtifactSourceName());
@@ -1009,7 +1011,8 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                      .onDemandRollbackAvailable(rollbackAvailable)
                                      .build();
       } else {
-        boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastSuccessfulWE);
+        boolean rollbackAvailable =
+            workflowExecutionService.getOnDemandRollbackAvailable(appId, lastSuccessfulWE, false);
         EntitySummary workflowExecutionSummary = getEntitySummary(
             lastSuccessfulWE.getName(), lastSuccessfulWE.getUuid(), EntityType.WORKFLOW_EXECUTION.name());
 

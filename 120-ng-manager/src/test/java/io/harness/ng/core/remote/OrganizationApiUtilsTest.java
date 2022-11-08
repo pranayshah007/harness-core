@@ -17,9 +17,9 @@ import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.spec.server.ng.model.CreateOrganizationRequest;
-import io.harness.spec.server.ng.model.OrganizationResponse;
-import io.harness.spec.server.ng.model.UpdateOrganizationRequest;
+import io.harness.spec.server.ng.v1.model.CreateOrganizationRequest;
+import io.harness.spec.server.ng.v1.model.OrganizationResponse;
+import io.harness.spec.server.ng.v1.model.UpdateOrganizationRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -9,10 +9,13 @@ package io.harness.perpetualtask;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.network.SafeHttpCall.execute;
 
 import static java.lang.String.format;
 import static java.time.Duration.ofMinutes;
+import static java.util.Collections.emptyList;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -23,12 +26,12 @@ import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanc
 import io.harness.delegate.beans.instancesync.mapper.CustomDeploymentInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest;
+import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
-import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
-import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
-import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
@@ -37,12 +40,16 @@ import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ScriptType;
-import io.harness.shell.ShellExecutionData;
 import io.harness.shell.ShellExecutorConfig;
 
 import software.wings.sm.states.customdeploymentng.InstanceMapperUtils;
 
+import com.google.common.base.Charsets;
 import com.google.inject.Inject;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -94,15 +101,13 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuter implements Perpet
   private List<ServerInstanceInfo> getServerInstanceInfo(
       PerpetualTaskId taskId, CustomDeploymentNGInstanceSyncPerpetualTaskParams taskParams) {
     try {
-      final ShellScriptTaskResponseNG response = executeScript(taskParams, taskId.getId());
-      if (CommandExecutionStatus.FAILURE.equals(response.getStatus())) {
+      final FetchInstanceScriptTaskNGResponse response = executeScript(taskParams, taskId.getId());
+      if (CommandExecutionStatus.FAILURE.equals(response.getCommandExecutionStatus())) {
         return Collections.emptyList();
       }
-      Map<String, String> output = ((ShellExecutionData) response.getExecuteCommandResponse().getCommandExecutionData())
-                                       .getSweepingOutputEnvVariables();
       final List<CustomDeploymentServerInstanceInfo> customDeploymentServerInstanceInfos =
           InstanceMapperUtils.mapJsonToInstanceElements(INSTANCE_NAME, taskParams.getInstanceAttributesMap(),
-              taskParams.getInstancesListPath(), output.get(OUTPUT_PATH_KEY), jsonMapper);
+              taskParams.getInstancesListPath(), response.getOutput(), jsonMapper);
       customDeploymentServerInstanceInfos.forEach(serverInstanceInfo -> {
         serverInstanceInfo.setInstanceFetchScript(taskParams.getScript());
         serverInstanceInfo.setInfrastructureKey(taskParams.getInfrastructureKey());
@@ -133,53 +138,93 @@ public class CustomDeploymentInstanceSyncPerpetualTaskExecuter implements Perpet
     }
     return SUCCESS_RESPONSE_MSG;
   }
-  private ShellScriptTaskResponseNG executeScript(
+
+  private FetchInstanceScriptTaskNGResponse executeScript(
       CustomDeploymentNGInstanceSyncPerpetualTaskParams taskParams, String taskId) {
+    String workingDir = null;
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     try {
-      ShellScriptTaskParametersNGBuilder taskParametersNGBuilder = ShellScriptTaskParametersNG.builder();
-      ShellScriptTaskParametersNG taskParameters = taskParametersNGBuilder.accountId(taskParams.getAccountId())
-                                                       .environmentVariables(new HashMap<>())
-                                                       .script(taskParams.getScript())
-                                                       .executeOnDelegate(true)
-                                                       .scriptType(ScriptType.BASH)
-                                                       .workingDirectory(WORKING_DIRECTORY)
-                                                       .outputVars(Collections.singletonList(OUTPUT_PATH_KEY))
-                                                       .build();
+      String basePath = Paths.get("fetchInstanceScript").toAbsolutePath().toString();
+      workingDir = Paths.get(basePath, taskId).toString();
+      String outputPath = Paths.get(workingDir, "output.json").toString();
+
+      Map<String, String> variablesMap = new HashMap<>();
+      variablesMap.put(OUTPUT_PATH_KEY, outputPath);
+      createNewFile(outputPath);
+
+      FetchInstanceScriptTaskNGRequest taskParameters = FetchInstanceScriptTaskNGRequest.builder()
+                                                            .accountId(taskParams.getAccountId())
+                                                            .executionId(taskId)
+                                                            .scriptBody(taskParams.getScript())
+                                                            .outputPathKey(OUTPUT_PATH_KEY)
+                                                            .variables(variablesMap)
+                                                            .build();
       ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParameters);
       ScriptProcessExecutor executor =
           shellExecutorFactory.getExecutor(shellExecutorConfig, null, commandUnitsProgress);
-      ExecuteCommandResponse executeCommandResponse =
-          executor.executeCommandString(taskParameters.getScript(), taskParameters.getOutputVars(),
-              taskParameters.getSecretOutputVars(), ofMinutes(DEFAULT_TIMEOUT_IN_MINUTES).toMillis());
-      return ShellScriptTaskResponseNG.builder()
-          .executeCommandResponse(executeCommandResponse)
-          .status(executeCommandResponse.getStatus())
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-          .build();
+      ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
+          taskParameters.getScriptBody(), emptyList(), emptyList(), ofMinutes(DEFAULT_TIMEOUT_IN_MINUTES).toMillis());
+
+      String message = String.format("Execution finished with status: %s", executeCommandResponse.getStatus());
+      if (executeCommandResponse.getStatus() == CommandExecutionStatus.FAILURE) {
+        return FetchInstanceScriptTaskNGResponse.builder()
+            .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+            .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+            .errorMessage(message)
+            .build();
+      }
+      try {
+        return FetchInstanceScriptTaskNGResponse.builder()
+            .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+            .commandExecutionStatus(SUCCESS)
+            .output(new String(Files.readAllBytes(Paths.get(outputPath)), Charsets.UTF_8))
+            .build();
+      } catch (IOException e) {
+        throw new InvalidRequestException("Error occurred while reading output file", e);
+      }
     } catch (Exception ex) {
       log.error("Exception Occured While Running Custom Deployment NG Perpetual Task:{}, Message: {}", taskId,
           ExceptionUtils.getMessage(ex));
-      return ShellScriptTaskResponseNG.builder()
-          .status(CommandExecutionStatus.FAILURE)
+      return FetchInstanceScriptTaskNGResponse.builder()
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .commandExecutionStatus(CommandExecutionStatus.FAILURE)
           .errorMessage(ExceptionUtils.getMessage(ex))
           .build();
+    } finally {
+      try {
+        deleteDirectoryAndItsContentIfExists(workingDir);
+      } catch (IOException e) {
+        log.warn(String.format("Failed to delete working directory: %s", workingDir));
+      }
     }
   }
 
-  private ShellExecutorConfig getShellExecutorConfig(ShellScriptTaskParametersNG taskParameters) {
+  private ShellExecutorConfig getShellExecutorConfig(FetchInstanceScriptTaskNGRequest taskParameters) {
     return ShellExecutorConfig.builder()
         .accountId(taskParameters.getAccountId())
         .executionId(taskParameters.getExecutionId())
         .commandUnitName(COMMAND_UNIT)
-        .workingDirectory(taskParameters.getWorkingDirectory())
-        .environment(taskParameters.getEnvironmentVariables())
-        .scriptType(taskParameters.getScriptType())
+        .environment(taskParameters.getVariables())
+        .scriptType(ScriptType.BASH)
         .build();
   }
 
   @Override
   public boolean cleanup(PerpetualTaskId taskId, PerpetualTaskExecutionParams params) {
     return false;
+  }
+
+  private File createNewFile(String path) {
+    File file = new File(path);
+    boolean mkdirs = file.getParentFile().mkdirs();
+    if (!mkdirs && !file.getParentFile().exists()) {
+      throw new InvalidRequestException(String.format("Unable to create directory for output file: %s", path));
+    }
+    try {
+      file.createNewFile();
+    } catch (IOException e) {
+      throw new InvalidRequestException("Error occurred in creating output file", e);
+    }
+    return file;
   }
 }

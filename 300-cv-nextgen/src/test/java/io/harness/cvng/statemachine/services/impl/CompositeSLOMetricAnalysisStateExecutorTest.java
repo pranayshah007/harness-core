@@ -11,25 +11,33 @@ import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord.CompositeSLORecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
+import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.impl.SLOHealthIndicatorServiceImpl;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState.StateType;
+import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.CompositeSLOMetricAnalysisState;
 import io.harness.cvng.statemachine.services.api.AnalysisStateExecutor;
 import io.harness.persistence.HPersistence;
@@ -155,23 +163,23 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
   public void testExecute() {
     verificationTaskService.createCompositeSLOVerificationTask(
         builderFactory.getContext().getAccountId(), compositeServiceLevelObjective.getUuid(), new HashMap<>());
-    //      sloMetricAnalysisState =
-    //          (CompositeSLOMetricAnalysisState) sloMetricAnalysisStateExecutor.execute(sloMetricAnalysisState);
-    //      List<CompositeSLORecord> sloRecordList =
-    //          hPersistence.createQuery(CompositeSLORecord.class)
-    //              .filter(CompositeSLORecordKeys.sloId, compositeServiceLevelObjective.getUuid())
-    //              .field(SLIRecordKeys.timestamp)
-    //              .greaterThanOrEq(startTime)
-    //              .field(SLIRecordKeys.timestamp)
-    //              .lessThan(endTime)
-    //              .asList();
-    //      assertThat(sloMetricAnalysisState.getStatus().name()).isEqualTo(AnalysisStatus.SUCCESS.name());
-    //      assertThat(sloRecordList.size()).isEqualTo(5);
-    //      SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOIdentifier(
-    //          builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
-    //      assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(863800.00 / 8640);
-    //      assertThat(sloHealthIndicator.getErrorBudgetRemainingMinutes()).isEqualTo(8638);
-    //      assertThat(sloHealthIndicator.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
+    sloMetricAnalysisState =
+        (CompositeSLOMetricAnalysisState) sloMetricAnalysisStateExecutor.execute(sloMetricAnalysisState);
+    List<CompositeSLORecord> sloRecordList =
+        hPersistence.createQuery(CompositeSLORecord.class)
+            .filter(CompositeSLORecordKeys.sloId, compositeServiceLevelObjective.getUuid())
+            .field(SLIRecordKeys.timestamp)
+            .greaterThanOrEq(startTime)
+            .field(SLIRecordKeys.timestamp)
+            .lessThan(endTime)
+            .asList();
+    assertThat(sloMetricAnalysisState.getStatus().name()).isEqualTo(AnalysisStatus.SUCCESS.name());
+    assertThat(sloRecordList.size()).isEqualTo(5);
+    SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOIdentifier(
+        builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
+    assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(863800.00 / 8640);
+    assertThat(sloHealthIndicator.getErrorBudgetRemainingMinutes()).isEqualTo(8638);
+    assertThat(sloHealthIndicator.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
   }
 
   private void generateSLIRecords(String sliId1, String sliId2) {

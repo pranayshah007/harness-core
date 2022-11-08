@@ -242,6 +242,9 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                  .build();
     serviceLevelObjectiveResponse = serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+    assertThat(verificationTaskService.getCompositeSLOVerificationTaskId(
+                   builderFactory.getContext().getAccountId(), compositeServiceLevelObjective.getUuid()))
+        .isEqualTo(compositeServiceLevelObjective.getUuid());
   }
 
   @Test
@@ -369,6 +372,19 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     boolean isDeleted = serviceLevelObjectiveV2Service.delete(projectParams, sloDTO.getIdentifier());
+    assertThat(isDeleted).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testDelete_SimpleSLO_AssociatedWith_CompositeSLO_Failure() {
+    boolean isDeleted =
+        serviceLevelObjectiveV2Service.delete(projectParams, simpleServiceLevelObjective1.getIdentifier());
+    assertThat(isDeleted).isEqualTo(false);
+    isDeleted = serviceLevelObjectiveV2Service.delete(projectParams, compositeSLODTO.getIdentifier());
+    assertThat(isDeleted).isEqualTo(true);
+    isDeleted = serviceLevelObjectiveV2Service.delete(projectParams, simpleServiceLevelObjective1.getIdentifier());
     assertThat(isDeleted).isEqualTo(true);
   }
 

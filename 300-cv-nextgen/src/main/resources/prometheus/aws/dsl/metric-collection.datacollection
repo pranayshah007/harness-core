@@ -2,30 +2,29 @@ Var lengthOfItems = Env:queryList.length()
 Var index = 0
 Var one = 1
 Var returnList = []
-Var maximumHostSizeAllowed = Env:maximumHostSizeAllowed
 
 while Var:index !=  Var:lengthOfItems {
     Var metricName = Env:metricNameList[Var:index]
     Var query = Env:queryList[Var:index]
     Var metricIdentifier =  Env:metricIdentifiers[Var:index]
 
-
     if Env:collectHostData == "true" {
         Var serviceInstanceField = Env:serviceInstanceFieldList[Var:index]
         Var filters = Env:filterList[Var:index]
+        Var concatenatedFilter = concat("{",Var:filters,"}")
         Var baseUrlForHostCollection =  Env:baseUrlsForHostCollection[Var:index]
         Var hostQueryParamMap = {}
         Var startTime = concat("",Env:startTimeSeconds)
         Var endTime = concat("",Env:endTimeSeconds)
         Var:hostQueryParamMap.put("start",Var:startTime)
         Var:hostQueryParamMap.put("end",Var:endTime)
-        Var:hostQueryParamMap.put("match[]",Var:filters)
+        Var:hostQueryParamMap.put("match[]",Var:concatenatedFilter)
         Var hostResult = sync-call-aws(url=Var:baseUrlForHostCollection, header=Env:commonHeaders, options=Env:commonOptions, method=GET, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, awsQueryParams=Var:hostQueryParamMap)
         Var hostList = extract(Var:hostResult,$.data)
         Var hostListLength = Var:hostList.length()
 
-        if Var:maximumHostSizeAllowed < Var:hostListLength {
-            Var exceptionMessage = concat("Host list returned from Prometheus is of size ", Var:hostListLength, ", which is greater than allowed ",  Var:maximumHostSizeAllowed, ", please check the query")
+        if Env:maximumHostSizeAllowed < Var:hostListLength {
+            Var exceptionMessage = concat("Host list returned from Prometheus is of size ", Var:hostListLength, ", which is greater than allowed ",  Env:maximumHostSizeAllowed, ", please check the query")
             throw exception Var:exceptionMessage
         }
         foreach host in Var:hostList {
@@ -33,8 +32,6 @@ while Var:index !=  Var:lengthOfItems {
             print Var:hostFilter
             Var:query.replaceAll("}", Var:hostFilter)
             Var dataQueryParamMap = {}
-            Var startTime = concat("",Env:startTimeSeconds)
-            Var endTime = concat("",Env:endTimeSeconds)
             Var:dataQueryParamMap.put("start",Var:startTime)
             Var:dataQueryParamMap.put("end",Var:endTime)
             Var:dataQueryParamMap.put("step","60s")

@@ -11,7 +11,6 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
-import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CloudWatchMetricCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -54,7 +53,6 @@ import org.apache.commons.lang3.StringUtils;
 public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
   @NotNull @NotBlank String region;
   @NotNull @NotBlank String feature;
-  @Valid Set<TimeSeriesMetricPackDTO> metricThresholds;
   @Valid @UniqueIdentifierCheck @NotEmpty List<CloudWatchMetricDefinition> metricDefinitions;
 
   @Override
@@ -147,7 +145,7 @@ public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
             .collect(Collectors.toList());
 
     // Add user defined metric thresholds to respective cvConfigs
-    cvConfigs.forEach(cvConfig -> cvConfig.addCustomMetricThresholds(metricThresholds));
+    cvConfigs.forEach(cvConfig -> cvConfig.addCustomMetricThresholds(metricPacks));
 
     cvConfigs.stream()
         .filter(cvConfig -> CollectionUtils.isNotEmpty(cvConfig.getMetricInfos()))

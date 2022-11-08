@@ -48,8 +48,10 @@ public class LimitVicinityCheckerJob implements Job {
   private static TriggerBuilder<SimpleTrigger> vicinityTriggerBuilder(String accountId) {
     return TriggerBuilder.newTrigger()
         .withIdentity(accountId, GROUP)
-        .withSchedule(
-            SimpleScheduleBuilder.simpleSchedule().withIntervalInMinutes(SYNC_INTERVAL_IN_MINUTES).repeatForever());
+        .withSchedule(SimpleScheduleBuilder.simpleSchedule()
+                          .withIntervalInMinutes(SYNC_INTERVAL_IN_MINUTES)
+                          .repeatForever()
+                          .withMisfireHandlingInstructionFireNow());
   }
 
   public TriggerBuilder<SimpleTrigger> getLimitVicinityTriggerBuilder(String accountId) {

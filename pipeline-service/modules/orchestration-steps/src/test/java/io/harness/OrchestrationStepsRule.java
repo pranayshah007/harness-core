@@ -29,6 +29,11 @@ import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
+import io.harness.logstreaming.LogStreamingClient;
+import io.harness.logstreaming.LogStreamingClientFactory;
+import io.harness.logstreaming.LogStreamingServiceConfiguration;
+import io.harness.logstreaming.LogStreamingServiceRestClient;
+import io.harness.logstreaming.NGLogStreamingClientFactory;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
@@ -94,7 +99,7 @@ import org.springframework.core.convert.converter.Converter;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin {
   ClosingFactory closingFactory;
-
+  private static final String logStreamingBaseURL = "ORCHESTRATION_STEPS_TEST_BASE_URL";
   public OrchestrationStepsRule(ClosingFactory closingFactory) {
     this.closingFactory = closingFactory;
   }
@@ -170,6 +175,12 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
       public boolean getSerializationForDelegate() {
         return false;
       }
+
+      @Provides
+      @Singleton
+      public LogStreamingServiceConfiguration getLogStreamingServiceConfiguration() {
+        return LogStreamingServiceConfiguration.builder().baseUrl(logStreamingBaseURL).build();
+      }
     });
     modules.add(new ProviderModule() {
       @Provides
@@ -242,6 +253,14 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
     PmsSdkConfiguration sdkConfig =
         PmsSdkConfiguration.builder().deploymentMode(SdkDeployMode.LOCAL).moduleType(ModuleType.PMS).build();
     modules.add(PmsSdkModule.getInstance(sdkConfig));
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(LogStreamingServiceRestClient.class)
+            .toProvider(NGLogStreamingClientFactory.builder().logStreamingServiceBaseUrl(logStreamingBaseURL).build());
+        bind(LogStreamingClient.class).toProvider(new LogStreamingClientFactory(logStreamingBaseURL, "", "", false));
+      }
+    });
     modules.add(OrchestrationStepsModule.getInstance(null));
     return modules;
   }

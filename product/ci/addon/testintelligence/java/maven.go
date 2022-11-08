@@ -40,7 +40,23 @@ func (m *mavenRunner) AutoDetectPackages() ([]string, error) {
 }
 
 func (m *mavenRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
-	return GetJavaTests(m.log, m.fs)
+	tests := make([]types.RunnableTest, 0)
+	javaTests, err := GetJavaTests()
+	if err != nil {
+		return tests, err
+	}
+	scalaTests, err := GetScalaTests()
+	if err != nil {
+		return tests, err
+	}
+	kotlinTests, err := GetKotlinTests()
+	if err != nil {
+		return tests, err
+	}
+	tests = append(tests, javaTests...)
+	tests = append(tests, scalaTests...)
+	tests = append(tests, kotlinTests...)
+	return tests, nil
 }
 
 func (m *mavenRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {

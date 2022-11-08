@@ -10,9 +10,11 @@ package io.harness.polling.artifact;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
@@ -20,6 +22,7 @@ import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.nexus.Nexus2ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.exception.InvalidRequestException;
@@ -58,6 +61,12 @@ public class ArtifactCollectionUtilsNg {
         return ((GarDelegateResponse) artifactDelegateResponse).getVersion();
       case GITHUB_PACKAGES:
         return ((GithubPackagesArtifactDelegateResponse) artifactDelegateResponse).getVersion();
+      case NEXUS2_REGISTRY:
+        return ((Nexus2ArtifactDelegateResponse) artifactDelegateResponse).getTag();
+      case AZURE_ARTIFACTS:
+        return ((AzureArtifactsDelegateResponse) artifactDelegateResponse).getVersion();
+      case AMI:
+        return ((AMIArtifactDelegateResponse) artifactDelegateResponse).getVersion();
       default:
         throw new InvalidRequestException(
             String.format("Source type %s not supported", artifactDelegateResponse.getSourceType()));

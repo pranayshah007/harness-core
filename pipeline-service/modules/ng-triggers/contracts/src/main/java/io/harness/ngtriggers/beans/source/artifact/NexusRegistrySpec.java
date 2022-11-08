@@ -25,9 +25,15 @@ import lombok.Data;
 public class NexusRegistrySpec implements ArtifactTypeSpec {
   String connectorRef;
   List<TriggerEventDataCondition> eventConditions;
-  String repositoryName;
+  String repository;
   String imagePath;
   String repositoryFormat;
+  String artifactId;
+  String packageName;
+  String groupId;
+  String repositoryUrl;
+  String classifier;
+  String extension;
   String tag;
 
   @Override

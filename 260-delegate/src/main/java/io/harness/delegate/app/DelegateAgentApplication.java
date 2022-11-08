@@ -86,7 +86,7 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(10, 40, 1, TimeUnit.SECONDS,
         new ThreadFactoryBuilder().setNameFormat("other-%d").setPriority(Thread.NORM_PRIORITY).build()));
 
-    final Injector injector = Guice.createInjector(new DelegateAgentModule(configuration, true));
+    final Injector injector = Guice.createInjector(new DelegateAgentModule(configuration));
 
     addShutdownHook(injector);
 

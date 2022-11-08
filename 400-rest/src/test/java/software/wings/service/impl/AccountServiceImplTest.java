@@ -8,11 +8,14 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.XIN;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
@@ -278,6 +281,50 @@ public class AccountServiceImplTest extends WingsBaseTest {
     exceptionRule.expect(InvalidRequestException.class);
     exceptionRule.expectMessage(String.format("Invalid feature flag name received: %s", featureFlagName));
     accountService.getFeatureFlagEnabledAccountIds(featureFlagName);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testIsAutoInviteAcceptanceEnabled() {
+    buildAccountWithAuthMechanism(AuthenticationMechanism.SAML, false);
+    when(featureFlagService.isEnabled(any(FeatureName.class), anyString())).thenReturn(true);
+    assertTrue(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.LDAP, false);
+    assertTrue(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.OAUTH, false);
+    assertTrue(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.USER_PASSWORD, false);
+    assertFalse(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.SAML, false);
+    when(featureFlagService.isEnabled(any(FeatureName.class), anyString())).thenReturn(false);
+    assertFalse(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID));
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testIsPLNoEmailForSamlAccountInvitesEnabled() {
+    buildAccountWithAuthMechanism(AuthenticationMechanism.SAML, false);
+    when(featureFlagService.isEnabled(any(FeatureName.class), anyString())).thenReturn(true);
+    assertTrue(accountService.isPLNoEmailForSamlAccountInvitesEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.LDAP, false);
+    assertTrue(accountService.isPLNoEmailForSamlAccountInvitesEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.OAUTH, false);
+    assertTrue(accountService.isPLNoEmailForSamlAccountInvitesEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.USER_PASSWORD, false);
+    assertFalse(accountService.isPLNoEmailForSamlAccountInvitesEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.SAML, false);
+    when(featureFlagService.isEnabled(any(FeatureName.class), anyString())).thenReturn(false);
+    assertFalse(accountService.isPLNoEmailForSamlAccountInvitesEnabled(ACCOUNT_ID));
   }
 
   private Account buildAccountWithAuthMechanism(

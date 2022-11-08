@@ -23,6 +23,7 @@ import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -35,10 +36,10 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
-import io.harness.spec.server.pipeline.PipelinesApi;
-import io.harness.spec.server.pipeline.model.PipelineCreateRequestBody;
-import io.harness.spec.server.pipeline.model.PipelineGetResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.PipelinesApi;
+import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.utils.PageUtils;
 import io.harness.yaml.validator.InvalidYamlException;
 
@@ -126,6 +127,12 @@ public class PipelinesApiImpl implements PipelinesApi {
           PipelinesApiUtils.getListYAMLErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata()));
       pipelineGetResponseBody.setValid(false);
       return Response.status(200).entity(pipelineGetResponseBody).build();
+    } catch (NGTemplateResolveExceptionV2 ne) {
+      pipelineGetResponseBody.setPipelineYaml(ne.getReferredByYaml());
+      pipelineGetResponseBody.setGitDetails(
+          PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
+      pipelineGetResponseBody.setValid(false);
+      return Response.status(200).entity(pipelineGetResponseBody).build();
     }
     pipelineGetResponseBody = PipelinesApiUtils.getGetResponseBody(pipelineEntity.orElseThrow(
         ()
@@ -187,7 +194,7 @@ public class PipelinesApiImpl implements PipelinesApi {
       @ProjectIdentifier String project, @ResourceIdentifier String pipeline, @AccountIdentifier String account) {
     if (!Objects.equals(pipeline, requestBody.getSlug())) {
       throw new InvalidRequestException(String.format(
-          "Expected Pipeline identifier in YAML to be [%s], but was [%s]", pipeline, requestBody.getSlug()));
+          "Expected Pipeline identifier in Request Body to be [%s], but was [%s]", pipeline, requestBody.getSlug()));
     }
     GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitUpdateDetails(requestBody.getGitDetails()));
     log.info(String.format(

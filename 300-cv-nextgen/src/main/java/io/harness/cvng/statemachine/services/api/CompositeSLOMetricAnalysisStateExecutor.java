@@ -58,9 +58,14 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
     Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap = new HashMap<>();
     for (ServiceLevelObjectivesDetail objectivesDetail :
         compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
+      ProjectParams projectParams = ProjectParams.builder()
+                                        .projectIdentifier(objectivesDetail.getProjectIdentifier())
+                                        .orgIdentifier(objectivesDetail.getOrgIdentifier())
+                                        .accountIdentifier(objectivesDetail.getAccountId())
+                                        .build();
       SimpleServiceLevelObjective simpleServiceLevelObjective =
-          (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.get(
-              objectivesDetail.getServiceLevelObjectiveRef());
+          (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+              projectParams, objectivesDetail.getServiceLevelObjectiveRef());
       Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
           "Only one service level indicator is supported");
       ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(

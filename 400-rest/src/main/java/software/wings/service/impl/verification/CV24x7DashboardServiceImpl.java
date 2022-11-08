@@ -22,7 +22,7 @@ import static java.lang.Math.min;
 
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
-import io.harness.delegate.task.DataCollectionExecutorService;
+import io.harness.delegate.task.common.DataCollectionExecutorService;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HIterator;

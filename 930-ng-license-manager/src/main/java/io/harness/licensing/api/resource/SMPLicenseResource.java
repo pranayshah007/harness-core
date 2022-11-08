@@ -11,6 +11,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
 import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
+import io.harness.licensing.beans.modules.SMPValidationResultDTO;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -49,6 +50,15 @@ public class SMPLicenseResource {
   @Inject
   public SMPLicenseResource(LicenseService licenseService) {
     this.licenseService = licenseService;
+  }
+
+  @POST
+  @Path("validate")
+  @InternalApi
+  @ApiOperation(value = "Validate License Under Account", nickname = "validateSMPLicense", hidden = true)
+  public ResponseDTO<SMPValidationResultDTO> validateSMPLicense(@NotNull @Valid SMPEncLicenseDTO licenseDTO) {
+    SMPValidationResultDTO decryptedLicense = licenseService.validateSMPLicense(licenseDTO);
+    return ResponseDTO.newResponse(decryptedLicense);
   }
 
   @POST

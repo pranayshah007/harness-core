@@ -41,9 +41,9 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.spec.server.ng.ProjectServicesApi;
-import io.harness.spec.server.ng.model.ServiceRequest;
-import io.harness.spec.server.ng.model.ServiceResponse;
+import io.harness.spec.server.ng.v1.ProjectServicesApi;
+import io.harness.spec.server.ng.v1.model.ServiceRequest;
+import io.harness.spec.server.ng.v1.model.ServiceResponse;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;

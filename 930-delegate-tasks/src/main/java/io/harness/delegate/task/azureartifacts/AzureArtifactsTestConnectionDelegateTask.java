@@ -15,8 +15,8 @@ import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTestConn
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTestConnectionTaskResponse;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsValidationParams;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 
 import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;

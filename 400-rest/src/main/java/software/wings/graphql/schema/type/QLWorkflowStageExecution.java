@@ -37,4 +37,5 @@ public class QLWorkflowStageExecution implements QLPipelineStageExecution {
   // Runtime is only there when above workflowExecutionId is NULL
   private List<QLVariable> runtimeInputVariables;
   private QLExecutionStatus status;
+  private List<QLInputVariable> inputVariables;
 }

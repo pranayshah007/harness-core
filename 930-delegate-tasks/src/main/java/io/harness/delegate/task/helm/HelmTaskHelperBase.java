@@ -121,6 +121,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -1198,6 +1199,33 @@ public class HelmTaskHelperBase {
     return workingDirectory;
   }
 
+  public String getCacheDirForManifestCollection(HelmVersion helmVersion, String repoName, boolean useCache)
+      throws IOException {
+    if (!HelmVersion.isHelmV3(helmVersion)) {
+      return EMPTY;
+    }
+    if (useCache) {
+      return Paths.get(RESOURCE_DIR_BASE, repoName, "cache").toAbsolutePath().normalize().toString();
+    }
+    return Files.createTempDirectory("charts").toAbsolutePath().toString();
+  }
+
+  public void deleteQuietlyWithErrorLog(String tempDir) {
+    try {
+      if (isNotEmpty(tempDir)) {
+        /*
+          adding this check as deleting an empty directory causes delegate to behave erratically
+          i.e. it deletes root folder and shuts down
+         */
+        log.info("Deleting directory at path(deleteQuietlyWithErrorLog) " + tempDir);
+        FileUtils.forceDelete(new File(tempDir));
+      }
+    } catch (IOException ie) {
+      log.error(
+          "Deletion of charts folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+    }
+  }
+
   private List<String> fetchVersionsFromHttp(
       HelmChartManifestDelegateConfig manifest, String destinationDirectory, long timeoutInMillis) throws IOException {
     if (!(manifest.getStoreDelegateConfig() instanceof HttpHelmStoreDelegateConfig)) {
@@ -1207,24 +1235,46 @@ public class HelmTaskHelperBase {
 
     HttpHelmStoreDelegateConfig storeDelegateConfig = (HttpHelmStoreDelegateConfig) manifest.getStoreDelegateConfig();
     HttpHelmConnectorDTO httpHelmConnector = storeDelegateConfig.getHttpHelmConnector();
+    Map<String, String> environment = new HashMap<>();
+    String commandOutput = "";
+    String cacheDir = getCacheDirForManifestCollection(
+        manifest.getHelmVersion(), storeDelegateConfig.getRepoName(), manifest.isUseCache());
 
     String username = getHttpHelmUsername(httpHelmConnector);
     char[] password = getHttpHelmPassword(httpHelmConnector);
-    addRepo(storeDelegateConfig.getRepoName(), storeDelegateConfig.getRepoDisplayName(),
-        httpHelmConnector.getHelmRepoUrl(), username, password, destinationDirectory, manifest.getHelmVersion(),
-        timeoutInMillis, "", manifest.getHelmCommandFlag());
-    updateRepo(storeDelegateConfig.getRepoName(), destinationDirectory, manifest.getHelmVersion(), timeoutInMillis,
-        EMPTY, manifest.getHelmCommandFlag());
+    try {
+      removeRepo(storeDelegateConfig.getRepoName(), destinationDirectory, manifest.getHelmVersion(), timeoutInMillis,
+          cacheDir);
+      addRepo(storeDelegateConfig.getRepoName(), storeDelegateConfig.getRepoDisplayName(),
+          httpHelmConnector.getHelmRepoUrl(), username, password, destinationDirectory, manifest.getHelmVersion(),
+          timeoutInMillis, cacheDir, manifest.getHelmCommandFlag());
 
-    ProcessResult processResult = executeCommand(Collections.emptyMap(),
-        fetchHelmChartVersionsCommand(manifest.getHelmVersion(), manifest.getChartName(),
-            storeDelegateConfig.getRepoName(), destinationDirectory),
-        destinationDirectory, "Helm chart fetch versions command failed ", timeoutInMillis,
-        HelmCliCommandType.FETCH_ALL_VERSIONS);
+      String command = fetchHelmChartVersionsCommand(
+          manifest.getHelmVersion(), manifest.getChartName(), storeDelegateConfig.getRepoName(), destinationDirectory);
 
-    String commandOutput = "";
-    if (processResult != null && processResult.getOutput() != null) {
-      commandOutput = processResult.getOutput().getString();
+      if (!HelmVersion.V2.equals(manifest.getHelmVersion())) {
+        // repo flags are supported only from helm v3
+        environment.putIfAbsent(HELM_CACHE_HOME,
+            HELM_CACHE_HOME_PATH.replace(REPO_NAME, storeDelegateConfig.getRepoName())
+                .replace(HELM_CACHE_HOME_PLACEHOLDER, cacheDir));
+        command = fetchHelmChartVersionsCommandWithRepoFlags(manifest.getHelmVersion(), manifest.getChartName(),
+            storeDelegateConfig.getRepoName(), destinationDirectory, cacheDir);
+      }
+
+      updateRepo(storeDelegateConfig.getRepoName(), destinationDirectory, manifest.getHelmVersion(), timeoutInMillis,
+          cacheDir, manifest.getHelmCommandFlag());
+
+      ProcessResult processResult = executeCommand(environment, command, destinationDirectory,
+          "Helm chart fetch versions command failed ", timeoutInMillis, HelmCliCommandType.FETCH_ALL_VERSIONS);
+
+      if (processResult != null && processResult.getOutput() != null) {
+        commandOutput = processResult.getOutput().getString();
+      }
+    } finally {
+      deleteDirectoryAndItsContentIfExists(destinationDirectory + "/helm");
+      if (!manifest.isUseCache() && isNotEmpty(cacheDir)) {
+        deleteQuietlyWithErrorLog(cacheDir);
+      }
     }
 
     return parseHelmVersionsFromOutput(commandOutput, manifest);
@@ -1321,7 +1371,7 @@ public class HelmTaskHelperBase {
     return Arrays.asList(recordName.split("/")).contains(chartName);
   }
 
-  private List<String> fetchVersionsUsingChartMuseumServer(
+  public List<String> fetchVersionsUsingChartMuseumServer(
       HelmChartManifestDelegateConfig manifest, String destinationDirectory, long timeoutInMillis) throws Exception {
     String resourceDirectory = null;
     ChartmuseumClient chartmuseumClient = null;
@@ -1340,6 +1390,9 @@ public class HelmTaskHelperBase {
     }
 
     try {
+      if (manifest != null) {
+        decryptEncryptedDetails(manifest);
+      }
       resourceDirectory = createNewDirectoryAtPath(RESOURCE_DIR_BASE);
       chartmuseumClient = ngChartmuseumClientFactory.createClient(manifest.getStoreDelegateConfig(), resourceDirectory);
       chartMuseumServer = chartmuseumClient.start();

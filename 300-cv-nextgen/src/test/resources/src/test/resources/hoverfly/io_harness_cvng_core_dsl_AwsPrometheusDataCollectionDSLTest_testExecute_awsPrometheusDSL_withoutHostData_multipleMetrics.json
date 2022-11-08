@@ -1,0 +1,70 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/workspaces/ws-bd297196-b5ca-48c5-9857-972fe759354f/api/v1/query_range"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "aps-workspaces.us-east-1.amazonaws.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "end" : [ {
+            "matcher" : "exact",
+            "value" : "1667214000"
+          } ],
+          "query" : [ {
+            "matcher" : "exact",
+            "value" : "avg(container_threads{alpha_eksctl_io_cluster_name=\"srm-eks-cluster-one\"})"
+          } ],
+          "start" : [ {
+            "matcher" : "exact",
+            "value" : "1667213700"
+          } ],
+          "step" : [ {
+            "matcher" : "exact",
+            "value" : "60s"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "{\"status\":\"success\",\"data\":{\"resultType\":\"matrix\",\"result\":[{\"metric\":{},\"values\":[[1667213700,\"42.793814432989684\"],[1667213760,\"42.505154639175274\"],[1667213820,\"42.8144329896907\"],[1667213880,\"42.98969072164948\"],[1667213940,\"43.051546391752595\"],[1667214000,\"42.82474226804122\"]]}]}}",
+        "encodedBody" : false,
+        "templated" : false,
+        "headers" : {
+          "Connection" : [ "keep-alive" ],
+          "Content-Length" : [ "287" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 31 Oct 2022 18:01:59 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Server" : [ "amazon" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Amzn-Requestid" : [ "1d08ef9d-cd24-40da-b4c2-0c6b70bab18e" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-10-31T18:02:07Z"
+  }
+}

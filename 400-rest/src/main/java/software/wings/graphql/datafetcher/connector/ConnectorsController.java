@@ -175,6 +175,7 @@ public class ConnectorsController {
                                  .authorEmailId(gitConfig.getAuthorEmailId())
                                  .commitMessage(gitConfig.getCommitMessage())
                                  .build())
+        .disableUserGitConfig(gitConfig.getDisableUserGitConfig())
         .usageScope(usageScopeController.populateUsageScope(settingAttribute.getUsageRestrictions()));
     if (null != gitConfig.getEncryptedPassword()) {
       builder.passwordSecretId(gitConfig.getEncryptedPassword());

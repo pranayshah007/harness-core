@@ -405,20 +405,19 @@ public class HelmClientImpl implements HelmClient {
   @VisibleForTesting
   HelmCliResponse executeHelmCLICommand(String command, OutputStream errorStream, Map<String, String> env)
       throws IOException, InterruptedException, TimeoutException {
-    return executeHelmCLICommand(command, DEFAULT_HELM_COMMAND_TIMEOUT, errorStream, env);
+    return executeHelmCLICommandNoDefaultTimeout(command, errorStream, env);
   }
 
   @VisibleForTesting
   HelmCliResponse executeHelmCLICommand(String command) throws IOException, InterruptedException, TimeoutException {
-    return executeHelmCLICommand(command, DEFAULT_HELM_COMMAND_TIMEOUT, null, Collections.emptyMap());
+    return executeHelmCLICommandNoDefaultTimeout(command, null, Collections.emptyMap());
   }
 
   @VisibleForTesting
-  HelmCliResponse executeHelmCLICommand(String command, long timeoutInMillis, OutputStream errorStream,
+  HelmCliResponse executeHelmCLICommandNoDefaultTimeout(String command, OutputStream errorStream,
       Map<String, String> env) throws IOException, InterruptedException, TimeoutException {
     ProcessExecutor processExecutor = new ProcessExecutor()
                                           .environment(env)
-                                          .timeout(timeoutInMillis, TimeUnit.MILLISECONDS)
                                           .command("/bin/sh", "-c", command)
                                           .readOutput(true)
                                           .redirectOutput(new LogOutputStream() {
@@ -544,7 +543,7 @@ public class HelmClientImpl implements HelmClient {
   public HelmCliResponse fetchCliResponseWithExceptionHandling(String command, HelmCliCommandType commandType,
       String errorMessagePrefix, OutputStream errorStream, long timeoutInMillis, Map<String, String> env) {
     try {
-      HelmCliResponse helmCliResponse = executeHelmCLICommand(command, timeoutInMillis, errorStream, env);
+      HelmCliResponse helmCliResponse = executeHelmCLICommandNoDefaultTimeout(command, errorStream, env);
 
       if (helmCliResponse.getCommandExecutionStatus() != SUCCESS) {
         // if helm hist fails due to 'release not found' -- then we don't fail/ throw exception

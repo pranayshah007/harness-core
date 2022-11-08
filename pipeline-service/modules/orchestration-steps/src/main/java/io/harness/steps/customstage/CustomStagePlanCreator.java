@@ -17,6 +17,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
@@ -103,5 +104,10 @@ public class CustomStagePlanCreator extends AbstractPmsStagePlanCreator<CustomSt
                               Dependency.newBuilder().putAllMetadata(specDependencyMetadataMap).build())
                           .build())
         .build();
+  }
+
+  @Override
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V0);
   }
 }

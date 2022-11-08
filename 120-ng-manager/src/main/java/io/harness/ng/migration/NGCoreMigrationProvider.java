@@ -36,6 +36,7 @@ public class NGCoreMigrationProvider implements MigrationProvider {
       { add(NGCoreMigrationDetails.class); }
       { add(NGCoreDataMigrationDetails.class); }
       { add(NGCoreBackgroundMigrationDetails.class); }
+      { add(NGCoreTimeScaleMigrationDetails.class); }
     };
   }
 }

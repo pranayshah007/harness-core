@@ -261,6 +261,12 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
               }
             }
           }
+
+          // rollback_duration
+          if (cdObject.get("rollbackDuration") != null) {
+            String rollbackDuration = cdObject.get("rollbackDuration").toString();
+            columnValueMapping.put("rollback_duration", rollbackDuration);
+          }
         }
       }
       nodeMap.add(columnValueMapping);

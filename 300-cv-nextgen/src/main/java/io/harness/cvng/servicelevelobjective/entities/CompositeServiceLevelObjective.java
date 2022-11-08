@@ -48,8 +48,7 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   }
 
   public static class CompositeServiceLevelObjectiveUpdatableEntity
-      extends AbstractServiceLevelObjectiveUpdatableEntity<CompositeServiceLevelObjective,
-          CompositeServiceLevelObjective> {
+      extends AbstractServiceLevelObjectiveUpdatableEntity<CompositeServiceLevelObjective> {
     @Override
     public void setUpdateOperations(UpdateOperations<CompositeServiceLevelObjective> updateOperations,
         CompositeServiceLevelObjective compositeServiceLevelObjective) {

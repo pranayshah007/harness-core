@@ -34,6 +34,8 @@ public class RecommendationUtils {
         .minNodes(minNodes)
         .sumCpu(totalResourceUsage.getSumcpu() / 1024.0D)
         .sumMem(totalResourceUsage.getSummemory() / 1024.0D)
+        .minCpu(totalResourceUsage.getMaxcpu() / 1024.0D)
+        .minMem(totalResourceUsage.getMaxmemory() / 1024.0D)
         .allowBurst(true)
         .sameSize(true)
         .build();

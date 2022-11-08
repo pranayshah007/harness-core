@@ -33,10 +33,10 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.rule.Owner;
-import io.harness.spec.server.pipeline.model.PipelineCreateRequestBody;
-import io.harness.spec.server.pipeline.model.PipelineGetResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineListResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.io.Resources;
@@ -203,6 +203,8 @@ public class PipelinesApiImplTest extends CategoryTest {
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(yaml, responseBody.getPipelineYaml());
     assertEquals(slug, responseBody.getSlug());
+    assertEquals(org, responseBody.getOrg());
+    assertEquals(project, responseBody.getProject());
     assertEquals(true, responseBody.isValid().booleanValue());
   }
 
@@ -220,6 +222,8 @@ public class PipelinesApiImplTest extends CategoryTest {
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(extraYaml, responseBody.getTemplateAppliedPipelineYaml());
     assertEquals(slug, responseBody.getSlug());
+    assertEquals(org, responseBody.getOrg());
+    assertEquals(project, responseBody.getProject());
     assertEquals(true, responseBody.isValid().booleanValue());
   }
 

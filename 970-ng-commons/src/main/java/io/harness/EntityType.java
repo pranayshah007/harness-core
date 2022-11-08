@@ -340,7 +340,14 @@ public enum EntityType {
   ECS_RUN_TASK_STEP(
       ModuleType.CD, EntityTypeConstants.ECS_RUN_TASK, IdentifierRef.class, EntityYamlRootNames.ECS_RUN_TASK),
   @JsonProperty(EntityTypeConstants.CHAOS_STEP)
-  CHAOS_STEP(ModuleType.CHAOS, EntityTypeConstants.CHAOS_STEP, IdentifierRef.class, EntityYamlRootNames.CHAOS_STEP);
+  CHAOS_STEP(ModuleType.CHAOS, EntityTypeConstants.CHAOS_STEP, IdentifierRef.class, EntityYamlRootNames.CHAOS_STEP),
+  @JsonProperty(EntityTypeConstants.ELASTIGROUP_DEPLOY_STEP)
+  ELASTIGROUP_DEPLOY_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_DEPLOY_STEP, IdentifierRef.class,
+      EntityYamlRootNames.ELASTIGROUP_DEPLOY_STEP),
+  @JsonProperty(EntityTypeConstants.ELASTIGROUP_ROLLBACK_STEP)
+  ELASTIGROUP_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_ROLLBACK_STEP, IdentifierRef.class,
+      EntityYamlRootNames.ELASTIGROUP_ROLLBACK_STEP);
+
   private final ModuleType moduleType;
   String yamlName;
   List<String> yamlRootElementString;
