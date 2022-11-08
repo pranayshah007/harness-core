@@ -18,6 +18,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.Store;
 import io.harness.rule.Owner;
 
+import org.junit.Ignore;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 
@@ -45,6 +46,7 @@ public class MongoIndexesTest extends WingsBaseTest {
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
   @HarnessAlwaysRun
+  @Ignore("CI-6025: TI team to follow up")
   public void testConfirmAllIndexesInManager() throws IOException {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setObjectFactory(objectFactory);

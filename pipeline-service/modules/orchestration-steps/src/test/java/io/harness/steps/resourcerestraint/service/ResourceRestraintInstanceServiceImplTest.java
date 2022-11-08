@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -161,6 +162,7 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
+  @Ignore("CI-6025: TI team to follow up")
   public void shouldTestFinishActiveInstance_InvalidRequestException() {
     ResourceRestraintInstance instance = ResourceRestraintInstance.builder()
                                              .releaseEntityId(generateUuid())
