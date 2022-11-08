@@ -65,7 +65,7 @@ public enum ElastigroupCommandUnitConstants {
   fetchElastigroupJson {
     @Override
     public String toString() {
-      return "Fetch ELastigroup Json";
+      return "Fetch Elastigroup Json";
     }
   }
 }
