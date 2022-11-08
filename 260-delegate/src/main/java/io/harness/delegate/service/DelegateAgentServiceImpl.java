@@ -1321,6 +1321,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                       -> executeRestCall(delegateAgentManagerClient.getDelegateScripts(
                           accountId, version, DEFAULT_PATCH_VERSION, DELEGATE_NAME)));
           DelegateScripts delegateScripts = restResponse.getResource();
+          if (delegateScripts == null) {
+            log.warn("Unable to fetch scripts from manager");
+            return;
+          }
           if (delegateScripts.isDoUpgrade()) {
             upgradePending.set(true);
 
