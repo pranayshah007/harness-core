@@ -32,6 +32,7 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -87,6 +88,7 @@ public class ServiceAllInOnePlanCreatorUtils {
         PlanNode.builder()
             .uuid(serviceNodeId)
             .stepType(ServiceStepV3.STEP_TYPE)
+            .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
             .name(PlanCreatorConstants.SERVICE_NODE_NAME)
             .identifier(YamlTypes.SERVICE_ENTITY)
             .stepParameters(stepParameters)

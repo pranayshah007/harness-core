@@ -41,6 +41,7 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -119,6 +120,7 @@ public class InfrastructurePmsPlanCreator {
                                                           .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
+        .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
         .name(PlanCreatorConstants.INFRA_SECTION_NODE_NAME)
         .identifier(PlanCreatorConstants.INFRA_SECTION_NODE_IDENTIFIER)
         .stepType(InfrastructureTaskExecutableStepV2.STEP_TYPE)

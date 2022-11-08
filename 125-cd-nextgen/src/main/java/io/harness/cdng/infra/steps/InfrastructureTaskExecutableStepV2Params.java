@@ -23,6 +23,6 @@ public class InfrastructureTaskExecutableStepV2Params implements StepParameters 
   @NotNull private ParameterField<String> envRef;
   @NotNull private ParameterField<String> infraRef;
   private ServiceDefinitionType deploymentType;
-  @SkipAutoEvaluation private ParameterField<Map<String, Object>> infraInputs;
+  private ParameterField<Map<String, Object>> infraInputs;
   private ParameterField<Boolean> skipInstances;
 }
