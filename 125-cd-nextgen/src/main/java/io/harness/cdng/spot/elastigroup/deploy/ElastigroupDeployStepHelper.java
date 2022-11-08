@@ -15,7 +15,10 @@ import io.harness.cdng.common.capacity.Capacity;
 import io.harness.cdng.common.capacity.CapacitySpecType;
 import io.harness.cdng.common.capacity.CountCapacitySpec;
 import io.harness.cdng.common.capacity.PercentageCapacitySpec;
+import io.harness.cdng.elastigroup.ElastigroupEntityHelper;
+import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
@@ -28,7 +31,6 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.model.ElastiGroup;
-import io.harness.steps.OutputExpressionConstants;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -169,11 +171,11 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
 
   private ElastigroupSetupDataOutcome getElastigroupSetupOutcome(Ambiance ambiance) {
     OptionalSweepingOutput optionalSetupDataOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ELASTIGROUP_SETUP_OUTCOME));
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME));
     if (!optionalSetupDataOutput.isFound()) {
       throw new InvalidRequestException("No elastigroup setup output found.");
     }
-    return (ElastigroupSetupDataOutcome) optionalSetupDataOutput;
+    return (ElastigroupSetupDataOutcome) optionalSetupDataOutput.getOutput();
   }
 
   private List<EncryptedDataDetail> getEncryptionDetails(
