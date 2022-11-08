@@ -125,7 +125,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return gson.fromJson(groupConfigJson, ElastiGroup.class);
   }
 
-  public int renderCount(ParameterField<Integer> field, Ambiance ambiance, int defaultValue) {
+  public int renderCount(ParameterField<String> field, Ambiance ambiance, int defaultValue) {
     int retVal = defaultValue;
     if (field.isExpression()) {
       try {
@@ -135,7 +135,12 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         retVal = defaultValue;
       }
     } else if(!ParameterField.isBlank(field)) {
-      retVal = field.getValue();
+      try {
+        retVal = Integer.parseInt(field.getValue());
+      } catch (NumberFormatException e) {
+        log.error(format("Number format Exception while evaluating: [%s]", field.getExpressionValue()), e);
+        retVal = defaultValue;
+      }
     }
     return retVal;
   }
