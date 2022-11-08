@@ -162,7 +162,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       }
       String prevStage = optionalPrevStageID.get();
       // if prev stage is a non rollback stage, then we need to update the next node for this previous stage
-      if (!prevStage.endsWith(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)) {
+      if (!graphLayoutNodeDTOMap.get(prevStage).getIsRollbackStageNode()) {
         List<String> newNextIdList = Collections.singletonList(planNodeUuid);
         update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + prevStage + ".edgeLayoutList.nextIds", newNextIdList);
       }
