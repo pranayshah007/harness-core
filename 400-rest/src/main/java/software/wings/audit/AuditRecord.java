@@ -57,7 +57,7 @@ public class AuditRecord
   @NotNull EntityAuditRecord entityAuditRecord;
   private long createdAt;
   @Setter @FdIndex private Long nextIteration;
-  private String accountId;
+  @NotEmpty private String accountId;
 
   @Override
   public Long obtainNextIteration(String fieldName) {
