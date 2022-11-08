@@ -35,7 +35,7 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 public interface DelegateTaskServiceClassic extends OwnedByAccount {
   @ValidationGroups(Create.class) String queueTask(@Valid DelegateTask task);
 
-  String queueTaskV2(DelegateTask task);
+  @ValidationGroups(Create.class) String queueTaskV2(DelegateTask task);
 
   void scheduleSyncTask(DelegateTask task);
 

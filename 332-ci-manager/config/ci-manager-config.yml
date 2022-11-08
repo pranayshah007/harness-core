@@ -95,10 +95,12 @@ scmConnectionConfig:
   url: localhost:8091
 
 logServiceConfig:
+  internalUrl: http://localhost:8079
   baseUrl: https://qa.harness.io/log-service/
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
+  internalUrl: http://localhost:8078
   baseUrl: http://localhost:8078
   globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
 
