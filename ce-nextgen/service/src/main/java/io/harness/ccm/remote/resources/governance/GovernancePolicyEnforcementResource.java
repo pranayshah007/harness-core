@@ -25,7 +25,6 @@ import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.PolicyEnforcementCreateEvent;
 import io.harness.ccm.audittrails.events.PolicyEnforcementDeleteEvent;
 import io.harness.ccm.audittrails.events.PolicyEnforcementUpdateEvent;
-import io.harness.ccm.audittrails.events.PolicyPackCreateEvent;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.scheduler.SchedulerClient;
 import io.harness.ccm.scheduler.SchedulerDTO;
@@ -200,6 +199,9 @@ public class GovernancePolicyEnforcementResource {
         // This will be read by the enqueue api during callback
         JSONObject jsonObject = new JSONObject();
         jsonObject.put(POLICY_ENFORCEMENT_ID, policyEnforcement.getUuid());
+        Map<String, String> tags = new HashMap<>();
+        // TODO: Fetch this from config
+        tags.put("dc", "dc1:1");
 
         Map<String, String> metadata = new HashMap<>();
         metadata.put(ACCOUNT_ID, policyEnforcement.getAccountId());
@@ -209,6 +211,7 @@ public class GovernancePolicyEnforcementResource {
         headers.add("Content-Type: application/json");
         SchedulerDTO schedulerDTO =
             SchedulerDTO.builder()
+                .tags(tags)
                 .schedule(policyEnforcement.getExecutionSchedule())
                 .disabled(configuration.getGovernanceConfig().isDkronJobEnabled())
                 .name(policyEnforcement.getUuid().toLowerCase())
