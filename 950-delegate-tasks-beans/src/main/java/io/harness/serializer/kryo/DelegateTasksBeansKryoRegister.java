@@ -806,7 +806,6 @@ import software.wings.beans.PerpetualTaskBroadcastEvent;
 import software.wings.beans.PhysicalDataCenterConfig;
 import software.wings.beans.PrometheusConfig;
 import software.wings.beans.SerializationFormat;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.SlackConfig;
 import software.wings.beans.SpotInstConfig;
 import software.wings.beans.StringValue;
@@ -931,17 +930,14 @@ import org.json.JSONObject;
 public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
-    kryo.register(SettingAttribute.class, 5008);
     kryo.register(AwsConfig.class, 5013);
     kryo.register(JenkinsConfig.class, 5012);
     kryo.register(ElasticLoadBalancerConfig.class, 5020);
     kryo.register(LoadBalancerConfig.class, 5081);
     kryo.register(YamlGitConfig.class, 5547);
     kryo.register(YamlGitConfig.SyncMode.class, 5548);
-    kryo.register(SettingAttribute.SettingCategory.class, 5069);
     kryo.register(ListNotifyResponseData.class, 5133);
     kryo.register(JenkinsExecutionResponse.class, 5146);
-
     kryo.register(ContainerSetupCommandUnitExecutionData.class, 5154);
     kryo.register(KubernetesResizeParams.class, 5180);
     kryo.register(EcsResizeParams.class, 5181);

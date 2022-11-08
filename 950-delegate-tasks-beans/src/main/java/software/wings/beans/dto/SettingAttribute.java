@@ -1,17 +1,12 @@
 package software.wings.beans.dto;
 
 import io.harness.beans.EmbeddedUser;;
-import io.harness.yaml.BaseYaml;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.annotations.Transient;
 import software.wings.security.UsageRestrictions;
 import software.wings.settings.SettingValue;
 import software.wings.settings.validation.ConnectivityValidationAttributes;
 
-import javax.validation.Valid;
 import java.util.List;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -25,7 +20,7 @@ public class SettingAttribute {
     private String name;
     private SettingValue value;
     private ConnectivityValidationAttributes connectivityValidationAttributes;
-    private software.wings.beans.SettingAttribute.SettingCategory category = software.wings.beans.SettingAttribute.SettingCategory.SETTING;
+    private software.wings.beans.dto.SettingCategory category = software.wings.beans.dto.SettingCategory.SETTING;
     private List<String> appIds;
     private String uuid;
     private String appId = GLOBAL_APP_ID;

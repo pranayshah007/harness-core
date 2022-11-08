@@ -7,7 +7,6 @@
 
 package software.wings.delegatetasks.aws.ecs.ecstaskhandler;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;

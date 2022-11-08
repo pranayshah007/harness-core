@@ -11,7 +11,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.dto.SettingAttribute;
-import software.wings.beans.SettingAttribute.SettingCategory;
+import software.wings.beans.dto.SettingCategory;
 import software.wings.beans.command.EcsResizeParams;
 
 import java.util.List;

@@ -281,7 +281,7 @@ public class YamlGitServiceImpl implements YamlGitService {
       // This is to support backward compatibility. Should be removed once we move to using gitConnector completely
       if (EmptyPredicate.isNotEmpty(ygs.getSshSettingId())) {
         SettingAttribute settingAttributeForSshKey = getAndDecryptSettingAttribute(ygs.getSshSettingId());
-        gitConfig = ygs.getGitConfig(settingAttributeForSshKey);
+        gitConfig = ygs.getGitConfig(SettingAttributeMapper.toSettingAttributeDTO(settingAttributeForSshKey));
       } else {
         gitConfig = ygs.getGitConfig(null);
       }
