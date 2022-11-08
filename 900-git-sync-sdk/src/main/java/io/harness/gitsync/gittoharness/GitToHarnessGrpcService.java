@@ -9,7 +9,7 @@ package io.harness.gitsync.gittoharness;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
-import io.harness.AuthorizationServiceHeader;
+import io.harness.misc.AuthorizationServiceHeader;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.ChangeSet;
 import io.harness.gitsync.GitToHarnessProcessRequest;
@@ -19,7 +19,7 @@ import io.harness.gitsync.MarkEntityInvalidResponse;
 import io.harness.gitsync.ProcessingResponse;
 import io.harness.gitsync.ResetGitSyncSDKCacheRequest;
 import io.harness.gitsync.ResetGitSyncSDKCacheResponse;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;

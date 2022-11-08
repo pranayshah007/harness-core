@@ -7,7 +7,7 @@
 
 package io.harness.accesscontrol.roleassignments.migration;
 
-import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.ORGANIZATION_VIEWER_ROLE;
@@ -29,7 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.NGMigration;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.CGRestUtils;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;

@@ -97,7 +97,7 @@ import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.ListCommitsResponse;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.IdentifierRefHelper;

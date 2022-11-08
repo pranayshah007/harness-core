@@ -8,13 +8,13 @@
 package io.harness.utils;
 
 import static io.harness.remote.client.CGRestUtils.getResponse;
-import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
+import static io.harness.security.dto.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import io.harness.client.NgConnectorManagerClient;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidRequestException;
 import io.harness.manage.GlobalContextManager;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.dto.UserPrincipal;
 
 import com.google.inject.Inject;

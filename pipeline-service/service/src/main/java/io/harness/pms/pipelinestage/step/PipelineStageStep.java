@@ -31,7 +31,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.security.PmsSecurityContextGuardUtils;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.steps.executable.AsyncExecutableWithRbac;

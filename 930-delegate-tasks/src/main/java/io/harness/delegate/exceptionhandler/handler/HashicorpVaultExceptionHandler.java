@@ -9,7 +9,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
-import io.harness.exception.runtime.HashiCorpVaultRuntimeException;
+import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;

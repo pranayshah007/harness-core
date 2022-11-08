@@ -19,7 +19,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.gitsync.interceptor.GitSyncConstants;
 import io.harness.manage.GlobalContextManager;
 import io.harness.rule.Owner;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.dto.UserPrincipal;
 

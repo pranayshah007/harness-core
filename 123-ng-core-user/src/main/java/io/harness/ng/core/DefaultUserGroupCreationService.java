@@ -7,7 +7,7 @@
 
 package io.harness.ng.core;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.misc.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.Boolean.FALSE;
@@ -27,7 +27,7 @@ import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.remote.client.CGRestUtils;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;

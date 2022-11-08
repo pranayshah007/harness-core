@@ -13,7 +13,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.observer.RemoteObserver;
 import io.harness.queue.QueueController;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;

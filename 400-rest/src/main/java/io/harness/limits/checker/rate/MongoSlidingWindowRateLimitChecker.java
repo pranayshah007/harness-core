@@ -13,7 +13,7 @@ import static io.harness.persistence.HPersistence.upsertReturnNewOptions;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.limits.Action;
 import io.harness.limits.impl.model.RateLimit;
-import io.harness.limits.lib.RateLimitChecker;
+import io.harness.limits.impl.model.RateLimitChecker;
 import io.harness.persistence.HPersistence;
 
 import software.wings.dl.WingsPersistence;

@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.runtime.HashiCorpVaultRuntimeException;
+import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
 import io.harness.network.Http;
 
 import software.wings.beans.VaultConfig;

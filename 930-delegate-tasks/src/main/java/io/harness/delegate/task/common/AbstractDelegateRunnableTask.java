@@ -35,7 +35,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FailureType;
 import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.logging.AccountLogContext;
-import io.harness.logging.ExceptionLogger;
+import io.harness.exception.ExceptionLogger;
 import io.harness.manage.GlobalContextManager;
 import io.harness.secret.SecretSanitizerThreadLocal;
 

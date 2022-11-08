@@ -22,7 +22,7 @@ import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.delegatetasks.delegatecapability.CapabilityHelper;

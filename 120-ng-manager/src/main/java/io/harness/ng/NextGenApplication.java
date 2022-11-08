@@ -7,10 +7,10 @@
 
 package io.harness.ng;
 
-import static io.harness.AuthorizationServiceHeader.BEARER;
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
-import static io.harness.AuthorizationServiceHeader.IDENTITY_SERVICE;
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.misc.AuthorizationServiceHeader.BEARER;
+import static io.harness.misc.AuthorizationServiceHeader.DEFAULT;
+import static io.harness.misc.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInterMsvcRequests;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInternalApi;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassPaths;

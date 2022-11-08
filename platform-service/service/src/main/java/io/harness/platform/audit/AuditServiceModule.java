@@ -7,7 +7,7 @@
 
 package io.harness.platform.audit;
 
-import static io.harness.AuthorizationServiceHeader.AUDIT_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.AUDIT_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.AccessControlClientModule;

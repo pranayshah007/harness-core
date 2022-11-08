@@ -17,7 +17,7 @@ import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.exception.FunctorException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.terraform.expression.TerraformPlanExpressionInterface;
 
 import com.google.inject.Inject;

@@ -7,7 +7,7 @@
 
 package io.harness.accesscontrol.commons.outbox;
 
-import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.accesscontrol.roleassignments.events.RoleAssignmentCreateEvent.ROLE_ASSIGNMENT_CREATE_EVENT;
 import static io.harness.accesscontrol.roleassignments.events.RoleAssignmentDeleteEvent.ROLE_ASSIGNMENT_DELETE_EVENT;
 import static io.harness.accesscontrol.roleassignments.events.RoleAssignmentUpdateEvent.ROLE_ASSIGNMENT_UPDATE_EVENT;
@@ -44,7 +44,7 @@ import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.serviceaccount.ServiceAccountDTO;
 import io.harness.serviceaccount.remote.ServiceAccountClient;

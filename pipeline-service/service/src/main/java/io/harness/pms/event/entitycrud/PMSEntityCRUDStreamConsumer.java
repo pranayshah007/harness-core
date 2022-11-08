@@ -7,7 +7,7 @@
 
 package io.harness.pms.event.entitycrud;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELINE_ENTITY;
@@ -20,7 +20,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.queue.QueueController;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 

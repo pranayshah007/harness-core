@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import javax.ws.rs.Path;
+
+import io.harness.misc.AuthorizationServiceHeader;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.model.Resource;

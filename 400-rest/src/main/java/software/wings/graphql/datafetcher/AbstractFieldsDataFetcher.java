@@ -16,7 +16,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
+import io.harness.exception.ExceptionLogger;
 
 import software.wings.service.impl.FilterLogContext;
 

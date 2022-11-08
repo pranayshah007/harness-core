@@ -7,8 +7,8 @@
 
 package software.wings.utils;
 
-import static io.harness.encryption.EncryptionReflectUtils.getEncryptedFieldTag;
-import static io.harness.encryption.EncryptionReflectUtils.getEncryptedRefField;
+import static io.harness.beans.EncryptionReflectUtils.getEncryptedFieldTag;
+import static io.harness.beans.EncryptionReflectUtils.getEncryptedRefField;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;

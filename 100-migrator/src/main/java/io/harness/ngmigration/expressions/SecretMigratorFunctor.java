@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration.expressions;
 
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 
 public class SecretMigratorFunctor implements ExpressionFunctor {
   public Object getValue(String secretIdentifier) {

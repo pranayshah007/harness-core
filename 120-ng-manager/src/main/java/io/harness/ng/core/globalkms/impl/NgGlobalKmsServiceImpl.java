@@ -10,7 +10,7 @@ package io.harness.ng.core.globalkms.impl;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
-import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
+import static io.harness.security.dto.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
@@ -31,7 +31,7 @@ import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.globalkms.dto.ConnectorSecretResponseDTO;
 import io.harness.ng.core.globalkms.services.NgConnectorManagerClientService;
 import io.harness.ng.core.globalkms.services.NgGlobalKmsService;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.dto.UserPrincipal;
 
 import com.google.inject.Inject;

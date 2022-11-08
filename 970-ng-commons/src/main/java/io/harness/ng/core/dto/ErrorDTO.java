@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
-import io.harness.exception.ngexception.ErrorMetadataDTO;
+import io.harness.exception.metadata.ErrorMetadataDTO;
 import io.harness.ng.core.CorrelationContext;
 import io.harness.ng.core.Status;
 

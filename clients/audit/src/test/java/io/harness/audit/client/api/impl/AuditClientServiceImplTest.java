@@ -40,7 +40,7 @@ import io.harness.context.GlobalContext;
 import io.harness.context.MdcGlobalContextData;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.dto.UserPrincipal;
 
 import java.io.IOException;

@@ -7,7 +7,7 @@
 
 package io.harness.gitsync.common.helper;
 
-import static io.harness.AuthorizationServiceHeader.GIT_SYNC_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.GIT_SYNC_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.EntityType;
@@ -16,7 +16,7 @@ import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.InvalidRequestException;
 import io.harness.manage.GlobalContextManager;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.fasterxml.jackson.databind.JsonNode;

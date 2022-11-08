@@ -49,7 +49,7 @@ import io.harness.logging.MdcContextSetter;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.security.Principal;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.PrincipalProtoMapper;
 import io.harness.security.SourcePrincipalContextData;
 import io.harness.serializer.KryoSerializer;

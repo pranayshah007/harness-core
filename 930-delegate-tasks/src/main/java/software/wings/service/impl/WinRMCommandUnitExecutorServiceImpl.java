@@ -31,7 +31,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ShellExecutionException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.ExceptionLogger;
+import io.harness.exception.ExceptionLogger;
 
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.command.CommandUnit;

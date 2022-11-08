@@ -35,7 +35,7 @@ import io.harness.exception.WingsException;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.logging.ExceptionLogger;
+import io.harness.exception.ExceptionLogger;
 import io.harness.rule.Owner;
 
 import com.google.common.base.Charsets;

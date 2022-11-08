@@ -7,7 +7,7 @@
 
 package io.harness.accesscontrol;
 
-import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ACCOUNT_PERMISSION;
 import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ORGANIZATION_PERMISSION;
 import static io.harness.accesscontrol.AccessControlPermissions.VIEW_PROJECT_PERMISSION;

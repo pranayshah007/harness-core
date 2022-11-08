@@ -11,7 +11,7 @@ import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
-import io.harness.exception.ngexception.ErrorMetadataDTO;
+import io.harness.exception.metadata.ErrorMetadataDTO;
 
 import java.util.EnumSet;
 

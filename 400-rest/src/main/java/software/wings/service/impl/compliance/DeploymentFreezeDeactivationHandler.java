@@ -13,7 +13,7 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofSeconds;
 
-import io.harness.SystemWrapper;
+import io.harness.misc.SystemWrapper;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;

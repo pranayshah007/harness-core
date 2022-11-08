@@ -7,7 +7,7 @@
 
 package io.harness.pms.event.webhookevent;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENTS_STREAM;
@@ -17,7 +17,7 @@ import io.harness.eventsframework.api.Consumer;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.pms.events.base.PmsAbstractRedisConsumer;
 import io.harness.queue.QueueController;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;

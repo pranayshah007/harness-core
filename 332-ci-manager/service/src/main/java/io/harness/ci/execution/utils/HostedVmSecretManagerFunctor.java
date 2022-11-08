@@ -23,7 +23,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SimpleEncryption;

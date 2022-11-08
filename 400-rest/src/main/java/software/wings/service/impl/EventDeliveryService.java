@@ -30,7 +30,7 @@ import io.harness.beans.WebHookEventConfig;
 import io.harness.data.algorithm.HashGenerator;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.http.HttpTaskParameters;
-import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.expression.LateBindingMap;
 import io.harness.ff.FeatureFlagService;
 import io.harness.serializer.JsonUtils;

@@ -20,7 +20,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
+import io.harness.exception.ExceptionLogger;
 
 import software.wings.beans.instance.dashboard.EntitySummary;
 import software.wings.dl.WingsPersistence;

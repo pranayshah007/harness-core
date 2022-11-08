@@ -15,7 +15,7 @@ import static software.wings.settings.SettingVariableTypes.APM_VERIFICATION;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedDataParent;
 import io.harness.beans.SearchFilter;
-import io.harness.encryption.EncryptionReflectUtils;
+import io.harness.beans.EncryptionReflectUtils;
 import io.harness.secrets.setupusage.EncryptionDetail;
 import io.harness.secrets.setupusage.SecretSetupUsage;
 import io.harness.secrets.setupusage.SecretSetupUsageBuilder;

@@ -20,7 +20,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.EntityName;
 import io.harness.encryption.Encrypted;
-import io.harness.encryption.EncryptionReflectUtils;
+import io.harness.beans.EncryptionReflectUtils;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;

@@ -14,7 +14,7 @@ import static org.apache.commons.lang3.StringUtils.join;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 
 import java.util.Arrays;
 import java.util.List;

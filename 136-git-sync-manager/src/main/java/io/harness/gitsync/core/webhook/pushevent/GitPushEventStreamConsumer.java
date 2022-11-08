@@ -7,7 +7,7 @@
 
 package io.harness.gitsync.core.webhook.pushevent;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.misc.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM;
 import static io.harness.gitsync.common.WebhookEventConstants.GIT_PUSH_EVENT_CONSUMER;
@@ -18,7 +18,7 @@ import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.ng.core.event.MessageListener;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;

@@ -7,17 +7,17 @@
 
 package io.harness.accesscontrol;
 
-import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
-import static io.harness.AuthorizationServiceHeader.BEARER;
-import static io.harness.AuthorizationServiceHeader.CI_MANAGER;
-import static io.harness.AuthorizationServiceHeader.CV_NEXT_GEN;
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
-import static io.harness.AuthorizationServiceHeader.DELEGATE_SERVICE;
-import static io.harness.AuthorizationServiceHeader.IDENTITY_SERVICE;
-import static io.harness.AuthorizationServiceHeader.MANAGER;
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
-import static io.harness.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.BEARER;
+import static io.harness.misc.AuthorizationServiceHeader.CI_MANAGER;
+import static io.harness.misc.AuthorizationServiceHeader.CV_NEXT_GEN;
+import static io.harness.misc.AuthorizationServiceHeader.DEFAULT;
+import static io.harness.misc.AuthorizationServiceHeader.DELEGATE_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.MANAGER;
+import static io.harness.misc.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.misc.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.accesscontrol.AccessControlConfiguration.ALL_ACCESS_CONTROL_RESOURCES;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.logging.LoggingInitializer.initializeLogging;

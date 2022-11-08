@@ -7,7 +7,7 @@
 
 package software.wings.app;
 
-import static io.harness.AuthorizationServiceHeader.MANAGER;
+import static io.harness.misc.AuthorizationServiceHeader.MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.GLOBAL_DISABLE_HEALTH_CHECK;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;

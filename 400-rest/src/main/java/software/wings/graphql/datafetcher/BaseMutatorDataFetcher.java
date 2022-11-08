@@ -22,7 +22,7 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
+import io.harness.exception.ExceptionLogger;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.serializer.jackson.HarnessJacksonModule;
 import io.harness.utils.RequestField;

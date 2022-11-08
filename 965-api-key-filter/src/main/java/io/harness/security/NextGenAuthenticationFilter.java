@@ -27,6 +27,7 @@ import io.harness.ng.core.dto.TokenDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.ScimAPI;
 import io.harness.security.dto.Principal;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.token.remote.TokenClient;

@@ -21,7 +21,7 @@ import io.harness.beans.EncryptedDataParent;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.encryption.EncryptionReflectUtils;
+import io.harness.beans.EncryptionReflectUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.reflection.ReflectionUtils;

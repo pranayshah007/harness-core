@@ -7,7 +7,7 @@
 
 package io.harness.analyserservice;
 
-import static io.harness.AuthorizationServiceHeader.ANALYZER_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.ANALYZER_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;

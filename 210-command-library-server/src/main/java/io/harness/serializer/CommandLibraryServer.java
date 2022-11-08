@@ -8,6 +8,7 @@
 package io.harness.serializer;
 
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.serializer.common.CommonsRegistrars;
 import io.harness.serializer.morphia.CommandLibraryServerMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;

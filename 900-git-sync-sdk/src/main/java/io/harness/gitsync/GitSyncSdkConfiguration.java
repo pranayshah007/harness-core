@@ -9,7 +9,7 @@ package io.harness.gitsync;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
-import io.harness.AuthorizationServiceHeader;
+import io.harness.misc.AuthorizationServiceHeader;
 import io.harness.EntityType;
 import io.harness.Microservice;
 import io.harness.ScmConnectionConfig;

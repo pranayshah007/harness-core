@@ -23,7 +23,7 @@ import static software.wings.beans.Log.Builder.aLog;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.SystemWrapper;
+import io.harness.misc.SystemWrapper;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;

@@ -7,9 +7,9 @@
 
 package io.harness.platform;
 
-import static io.harness.AuthorizationServiceHeader.BEARER;
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
-import static io.harness.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.BEARER;
+import static io.harness.misc.AuthorizationServiceHeader.DEFAULT;
+import static io.harness.misc.AuthorizationServiceHeader.IDENTITY_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.platform.PlatformConfiguration.getPlatformServiceCombinedResourceClasses;
@@ -20,8 +20,8 @@ import static io.harness.platform.resourcegroup.ResourceGroupServiceSetup.RESOUR
 import static com.google.common.collect.ImmutableMap.of;
 import static java.util.stream.Collectors.toSet;
 
-import io.harness.AuthorizationServiceHeader;
-import io.harness.GodInjector;
+import io.harness.misc.AuthorizationServiceHeader;
+import io.harness.misc.GodInjector;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.govern.ProviderModule;

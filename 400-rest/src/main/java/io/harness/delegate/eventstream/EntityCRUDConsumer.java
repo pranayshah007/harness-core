@@ -7,7 +7,7 @@
 
 package io.harness.delegate.eventstream;
 
-import static io.harness.AuthorizationServiceHeader.MANAGER;
+import static io.harness.misc.AuthorizationServiceHeader.MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
@@ -19,7 +19,7 @@ import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.queue.QueueController;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.common.collect.Lists;

@@ -10,7 +10,7 @@ package io.harness.delegate.task.azure.artifact;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 @OwnedBy(CDP)
 public interface AzureArtifactRequestDetails extends NestedAnnotationResolver {

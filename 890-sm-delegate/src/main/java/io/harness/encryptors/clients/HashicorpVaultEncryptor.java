@@ -25,7 +25,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.exception.SecretManagementDelegateException;
-import io.harness.exception.runtime.HashiCorpVaultRuntimeException;
+import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.security.encryption.AccessType;
 import io.harness.security.encryption.EncryptedRecord;

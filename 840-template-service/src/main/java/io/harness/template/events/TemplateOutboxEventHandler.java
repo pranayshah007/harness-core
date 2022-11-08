@@ -7,9 +7,9 @@
 
 package io.harness.template.events;
 
-import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
-import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
+import static io.harness.security.dto.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -32,7 +32,7 @@ import io.harness.ng.core.OrgScope;
 import io.harness.ng.core.ProjectScope;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.template.entity.TemplateEntity;

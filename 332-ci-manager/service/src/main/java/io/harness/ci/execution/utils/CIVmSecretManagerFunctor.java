@@ -9,7 +9,7 @@ package io.harness.ci.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.ng.core.NGAccess;
 
 import java.util.HashSet;

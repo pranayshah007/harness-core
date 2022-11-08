@@ -14,7 +14,7 @@ import io.harness.ci.serializer.morphia.CIExecutionMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.ApiServicesRegistrars;
 import io.harness.serializer.CiBeansRegistrars;
-import io.harness.serializer.CommonsRegistrars;
+import io.harness.serializer.common.CommonsRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.DelegateTasksBeansRegistrars;
 import io.harness.serializer.KryoRegistrar;

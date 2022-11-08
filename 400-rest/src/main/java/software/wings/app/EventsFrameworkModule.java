@@ -7,8 +7,8 @@
 
 package software.wings.app;
 
-import static io.harness.AuthorizationServiceHeader.DMS;
-import static io.harness.AuthorizationServiceHeader.MANAGER;
+import static io.harness.misc.AuthorizationServiceHeader.DMS;
+import static io.harness.misc.AuthorizationServiceHeader.MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;

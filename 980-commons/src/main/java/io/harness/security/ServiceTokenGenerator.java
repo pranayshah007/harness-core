@@ -20,6 +20,8 @@ import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.google.common.base.Preconditions;
+import io.harness.security.dto.SecurityContextBuilder;
+
 import java.io.UnsupportedEncodingException;
 import java.time.Duration;
 import java.util.Date;

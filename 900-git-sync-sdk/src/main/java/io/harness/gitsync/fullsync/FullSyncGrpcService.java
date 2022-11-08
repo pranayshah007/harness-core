@@ -12,7 +12,7 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
 import static java.util.stream.Collectors.toCollection;
 
-import io.harness.AuthorizationServiceHeader;
+import io.harness.misc.AuthorizationServiceHeader;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ExceptionUtils;
 import io.harness.gitsync.FileChanges;
@@ -26,7 +26,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.logging.MdcContextSetter;
 import io.harness.manage.GlobalContextManager;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 

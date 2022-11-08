@@ -32,7 +32,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.exception.FunctorException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.ff.FeatureFlagService;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.security.encryption.EncryptedDataDetail;

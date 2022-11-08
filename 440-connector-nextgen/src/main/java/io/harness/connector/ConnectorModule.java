@@ -7,7 +7,7 @@
 
 package io.harness.connector;
 
-import static io.harness.AuthorizationServiceHeader.CE_NEXT_GEN;
+import static io.harness.misc.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;

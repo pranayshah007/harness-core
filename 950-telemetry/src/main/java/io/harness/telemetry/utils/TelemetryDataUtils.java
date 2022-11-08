@@ -10,7 +10,7 @@ package io.harness.telemetry.utils;
 import static io.harness.TelemetryConstants.SYSTEM_USER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
 

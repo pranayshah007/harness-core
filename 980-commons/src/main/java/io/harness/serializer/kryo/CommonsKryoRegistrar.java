@@ -82,7 +82,7 @@ import io.harness.exception.runtime.serverless.ServerlessAwsLambdaRuntimeExcepti
 import io.harness.exception.runtime.serverless.ServerlessCommandExecutionException;
 import io.harness.logging.LogLevel;
 import io.harness.rest.RestResponse;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.SimpleEncryption;
 import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.dto.Principal;

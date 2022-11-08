@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.UTKARSH;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
+import io.harness.beans.EncryptionReflectUtils;
 import io.harness.category.element.UnitTests;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.rule.Owner;

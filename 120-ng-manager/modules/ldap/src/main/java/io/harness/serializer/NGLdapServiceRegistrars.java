@@ -15,6 +15,7 @@ import io.harness.ldap.serializer.NGLdapCommonsRegistrars;
 import io.harness.morphia.MorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
+import io.harness.serializer.common.CommonsRegistrars;
 import io.serializer.registrars.NGCommonsRegistrars;
 import lombok.experimental.UtilityClass;
 

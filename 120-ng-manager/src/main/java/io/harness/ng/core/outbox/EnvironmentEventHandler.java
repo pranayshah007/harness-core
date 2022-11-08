@@ -7,11 +7,11 @@
 
 package io.harness.ng.core.outbox;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.misc.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
-import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
+import static io.harness.security.dto.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
@@ -33,7 +33,7 @@ import io.harness.ng.core.events.EnvironmentUpsertEvent;
 import io.harness.ng.core.events.OutboxEventConstants;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 

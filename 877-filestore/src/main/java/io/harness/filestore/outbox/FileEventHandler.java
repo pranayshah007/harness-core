@@ -7,7 +7,7 @@
 
 package io.harness.filestore.outbox;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.misc.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
@@ -16,7 +16,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.FILE_E
 import static io.harness.filestore.events.FileCreateEvent.FILE_CREATED_EVENT;
 import static io.harness.filestore.events.FileDeleteEvent.FILE_DELETED_EVENT;
 import static io.harness.filestore.events.FileUpdateEvent.FILE_UPDATED_EVENT;
-import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
+import static io.harness.security.dto.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import static java.lang.String.format;
 
@@ -45,7 +45,7 @@ import io.harness.ng.core.filestore.dto.FileStoreRequest;
 import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 

@@ -13,7 +13,7 @@ import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.beans.EncryptedDataParent;
 import io.harness.data.validator.EntityNameValidator;
-import io.harness.encryption.EncryptionReflectUtils;
+import io.harness.beans.EncryptionReflectUtils;
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 

@@ -26,7 +26,7 @@ import io.harness.gitsync.core.runnable.ChangeSetGroupingKey.ChangeSetGroupingKe
 import io.harness.gitsync.core.service.YamlChangeSetService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.logging.ExceptionLogger;
+import io.harness.exception.ExceptionLogger;
 import io.harness.repositories.yamlChangeSet.YamlChangeSetRepository;
 
 import com.google.inject.Inject;

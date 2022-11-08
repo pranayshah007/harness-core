@@ -7,7 +7,7 @@
 
 package software.wings.security;
 
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
+import static io.harness.misc.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -38,7 +38,7 @@ import io.harness.logging.AccountLogContext;
 import io.harness.manage.GlobalContextManager;
 import io.harness.security.JWTAuthenticationFilter;
 import io.harness.security.JWTTokenHandler;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.annotations.DelegateAuth;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.LearningEngineAuth;

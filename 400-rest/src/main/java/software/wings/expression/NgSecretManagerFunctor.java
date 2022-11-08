@@ -33,7 +33,7 @@ import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.FunctorException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;

@@ -7,7 +7,7 @@
 
 package io.harness.template.event;
 
-import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
@@ -15,7 +15,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.queue.QueueController;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import java.time.Duration;

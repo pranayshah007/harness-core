@@ -10,6 +10,7 @@ package io.harness.expression;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.expression.functors.ExpressionFunctor;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

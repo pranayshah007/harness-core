@@ -15,7 +15,7 @@ import static java.util.stream.Collectors.toList;
 import io.harness.eraro.Level;
 import io.harness.eraro.ResponseMessage;
 import io.harness.rest.RestResponse;
-import io.harness.utils.ConstraintViolationHandlerUtils;
+import io.harness.utils.constraintviolation.ConstraintViolationHandlerUtils;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;

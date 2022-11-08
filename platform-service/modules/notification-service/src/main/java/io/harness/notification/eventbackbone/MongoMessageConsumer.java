@@ -7,14 +7,14 @@
 
 package io.harness.notification.eventbackbone;
 
-import static io.harness.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
 
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.entities.MongoNotificationRequest;
 import io.harness.notification.service.api.NotificationService;
 import io.harness.queue.QueueConsumer;
 import io.harness.queue.QueueListener;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;

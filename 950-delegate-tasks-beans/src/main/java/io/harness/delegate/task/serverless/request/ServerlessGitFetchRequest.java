@@ -22,7 +22,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.serverless.ServerlessGitFetchFileConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import java.util.ArrayList;
 import java.util.List;

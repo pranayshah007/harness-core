@@ -9,7 +9,7 @@ package io.harness.telemetry.helpers;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.security.dto.UserPrincipal;

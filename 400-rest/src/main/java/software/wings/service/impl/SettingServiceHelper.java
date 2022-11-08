@@ -9,7 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.encryption.EncryptionReflectUtils.getEncryptedRefField;
+import static io.harness.beans.EncryptionReflectUtils.getEncryptedRefField;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.SettingAttribute.SettingCategory.AZURE_ARTIFACTS;

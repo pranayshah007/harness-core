@@ -7,7 +7,7 @@
 
 package io.harness.gitsync.core.fullsync;
 
-import static io.harness.AuthorizationServiceHeader.GIT_SYNC_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.GIT_SYNC_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -44,7 +44,7 @@ import io.harness.gitsync.fullsync.utils.FullSyncLogContextHelper;
 import io.harness.gitsync.scm.ScmGitUtils;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.entitydetail.EntityDetailRestToProtoMapper;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.utils.IdentifierRefHelper;
 

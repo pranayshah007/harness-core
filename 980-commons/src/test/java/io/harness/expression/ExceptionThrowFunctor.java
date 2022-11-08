@@ -8,6 +8,7 @@
 package io.harness.expression;
 
 import io.harness.exception.FunctorException;
+import io.harness.expression.functors.ExpressionFunctor;
 
 public class ExceptionThrowFunctor implements ExpressionFunctor {
   public void throwException() {

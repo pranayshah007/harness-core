@@ -7,7 +7,7 @@
 
 package io.harness.security;
 
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
+import static io.harness.misc.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
@@ -39,6 +39,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.HttpHeaders;
+
+import io.harness.security.dto.SecurityContextBuilder;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;

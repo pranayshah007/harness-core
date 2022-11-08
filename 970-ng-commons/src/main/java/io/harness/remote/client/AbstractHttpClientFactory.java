@@ -27,7 +27,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
 import io.harness.security.PmsAuthInterceptor;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;

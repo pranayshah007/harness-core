@@ -7,7 +7,7 @@
 
 package io.harness.cdng.customdeploymentng;
 
-import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.cdng.customDeployment.CustomDeploymentConstants.INFRASTRUCTURE_DEFINITION;
 import static io.harness.cdng.customDeployment.eventlistener.CustomDeploymentEntityCRUDEventHandler.STABLE_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -42,7 +42,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;

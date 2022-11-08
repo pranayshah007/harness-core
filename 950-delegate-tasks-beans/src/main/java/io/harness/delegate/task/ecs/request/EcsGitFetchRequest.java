@@ -22,7 +22,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.ecs.EcsGitFetchFileConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.reflection.ExpressionReflectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -7,9 +7,9 @@
 
 package io.harness.pms.outbox;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
-import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
+import static io.harness.security.dto.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -28,7 +28,7 @@ import io.harness.pms.events.PipelineDeleteEvent;
 import io.harness.pms.events.PipelineOutboxEvents;
 import io.harness.pms.events.PipelineUpdateEvent;
 import io.harness.pms.pipeline.observer.PipelineActionObserver;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 

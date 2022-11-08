@@ -14,7 +14,7 @@ import static io.harness.context.MdcGlobalContextData.MDC_ID;
 import static io.harness.ng.core.CorrelationContext.getCorrelationIdKey;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.request.RequestContextData.REQUEST_CONTEXT;
-import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
+import static io.harness.security.dto.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.AuditEntry;
@@ -30,7 +30,7 @@ import io.harness.context.MdcGlobalContextData;
 import io.harness.request.HttpRequestInfo;
 import io.harness.request.RequestContextData;
 import io.harness.request.RequestMetadata;
-import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.PrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 

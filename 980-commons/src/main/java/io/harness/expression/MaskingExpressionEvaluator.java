@@ -10,6 +10,7 @@ package io.harness.expression;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.security.SimpleEncryption;
 
 import software.wings.expression.NgSecretManagerFunctorInterface;

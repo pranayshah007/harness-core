@@ -29,6 +29,8 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
+
+import io.harness.security.dto.SecurityContextBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(PL)

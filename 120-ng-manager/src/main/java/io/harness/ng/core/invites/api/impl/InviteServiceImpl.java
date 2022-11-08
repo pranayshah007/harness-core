@@ -78,7 +78,7 @@ import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.invites.spring.InviteRepository;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;

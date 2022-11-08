@@ -7,7 +7,7 @@
 
 package io.harness.rule;
 
-import static io.harness.AuthorizationServiceHeader.CV_NEXT_GEN;
+import static io.harness.misc.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.CvNextGenTestBase.getResourceFilePath;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;

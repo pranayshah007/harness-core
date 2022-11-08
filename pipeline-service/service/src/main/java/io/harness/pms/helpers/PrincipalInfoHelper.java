@@ -20,7 +20,7 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.WingsException;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PrincipalType;
-import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.SecurityContextBuilder;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;

@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedDataParent;
 import io.harness.beans.SecretManagerConfig;
-import io.harness.encryption.EncryptionReflectUtils;
+import io.harness.beans.EncryptionReflectUtils;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.secrets.setupusage.EncryptionDetail;
 import io.harness.secrets.setupusage.SecretSetupUsage;

@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration;
 
-import static io.harness.AuthorizationServiceHeader.MIGRATOR;
+import static io.harness.misc.AuthorizationServiceHeader.MIGRATOR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

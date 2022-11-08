@@ -10,7 +10,7 @@ package io.harness.gitsync;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.AuthorizationServiceHeader;
+import io.harness.misc.AuthorizationServiceHeader;
 import io.harness.EntityType;
 import io.harness.SCMGrpcClientModule;
 import io.harness.ScmConnectionConfig;

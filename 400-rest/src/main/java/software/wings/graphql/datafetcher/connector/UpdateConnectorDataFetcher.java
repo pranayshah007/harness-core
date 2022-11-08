@@ -18,7 +18,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.utils.ConstraintViolationHandlerUtils;
+import io.harness.utils.constraintviolation.ConstraintViolationHandlerUtils;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.graphql.datafetcher.BaseMutatorDataFetcher;

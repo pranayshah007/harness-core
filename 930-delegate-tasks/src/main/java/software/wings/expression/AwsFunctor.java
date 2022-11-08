@@ -10,7 +10,7 @@ package software.wings.expression;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 
 import com.amazonaws.services.ec2.model.Tag;
 import java.util.Collection;

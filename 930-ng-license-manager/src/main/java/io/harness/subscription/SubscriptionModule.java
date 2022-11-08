@@ -7,7 +7,7 @@
 
 package io.harness.subscription;
 
-import static io.harness.AuthorizationServiceHeader.SUBSCRIPTION_SERVICE;
+import static io.harness.misc.AuthorizationServiceHeader.SUBSCRIPTION_SERVICE;
 
 import io.harness.AccessControlClientModule;
 import io.harness.subscription.handlers.InvoicePaymentSucceedHandler;

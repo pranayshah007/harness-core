@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.outbox;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.misc.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.toAuditRoleBindings;
