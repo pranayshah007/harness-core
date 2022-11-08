@@ -702,6 +702,8 @@ import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequest;
 import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse;
+import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskParameters;
+import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskResponse;
 import io.harness.delegate.task.spotinst.request.SpotInstDeployTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstGetElastigroupJsonParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstListElastigroupInstancesParameters;
@@ -1321,6 +1323,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(SpotTaskType.class, 21008);
     kryo.register(SpotValidationParams.class, 21009);
     kryo.register(SpotDelegateTaskResponse.class, 21010);
+    kryo.register(ElastigroupDeployTaskParameters.class, 21011);
+    kryo.register(ElastigroupDeployTaskResponse.class, 21012);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
