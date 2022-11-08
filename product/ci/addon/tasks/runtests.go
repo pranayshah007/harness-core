@@ -484,6 +484,13 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	if err != nil {
 		return "", err
 	}
+	for _, file := range files {
+		pkg, err := utils.ReadJavaPkg(r.log, r.fs, file.Name, make([]string, 0))
+		if err != nil {
+			return "", err
+		}
+		file.Package = pkg
+	}
 
 	// Test selection
 	isManual := isManualFn()
