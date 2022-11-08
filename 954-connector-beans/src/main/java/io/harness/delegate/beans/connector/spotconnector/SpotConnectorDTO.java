@@ -45,7 +45,7 @@ public class SpotConnectorDTO extends ConnectorConfigDTO implements DelegateSele
       SpotPermanentTokenConfigSpecDTO credentialConfig = (SpotPermanentTokenConfigSpecDTO) credential.getConfig();
       return Collections.singletonList(credentialConfig);
     }
-    return null;
+    return Collections.emptyList();
   }
 
   @Override
