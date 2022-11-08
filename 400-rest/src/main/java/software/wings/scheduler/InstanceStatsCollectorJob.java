@@ -16,7 +16,6 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.scheduler.BackgroundExecutorService;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.beans.Account;
@@ -35,6 +34,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Date;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +63,7 @@ public class InstanceStatsCollectorJob implements Job {
   private static final long DATA_MIGRATION_CRON_LOCK_EXPIRY_IN_SECONDS = 660; // 60 * 11
   private static final String DATA_MIGRATION_CRON_LOCK_PREFIX = "INSTANCE_DATA_MIGRATION_CRON:";
 
-  @Inject private BackgroundExecutorService executorService;
+  @Inject private ExecutorService executorService;
   @Inject private PersistentLocker persistentLocker;
   @Inject private StatsCollector statsCollector;
   @Inject private InstanceUsageLimitExcessHandler instanceLimitHandler;
