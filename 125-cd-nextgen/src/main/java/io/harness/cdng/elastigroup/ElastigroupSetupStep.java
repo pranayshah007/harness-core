@@ -82,7 +82,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .elastigroupNamePrefix(elastigroupNamePrefix)
             .accountId(accountId)
             .spotInstConfig(spotInstConfig)
-            .elastiGroupJson(elastigroupJson)
+            .elastigroupJson(elastigroupJson)
             .elastigroupCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
             .startupScript(elastigroupStepExecutorParams.getStartupScript())
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
@@ -131,7 +131,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     try {
       elastigroupSetupResponse = (ElastigroupSetupResponse) responseDataSupplier.get();
     } catch (Exception e) {
-      log.error("Error while processing ecs task response: {}", e.getMessage(), e);
+      log.error("Error while processing elastigroup task response: {}", e.getMessage(), e);
       return elastigroupStepCommonHelper.handleTaskException(ambiance, elastigroupExecutionPassThroughData, e);
     }
     StepResponseBuilder stepResponseBuilder =

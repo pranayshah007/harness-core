@@ -32,7 +32,7 @@ public class ElastigroupSetupCommandRequest
   ElastigroupCommandTypeNG elastigroupCommandType;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  String elastiGroupJson;
+  String elastigroupJson;
   String elastigroupNamePrefix;
   String startupScript;
   boolean blueGreen;

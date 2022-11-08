@@ -16,7 +16,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.beans.FileReference;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.ecs.EcsEntityHelper;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
@@ -44,7 +43,6 @@ import java.util.Optional;
 
 public class ElastigroupStepUtils extends CDStepHelper {
   @Inject private EngineExpressionService engineExpressionService;
-  @Inject private EcsEntityHelper ecsEntityHelper;
   @Inject private FileStoreService fileStoreService;
 
   public List<String> fetchFilesContentFromLocalStore(

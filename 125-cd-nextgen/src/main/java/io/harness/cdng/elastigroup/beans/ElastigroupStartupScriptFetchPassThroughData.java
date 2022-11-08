@@ -21,7 +21,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("ecsGitFetchPassThroughData")
+@TypeAlias("elastigroupStartupScriptFetchPassThroughData")
 @RecasterAlias("io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData")
 public class ElastigroupStartupScriptFetchPassThroughData implements PassThroughData {
   InfrastructureOutcome infrastructureOutcome;
