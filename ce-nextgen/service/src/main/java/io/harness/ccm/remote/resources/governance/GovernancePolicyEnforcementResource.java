@@ -200,8 +200,7 @@ public class GovernancePolicyEnforcementResource {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put(POLICY_ENFORCEMENT_ID, policyEnforcement.getUuid());
         Map<String, String> tags = new HashMap<>();
-        // TODO: Fetch this from config
-        tags.put("dc", "dc1:1");
+        tags.put(configuration.getGovernanceConfig().getTagsKey(), configuration.getGovernanceConfig().getTagsValue());
 
         Map<String, String> metadata = new HashMap<>();
         metadata.put(ACCOUNT_ID, policyEnforcement.getAccountId());
@@ -213,7 +212,7 @@ public class GovernancePolicyEnforcementResource {
             SchedulerDTO.builder()
                 .tags(tags)
                 .schedule(policyEnforcement.getExecutionSchedule())
-                .disabled(configuration.getGovernanceConfig().isDkronJobEnabled())
+                .disabled(!configuration.getGovernanceConfig().isDkronJobEnabled())
                 .name(policyEnforcement.getUuid().toLowerCase())
                 .displayname(policyEnforcement.getName() + "_" + policyEnforcement.getUuid())
                 .timezone(policyEnforcement.getExecutionTimezone())

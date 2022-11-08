@@ -465,6 +465,7 @@ public class GovernancePolicyResource {
             try {
               GovernanceJobDetailsAWS governanceJobDetailsAWS =
                   GovernanceJobDetailsAWS.builder()
+                      .accountId(accountId)
                       .awsAccountId(ceAwsConnectorDTO.getAwsAccountId())
                       .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
                       .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())

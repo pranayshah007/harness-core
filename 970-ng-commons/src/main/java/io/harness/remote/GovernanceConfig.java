@@ -20,4 +20,6 @@ public class GovernanceConfig {
   private boolean dkronJobEnabled;
   private String awsFaktoryJobType;
   private String awsFaktoryQueueName;
+  private String tagsKey;
+  private String tagsValue;
 }

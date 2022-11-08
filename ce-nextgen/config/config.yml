@@ -232,11 +232,12 @@ dkronClientConfig:
   connectTimeOutSeconds: 50
   readTimeOutSeconds: 50
 
-
 governanceConfig:
   useDkron: true
   callbackApiEndpoint: http://localhost:7340/ccm/api/governance/enqueue
   dkronJobEnabled: true
   awsFaktoryJobType: aws-governance # This should match with worker
   awsFaktoryQueueName: aws-governance # This should match with worker
+  tagsKey: dc
+  tagsValue: dc1:1
 
