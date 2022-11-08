@@ -50,6 +50,7 @@ public class ArtifactCollectionServiceRegistryNg {
       case GCR:
         return GcrArtifactTaskHandler.class;
       case NEXUS3_REGISTRY:
+      case NEXUS2_REGISTRY:
         return NexusArtifactTaskHandler.class;
       case ARTIFACTORY_REGISTRY:
         return ArtifactoryArtifactTaskHandler.class;

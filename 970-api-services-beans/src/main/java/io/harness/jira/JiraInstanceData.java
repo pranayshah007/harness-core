@@ -23,11 +23,14 @@ import lombok.NoArgsConstructor;
 public class JiraInstanceData {
   public JiraInstanceData(JsonNode node) {
     this.deploymentType = JiraDeploymentType.valueOf(JsonNodeUtils.mustGetString(node, "deploymentType").toUpperCase());
+    this.version = JsonNodeUtils.mustGetString(node, "version");
   }
 
   public JiraInstanceData(JiraDeploymentType deploymentType) {
     this.deploymentType = deploymentType;
   }
+
+  public String version;
 
   public JiraDeploymentType deploymentType;
 

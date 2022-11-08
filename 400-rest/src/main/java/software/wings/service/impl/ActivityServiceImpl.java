@@ -146,7 +146,7 @@ public class ActivityServiceImpl implements ActivityService {
     return getCommandUnits(activity);
   }
 
-  private List<CommandUnitDetails> getCommandUnits(Activity activity) {
+  public List<CommandUnitDetails> getCommandUnits(Activity activity) {
     List<CommandUnitDetails> rv = new ArrayList<>();
     if (activity.getCommandUnitType() != null) {
       switch (activity.getCommandUnitType()) {

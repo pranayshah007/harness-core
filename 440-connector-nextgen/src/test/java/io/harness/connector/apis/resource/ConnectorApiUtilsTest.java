@@ -18,8 +18,8 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.jacksontests.ConnectorJacksonTestHelper;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.spec.server.ng.model.ConnectorRequest;
-import io.harness.spec.server.ng.model.ConnectorResponse;
+import io.harness.spec.server.connector.v1.model.ConnectorRequest;
+import io.harness.spec.server.connector.v1.model.ConnectorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

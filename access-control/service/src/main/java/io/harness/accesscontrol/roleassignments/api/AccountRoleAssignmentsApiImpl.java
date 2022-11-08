@@ -39,9 +39,9 @@ import io.harness.exception.WingsException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.outbox.api.OutboxService;
-import io.harness.spec.server.accesscontrol.AccountRoleAssignmentsApi;
-import io.harness.spec.server.accesscontrol.model.RoleAssignment;
-import io.harness.spec.server.accesscontrol.model.RoleAssignmentResponse;
+import io.harness.spec.server.accesscontrol.v1.AccountRoleAssignmentsApi;
+import io.harness.spec.server.accesscontrol.v1.model.RoleAssignment;
+import io.harness.spec.server.accesscontrol.v1.model.RoleAssignmentResponse;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;

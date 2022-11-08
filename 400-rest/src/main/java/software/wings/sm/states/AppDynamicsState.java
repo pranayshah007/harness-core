@@ -24,7 +24,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
-import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.WingsException;
 
@@ -41,14 +40,11 @@ import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.AnalysisTolerance;
 import software.wings.service.impl.analysis.AnalysisToleranceProvider;
 import software.wings.service.impl.analysis.DataCollectionCallback;
-import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.analysis.TimeSeriesMetricGroup.TimeSeriesMlAnalysisGroupInfo;
 import software.wings.service.impl.analysis.TimeSeriesMlAnalysisType;
-import software.wings.service.impl.appdynamics.AppDynamicsDataCollectionInfoV2;
 import software.wings.service.impl.appdynamics.AppdynamicsDataCollectionInfo;
 import software.wings.service.impl.appdynamics.AppdynamicsTier;
 import software.wings.service.impl.appdynamics.AppdynamicsTimeSeries;
-import software.wings.service.impl.newrelic.NewRelicApplication;
 import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.appdynamics.AppdynamicsService;
 import software.wings.sm.ExecutionContext;
@@ -69,7 +65,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.experimental.FieldNameConstants;
@@ -198,62 +193,6 @@ public class AppDynamicsState extends AbstractMetricAnalysisState {
 
     log.info("AppDynamics State Validated");
     return results;
-  }
-
-  @Override
-  protected DataCollectionInfoV2 createDataCollectionInfo(
-      ExecutionContext context, Map<String, String> hostsToCollect) {
-    metricAnalysisService.saveMetricTemplates(context.getAppId(), StateType.APP_DYNAMICS,
-        context.getStateExecutionInstanceId(), null, APP_DYNAMICS_VALUES_TO_ANALYZE);
-
-    final String resolvedConnectorId =
-        getResolvedConnectorId(context, AppDynamicsStateKeys.analysisServerConfigId, analysisServerConfigId);
-    String resolvedApplicationId = getResolvedFieldValue(context, AppDynamicsStateKeys.applicationId, applicationId);
-    String resolvedTierId = getResolvedFieldValue(context, AppDynamicsStateKeys.tierId, tierId);
-
-    boolean isTriggerBased = workflowExecutionService.isTriggerBasedDeployment(context);
-    if (isTriggerBased) {
-      // Resolve application using name / id
-      NewRelicApplication appDynamicsApplication = appdynamicsService.getAppDynamicsApplication(
-          resolvedConnectorId, resolvedApplicationId, context.getAppId(), context.getWorkflowExecutionId());
-      if (appDynamicsApplication == null) {
-        resolvedApplicationId = appdynamicsService.getAppDynamicsApplicationByName(
-            resolvedConnectorId, resolvedApplicationId, context.getAppId(), context.getWorkflowExecutionId());
-      }
-
-      Preconditions.checkNotNull(resolvedApplicationId, "AppDynamics application is not valid");
-
-      // Resolve tier using name/id
-      final AppdynamicsTier tier = appdynamicsService.getTier(resolvedConnectorId,
-          Long.parseLong(resolvedApplicationId), resolvedTierId, context.getAppId(), context.getWorkflowExecutionId(),
-          ThirdPartyApiCallLog.createApiCallLog(
-              appService.getAccountIdByAppId(context.getAppId()), context.getStateExecutionInstanceId()));
-      if (tier == null) {
-        resolvedTierId = appdynamicsService.getTierByName(analysisServerConfigId, applicationId, resolvedTierId,
-            context.getAppId(), context.getWorkflowExecutionId(),
-            ThirdPartyApiCallLog.createApiCallLog(
-                appService.getAccountIdByAppId(context.getAppId()), context.getStateExecutionInstanceId()));
-      }
-
-      Preconditions.checkNotNull(resolvedTierId, "AppDynamics tier is not null");
-    }
-
-    updateHostToGroupNameMap(resolvedConnectorId, resolvedApplicationId, tierId, hostsToCollect, context);
-
-    return AppDynamicsDataCollectionInfoV2.builder()
-        .connectorId(resolvedConnectorId)
-        .stateExecutionId(context.getStateExecutionInstanceId())
-        .workflowId(getWorkflowId(context))
-        .workflowExecutionId(context.getWorkflowExecutionId())
-        .accountId(context.getAccountId())
-        .envId(getEnvId(context))
-        .applicationId(context.getAppId())
-        .serviceId(getPhaseServiceId(context))
-        .hosts(hostsToCollect.keySet())
-        .appDynamicsApplicationId(Long.parseLong(resolvedApplicationId))
-        .appDynamicsTierId(Long.parseLong(resolvedTierId))
-        .hostsToGroupNameMap(hostsToCollect)
-        .build();
   }
 
   @VisibleForTesting
@@ -521,10 +460,5 @@ public class AppDynamicsState extends AbstractMetricAnalysisState {
     }
     log.error("Invalid metricName in AppDynamics {}", metricName);
     return null;
-  }
-
-  @Override
-  protected Optional<FeatureName> getCVTaskFeatureName() {
-    return Optional.of(FeatureName.APPD_CV_TASK);
   }
 }

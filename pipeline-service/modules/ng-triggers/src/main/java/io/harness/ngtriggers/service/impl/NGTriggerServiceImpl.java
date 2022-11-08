@@ -163,7 +163,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   public NGTriggerEntity create(NGTriggerEntity ngTriggerEntity) {
     try {
       NGTriggerEntity savedNgTriggerEntity = ngTriggerRepository.save(ngTriggerEntity);
-      performPostUpsertFlow(savedNgTriggerEntity);
+      performPostUpsertFlow(savedNgTriggerEntity, false);
       outboxService.save(new TriggerCreateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
           ngTriggerEntity.getProjectIdentifier(), savedNgTriggerEntity));
       return savedNgTriggerEntity;
@@ -173,13 +173,13 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
-  private void performPostUpsertFlow(NGTriggerEntity ngTriggerEntity) {
+  private void performPostUpsertFlow(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     NGTriggerEntity validatedTrigger = validateTrigger(ngTriggerEntity);
     registerWebhookAsync(validatedTrigger);
-    registerPollingAsync(validatedTrigger);
+    registerPollingAsync(validatedTrigger, isUpdate);
   }
 
-  private void registerPollingAsync(NGTriggerEntity ngTriggerEntity) {
+  private void registerPollingAsync(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     if (checkForValidationFailure(ngTriggerEntity)) {
       log.warn(
           String.format("Trigger Validation Failed for Trigger: %s, Skipping Polling Framework subscription request",
@@ -192,10 +192,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       return;
     }
 
-    executorService.submit(() -> { subscribePolling(ngTriggerEntity); });
+    executorService.submit(() -> { subscribePolling(ngTriggerEntity, isUpdate); });
   }
 
-  private void subscribePolling(NGTriggerEntity ngTriggerEntity) {
+  private void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
 
     try {
@@ -210,6 +210,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           && executePollingUnSubscription(ngTriggerEntity, pollingItemBytes).equals(Boolean.TRUE)) {
         updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS);
       } else {
+        if (isUpdate) {
+          executePollingUnSubscription(ngTriggerEntity, pollingItemBytes);
+        }
+
         ResponseDTO<PollingResponseDTO> responseDTO = executePollingSubscription(ngTriggerEntity, pollingItemBytes);
         PollingDocument pollingDocument =
             (PollingDocument) kryoSerializer.asObject(responseDTO.getData().getPollingResponse());
@@ -311,7 +315,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
             ngTriggerEntity.getIdentifier(), webhookId, pollInterval));
         return;
       }
-      subscribePolling(ngTriggerEntity);
+      subscribePolling(ngTriggerEntity, false);
     }
   }
 
@@ -341,7 +345,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           String.format("NGTrigger [%s] couldn't be updated or doesn't exist", ngTriggerEntity.getIdentifier()));
     }
 
-    performPostUpsertFlow(updatedEntity);
+    performPostUpsertFlow(updatedEntity, true);
     return updatedEntity;
   }
 

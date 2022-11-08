@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.tasks.Task;
 
 import java.util.LinkedHashMap;
@@ -21,5 +22,7 @@ public interface HDelegateTask extends Task {
   String getAccountId();
   Map<String, String> getSetupAbstractions();
   TaskData getData();
+
+  TaskDataV2 getTaskDataV2();
   LinkedHashMap<String, String> getLogStreamingAbstractions();
 }

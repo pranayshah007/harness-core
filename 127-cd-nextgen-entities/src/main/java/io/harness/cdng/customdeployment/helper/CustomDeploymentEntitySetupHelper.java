@@ -140,7 +140,7 @@ public class CustomDeploymentEntitySetupHelper {
       log.error("Could not fetch the template reference from yaml for acc :{}, project :{}, infraRef:{}: {}",
           infraEntity.getAccountId(), infraEntity.getProjectIdentifier(), infraEntity.getIdentifier(), e);
       throw new InvalidRequestException(
-          format("Could not fetch the template reference from yaml for infraRef : [%s]", infraEntity.getIdentifier()));
+          format("Could not fetch the template reference from yaml for infraRef : [%s]", infraEntity.getName()));
     }
   }
 
@@ -176,8 +176,8 @@ public class CustomDeploymentEntitySetupHelper {
       log.error("Could not add the reference in entity setup usage for acc :{}, project :{}, infraRef:{}: {}",
           infraEntity.getAccountId(), infraEntity.getProjectIdentifier(), infraEntity.getIdentifier(), e);
       throw new InvalidRequestException(
-          format("Could not add the reference in entity setup usage for infraRef :[%s] and [%s] ",
-              infraEntity.getIdentifier(), e.getMessage()));
+          format("Could not add the reference in entity setup usage for infraRef :[%s] and [%s]", infraEntity.getName(),
+              e.getMessage()));
     }
   }
   private EntityDetailProtoDTO getEntityProtoForDelete(@NotNull InfrastructureEntity infraEntity) {

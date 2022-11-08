@@ -14,10 +14,13 @@ import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
 
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
+import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo;
 import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import java.io.InputStream;
 import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(CDC)
 public interface AzureArtifactsRegistryService {
@@ -38,4 +41,10 @@ public interface AzureArtifactsRegistryService {
       AzureArtifactsInternalConfig azureArtifactsInternalConfig, String project, String feed, String packageType);
 
   List<AzureArtifactsFeed> listFeeds(AzureArtifactsInternalConfig azureArtifactsInternalConfig, String project);
+
+  List<AzureArtifactsPackageFileInfo> listPackageFiles(AzureArtifactsInternalConfig azureArtifactsInternalConfig,
+      String project, String feed, String packageType, String packageName, String version);
+
+  Pair<String, InputStream> downloadArtifact(AzureArtifactsInternalConfig azureArtifactsInternalConfig, String project,
+      String feed, String packageType, String packageName, String version);
 }

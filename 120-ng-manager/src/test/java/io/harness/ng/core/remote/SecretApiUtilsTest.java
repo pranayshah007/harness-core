@@ -17,8 +17,8 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.spec.server.ng.model.SecretRequest;
-import io.harness.spec.server.ng.model.SecretResponse;
+import io.harness.spec.server.ng.v1.model.SecretRequest;
+import io.harness.spec.server.ng.v1.model.SecretResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

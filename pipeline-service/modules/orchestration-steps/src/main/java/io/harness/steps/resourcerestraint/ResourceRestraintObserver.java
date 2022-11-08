@@ -18,9 +18,11 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.springdata.TransactionHelper;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -32,6 +34,7 @@ public class ResourceRestraintObserver
     implements OrchestrationEndObserver, NodeStatusUpdateObserver, AsyncInformObserver {
   private final ExecutorService executorService = Executors.newSingleThreadExecutor();
   @Inject private ResourceRestraintInstanceService restraintService;
+  @Inject private TransactionHelper transactionHelper;
 
   @Override
   public void onEnd(Ambiance ambiance) {
@@ -57,7 +60,11 @@ public class ResourceRestraintObserver
       log.info("Found {} active resource restraint instances", restraintInstances.size());
       if (EmptyPredicate.isNotEmpty(restraintInstances)) {
         for (ResourceRestraintInstance ri : restraintInstances) {
-          restraintService.processRestraint(ri);
+          transactionHelper.performTransaction(() -> {
+            restraintService.finishInstance(ri.getUuid(), ri.getResourceUnit());
+            restraintService.updateBlockedConstraints(ImmutableSet.of(ri.getResourceRestraintId()));
+            return null;
+          });
         }
         log.info("Updated Blocked Resource constraints");
       }

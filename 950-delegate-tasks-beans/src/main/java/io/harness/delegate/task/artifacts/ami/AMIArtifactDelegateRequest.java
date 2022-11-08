@@ -110,24 +110,20 @@ public class AMIArtifactDelegateRequest implements ArtifactSourceDelegateRequest
     List<ExecutionCapability> capabilities =
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             encryptedDataDetails, maskingEvaluator));
-
     if (awsConnectorDTO.getCredential() != null) {
       if (awsConnectorDTO.getCredential().getAwsCredentialType() == AwsCredentialType.INHERIT_FROM_DELEGATE
           || awsConnectorDTO.getCredential().getAwsCredentialType() == AwsCredentialType.MANUAL_CREDENTIALS
           || awsConnectorDTO.getCredential().getAwsCredentialType() == AwsCredentialType.IRSA) {
         populateDelegateSelectorCapability(capabilities, awsConnectorDTO.getDelegateSelectors());
-
         if (awsConnectorDTO.getCredential().getAwsCredentialType() == AwsCredentialType.MANUAL_CREDENTIALS) {
           capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
               AwsInternalConfig.AWS_URL, maskingEvaluator));
         }
-
       } else {
         throw new UnknownEnumTypeException(
             "AWS Credential Type", String.valueOf(awsConnectorDTO.getCredential().getAwsCredentialType()));
       }
     }
-
     return capabilities;
   }
 

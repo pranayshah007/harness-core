@@ -8,6 +8,7 @@
 package io.harness.delegate.task;
 
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -20,7 +21,8 @@ import lombok.Value;
 @Builder
 public class SimpleHDelegateTask implements HDelegateTask {
   @NonNull String accountId;
-  @NonNull TaskData data;
+  TaskData data;
+  TaskDataV2 taskDataV2;
   @Singular Map<String, String> setupAbstractions;
   String uuid;
   LinkedHashMap<String, String> logStreamingAbstractions;

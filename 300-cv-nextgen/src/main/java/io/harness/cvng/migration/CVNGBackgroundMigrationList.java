@@ -21,6 +21,7 @@ import io.harness.cvng.migration.list.AddMonitoredServiceToChangeSourceMigration
 import io.harness.cvng.migration.list.AddMonitoredServiceToHeatMapMigration;
 import io.harness.cvng.migration.list.AddMonitoredServiceToWebhookMigration;
 import io.harness.cvng.migration.list.AddMonitoringSourcesToVerificationJobMigration;
+import io.harness.cvng.migration.list.AddStartedAtToServiceLevelObjectiveV2;
 import io.harness.cvng.migration.list.AddTaskInfoToVerificationTask;
 import io.harness.cvng.migration.list.AddTypeToServiceLevelObjectivesV2;
 import io.harness.cvng.migration.list.AppDCVConfigCompleteMetricPathMigration;
@@ -118,6 +119,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(51, AddLastDisabledAtToMonitoredServiceMigration.class))
         .add(Pair.of(52, WriteServiceLevelObjectivesToV2.class))
         .add(Pair.of(53, AddTypeToServiceLevelObjectivesV2.class))
+        .add(Pair.of(54, AddStartedAtToServiceLevelObjectiveV2.class))
         .build();
   }
 }

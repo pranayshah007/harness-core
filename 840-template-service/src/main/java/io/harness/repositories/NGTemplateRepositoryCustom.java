@@ -15,6 +15,7 @@ import io.harness.git.model.ChangeType;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.events.TemplateUpdateEventType;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -89,4 +90,6 @@ public interface NGTemplateRepositoryCustom {
   Long countFileInstances(String accountIdentifier, String repoURL, String filePath);
 
   TemplateEntity importFlowSaveTemplate(TemplateEntity templateEntity, String comments);
+
+  List<String> getListOfRepos(Criteria criteria);
 }

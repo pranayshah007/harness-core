@@ -43,7 +43,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 public class SecretNGVariable implements NGVariable {
   @NGVariableName
-  @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)
+  @Pattern(regexp = NGRegexValidatorConstants.VARIABLE_NAME_PATTERN)
   @VariableExpression(skipVariableExpression = true)
   String name;
   @ApiModelProperty(allowableValues = NGVariableConstants.SECRET_TYPE)

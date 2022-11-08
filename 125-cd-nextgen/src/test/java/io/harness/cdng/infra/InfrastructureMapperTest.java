@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
@@ -26,6 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
+import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcomeAbstract;
@@ -41,6 +43,7 @@ import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -406,6 +409,31 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                    .build();
     outcome.setConnector(Connector.builder().name("my_connector").build());
     assertThat(infrastructureOutcome).isEqualToIgnoringGivenFields(outcome, "infrastructureKey");
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testEcsInfraMapper() {
+    EcsInfrastructure ecsInfrastructure = EcsInfrastructure.builder()
+                                              .connectorRef(ParameterField.createValueField("connectorId"))
+                                              .region(ParameterField.createValueField("region"))
+                                              .cluster(ParameterField.createValueField("cluster"))
+                                              .build();
+
+    EcsInfrastructureOutcome expectedOutcome = EcsInfrastructureOutcome.builder()
+                                                   .connectorRef("connectorId")
+                                                   .region("region")
+                                                   .cluster("cluster")
+                                                   .environment(environment)
+                                                   .infrastructureKey("4e88dbd8bc5e4694fe1c72d90371e127a8bc3d1c")
+                                                   .build();
+
+    expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
+
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(ecsInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
 
   @Test

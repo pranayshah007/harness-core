@@ -17,7 +17,9 @@ import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.ListFilesInCommitRequest;
 import io.harness.beans.response.GitFileResponse;
+import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.impl.scm.SCMServiceGitClientImpl;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
@@ -104,6 +106,11 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   @Override
   public FindFilesInCommitResponse findFilesInCommit(ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails) {
     return scmServiceGitClient.findFilesInCommit(scmConnector, gitFilePathDetails);
+  }
+
+  @Override
+  public ListFilesInCommitResponse listFilesInCommit(ScmConnector scmConnector, ListFilesInCommitRequest request) {
+    return scmServiceGitClient.listFilesInCommit(scmConnector, request);
   }
 
   @Override

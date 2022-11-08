@@ -7,12 +7,8 @@
 
 package io.harness.serializer.morphia;
 
-import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.capability.CapabilityRequirement;
-import io.harness.capability.CapabilitySubjectPermission;
-import io.harness.capability.CapabilityTaskSelectionDetails;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
@@ -113,16 +109,11 @@ import software.wings.yaml.gitSync.YamlGitConfig;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.DEL)
-@BreakDependencyOn("io.harness.capability.CapabilityRequirement")
-@BreakDependencyOn("io.harness.capability.CapabilitySubjectPermission")
 public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
   private String cf = "helpers.ext.cloudformation.";
 
   @Override
   public void registerClasses(Set<Class> set) {
-    set.add(CapabilityRequirement.class);
-    set.add(CapabilitySubjectPermission.class);
-    set.add(CapabilityTaskSelectionDetails.class);
     set.add(HDelegateTask.class);
     set.add(ExecutionCapabilityDemander.class);
     set.add(ExecutionCapability.class);

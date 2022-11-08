@@ -37,8 +37,19 @@ func (b *sbtRunner) AutoDetectPackages() ([]string, error) {
 	return DetectPkgs(b.log, b.fs)
 }
 
-func (m *sbtRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
-	return []types.RunnableTest{}, nil
+func (b *sbtRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	javaTests, err := GetJavaTests()
+	if err != nil {
+		return tests, err
+	}
+	scalaTests, err := GetScalaTests()
+	if err != nil {
+		return tests, err
+	}
+	tests = append(tests, javaTests...)
+	tests = append(tests, scalaTests...)
+	return tests, nil
 }
 
 func (b *sbtRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
@@ -67,7 +78,7 @@ func (b *sbtRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, user
 			continue
 		}
 		set[t.Class] = struct{}{}
-		testsList = append(testsList, t.Pkg + "."+ t.Class)
+		testsList = append(testsList, t.Pkg+"."+t.Class)
 	}
 	return fmt.Sprintf("%s %s %s 'testOnly %s'", sbtCmd, userArgs, instrArg, strings.Join(testsList, " ")), nil
 }

@@ -31,6 +31,7 @@ import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
@@ -58,7 +59,8 @@ public class InputsValidator {
   @Inject private NgManagerReconcileClient ngManagerReconcileClient;
 
   public ValidateInputsResponseDTO validateInputsForTemplate(
-      String accountId, String orgId, String projectId, TemplateEntity templateEntity) {
+      String accountId, String orgId, String projectId, TemplateEntityGetResponse templateEntityGetResponse) {
+    TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     InputsValidationResponse inputsValidationResponse =
         validateInputsInternal(accountId, orgId, projectId, templateEntity.getYaml(), new HashMap<>());
 
@@ -66,7 +68,7 @@ public class InputsValidator {
         TemplateNodeErrorSummary.builder()
             .nodeInfo(
                 NodeInfo.builder().identifier(templateEntity.getIdentifier()).name(templateEntity.getName()).build())
-            .templateResponse(NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity))
+            .templateResponse(NGTemplateDtoMapper.writeTemplateResponseDto(templateEntityGetResponse))
             .childrenErrorNodes(inputsValidationResponse.getChildrenErrorNodes())
             .build();
     return ValidateInputsResponseDTO.builder()
@@ -224,9 +226,9 @@ public class InputsValidator {
       Map<String, TemplateEntity> templateCacheMap, int depth, InputsValidationResponse inputsValidationResponse) {
     JsonNode templateNodeValue = templateNode.getCurrJsonNode();
     // Template YAML corresponding to the TemplateRef and Version Label
-    TemplateEntity templateEntity = templateMergeServiceHelper.getLinkedTemplateEntity(
+    TemplateEntityGetResponse templateEntityGetResponse = templateMergeServiceHelper.getLinkedTemplateEntity(
         accountId, orgId, projectId, templateNodeValue, templateCacheMap);
-
+    TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     String templateYaml = templateEntity.getYaml();
 
     // verify template inputs of child template.
@@ -236,8 +238,8 @@ public class InputsValidator {
     // if childrenErrorNodes are not empty, then current node is also an error node
     if (!childValidationResponse.isValid()) {
       inputsValidationResponse.setValid(false);
-      inputsValidationResponse.addChildErrorNode(
-          createTemplateErrorNode(templateNode, templateEntity, childValidationResponse.getChildrenErrorNodes()));
+      inputsValidationResponse.addChildErrorNode(createTemplateErrorNode(
+          templateNode, templateEntityGetResponse, childValidationResponse.getChildrenErrorNodes()));
       return;
     }
 
@@ -258,8 +260,8 @@ public class InputsValidator {
     }
   }
 
-  private NodeErrorSummary createTemplateErrorNode(
-      YamlNode templateNode, TemplateEntity templateEntity, List<NodeErrorSummary> childrenErrorNodes) {
+  private NodeErrorSummary createTemplateErrorNode(YamlNode templateNode,
+      TemplateEntityGetResponse templateEntityGetResponse, List<NodeErrorSummary> childrenErrorNodes) {
     YamlNode parentNode = templateNode.getParentNode();
     return TemplateNodeErrorSummary.builder()
         .nodeInfo(NodeInfo.builder()
@@ -267,7 +269,7 @@ public class InputsValidator {
                       .name(parentNode != null ? parentNode.getName() : null)
                       .localFqn(YamlUtils.getFullyQualifiedName(templateNode))
                       .build())
-        .templateResponse(NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity))
+        .templateResponse(NGTemplateDtoMapper.writeTemplateResponseDto(templateEntityGetResponse))
         .childrenErrorNodes(childrenErrorNodes)
         .build();
   }

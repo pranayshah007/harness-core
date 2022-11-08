@@ -125,7 +125,7 @@ public class UserGroupMapper {
       case EMAIL:
         return EmailConfig.builder()
             .groupEmail(((EmailConfigDTO) dto).getGroupEmail())
-            .sendEmailToAllUsers(((EmailConfigDTO) dto).isSendEmailToAllUsers())
+            .sendEmailToAllUsers(((EmailConfigDTO) dto).getSendEmailToAllUsers())
             .build();
       default:
         throw new IllegalArgumentException("This is not a valid Notification Setting Type: " + dto.getType());
@@ -148,7 +148,7 @@ public class UserGroupMapper {
       case EMAIL:
         return EmailConfigDTO.builder()
             .groupEmail(((EmailConfig) entity).getGroupEmail())
-            .sendEmailToAllUsers(((EmailConfig) entity).isSendEmailToAllUsers())
+            .sendEmailToAllUsers(((EmailConfig) entity).getSendEmailToAllUsers())
             .build();
       default:
         throw new IllegalArgumentException("This is not a valid Notification Setting Type: " + entity.getType());

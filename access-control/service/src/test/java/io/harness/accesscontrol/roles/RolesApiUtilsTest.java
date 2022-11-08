@@ -21,9 +21,9 @@ import io.harness.beans.SortOrder;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.beans.PageRequest;
 import io.harness.rule.Owner;
-import io.harness.spec.server.accesscontrol.model.CreateRoleRequest;
-import io.harness.spec.server.accesscontrol.model.RolesResponse;
-import io.harness.spec.server.accesscontrol.model.RolesResponse.AllowedScopeLevelsEnum;
+import io.harness.spec.server.accesscontrol.v1.model.CreateRoleRequest;
+import io.harness.spec.server.accesscontrol.v1.model.RolesResponse;
+import io.harness.spec.server.accesscontrol.v1.model.RolesResponse.AllowedScopeLevelsEnum;
 
 import java.util.Collections;
 import javax.validation.Validation;

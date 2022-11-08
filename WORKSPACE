@@ -28,6 +28,14 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
 
+load("//:tools/bazel/openapi.bzl", "openapi_repositories")
+
+openapi_repositories(
+    codegen_cli_provider = "harness-swagger-v3",
+    codegen_cli_sha256 = "8153719ed24ff1bdcf6d5bbe8713d26091ff85a3b253c2224f6e5c8490e9643d",
+    codegen_cli_version = "3.0.35-harness-SNAPSHOT",
+)
+
 # Download the Go rules
 http_archive(
     name = "io_bazel_rules_go",
@@ -4543,7 +4551,7 @@ plain_artifacts = [
     "com.fasterxml.jackson.module:jackson-module-jsonSchema:2.13.4",
     "com.fasterxml.jackson.module:jackson-module-parameter-names:2.13.4",
     "com.fasterxml.uuid:java-uuid-generator:4.0.1",
-    "com.fasterxml.woodstox:woodstox-core:5.3.0",
+    "com.fasterxml.woodstox:woodstox-core:6.4.0",
     "com.fasterxml:classmate:1.4.0",
     "com.github.allbegray:slack-api:v1.3.0.RELEASE",
     "com.github.ben-manes.caffeine:caffeine:2.8.4",
@@ -4837,7 +4845,7 @@ plain_artifacts = [
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.42-RELEASE",
-    "io.harness:ff-java-server-sdk:1.0.5.1",
+    "io.harness:ff-java-server-sdk:1.0.5.2",
     "io.harness:access-control-server-spec:1.0.9",
     "io.harness:common-models:1.0.4",
     "io.harness:ng-manager-server-spec:1.0.25",
@@ -4868,9 +4876,9 @@ plain_artifacts = [
     "io.opencensus:opencensus-exporter-stats-prometheus:0.28.0",
     "io.opencensus:opencensus-impl:0.28.0",
     "io.perfmark:perfmark-api:0.19.0",
-    "io.projectreactor.netty:reactor-netty:1.0.19",
-    "io.projectreactor.netty:reactor-netty-core:1.0.19",
-    "io.projectreactor.netty:reactor-netty-http:1.0.19",
+    "io.projectreactor.netty:reactor-netty:1.0.24",
+    "io.projectreactor.netty:reactor-netty-core:1.0.24",
+    "io.projectreactor.netty:reactor-netty-http:1.0.24",
     "io.projectreactor:reactor-core:3.4.18",
     "io.prometheus:simpleclient:0.5.0",
     "io.prometheus:simpleclient_common:0.5.0",
@@ -5168,16 +5176,16 @@ plain_artifacts = [
     "org.springframework.kafka:spring-kafka:2.3.7.RELEASE",
     "org.springframework.retry:spring-retry:1.2.5.RELEASE",
     "org.springframework.security:spring-security-crypto:5.3.5.RELEASE",
-    "org.springframework:spring-aop:5.3.18",
-    "org.springframework:spring-beans:5.3.18",
-    "org.springframework:spring-context:5.3.18",
-    "org.springframework:spring-core:5.3.18",
-    "org.springframework:spring-expression:5.3.18",
-    "org.springframework:spring-jcl:5.3.18",
-    "org.springframework:spring-messaging:5.3.18",
-    "org.springframework:spring-test:5.3.18",
-    "org.springframework:spring-tx:5.3.18",
-    "org.springframework:spring-web:5.3.18",
+    "org.springframework:spring-aop:5.3.23",
+    "org.springframework:spring-beans:5.3.23",
+    "org.springframework:spring-context:5.3.23",
+    "org.springframework:spring-core:5.3.23",
+    "org.springframework:spring-expression:5.3.23",
+    "org.springframework:spring-jcl:5.3.23",
+    "org.springframework:spring-messaging:5.3.23",
+    "org.springframework:spring-test:5.3.23",
+    "org.springframework:spring-tx:5.3.23",
+    "org.springframework:spring-web:5.3.23",
     "org.threeten:threetenbp:1.4.1",
     "org.webjars.npm:viz.js-for-graphviz-java:2.1.3",
     "org.xerial.snappy:snappy-java:1.1.7.3",
@@ -5438,7 +5446,7 @@ maven_install(
 maven_install(
     name = "batch",
     artifacts = [
-        "com.fasterxml.jackson.core:jackson-databind:2.13.3",
+        "com.fasterxml.jackson.core:jackson-databind:2.13.4.2",
         "com.azure:azure-core:1.29.1",
         "com.azure:azure-identity:1.5.0",
         "com.azure:azure-storage-blob:12.16.0",

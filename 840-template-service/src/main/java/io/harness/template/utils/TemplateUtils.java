@@ -8,6 +8,7 @@
 package io.harness.template.utils;
 
 import io.harness.beans.Scope;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
@@ -44,18 +45,28 @@ public class TemplateUtils {
     return null;
   }
 
-  public void setupGitParentEntityDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public void setupGitParentEntityDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String repoFromTemplate, String connectorFromTemplate) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (null != gitEntityInfo) {
-      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getRepoName())) {
+      // Set Parent's Repo
+      if (EmptyPredicate.isNotEmpty(repoFromTemplate)) {
+        gitEntityInfo.setParentEntityRepoName(repoFromTemplate);
+      } else if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getRepoName())) {
         gitEntityInfo.setParentEntityRepoName(gitEntityInfo.getRepoName());
       }
-      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getConnectorRef())) {
+
+      // Set Parent's ConnectorRef
+      if (EmptyPredicate.isNotEmpty(connectorFromTemplate)) {
+        gitEntityInfo.setParentEntityConnectorRef(connectorFromTemplate);
+      } else if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getConnectorRef())) {
         gitEntityInfo.setParentEntityConnectorRef(gitEntityInfo.getConnectorRef());
       }
+      // Set Parent's Org identifier
       if (!GitAwareContextHelper.isNullOrDefault(orgIdentifier)) {
         gitEntityInfo.setParentEntityOrgIdentifier(orgIdentifier);
       }
+      // Set Parent's Project Identifier
       if (!GitAwareContextHelper.isNullOrDefault(projectIdentifier)) {
         gitEntityInfo.setParentEntityProjectIdentifier(projectIdentifier);
       }

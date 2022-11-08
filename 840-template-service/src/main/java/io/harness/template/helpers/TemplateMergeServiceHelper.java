@@ -39,6 +39,8 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.entity.TemplateEntityGetResponse;
+import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
@@ -73,7 +75,7 @@ public class TemplateMergeServiceHelper {
   private NGTemplateServiceHelper templateServiceHelper;
 
   // Gets the Template Entity linked to a YAML
-  public TemplateEntity getLinkedTemplateEntity(
+  public TemplateEntityGetResponse getLinkedTemplateEntity(
       String accountId, String orgId, String projectId, JsonNode yaml, Map<String, TemplateEntity> templateCacheMap) {
     String identifier = yaml.get(TEMPLATE_REF).asText();
     String versionLabel = "";
@@ -82,9 +84,9 @@ public class TemplateMergeServiceHelper {
       versionLabel = yaml.get(TEMPLATE_VERSION_LABEL).asText();
       versionMarker = versionLabel;
     }
-
-    return getLinkedTemplateEntityHelper(
+    TemplateEntity template = getLinkedTemplateEntityHelper(
         accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker);
+    return new TemplateEntityGetResponse(template, NGTemplateDtoMapper.getEntityGitDetails(template));
   }
 
   // Gets the Template Entity linked to a YAML
@@ -337,7 +339,9 @@ public class TemplateMergeServiceHelper {
       JsonNode template, Map<String, TemplateEntity> templateCacheMap) {
     JsonNode templateInputs = template.get(TEMPLATE_INPUTS);
 
-    TemplateEntity templateEntity = getLinkedTemplateEntity(accountId, orgId, projectId, template, templateCacheMap);
+    TemplateEntityGetResponse templateEntityGetResponse =
+        getLinkedTemplateEntity(accountId, orgId, projectId, template, templateCacheMap);
+    TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     String templateYaml = templateEntity.getYaml();
 
     JsonNode templateSpec;
@@ -499,8 +503,9 @@ public class TemplateMergeServiceHelper {
   private JsonNode validateTemplateInputs(String accountId, String orgId, String projectId, JsonNode linkedTemplate,
       Map<String, TemplateInputsErrorDTO> errorMap, Map<String, TemplateEntity> templateCacheMap) {
     String identifier = linkedTemplate.get(TEMPLATE_REF).asText();
-    TemplateEntity templateEntity =
+    TemplateEntityGetResponse templateEntityGetResponse =
         getLinkedTemplateEntity(accountId, orgId, projectId, linkedTemplate, templateCacheMap);
+    TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     JsonNode linkedTemplateInputs = linkedTemplate.get(TEMPLATE_INPUTS);
     if (linkedTemplateInputs == null) {
       return linkedTemplate;

@@ -32,9 +32,9 @@ import io.harness.resourcegroup.framework.v3.mapper.ResourceGroupApiUtils;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupRequest;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.spec.server.platform.ProjectResourceGroupsApi;
-import io.harness.spec.server.platform.model.CreateResourceGroupRequest;
-import io.harness.spec.server.platform.model.ResourceGroupsResponse;
+import io.harness.spec.server.resourcegroup.v1.ProjectResourceGroupsApi;
+import io.harness.spec.server.resourcegroup.v1.model.CreateResourceGroupRequest;
+import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupsResponse;
 
 import com.google.inject.Inject;
 import java.util.stream.Collectors;

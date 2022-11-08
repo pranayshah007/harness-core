@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.HARSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.app.impl.CIManagerTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.mongo.IndexCreator;
@@ -44,6 +45,7 @@ public class CIMongoIndexesTest extends CIManagerTestBase {
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testConfirmAllIndexesInManager() throws IOException {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setObjectFactory(objectFactory);

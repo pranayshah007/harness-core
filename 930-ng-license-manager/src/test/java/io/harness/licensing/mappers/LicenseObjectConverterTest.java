@@ -9,6 +9,7 @@ package io.harness.licensing.mappers;
 
 import static io.harness.licensing.LicenseTestConstant.DEFAULT_CI_MODULE_LICENSE;
 import static io.harness.licensing.LicenseTestConstant.DEFAULT_CI_MODULE_LICENSE_DTO;
+import static io.harness.licensing.LicenseTestConstant.HOSTING_CREDITS;
 import static io.harness.licensing.LicenseTestConstant.TOTAL_DEVELOPER;
 import static io.harness.rule.OwnerRule.ZHUO;
 
@@ -52,7 +53,8 @@ public class LicenseObjectConverterTest extends CategoryTest {
     defaultModueLicenseDTO = DEFAULT_CI_MODULE_LICENSE_DTO;
     defaultModuleLicense = DEFAULT_CI_MODULE_LICENSE;
 
-    expectedModuleLicense = CIModuleLicense.builder().numberOfCommitters(TOTAL_DEVELOPER).build();
+    expectedModuleLicense =
+        CIModuleLicense.builder().numberOfCommitters(TOTAL_DEVELOPER).hostingCredits(HOSTING_CREDITS).build();
     expectedModuleLicense.setId("id");
     expectedModuleLicense.setAccountIdentifier(ACCOUNT_IDENTIFIER);
     expectedModuleLicense.setModuleType(DEFAULT_MODULE_TYPE);
@@ -62,8 +64,12 @@ public class LicenseObjectConverterTest extends CategoryTest {
     expectedModuleLicense.setStartTime(1);
     expectedModuleLicense.setExpiryTime(1);
 
-    when(CIMapper.toEntity(any())).thenReturn(CIModuleLicense.builder().numberOfCommitters(TOTAL_DEVELOPER).build());
-    when(CIMapper.toDTO(any())).thenReturn(CIModuleLicenseDTO.builder().numberOfCommitters(TOTAL_DEVELOPER).build());
+    when(CIMapper.toEntity(any()))
+        .thenReturn(
+            CIModuleLicense.builder().numberOfCommitters(TOTAL_DEVELOPER).hostingCredits(HOSTING_CREDITS).build());
+    when(CIMapper.toDTO(any()))
+        .thenReturn(
+            CIModuleLicenseDTO.builder().numberOfCommitters(TOTAL_DEVELOPER).hostingCredits(HOSTING_CREDITS).build());
     when(mapperMap.get(DEFAULT_MODULE_TYPE)).thenReturn(CIMapper);
   }
 

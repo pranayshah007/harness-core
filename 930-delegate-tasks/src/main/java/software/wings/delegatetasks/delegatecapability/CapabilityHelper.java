@@ -17,6 +17,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
@@ -134,6 +135,11 @@ public class CapabilityHelper {
   }
 
   public static boolean isTaskParameterType(TaskData taskData) {
+    return taskData.getParameters() == null
+        || taskData.getParameters().length == 1 && taskData.getParameters()[0] instanceof TaskParameters;
+  }
+
+  public static boolean isTaskParameterTypeV2(TaskDataV2 taskData) {
     return taskData.getParameters() == null
         || taskData.getParameters().length == 1 && taskData.getParameters()[0] instanceof TaskParameters;
   }

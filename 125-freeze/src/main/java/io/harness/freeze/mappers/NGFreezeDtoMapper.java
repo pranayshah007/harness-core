@@ -10,22 +10,35 @@ package io.harness.freeze.mappers;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.freeze.beans.FilterType;
+import io.harness.freeze.beans.FreezeEntityRule;
+import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.FreezeType;
+import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.response.FreezeBannerDetails;
 import io.harness.freeze.beans.response.FreezeDetailedResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.yaml.FreezeConfig;
+import io.harness.freeze.beans.yaml.FreezeInfoConfig;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.helpers.FreezeTimeUtils;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.google.common.collect.Sets;
 import java.io.IOException;
+import java.text.ParseException;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class NGFreezeDtoMapper {
+  private static final long MIN_FREEZE_WINDOW_TIME = 1800000L;
+  private static final long MAX_FREEZE_WINDOW_TIME = 31536000000L;
+  DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a");
   public FreezeConfigEntity toFreezeConfigEntity(
       String accountId, String orgId, String projectId, String freezeConfigYaml, FreezeType type) {
     FreezeConfig freezeConfig = toFreezeConfig(freezeConfigYaml);
@@ -175,7 +188,7 @@ public class NGFreezeDtoMapper {
 
   private FreezeConfigEntity toFreezeConfigEntityResponse(String accountId, FreezeConfig freezeConfig,
       String freezeConfigYaml, FreezeType type, String orgId, String projectId) {
-    //    validateFreezeYaml(freezeConfig, orgId, projectId);
+    validateFreezeYaml(freezeConfig, orgId, projectId);
     String description = null;
     if (freezeConfig.getFreezeInfoConfig().getDescription() != null) {
       description = (String) freezeConfig.getFreezeInfoConfig().getDescription().fetchFinalValue();
@@ -215,6 +228,54 @@ public class NGFreezeDtoMapper {
       case PROJECT:
       default:
         return identifier;
+    }
+  }
+
+  public static void validateFreezeYaml(FreezeConfig freezeConfig, String orgId, String projectId) {
+    if (freezeConfig.getFreezeInfoConfig() == null) {
+      throw new InvalidRequestException("FreezeInfoConfig cannot be empty");
+    }
+    FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
+
+    List<FreezeEntityRule> rules = freezeInfoConfig.getRules();
+    List<FreezeWindow> windows = freezeInfoConfig.getWindows();
+    if (FreezeType.MANUAL.equals(freezeInfoConfig.getStatus())
+        && (EmptyPredicate.isEmpty(rules) || EmptyPredicate.isEmpty(windows))) {
+      throw new InvalidRequestException("Freeze Windows and Rules are required.");
+    }
+
+    // Currently we support only 1 window, Remove this validation after multiple windows are supported.
+    if (windows != null && windows.size() > 1) {
+      throw new InvalidRequestException("Multiple windows are not supported as of now.");
+    }
+
+    if (rules != null) {
+      rules.stream().forEach(freezeEntityRule -> {
+        freezeEntityRule.getEntityConfigList().stream().forEach(entityConfig -> {
+          if (!FilterType.ALL.equals(entityConfig.getFilterType())) {
+            if (EmptyPredicate.isEmpty(entityConfig.getEntityReference())) {
+              throw new InvalidRequestException("Entity references are empty");
+            }
+            if (FreezeEntityType.ENV_TYPE.equals(entityConfig.getFreezeEntityType())) {
+              Set<String> supportedEnvs = Sets.newHashSet("Production", "PreProduction");
+              if (!entityConfig.getEntityReference().stream().allMatch(
+                      entityReference -> supportedEnvs.contains(entityReference))) {
+                throw new InvalidRequestException("Supported EnvTypes are Production and PreProduction");
+              }
+            }
+          }
+        });
+      });
+    }
+
+    if (windows != null) {
+      windows.stream().forEach(freezeWindow -> {
+        try {
+          FreezeTimeUtils.validateTimeRange(freezeWindow);
+        } catch (ParseException e) {
+          throw new InvalidRequestException("Invalid time format provided.", e);
+        }
+      });
     }
   }
 }

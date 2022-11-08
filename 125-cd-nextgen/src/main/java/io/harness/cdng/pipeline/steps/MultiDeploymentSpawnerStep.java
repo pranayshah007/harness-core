@@ -76,12 +76,15 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     if (servicesMap.isEmpty()) {
       int currentIteration = 0;
       int totalIterations = environmentsMapList.size();
-      int maxConcurrency = 1;
-      if ((stepParameters.getEnvironments() != null
-              && shouldDeployInParallel(stepParameters.getEnvironments().getEnvironmentsMetadata()))
-          || (stepParameters.getEnvironmentGroup() != null
-              && shouldDeployInParallel(stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata()))) {
-        maxConcurrency = 0;
+      int maxConcurrency = 0;
+      if (stepParameters.getEnvironments() != null && stepParameters.getEnvironments().getEnvironmentsMetadata() != null
+              && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
+              && !stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel()
+          || stepParameters.getEnvironmentGroup() != null
+              && stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata() != null
+              && stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata().getParallel() != null
+              && !stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata().getParallel()) {
+        maxConcurrency = 1;
       }
       for (Map<String, String> environmentMap : environmentsMapList) {
         children.add(getChild(childNodeId, currentIteration, totalIterations, environmentMap,
@@ -94,10 +97,11 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     if (environmentsMapList.isEmpty()) {
       int currentIteration = 0;
       int totalIterations = servicesMap.size();
-      int maxConcurrency = 1;
-      if (stepParameters.getServices() != null
-          && shouldDeployInParallel(stepParameters.getServices().getServicesMetadata())) {
-        maxConcurrency = 0;
+      int maxConcurrency = 0;
+      if (stepParameters.getServices().getServicesMetadata() != null
+          && stepParameters.getServices().getServicesMetadata().getParallel() != null
+          && !stepParameters.getServices().getServicesMetadata().getParallel()) {
+        maxConcurrency = 1;
       }
       for (Map<String, String> serviceMap : servicesMap) {
         children.add(getChild(childNodeId, currentIteration, totalIterations, serviceMap,
@@ -109,29 +113,19 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
     boolean isServiceParallel = stepParameters.getServices() != null
         && shouldDeployInParallel(stepParameters.getServices().getServicesMetadata());
-    boolean isEnvironmentParallel =
-        (stepParameters.getEnvironments() != null
-            && shouldDeployInParallel(stepParameters.getEnvironments().getEnvironmentsMetadata()))
-        || (stepParameters.getEnvironmentGroup() != null
-            && shouldDeployInParallel(stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata()));
+    boolean isEnvironmentParallel = stepParameters.getEnvironmentGroup() != null
+        || (stepParameters.getEnvironments() != null
+            && shouldDeployInParallel(stepParameters.getEnvironments().getEnvironmentsMetadata()));
+
     int currentIteration = 0;
-    int totalIterations = servicesMap.size() + environmentsMapList.size();
+    int totalIterations = servicesMap.size() * environmentsMapList.size();
     int maxConcurrency = 0;
     if (isServiceParallel) {
-      if (isEnvironmentParallel) {
-        maxConcurrency = totalIterations;
-      } else {
+      if (!isEnvironmentParallel) {
         maxConcurrency = servicesMap.size();
+      } else {
+        maxConcurrency = totalIterations;
       }
-      for (Map<String, String> serviceMap : servicesMap) {
-        for (Map<String, String> environmentMap : environmentsMapList) {
-          children.add(
-              getChildForMultiServiceInfra(childNodeId, currentIteration, totalIterations, serviceMap, environmentMap));
-          currentIteration++;
-        }
-      }
-    } else if (isEnvironmentParallel) {
-      maxConcurrency = environmentsMapList.size();
       for (Map<String, String> environmentMap : environmentsMapList) {
         for (Map<String, String> serviceMap : servicesMap) {
           children.add(
@@ -139,8 +133,16 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
           currentIteration++;
         }
       }
+    } else if (isEnvironmentParallel) {
+      maxConcurrency = environmentsMapList.size();
+      for (Map<String, String> serviceMap : servicesMap) {
+        for (Map<String, String> environmentMap : environmentsMapList) {
+          children.add(
+              getChildForMultiServiceInfra(childNodeId, currentIteration, totalIterations, serviceMap, environmentMap));
+          currentIteration++;
+        }
+      }
     } else {
-      maxConcurrency = 1;
       for (Map<String, String> environmentMap : environmentsMapList) {
         for (Map<String, String> serviceMap : servicesMap) {
           children.add(

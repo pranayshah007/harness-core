@@ -9,10 +9,12 @@ package io.harness.steps.resourcerestraint;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
+import static io.harness.distribution.constraint.Consumer.State.REJECTED;
 import static io.harness.pms.sdk.core.execution.events.node.facilitate.FacilitatorResponse.FacilitatorResponseBuilder;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.ConstraintUnit;
 import io.harness.distribution.constraint.Consumer;
@@ -22,6 +24,7 @@ import io.harness.distribution.constraint.PermanentlyBlockedConsumerException;
 import io.harness.distribution.constraint.UnableToRegisterConsumerException;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.GeneralException;
 import io.harness.exception.PersistentLockException;
 import io.harness.exception.WingsException;
 import io.harness.lock.AcquiredLock;
@@ -120,6 +123,8 @@ public class ResourceRestraintFacilitator implements Facilitator {
               .passThroughData(buildPassThroughData(
                   specParameters, resourceRestraint, consumerId, releaseEntityId, renderedResourceUnit.getValue()))
               .build();
+        } else if (REJECTED == state) {
+          throw new GeneralException("Found already running resourceConstrains, marking this execution as failed");
         }
       } catch (InvalidPermitsException | UnableToRegisterConsumerException | PermanentlyBlockedConsumerException e) {
         log.error("Exception on ResourceRestraintStep for id [{}]", AmbianceUtils.obtainCurrentRuntimeId(ambiance), e);
@@ -154,6 +159,7 @@ public class ResourceRestraintFacilitator implements Facilitator {
         resourceRestraintInstanceService.getMaxOrder(resourceRestraint.getUuid()) + 1);
     constraintContext.put(ResourceRestraintKeys.capacity, resourceRestraint.getCapacity());
     constraintContext.put(ResourceRestraintKeys.name, resourceRestraint.getName());
+    constraintContext.put(FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE.name(), true);
 
     return constraintContext;
   }

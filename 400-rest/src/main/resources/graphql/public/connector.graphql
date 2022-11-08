@@ -199,6 +199,7 @@ type GitConnector implements Connector {
   customCommitDetails: CustomCommitDetails
   usageScope: UsageScope
   delegateSelectors: [String]
+  disableUserGitConfig: Boolean
 }
 type JenkinsConnector implements Connector {
   id: String

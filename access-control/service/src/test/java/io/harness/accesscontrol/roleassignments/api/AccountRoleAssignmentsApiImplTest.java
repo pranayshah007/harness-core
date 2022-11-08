@@ -66,8 +66,8 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
-import io.harness.spec.server.accesscontrol.model.Principal;
-import io.harness.spec.server.accesscontrol.model.RoleAssignmentResponse;
+import io.harness.spec.server.accesscontrol.v1.model.Principal;
+import io.harness.spec.server.accesscontrol.v1.model.RoleAssignmentResponse;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -159,10 +159,10 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
         .thenReturn(hasViewServiceAccountPermission);
   }
 
-  private io.harness.spec.server.accesscontrol.model.RoleAssignment getRoleAssignmentRequest(
+  private io.harness.spec.server.accesscontrol.v1.model.RoleAssignment getRoleAssignmentRequest(
       Principal.TypeEnum principalType) {
-    io.harness.spec.server.accesscontrol.model.RoleAssignment request =
-        new io.harness.spec.server.accesscontrol.model.RoleAssignment();
+    io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
+        new io.harness.spec.server.accesscontrol.v1.model.RoleAssignment();
     request.setSlug(randomAlphabetic(10));
     request.setRole(randomAlphabetic(10));
     request.setResourceGroup(randomAlphabetic(10));
@@ -285,7 +285,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testCreate() {
-    io.harness.spec.server.accesscontrol.model.RoleAssignment request =
+    io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.USER);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
     RoleAssignmentDTO roleAssignmentDTOClone = (RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO);
@@ -303,7 +303,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testCreateSyncDependencies() {
-    io.harness.spec.server.accesscontrol.model.RoleAssignment request =
+    io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.USER);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
     RoleAssignmentDTO roleAssignmentDTOClone = (RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO);
@@ -321,7 +321,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testCreateInvalidPrincipal() {
-    io.harness.spec.server.accesscontrol.model.RoleAssignment request =
+    io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.SERVICE);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
     RoleAssignmentDTO roleAssignmentDTOClone = (RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO);
@@ -373,7 +373,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testGet() {
-    io.harness.spec.server.accesscontrol.model.RoleAssignment request =
+    io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.USER);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
     Scope scope = ScopeMapper.fromParams(harnessScopeParams);
@@ -396,7 +396,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testDelete() {
-    io.harness.spec.server.accesscontrol.model.RoleAssignment request =
+    io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.USER);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
     Scope scope = ScopeMapper.fromParams(harnessScopeParams);
@@ -428,7 +428,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testDeleteNotFound() {
-    io.harness.spec.server.accesscontrol.model.RoleAssignment request =
+    io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.USER);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
     Scope scope = ScopeMapper.fromParams(harnessScopeParams);
@@ -447,7 +447,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testDeleteInvalidPrincipal() {
-    io.harness.spec.server.accesscontrol.model.RoleAssignment request =
+    io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.SERVICE);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
     Scope scope = ScopeMapper.fromParams(harnessScopeParams);
@@ -469,7 +469,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testDeleteActionNotAllowed() {
-    io.harness.spec.server.accesscontrol.model.RoleAssignment request =
+    io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.USER);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
     Scope scope = ScopeMapper.fromParams(harnessScopeParams);

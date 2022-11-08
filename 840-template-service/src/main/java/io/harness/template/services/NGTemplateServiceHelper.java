@@ -239,6 +239,37 @@ public class NGTemplateServiceHelper {
     return criteria;
   }
 
+  public Criteria formCriteriaForRepoListing(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      boolean includeAllTemplatesAccessibleAtScope) {
+    Criteria criteria = new Criteria();
+    criteria.and(TemplateEntityKeys.accountId).is(accountIdentifier);
+
+    Criteria includeAllTemplatesCriteria = null;
+    if (includeAllTemplatesAccessibleAtScope) {
+      includeAllTemplatesCriteria = getCriteriaToReturnAllTemplatesAccessible(orgIdentifier, projectIdentifier);
+    } else {
+      if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+        criteria.and(TemplateEntityKeys.orgIdentifier).is(orgIdentifier);
+        if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+          criteria.and(TemplateEntityKeys.projectIdentifier).is(projectIdentifier);
+        } else {
+          criteria.and(TemplateEntityKeys.projectIdentifier).exists(false);
+        }
+      } else {
+        criteria.and(TemplateEntityKeys.orgIdentifier).exists(false);
+        criteria.and(TemplateEntityKeys.projectIdentifier).exists(false);
+      }
+    }
+    List<Criteria> criteriaList = new ArrayList<>();
+    if (includeAllTemplatesCriteria != null) {
+      criteriaList.add(includeAllTemplatesCriteria);
+    }
+    if (criteriaList.size() != 0) {
+      criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+    }
+    return criteria;
+  }
+
   private void populateFilterUsingIdentifier(Criteria criteria, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull String filterIdentifier, String searchTerm,
       Criteria includeAllTemplatesCriteria) {

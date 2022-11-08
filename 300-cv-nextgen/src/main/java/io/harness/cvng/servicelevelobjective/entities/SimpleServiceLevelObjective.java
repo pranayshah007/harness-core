@@ -38,7 +38,7 @@ public class SimpleServiceLevelObjective extends AbstractServiceLevelObjective {
   }
 
   public static class SimpleServiceLevelObjectiveUpdatableEntity
-      extends AbstractServiceLevelObjectiveUpdatableEntity<SimpleServiceLevelObjective, SimpleServiceLevelObjective> {
+      extends AbstractServiceLevelObjectiveUpdatableEntity<SimpleServiceLevelObjective> {
     @Override
     public void setUpdateOperations(UpdateOperations<SimpleServiceLevelObjective> updateOperations,
         SimpleServiceLevelObjective simpleServiceLevelObjective) {

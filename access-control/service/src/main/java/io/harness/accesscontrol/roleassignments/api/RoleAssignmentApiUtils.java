@@ -56,9 +56,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
-import io.harness.spec.server.accesscontrol.model.Principal;
-import io.harness.spec.server.accesscontrol.model.RoleAssignment;
-import io.harness.spec.server.accesscontrol.model.RoleAssignmentResponse;
+import io.harness.spec.server.accesscontrol.v1.model.Principal;
+import io.harness.spec.server.accesscontrol.v1.model.RoleAssignment;
+import io.harness.spec.server.accesscontrol.v1.model.RoleAssignmentResponse;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;

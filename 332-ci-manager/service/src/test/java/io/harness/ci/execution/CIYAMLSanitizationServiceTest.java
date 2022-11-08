@@ -8,6 +8,7 @@
 package io.harness.ci.execution;
 
 import static io.harness.rule.OwnerRule.HEN;
+import static io.harness.rule.OwnerRule.JAMIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,6 +43,15 @@ public class CIYAMLSanitizationServiceTest extends CIExecutionTestBase {
     } catch (Exception e) {
     }
 
+    assertThat(validate).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = JAMIE)
+  @Category(UnitTests.class)
+  public void testValidRunTests() {
+    List<ExecutionWrapperConfig> steps = K8InitializeTaskUtilsHelper.getRunTestExecutionWrapperConfigList();
+    boolean validate = ciyamlSanitizationService.validate(steps);
     assertThat(validate).isEqualTo(true);
   }
 

@@ -13,15 +13,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.common.StageElementParameters;
+import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
+import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
@@ -38,6 +41,7 @@ import io.harness.steps.customstage.CustomStageStep;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -77,8 +81,9 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     }
     dependenciesNodeMap.put(stepsField.getNode().getUuid(), stepsField);
 
-    // TODO : add support for strategy
-    // addStrategyFieldDependencyIfPresent(ctx, field, dependenciesNodeMap, metadataMap);
+    // adding support for strategy
+    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
+        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, metadataMap, getBuild(ctx.getDependency()));
 
     planCreationResponseMap.put(stepsField.getNode().getUuid(),
         PlanCreationResponse.builder()
@@ -93,15 +98,32 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   }
 
   @Override
+  public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, YamlField config) {
+    Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
+    YamlField stageYamlField = context.getCurrentField();
+    String nextNodeUuid = null;
+    if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
+        && context.getDependency().getMetadataMap().containsKey("nextId")) {
+      nextNodeUuid =
+          (String) kryoSerializer.asObject(context.getDependency().getMetadataMap().get("nextId").toByteArray());
+    }
+    if (StrategyUtilsV1.isWrappedUnderStrategy(context.getCurrentField())) {
+      stageYamlFieldMap = StrategyUtilsV1.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);
+    }
+    return GraphLayoutResponse.builder().layoutNodes(stageYamlFieldMap).build();
+  }
+
+  @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
     CustomStageSpecParams params = CustomStageSpecParams.builder().childNodeID(childrenNodeIds.get(0)).build();
+    String name = config.getNodeName();
     PlanNodeBuilder builder =
         PlanNode.builder()
-            .uuid(config.getUuid())
-            .identifier(config.getId())
+            .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, config.getUuid()))
+            .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, config.getId()))
             .stepType(CustomStageStep.STEP_TYPE)
             .group(StepOutcomeGroup.STAGE.name())
-            .name(config.getName())
+            .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, name))
             .skipUnresolvedExpressionsCheck(true)
             .stepParameters(StageElementParameters.builder().specConfig(params).build())
             .facilitatorObtainment(
@@ -110,25 +132,28 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
                     .build())
             .skipExpressionChain(false);
 
-    AdviserObtainment adviser = getBuild(ctx.getDependency());
-    if (adviser != null) {
-      builder.adviserObtainment(adviser);
+    // If strategy present then don't add advisers. Strategy node will take care of running the stage nodes.
+    if (config.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField("strategy") == null) {
+      builder.adviserObtainments(getBuild(ctx.getDependency()));
     }
     return builder.build();
   }
 
-  private AdviserObtainment getBuild(Dependency dependency) {
+  private List<AdviserObtainment> getBuild(Dependency dependency) {
+    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
         || !dependency.getMetadataMap().containsKey("nextId")) {
-      return null;
+      return adviserObtainments;
     }
 
     String nextId = (String) kryoSerializer.asObject(dependency.getMetadataMap().get("nextId").toByteArray());
-    return AdviserObtainment.newBuilder()
-        .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-        .setParameters(
-            ByteString.copyFrom(kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
-        .build();
+    adviserObtainments.add(
+        AdviserObtainment.newBuilder()
+            .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
+            .setParameters(ByteString.copyFrom(
+                kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
+            .build());
+    return adviserObtainments;
   }
 
   @Override
