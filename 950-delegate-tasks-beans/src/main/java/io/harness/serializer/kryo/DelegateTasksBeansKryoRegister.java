@@ -1950,12 +1950,5 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AMITag.class, 60013);
     kryo.register(AMIFilter.class, 60014);
     kryo.register(EmptyHostDelegateConfig.class, 60015);
-
-    // Elastigroup
-    kryo.register(ElastigroupStartupScriptFetchRequest.class, 573545);
-    kryo.register(ElastigroupStartupScriptFetchResponse.class, 573546);
-    kryo.register(ElastigroupSetupCommandRequest.class, 573547);
-    kryo.register(ElastigroupSetupResponse.class, 573548);
-    kryo.register(ElastigroupSetupResult.class, 573549);
   }
 }
