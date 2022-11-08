@@ -80,7 +80,6 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest = (ElastigroupSetupCommandRequest) elastigroupCommandRequest;
 
     timeoutInMillis = elastigroupSetupCommandRequest.getTimeoutIntervalInMin() * 60000;
-//    ecsInfraConfig = elastigroupSetupCommandRequest.getEcsInfraConfig();
 
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
         iLogStreamingTaskClient, ElastigroupCommandUnitConstants.createSetup.toString(), true, commandUnitsProgress);

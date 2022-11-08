@@ -241,7 +241,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
                 .setStatus(CommandExecutionStatus.SUCCESS.getUnitStatus())
                 .build());
 
-        //     Render expressions for all file content fetched from Harness File Store
+        //Render expressions for all file content fetched from Harness File Store
         if (elastigroupParameters != null) {
           elastigroupParameters = renderExpression(ambiance, elastigroupParameters);
         }
@@ -391,10 +391,10 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
       else if(responseData instanceof ElastigroupParametersFetchResponse) { // if EcsGitFetchResponse is received
 
         ElastigroupParametersFetchResponse elastigroupParametersFetchResponse = (ElastigroupParametersFetchResponse) responseData;
-        ElastigroupStartupScriptFetchPassThroughData elastigroupStartupScriptFetchPassThroughData = (ElastigroupStartupScriptFetchPassThroughData) passThroughData;
+        ElastigroupParametersFetchPassThroughData elastigroupParametersFetchPassThroughData = (ElastigroupParametersFetchPassThroughData) passThroughData;
 
         taskChainResponse = handleElastigroupParametersFetchResponse(
-                elastigroupParametersFetchResponse, elastigroupStepExecutor, ambiance, stepElementParameters, elastigroupStartupScriptFetchPassThroughData);
+                elastigroupParametersFetchResponse, elastigroupStepExecutor, ambiance, stepElementParameters, elastigroupParametersFetchPassThroughData);
       }
     } catch (Exception e) {
       taskChainResponse =
@@ -432,14 +432,14 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
   private TaskChainResponse handleElastigroupParametersFetchResponse(ElastigroupParametersFetchResponse elastigroupParametersFetchResponse,
                                                                              ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
-                                                                             ElastigroupStartupScriptFetchPassThroughData elastigroupStartupScriptFetchPassThroughData) {
+                                                                             ElastigroupParametersFetchPassThroughData elastigroupParametersFetchPassThroughData) {
     if (elastigroupParametersFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       return handleFailureElastigroupParametersFetchTask(elastigroupParametersFetchResponse);
     }
 
     return executeElastigroupTask(elastigroupStepExecutor, ambiance, stepElementParameters,
-            elastigroupParametersFetchResponse.getUnitProgressData(), elastigroupStartupScriptFetchPassThroughData.getStartupScript(),
-            elastigroupStartupScriptFetchPassThroughData.getInfrastructureOutcome(), elastigroupParametersFetchResponse.getElastigroupParameters());
+            elastigroupParametersFetchResponse.getUnitProgressData(), elastigroupParametersFetchPassThroughData.getStartupScript(),
+            elastigroupParametersFetchPassThroughData.getInfrastructureOutcome(), renderExpression(ambiance, elastigroupParametersFetchResponse.getElastigroupParameters()));
   }
 
   private TaskChainResponse executeElastigroupTask(ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
