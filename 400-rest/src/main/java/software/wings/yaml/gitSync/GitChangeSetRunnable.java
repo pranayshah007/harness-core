@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 
 import static software.wings.beans.yaml.YamlConstants.GIT_YAML_LOG_PREFIX;
@@ -124,7 +125,7 @@ public class GitChangeSetRunnable implements Runnable {
 
   private void processChangeSet(YamlChangeSet yamlChangeSet) {
     final String accountId = yamlChangeSet.getAccountId();
-    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_NESTS);
          AutoLogContext ignore2 = createLogContextForChangeSet(yamlChangeSet)) {
       log.info(GIT_YAML_LOG_PREFIX + "Processing changeSetId: [{}]", yamlChangeSet.getUuid());
 
@@ -176,7 +177,7 @@ public class GitChangeSetRunnable implements Runnable {
 
   private YamlChangeSet getQueuedChangeSetForWaitingQueueKey(String accountId, String queueKey) {
     try (
-        AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+        AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_NESTS);
         AutoLogContext ignore2 = YamlProcessingLogContext.builder().changeSetQueueKey(queueKey).build(OVERRIDE_ERROR)) {
       return yamlChangeSetService.getQueuedChangeSetForWaitingQueueKey(
           accountId, queueKey, getMaxRunningChangesetsForAccount());
