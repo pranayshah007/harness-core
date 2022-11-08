@@ -190,10 +190,12 @@ public class EcsStepCommonHelper extends EcsStepUtils {
                 .ecsScalableTargetManifestContentList(ecsHarnessStoreContent.getScalableTargetHarnessContentList())
                 .ecsScalingPolicyManifestContentList(ecsHarnessStoreContent.getScalingPolicyHarnessContentList())
                 .build();
-        EcsS3FetchPassThroughData ecsS3FetchPassThroughData = EcsS3FetchPassThroughData.builder()
-                                                                  .infrastructureOutcome(infrastructureOutcome)
-                                                                  .ecsOtherManifestsContent(ecsHarnessManifestsContent)
-                                                                  .build();
+        EcsS3FetchPassThroughData ecsS3FetchPassThroughData =
+            EcsS3FetchPassThroughData.builder()
+                .infrastructureOutcome(infrastructureOutcome)
+                .ecsOtherStoreContents(ecsHarnessManifestsContent)
+                .otherStoreTargetGroupArnKey(ecsHarnessStoreContent.getTargetGroupArnKey())
+                .build();
         taskChainResponse = prepareEcsManifestS3FetchTask(
             ambiance, stepElementParameters, ecsS3FetchPassThroughData, ecsS3ManifestFileConfigs);
       }
@@ -425,7 +427,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     List<EcsS3FetchFileConfig> ecsScalingPolicyS3FetchFileConfigs = new ArrayList<>();
     if (CollectionUtils.isNotEmpty(ecsScalingPolicyManifestOutcomes)) {
       for (ManifestOutcome ecsScalingPolicyManifestOutcome : ecsScalingPolicyManifestOutcomes) {
-        if (ManifestStoreType.HARNESS.equals(ecsScalingPolicyManifestOutcome.getStore().getKind())) {
+        if (ManifestStoreType.S3.equals(ecsScalingPolicyManifestOutcome.getStore().getKind())) {
           ecsScalingPolicyS3FetchFileConfigs.add(
               getEcsS3FetchFilesConfigFromManifestOutcome(ecsScalingPolicyManifestOutcome, ambiance, ecsStepHelper));
         }
@@ -844,6 +846,13 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
         taskChainResponse = handleEcsGitFetchFilesResponseCanary(
             ecsGitFetchResponse, ecsStepExecutor, ambiance, stepElementParameters, ecsGitFetchPassThroughData);
+      } else if (responseData instanceof EcsS3FetchResponse) { // if EcsS3FetchResponse is received
+
+        EcsS3FetchResponse ecsS3FetchResponse = (EcsS3FetchResponse) responseData;
+        EcsS3FetchPassThroughData ecsS3FetchPassThroughData = (EcsS3FetchPassThroughData) passThroughData;
+
+        taskChainResponse = handleEcsS3FetchFilesResponseCanary(
+            ecsS3FetchResponse, ecsStepExecutor, ambiance, stepElementParameters, ecsS3FetchPassThroughData);
       }
     } catch (Exception e) {
       taskChainResponse =
@@ -875,6 +884,12 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         taskChainResponse = handleEcsGitFetchFilesResponseBlueGreen(
             ecsGitFetchResponse, ecsStepExecutor, ambiance, stepElementParameters, ecsGitFetchPassThroughData);
 
+      } else if (responseData instanceof EcsS3FetchResponse) {
+        EcsS3FetchResponse ecsS3FetchResponse = (EcsS3FetchResponse) responseData;
+        EcsS3FetchPassThroughData ecsS3FetchPassThroughData = (EcsS3FetchPassThroughData) passThroughData;
+
+        taskChainResponse = handleEcsS3FetchFilesResponseBlueGreen(
+            ecsS3FetchResponse, ecsStepExecutor, ambiance, stepElementParameters, ecsS3FetchPassThroughData);
       } else if (responseData
           instanceof EcsBlueGreenPrepareRollbackDataResponse) { // if EcsBlueGreenPrepareRollbackDataResponse is
                                                                 // received
@@ -935,6 +950,55 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   public EcsInfraConfig getEcsInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     return ecsEntityHelper.getEcsInfraConfig(infrastructure, ngAccess);
+  }
+
+  private EcsManifestsContent mergeManifestsFromS3AndOtherFileStore(
+      EcsS3FetchResponse ecsS3FetchResponse, Ambiance ambiance, EcsS3FetchPassThroughData ecsS3FetchPassThroughData) {
+    EcsManifestsContent ecsOtherStoreContent = ecsS3FetchPassThroughData.getEcsOtherStoreContents();
+
+    String ecsTaskDefinitionFileContent;
+    if (ecsS3FetchResponse.getEcsS3TaskDefinitionContent() != null) {
+      ecsTaskDefinitionFileContent =
+          engineExpressionService.renderExpression(ambiance, ecsS3FetchResponse.getEcsS3TaskDefinitionContent());
+    } else {
+      ecsTaskDefinitionFileContent = ecsOtherStoreContent.getEcsTaskDefinitionFileContent();
+    }
+
+    String ecsServiceDefinitionFileContent;
+    if (ecsS3FetchResponse.getEcsS3ServiceDefinitionContent() != null) {
+      ecsServiceDefinitionFileContent =
+          engineExpressionService.renderExpression(ambiance, ecsS3FetchResponse.getEcsS3ServiceDefinitionContent());
+    } else {
+      ecsServiceDefinitionFileContent = ecsOtherStoreContent.getEcsServiceDefinitionFileContent();
+    }
+
+    List<String> ecsScalableTargetFileContentList = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(ecsS3FetchResponse.getEcsS3ScalableTargetContents())) {
+      for (String fileContent : ecsS3FetchResponse.getEcsS3ScalableTargetContents()) {
+        ecsScalableTargetFileContentList.add(engineExpressionService.renderExpression(ambiance, fileContent));
+      }
+    }
+
+    if (CollectionUtils.isNotEmpty((ecsOtherStoreContent.getEcsScalableTargetManifestContentList()))) {
+      ecsScalableTargetFileContentList.addAll(ecsOtherStoreContent.getEcsScalableTargetManifestContentList());
+    }
+
+    List<String> ecsScalingPolicyFileContentList = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(ecsS3FetchResponse.getEcsS3ScalingPolicyContents())) {
+      for (String fileContent : ecsS3FetchResponse.getEcsS3ScalingPolicyContents()) {
+        ecsScalingPolicyFileContentList.add(engineExpressionService.renderExpression(ambiance, fileContent));
+      }
+    }
+
+    if (CollectionUtils.isNotEmpty((ecsOtherStoreContent.getEcsScalingPolicyManifestContentList()))) {
+      ecsScalingPolicyFileContentList.addAll(ecsOtherStoreContent.getEcsScalingPolicyManifestContentList());
+    }
+    return EcsManifestsContent.builder()
+        .ecsTaskDefinitionFileContent(ecsTaskDefinitionFileContent)
+        .ecsServiceDefinitionFileContent(ecsServiceDefinitionFileContent)
+        .ecsScalableTargetManifestContentList(ecsScalableTargetFileContentList)
+        .ecsScalingPolicyManifestContentList(ecsScalingPolicyFileContentList)
+        .build();
   }
 
   private EcsManifestsContent mergeManifestsFromGitAndHarnessFileStore(EcsGitFetchResponse ecsGitFetchResponse,
@@ -1005,7 +1069,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     }
 
     // mergeManifests Content
-    EcsManifestsContent ecsManifestsContent = EcsManifestsContent.builder().build();
+    EcsManifestsContent ecsManifestsContent =
+        mergeManifestsFromS3AndOtherFileStore(ecsS3FetchResponse, ambiance, ecsS3FetchPassThroughData);
 
     EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData =
         EcsPrepareRollbackDataPassThroughData.builder()
@@ -1045,7 +1110,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       EcsS3FetchPassThroughData ecsS3FetchPassThroughData =
           EcsS3FetchPassThroughData.builder()
               .infrastructureOutcome(ecsGitFetchPassThroughData.getInfrastructureOutcome())
-              .ecsOtherManifestsContent(ecsManifestsContent)
+              .ecsOtherStoreContents(ecsManifestsContent)
               .build();
       taskChainResponse = prepareEcsManifestS3FetchTask(ambiance, stepElementParameters, ecsS3FetchPassThroughData,
           ecsGitFetchPassThroughData.getEcsS3ManifestFileConfigs());
@@ -1053,20 +1118,20 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     return taskChainResponse;
   }
 
-  private TaskChainResponse handleEcsGitFetchFilesResponseCanary(EcsGitFetchResponse ecsGitFetchResponse,
+  private TaskChainResponse handleEcsS3FetchFilesResponseCanary(EcsS3FetchResponse ecsS3FetchResponse,
       EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
-      EcsGitFetchPassThroughData ecsGitFetchPassThroughData) {
-    if (ecsGitFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
-      return handleFailureGitTask(ecsGitFetchResponse);
+      EcsS3FetchPassThroughData ecsS3FetchPassThroughData) {
+    if (ecsS3FetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
+      return null;
     }
 
     EcsManifestsContent ecsManifestsContent =
-        mergeManifestsFromGitAndHarnessFileStore(ecsGitFetchResponse, ambiance, ecsGitFetchPassThroughData);
+        mergeManifestsFromS3AndOtherFileStore(ecsS3FetchResponse, ambiance, ecsS3FetchPassThroughData);
 
     EcsExecutionPassThroughData ecsExecutionPassThroughData =
         EcsExecutionPassThroughData.builder()
-            .infrastructure(ecsGitFetchPassThroughData.getInfrastructureOutcome())
-            .lastActiveUnitProgressData(ecsGitFetchResponse.getUnitProgressData())
+            .infrastructure(ecsS3FetchPassThroughData.getInfrastructureOutcome())
+            .lastActiveUnitProgressData(ecsS3FetchResponse.getUnitProgressData())
             .build();
 
     EcsStepExecutorParams ecsStepExecutorParams =
@@ -1079,7 +1144,48 @@ public class EcsStepCommonHelper extends EcsStepUtils {
             .build();
 
     return ecsStepExecutor.executeEcsTask(ambiance, stepElementParameters, ecsExecutionPassThroughData,
-        ecsGitFetchResponse.getUnitProgressData(), ecsStepExecutorParams);
+        ecsS3FetchResponse.getUnitProgressData(), ecsStepExecutorParams);
+  }
+
+  private TaskChainResponse handleEcsGitFetchFilesResponseCanary(EcsGitFetchResponse ecsGitFetchResponse,
+      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsGitFetchPassThroughData ecsGitFetchPassThroughData) {
+    if (ecsGitFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
+      return handleFailureGitTask(ecsGitFetchResponse);
+    }
+
+    EcsManifestsContent ecsManifestsContent =
+        mergeManifestsFromGitAndHarnessFileStore(ecsGitFetchResponse, ambiance, ecsGitFetchPassThroughData);
+
+    TaskChainResponse taskChainResponse = null;
+    if (ecsGitFetchPassThroughData.getEcsS3ManifestFileConfigs() == null) {
+      EcsExecutionPassThroughData ecsExecutionPassThroughData =
+          EcsExecutionPassThroughData.builder()
+              .infrastructure(ecsGitFetchPassThroughData.getInfrastructureOutcome())
+              .lastActiveUnitProgressData(ecsGitFetchResponse.getUnitProgressData())
+              .build();
+
+      EcsStepExecutorParams ecsStepExecutorParams =
+          EcsStepExecutorParams.builder()
+              .shouldOpenFetchFilesLogStream(false)
+              .ecsTaskDefinitionManifestContent(ecsManifestsContent.getEcsTaskDefinitionFileContent())
+              .ecsServiceDefinitionManifestContent(ecsManifestsContent.getEcsServiceDefinitionFileContent())
+              .ecsScalableTargetManifestContentList(ecsManifestsContent.getEcsScalableTargetManifestContentList())
+              .ecsScalingPolicyManifestContentList(ecsManifestsContent.getEcsScalingPolicyManifestContentList())
+              .build();
+
+      taskChainResponse = ecsStepExecutor.executeEcsTask(ambiance, stepElementParameters, ecsExecutionPassThroughData,
+          ecsGitFetchResponse.getUnitProgressData(), ecsStepExecutorParams);
+    } else {
+      EcsS3FetchPassThroughData ecsS3FetchPassThroughData =
+          EcsS3FetchPassThroughData.builder()
+              .infrastructureOutcome(ecsGitFetchPassThroughData.getInfrastructureOutcome())
+              .ecsOtherStoreContents(ecsManifestsContent)
+              .build();
+      taskChainResponse = prepareEcsManifestS3FetchTask(ambiance, stepElementParameters, ecsS3FetchPassThroughData,
+          ecsGitFetchPassThroughData.getEcsS3ManifestFileConfigs());
+    }
+    return taskChainResponse;
   }
 
   private TaskChainResponse handleEcsGitFetchFilesResponseRunTask(EcsGitFetchRunTaskResponse ecsGitFetchRunTaskResponse,
@@ -1136,6 +1242,79 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     return ecsStepExecutor.executeEcsTask(ambiance, stepElementParameters, ecsExecutionPassThroughData,
         ecsGitFetchRunTaskResponse.getUnitProgressData(), ecsStepExecutorParams);
+  }
+
+  private TaskChainResponse handleEcsS3FetchFilesResponseBlueGreen(EcsS3FetchResponse ecsS3FetchResponse,
+      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsS3FetchPassThroughData ecsS3FetchPassThroughData) {
+    if (ecsS3FetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
+      return null;
+    }
+    EcsManifestsContent ecsOtherStoreContent = ecsS3FetchPassThroughData.getEcsOtherStoreContents();
+
+    String ecsTaskDefinitionFileContent;
+    if (ecsS3FetchResponse.getEcsS3TaskDefinitionContent() != null) {
+      ecsTaskDefinitionFileContent =
+          engineExpressionService.renderExpression(ambiance, ecsS3FetchResponse.getEcsS3TaskDefinitionContent());
+    } else {
+      ecsTaskDefinitionFileContent = ecsOtherStoreContent.getEcsTaskDefinitionFileContent();
+    }
+
+    StringBuilder key = new StringBuilder();
+    if (ecsS3FetchPassThroughData.getOtherStoreTargetGroupArnKey() != null) {
+      key = key.append(ecsS3FetchPassThroughData.getOtherStoreTargetGroupArnKey());
+    } else {
+      long timeStamp = System.currentTimeMillis();
+      key = key.append(timeStamp).append("targetGroup");
+    }
+
+    String ecsServiceDefinitionFileContent;
+    if (ecsS3FetchResponse.getEcsS3ServiceDefinitionContent() != null) {
+      ecsServiceDefinitionFileContent = ecsS3FetchResponse.getEcsS3ServiceDefinitionContent();
+      if (ecsServiceDefinitionFileContent.contains(TARGET_GROUP_ARN_EXPRESSION)) {
+        ecsServiceDefinitionFileContent =
+            ecsServiceDefinitionFileContent.replace(TARGET_GROUP_ARN_EXPRESSION, key.toString());
+      }
+      ecsServiceDefinitionFileContent =
+          engineExpressionService.renderExpression(ambiance, ecsServiceDefinitionFileContent);
+    } else {
+      ecsServiceDefinitionFileContent = ecsOtherStoreContent.getEcsServiceDefinitionFileContent();
+    }
+
+    List<String> ecsScalableTargetFileContentList = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(ecsS3FetchResponse.getEcsS3ScalableTargetContents())) {
+      for (String fileContent : ecsS3FetchResponse.getEcsS3ScalableTargetContents()) {
+        ecsScalableTargetFileContentList.add(engineExpressionService.renderExpression(ambiance, fileContent));
+      }
+    }
+
+    if (CollectionUtils.isNotEmpty((ecsOtherStoreContent.getEcsScalableTargetManifestContentList()))) {
+      ecsScalableTargetFileContentList.addAll(ecsOtherStoreContent.getEcsScalableTargetManifestContentList());
+    }
+
+    List<String> ecsScalingPolicyFileContentList = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(ecsS3FetchResponse.getEcsS3ScalingPolicyContents())) {
+      for (String fileContent : ecsS3FetchResponse.getEcsS3ScalingPolicyContents()) {
+        ecsScalingPolicyFileContentList.add(engineExpressionService.renderExpression(ambiance, fileContent));
+      }
+    }
+
+    if (CollectionUtils.isNotEmpty((ecsOtherStoreContent.getEcsScalingPolicyManifestContentList()))) {
+      ecsScalingPolicyFileContentList.addAll(ecsOtherStoreContent.getEcsScalingPolicyManifestContentList());
+    }
+
+    EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData =
+        EcsPrepareRollbackDataPassThroughData.builder()
+            .infrastructureOutcome(ecsS3FetchPassThroughData.getInfrastructureOutcome())
+            .ecsTaskDefinitionManifestContent(ecsTaskDefinitionFileContent)
+            .ecsServiceDefinitionManifestContent(ecsServiceDefinitionFileContent)
+            .ecsScalableTargetManifestContentList(ecsScalableTargetFileContentList)
+            .ecsScalingPolicyManifestContentList(ecsScalingPolicyFileContentList)
+            .targetGroupArnKey(key.toString())
+            .build();
+
+    return ecsStepExecutor.executeEcsPrepareRollbackTask(ambiance, stepElementParameters,
+        ecsPrepareRollbackDataPassThroughData, ecsS3FetchResponse.getUnitProgressData());
   }
 
   private TaskChainResponse handleEcsGitFetchFilesResponseBlueGreen(EcsGitFetchResponse ecsGitFetchResponse,
@@ -1209,18 +1388,38 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       ecsScalingPolicyManifestContentList.addAll(ecsGitFetchPassThroughData.getScalingPolicyHarnessFileContentList());
     }
 
-    EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData =
-        EcsPrepareRollbackDataPassThroughData.builder()
-            .infrastructureOutcome(ecsGitFetchPassThroughData.getInfrastructureOutcome())
-            .ecsTaskDefinitionManifestContent(ecsTaskDefinitionFileContent)
-            .ecsServiceDefinitionManifestContent(ecsServiceDefinitionFileContent)
-            .ecsScalableTargetManifestContentList(ecsScalableTargetManifestContentList)
-            .ecsScalingPolicyManifestContentList(ecsScalingPolicyManifestContentList)
-            .targetGroupArnKey(key.toString())
-            .build();
+    TaskChainResponse taskChainResponse = null;
+    if (ecsGitFetchPassThroughData.getEcsS3ManifestFileConfigs() == null) {
+      EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData =
+          EcsPrepareRollbackDataPassThroughData.builder()
+              .infrastructureOutcome(ecsGitFetchPassThroughData.getInfrastructureOutcome())
+              .ecsTaskDefinitionManifestContent(ecsTaskDefinitionFileContent)
+              .ecsServiceDefinitionManifestContent(ecsServiceDefinitionFileContent)
+              .ecsScalableTargetManifestContentList(ecsScalableTargetManifestContentList)
+              .ecsScalingPolicyManifestContentList(ecsScalingPolicyManifestContentList)
+              .targetGroupArnKey(key.toString())
+              .build();
 
-    return ecsStepExecutor.executeEcsPrepareRollbackTask(ambiance, stepElementParameters,
-        ecsPrepareRollbackDataPassThroughData, ecsGitFetchResponse.getUnitProgressData());
+      taskChainResponse = ecsStepExecutor.executeEcsPrepareRollbackTask(ambiance, stepElementParameters,
+          ecsPrepareRollbackDataPassThroughData, ecsGitFetchResponse.getUnitProgressData());
+    } else {
+      EcsManifestsContent ecsOtherStoreContents =
+          EcsManifestsContent.builder()
+              .ecsTaskDefinitionFileContent(ecsTaskDefinitionFileContent)
+              .ecsServiceDefinitionFileContent(ecsServiceDefinitionFileContent)
+              .ecsScalableTargetManifestContentList(ecsScalableTargetManifestContentList)
+              .ecsScalingPolicyManifestContentList(ecsScalingPolicyManifestContentList)
+              .build();
+      EcsS3FetchPassThroughData ecsS3FetchPassThroughData =
+          EcsS3FetchPassThroughData.builder()
+              .infrastructureOutcome(ecsGitFetchPassThroughData.getInfrastructureOutcome())
+              .ecsOtherStoreContents(ecsOtherStoreContents)
+              .otherStoreTargetGroupArnKey(key.toString())
+              .build();
+      taskChainResponse = prepareEcsManifestS3FetchTask(ambiance, stepElementParameters, ecsS3FetchPassThroughData,
+          ecsGitFetchPassThroughData.getEcsS3ManifestFileConfigs());
+    }
+    return taskChainResponse;
   }
 
   private TaskChainResponse handleFailureGitTask(EcsGitFetchResponse ecsGitFetchResponse) {

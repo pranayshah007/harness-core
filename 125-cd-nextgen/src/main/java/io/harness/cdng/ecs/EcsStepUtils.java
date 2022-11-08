@@ -106,7 +106,7 @@ public class EcsStepUtils extends CDStepHelper {
     String validationMessage = format("Ecs manifest with Id [%s]", manifestOutcome.getIdentifier());
     ConnectorInfoDTO connectorDTO = getConnectorDTO(connectorId, ambiance);
     validateManifest(s3StoreConfig.getKind(), connectorDTO, validationMessage);
-    return getS3StoreDelegateConfig(s3StoreConfig, connectorDTO, manifestOutcome, ambiance);
+    return getS3StoreDelegateConfig(s3StoreConfig, connectorDTO, ambiance);
   }
 
   private ConnectorInfoDTO getConnectorDTO(String connectorId, Ambiance ambiance) {

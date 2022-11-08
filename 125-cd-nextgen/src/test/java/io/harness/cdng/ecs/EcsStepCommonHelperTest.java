@@ -29,6 +29,8 @@ import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
+import io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData;
+import io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -41,8 +43,11 @@ import io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
 import io.harness.delegate.beans.ecs.EcsCanaryDeployResult;
 import io.harness.delegate.beans.ecs.EcsPrepareRollbackDataResult;
@@ -54,9 +59,11 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
+import io.harness.delegate.task.ecs.EcsS3FetchFileConfig;
 import io.harness.delegate.task.ecs.request.EcsCanaryDeployRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsCanaryDeleteResponse;
@@ -208,6 +215,75 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
     assertThat(ecsGitFetchPassThroughData.getInfrastructureOutcome())
         .isEqualTo(EcsInfrastructureOutcome.builder().build());
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void startChainLinkAllS3StoreTest() {
+    S3StoreConfig s3StoreConfig = S3StoreConfig.builder()
+                                      .connectorRef(ParameterField.createValueField("sfad"))
+                                      .paths(ParameterField.createValueField(Arrays.asList("folderPath")))
+                                      .build();
+    ManifestOutcome manifestOutcome =
+        EcsTaskDefinitionManifestOutcome.builder().identifier("sadf").store(s3StoreConfig).build();
+    ManifestOutcome serviceManifestOutcome =
+        EcsServiceDefinitionManifestOutcome.builder().identifier("sadf").store(s3StoreConfig).build();
+    ManifestOutcome scalableManifestOutcome =
+        EcsScalableTargetDefinitionManifestOutcome.builder().identifier("sadf").store(s3StoreConfig).build();
+    ManifestOutcome scalingManifestOutcome =
+        EcsScalingPolicyDefinitionManifestOutcome.builder().identifier("sadf").store(s3StoreConfig).build();
+
+    Map<String, ManifestOutcome> manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("safdsd", manifestOutcome);
+    ManifestsOutcome manifestsOutcome = new ManifestsOutcome(manifestOutcomeMap);
+    List<ManifestOutcome> manifestOutcomes =
+        Arrays.asList(manifestOutcome, serviceManifestOutcome, scalableManifestOutcome, scalingManifestOutcome);
+    doReturn(logCallback)
+        .when(ecsStepCommonHelper)
+        .getLogCallback(EcsCommandUnitConstants.fetchManifests.toString(), ambiance, true);
+    doNothing().when(ecsStepCommonHelper).validateManifestsOutcome(ambiance, manifestsOutcome);
+    OptionalOutcome optionalOutcome = OptionalOutcome.builder().found(true).outcome(manifestsOutcome).build();
+    InfrastructureOutcome infrastructureOutcome = EcsInfrastructureOutcome.builder().build();
+    doReturn(optionalOutcome).when(outcomeService).resolveOptional(any(), any());
+    doReturn(infrastructureOutcome).when(outcomeService).resolve(any(), any());
+
+    doReturn(manifestOutcomes).when(ecsStepHelper).getEcsManifestOutcome(manifestsOutcome.values());
+    doReturn(manifestOutcome).when(ecsStepHelper).getEcsTaskDefinitionManifestOutcome(manifestOutcomes);
+    doReturn(serviceManifestOutcome).when(ecsStepHelper).getEcsServiceDefinitionManifestOutcome(manifestOutcomes);
+    doReturn(Arrays.asList(scalableManifestOutcome))
+        .when(ecsStepHelper)
+        .getManifestOutcomesByType(manifestOutcomes, ManifestType.EcsScalableTargetDefinition);
+    doReturn(Arrays.asList(scalingManifestOutcome))
+        .when(ecsStepHelper)
+        .getManifestOutcomesByType(manifestOutcomes, ManifestType.EcsScalingPolicyDefinition);
+
+    AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder().build();
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorConfig(awsConnectorDTO).connectorType(ConnectorType.AWS).build();
+    doReturn(connectorInfoDTO).when(ecsEntityHelper).getConnectorInfoDTO(any(), any());
+    S3StoreDelegateConfig s3StoreDelegateConfig = S3StoreDelegateConfig.builder().build();
+    doReturn(s3StoreDelegateConfig)
+        .when(ecsStepCommonHelper)
+        .getS3StoreDelegateConfig(eq(s3StoreConfig), any(), eq(ambiance));
+
+    doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
+
+    Mockito.mockStatic(StepUtils.class);
+    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+
+    TaskChainResponse taskChainResponse =
+        ecsStepCommonHelper.startChainLink(ecsStepExecutor, ambiance, stepElementParameters, ecsStepHelper);
+
+    PowerMockito.verifyStatic(StepUtils.class, times(1));
+    StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+
+    EcsS3FetchPassThroughData ecsS3FetchPassThroughData =
+        (EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData();
+
+    assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
+    assertThat(ecsS3FetchPassThroughData.getInfrastructureOutcome()).isEqualTo(infrastructureOutcome);
   }
 
   @Test(expected = InvalidRequestException.class)

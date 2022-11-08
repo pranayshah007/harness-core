@@ -23,7 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("ecsGitFetchPassThroughData")
 @RecasterAlias("io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData")
 public class EcsS3FetchPassThroughData implements PassThroughData {
-  String targetGroupS3ArnKey;
+  String otherStoreTargetGroupArnKey;
   InfrastructureOutcome infrastructureOutcome;
-  EcsManifestsContent ecsOtherManifestsContent;
+  EcsManifestsContent ecsOtherStoreContents;
 }

@@ -417,8 +417,8 @@ public class CDStepHelper {
         .build();
   }
 
-  public S3StoreDelegateConfig getS3StoreDelegateConfig(@Nonnull S3StoreConfig s3StoreConfig,
-      @Nonnull ConnectorInfoDTO awsConnectorDTO, ManifestOutcome manifestOutcome, Ambiance ambiance) {
+  public S3StoreDelegateConfig getS3StoreDelegateConfig(
+      @Nonnull S3StoreConfig s3StoreConfig, @Nonnull ConnectorInfoDTO awsConnectorDTO, Ambiance ambiance) {
     return S3StoreDelegateConfig.builder()
         .bucketName(getParameterFieldValue(s3StoreConfig.getBucketName()))
         .region(getParameterFieldValue(s3StoreConfig.getRegion()))
