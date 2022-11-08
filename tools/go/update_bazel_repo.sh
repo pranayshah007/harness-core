@@ -56,7 +56,7 @@ grep -v module $path_to_go_mod.bak | grep -v $PROJECT_GITHUB_ACCOUNT >> $path_to
 
 # Now update the go_repository() at $PROJECT_ROOT/WORKSPACE
 cd $PROJECT_ROOT
-bazelisk run //:gazelle -- update-repos -from_file=$path_to_go_mod
+bazel run //:gazelle -- update-repos -from_file=$path_to_go_mod
 
 # Now restore the original go.mod to support native go tools
 mv $path_to_go_mod.bak $path_to_go_mod

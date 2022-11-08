@@ -56,9 +56,11 @@ import io.harness.ngtriggers.beans.source.webhook.v2.github.GithubSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.GithubSpec.GithubSpecBuilder;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.action.GithubIssueCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.action.GithubPRAction;
+import io.harness.ngtriggers.beans.source.webhook.v2.github.action.GithubReleaseAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubIssueCommentSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubPRSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubPushSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubReleaseSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.GitlabSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.GitlabSpec.GitlabSpecBuilder;
@@ -206,6 +208,18 @@ public class NgTriggerConfigAdaptor {
               .autoAbortPreviousExecutions(false)
               .actions(getGithubIssueCommentActions(githubTriggerSpec))
               .build());
+    } else if (githubTriggerSpec.getEvent() == WebhookEvent.RELEASE) {
+      githubSpecBuilder.type(GithubTriggerEvent.RELEASE);
+      githubSpecBuilder.spec(
+          GithubReleaseSpec.builder()
+              .connectorRef(githubTriggerSpec.getGitRepoSpec().getIdentifier())
+              .repoName(githubTriggerSpec.getGitRepoSpec().getRepoName())
+              .headerConditions(mapToTriggerEventDataCondition(githubTriggerSpec.getHeaderConditions()))
+              .payloadConditions(mapToTriggerEventDataCondition(githubTriggerSpec.getPayloadConditions()))
+              .jexlCondition(githubTriggerSpec.getJexlCondition())
+              .autoAbortPreviousExecutions(false)
+              .actions(getGithubReleaseActions(githubTriggerSpec))
+              .build());
     } else {
       throw new TriggerException(
           "Invalid Event Type encountered in Trigger with Version 0 while converting to Version 2"
@@ -345,6 +359,16 @@ public class NgTriggerConfigAdaptor {
     List<GitAction> gitActions =
         getGitActions(githubTriggerSpec.getActions(), Arrays.asList(GithubIssueCommentAction.values()));
     return gitActions.stream().map(gitAction -> (GithubIssueCommentAction) gitAction).collect(toList());
+  }
+
+  private static List<GithubReleaseAction> getGithubReleaseActions(GithubTriggerSpec githubTriggerSpec) {
+    if (isEmpty(githubTriggerSpec.getActions())) {
+      return emptyList();
+    }
+
+    List<GitAction> gitActions =
+        getGitActions(githubTriggerSpec.getActions(), Arrays.asList(GithubReleaseAction.values()));
+    return gitActions.stream().map(gitAction -> (GithubReleaseAction) gitAction).collect(toList());
   }
 
   private static List<GitlabPRAction> getGitlabPrActions(GitlabTriggerSpec gitlabTriggerSpec) {
