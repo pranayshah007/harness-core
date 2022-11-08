@@ -76,7 +76,7 @@ public class GitConfig extends SettingValue implements EncryptableSetting {
 
   @JsonView(JsonViews.Internal.class) @SchemaIgnore private String encryptedPassword;
   private String sshSettingId;
-  @SchemaIgnore @Transient private SettingAttribute sshSettingAttribute;
+  @SchemaIgnore @Transient private software.wings.beans.dto.SettingAttribute sshSettingAttribute;
   @SchemaIgnore @Transient @Trimmed @Nullable private String repoName;
   private boolean keyAuth;
   @Default private AuthenticationScheme authenticationScheme = HTTP_PASSWORD;
@@ -94,7 +94,7 @@ public class GitConfig extends SettingValue implements EncryptableSetting {
 
   @Builder
   public GitConfig(String username, char[] password, String repoUrl, String branch, String accountId,
-      String encryptedPassword, String sshSettingId, SettingAttribute sshSettingAttribute, boolean keyAuth,
+      String encryptedPassword, String sshSettingId, software.wings.beans.dto.SettingAttribute sshSettingAttribute, boolean keyAuth,
       AuthenticationScheme authenticationScheme, String description, String webhookToken, GitRepositoryType gitRepoType,
       boolean generateWebhookUrl, String authorName, String authorEmailId, String commitMessage, UrlType urlType,
       String repoName, String reference, List<String> delegateSelectors, ProviderType providerType,

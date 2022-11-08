@@ -37,6 +37,7 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.GitRepositoryInfo;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.yaml.GitCommand.GitCommandType;
 import software.wings.beans.yaml.GitCommandExecutionResponse;
@@ -98,7 +99,7 @@ public class GitConfigHelperService {
       if (sshSettingAttribute == null) {
         throw new InvalidRequestException("Could not find SettingAttribute for Id: " + gitConfig.getSshSettingId());
       } else {
-        gitConfig.setSshSettingAttribute(sshSettingAttribute);
+        gitConfig.setSshSettingAttribute(SettingAttributeMapper.toSettingAttributeDTO(sshSettingAttribute));
       }
     } else {
       if (gitConfig.getSshSettingId() != null) {
@@ -106,7 +107,7 @@ public class GitConfigHelperService {
         if (sshSettingAttribute == null) {
           throw new InvalidRequestException("Could not find SettingAttribute for Id: " + gitConfig.getSshSettingId());
         }
-        gitConfig.setSshSettingAttribute(sshSettingAttribute);
+        gitConfig.setSshSettingAttribute(SettingAttributeMapper.toSettingAttributeDTO(sshSettingAttribute));
       } else if (gitConfig.getUsername() == null
           || (gitConfig.getPassword() == null && gitConfig.getEncryptedPassword() == null)) {
         throw new InvalidRequestException("Username and password can not be empty", USER);
@@ -175,7 +176,7 @@ public class GitConfigHelperService {
             secretManager.getEncryptionDetails(attributeValue, GLOBAL_APP_ID, null);
         managerDecryptionService.decrypt(attributeValue, encryptionDetails);
         ExceptionMessageSanitizer.storeAllSecretsForSanitizing(attributeValue, encryptionDetails);
-        gitConfig.setSshSettingAttribute(settingAttribute);
+        gitConfig.setSshSettingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute));
       }
     }
   }

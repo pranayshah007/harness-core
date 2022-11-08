@@ -61,6 +61,7 @@ import software.wings.beans.InstanceUnitType;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
@@ -217,7 +218,7 @@ public abstract class ContainerServiceDeploy extends State {
               .appId(contextData.app.getUuid())
               .envId(contextData.env.getUuid())
               .activityId(activity.getUuid())
-              .cloudProviderSetting(contextData.settingAttribute)
+              .cloudProviderSetting(SettingAttributeMapper.toSettingAttributeDTO(contextData.settingAttribute))
               .cloudProviderCredentials(contextData.encryptedDataDetails)
               .containerResizeParams(params)
               .deploymentType(deploymentType.name())

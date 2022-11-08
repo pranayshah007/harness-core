@@ -57,6 +57,7 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.RancherKubernetesInfrastructureMapping;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
@@ -148,7 +149,7 @@ public class K8sStateHelper {
     if (containerServiceParams == null || containerServiceParams.getSettingAttribute() == null) {
       return emptyList();
     }
-    SettingAttribute settingAttribute = containerServiceParams.getSettingAttribute();
+    SettingAttribute settingAttribute = SettingAttributeMapper.fromSettingAttributeDTO(containerServiceParams.getSettingAttribute());
     return fetchDelegateNameAsTagFromK8sCloudProvider(settingAttribute.getValue());
   }
 

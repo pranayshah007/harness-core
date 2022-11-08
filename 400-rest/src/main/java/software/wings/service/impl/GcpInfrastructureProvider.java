@@ -20,6 +20,7 @@ import software.wings.beans.AwsInfrastructureMapping;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.infrastructure.Host;
 import software.wings.delegatetasks.DelegateProxyFactory;
@@ -77,7 +78,7 @@ public class GcpInfrastructureProvider implements InfrastructureProvider {
     return delegateProxyFactory.get(ContainerService.class, syncTaskContext)
         .listClusters(ContainerServiceParams.builder()
                           .encryptionDetails(encryptedDataDetails)
-                          .settingAttribute(computeProviderSetting)
+                          .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(computeProviderSetting))
                           .clusterName("None")
                           .build());
   }

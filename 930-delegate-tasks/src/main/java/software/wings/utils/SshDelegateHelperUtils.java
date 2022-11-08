@@ -25,7 +25,7 @@ import io.harness.shell.SshSessionConfig;
 
 import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.HostConnectionAttributes;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 
 public class SshDelegateHelperUtils {
   private static ExecutorType getExecutorType(

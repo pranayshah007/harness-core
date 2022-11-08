@@ -19,7 +19,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.SSHExecutionCredential;
 import software.wings.beans.SSHVaultConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 
 import java.time.Duration;
 import java.util.HashMap;

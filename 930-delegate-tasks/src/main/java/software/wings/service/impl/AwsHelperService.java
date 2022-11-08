@@ -48,7 +48,7 @@ import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.AWSTemporaryCredentials;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.EcrConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.common.InfrastructureConstants;

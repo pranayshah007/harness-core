@@ -163,7 +163,7 @@ public class YamlGitConfig implements EncryptableSetting, PersistentEntity, Uuid
         .repoUrl(this.url)
         .username(this.username)
         .password(this.password)
-        .sshSettingAttribute(sshSettingAttribute)
+        //.sshSettingAttribute(sshSettingAttribute)
         .sshSettingId(this.sshSettingId)
         .keyAuth(this.keyAuth)
         .encryptedPassword(this.encryptedPassword)

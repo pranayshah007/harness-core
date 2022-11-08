@@ -37,6 +37,7 @@ import software.wings.beans.ContainerInfrastructureMapping;
 import software.wings.beans.EcsInfrastructureMapping;
 import software.wings.beans.Environment;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.delegatetasks.aws.AwsCommandHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
@@ -129,7 +130,7 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
   private DelegateTask buildNonK8sDelegateTask(
       Map<String, String> clientParams, ContainerInstanceSyncPerpetualTaskData taskData) {
     ContainerServiceParams delegateTaskParams = ContainerServiceParams.builder()
-                                                    .settingAttribute(taskData.getSettingAttribute())
+                                                    .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(taskData.getSettingAttribute()))
                                                     .containerServiceName(taskData.getContainerServiceName())
                                                     .encryptionDetails(taskData.getEncryptionDetails())
                                                     .clusterName(taskData.getClusterName())

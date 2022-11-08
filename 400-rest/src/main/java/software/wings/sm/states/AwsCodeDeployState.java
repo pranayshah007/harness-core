@@ -56,6 +56,7 @@ import software.wings.beans.Environment;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.command.CodeDeployCommandExecutionData;
 import software.wings.beans.command.CodeDeployParams;
@@ -228,7 +229,7 @@ public class AwsCodeDeployState extends State {
                                                           .serviceName(service.getName())
                                                           .deploymentType(deploymentType.name())
                                                           .activityId(activity.getUuid())
-                                                          .cloudProviderSetting(cloudProviderSetting)
+                                                          .cloudProviderSetting(SettingAttributeMapper.toSettingAttributeDTO(cloudProviderSetting))
                                                           .cloudProviderCredentials(encryptedDataDetails)
                                                           .codeDeployParams(codeDeployParams)
                                                           .build();

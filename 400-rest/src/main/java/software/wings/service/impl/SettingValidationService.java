@@ -80,6 +80,7 @@ import software.wings.beans.ScalyrConfig;
 import software.wings.beans.ServiceNowConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.SftpConfig;
 import software.wings.beans.SmbConfig;
 import software.wings.beans.SplunkConfig;
@@ -200,7 +201,7 @@ public class SettingValidationService {
       }
       ConnectivityValidationDelegateRequest request = ConnectivityValidationDelegateRequest.builder()
                                                           .encryptedDataDetails(encryptionDetails)
-                                                          .settingAttribute(settingAttribute)
+                                                          .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
                                                           .sshVaultConfig(sshVaultConfig)
                                                           .build();
       DelegateTask delegateTask =
@@ -482,7 +483,7 @@ public class SettingValidationService {
 
     String namespace = "default";
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
-                                                        .settingAttribute(settingAttribute)
+                                                        .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
                                                         .encryptionDetails(encryptedDataDetails)
                                                         .namespace(namespace)
                                                         .build();
@@ -531,7 +532,7 @@ public class SettingValidationService {
 
     String namespace = "default";
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
-                                                        .settingAttribute(settingAttribute)
+                                                        .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
                                                         .encryptionDetails(fetchEncryptionDetails(settingValue))
                                                         .namespace(namespace)
                                                         .build();

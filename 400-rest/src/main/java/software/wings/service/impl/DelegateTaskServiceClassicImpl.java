@@ -141,6 +141,7 @@ import software.wings.beans.GitValidationParameters;
 import software.wings.beans.HostValidationTaskParameters;
 import software.wings.beans.SerializationFormat;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.common.AuditHelper;
 import software.wings.core.managerConfiguration.ConfigurationController;
@@ -660,7 +661,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         } else {
           hostValidationTaskParameters = HostValidationTaskParameters.builder()
                                              .hostNames((List<String>) params[2])
-                                             .connectionSetting((SettingAttribute) params[3])
+                                             .connectionSetting(SettingAttributeMapper.toSettingAttributeDTO((SettingAttribute) params[3]))
                                              .encryptionDetails((List<EncryptedDataDetail>) params[4])
                                              .executionCredential((ExecutionCredential) params[5])
                                              .build();

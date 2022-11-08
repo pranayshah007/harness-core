@@ -69,6 +69,7 @@ import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.Variable;
@@ -588,7 +589,7 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
 
   String getTagFromCloudProvider(ContainerServiceParams containerServiceParams) {
     if (containerServiceParams != null) {
-      SettingAttribute settingAttribute = containerServiceParams.getSettingAttribute();
+      SettingAttribute settingAttribute = SettingAttributeMapper.fromSettingAttributeDTO(containerServiceParams.getSettingAttribute());
       SettingValue settingValue = settingAttribute.getValue();
       if (settingValue instanceof AwsConfig) {
         return ((AwsConfig) settingValue).getTag();

@@ -41,6 +41,7 @@ import software.wings.beans.PhysicalInfrastructureMapping;
 import software.wings.beans.PhysicalInfrastructureMappingBase;
 import software.wings.beans.PhysicalInfrastructureMappingWinRm;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.WorkflowExecution;
@@ -245,7 +246,7 @@ public class PdcInstanceHandler extends InstanceHandler implements InstanceSyncB
       SettingAttribute settingAttribute, List<EncryptedDataDetail> encryptedDataDetails) {
     HostValidationTaskParameters parameters = HostValidationTaskParameters.builder()
                                                   .hostNames(hostNames)
-                                                  .connectionSetting(settingAttribute)
+                                                  .connectionSetting(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
                                                   .encryptionDetails(encryptedDataDetails)
                                                   .checkOnlyReachability(true)
                                                   .checkOr(true)

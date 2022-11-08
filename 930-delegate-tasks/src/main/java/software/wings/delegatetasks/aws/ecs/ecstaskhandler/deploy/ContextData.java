@@ -10,7 +10,7 @@ package software.wings.delegatetasks.aws.ecs.ecstaskhandler.deploy;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingCategory;
 import software.wings.beans.command.EcsResizeParams;
 
@@ -30,9 +30,6 @@ class ContextData {
   private final boolean blueGreen;
 
   public SettingAttribute getSettingAttribute() {
-    return SettingAttribute.Builder.aSettingAttribute()
-        .withValue(awsConfig)
-        .withCategory(SettingCategory.CLOUD_PROVIDER)
-        .build();
+    return SettingAttribute.builder().value(awsConfig).category(SettingCategory.CLOUD_PROVIDER).build();
   }
 }

@@ -30,7 +30,7 @@ import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.SSHExecutionCredential;
 import software.wings.beans.SSHVaultConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.validation.capabilities.SSHHostValidationCapability;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.security.SecretManagementDelegateService;

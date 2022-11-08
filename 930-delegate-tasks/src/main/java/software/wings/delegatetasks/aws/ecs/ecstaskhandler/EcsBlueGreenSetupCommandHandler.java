@@ -32,7 +32,7 @@ import io.harness.logging.Misc;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData.ContainerSetupCommandUnitExecutionDataBuilder;
 import software.wings.beans.command.EcsSetupParams;
@@ -105,9 +105,9 @@ public class EcsBlueGreenSetupCommandHandler extends EcsCommandTaskHandler {
           ecsBGServiceSetupRequest.getSafeDisplayServiceVariables(), executionLogCallback, setupParams);
 
       createServiceForBlueGreen(setupParams, taskDefinition,
-          aSettingAttribute().withValue(ecsBGServiceSetupRequest.getAwsConfig()).build(), encryptedDataDetails,
+              SettingAttribute.builder().value(ecsBGServiceSetupRequest.getAwsConfig()).build(), encryptedDataDetails,
           commandExecutionDataBuilder, executionLogCallback);
-
+      //
       ecsCommandResponse.setSetupData(commandExecutionDataBuilder.build());
     } catch (TimeoutException ex) {
       log.error("Completed operation with errors");

@@ -26,6 +26,7 @@ import software.wings.beans.Application;
 import software.wings.beans.GcpKubernetesInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.cloudprovider.gke.GkeClusterService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.ServiceResourceService;
@@ -104,7 +105,7 @@ public class GcpClusterSetup extends State {
             KubernetesConvention.getControllerNamePrefix(app.getName(), serviceName, env));
     String zoneCluster = zone + "/" + clusterName;
 
-    gkeClusterService.createCluster(computeProviderSetting, encryptionDetails, zoneCluster,
+    gkeClusterService.createCluster(SettingAttributeMapper.toSettingAttributeDTO(computeProviderSetting), encryptionDetails, zoneCluster,
         context.renderExpression(gcpInfraMapping.getNamespace()),
         ImmutableMap.<String, String>builder()
             .put("nodeCount", Integer.toString(nodeCount))

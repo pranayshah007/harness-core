@@ -27,7 +27,7 @@ import software.wings.beans.AzureConfig;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.RancherConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.gke.GkeClusterService;
 import software.wings.delegatetasks.rancher.RancherTaskHelper;
 import software.wings.helpers.ext.azure.AzureDelegateHelperService;

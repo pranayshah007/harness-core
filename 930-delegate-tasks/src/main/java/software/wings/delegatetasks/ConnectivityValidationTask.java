@@ -35,7 +35,7 @@ import software.wings.beans.ExecutionCredential;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.HostValidationResponse;
 import software.wings.beans.SSHVaultConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.mail.Mailer;

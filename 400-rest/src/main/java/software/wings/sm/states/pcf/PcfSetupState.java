@@ -80,6 +80,7 @@ import software.wings.beans.Environment;
 import software.wings.beans.PcfConfig;
 import software.wings.beans.PcfInfrastructureMapping;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
@@ -306,7 +307,7 @@ public class PcfSetupState extends State {
         artifactStream.fetchArtifactStreamAttributes(featureFlagService);
     artifactStreamAttributes.setMetadata(artifact.getMetadata());
     artifactStreamAttributes.setArtifactStreamId(artifactStream.getUuid());
-    artifactStreamAttributes.setServerSetting(settingsService.get(artifactStream.getSettingId()));
+    artifactStreamAttributes.setServerSetting(SettingAttributeMapper.toSettingAttributeDTO(settingsService.get(artifactStream.getSettingId())));
     artifactStreamAttributes.setArtifactServerEncryptedDataDetails(
         secretManager.getEncryptionDetails((EncryptableSetting) artifactStreamAttributes.getServerSetting().getValue(),
             context.getAppId(), context.getWorkflowExecutionId()));

@@ -20,6 +20,7 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.settings.SettingValue;
 
 import java.util.Collection;

@@ -72,6 +72,7 @@ import software.wings.beans.Service;
 import software.wings.beans.ServiceInstance;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.StringValue;
 import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
@@ -750,7 +751,7 @@ public class CommandState extends State {
             format("Unable to find Connector/Cloud Provider for artifact stream %s", artifactStream.getSourceName()),
             WingsException.USER);
       }
-      artifactStreamAttributes.setServerSetting(settingAttribute);
+      artifactStreamAttributes.setServerSetting(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute));
       artifactStreamAttributes.setArtifactServerEncryptedDataDetails(secretManager.getEncryptionDetails(
           (EncryptableSetting) artifactStreamAttributes.getServerSetting().getValue(), context.getAppId(),
           context.getWorkflowExecutionId()));
@@ -820,7 +821,7 @@ public class CommandState extends State {
                                          artifactStream.getSourceName()),
                 WingsException.USER);
           }
-          artifactStreamAttributes.setServerSetting(settingAttribute);
+          artifactStreamAttributes.setServerSetting(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute));
           List<EncryptedDataDetail> encryptedDataDetails = secretManager.getEncryptionDetails(
               (EncryptableSetting) artifactStreamAttributes.getServerSetting().getValue(), context.getAppId(),
               context.getWorkflowExecutionId());
@@ -888,7 +889,7 @@ public class CommandState extends State {
       ExecutionContext context, Host host, CommandParametersBuilder commandParametersBuilder) {
     if (isNotEmpty(host.getHostConnAttr())) {
       SettingAttribute hostConnectionAttribute = settingsService.get(host.getHostConnAttr());
-      commandParametersBuilder.hostConnectionAttributes(hostConnectionAttribute);
+      commandParametersBuilder.hostConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(hostConnectionAttribute));
       commandParametersBuilder.hostConnectionCredentials(
           secretManager.getEncryptionDetails((EncryptableSetting) hostConnectionAttribute.getValue(),
               context.getAppId(), context.getWorkflowExecutionId()));
@@ -901,7 +902,7 @@ public class CommandState extends State {
     }
     if (isNotEmpty(host.getBastionConnAttr())) {
       SettingAttribute bastionConnectionAttribute = settingsService.get(host.getBastionConnAttr());
-      commandParametersBuilder.bastionConnectionAttributes(bastionConnectionAttribute);
+      commandParametersBuilder.bastionConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(bastionConnectionAttribute));
       commandParametersBuilder.bastionConnectionCredentials(
           secretManager.getEncryptionDetails((EncryptableSetting) bastionConnectionAttribute.getValue(),
               context.getAppId(), context.getWorkflowExecutionId()));

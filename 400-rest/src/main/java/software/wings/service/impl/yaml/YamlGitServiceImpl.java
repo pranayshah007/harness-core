@@ -102,6 +102,7 @@ import software.wings.beans.GitConfig.UrlType;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.GitConnectionErrorAlert;
@@ -273,7 +274,7 @@ public class YamlGitServiceImpl implements YamlGitService {
         gitConfig.setBranch(ygs.getBranchName());
         if (EmptyPredicate.isNotEmpty(gitConfig.getSshSettingId())) {
           SettingAttribute settingAttributeForSshKey = getAndDecryptSettingAttribute(gitConfig.getSshSettingId());
-          gitConfig.setSshSettingAttribute(settingAttributeForSshKey);
+          gitConfig.setSshSettingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttributeForSshKey));
         }
       }
     } else {

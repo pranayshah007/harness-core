@@ -76,6 +76,7 @@ import software.wings.beans.Log;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.VMSSAuthType;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.artifact.Artifact;
@@ -690,7 +691,7 @@ public class AzureVMSSStateHelper {
     artifactStreamAttributes.setMetadata(artifact.getMetadata());
     artifactStreamAttributes.setArtifactName(artifact.getDisplayName());
     artifactStreamAttributes.setArtifactStreamId(artifactStream.getUuid());
-    artifactStreamAttributes.setServerSetting(settingsService.get(artifactStream.getSettingId()));
+    artifactStreamAttributes.setServerSetting(SettingAttributeMapper.toSettingAttributeDTO(settingsService.get(artifactStream.getSettingId())));
     artifactStreamAttributes.setMetadataOnly(onlyMetaForArtifactType(artifactStream));
     artifactStreamAttributes.setArtifactStreamType(artifactStream.getArtifactStreamType());
     artifactStreamAttributes.setArtifactType(service.getArtifactType());

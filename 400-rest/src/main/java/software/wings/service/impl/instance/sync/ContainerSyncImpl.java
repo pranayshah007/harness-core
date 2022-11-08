@@ -24,6 +24,7 @@ import software.wings.beans.EcsInfrastructureMapping;
 import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.infrastructure.instance.ContainerDeploymentInfo;
 import software.wings.beans.infrastructure.instance.info.ContainerInfo;
@@ -112,7 +113,7 @@ public class ContainerSyncImpl implements ContainerSync {
                 .build();
         ContainerServiceParams containerServiceParams =
             ContainerServiceParams.builder()
-                .settingAttribute(settingAttribute)
+                .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
                 .containerServiceName(containerDeploymentInfo.getContainerSvcName())
                 .encryptionDetails(encryptionDetails)
                 .clusterName(clusterName)
@@ -242,7 +243,7 @@ public class ContainerSyncImpl implements ContainerSync {
         (EncryptableSetting) settingAttribute.getValue(), containerInfraMapping.getAppId(), null);
 
     return ContainerServiceParams.builder()
-        .settingAttribute(settingAttribute)
+        .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
         .containerServiceName(containerSvcName)
         .encryptionDetails(encryptionDetails)
         .clusterName(clusterName)

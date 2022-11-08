@@ -51,6 +51,7 @@ import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.Command;
@@ -233,7 +234,7 @@ public abstract class ContainerServiceSetup extends State {
               .deploymentType(deploymentType.name())
               .containerSetupParams(containerSetupParams)
               .activityId(activity.getUuid())
-              .cloudProviderSetting(settingAttribute)
+              .cloudProviderSetting(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
               .cloudProviderCredentials(encryptedDataDetails)
               .serviceVariables(serviceVariables)
               .safeDisplayServiceVariables(safeDisplayServiceVariables)

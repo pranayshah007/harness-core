@@ -32,6 +32,7 @@ import software.wings.beans.PhysicalInfrastructureMapping;
 import software.wings.beans.PhysicalInfrastructureMappingBase;
 import software.wings.beans.PhysicalInfrastructureMappingWinRm;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.service.InstanceSyncConstants;
@@ -77,7 +78,7 @@ public class PdcPerpetualTaskServiceClient implements PerpetualTaskServiceClient
 
     HostValidationTaskParameters parameters = HostValidationTaskParameters.builder()
                                                   .hostNames(taskData.getHostNames())
-                                                  .connectionSetting(taskData.getSettingAttribute())
+                                                  .connectionSetting(SettingAttributeMapper.toSettingAttributeDTO((taskData.getSettingAttribute())))
                                                   .encryptionDetails(taskData.getEncryptedDataDetails())
                                                   .checkOnlyReachability(true)
                                                   .checkOr(true)

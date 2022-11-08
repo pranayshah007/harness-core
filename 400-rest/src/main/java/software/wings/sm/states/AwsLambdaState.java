@@ -67,6 +67,7 @@ import software.wings.beans.Service;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.Tag;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
@@ -353,7 +354,7 @@ public class AwsLambdaState extends State {
     ArtifactStreamAttributes artifactStreamAttributes =
         artifactStream.fetchArtifactStreamAttributes(featureFlagService);
     if (!ArtifactStreamType.CUSTOM.name().equalsIgnoreCase(artifactStreamAttributes.getArtifactStreamType())) {
-      artifactStreamAttributes.setServerSetting(settingsService.get(artifactStream.getSettingId()));
+      artifactStreamAttributes.setServerSetting(SettingAttributeMapper.toSettingAttributeDTO(settingsService.get(artifactStream.getSettingId())));
       artifactStreamAttributes.setArtifactServerEncryptedDataDetails(secretManager.getEncryptionDetails(
           (EncryptableSetting) artifactStreamAttributes.getServerSetting().getValue(), context.getAppId(),
           context.getWorkflowExecutionId()));

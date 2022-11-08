@@ -28,6 +28,7 @@ import io.harness.helm.HelmCommandType;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
+import software.wings.beans.dto.SettingAttribute;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GcpConfig;
@@ -113,7 +114,6 @@ public class HelmCommandRequest implements TaskParameters, ActivityAccess, Execu
                                       .build());
       }
     }
-
     Set<String> delegateSelectors = getDelegateSelectorsFromConfigurations();
     if (isNotEmpty(delegateSelectors)) {
       executionCapabilities.add(SelectorCapability.builder().selectors(delegateSelectors).build());

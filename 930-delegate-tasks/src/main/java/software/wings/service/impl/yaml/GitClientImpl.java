@@ -64,7 +64,7 @@ import io.harness.shell.SshSessionConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
 import software.wings.beans.HostConnectionAttributes;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.yaml.GitCheckoutResult;
 import software.wings.beans.yaml.GitCloneResult;
 import software.wings.beans.yaml.GitCommitRequest;

@@ -28,7 +28,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.api.ContainerServiceData;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.command.EcsResizeParams;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.beans.container.AwsAutoScalarConfig;
@@ -430,9 +430,9 @@ public class EcsDeployCommandTaskHelper {
 
     executionLogCallback.saveExecutionLog(
         format("Registering task definition with family => %s", runTaskDefinition.getFamily()), LogLevel.INFO);
-
-    return awsClusterService.createTask(
-        region, cloudProviderSetting, encryptedDataDetails, registerTaskDefinitionRequest);
+   return null;
+    /*return awsClusterService.createTask(
+        region, cloudProviderSetting, encryptedDataDetails, registerTaskDefinitionRequest);*/
   }
 
   public TaskDefinition registerRunTaskDefinitionWithRegisterTaskDefinitionRequest(
@@ -523,10 +523,11 @@ public class EcsDeployCommandTaskHelper {
 
   public Optional<Integer> getServiceDesiredCount(ContextData contextData) {
     EcsResizeParams resizeParams = contextData.getResizeParams();
-    Optional<Service> service = awsClusterService.getService(resizeParams.getRegion(),
+   /* Optional<Service> service = awsClusterService.getService(resizeParams.getRegion(),
         contextData.getSettingAttribute(), contextData.getEncryptedDataDetails(), resizeParams.getClusterName(),
         resizeParams.getContainerServiceName());
-    return service.map(Service::getDesiredCount);
+    return service.map(Service::getDesiredCount);*/
+    return null;
   }
 
   public int getNewInstancesDesiredCount(ContextData contextData) {
@@ -643,16 +644,18 @@ public class EcsDeployCommandTaskHelper {
 
   public Map<String, Integer> getActiveServiceCounts(ContextData contextData) {
     EcsResizeParams resizeParams = contextData.getResizeParams();
-    return awsClusterService.getActiveServiceCounts(resizeParams.getRegion(), contextData.getSettingAttribute(),
-        contextData.getEncryptedDataDetails(), resizeParams.getClusterName(), resizeParams.getContainerServiceName());
+   /* return awsClusterService.getActiveServiceCounts(resizeParams.getRegion(), contextData.getSettingAttribute(),
+        contextData.getEncryptedDataDetails(), resizeParams.getClusterName(), resizeParams.getContainerServiceName());*/
+    return null;
   }
 
   public Map<String, String> getActiveServiceImages(ContextData contextData) {
     EcsResizeParams resizeParams = contextData.getResizeParams();
     String imagePrefix = substringBefore(resizeParams.getImage(), ":");
-    return awsClusterService.getActiveServiceImages(resizeParams.getRegion(), contextData.getSettingAttribute(),
+    return null;
+   /* return awsClusterService.getActiveServiceImages(resizeParams.getRegion(), contextData.getSettingAttribute(),
         contextData.getEncryptedDataDetails(), resizeParams.getClusterName(), resizeParams.getContainerServiceName(),
-        imagePrefix);
+        imagePrefix);*/
   }
 
   public Map<String, Integer> listOfStringArrayToMap(List<String[]> listOfStringArray) {

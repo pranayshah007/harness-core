@@ -19,6 +19,7 @@ import io.harness.annotations.dev.TargetModule;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
@@ -32,7 +33,7 @@ import java.util.List;
 @OwnedBy(CDP)
 public class AwsCommandHelper {
   public List<String> getAwsConfigTagsFromContext(CommandExecutionContext context) {
-    SettingAttribute cloudProviderSetting = context.getCloudProviderSetting();
+    SettingAttribute cloudProviderSetting = SettingAttributeMapper.fromSettingAttributeDTO(context.getCloudProviderSetting());
     if (cloudProviderSetting != null) {
       SettingValue settingValue = cloudProviderSetting.getValue();
       if (settingValue instanceof AwsConfig) {

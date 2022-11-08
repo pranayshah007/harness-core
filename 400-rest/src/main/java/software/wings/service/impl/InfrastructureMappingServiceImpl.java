@@ -136,6 +136,7 @@ import software.wings.beans.ServiceInstance;
 import software.wings.beans.ServiceInstanceSelectionParams;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.container.ContainerTask;
 import software.wings.beans.container.KubernetesContainerTask;
@@ -1116,7 +1117,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     List<EncryptedDataDetail> encryptionDetails =
         secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue());
     return ContainerServiceParams.builder()
-        .settingAttribute(settingAttribute)
+        .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
         .encryptionDetails(encryptionDetails)
         .clusterName(infraMapping.getClusterName())
         .namespace(infraMapping.getNamespace())
@@ -1176,7 +1177,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
         secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue());
 
     return ContainerServiceParams.builder()
-        .settingAttribute(settingAttribute)
+        .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
         .encryptionDetails(encryptionDetails)
         .clusterName(infraMapping.getClusterName())
         .subscriptionId(infraMapping.getSubscriptionId())
@@ -1214,7 +1215,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
 
     SyncTaskContext syncTaskContext = getSyncTaskContext(infraMapping);
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
-                                                        .settingAttribute(settingAttribute)
+                                                        .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
                                                         .encryptionDetails(encryptionDetails)
                                                         .namespace(namespace)
                                                         .build();
@@ -2186,7 +2187,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
       ((HostConnectionAttributes) hostConnectionSetting.getValue()).setSshVaultConfig(sshVaultConfig);
     }
     return delegateProxyFactory.get(HostValidationService.class, syncTaskContext)
-        .validateHost(validationRequest.getHostNames(), hostConnectionSetting, encryptionDetails,
+        .validateHost(validationRequest.getHostNames(), SettingAttributeMapper.toSettingAttributeDTO(hostConnectionSetting), encryptionDetails,
             validationRequest.getExecutionCredential(), sshVaultConfig);
   }
 
@@ -2416,7 +2417,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
             .build();
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
-                                                        .settingAttribute(settingAttribute)
+                                                        .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
                                                         .containerServiceName(containerServiceName)
                                                         .encryptionDetails(encryptionDetails)
                                                         .clusterName(clusterName)

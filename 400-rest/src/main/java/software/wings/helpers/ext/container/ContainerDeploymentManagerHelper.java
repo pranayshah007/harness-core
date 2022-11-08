@@ -42,6 +42,7 @@ import software.wings.beans.GcpKubernetesInfrastructureMapping;
 import software.wings.beans.RancherKubernetesInfrastructureMapping;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.intfc.ServiceTemplateService;
@@ -168,7 +169,7 @@ public class ContainerDeploymentManagerHelper {
         secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue(),
             containerInfraMapping.getAppId(), context != null ? context.getWorkflowExecutionId() : null);
     return ContainerServiceParams.builder()
-        .settingAttribute(settingAttribute)
+        .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
         .containerServiceName(containerServiceName)
         .encryptionDetails(encryptionDetails)
         .clusterName(clusterName)

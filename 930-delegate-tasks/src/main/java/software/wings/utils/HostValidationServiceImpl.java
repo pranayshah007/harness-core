@@ -36,7 +36,7 @@ import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.HostReachabilityInfo;
 import software.wings.beans.HostValidationResponse;
 import software.wings.beans.SSHVaultConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.infrastructure.Host;

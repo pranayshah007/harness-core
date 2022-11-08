@@ -38,7 +38,7 @@ import software.wings.beans.ExecutionCredential;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SSHExecutionCredential;
 import software.wings.beans.SSHVaultConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactFile;

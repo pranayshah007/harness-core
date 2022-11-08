@@ -77,7 +77,7 @@ import software.wings.api.DeploymentType;
 import software.wings.beans.AzureConfig;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.LogColor;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData.ContainerSetupCommandUnitExecutionDataBuilder;
 import software.wings.beans.container.ContainerDefinition;
 import software.wings.beans.container.KubernetesContainerTaskUtils;

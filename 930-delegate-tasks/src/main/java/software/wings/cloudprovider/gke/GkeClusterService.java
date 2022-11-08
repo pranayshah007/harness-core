@@ -11,7 +11,7 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.GcpConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 
 import java.util.List;
 import java.util.Map;

@@ -26,6 +26,7 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.RancherKubernetesInfrastructureMapping;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.SyncTaskContext;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.service.impl.ContainerServiceParams;
@@ -79,7 +80,7 @@ public class ContainerMasterUrlHelper {
     }
 
     if (infraMapping instanceof DirectKubernetesInfrastructureMapping) {
-      final SettingAttribute settingAttribute = containerServiceParams.getSettingAttribute();
+      final SettingAttribute settingAttribute = SettingAttributeMapper.fromSettingAttributeDTO(containerServiceParams.getSettingAttribute());
       if (settingAttribute.getValue() instanceof KubernetesClusterConfig) {
         return ((KubernetesClusterConfig) settingAttribute.getValue()).getMasterUrl();
       }
