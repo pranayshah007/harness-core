@@ -106,7 +106,8 @@ public class DelegateInvocationHandler implements InvocationHandler {
           }
         } else if (arg instanceof ContainerServiceParams) {
           ContainerServiceParams containerServiceParams = (ContainerServiceParams) arg;
-          SettingAttribute settingAttribute = SettingAttributeMapper.fromSettingAttributeDTO((containerServiceParams.getSettingAttribute()));
+          SettingAttribute settingAttribute =
+              SettingAttributeMapper.fromSettingAttributeDTO(containerServiceParams.getSettingAttribute());
           SettingValue settingValue = settingAttribute.getValue();
           if (settingValue instanceof AwsConfig) {
             return ((AwsConfig) settingValue).getTag();

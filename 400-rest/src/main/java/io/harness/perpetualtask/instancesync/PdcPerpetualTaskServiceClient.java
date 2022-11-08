@@ -76,13 +76,14 @@ public class PdcPerpetualTaskServiceClient implements PerpetualTaskServiceClient
   public DelegateTask getValidationTask(PerpetualTaskClientContext clientContext, String accountId) {
     final PerpetualTaskData taskData = getPerpetualTaskData(clientContext);
 
-    HostValidationTaskParameters parameters = HostValidationTaskParameters.builder()
-                                                  .hostNames(taskData.getHostNames())
-                                                  .connectionSetting(SettingAttributeMapper.toSettingAttributeDTO((taskData.getSettingAttribute())))
-                                                  .encryptionDetails(taskData.getEncryptedDataDetails())
-                                                  .checkOnlyReachability(true)
-                                                  .checkOr(true)
-                                                  .build();
+    HostValidationTaskParameters parameters =
+        HostValidationTaskParameters.builder()
+            .hostNames(taskData.getHostNames())
+            .connectionSetting(SettingAttributeMapper.toSettingAttributeDTO(taskData.getSettingAttribute()))
+            .encryptionDetails(taskData.getEncryptedDataDetails())
+            .checkOnlyReachability(true)
+            .checkOr(true)
+            .build();
 
     return DelegateTask.builder()
         .accountId(accountId)

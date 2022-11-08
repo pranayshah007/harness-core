@@ -28,7 +28,6 @@ import io.harness.helm.HelmCommandType;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
-import software.wings.beans.dto.SettingAttribute;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GcpConfig;
