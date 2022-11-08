@@ -161,9 +161,10 @@ public class RecommendationsOverviewQueryV2 {
   public RecommendationOverviewStats recommendationStats(
       @GraphQLArgument(name = "filter", defaultValue = "{}") K8sRecommendationFilterDTO filter,
       @GraphQLEnvironment final ResolutionEnvironment env) {
-    final String accountId = graphQLUtils.getAccountIdentifier(env);
+    final String accountId = "JQ3KKI5yRTGe37OrCiZaTA";
 
-    Condition condition = applyAllFilters(filter, accountId);
+    Condition condition = null;
+    //            applyAllFilters(filter, accountId);
 
     return recommendationService.getStats(accountId, condition);
   }
@@ -182,11 +183,13 @@ public class RecommendationsOverviewQueryV2 {
   }
 
   private int genericCountQuery(@NotNull final ResolutionEnvironment env) {
-    final String accountId = graphQLUtils.getAccountIdentifier(env);
+    final String accountId = "JQ3KKI5yRTGe37OrCiZaTA";
+    //            graphQLUtils.getAccountIdentifier(env);
 
     K8sRecommendationFilterDTO filter = extractRecommendationFilter(env);
 
-    Condition condition = applyAllFilters(filter, accountId);
+    Condition condition = null;
+    //            applyAllFilters(filter, accountId);
 
     return recommendationService.getRecommendationsCount(accountId, condition);
   }
@@ -202,9 +205,11 @@ public class RecommendationsOverviewQueryV2 {
       @GraphQLArgument(name = "keys", defaultValue = "[]") List<String> columns,
       @GraphQLArgument(name = "filter", defaultValue = "{}") K8sRecommendationFilterDTO filter,
       @GraphQLEnvironment final ResolutionEnvironment env) {
-    final String accountId = graphQLUtils.getAccountIdentifier(env);
+    final String accountId = "JQ3KKI5yRTGe37OrCiZaTA";
+    //            graphQLUtils.getAccountIdentifier(env);
 
-    Condition condition = applyAllFilters(filter, accountId);
+    Condition condition = null;
+    //            applyAllFilters(filter, accountId);
 
     return recommendationService.getFilterStats(accountId, condition, columns, CE_RECOMMENDATIONS);
   }

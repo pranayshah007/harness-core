@@ -23,7 +23,7 @@ public class EC2RecommendationService {
 
   @Nullable
   public EC2RecommendationDTO getEC2RecommendationById(@NonNull final String accountIdentifier, String id) {
-    log.info("request came to EC2RecommendationService {} {}", accountIdentifier, id);
+    log.info("request came to EC2RecommendationServicee {} {}", accountIdentifier, id);
 
     final Optional<EC2Recommendation> ec2Recommendation =
         ec2RecommendationDAO.fetchEC2RecommendationById(accountIdentifier, id);

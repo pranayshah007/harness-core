@@ -60,7 +60,9 @@ public class RecommendationsDetailsQuery {
       @GraphQLArgument(name = "endTime", description = "defaults to Now()") OffsetDateTime endTime,
       @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0")
       Long bufferPercentage, @GraphQLEnvironment final ResolutionEnvironment env) {
+    log.info("called by overview recomm");
     final String accountIdentifier = "JQ3KKI5yRTGe37OrCiZaTA";
+    log.info("nodeDTO.getResourceType() = {}", nodeDTO.getResourceType());
     //            graphQLUtils.getAccountIdentifier(env);
 
     return recommendationDetailsInternal(
@@ -74,7 +76,9 @@ public class RecommendationsDetailsQuery {
       @GraphQLArgument(name = "endTime", description = "defaults to Now()") OffsetDateTime endTime,
       @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0")
       Long bufferPercentage, @GraphQLEnvironment final ResolutionEnvironment env) {
+    log.info("called by detail recomm");
     final String accountIdentifier = "JQ3KKI5yRTGe37OrCiZaTA";
+    log.info("resourceType = {}", resourceType);
     //    graphQLUtils.getAccountIdentifier(env);
 
     return recommendationDetailsInternal(accountIdentifier, resourceType, id, startTime, endTime, bufferPercentage);
