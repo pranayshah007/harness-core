@@ -83,7 +83,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .accountId(accountId)
             .spotInstConfig(spotInstConfig)
             .elastiGroupJson(elastigroupJson)
-            .ecsCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
+            .elastigroupCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
             .startupScript(elastigroupStepExecutorParams.getStartupScript())
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
@@ -146,7 +146,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     ElastigroupSetupDataOutcome elastigroupSetupDataOutcome =
         ElastigroupSetupDataOutcome.builder()
             .resizeStrategy(elastigroupSetupResult.getResizeStrategy())
-            .elstiGroupNamePrefix(elastigroupSetupResult.getElstiGroupNamePrefix())
+            .elastiGroupNamePrefix(elastigroupSetupResult.getElastiGroupNamePrefix())
             .maxInstanceCount(elastigroupSetupResult.getMaxInstanceCount())
             .isBlueGreen(elastigroupSetupResult.isBlueGreen())
             .oldElastiGroupOriginalConfig(oldElastiGroup)

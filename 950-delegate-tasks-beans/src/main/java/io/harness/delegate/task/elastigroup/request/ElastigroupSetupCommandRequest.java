@@ -12,7 +12,6 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.expression.Expression;
@@ -30,14 +29,13 @@ import lombok.experimental.NonFinal;
 public class ElastigroupSetupCommandRequest
     implements ElastigroupCommandRequest, ExpressionReflectionUtils.NestedAnnotationResolver {
   String accountId;
-  ElastigroupCommandTypeNG ecsCommandType;
+  ElastigroupCommandTypeNG elastigroupCommandType;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   String elastiGroupJson;
   String elastigroupNamePrefix;
   String startupScript;
   boolean blueGreen;
-  @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig ecsInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) SpotInstConfig spotInstConfig;
   @NonFinal @Expression(ALLOW_SECRETS) List<EncryptedDataDetail> spotinstEncryptionDetails;
