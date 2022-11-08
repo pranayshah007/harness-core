@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
