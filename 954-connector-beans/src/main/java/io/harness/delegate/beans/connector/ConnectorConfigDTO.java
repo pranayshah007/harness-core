@@ -42,6 +42,7 @@ import io.harness.delegate.beans.connector.localconnector.LocalConnectorDTO;
 import io.harness.delegate.beans.connector.newrelic.NewRelicConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.pagerduty.PagerDutyConnectorDTO;
+import io.harness.delegate.beans.connector.pcfconnector.PcfConnectorDTO;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
@@ -108,7 +109,8 @@ import java.util.List;
       @JsonSubTypes.Type(value = CustomSecretManagerConnectorDTO.class, name = "CustomSecretManager"),
       @JsonSubTypes.Type(value = ELKConnectorDTO.class, name = "ElasticSearch"),
       @JsonSubTypes.Type(value = GcpSecretManagerConnectorDTO.class, name = "GcpSecretManager"),
-      @JsonSubTypes.Type(value = AzureArtifactsConnectorDTO.class, name = "AzureArtifacts")
+      @JsonSubTypes.Type(value = AzureArtifactsConnectorDTO.class, name = "AzureArtifacts"),
+      @JsonSubTypes.Type(value = PcfConnectorDTO.class, name = "Pcf")
 })
 @OwnedBy(DX)
 @Schema(name = "ConnectorConfig", description = "This is the view of the ConnectorConfig entity defined in Harness")
