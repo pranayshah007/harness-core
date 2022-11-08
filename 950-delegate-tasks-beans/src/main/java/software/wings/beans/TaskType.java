@@ -398,7 +398,8 @@ public enum TaskType {
   HELM_FETCH_CHART_VERSIONS_TASK_NG(TaskGroup.HELM, "Fetch Helm Chart Versions Task"),
   ELASTIGROUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Command Task"),
   ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Startup Script Fetch Run Task"),
-  ELASTIGROUP_DEPLOY(TaskGroup.ELASTIGROUP, "Elastigroup Deploy Task");
+  ELASTIGROUP_DEPLOY(TaskGroup.ELASTIGROUP, "Elastigroup Deploy Task"),
+  ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Parameters Fetch Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

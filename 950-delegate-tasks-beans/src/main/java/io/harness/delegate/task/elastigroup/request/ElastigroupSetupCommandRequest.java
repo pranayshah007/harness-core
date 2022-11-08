@@ -11,19 +11,32 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.pcf.ResizeStrategy;
+import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.ecs.EcsCommandTypeNG;
+import io.harness.delegate.task.ecs.EcsInfraConfig;
+import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
+import io.harness.delegate.task.spotinst.request.SpotInstTaskParameters;
 import io.harness.expression.Expression;
+import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Value;
 import lombok.experimental.NonFinal;
 
-@Data
+@Value
 @Builder
 @OwnedBy(CDP)
 public class ElastigroupSetupCommandRequest
@@ -32,11 +45,15 @@ public class ElastigroupSetupCommandRequest
   ElastigroupCommandTypeNG elastigroupCommandType;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  String elastigroupJson;
+  String elastiGroupJson;
   String elastigroupNamePrefix;
+  private Integer maxInstanceCount;
+  private boolean useCurrentRunningInstanceCount;
+  private Integer currentRunningInstanceCount;
   String startupScript;
+  String image;
   boolean blueGreen;
+  ResizeStrategy resizeStrategy;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) SpotInstConfig spotInstConfig;
-  @NonFinal @Expression(ALLOW_SECRETS) List<EncryptedDataDetail> spotinstEncryptionDetails;
 }

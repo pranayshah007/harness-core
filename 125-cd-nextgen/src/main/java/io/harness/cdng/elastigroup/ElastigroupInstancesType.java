@@ -6,6 +6,9 @@
  */
 
 package io.harness.cdng.elastigroup;
+
+import io.harness.delegate.beans.connector.pdcconnector.HostFilterKind;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 

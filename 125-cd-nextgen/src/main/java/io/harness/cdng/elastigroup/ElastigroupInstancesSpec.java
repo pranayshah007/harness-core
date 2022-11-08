@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
