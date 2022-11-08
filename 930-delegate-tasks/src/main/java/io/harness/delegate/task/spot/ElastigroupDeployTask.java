@@ -87,11 +87,12 @@ public class ElastigroupDeployTask extends AbstractDelegateRunnableTask {
         ngConfigMapper.mapSpotConfigWithDecryption(parameters.getSpotConnector(), parameters.getEncryptionDetails());
     String spotInstAccountId = spotConfig.getCredential().getSpotAccountId();
     String spotInstToken = spotConfig.getCredential().getAppTokenId();
+    int timeoutInMinutes = parameters.getTimeout() > 0 ? parameters.getTimeout() : STEADY_STATE_TIME_OUT_IN_MINUTES;
 
-    taskHelper.scaleElastigroup(newElastigroup, spotInstToken, spotInstAccountId, STEADY_STATE_TIME_OUT_IN_MINUTES,
+    taskHelper.scaleElastigroup(newElastigroup, spotInstToken, spotInstAccountId, timeoutInMinutes,
         getLogStreamingTaskClient(), UP_SCALE_COMMAND_UNIT, UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT,
         commandUnitsProgress);
-    taskHelper.scaleElastigroup(oldElastigroup, spotInstToken, spotInstAccountId, STEADY_STATE_TIME_OUT_IN_MINUTES,
+    taskHelper.scaleElastigroup(oldElastigroup, spotInstToken, spotInstAccountId, timeoutInMinutes,
         getLogStreamingTaskClient(), DOWN_SCALE_COMMAND_UNIT, DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT,
         commandUnitsProgress);
 

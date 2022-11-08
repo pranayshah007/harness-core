@@ -12,6 +12,7 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.NGTimeConversionHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskParameters;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskResponse;
@@ -64,7 +65,8 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Ela
     validateStepParameters(elastigroupDeployStepParameters);
 
     ElastigroupDeployTaskParameters taskParameters =
-        stepHelper.getElastigroupDeployTaskParameters(elastigroupDeployStepParameters, ambiance);
+        stepHelper.getElastigroupDeployTaskParameters(elastigroupDeployStepParameters, ambiance,
+            NGTimeConversionHelper.convertTimeStringToMinutes(stepParameters.getTimeout().getValue()));
 
     TaskData taskData =
         TaskData.builder()

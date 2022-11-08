@@ -34,6 +34,7 @@ public class ElastigroupDeployTaskParameters implements TaskParameters, Executio
   ElastiGroup oldElastigroup;
   SpotConnectorDTO spotConnector;
   List<EncryptedDataDetail> encryptionDetails;
+  int timeout;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
