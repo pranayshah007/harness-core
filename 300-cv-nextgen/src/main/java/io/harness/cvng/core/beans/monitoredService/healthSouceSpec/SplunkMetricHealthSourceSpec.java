@@ -11,7 +11,6 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
-import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.SplunkMetricCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -48,12 +47,6 @@ import lombok.experimental.SuperBuilder;
 public class SplunkMetricHealthSourceSpec extends MetricHealthSourceSpec {
   @NotNull String feature;
   private List<SplunkMetricDefinition> metricDefinitions;
-
-  @Override
-  // Need to be implemented to support metric thresholds
-  public Set<TimeSeriesMetricPackDTO> getMetricPacks() {
-    return null;
-  }
 
   @Data
   @FieldDefaults(level = AccessLevel.PRIVATE)
