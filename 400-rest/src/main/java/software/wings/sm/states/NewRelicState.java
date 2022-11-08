@@ -29,12 +29,10 @@ import software.wings.metrics.TimeSeriesMetricDefinition;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.DataCollectionCallback;
-import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.analysis.TimeSeriesMetricGroup.TimeSeriesMlAnalysisGroupInfo;
 import software.wings.service.impl.analysis.TimeSeriesMlAnalysisType;
 import software.wings.service.impl.newrelic.NewRelicApplication;
 import software.wings.service.impl.newrelic.NewRelicDataCollectionInfo;
-import software.wings.service.impl.newrelic.NewRelicDataCollectionInfoV2;
 import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.impl.newrelic.NewRelicMetricValueDefinition;
 import software.wings.service.intfc.newrelic.NewRelicService;
@@ -52,7 +50,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
@@ -196,45 +193,6 @@ public class NewRelicState extends AbstractMetricAnalysisState {
   }
 
   @Override
-  protected DataCollectionInfoV2 createDataCollectionInfo(
-      ExecutionContext context, Map<String, String> hostsToCollect) {
-    final Collection<Metric> metricNameToObjectMap =
-        newRelicService.getMetricsCorrespondingToMetricNames(metrics).values();
-    final Map<String, TimeSeriesMetricDefinition> metricTemplate =
-        newRelicService.metricDefinitions(metricNameToObjectMap);
-    metricAnalysisService.saveMetricTemplates(
-        context.getAppId(), StateType.NEW_RELIC, context.getStateExecutionInstanceId(), null, metricTemplate);
-    String envId = getEnvId(context);
-
-    String finalServerConfigId =
-        getResolvedConnectorId(context, NewRelicStateKeys.analysisServerConfigId, analysisServerConfigId);
-
-    String finalNewRelicApplicationId = getResolvedFieldValue(context, NewRelicStateKeys.applicationId, applicationId);
-    try {
-      newRelicService.resolveApplicationId(
-          finalServerConfigId, finalNewRelicApplicationId, context.getAppId(), context.getWorkflowExecutionId());
-    } catch (Exception e) {
-      // see if we can resolve the application by name
-      final NewRelicApplication newRelicApplication = newRelicService.resolveApplicationName(
-          finalServerConfigId, finalNewRelicApplicationId, context.getAppId(), context.getWorkflowExecutionId());
-      finalNewRelicApplicationId = String.valueOf(newRelicApplication.getId());
-    }
-
-    return NewRelicDataCollectionInfoV2.builder()
-        .connectorId(finalServerConfigId)
-        .workflowExecutionId(context.getWorkflowExecutionId())
-        .stateExecutionId(context.getStateExecutionInstanceId())
-        .workflowId(context.getWorkflowId())
-        .accountId(appService.get(context.getAppId()).getAccountId())
-        .envId(envId)
-        .applicationId(context.getAppId())
-        .hosts(hostsToCollect.keySet())
-        .newRelicAppId(Long.parseLong(finalNewRelicApplicationId))
-        .hostsToGroupNameMap(hostsToCollect)
-        .serviceId(getPhaseServiceId(context))
-        .build();
-  }
-  @Override
   protected void createAndSaveMetricGroups(ExecutionContext context, Map<String, String> hostsToCollect) {
     Map<String, TimeSeriesMlAnalysisGroupInfo> metricGroups = new HashMap<>();
     Set<String> hostGroups = new HashSet<>(hostsToCollect.values());
@@ -313,10 +271,6 @@ public class NewRelicState extends AbstractMetricAnalysisState {
     this.metrics = metrics;
   }
 
-  @Override
-  protected Optional<FeatureName> getCVTaskFeatureName() {
-    return Optional.of(FeatureName.NEW_RELIC_CV_TASK);
-  }
   @Data
   @Builder
   public static class Metric {
