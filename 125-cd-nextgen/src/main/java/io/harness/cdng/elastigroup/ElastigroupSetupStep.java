@@ -18,7 +18,6 @@ import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePas
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -104,6 +103,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .elastigroupCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
                     .startupScript(elastigroupStepCommonHelper.getBase64EncodedStartupScript(ambiance, elastigroupStepExecutorParams.getStartupScript()))
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
+                    .image(elastigroupStepExecutorParams.getImage())
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
                     .maxInstanceCount(elastiGroupOriginalConfig.getCapacity().getMaximum())
