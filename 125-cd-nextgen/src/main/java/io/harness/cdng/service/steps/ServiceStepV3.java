@@ -174,7 +174,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private void executeEnvironmentPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
-      ServicePartResponse servicePartResponse, NGLogCallback logCallback, Map<FreezeEntityType, List<String>> entityMap) {
+      ServicePartResponse servicePartResponse, NGLogCallback logCallback,
+      Map<FreezeEntityType, List<String>> entityMap) {
     final ParameterField<String> envRef = parameters.getEnvRef();
     final ParameterField<Map<String, Object>> envInputs = parameters.getEnvInputs();
     if (ParameterField.isNull(envRef)) {
