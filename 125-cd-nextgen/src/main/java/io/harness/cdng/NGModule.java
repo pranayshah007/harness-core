@@ -13,6 +13,8 @@ import io.harness.WalkTreeModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceServiceImpl;
+import io.harness.cdng.artifact.resources.ami.AMIResourceService;
+import io.harness.cdng.artifact.resources.ami.AMIResourceServiceImpl;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl;
 import io.harness.cdng.artifact.resources.azureartifacts.AzureArtifactsResourceService;
@@ -133,6 +135,7 @@ public class NGModule extends AbstractModule {
     bind(JenkinsResourceService.class).to(JenkinsResourceServiceImpl.class);
     bind(GithubPackagesResourceService.class).to(GithubPackagesResourceServiceImpl.class);
     bind(AzureArtifactsResourceService.class).to(AzureArtifactsResourceServiceImpl.class);
+    bind(AMIResourceService.class).to(AMIResourceServiceImpl.class);
     bind(FilterService.class).to(FilterServiceImpl.class);
     bind(ClusterService.class).to(ClusterServiceImpl.class);
     bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);

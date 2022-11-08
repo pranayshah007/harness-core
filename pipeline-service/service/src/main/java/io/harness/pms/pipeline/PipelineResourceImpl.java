@@ -482,6 +482,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   @Override
   public ResponseDTO<PMSPipelineListRepoResponse> getListRepos(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return ResponseDTO.newResponse(PMSPipelineListRepoResponse.builder().build());
+    return ResponseDTO.newResponse(
+        pmsPipelineService.getListOfRepos(accountIdentifier, orgIdentifier, projectIdentifier));
   }
 }

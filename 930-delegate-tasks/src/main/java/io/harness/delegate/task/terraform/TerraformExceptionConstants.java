@@ -59,6 +59,10 @@ public final class TerraformExceptionConstants {
     public static final String MESSAGE_INVALID_CREDENTIALS_AWS = "Invalid or missing credentials for AWS provider";
     public static final String MESSAGE_ERROR_INSPECTING_STATE_IN_BACKEND = "Failed to initialize terraform backend";
     public static final String MESSAGE_FAILED_TO_GET_EXISTING_WORKSPACES = "Failed to get existing workspaces";
+    public static final String GENERIC_NO_TERRAFORM_ERROR =
+        "Failed with unknown error. For more details please configure TF_LOG env variable and check execution logs";
+    public static final String MESSAGE_ERROR_TOO_LONG =
+        "Error message is too long to be fully displayed, please check execution logs for more details";
   }
 
   public static final class CliErrorMessages {

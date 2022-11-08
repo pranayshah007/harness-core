@@ -119,8 +119,6 @@ io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig
 io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig
 io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig
 io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig
-io.harness.cdng.artifact.bean.yaml.ami.AMITag
-io.harness.cdng.artifact.bean.yaml.ami.AMIFilter
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
 io.harness.cdng.infra.beans.K8sGcpInfraMapping
 io.harness.cdng.infra.beans.K8sAzureInfraMapping
@@ -422,6 +420,8 @@ io.harness.ngpipeline.pipeline.executions.beans.GithubPackagesArtifactSummary
 io.harness.cdng.artifact.bean.yaml.GithubPackageArtifactConfig
 io.harness.ngpipeline.artifact.bean.AzureArtifactsOutcome
 io.harness.ngpipeline.pipeline.executions.beans.AzureArtifactsSummary
+io.harness.ngpipeline.artifact.bean.AMIArtifactOutcome
+io.harness.ngpipeline.pipeline.executions.beans.AMIArtifactSummary
 io.harness.cdng.provision.azure.AzureSubscriptionSpec
 io.harness.cdng.provision.azure.AzureTenantSpec
 io.harness.cdng.provision.azure.AzureResourceGroupSpec

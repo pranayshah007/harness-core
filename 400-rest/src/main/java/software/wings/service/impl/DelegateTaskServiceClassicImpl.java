@@ -1427,4 +1427,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   public void onReconnected(Delegate delegate) {
     // do nothing
   }
+
+  @Override
+  public void onDelegateTagsUpdated(String accountId) {
+    // do nothing
+  }
 }

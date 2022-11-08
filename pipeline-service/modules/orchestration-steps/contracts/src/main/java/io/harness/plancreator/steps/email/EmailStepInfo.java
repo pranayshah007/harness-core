@@ -15,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -23,9 +22,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.email.EmailStepParameters;
-import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
-import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -47,7 +44,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("emailStepInfo")
 @RecasterAlias("io.harness.plancreator.steps.email.EmailStepInfo")
 @OwnedBy(CDC)
-public class EmailStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector {
+public class EmailStepInfo implements PMSStepInfo {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -74,11 +71,6 @@ public class EmailStepInfo implements PMSStepInfo, Visitable, WithDelegateSelect
   }
 
   @Override
-  public VisitableChildren getChildrenToWalk() {
-    return VisitableChildren.builder().build();
-  }
-
-  @Override
   @JsonIgnore
   public StepType getStepType() {
     return StepSpecTypeConstants.EMAIL_STEP_TYPE;
@@ -87,11 +79,17 @@ public class EmailStepInfo implements PMSStepInfo, Visitable, WithDelegateSelect
   @Override
   @JsonIgnore
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
+    return OrchestrationFacilitatorType.SYNC;
   }
 
   @Override
   public SpecParameters getSpecParameters() {
-    return EmailStepParameters.builder().body(body).cc(cc).delegateSelectors(delegateSelectors).to(to).build();
+    return EmailStepParameters.builder()
+        .subject(subject)
+        .body(body)
+        .cc(cc)
+        .delegateSelectors(delegateSelectors)
+        .to(to)
+        .build();
   }
 }

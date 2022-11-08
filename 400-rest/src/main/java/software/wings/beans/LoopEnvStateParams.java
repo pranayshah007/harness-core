@@ -30,10 +30,13 @@ public class LoopEnvStateParams implements LoopParams {
   String workflowId;
   Map<String, String> workflowVariables;
   String stepName;
+  boolean isRollback;
 
   public State getEnvStateInstanceFromParams(WorkflowService workflowService, String appId) {
     Map<String, StateTypeDescriptor> stencilMap = workflowService.stencilMap(appId);
-    StateTypeDescriptor stateTypeDesc = stencilMap.get(StateType.ENV_STATE.getType());
+
+    StateTypeDescriptor stateTypeDesc =
+        stencilMap.get(isRollback ? StateType.ENV_ROLLBACK_STATE.getType() : StateType.ENV_STATE.getType());
 
     State state = stateTypeDesc.newInstance(stepName);
     Map<String, Object> properties = new HashMap<>();

@@ -355,7 +355,7 @@ public class ExecutionResource {
     notNullCheck("No Workflow Execution exist for Id: " + workflowExecutionId, workflowExecution);
     deploymentAuthHandler.authorizeRollback(appId, workflowExecution);
     WorkflowExecution rollbackWorkflowExecution =
-        workflowExecutionService.triggerRollbackExecutionWorkflow(appId, workflowExecution);
+        workflowExecutionService.triggerRollbackExecutionWorkflow(appId, workflowExecution, false);
     rollbackWorkflowExecution.setStateMachine(null);
     return new RestResponse<>(rollbackWorkflowExecution);
   }
