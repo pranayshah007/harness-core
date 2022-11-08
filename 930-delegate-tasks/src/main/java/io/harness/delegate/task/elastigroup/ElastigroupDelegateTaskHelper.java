@@ -37,7 +37,6 @@ public class ElastigroupDelegateTaskHelper {
         ? elastigroupCommandRequest.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();
     log.info("Starting task execution for command: {}", elastigroupCommandRequest.getElastigroupCommandType().name());
-//    decryptRequestDTOs(elastigroupCommandRequest);
 
     ElastigroupCommandTaskNGHandler commandTaskHandler =
         commandTaskTypeToTaskHandlerMap.get(elastigroupCommandRequest.getElastigroupCommandType().name());
@@ -54,8 +53,4 @@ public class ElastigroupDelegateTaskHelper {
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     }
   }
-
-//  private void decryptRequestDTOs(EcsCommandRequest ecsCommandRequest) {
-//    ecsInfraConfigHelper.decryptEcsInfraConfig(ecsCommandRequest.getEcsInfraConfig());
-//  }
 }
