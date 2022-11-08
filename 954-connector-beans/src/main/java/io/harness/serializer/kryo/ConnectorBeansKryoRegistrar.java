@@ -137,6 +137,11 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConstants;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.pagerduty.PagerDutyConnectorDTO;
+import io.harness.delegate.beans.connector.pcfconnector.PcfConnectorDTO;
+import io.harness.delegate.beans.connector.pcfconnector.PcfCredentialDTO;
+import io.harness.delegate.beans.connector.pcfconnector.PcfCredentialSpecDTO;
+import io.harness.delegate.beans.connector.pcfconnector.PcfCredentialType;
+import io.harness.delegate.beans.connector.pcfconnector.PcfManualDetailsDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
@@ -438,5 +443,11 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureArtifactsAuthenticationType.class, 10000103);
     kryo.register(AzureArtifactsAuthenticationDTO.class, 10000109);
     kryo.register(AzureArtifactsTokenDTO.class, 10000111);
+
+    kryo.register(PcfConnectorDTO.class, 10000201);
+    kryo.register(PcfCredentialDTO.class, 10000202);
+    kryo.register(PcfCredentialSpecDTO.class, 10000203);
+    kryo.register(PcfCredentialType.class, 10000204);
+    kryo.register(PcfManualDetailsDTO.class, 10000205);
   }
 }

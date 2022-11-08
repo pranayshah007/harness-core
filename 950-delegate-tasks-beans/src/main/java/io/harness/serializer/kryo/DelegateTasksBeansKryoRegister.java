@@ -229,6 +229,9 @@ import io.harness.delegate.beans.connector.k8Connector.K8sValidationParams;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesConnectionTaskParams;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesConnectionTaskResponse;
 import io.harness.delegate.beans.connector.nexusconnector.NexusValidationParams;
+import io.harness.delegate.beans.connector.pcfconnector.PcfTaskParams;
+import io.harness.delegate.beans.connector.pcfconnector.PcfTaskType;
+import io.harness.delegate.beans.connector.pcfconnector.PcfValidationParams;
 import io.harness.delegate.beans.connector.pdcconnector.HostConnectivityTaskParams;
 import io.harness.delegate.beans.connector.pdcconnector.HostConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorValidationParams;
@@ -315,6 +318,8 @@ import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
+import io.harness.delegate.beans.pcf.response.PcfDelegateTaskResponse;
+import io.harness.delegate.beans.pcf.response.PcfValidateTaskResponse;
 import io.harness.delegate.beans.polling.ArtifactPollingDelegateResponse;
 import io.harness.delegate.beans.polling.GitPollingDelegateResponse;
 import io.harness.delegate.beans.polling.ManifestPollingDelegateResponse;
@@ -1309,6 +1314,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(SpotTaskType.class, 21008);
     kryo.register(SpotValidationParams.class, 21009);
     kryo.register(SpotDelegateTaskResponse.class, 21010);
+
+    kryo.register(PcfValidateTaskResponse.class, 10000208);
+    kryo.register(PcfTaskParams.class, 10000207);
+    kryo.register(PcfTaskType.class, 10000206);
+    kryo.register(PcfValidationParams.class, 10000209);
+    kryo.register(PcfDelegateTaskResponse.class, 10000210);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);

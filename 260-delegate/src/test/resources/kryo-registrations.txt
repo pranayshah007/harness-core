@@ -2433,4 +2433,15 @@
 10000103:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType
 10000109:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO
 10000111:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
+10000201:io.harness.delegate.beans.connector.pcfconnector.PcfConnectorDTO
+10000202:io.harness.delegate.beans.connector.pcfconnector.PcfCredentialDTO
+10000203:io.harness.delegate.beans.connector.pcfconnector.PcfCredentialSpecDTO
+10000204:io.harness.delegate.beans.connector.pcfconnector.PcfCredentialType
+10000205:io.harness.delegate.beans.connector.pcfconnector.PcfManualDetailsDTO
+10000206:io.harness.delegate.beans.connector.pcfconnector.PcfTaskType
+10000207:io.harness.delegate.beans.connector.pcfconnector.PcfTaskParams
+10000208:io.harness.delegate.beans.pcf.response.PcfValidateTaskResponse
+10000209:io.harness.delegate.beans.connector.pcfconnector.PcfValidationParams
+10000210:io.harness.delegate.beans.pcf.response.PcfDelegateTaskResponse
+
 
