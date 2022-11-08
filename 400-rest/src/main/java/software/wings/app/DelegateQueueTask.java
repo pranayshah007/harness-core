@@ -163,17 +163,35 @@ public class DelegateQueueTask implements Runnable {
         delegateTask.setBroadcastToDelegateIds(broadcastToDelegates);
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(broadcastToDelegates), delegateTask);
 
-        try (AutoLogContext ignore1 = new TaskLogContext(delegateTask.getUuid(), delegateTask.getData().getTaskType(),
-                 TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR);
-             AutoLogContext ignore2 = new AccountLogContext(delegateTask.getAccountId(), OVERRIDE_ERROR)) {
-          log.info("ST: Rebroadcast queued task id {} on broadcast attempt: {} on round {} to {} ",
-              delegateTask.getUuid(), delegateTask.getBroadcastCount(), delegateTask.getBroadcastRound(),
-              delegateTask.getBroadcastToDelegateIds());
-          delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_REBROADCAST);
-          broadcastHelper.rebroadcastDelegateTask(delegateTask);
-          count++;
+        if (delegateTask.getTaskDataV2() != null) {
+          rebroadcastDelegateTaskUsingTaskDataV2(delegateTask);
+        } else {
+          rebroadcastDelegateTaskUsingTaskData(delegateTask);
         }
+        count++;
       }
+    }
+  }
+
+  private void rebroadcastDelegateTaskUsingTaskData(DelegateTask delegateTask) {
+    try (AutoLogContext ignore1 = new TaskLogContext(delegateTask.getUuid(), delegateTask.getData().getTaskType(),
+             TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(delegateTask.getAccountId(), OVERRIDE_ERROR)) {
+      log.info("ST: Rebroadcast queued task id {} on broadcast attempt: {} on round {} to {} ", delegateTask.getUuid(),
+          delegateTask.getBroadcastCount(), delegateTask.getBroadcastRound(), delegateTask.getBroadcastToDelegateIds());
+      delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_REBROADCAST);
+      broadcastHelper.rebroadcastDelegateTask(delegateTask);
+    }
+  }
+
+  private void rebroadcastDelegateTaskUsingTaskDataV2(DelegateTask delegateTask) {
+    try (AutoLogContext ignore1 = new TaskLogContext(delegateTask.getUuid(), delegateTask.getTaskDataV2().getTaskType(),
+             TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(delegateTask.getAccountId(), OVERRIDE_ERROR)) {
+      log.info("ST: Rebroadcast queued task id {} on broadcast attempt: {} on round {} to {} ", delegateTask.getUuid(),
+          delegateTask.getBroadcastCount(), delegateTask.getBroadcastRound(), delegateTask.getBroadcastToDelegateIds());
+      delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_REBROADCAST);
+      broadcastHelper.rebroadcastDelegateTaskV2(delegateTask);
     }
   }
 }

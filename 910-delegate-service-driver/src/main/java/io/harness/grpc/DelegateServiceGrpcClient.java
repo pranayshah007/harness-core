@@ -88,17 +88,22 @@ public class DelegateServiceGrpcClient {
   private final DelegateServiceBlockingStub delegateServiceBlockingStub;
   private final DelegateAsyncService delegateAsyncService;
   private final KryoSerializer kryoSerializer;
+
+  private final KryoSerializer referenceFalseKryoSerializer;
   private final DelegateSyncService delegateSyncService;
   private final boolean isDriverInstalledInNgService;
   @Inject private ObjectMapper objectMapper;
 
   @Inject
   public DelegateServiceGrpcClient(DelegateServiceBlockingStub delegateServiceBlockingStub,
-      DelegateAsyncService delegateAsyncService, KryoSerializer kryoSerializer, DelegateSyncService delegateSyncService,
+      DelegateAsyncService delegateAsyncService, KryoSerializer kryoSerializer,
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
+      DelegateSyncService delegateSyncService,
       @Named("driver-installed-in-ng-service") BooleanSupplier isDriverInstalledInNgService) {
     this.delegateServiceBlockingStub = delegateServiceBlockingStub;
     this.delegateAsyncService = delegateAsyncService;
     this.kryoSerializer = kryoSerializer;
+    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.delegateSyncService = delegateSyncService;
     this.isDriverInstalledInNgService = isDriverInstalledInNgService.getAsBoolean();
   }
@@ -107,6 +112,13 @@ public class DelegateServiceGrpcClient {
       DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken, Duration holdFor) {
     final SubmitTaskResponse submitTaskResponse =
         submitTaskInternal(TaskMode.ASYNC, taskRequest, delegateCallbackToken, holdFor);
+    return submitTaskResponse.getTaskId().getId();
+  }
+
+  public String submitAsyncTaskV2(
+      DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken, Duration holdFor) {
+    final SubmitTaskResponse submitTaskResponse =
+        submitTaskInternalV2(TaskMode.ASYNC, taskRequest, delegateCallbackToken, holdFor);
     return submitTaskResponse.getTaskId().getId();
   }
 
@@ -140,6 +152,16 @@ public class DelegateServiceGrpcClient {
       DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken) {
     final SubmitTaskResponse submitTaskResponse =
         submitTaskInternal(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO);
+    final String taskId = submitTaskResponse.getTaskId().getId();
+    return delegateSyncService.waitForTask(taskId,
+        Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
+        Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
+  }
+
+  public <T extends ResponseData> T executeSyncTaskReturningResponseDataV2(
+      DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken) {
+    final SubmitTaskResponse submitTaskResponse =
+        submitTaskInternalV2(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO);
     final String taskId = submitTaskResponse.getTaskId().getId();
     return delegateSyncService.waitForTask(taskId,
         Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
@@ -220,6 +242,81 @@ public class DelegateServiceGrpcClient {
     }
   }
 
+  public SubmitTaskResponse submitTaskV2(DelegateCallbackToken delegateCallbackToken, AccountId accountId,
+      TaskSetupAbstractions taskSetupAbstractions, TaskLogAbstractions taskLogAbstractions, TaskDetails taskDetails,
+      List<ExecutionCapability> capabilities, List<String> taskSelectors, Duration holdFor, boolean forceExecute,
+      boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds, boolean emitEvent,
+      String stageId) {
+    try {
+      if (taskSetupAbstractions == null || taskSetupAbstractions.getValuesCount() == 0) {
+        Map<String, String> setupAbstractions = new HashMap<>();
+        setupAbstractions.put("ng", String.valueOf(isDriverInstalledInNgService));
+
+        taskSetupAbstractions = TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractions).build();
+      } else if (taskSetupAbstractions.getValuesMap().get("ng") == null) {
+        // This should allow a consumer of the client to override the value, if the one provided by this client is not
+        // appropriate
+        taskSetupAbstractions = TaskSetupAbstractions.newBuilder()
+                                    .putAllValues(taskSetupAbstractions.getValuesMap())
+                                    .putValues("ng", String.valueOf(isDriverInstalledInNgService))
+                                    .build();
+      }
+
+      SubmitTaskRequest.Builder submitTaskRequestBuilder =
+          SubmitTaskRequest.newBuilder()
+              .setCallbackToken(delegateCallbackToken)
+              .setAccountId(accountId)
+              .setSetupAbstractions(taskSetupAbstractions)
+              .setLogAbstractions(taskLogAbstractions)
+              .setExecuteOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
+              .setEmitEvent(emitEvent)
+              .setDetails(taskDetails)
+              .setForceExecute(forceExecute);
+
+      if (Strings.isNotBlank(stageId)) {
+        submitTaskRequestBuilder.setStageId(stageId);
+      }
+
+      if (isNotEmpty(capabilities)) {
+        submitTaskRequestBuilder.addAllCapabilities(
+            capabilities.stream()
+                .map(capability
+                    -> Capability.newBuilder()
+                           .setKryoCapability(
+                               ByteString.copyFrom(referenceFalseKryoSerializer.asDeflatedBytes(capability)))
+                           .build())
+                .collect(toList()));
+      }
+
+      if (isNotEmpty(taskSelectors)) {
+        submitTaskRequestBuilder.addAllSelectors(
+            taskSelectors.stream()
+                .map(selector -> TaskSelector.newBuilder().setSelector(selector).build())
+                .collect(toList()));
+      }
+
+      if (isNotEmpty(eligibleToExecuteDelegateIds)) {
+        submitTaskRequestBuilder.addAllEligibleToExecuteDelegateIds(
+            eligibleToExecuteDelegateIds.stream().collect(toList()));
+      }
+
+      SubmitTaskResponse response = delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
+                                        .submitTaskV2(submitTaskRequestBuilder.build());
+
+      if (taskDetails.getMode() == TaskMode.ASYNC) {
+        delegateAsyncService.setupTimeoutForTask(response.getTaskId().getId(),
+            Timestamps.toMillis(response.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis());
+      }
+
+      return response;
+    } catch (StatusRuntimeException ex) {
+      if (ex.getStatus() != null && isNotEmpty(ex.getStatus().getDescription())) {
+        throw new DelegateServiceDriverException(ex.getStatus().getDescription());
+      }
+      throw new DelegateServiceDriverException("Unexpected error occurred while submitting task.", ex);
+    }
+  }
+
   private SubmitTaskResponse submitTaskInternal(TaskMode taskMode, DelegateTaskRequest taskRequest,
       DelegateCallbackToken delegateCallbackToken, Duration holdFor) {
     final TaskParameters taskParameters = taskRequest.getTaskParameters();
@@ -247,6 +344,45 @@ public class DelegateServiceGrpcClient {
     }
 
     return submitTask(delegateCallbackToken, AccountId.newBuilder().setId(taskRequest.getAccountId()).build(),
+        TaskSetupAbstractions.newBuilder()
+            .putAllValues(MapUtils.emptyIfNull(taskRequest.getTaskSetupAbstractions()))
+            .build(),
+        TaskLogAbstractions.newBuilder()
+            .putAllValues(MapUtils.emptyIfNull(taskRequest.getLogStreamingAbstractions()))
+            .build(),
+        taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor, taskRequest.isForceExecute(),
+        taskRequest.isExecuteOnHarnessHostedDelegates(), taskRequest.getEligibleToExecuteDelegateIds(),
+        taskRequest.isEmitEvent(), taskRequest.getStageId());
+  }
+
+  private SubmitTaskResponse submitTaskInternalV2(TaskMode taskMode, DelegateTaskRequest taskRequest,
+      DelegateCallbackToken delegateCallbackToken, Duration holdFor) {
+    final TaskParameters taskParameters = taskRequest.getTaskParameters();
+
+    final List<ExecutionCapability> capabilities = (taskParameters instanceof ExecutionCapabilityDemander)
+        ? ListUtils.emptyIfNull(((ExecutionCapabilityDemander) taskParameters).fetchRequiredExecutionCapabilities(null))
+        : Collections.emptyList();
+
+    TaskDetails.Builder taskDetailsBuilder =
+        TaskDetails.newBuilder()
+            .setParked(taskRequest.isParked())
+            .setMode(taskMode)
+            .setExpressionFunctorToken(taskRequest.getExpressionFunctorToken())
+            .setType(TaskType.newBuilder().setType(taskRequest.getTaskType()).build())
+            .setExecutionTimeout(Durations.fromSeconds(taskRequest.getExecutionTimeout().getSeconds()));
+
+    if (taskRequest.getSerializationFormat().equals(SerializationFormat.JSON)) {
+      try {
+        taskDetailsBuilder.setJsonParameters(ByteString.copyFrom(objectMapper.writeValueAsBytes(taskParameters)));
+      } catch (JsonProcessingException e) {
+        throw new InvalidRequestException("Could not serialize the task request", e);
+      }
+    } else {
+      taskDetailsBuilder.setKryoParameters(
+          ByteString.copyFrom(referenceFalseKryoSerializer.asDeflatedBytes(taskParameters)));
+    }
+
+    return submitTaskV2(delegateCallbackToken, AccountId.newBuilder().setId(taskRequest.getAccountId()).build(),
         TaskSetupAbstractions.newBuilder()
             .putAllValues(MapUtils.emptyIfNull(taskRequest.getTaskSetupAbstractions()))
             .build(),

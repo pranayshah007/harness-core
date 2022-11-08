@@ -519,8 +519,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           templateIdentifier, versionLabel, projectIdentifier, orgIdentifier));
     }
     checkThatTheTemplateIsNotUsedByOthers(templateToDelete);
-    // delete template references
-    templateReferenceHelper.deleteTemplateReferences(templateToDelete);
     try {
       return templateServiceHelper.deleteTemplate(
           accountId, orgIdentifier, projectIdentifier, templateIdentifier, templateToDelete, versionLabel, comments);

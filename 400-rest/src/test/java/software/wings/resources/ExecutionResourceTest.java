@@ -104,7 +104,8 @@ public class ExecutionResourceTest extends CategoryTest {
     when(appService.list(anyObject())).thenReturn(applicationPageResponse);
 
     PageResponse<WorkflowExecution> workflowExecutionPageResponse = aPageResponse().build();
-    when(workflowExecutionService.listExecutions(anyObject(), eq(true), eq(true), eq(true), eq(true), eq(true)))
+    when(workflowExecutionService.listExecutions(
+             anyObject(), eq(true), eq(true), eq(true), eq(true), eq(true), eq(true)))
         .thenReturn(workflowExecutionPageResponse);
 
     RestResponse<PageResponse<WorkflowExecution>> actual =

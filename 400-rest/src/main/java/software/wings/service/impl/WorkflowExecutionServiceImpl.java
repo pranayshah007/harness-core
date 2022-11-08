@@ -509,7 +509,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   @Override
   public PageResponse<WorkflowExecution> listExecutions(
       PageRequest<WorkflowExecution> pageRequest, boolean includeGraph) {
-    return listExecutions(pageRequest, includeGraph, false, true, true, false);
+    return listExecutions(pageRequest, includeGraph, false, true, true, false, false);
   }
 
   @Override
@@ -525,8 +525,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   @Override
   public PageResponse<WorkflowExecution> listExecutions(PageRequest<WorkflowExecution> pageRequest,
       boolean includeGraph, boolean runningOnly, boolean withBreakdownAndSummary, boolean includeStatus,
-      boolean withFailureDetails) {
-    PageResponse<WorkflowExecution> res = wingsPersistence.query(WorkflowExecution.class, pageRequest);
+      boolean withFailureDetails, boolean fromUi) {
+    PageResponse<WorkflowExecution> res;
+    res = fromUi ? wingsPersistence.queryAnalytics(WorkflowExecution.class, pageRequest)
+                 : wingsPersistence.query(WorkflowExecution.class, pageRequest);
     return (PageResponse<WorkflowExecution>) processExecutions(
         res, includeGraph, runningOnly, withBreakdownAndSummary, includeStatus, withFailureDetails);
   }
@@ -6013,7 +6015,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       pageRequest.addFilter(WorkflowExecutionKeys.serviceIds, EQ, serviceId);
     }
     final PageResponse<WorkflowExecution> workflowExecutions =
-        listExecutions(pageRequest, false, true, false, false, false);
+        listExecutions(pageRequest, false, true, false, false, false, false);
     if (workflowExecutions != null) {
       return workflowExecutions.getResponse();
     }

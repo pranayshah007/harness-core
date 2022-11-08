@@ -40,6 +40,7 @@ public class DelegateTaskPackage {
   private String delegateCallbackToken;
 
   private TaskData data;
+  private TaskDataV2 taskDataV2;
 
   @Default private Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
   @Default private Map<String, SecretDetail> secretDetails = new HashMap<>();

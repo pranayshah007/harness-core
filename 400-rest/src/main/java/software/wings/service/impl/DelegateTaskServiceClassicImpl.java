@@ -81,6 +81,7 @@ import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.TaskGroup;
 import io.harness.delegate.beans.TaskSelectorMap;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -316,6 +317,27 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
   }
 
+  public static void embedCapabilitiesInDelegateTaskV2(
+      DelegateTask task, Collection<EncryptionConfig> encryptionConfigs, ExpressionEvaluator maskingEvaluator) {
+    if (isEmpty(task.getTaskDataV2().getParameters()) || isNotEmpty(task.getExecutionCapabilities())) {
+      return;
+    }
+
+    task.setExecutionCapabilities(new ArrayList<>());
+    task.getExecutionCapabilities().addAll(
+        Arrays.stream(task.getTaskDataV2().getParameters())
+            .filter(param -> param instanceof ExecutionCapabilityDemander)
+            .flatMap(param
+                -> ((ExecutionCapabilityDemander) param).fetchRequiredExecutionCapabilities(maskingEvaluator).stream())
+            .collect(toList()));
+
+    if (isNotEmpty(encryptionConfigs)) {
+      task.getExecutionCapabilities().addAll(
+          EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForSecretManagers(
+              encryptionConfigs, maskingEvaluator));
+    }
+  }
+
   @VisibleForTesting
   protected void checkTaskRankRateLimit(DelegateTaskRank rank) {
     if (rank == null) {
@@ -383,6 +405,44 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
   }
 
+  @VisibleForTesting
+  @Override
+  public void convertToExecutionCapabilityV2(DelegateTask task) {
+    Set<ExecutionCapability> executionCapabilities = new HashSet<>();
+
+    if (isNotEmpty(task.getTags())) {
+      SelectorCapability selectorCapability =
+          SelectorCapability.builder().selectors(new HashSet<>(task.getTags())).selectorOrigin(TASK_SELECTORS).build();
+      executionCapabilities.add(selectorCapability);
+    }
+
+    boolean isTaskNg =
+        !isEmpty(task.getSetupAbstractions()) && Boolean.parseBoolean(task.getSetupAbstractions().get(NG));
+
+    if (!isTaskNg && task.getTaskDataV2() != null && task.getTaskDataV2().getTaskType() != null) {
+      TaskGroup taskGroup = TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup();
+      TaskSelectorMap mapFromTaskType = taskSelectorMapService.get(task.getAccountId(), taskGroup);
+      if (mapFromTaskType != null && isNotEmpty(mapFromTaskType.getSelectors())) {
+        SelectorCapability selectorCapability = SelectorCapability.builder()
+                                                    .selectors(mapFromTaskType.getSelectors())
+                                                    .selectorOrigin(TASK_CATEGORY_MAP)
+                                                    .build();
+        executionCapabilities.add(selectorCapability);
+      }
+    }
+
+    if (task.getExecutionCapabilities() == null) {
+      task.setExecutionCapabilities(new ArrayList<>(executionCapabilities));
+      if (task.getTaskDataV2() != null && isNotEmpty(executionCapabilities)) {
+        addToTaskActivityLog(task,
+            CapabilityHelper.generateLogStringWithSelectionCapabilitiesGenerated(
+                task.getTaskDataV2().getTaskType(), task.getExecutionCapabilities()));
+      }
+    } else {
+      task.getExecutionCapabilities().addAll(executionCapabilities);
+    }
+  }
+
   @Override
   public String queueTask(DelegateTask task) {
     task.getData().setAsync(true);
@@ -396,6 +456,24 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       log.info("Queueing async task {} of type {} ", task.getUuid(), task.getData().getTaskType());
       processDelegateTask(task, QUEUED);
       broadcastHelper.broadcastNewDelegateTaskAsync(task);
+    }
+    return task.getUuid();
+  }
+
+  @Override
+  public String queueTaskV2(DelegateTask task) {
+    task.getTaskDataV2().setAsync(true);
+    if (task.getUuid() == null) {
+      task.setUuid(generateUuid());
+    }
+
+    try (
+        AutoLogContext ignore1 = new TaskLogContext(task.getUuid(), task.getTaskDataV2().getTaskType(),
+            TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup().name(), task.getRank(), OVERRIDE_NESTS);
+        AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
+      log.info("Queueing async task {} of type {} ", task.getUuid(), task.getTaskDataV2().getTaskType());
+      processDelegateTask(task, QUEUED);
+      broadcastHelper.broadcastNewDelegateTaskAsyncV2(task);
     }
     return task.getUuid();
   }
@@ -417,10 +495,34 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   @Override
+  public void scheduleSyncTaskV2(DelegateTask task) {
+    task.getTaskDataV2().setAsync(false);
+    if (task.getUuid() == null) {
+      task.setUuid(generateUuid());
+    }
+
+    try (
+        AutoLogContext ignore1 = new TaskLogContext(task.getUuid(), task.getTaskDataV2().getTaskType(),
+            TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup().name(), task.getRank(), OVERRIDE_NESTS);
+        AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
+      log.info("Processing sync task {} of type {}", task.getUuid(), task.getTaskDataV2().getTaskType());
+      processDelegateTaskV2(task, QUEUED);
+      broadcastHelper.rebroadcastDelegateTaskV2(task);
+    }
+  }
+
+  @Override
   public <T extends DelegateResponseData> T executeTask(DelegateTask task) {
     scheduleSyncTask(task);
     return delegateSyncService.waitForTask(task.getUuid(), task.calcDescription(),
         Duration.ofMillis(task.getData().getTimeout()), task.getExecutionCapabilities());
+  }
+
+  @Override
+  public <T extends DelegateResponseData> T executeTaskV2(DelegateTask task) {
+    scheduleSyncTaskV2(task);
+    return delegateSyncService.waitForTask(task.getUuid(), task.calcDescription(),
+        Duration.ofMillis(task.getTaskDataV2().getTimeout()), task.getExecutionCapabilities());
   }
 
   @VisibleForTesting
@@ -539,6 +641,122 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
   }
 
+  @VisibleForTesting
+  @Override
+  public void processDelegateTaskV2(DelegateTask task, DelegateTask.Status taskStatus) {
+    String taskInfo =
+        String.format("Processing task id: %s of task type %s", task.getUuid(), task.getTaskDataV2().getTaskType());
+    addToTaskActivityLog(task, taskInfo);
+    task.setStatus(taskStatus);
+    task.setVersion(getVersion());
+    task.setLastBroadcastAt(clock.millis());
+    if (task.isExecuteOnHarnessHostedDelegates()) {
+      task.setSecondaryAccountId(task.getAccountId());
+      if (delegateGlobalAccountController.getGlobalAccount().isPresent()) {
+        String globalDelegateAccount = delegateGlobalAccountController.getGlobalAccount().get().getUuid();
+        task.setAccountId(globalDelegateAccount);
+      } else {
+        throw new NoGlobalDelegateAccountException(
+            "No Global Delegate Account Found", ErrorCode.NO_GLOBAL_DELEGATE_ACCOUNT);
+      }
+    }
+
+    // For forward compatibility set the wait id to the uuid
+    if (task.getUuid() == null) {
+      task.setUuid(generateUuid());
+    }
+
+    if (task.getWaitId() == null) {
+      task.setWaitId(task.getUuid());
+    }
+
+    // For backward compatibility we base the queue task expiry on the execution timeout
+    if (task.getExpiry() == 0) {
+      task.setExpiry(currentTimeMillis() + task.getTaskDataV2().getTimeout());
+    }
+    try (AutoLogContext ignore = new TaskLogContext(task.getUuid(), task.getTaskDataV2().getTaskType(),
+             TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
+      try {
+        // capabilities created,then appended to task.executionCapabilities to get eligible delegates
+        generateCapabilitiesForTaskV2(task);
+        convertToExecutionCapabilityV2(task);
+
+        List<String> eligibleListOfDelegates = assignDelegateService.getEligibleDelegatesToExecuteTaskV2(task);
+        delegateSelectionLogsService.logDelegateTaskInfo(task);
+        if (eligibleListOfDelegates.isEmpty()) {
+          addToTaskActivityLog(task, NO_ELIGIBLE_DELEGATES);
+          delegateSelectionLogsService.logNoEligibleDelegatesToExecuteTask(task);
+          delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_NO_ELIGIBLE_DELEGATES);
+          StringBuilder errorMessage = new StringBuilder(NO_ELIGIBLE_DELEGATES);
+          if (task.getNonAssignableDelegates() != null) {
+            errorMessage.append(String.join(" , ", task.getNonAssignableDelegates().keySet()));
+          }
+          throw new NoEligibleDelegatesInAccountException(errorMessage.toString());
+        }
+        // shuffle the eligible delegates to evenly distribute the load
+        Collections.shuffle(eligibleListOfDelegates);
+        task.setBroadcastToDelegateIds(
+            Lists.newArrayList(getDelegateIdForFirstBroadcast(task, eligibleListOfDelegates)));
+        if (isNotEmpty(task.getEligibleToExecuteDelegateIds())) {
+          // case when caller send eligibleDelegateIds where we skip assignment process, different selection log message
+          delegateSelectionLogsService.logEligibleDelegatesToExecuteTask(
+              Sets.newHashSet(eligibleListOfDelegates), task, true);
+        } else {
+          delegateSelectionLogsService.logEligibleDelegatesToExecuteTask(
+              Sets.newHashSet(eligibleListOfDelegates), task, false);
+        }
+        // save eligible delegate ids as part of task (will be used for rebroadcasting)
+        task.setEligibleToExecuteDelegateIds(new LinkedList<>(eligibleListOfDelegates));
+        log.info("Assignable/eligible delegates to execute task {} are {}.", task.getUuid(),
+            task.getEligibleToExecuteDelegateIds() + "\n\n"
+                + CapabilityHelper.generateLogStringWithSelectionCapabilitiesGenerated(
+                    task.getTaskDataV2().getTaskType(), task.getExecutionCapabilities()));
+
+        // filter only connected ones from list
+        List<String> connectedEligibleDelegates =
+            assignDelegateService.getConnectedDelegateList(eligibleListOfDelegates, task);
+
+        if (!task.getTaskDataV2().isAsync() && connectedEligibleDelegates.isEmpty()) {
+          addToTaskActivityLog(task, "No Connected eligible delegates to execute sync task");
+          if (assignDelegateService.noInstalledDelegates(task.getAccountId())) {
+            throw new NoInstalledDelegatesException();
+          } else {
+            throw new NoAvailableDelegatesException();
+          }
+        }
+        checkTaskRankRateLimit(task.getRank());
+
+        // Added temporarily to help to identifying tasks whose task setup abstractions need to be fixed
+        verifyTaskSetupAbstractions(task);
+        if (task.isSelectionLogsTrackingEnabled()) {
+          persistence.save(DelegateSelectionLogTaskMetadata.builder()
+                               .taskId(task.getUuid())
+                               .accountId(task.getAccountId())
+                               .setupAbstractions(task.getSetupAbstractions())
+                               .build());
+        }
+
+        // Ensure that broadcast happens at least 5 seconds from current time for async tasks
+        if (task.getTaskDataV2().isAsync()) {
+          task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
+        }
+        persistence.save(task);
+        delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(task.getBroadcastToDelegateIds()), task);
+        delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_CREATION);
+        log.info("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
+            task.getBroadcastToDelegateIds());
+        addToTaskActivityLog(task, "Task processing completed");
+      } catch (Exception exception) {
+        log.info("Task id {} failed with error {}", task.getUuid(), exception);
+        printErrorMessageOnTaskFailure(task);
+        handleTaskFailureResponseV2(task, exception);
+        if (!task.getTaskDataV2().isAsync()) {
+          throw exception;
+        }
+      }
+    }
+  }
+
   private String getDelegateIdForFirstBroadcast(DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
     for (String delegateId : eligibleListOfDelegates) {
       if (assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegateId)
@@ -572,10 +790,52 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     delegateTaskService.handleResponse(task, taskQuery, response);
   }
 
+  private void handleTaskFailureResponseV2(DelegateTask task, Exception exception) {
+    Query<DelegateTask> taskQuery = persistence.createQuery(DelegateTask.class)
+                                        .filter(DelegateTaskKeys.accountId, task.getAccountId())
+                                        .filter(DelegateTaskKeys.uuid, task.getUuid());
+    WingsException ex = null;
+    if (exception instanceof WingsException) {
+      ex = (WingsException) exception;
+    } else {
+      log.error("Encountered unknown exception and failing task", exception);
+    }
+    DelegateTaskResponse response = DelegateTaskResponse.builder()
+                                        .response(ErrorNotifyResponseData.builder()
+                                                      .errorMessage(ExceptionUtils.getMessage(exception))
+                                                      .exception(ex)
+                                                      .build())
+                                        .responseCode(ResponseCode.FAILED)
+                                        .accountId(task.getAccountId())
+                                        .build();
+    delegateTaskService.handleResponseV2(task, taskQuery, response);
+  }
+
   private void verifyTaskSetupAbstractions(DelegateTask task) {
     if (isNotBlank(task.getUuid()) && task.getData() != null && task.getData().getTaskType() != null) {
       try (AutoLogContext ignore1 = new TaskLogContext(task.getUuid(), task.getData().getTaskType(),
                TaskType.valueOf(task.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_NESTS);) {
+        // Verify presence of Environment type, if EnvironmentId is present
+        if (isNotEmpty(task.getSetupAbstractions())
+            && task.getSetupAbstractions().get(Cd1SetupFields.ENV_ID_FIELD) != null
+            && task.getSetupAbstractions().get(Cd1SetupFields.ENV_TYPE_FIELD) == null) {
+          log.error("Missing envType setup abstraction", new RuntimeException());
+        }
+
+        // Verify presence of ServiceId, if Infrastructure Mapping is present
+        if (isNotEmpty(task.getSetupAbstractions())
+            && task.getSetupAbstractions().get(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD) != null
+            && task.getSetupAbstractions().get(Cd1SetupFields.SERVICE_ID_FIELD) == null) {
+          log.error("Missing serviceId setup abstraction", new RuntimeException());
+        }
+      }
+    }
+  }
+
+  private void verifyTaskSetupAbstractionsV2(DelegateTask task) {
+    if (isNotBlank(task.getUuid()) && task.getTaskDataV2() != null && task.getTaskDataV2().getTaskType() != null) {
+      try (AutoLogContext ignore1 = new TaskLogContext(task.getUuid(), task.getTaskDataV2().getTaskType(),
+               TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_NESTS);) {
         // Verify presence of Environment type, if EnvironmentId is present
         if (isNotEmpty(task.getSetupAbstractions())
             && task.getSetupAbstractions().get(Cd1SetupFields.ENV_ID_FIELD) != null
@@ -617,6 +877,25 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   @Override
+  public String queueParkedTaskV2(String accountId, String taskId) {
+    DelegateTask task = persistence.createQuery(DelegateTask.class)
+                            .filter(DelegateTaskKeys.accountId, accountId)
+                            .filter(DelegateTaskKeys.uuid, taskId)
+                            .get();
+
+    task.getTaskDataV2().setAsync(true);
+
+    try (AutoLogContext ignore1 = new TaskLogContext(task.getUuid(), task.getTaskDataV2().getTaskType(),
+             TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_NESTS);
+         AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
+      processDelegateTaskV2(task, QUEUED);
+      log.debug("Queueing parked task");
+      broadcastHelper.broadcastNewDelegateTaskAsyncV2(task);
+    }
+    return task.getUuid();
+  }
+
+  @Override
   public byte[] getParkedTaskResults(String accountId, String taskId, String driverId) {
     DelegateTaskResultsProvider delegateTaskResultsProvider =
         delegateCallbackRegistry.obtainDelegateTaskResultsProvider(driverId);
@@ -642,6 +921,25 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       addToTaskActivityLog(task,
           CapabilityHelper.generateLogStringWithCapabilitiesGenerated(
               task.getData().getTaskType(), task.getExecutionCapabilities()));
+    }
+  }
+
+  private void generateCapabilitiesForTaskV2(DelegateTask task) {
+    addMergedParamsForCapabilityCheckV2(task);
+
+    DelegateTaskPackage delegateTaskPackage = getDelegatePackageWithEncryptionConfigV2(task);
+    embedCapabilitiesInDelegateTaskV2(task,
+        delegateTaskPackage == null || isEmpty(delegateTaskPackage.getEncryptionConfigs())
+            ? emptyList()
+            : delegateTaskPackage.getEncryptionConfigs().values(),
+        new ManagerPreviewExpressionEvaluator());
+
+    if (isNotEmpty(task.getExecutionCapabilities())) {
+      log.debug(CapabilityHelper.generateLogStringWithCapabilitiesGenerated(
+          task.getTaskDataV2().getTaskType(), task.getExecutionCapabilities()));
+      addToTaskActivityLog(task,
+          CapabilityHelper.generateLogStringWithCapabilitiesGenerated(
+              task.getTaskDataV2().getTaskType(), task.getExecutionCapabilities()));
     }
   }
 
@@ -692,6 +990,56 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                 .isGitHostConnectivityCheck(featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, task.getAccountId()))
                 .build();
         task.getData().setParameters(newParamsArr);
+        return;
+      default:
+        noop();
+    }
+  }
+
+  private void addMergedParamsForCapabilityCheckV2(DelegateTask task) {
+    List<Object> newParams;
+    TaskType type = TaskType.valueOf(task.getTaskDataV2().getTaskType());
+    Object[] params = task.getTaskDataV2().getParameters();
+    switch (type) {
+      case HOST_VALIDATION:
+        HostValidationTaskParameters hostValidationTaskParameters;
+        if (params.length == 1 && params[0] instanceof HostValidationTaskParameters) {
+          hostValidationTaskParameters = (HostValidationTaskParameters) params[0];
+        } else {
+          hostValidationTaskParameters = HostValidationTaskParameters.builder()
+                                             .hostNames((List<String>) params[2])
+                                             .connectionSetting((SettingAttribute) params[3])
+                                             .encryptionDetails((List<EncryptedDataDetail>) params[4])
+                                             .executionCredential((ExecutionCredential) params[5])
+                                             .build();
+        }
+
+        newParams = new ArrayList<>(Arrays.asList(hostValidationTaskParameters));
+        task.getTaskDataV2().setParameters(newParams.toArray());
+        return;
+      case PCF_COMMAND_TASK:
+        CfCommandRequest commandRequest = (CfCommandRequest) params[0];
+        if (!(commandRequest instanceof CfRunPluginCommandRequest)) {
+          CfCommandTaskParametersBuilder parametersBuilder =
+              CfCommandTaskParameters.builder().pcfCommandRequest(commandRequest);
+          if (params.length > 1) {
+            parametersBuilder.encryptedDataDetails((List<EncryptedDataDetail>) params[1]);
+          }
+          newParams = new ArrayList<>(Collections.singletonList(parametersBuilder.build()));
+          task.getTaskDataV2().setParameters(newParams.toArray());
+        }
+        return;
+      case GIT_COMMAND:
+        GitConfig config = (GitConfig) params[1];
+        List<EncryptedDataDetail> encryptedDataDetails = (List<EncryptedDataDetail>) params[2];
+        Object[] newParamsArr = Arrays.copyOf(params, params.length + 1);
+        newParamsArr[newParamsArr.length - 1] =
+            GitValidationParameters.builder()
+                .gitConfig(config)
+                .encryptedDataDetails(encryptedDataDetails)
+                .isGitHostConnectivityCheck(featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, task.getAccountId()))
+                .build();
+        task.getTaskDataV2().setParameters(newParamsArr);
         return;
       default:
         noop();
@@ -815,6 +1163,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                     .get();
 
     if (delegateTask != null) {
+      copyTaskDataV2ToTaskData(delegateTask);
+
       if (SerializationFormat.JSON.equals(delegateTask.getData().getSerializationFormat())) {
         TaskType type = TaskType.valueOf(delegateTask.getData().getTaskType());
         TaskParameters taskParameters;
@@ -843,6 +1193,25 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       log.info("Task with id: {} no longer exists", taskId);
     }
     return null;
+  }
+
+  private void copyTaskDataV2ToTaskData(DelegateTask delegateTask) {
+    TaskDataV2 taskDataV2 = delegateTask.getTaskDataV2();
+    if (taskDataV2 != null) {
+      TaskData taskData =
+          TaskData.builder()
+              .data(taskDataV2.getData())
+              .taskType(taskDataV2.getTaskType())
+              .async(taskDataV2.isAsync())
+              .parked(taskDataV2.isParked())
+              .parameters(taskDataV2.getParameters())
+              .timeout(taskDataV2.getTimeout())
+              .expressionFunctorToken(taskDataV2.getExpressionFunctorToken())
+              .expressions(taskDataV2.getExpressions())
+              .serializationFormat(SerializationFormat.valueOf(taskDataV2.getSerializationFormat().name()))
+              .build();
+      delegateTask.setData(taskData);
+    }
   }
 
   private DelegateTaskPackage resolvePreAssignmentExpressions(DelegateTask delegateTask, SecretManagerMode mode) {
@@ -952,6 +1321,117 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
   }
 
+  private DelegateTaskPackage resolvePreAssignmentExpressionsV2(DelegateTask delegateTask, SecretManagerMode mode) {
+    try {
+      ManagerPreExecutionExpressionEvaluator managerPreExecutionExpressionEvaluator =
+          new ManagerPreExecutionExpressionEvaluator(mode, serviceTemplateService, configService,
+              artifactCollectionUtils, featureFlagService, managerDecryptionService, secretManager,
+              delegateTask.getAccountId(), delegateTask.getWorkflowExecutionId(),
+              delegateTask.getTaskDataV2().getExpressionFunctorToken(), ngSecretService,
+              delegateTask.getSetupAbstractions(), secretsCache, delegateMetricsService, expressionEvaluatorExecutor);
+
+      List<ExecutionCapability> executionCapabilityList = emptyList();
+      if (isNotEmpty(delegateTask.getExecutionCapabilities())) {
+        executionCapabilityList = delegateTask.getExecutionCapabilities()
+                                      .stream()
+                                      .filter(x -> x.evaluationMode() == EvaluationMode.AGENT)
+                                      .collect(toList());
+      }
+
+      //  copyTaskDataV2ToTaskData(delegateTask);
+
+      DelegateTaskPackageBuilder delegateTaskPackageBuilder =
+          DelegateTaskPackage.builder()
+              .accountId(delegateTask.getAccountId())
+              .delegateId(delegateTask.getDelegateId())
+              .delegateInstanceId(delegateTask.getDelegateInstanceId())
+              .delegateTaskId(delegateTask.getUuid())
+              .taskDataV2(delegateTask.getTaskDataV2())
+              .executionCapabilities(executionCapabilityList)
+              .delegateCallbackToken(delegateTask.getDriverId());
+
+      boolean isTaskNg = !isEmpty(delegateTask.getSetupAbstractions())
+          && Boolean.parseBoolean(delegateTask.getSetupAbstractions().get(NG));
+
+      if (isTaskNg) {
+        try {
+          String logStreamingAccountToken = logStreamingAccountTokenCache.get(delegateTask.getAccountId());
+
+          if (isNotBlank(logStreamingAccountToken)) {
+            delegateTaskPackageBuilder.logStreamingToken(logStreamingAccountToken);
+          }
+        } catch (ExecutionException e) {
+          delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE_FAILED);
+          log.warn("Unable to retrieve the log streaming service account token, while preparing delegate task package");
+          throw new InvalidRequestException(e.getMessage() + "\nPlease ensure log service is running.", e);
+        }
+
+        delegateTaskPackageBuilder.logStreamingAbstractions(delegateTask.getLogStreamingAbstractions());
+      }
+
+      if (delegateTask.getTaskDataV2().getParameters() == null
+          || delegateTask.getTaskDataV2().getParameters().length != 1
+          || !(delegateTask.getTaskDataV2().getParameters()[0] instanceof TaskParameters)) {
+        return delegateTaskPackageBuilder.build();
+      }
+
+      NgSecretManagerFunctor ngSecretManagerFunctor =
+          (NgSecretManagerFunctor) managerPreExecutionExpressionEvaluator.getNgSecretManagerFunctor();
+
+      SecretManagerFunctor secretManagerFunctor =
+          (SecretManagerFunctor) managerPreExecutionExpressionEvaluator.getSecretManagerFunctor();
+
+      SweepingOutputSecretFunctor sweepingOutputSecretFunctor =
+          managerPreExecutionExpressionEvaluator.getSweepingOutputSecretFunctor();
+
+      ExpressionReflectionUtils.applyExpression(
+          delegateTask.getTaskDataV2().getParameters()[0], (secretMode, value) -> {
+            if (value == null) {
+              log.error(
+                  "Unable to assign task {} due to error on ManagerPreExecutionExpressionEvaluator , value is null",
+                  delegateTask.getUuid());
+              return null;
+            }
+            return managerPreExecutionExpressionEvaluator.substitute(value, new HashMap<>());
+            // TODO: this code is causing the second issue in DEL-1167
+            //        if (secretManagerFunctor != null && secretMode == DISALLOW_SECRETS
+            //            && secretManagerFunctor.getEvaluatedSecrets().size() > 0) {
+            //          throw new InvalidRequestException(format("Expression %s is not allowed to have secrets.",
+            //          substituted));
+            //        }
+            //        return mode == CHECK_FOR_SECRETS ? value : substituted;
+          });
+
+      if (secretManagerFunctor == null && ngSecretManagerFunctor == null) {
+        log.error(
+            "Unable to assign task {} due to Error on ManagerPreExecutionExpressionEvaluator", delegateTask.getUuid());
+        return null;
+      }
+
+      addSecretManagerFunctorConfigs(delegateTaskPackageBuilder, secretManagerFunctor, ngSecretManagerFunctor,
+          sweepingOutputSecretFunctor, delegateTask.getAccountId());
+
+      return delegateTaskPackageBuilder.build();
+    } catch (CriticalExpressionEvaluationException exception) {
+      log.error("Exception in ManagerPreExecutionExpressionEvaluator ", exception);
+      Query<DelegateTask> taskQuery = persistence.createQuery(DelegateTask.class)
+                                          .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
+                                          .filter(DelegateTaskKeys.uuid, delegateTask.getUuid());
+      DelegateTaskResponse response =
+          DelegateTaskResponse.builder()
+              .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
+              .responseCode(ResponseCode.FAILED)
+              .accountId(delegateTask.getAccountId())
+              .build();
+      delegateTaskService.handleResponseV2(delegateTask, taskQuery, response);
+      if (featureFlagService.isEnabled(
+              FeatureName.FAIL_WORKFLOW_IF_SECRET_DECRYPTION_FAILS, delegateTask.getAccountId())) {
+        throw exception;
+      }
+      return null;
+    }
+  }
+
   private void addSecretManagerFunctorConfigs(DelegateTaskPackageBuilder delegateTaskPackageBuilder,
       SecretManagerFunctor secretManagerFunctor, NgSecretManagerFunctor ngSecretManagerFunctor,
       SweepingOutputSecretFunctor sweepingOutputSecretFunctor, String accountID) {
@@ -1011,6 +1491,25 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
   }
 
+  private DelegateTaskPackage getDelegatePackageWithEncryptionConfigV2(DelegateTask delegateTask) {
+    if (CapabilityHelper.isTaskParameterTypeV2(delegateTask.getTaskDataV2())) {
+      return resolvePreAssignmentExpressionsV2(delegateTask, SecretManagerMode.DRY_RUN);
+    } else {
+      // TODO: Ideally we should not land here, as we should always be passing TaskParameter only for
+      // TODO: delegate task. But for now, this is needed. (e.g. Tasks containing Jenkinsonfig, BambooConfig etc.)
+      Map<String, EncryptionConfig> encryptionConfigMap =
+          CapabilityHelper.fetchEncryptionDetailsListFromParameters(delegateTask.getData());
+      copyTaskDataV2ToTaskData(delegateTask);
+      return DelegateTaskPackage.builder()
+          .accountId(delegateTask.getAccountId())
+          .delegateId(delegateTask.getDelegateId())
+          .delegateTaskId(delegateTask.getUuid())
+          .data(delegateTask.getData())
+          .encryptionConfigs(encryptionConfigMap)
+          .build();
+    }
+  }
+
   @Override
   public void publishTaskProgressResponse(
       String accountId, String driverId, String delegateTaskId, DelegateProgressData responseData) {
@@ -1046,6 +1545,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     DelegateTask task = persistence.findAndModifySystemData(query, updateOperations, HPersistence.returnNewOptions);
     // If the task wasn't updated because delegateId already exists then query for the task with the delegateId in
     // case client is retrying the request
+    copyTaskDataV2ToTaskData(task);
     if (task != null) {
       try (
           DelayLogContext ignore = new DelayLogContext(task.getLastUpdatedAt() - task.getCreatedAt(), OVERRIDE_ERROR)) {

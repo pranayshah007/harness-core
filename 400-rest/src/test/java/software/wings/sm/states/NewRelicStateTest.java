@@ -10,7 +10,6 @@ package software.wings.sm.states;
 import static io.harness.beans.ExecutionStatus.ERROR;
 import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.SOWMYA;
@@ -36,7 +35,6 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
-import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 import io.harness.waiter.WaitNotifyEngine;
@@ -56,7 +54,6 @@ import software.wings.service.impl.analysis.TimeSeriesMetricGroup.TimeSeriesMlAn
 import software.wings.service.impl.analysis.TimeSeriesMlAnalysisType;
 import software.wings.service.impl.newrelic.NewRelicApplication;
 import software.wings.service.impl.newrelic.NewRelicDataCollectionInfo;
-import software.wings.service.impl.newrelic.NewRelicDataCollectionInfoV2;
 import software.wings.service.impl.newrelic.NewRelicMetricValueDefinition;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.DelegateService;
@@ -72,7 +69,6 @@ import software.wings.sm.states.NewRelicState.Metric;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -332,184 +328,6 @@ public class NewRelicStateTest extends APMStateVerificationTestBase {
     executionResponse = spyNewRelicState.execute(executionContext);
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ERROR);
     assertThat(executionResponse.getErrorMessage()).isEqualTo("RuntimeException: Can not find application by id");
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
-  public void testCreateDataCollectionInfo_withoutTemplatization() {
-    Map<String, String> hosts = new HashMap<>();
-    hosts.put("host1", "default");
-    hosts.put("host2", "default");
-    String analysisServerConfigId = generateUuid();
-    newRelicState.setAnalysisServerConfigId(analysisServerConfigId);
-    NewRelicDataCollectionInfoV2 dataCollectionInfo =
-        (NewRelicDataCollectionInfoV2) newRelicState.createDataCollectionInfo(executionContext, hosts);
-
-    assertThat(DelegateStateType.NEW_RELIC).isEqualTo(dataCollectionInfo.getStateType());
-    assertThat(dataCollectionInfo.getNewRelicConfig()).isNull();
-    assertThat(dataCollectionInfo.getStateExecutionId()).isEqualTo(executionContext.getStateExecutionInstanceId());
-    assertThat(dataCollectionInfo.getConnectorId()).isEqualTo(analysisServerConfigId);
-    assertThat(dataCollectionInfo.getHosts()).isEqualTo(Sets.newHashSet("host1", "host2"));
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
-  public void testCreateDataCollectionInfo_nullSettingsAttribute() {
-    Map<String, String> hosts = new HashMap<>();
-    hosts.put("host1", "default");
-    hosts.put("host2", "default");
-    String analysisServerConfigId = generateUuid();
-    newRelicState.setAnalysisServerConfigId(analysisServerConfigId);
-    NewRelicDataCollectionInfoV2 dataCollectionInfo =
-        (NewRelicDataCollectionInfoV2) newRelicState.createDataCollectionInfo(executionContext, hosts);
-
-    assertThat(DelegateStateType.NEW_RELIC).isEqualTo(dataCollectionInfo.getStateType());
-    assertThat(dataCollectionInfo.getNewRelicConfig()).isNull();
-    assertThat(dataCollectionInfo.getStateExecutionId()).isEqualTo(executionContext.getStateExecutionInstanceId());
-    assertThat(dataCollectionInfo.getConnectorId()).isEqualTo(analysisServerConfigId);
-    assertThat(dataCollectionInfo.getHosts()).isEqualTo(Sets.newHashSet("host1", "host2"));
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
-  public void testCreateDataCollectionInfo_withTemplatizationForNewRelicServer() {
-    Map<String, String> hosts = new HashMap<>();
-    hosts.put("host1", "default");
-    NewRelicConfig newRelicConfig = NewRelicConfig.builder()
-                                        .accountId(accountId)
-                                        .newRelicUrl("newrelic-url")
-                                        .apiKey(generateUuid().toCharArray())
-                                        .build();
-    SettingAttribute settingAttribute = SettingAttribute.Builder.aSettingAttribute()
-                                            .withAccountId(accountId)
-                                            .withName("relic-config")
-                                            .withValue(newRelicConfig)
-                                            .build();
-    newRelicState.setAnalysisServerConfigId("${NewRelic_Server}");
-    NewRelicState spyState = spy(newRelicState);
-    doReturn(Arrays.asList(TemplateExpression.builder()
-                               .fieldName("analysisServerConfigId")
-                               .expression("${NewRelic_Server}")
-                               .metadata(ImmutableMap.of("entityType", "NEWRELIC_CONFIGID"))
-                               .build()))
-        .when(spyState)
-        .getTemplateExpressions();
-
-    wingsPersistence.save(settingAttribute);
-    when(executionContext.renderExpression("${workflow.variables.NewRelic_Server}"))
-        .thenReturn(settingAttribute.getUuid());
-
-    NewRelicDataCollectionInfoV2 dataCollectionInfo =
-        (NewRelicDataCollectionInfoV2) spyState.createDataCollectionInfo(executionContext, hosts);
-
-    assertThat(DelegateStateType.NEW_RELIC).isEqualTo(dataCollectionInfo.getStateType());
-    assertThat(dataCollectionInfo.getNewRelicConfig()).isNull();
-    assertThat(dataCollectionInfo.getStateExecutionId()).isEqualTo(executionContext.getStateExecutionInstanceId());
-
-    assertThat(dataCollectionInfo.getConnectorId()).isEqualTo(settingAttribute.getUuid());
-    assertThat(dataCollectionInfo.getHosts()).isEqualTo(Sets.newHashSet("host1"));
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
-  public void testCreateDataCollectionInfo_withTemplatizationApplicationName() {
-    Map<String, String> hosts = new HashMap<>();
-    hosts.put("host1", "default");
-    newRelicState.setApplicationId("${NewRelic_Application}");
-    NewRelicState spyState = spy(newRelicState);
-    doReturn(Arrays.asList(TemplateExpression.builder()
-                               .fieldName("applicationId")
-                               .expression("${NewRelic_Application}")
-                               .metadata(ImmutableMap.of("entityType", "NEWRELIC_CONFIGID"))
-                               .build()))
-        .when(spyState)
-        .getTemplateExpressions();
-    String applicationId = "" + 74878374747L;
-    when(executionContext.renderExpression("${workflow.variables.NewRelic_Application}")).thenReturn(applicationId);
-
-    NewRelicDataCollectionInfoV2 dataCollectionInfo =
-        (NewRelicDataCollectionInfoV2) spyState.createDataCollectionInfo(executionContext, hosts);
-
-    assertThat(DelegateStateType.NEW_RELIC).isEqualTo(dataCollectionInfo.getStateType());
-    assertThat(dataCollectionInfo.getNewRelicConfig()).isNull();
-    assertThat(dataCollectionInfo.getStateExecutionId()).isEqualTo(executionContext.getStateExecutionInstanceId());
-
-    assertThat(dataCollectionInfo.getNewRelicAppId()).isEqualTo(Long.parseLong(applicationId));
-    assertThat(dataCollectionInfo.getHosts()).isEqualTo(Sets.newHashSet("host1"));
-  }
-
-  @Test
-  @Owner(developers = SOWMYA)
-  @Category(UnitTests.class)
-  public void testCreateDataCollectionInfo_withExpressionApplicationID() {
-    Map<String, String> hosts = new HashMap<>();
-    hosts.put("host1", "default");
-    newRelicState.setApplicationId("${NewRelic_Application}");
-    NewRelicState spyState = spy(newRelicState);
-    String applicationId = "" + 74878374747L;
-    doReturn(applicationId).when(spyState).getResolvedFieldValue(any(), any(), any());
-    NewRelicDataCollectionInfoV2 dataCollectionInfo =
-        (NewRelicDataCollectionInfoV2) spyState.createDataCollectionInfo(executionContext, hosts);
-
-    assertThat(DelegateStateType.NEW_RELIC).isEqualTo(dataCollectionInfo.getStateType());
-    assertThat(dataCollectionInfo.getNewRelicConfig()).isNull();
-    assertThat(dataCollectionInfo.getStateExecutionId()).isEqualTo(executionContext.getStateExecutionInstanceId());
-
-    assertThat(dataCollectionInfo.getNewRelicAppId()).isEqualTo(Long.parseLong(applicationId));
-    assertThat(dataCollectionInfo.getHosts()).isEqualTo(Sets.newHashSet("host1"));
-  }
-
-  @Test
-  @Owner(developers = SOWMYA)
-  @Category(UnitTests.class)
-  public void testCreateDataCollectionInfo_withExpressionApplicationName() {
-    Map<String, String> hosts = new HashMap<>();
-    hosts.put("host1", "default");
-    newRelicState.setApplicationId("${NewRelic_Application}");
-    NewRelicState spyState = spy(newRelicState);
-
-    String applicationId = "" + 74878374747L;
-    NewRelicApplication newRelicApplication = NewRelicApplication.builder().id(Long.valueOf(applicationId)).build();
-
-    when(newRelicService.resolveApplicationId(anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(new UnexpectedException("exception occurred"));
-    when(newRelicService.resolveApplicationName(anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(newRelicApplication);
-    doReturn(applicationId).when(spyState).getResolvedFieldValue(any(), any(), any());
-    NewRelicDataCollectionInfoV2 dataCollectionInfo =
-        (NewRelicDataCollectionInfoV2) spyState.createDataCollectionInfo(executionContext, hosts);
-
-    assertThat(DelegateStateType.NEW_RELIC).isEqualTo(dataCollectionInfo.getStateType());
-    assertThat(dataCollectionInfo.getNewRelicConfig()).isNull();
-    assertThat(dataCollectionInfo.getStateExecutionId()).isEqualTo(executionContext.getStateExecutionInstanceId());
-
-    assertThat(dataCollectionInfo.getNewRelicAppId()).isEqualTo(Long.parseLong(applicationId));
-    assertThat(dataCollectionInfo.getHosts()).isEqualTo(Sets.newHashSet("host1"));
-  }
-
-  @Test
-  @Owner(developers = SOWMYA)
-  @Category(UnitTests.class)
-  public void testCreateDataCollectionInfo_withExpressionUnresolvedApplication() {
-    Map<String, String> hosts = new HashMap<>();
-    hosts.put("host1", "default");
-    newRelicState.setApplicationId("${NewRelic_Application}");
-    NewRelicState spyState = spy(newRelicState);
-
-    String applicationId = "" + 74878374747L;
-
-    String message = "exception occurred";
-    when(newRelicService.resolveApplicationId(any(), any(), any(), any())).thenThrow(new UnexpectedException(message));
-    when(newRelicService.resolveApplicationName(any(), any(), any(), any()))
-        .thenThrow(new UnexpectedException(message));
-    doReturn(applicationId).when(spyState).getResolvedFieldValue(any(), any(), any());
-    assertThatThrownBy(() -> spyState.createDataCollectionInfo(executionContext, hosts))
-        .isInstanceOf(UnexpectedException.class)
-        .hasMessage(message);
   }
 
   @Test

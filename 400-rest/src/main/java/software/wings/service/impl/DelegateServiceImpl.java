@@ -4027,11 +4027,24 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
+  public void scheduleSyncTaskV2(DelegateTask task) {
+    delegateTaskServiceClassic.scheduleSyncTaskV2(task);
+  }
+
+  @Override
   public <T extends DelegateResponseData> T executeTask(DelegateTask task) throws InterruptedException {
     if (task.getUuid() == null) {
       task.setUuid(generateUuid());
     }
     return delegateTaskServiceClassic.executeTask(task);
+  }
+
+  @Override
+  public <T extends DelegateResponseData> T executeTaskV2(DelegateTask task) throws InterruptedException {
+    if (task.getUuid() == null) {
+      task.setUuid(generateUuid());
+    }
+    return delegateTaskServiceClassic.executeTaskV2(task);
   }
 
   @Override
