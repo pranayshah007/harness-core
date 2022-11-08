@@ -10,7 +10,6 @@ package io.harness.cdng.infra.steps;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.SkipAutoEvaluation;
 
 import java.util.Map;
 import javax.validation.constraints.NotNull;
