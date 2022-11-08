@@ -73,7 +73,6 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
     assertThat(multiDeploymentSpawnerStep.obtainChildrenAfterRbac(null, multiDeploymentStepParameters, null))
         .isEqualTo(
             ChildrenExecutableResponse.newBuilder()
-                .setMaxConcurrency(1)
                 .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(1)
@@ -110,7 +109,6 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
     map.put("identifier", "identifier");
     assertThat(multiDeploymentSpawnerStep.obtainChildrenAfterRbac(null, multiDeploymentStepParameters, null))
         .isEqualTo(ChildrenExecutableResponse.newBuilder()
-                       .setMaxConcurrency(1)
                        .addChildren(ChildrenExecutableResponse.Child.newBuilder()
                                         .setChildNodeId("test")
                                         .setStrategyMetadata(

@@ -327,9 +327,13 @@ cp ../../360-cg-manager/cert.pem .
 cp ../../360-cg-manager/newrelic.yml .
 cp ../../100-migrator/config.yml .
 cp ../../400-rest/src/main/resources/redisson-jcache.yaml .
+cp ../../400-rest/src/main/resources/jfr/default.jfc .
+cp ../../400-rest/src/main/resources/jfr/profile.jfc .
 
 cp ../../dockerization/migrator/Dockerfile-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/migrator/Dockerfile-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/migrator/scripts/ .
 mv scripts/start_process_bazel.sh scripts/start_process.sh
 

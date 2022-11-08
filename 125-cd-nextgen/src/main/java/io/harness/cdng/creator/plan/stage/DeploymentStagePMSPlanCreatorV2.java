@@ -210,6 +210,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   public String getIdentifierWithExpression(PlanCreationContext ctx, DeploymentStageNode node, String identifier) {
+    if (node.getDeploymentStageConfig().getGitOpsEnabled()) {
+      return StrategyUtils.getIdentifierWithExpression(ctx, identifier);
+    }
     if (node.getDeploymentStageConfig().getServices() != null
         || node.getDeploymentStageConfig().getEnvironments() != null
         || node.getDeploymentStageConfig().getEnvironmentGroup() != null) {
