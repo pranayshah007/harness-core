@@ -31,6 +31,7 @@ import io.harness.connector.heartbeat.K8sConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.NexusValidationParamsProvider;
 import io.harness.connector.heartbeat.NoOpConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.OciHelmConnectorValidationParamsProvider;
+import io.harness.connector.heartbeat.PcfConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.PhysicalDataCenterConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ScmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ServiceNowValidationParamsProvider;
@@ -98,6 +99,8 @@ import io.harness.connector.mappers.nexusmapper.NexusDTOToEntity;
 import io.harness.connector.mappers.nexusmapper.NexusEntityToDTO;
 import io.harness.connector.mappers.pagerduty.PagerDutyDTOToEntity;
 import io.harness.connector.mappers.pagerduty.PagerDutyEntityToDTO;
+import io.harness.connector.mappers.pcfmapper.PcfDTOToEntity;
+import io.harness.connector.mappers.pcfmapper.PcfEntityToDTO;
 import io.harness.connector.mappers.pdcconnector.PhysicalDataCenterDTOToEntity;
 import io.harness.connector.mappers.pdcconnector.PhysicalDataCenterEntityToDTO;
 import io.harness.connector.mappers.prometheusmapper.PrometheusDTOToEntity;
@@ -163,6 +166,7 @@ import io.harness.connector.validator.scmValidators.GitConnectorValidator;
 import io.harness.connector.validator.scmValidators.GithubConnectorValidator;
 import io.harness.connector.validator.scmValidators.GitlabConnectorValidator;
 import io.harness.connector.validator.scmValidators.JenkinsConnectorValidationsParamsProvider;
+import io.harness.connector.validator.scmValidators.PcfConnectorValidator;
 import io.harness.delegate.beans.connector.ConnectorType;
 
 import java.util.HashMap;
@@ -344,6 +348,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, AzureArtifactsConnectorValidator.class,
             AzureArtifactsConnectorValidationParamsProvider.class, AzureArtifactsDTOToEntity.class,
             AzureArtifactsEntityToDTO.class, NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.PCF,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, PcfConnectorValidator.class,
+            PcfConnectorValidationParamsProvider.class, PcfDTOToEntity.class, PcfEntityToDTO.class,
+            NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.GCP_SECRET_MANAGER,
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,
             GcpSecretManagerValidationParamProvider.class, GcpSecretManagerDTOToEntity.class,
