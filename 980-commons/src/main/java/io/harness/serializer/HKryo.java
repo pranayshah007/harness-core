@@ -209,9 +209,11 @@ public class HKryo extends Kryo {
   private Registration check(Registration registration, int id) {
     if (CodeUtils.isHarnessClass(registration.getType()) && !this.skipHarnessClassOriginRegistrarCheck) {
       final String location = CodeUtils.location(registration.getType());
-      if (currentLocation != null && !currentLocation.equals(location)) {
-        log.warn(format("The class %s in %s is registered from registrar from module %s",
-            registration.getType().getCanonicalName(), location, currentLocation));
+      if (log.isDebugEnabled()) {
+        if (currentLocation != null && !currentLocation.equals(location)) {
+          log.debug(format("The class %s in %s is registered from registrar from module %s",
+              registration.getType().getCanonicalName(), location, currentLocation));
+        }
       }
     }
 
