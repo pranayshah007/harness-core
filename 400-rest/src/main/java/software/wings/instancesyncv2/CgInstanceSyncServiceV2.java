@@ -68,7 +68,7 @@ public class CgInstanceSyncServiceV2 {
   private final InstanceService instanceService;
 
   public static final String AUTO_SCALE = "AUTO_SCALE";
-  public static final int PERPETUAL_TASK_INTERVAL = 2;
+  public static final int PERPETUAL_TASK_INTERVAL = 10;
   public static final int PERPETUAL_TASK_TIMEOUT = 5;
 
   public void handleInstanceSync(DeploymentEvent event) {
