@@ -21,4 +21,5 @@ public class ElastigroupStepExecutorParams {
   boolean shouldOpenFetchFilesLogStream;
   String startupScript;
   String elastigroupParameters;
+  String image;
 }
