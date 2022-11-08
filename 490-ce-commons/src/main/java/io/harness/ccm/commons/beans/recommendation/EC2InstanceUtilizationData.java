@@ -15,6 +15,9 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(CE)
 public class EC2InstanceUtilizationData {
   long starttime;
+  long endtime;
   double maxcpu;
   double maxmemory;
+  double avgcpu;
+  double avgmemory;
 }
