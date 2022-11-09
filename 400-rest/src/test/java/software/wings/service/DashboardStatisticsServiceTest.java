@@ -10,6 +10,8 @@ package software.wings.service;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.VLAD;
 
+import static software.wings.beans.EntityType.ARTIFACT;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -20,10 +22,15 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.Account;
 import software.wings.beans.Application;
+import software.wings.beans.User;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.instance.dashboard.InstanceSummaryStats;
 import software.wings.dl.WingsPersistence;
+import software.wings.events.TestUtils;
+import software.wings.security.UserRequestContext;
+import software.wings.security.UserThreadLocal;
 import software.wings.service.intfc.instance.DashboardStatisticsService;
 
 import com.google.inject.Inject;
@@ -31,15 +38,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import org.assertj.core.util.Arrays;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mockito;
 
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 @OwnedBy(HarnessTeam.PL)
 public class DashboardStatisticsServiceTest extends WingsBaseTest {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private DashboardStatisticsService dashboardStatisticsService;
+  @Inject private TestUtils testUtils;
 
   private static final String ACCOUNT_ID = "accountId";
 
@@ -66,12 +74,21 @@ public class DashboardStatisticsServiceTest extends WingsBaseTest {
   @Owner(developers = VLAD)
   @Category(UnitTests.class)
   public void testGetServiceInstanceSummaryStats() {
-    String accountId = "someAccount";
-    String serviceId = "someService";
-    List<String> groupByEntityTypes = Collections.singletonList("ARTIFACT");
-    InstanceSummaryStats result =
-        dashboardStatisticsService.getServiceInstanceSummaryStats(accountId, serviceId, groupByEntityTypes, 123l);
-    assertThat(result).isNotNull();
+    try {
+      String accountId = "someAccount";
+      String serviceId = "someService";
+      List<String> groupByEntityTypes = Collections.singletonList(ARTIFACT.name());
+      Account account = new Account();
+      User user = testUtils.createUser(account);
+      UserRequestContext userRequestContext = Mockito.mock(UserRequestContext.class);
+      user.setUserRequestContext(userRequestContext);
+      UserThreadLocal.set(user);
+      InstanceSummaryStats result =
+          dashboardStatisticsService.getServiceInstanceSummaryStats(accountId, serviceId, groupByEntityTypes, 123l);
+      assertThat(result.getCountMap()).containsKey(ARTIFACT.name());
+    } finally {
+      UserThreadLocal.unset();
+    }
   }
 
   private void deleteApplications(List<String> applicationIds) {

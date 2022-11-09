@@ -10,26 +10,18 @@ package software.wings.beans.instance.dashboard;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 /**
  * General construct that could be used anywhere
  * @author rktummala on 08/13/17
  */
 @Data
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class EntitySummary extends AbstractEntitySummary {
-  private long lastDeployedAt;
-  private String detail;
-
   @Builder
   public EntitySummary(String id, String name, String type) {
     super(id, name, type);
-  }
-
-  @Builder
-  public EntitySummary(String id, String name, String type, long lastDeployedAt, String detail) {
-    super(id, name, type);
-    this.lastDeployedAt = lastDeployedAt;
-    this.detail = detail;
   }
 }

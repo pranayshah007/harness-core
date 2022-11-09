@@ -16,7 +16,5 @@ public class FlatEntitySummaryStats {
   private String entityId;
   private String entityName;
   private String entityVersion;
-  private long lastDeployedAt;
-  private String entityDetail;
   private int count;
 }

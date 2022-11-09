@@ -18,17 +18,23 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class ArtifactSummary extends AbstractEntitySummary {
+public class ArtifactSummary extends EntitySummary {
   private String artifactSourceName;
   private String buildNo;
   private Map<String, Object> artifactParameters;
+  private long lastDeployedAt;
 
   @Builder
   public ArtifactSummary(String id, String name, String type, String artifactSourceName, String buildNo,
-      Map<String, Object> artifactParameters) {
+      Map<String, Object> artifactParameters, long lastDeployedAt) {
     super(id, name, type);
     this.artifactSourceName = artifactSourceName;
     this.buildNo = buildNo;
     this.artifactParameters = artifactParameters;
+    this.lastDeployedAt = lastDeployedAt;
+  }
+
+  public static class ArtifactSummaryBuilder extends EntitySummaryBuilder {
+    ArtifactSummaryBuilder() {}
   }
 }

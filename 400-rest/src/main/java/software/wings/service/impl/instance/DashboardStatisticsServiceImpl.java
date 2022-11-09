@@ -201,23 +201,18 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     for (String groupByEntityType : groupByEntityTypes) {
       String entityIdColumn;
       String entityNameColumn;
-      String entityDetailColumn;
       List<EntitySummaryStats> entitySummaryStatsList;
       if (EntityType.SERVICE.name().equals(groupByEntityType)) {
         entityIdColumn = "serviceId";
         entityNameColumn = "serviceName";
-        entityDetailColumn = "appName";
-        entitySummaryStatsList =
-            getEntitySummaryStats(entityIdColumn, entityNameColumn, entityDetailColumn, groupByEntityType, query);
+        entitySummaryStatsList = getEntitySummaryStats(entityIdColumn, entityNameColumn, groupByEntityType, query);
       } else if (EntityType.ENVIRONMENT.name().equals(groupByEntityType)) {
         // TODO: Make UI pass ENVIRONMENT_TYPE instead of ENVIRONMENT since that's what are we are really displaying
         entitySummaryStatsList = getEnvironmentTypeSummaryStats(query);
       } else if (SettingCategory.CLOUD_PROVIDER.name().equals(groupByEntityType)) {
         entityIdColumn = "computeProviderId";
         entityNameColumn = "computeProviderName";
-        entityDetailColumn = "appName";
-        entitySummaryStatsList =
-            getEntitySummaryStats(entityIdColumn, entityNameColumn, entityDetailColumn, groupByEntityType, query);
+        entitySummaryStatsList = getEntitySummaryStats(entityIdColumn, entityNameColumn, groupByEntityType, query);
       } else {
         throw new InvalidArgumentsException("Unsupported groupBy entity type:" + groupByEntityType, USER);
       }
@@ -260,8 +255,8 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     }
   }
 
-  private List<EntitySummaryStats> getEntitySummaryStats(String entityIdColumn, String entityNameColumn,
-      String entityDetailsColumn, String groupByEntityType, Query<Instance> query) {
+  private List<EntitySummaryStats> getEntitySummaryStats(
+      String entityIdColumn, String entityNameColumn, String groupByEntityType, Query<Instance> query) {
     List<EntitySummaryStats> entitySummaryStatsList = new ArrayList<>();
     wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
         .createAggregation(Instance.class)
@@ -269,8 +264,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         .group(Group.id(grouping(entityIdColumn)), grouping("count", accumulator("$sum", 1)),
             grouping(entityNameColumn, grouping("$first", entityNameColumn)))
         .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
-            projection("entityName", entityNameColumn), projection("lastDeployedAt", "lastDeployedAt"),
-            projection("entityDetail", entityDetailsColumn), projection("count"))
+            projection("entityName", entityNameColumn), projection("count"))
         .sort(descending("count"))
         .aggregate(FlatEntitySummaryStats.class,
             AggregationOptions.builder()
@@ -295,6 +289,34 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                 .build())
         .forEachRemaining(instanceCount -> totalCount.addAndGet(instanceCount.getCount()));
     return totalCount.get();
+  }
+
+  private List<EntitySummaryStats> getArtifactTypeSummaryStats(
+      String entityIdColumn, String entityNameColumn, String groupByEntityType, Query<Instance> query) {
+    List<EntitySummaryStats> entitySummaryStatsList = new ArrayList<>();
+    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
+        .createAggregation(Instance.class)
+        .match(query)
+        .group(Group.id(grouping(entityIdColumn)), grouping("count", accumulator("$sum", 1)),
+            grouping(entityNameColumn, grouping("$first", entityNameColumn)),
+            grouping("lastDeployedAt", grouping("$first", "lastDeployedAt")),
+            grouping("lastArtifactSourceName", grouping("$first", "lastArtifactSourceName")),
+            grouping("lastArtifactBuildNum", grouping("$first", "lastArtifactBuildNum")))
+        .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
+            projection("entityName", entityNameColumn), projection("lastDeployedAt", "lastDeployedAt"),
+            projection("lastArtifactSourceName", "lastArtifactSourceName"),
+            projection("lastArtifactBuildNum", "lastArtifactBuildNum"), projection("count"))
+        .sort(descending("count"))
+        .aggregate(ArtifactEntitySummaryStats.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                .build())
+        .forEachRemaining(artifactEntitySummaryStats -> {
+          EntitySummaryStats entitySummaryStats =
+              getArtifactEntitySummaryStats(artifactEntitySummaryStats, groupByEntityType);
+          entitySummaryStatsList.add(entitySummaryStats);
+        });
+    return entitySummaryStatsList;
   }
 
   private List<EntitySummaryStats> getEnvironmentTypeSummaryStats(Query<Instance> query) {
@@ -323,13 +345,27 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     return entitySummaryStatsList;
   }
 
+  private EntitySummaryStats getArtifactEntitySummaryStats(
+      ArtifactEntitySummaryStats artifactEntitySummaryStats, String entityType) {
+    ArtifactSummary entitySummary = ArtifactSummary.builder()
+                                        .id(artifactEntitySummaryStats.getEntityId())
+                                        .name(artifactEntitySummaryStats.getEntityName())
+                                        .type(entityType)
+                                        .artifactSourceName(artifactEntitySummaryStats.getLastArtifactSourceName())
+                                        .buildNo(artifactEntitySummaryStats.getLastArtifactBuildNum())
+                                        .lastDeployedAt(artifactEntitySummaryStats.getLastDeployedAt())
+                                        .build();
+    return EntitySummaryStats.Builder.anEntitySummaryStats()
+        .count(artifactEntitySummaryStats.getCount())
+        .entitySummary(entitySummary)
+        .build();
+  }
+
   private EntitySummaryStats getEntitySummaryStats(FlatEntitySummaryStats flatEntitySummaryStats, String entityType) {
     EntitySummary entitySummary = EntitySummary.builder()
                                       .id(flatEntitySummaryStats.getEntityId())
                                       .name(flatEntitySummaryStats.getEntityName())
                                       .type(entityType)
-                                      .lastDeployedAt(flatEntitySummaryStats.getLastDeployedAt())
-                                      .detail(flatEntitySummaryStats.getEntityDetail())
                                       .build();
     return EntitySummaryStats.Builder.anEntitySummaryStats()
         .count(flatEntitySummaryStats.getCount())
@@ -363,21 +399,22 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       if (ARTIFACT.name().equals(groupByEntityType)) {
         entityIdColumn = "lastArtifactId";
         entityNameColumn = "lastArtifactBuildNum";
-        entityDetailsColumn = "lastArtifactName";
+        entitySummaryStatsList =
+            getArtifactTypeSummaryStats(entityIdColumn, entityNameColumn, groupByEntityType, query);
+        instanceSummaryMap.put(groupByEntityType, entitySummaryStatsList);
       } else if (EntityType.ENVIRONMENT.name().equals(groupByEntityType)) {
         entityIdColumn = "envId";
         entityNameColumn = "envName";
-        entityDetailsColumn = "envType";
+        entitySummaryStatsList = getEntitySummaryStats(entityIdColumn, entityNameColumn, groupByEntityType, query);
+        instanceSummaryMap.put(groupByEntityType, entitySummaryStatsList);
       } else if ("INFRASTRUCTURE".equals(groupByEntityType)) {
         entityIdColumn = "infraMappingId";
         entityNameColumn = "infraMappingType";
-        entityDetailsColumn = "infraMappingName";
+        entitySummaryStatsList = getEntitySummaryStats(entityIdColumn, entityNameColumn, groupByEntityType, query);
+        instanceSummaryMap.put(groupByEntityType, entitySummaryStatsList);
       } else {
         throw new InvalidArgumentsException("Unsupported groupBy entity type:" + groupByEntityType, USER);
       }
-
-      entitySummaryStatsList =
-          getEntitySummaryStats(entityIdColumn, entityNameColumn, entityDetailsColumn, groupByEntityType, query);
       instanceSummaryMap.put(groupByEntityType, entitySummaryStatsList);
     }
 
@@ -989,8 +1026,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                      .serviceInfra(serviceInfraSummary)
                                      .onDemandRollbackAvailable(false)
                                      .build();
-      } else if (stateEI != null) {
-        // if is true, there is a rollback failed
+      } else if (stateEI != null && ExecutionStatus.SUCCESS.equals(stateEI.getStatus())) {
         boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastWE, false);
         Artifact artifactRollback = lastWE.getArtifacts().get(0);
         artifactSummary = getArtifactSummary(artifactRollback.getDisplayName(), artifactRollback.getUuid(),
