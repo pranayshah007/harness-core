@@ -664,7 +664,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         }
       }
 
-      startChroniqleQueueMonitor();
+      if (this.isImmutableDelegate) {
+        startChroniqleQueueMonitor();
+      }
 
       startMonitoringWatcher();
       checkForSSLCertVerification(accountId);

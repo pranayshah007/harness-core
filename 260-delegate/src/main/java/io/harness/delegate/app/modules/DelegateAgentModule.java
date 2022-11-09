@@ -45,6 +45,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class DelegateAgentModule extends AbstractModule {
   private final DelegateConfiguration configuration;
+  private final boolean isImmutableDelegate;
 
   @Override
   protected void configure() {
@@ -89,10 +90,10 @@ public class DelegateAgentModule extends AbstractModule {
 
   private void configureCcmEventPublishing() {
     final String deployMode = System.getenv(DEPLOY_MODE);
-    if (!isOnPrem(deployMode)) {
+    if (!isOnPrem(deployMode) && isImmutableDelegate) {
       final String managerHostAndPort = System.getenv("MANAGER_HOST_AND_PORT");
       if (isNotBlank(managerHostAndPort)) {
-        log.info("Running delegate, starting CCM event tailer");
+        log.info("Running immutable delegate, starting CCM event tailer");
         final DelegateTailerModule.Config tailerConfig =
             DelegateTailerModule.Config.builder()
                 .queueFilePath(configuration.getQueueFilePath())
