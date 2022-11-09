@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.cdng.service.beans.ServiceDefinitionType.KUBERNETES;
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static java.util.Arrays.asList;
@@ -28,6 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
+import io.harness.cdng.creator.plan.rollback.RollbackPlanCreator;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
@@ -82,6 +84,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -238,6 +242,22 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     deploymentStagePMSPlanCreator.failIfProjectIsFrozen(ctx);
 
     verify(freezeEvaluateService, times(0)).getActiveFreezeEntities(anyString(), anyString(), anyString());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testCreatePlanForRollback() throws IOException {
+    String yaml = "Pipeline: YAML";
+    YamlField yamlField = YamlUtils.injectUuidInYamlField(yaml);
+    PlanCreationContext ctx = PlanCreationContext.builder().build();
+    ctx.setCurrentField(yamlField);
+    MockedStatic<RollbackPlanCreator> mockSettings = Mockito.mockStatic(RollbackPlanCreator.class);
+    PlanCreationResponse dummy =
+        PlanCreationResponse.builder().planNode(PlanNode.builder().uuid("uuid").build()).build();
+    when(RollbackPlanCreator.createPlanForRollbackFromStageField(yamlField)).thenReturn(dummy);
+    assertThat(deploymentStagePMSPlanCreator.createPlanForRollback(ctx, null)).isEqualTo(dummy);
+    mockSettings.close();
   }
 
   private FreezeSummaryResponseDTO createGlobalFreezeResponse() {

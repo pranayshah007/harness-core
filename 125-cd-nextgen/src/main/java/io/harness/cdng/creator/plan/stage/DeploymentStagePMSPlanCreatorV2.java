@@ -10,6 +10,7 @@ package io.harness.cdng.creator.plan.stage;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -214,6 +215,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   @Override
+  @VisibleForTesting
   protected PlanCreationResponse createPlanForRollback(PlanCreationContext ctx, DeploymentStageNode config) {
     return RollbackPlanCreator.createPlanForRollbackFromStageField(ctx.getCurrentField());
   }
