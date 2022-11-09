@@ -135,7 +135,8 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateYamlWithEmptyFreezeInfoConfig() {
     FreezeConfig freezeConfig = FreezeConfig.builder().build();
-    assertThatThrownBy(() -> NGFreezeDtoMapper.validateFreezeYaml(freezeConfig, ORG_IDENTIFIER, PROJ_IDENTIFIER))
+    assertThatThrownBy(
+        () -> NGFreezeDtoMapper.validateFreezeYaml(freezeConfig, ORG_IDENTIFIER, PROJ_IDENTIFIER, FreezeType.MANUAL))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -156,7 +157,8 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
     windows.add(freezeWindow2);
     freezeInfoConfig.setWindows(windows);
     FreezeConfig freezeConfig = FreezeConfig.builder().freezeInfoConfig(freezeInfoConfig).build();
-    assertThatThrownBy(() -> NGFreezeDtoMapper.validateFreezeYaml(freezeConfig, ORG_IDENTIFIER, PROJ_IDENTIFIER))
+    assertThatThrownBy(
+        () -> NGFreezeDtoMapper.validateFreezeYaml(freezeConfig, ORG_IDENTIFIER, PROJ_IDENTIFIER, FreezeType.MANUAL))
         .isInstanceOf(InvalidRequestException.class);
   }
 }
