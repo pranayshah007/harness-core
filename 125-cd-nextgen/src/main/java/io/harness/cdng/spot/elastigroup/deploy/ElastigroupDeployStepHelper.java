@@ -124,10 +124,10 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
 
   private ElastiGroup calculateOldForDownsize(
       Capacity requestedCapacity, ElastiGroup setupElastigroup, boolean isFinalDeployStep) {
-    final ElastiGroup result = setupElastigroup.clone();
-    if (result == null) {
+    if (setupElastigroup == null) {
       return null;
     }
+    final ElastiGroup result = setupElastigroup.clone();
 
     if (isFinalDeployStep) {
       scaleDownElastigroup(result);
