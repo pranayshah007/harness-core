@@ -105,10 +105,6 @@ public class ArtifactDownloaderServiceTest {
 
   private void mockCreateArtifactFileInWorkingDirectory(File workingDirectory, String artifactName) {
     when(workingDirectory.getAbsolutePath()).thenReturn(ARTIFACT_FILE_DIRECTORY);
-
-    File mockArtifactFile = mock(File.class);
-    String artifactFilePath = ARTIFACT_FILE_DIRECTORY.concat(artifactName);
-    when(mockArtifactFile.getAbsolutePath()).thenReturn(artifactFilePath);
   }
 
   public ArtifactDownloaderContext getArtifactDownloaderContext() {
