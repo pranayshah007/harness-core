@@ -485,7 +485,8 @@ public enum FeatureName {
   PL_HIDE_LAUNCH_NEXTGEN("FF to hide Launch NextGen button", HarnessTeam.PL),
   PL_LDAP_PARALLEL_GROUP_SYNC(
       "Enables User Group sync operation to fetch data from Ldap Server in Parallel. Enable only if Ldap Server can take the load",
-      HarnessTeam.PL);
+      HarnessTeam.PL),
+  PCF_NG("FF for enabling TAS deployment in NG", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

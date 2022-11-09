@@ -1,6 +1,8 @@
 package io.harness.connector.mappers.pcfmapper;
 
-import io.harness.connector.entities.embedded.pcfconnector.PcfConfig;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.entities.embedded.pcfconnector.CloudFoundryConfig;
 import io.harness.connector.entities.embedded.pcfconnector.PcfManualCredential;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
 import io.harness.delegate.beans.connector.pcfconnector.PcfConnectorDTO;
@@ -10,28 +12,40 @@ import io.harness.delegate.beans.connector.pcfconnector.PcfManualDetailsDTO;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
 
-public class PcfDTOToEntity implements ConnectorDTOToEntityMapper<PcfConnectorDTO, PcfConfig> {
+import com.google.inject.Singleton;
+
+@OwnedBy(HarnessTeam.CDP)
+@Singleton
+public class PcfDTOToEntity implements ConnectorDTOToEntityMapper<PcfConnectorDTO, CloudFoundryConfig> {
   @Override
-  public PcfConfig toConnectorEntity(PcfConnectorDTO connectorDTO) {
+  public CloudFoundryConfig toConnectorEntity(PcfConnectorDTO connectorDTO) {
     final PcfCredentialDTO credential = connectorDTO.getCredential();
     final PcfCredentialType credentialType = credential.getType();
-    final PcfConfig pcfConfig;
+    final CloudFoundryConfig cloudFoundryConfig;
     if (credentialType == PcfCredentialType.MANUAL_CREDENTIALS) {
-      pcfConfig = buildManualCredential(credential);
+      cloudFoundryConfig = buildManualCredential(credential);
     } else {
       throw new InvalidRequestException("Invalid Credential type.");
     }
 
-    return pcfConfig;
+    return cloudFoundryConfig;
   }
 
-  private PcfConfig buildManualCredential(PcfCredentialDTO pcfCredentialDTO) {
+  private CloudFoundryConfig buildManualCredential(PcfCredentialDTO pcfCredentialDTO) {
     final PcfManualDetailsDTO config = (PcfManualDetailsDTO) pcfCredentialDTO.getSpec();
     final String endpointUrl = config.getEndpointUrl();
     final String passwordRef = SecretRefHelper.getSecretConfigString(config.getPasswordRef());
-    final String userName = SecretRefHelper.getSecretConfigString(config.getUserName());
-    PcfManualCredential credential =
-        PcfManualCredential.builder().endpointUrl(endpointUrl).userName(userName).passwordRef(passwordRef).build();
-    return PcfConfig.builder().credentialType(PcfCredentialType.MANUAL_CREDENTIALS).credential(credential).build();
+    final String usernameRef = SecretRefHelper.getSecretConfigString(config.getUsernameRef());
+    final String username = config.getUsername();
+    PcfManualCredential credential = PcfManualCredential.builder()
+                                         .endpointUrl(endpointUrl)
+                                         .userName(username)
+                                         .userNameRef(usernameRef)
+                                         .passwordRef(passwordRef)
+                                         .build();
+    return CloudFoundryConfig.builder()
+        .credentialType(PcfCredentialType.MANUAL_CREDENTIALS)
+        .credential(credential)
+        .build();
   }
 }
