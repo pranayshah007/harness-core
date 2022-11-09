@@ -19,4 +19,5 @@ import lombok.Value;
 public class STOServiceConfig {
   String baseUrl;
   String globalToken;
+  String internalUrl;
 }
