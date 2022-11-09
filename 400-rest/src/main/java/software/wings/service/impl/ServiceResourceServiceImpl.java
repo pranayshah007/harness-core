@@ -2208,6 +2208,8 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
 
     if (DeploymentType.AZURE_WEBAPP.equals(service.getDeploymentType()) && isEmpty(userDataSpecification.getData())) {
       wingsPersistence.delete(userDataSpecification);
+      yamlPushService.pushYamlChangeSet(
+          accountId, service, userDataSpecification, Type.DELETE, userDataSpecification.isSyncFromGit());
       return userDataSpecification;
     } else {
       UserDataSpecification persistedUserDataSpec =
