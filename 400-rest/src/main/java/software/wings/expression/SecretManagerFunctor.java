@@ -246,7 +246,7 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
     String encryptionConfigUuid = encryptedDataDetail.getEncryptionConfig().getUuid();
 
     encryptionConfigs.put(encryptionConfigUuid, encryptedDataDetail.getEncryptionConfig());
-    if (isNotEmpty(encryptionConfigUuid)) {
+    if (isEmpty(encryptionConfigUuid)) {
       log.warn("Got encryptionConfigUuid as null, name: {}, isGlobalKms {}, type: {}",
           encryptedDataDetail.getEncryptionConfig().getName(), encryptedDataDetail.getEncryptionConfig().isGlobalKms(),
           encryptedDataDetail.getEncryptionConfig().getType());
