@@ -5,10 +5,6 @@
 
 BEGIN;
 
-ALTER TABLE anomalies ADD notificationsent boolean;
-
-CREATE INDEX IF NOT EXISTS anomalies_accountid_anomalytime_notificationsent ON anomalies (accountid ASC, anomalytime DESC, notificationsent ASC);
-
-UPDATE anomalies SET notificationsent = false;
+ALTER TABLE anomalies ADD notificationsent boolean DEFAULT false;
 
 COMMIT;
