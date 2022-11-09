@@ -17,6 +17,7 @@ import io.harness.ModuleType;
 import io.harness.SCMGrpcClientModule;
 import io.harness.ScmConnectionConfig;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsClient;
@@ -140,6 +141,12 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       @Override
       protected void configure() {
         bind(CILicenseService.class).to(CILicenseNoopServiceImpl.class);
+      }
+    });
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(AccountClient.class).toInstance(mock(AccountClient.class));
       }
     });
 
