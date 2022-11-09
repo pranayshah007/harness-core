@@ -14,6 +14,8 @@ COPY --chown=65534:65534 config.yml /opt/harness/
 COPY --chown=65534:65534 hazelcast.xml /opt/harness/
 COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
+COPY --chown=65534:65534 default.jfc /opt/harness/
+COPY --chown=65534:65534 profile.jfc /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
 
@@ -28,3 +30,16 @@ RUN chmod +x /opt/harness/*.sh
 WORKDIR /opt/harness
 
 CMD [ "./run.sh" ]
+
+############################ON PREM#########################
+FROM base as onprem
+
+COPY --chown=65534:65534 inject-onprem-apm-bins-into-dockerimage.sh /opt/harness
+RUN /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh && rm /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh
+
+
+############################SAAS#########################
+FROM base as saas
+
+COPY --chown=65534:65534 inject-saas-apm-bins-into-dockerimage.sh /opt/harness
+RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh

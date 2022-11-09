@@ -59,7 +59,7 @@ paths:
           description: List of Pipeline identifiers on the basis of which the Pipelines are filtered.
         - schema:
             type: string
-            pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+            pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
             minLength: 1
             maxLength: 64
           in: query
@@ -186,6 +186,17 @@ paths:
       responses:
         '204':
           description: No Content
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+            application/yaml:
+              schema:
+                type: object
+                properties: {}
 components:
   schemas:
     GitDetails:
@@ -206,7 +217,7 @@ components:
       properties:
         object_id:
           type: string
-          description: Entity identifier
+          description: Object identifier / blob id
           pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
           minLength: 1
           maxLength: 64
@@ -284,24 +295,24 @@ components:
         slug:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
         name:
           type: string
           description: Pipeline name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         org:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Organization identifier
         project:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Project identifier
@@ -398,13 +409,13 @@ components:
         slug:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
         name:
           type: string
           description: Pipeline name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         description:
@@ -604,13 +615,13 @@ components:
           description: Pipeline YAML (to be passed as a String).
         slug:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Pipeline identifier
         name:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Pipeline name
@@ -643,7 +654,7 @@ components:
         slug:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
     YAMLSchemaErrorWrapper:
@@ -702,7 +713,7 @@ components:
       properties:
         slug:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Entity identifier
@@ -711,7 +722,7 @@ components:
           description: Type of Entity
         name:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Name of Entity
@@ -729,7 +740,7 @@ components:
           $ref: '#/components/schemas/ExecutorInfo'
         execution_id:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Execution identifier
@@ -807,9 +818,6 @@ components:
         username:
           type: string
           description: Username of the Executor.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
-          minLength: 1
-          maxLength: 64
         email:
           type: string
           description: Email address of the Executor.
@@ -873,13 +881,13 @@ components:
           description: Commit message used for the merge commit.
         last_object_id:
           type: string
-          description: Last object identifier (for Github).
+          description: Last object identifier (for Github only).
         base_branch:
           type: string
           description: Name of the default branch (this checks out a new branch titled by branch_name).
         last_commit_id:
           type: string
-          description: Last commit identifier (for Git Repositories other than Github).
+          description: Last commit identifier.
       x-examples:
         example-update-git:
           branch_name: branch
@@ -1000,13 +1008,13 @@ components:
           description: Pipeline YAML (to be passed as a String).
         slug:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Pipeline identifier
         name:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Pipeline name

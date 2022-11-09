@@ -38,6 +38,7 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.utils.PageUtils;
@@ -73,6 +74,9 @@ public class PipelinesApiImpl implements PipelinesApi {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   public Response createPipeline(PipelineCreateRequestBody requestBody, @OrgIdentifier String org,
       @ProjectIdentifier String project, @AccountIdentifier String account) {
+    if (requestBody == null) {
+      throw new InvalidRequestException("Pipeline Create request body must not be null.");
+    }
     GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitCreateDetails(requestBody.getGitDetails()));
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
         PipelinesApiUtils.mapCreateToRequestInfoDTO(requestBody), account, org, project, null);
@@ -85,7 +89,9 @@ public class PipelinesApiImpl implements PipelinesApi {
       throw new PolicyEvaluationFailureException(
           "Policy Evaluation Failure", governanceMetadata, createdEntity.getYaml());
     }
-    return Response.status(201).entity(createdEntity.getIdentifier()).build();
+    PipelineCreateResponseBody responseBody = new PipelineCreateResponseBody();
+    responseBody.setSlug(createdEntity.getIdentifier());
+    return Response.status(201).entity(responseBody).build();
   }
 
   @Override
@@ -192,6 +198,9 @@ public class PipelinesApiImpl implements PipelinesApi {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   public Response updatePipeline(PipelineUpdateRequestBody requestBody, @OrgIdentifier String org,
       @ProjectIdentifier String project, @ResourceIdentifier String pipeline, @AccountIdentifier String account) {
+    if (requestBody == null) {
+      throw new InvalidRequestException("Pipeline Update request body must not be null.");
+    }
     if (!Objects.equals(pipeline, requestBody.getSlug())) {
       throw new InvalidRequestException(String.format(
           "Expected Pipeline identifier in Request Body to be [%s], but was [%s]", pipeline, requestBody.getSlug()));
@@ -208,6 +217,8 @@ public class PipelinesApiImpl implements PipelinesApi {
       throw new PolicyEvaluationFailureException(
           "Policy Evaluation Failure", governanceMetadata, updatedEntity.getYaml());
     }
-    return Response.ok().entity(updatedEntity.getIdentifier()).build();
+    PipelineCreateResponseBody responseBody = new PipelineCreateResponseBody();
+    responseBody.setSlug(updatedEntity.getIdentifier());
+    return Response.status(201).entity(responseBody).build();
   }
 }

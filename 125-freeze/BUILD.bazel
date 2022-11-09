@@ -12,6 +12,7 @@ java_library(
     deps = [
         "//:lombok",
         "//125-freeze/src/main/proto:125-freeze_java_proto",
+        "//878-ng-common-utilities:module",
         "//960-persistence:module",
         "//960-yaml-sdk:module",
         "//980-commons:module",

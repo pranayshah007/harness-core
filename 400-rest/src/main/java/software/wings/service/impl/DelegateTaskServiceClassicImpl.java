@@ -1196,21 +1196,23 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private void copyTaskDataV2ToTaskData(DelegateTask delegateTask) {
-    TaskDataV2 taskDataV2 = delegateTask.getTaskDataV2();
-    if (taskDataV2 != null) {
-      TaskData taskData =
-          TaskData.builder()
-              .data(taskDataV2.getData())
-              .taskType(taskDataV2.getTaskType())
-              .async(taskDataV2.isAsync())
-              .parked(taskDataV2.isParked())
-              .parameters(taskDataV2.getParameters())
-              .timeout(taskDataV2.getTimeout())
-              .expressionFunctorToken(taskDataV2.getExpressionFunctorToken())
-              .expressions(taskDataV2.getExpressions())
-              .serializationFormat(SerializationFormat.valueOf(taskDataV2.getSerializationFormat().name()))
-              .build();
-      delegateTask.setData(taskData);
+    if (delegateTask != null && delegateTask.getTaskDataV2() != null) {
+      TaskDataV2 taskDataV2 = delegateTask.getTaskDataV2();
+      if (taskDataV2 != null) {
+        TaskData taskData =
+            TaskData.builder()
+                .data(taskDataV2.getData())
+                .taskType(taskDataV2.getTaskType())
+                .async(taskDataV2.isAsync())
+                .parked(taskDataV2.isParked())
+                .parameters(taskDataV2.getParameters())
+                .timeout(taskDataV2.getTimeout())
+                .expressionFunctorToken(taskDataV2.getExpressionFunctorToken())
+                .expressions(taskDataV2.getExpressions())
+                .serializationFormat(SerializationFormat.valueOf(taskDataV2.getSerializationFormat().name()))
+                .build();
+        delegateTask.setData(taskData);
+      }
     }
   }
 

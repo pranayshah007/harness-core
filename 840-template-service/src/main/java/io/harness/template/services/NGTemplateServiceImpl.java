@@ -310,6 +310,40 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     });
   }
 
+  @Override
+  public TemplateEntity updateTemplateEntity(TemplateEntity templateEntity, ChangeType changeType,
+      boolean setDefaultTemplate, String comments, TemplateResponseDTO templateResponse) {
+    enforcementClientService.checkAvailability(
+        FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
+    // apply templates to template yaml for validations and populating module info
+    applyTemplatesToYamlAndValidateSchema(templateEntity);
+    // update template references
+    templateReferenceHelper.populateTemplateReferences(templateEntity);
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null) {
+      if (templateResponse.getGitDetails() != null) {
+        if (templateResponse.getGitDetails().getCommitId() != null) {
+          gitEntityInfo.setLastCommitId(templateResponse.getGitDetails().getCommitId());
+        }
+        if (templateResponse.getGitDetails().getObjectId() != null) {
+          gitEntityInfo.setLastObjectId(templateResponse.getGitDetails().getObjectId());
+        }
+        if (templateResponse.getGitDetails().getFilePath() != null) {
+          gitEntityInfo.setFilePath(templateResponse.getGitDetails().getFilePath());
+        }
+        if (templateResponse.getGitDetails().getBranch() != null) {
+          gitEntityInfo.setBranch(templateResponse.getGitDetails().getBranch());
+        }
+      }
+    }
+    return transactionHelper.performTransaction(() -> {
+      makePreviousLastUpdatedTemplateFalse(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
+          templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
+      return updateTemplateHelper(templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
+          templateEntity, changeType, setDefaultTemplate, true, comments, null);
+    });
+  }
+
   private TemplateEntity updateTemplateHelper(String oldOrgIdentifier, String oldProjectIdentifier,
       TemplateEntity templateEntity, ChangeType changeType, boolean setStableTemplate,
       boolean updateLastUpdatedTemplateFlag, String comments, TemplateUpdateEventType eventType) {
@@ -1128,8 +1162,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   private TemplateEntity getAndValidateOldTemplateEntity(
       TemplateEntity templateEntity, String oldOrgIdentifier, String oldProjectIdentifier) {
-    TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(), oldOrgIdentifier,
-        oldProjectIdentifier, templateEntity.getRepo(), templateEntity.getConnectorRef());
+    TemplateUtils.setupGitParentEntityDetails(
+        templateEntity.getAccountIdentifier(), oldOrgIdentifier, oldProjectIdentifier, null, null);
     Optional<TemplateEntity> optionalTemplate =
         templateServiceHelper.getTemplateWithVersionLabel(templateEntity.getAccountId(), oldOrgIdentifier,
             oldProjectIdentifier, templateEntity.getIdentifier(), templateEntity.getVersionLabel(), false, false);

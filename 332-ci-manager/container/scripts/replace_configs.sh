@@ -192,12 +192,20 @@ if [[ "" != "$LOG_SERVICE_ENDPOINT" ]]; then
   export LOG_SERVICE_ENDPOINT; yq -i '.logServiceConfig.baseUrl=env(LOG_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$LOG_SERVICE_INTERNAL_URL" ]]; then
+  export LOG_SERVICE_INTERNAL_URL; yq -i '.logServiceConfig.internalUrl=env(LOG_SERVICE_INTERNAL_URL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$LOG_SERVICE_GLOBAL_TOKEN" ]]; then
   export LOG_SERVICE_GLOBAL_TOKEN; yq -i '.logServiceConfig.globalToken=env(LOG_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TI_SERVICE_ENDPOINT" ]]; then
   export TI_SERVICE_ENDPOINT; yq -i '.tiServiceConfig.baseUrl=env(TI_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TI_SERVICE_INTERNAL_URL" ]]; then
+  export TI_SERVICE_INTERNAL_URL; yq -i '.tiServiceConfig.internalUrl=env(TI_SERVICE_INTERNAL_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then

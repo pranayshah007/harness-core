@@ -158,6 +158,8 @@ public interface DelegateService extends OwnedByAccount {
 
   @ValidationGroups(Create.class) String queueTask(@Valid DelegateTask task);
 
+  @ValidationGroups(Create.class) String queueTaskV2(@Valid DelegateTask task);
+
   void scheduleSyncTask(DelegateTask task);
 
   void scheduleSyncTaskV2(DelegateTask task);

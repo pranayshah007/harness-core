@@ -227,6 +227,78 @@ public enum EntityType {
       ModuleType.CI, EntityTypeConstants.SAVE_CACHE_S3, IdentifierRef.class, EntityYamlRootNames.SAVE_CACHE_S3),
   @JsonProperty(EntityTypeConstants.SECURITY)
   SECURITY(ModuleType.CI, EntityTypeConstants.SECURITY, IdentifierRef.class, EntityYamlRootNames.SECURITY),
+
+  @JsonProperty(EntityTypeConstants.AQUA_TRIVY)
+  AQUA_TRIVY(ModuleType.STO, EntityTypeConstants.AQUA_TRIVY, IdentifierRef.class, EntityYamlRootNames.AQUA_TRIVY),
+  @JsonProperty(EntityTypeConstants.AWS_ECR)
+  AWS_ECR(ModuleType.STO, EntityTypeConstants.AWS_ECR, IdentifierRef.class, EntityYamlRootNames.AWS_ECR),
+  @JsonProperty(EntityTypeConstants.BANDIT)
+  BANDIT(ModuleType.STO, EntityTypeConstants.BANDIT, IdentifierRef.class, EntityYamlRootNames.BANDIT),
+  @JsonProperty(EntityTypeConstants.BLACKDUCK)
+  BLACKDUCK(ModuleType.STO, EntityTypeConstants.BLACKDUCK, IdentifierRef.class, EntityYamlRootNames.BLACKDUCK),
+  @JsonProperty(EntityTypeConstants.BRAKEMAN)
+  BRAKEMAN(ModuleType.STO, EntityTypeConstants.BRAKEMAN, IdentifierRef.class, EntityYamlRootNames.BRAKEMAN),
+  @JsonProperty(EntityTypeConstants.BURP)
+  BURP(ModuleType.STO, EntityTypeConstants.BURP, IdentifierRef.class, EntityYamlRootNames.BURP),
+  @JsonProperty(EntityTypeConstants.CHECKMARX)
+  CHECKMARX(ModuleType.STO, EntityTypeConstants.CHECKMARX, IdentifierRef.class, EntityYamlRootNames.CHECKMARX),
+  @JsonProperty(EntityTypeConstants.CLAIR)
+  CLAIR(ModuleType.STO, EntityTypeConstants.CLAIR, IdentifierRef.class, EntityYamlRootNames.CLAIR),
+  @JsonProperty(EntityTypeConstants.DATA_THEOREM)
+  DATA_THEOREM(ModuleType.STO, EntityTypeConstants.DATA_THEOREM, IdentifierRef.class, EntityYamlRootNames.DATA_THEOREM),
+  @JsonProperty(EntityTypeConstants.DOCKER_CONTENT_TRUST)
+  DOCKER_CONTENT_TRUST(ModuleType.STO, EntityTypeConstants.DOCKER_CONTENT_TRUST, IdentifierRef.class,
+      EntityYamlRootNames.DOCKER_CONTENT_TRUST),
+  @JsonProperty(EntityTypeConstants.EXTERNAL)
+  EXTERNAL(ModuleType.STO, EntityTypeConstants.EXTERNAL, IdentifierRef.class, EntityYamlRootNames.EXTERNAL),
+  @JsonProperty(EntityTypeConstants.FORTIFY_ON_DEMAND)
+  FORTIFY_ON_DEMAND(ModuleType.STO, EntityTypeConstants.FORTIFY_ON_DEMAND, IdentifierRef.class,
+      EntityYamlRootNames.FORTIFY_ON_DEMAND),
+  @JsonProperty(EntityTypeConstants.GRYPE)
+  GRYPE(ModuleType.STO, EntityTypeConstants.GRYPE, IdentifierRef.class, EntityYamlRootNames.GRYPE),
+  @JsonProperty(EntityTypeConstants.JFROG_XRAY)
+  JFROG_XRAY(ModuleType.STO, EntityTypeConstants.JFROG_XRAY, IdentifierRef.class, EntityYamlRootNames.JFROG_XRAY),
+  @JsonProperty(EntityTypeConstants.MEND)
+  MEND(ModuleType.STO, EntityTypeConstants.MEND, IdentifierRef.class, EntityYamlRootNames.MEND),
+  @JsonProperty(EntityTypeConstants.METASPLOIT)
+  METASPLOIT(ModuleType.STO, EntityTypeConstants.METASPLOIT, IdentifierRef.class, EntityYamlRootNames.METASPLOIT),
+  @JsonProperty(EntityTypeConstants.NESSUS)
+  NESSUS(ModuleType.STO, EntityTypeConstants.NESSUS, IdentifierRef.class, EntityYamlRootNames.NESSUS),
+  @JsonProperty(EntityTypeConstants.NEXUS_IQ)
+  NEXUS_IQ(ModuleType.STO, EntityTypeConstants.NEXUS_IQ, IdentifierRef.class, EntityYamlRootNames.NEXUS_IQ),
+  @JsonProperty(EntityTypeConstants.NIKTO)
+  NIKTO(ModuleType.STO, EntityTypeConstants.NIKTO, IdentifierRef.class, EntityYamlRootNames.NIKTO),
+  @JsonProperty(EntityTypeConstants.NMAP)
+  NMAP(ModuleType.STO, EntityTypeConstants.NMAP, IdentifierRef.class, EntityYamlRootNames.NMAP),
+  @JsonProperty(EntityTypeConstants.OPENVAS)
+  OPENVAS(ModuleType.STO, EntityTypeConstants.OPENVAS, IdentifierRef.class, EntityYamlRootNames.OPENVAS),
+  @JsonProperty(EntityTypeConstants.OWASP)
+  OWASP(ModuleType.STO, EntityTypeConstants.OWASP, IdentifierRef.class, EntityYamlRootNames.OWASP),
+  @JsonProperty(EntityTypeConstants.PRISMA_CLOUD)
+  PRISMA_CLOUD(ModuleType.STO, EntityTypeConstants.PRISMA_CLOUD, IdentifierRef.class, EntityYamlRootNames.PRISMA_CLOUD),
+  @JsonProperty(EntityTypeConstants.PROWLER)
+  PROWLER(ModuleType.STO, EntityTypeConstants.PROWLER, IdentifierRef.class, EntityYamlRootNames.PROWLER),
+  @JsonProperty(EntityTypeConstants.QUALYS)
+  QUALYS(ModuleType.STO, EntityTypeConstants.QUALYS, IdentifierRef.class, EntityYamlRootNames.QUALYS),
+  @JsonProperty(EntityTypeConstants.REAPSAW)
+  REAPSAW(ModuleType.STO, EntityTypeConstants.REAPSAW, IdentifierRef.class, EntityYamlRootNames.REAPSAW),
+  @JsonProperty(EntityTypeConstants.SHIFT_LEFT)
+  SHIFT_LEFT(ModuleType.STO, EntityTypeConstants.SHIFT_LEFT, IdentifierRef.class, EntityYamlRootNames.SHIFT_LEFT),
+  @JsonProperty(EntityTypeConstants.SNIPER)
+  SNIPER(ModuleType.STO, EntityTypeConstants.SNIPER, IdentifierRef.class, EntityYamlRootNames.SNIPER),
+  @JsonProperty(EntityTypeConstants.SNYK)
+  SNYK(ModuleType.STO, EntityTypeConstants.SNYK, IdentifierRef.class, EntityYamlRootNames.SNYK),
+  @JsonProperty(EntityTypeConstants.SONARQUBE)
+  SONARQUBE(ModuleType.STO, EntityTypeConstants.SONARQUBE, IdentifierRef.class, EntityYamlRootNames.SONARQUBE),
+  @JsonProperty(EntityTypeConstants.SYSDIG)
+  SYSDIG(ModuleType.STO, EntityTypeConstants.SYSDIG, IdentifierRef.class, EntityYamlRootNames.SYSDIG),
+  @JsonProperty(EntityTypeConstants.TENABLE)
+  TENABLE(ModuleType.STO, EntityTypeConstants.TENABLE, IdentifierRef.class, EntityYamlRootNames.TENABLE),
+  @JsonProperty(EntityTypeConstants.VERACODE)
+  VERACODE(ModuleType.STO, EntityTypeConstants.VERACODE, IdentifierRef.class, EntityYamlRootNames.VERACODE),
+  @JsonProperty(EntityTypeConstants.ZAP)
+  ZAP(ModuleType.STO, EntityTypeConstants.ZAP, IdentifierRef.class, EntityYamlRootNames.ZAP),
+
   @JsonProperty(EntityTypeConstants.GIT_CLONE)
   GIT_CLONE(ModuleType.CI, EntityTypeConstants.GIT_CLONE, IdentifierRef.class, EntityYamlRootNames.GIT_CLONE),
   @JsonProperty(EntityTypeConstants.ARTIFACTORY_UPLOAD)
