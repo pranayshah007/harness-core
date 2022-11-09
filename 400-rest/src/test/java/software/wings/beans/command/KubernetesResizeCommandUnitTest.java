@@ -42,6 +42,7 @@ import software.wings.api.ContainerServiceData;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.InstanceUnitType;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.command.ContainerResizeCommandUnit.ContextData;
 import software.wings.beans.command.KubernetesResizeParams.KubernetesResizeParamsBuilder;
 import software.wings.cloudprovider.gke.GkeClusterService;
@@ -91,11 +92,14 @@ public class KubernetesResizeCommandUnitTest extends WingsBaseTest {
                                                                   .withResizeStrategy(ResizeStrategy.RESIZE_NEW_FIRST);
   private SettingAttribute computeProvider = aSettingAttribute().withValue(GcpConfig.builder().build()).build();
   private CommandExecutionContext.Builder contextBuilder =
-      aCommandExecutionContext().cloudProviderSetting(computeProvider).cloudProviderCredentials(emptyList());
+      aCommandExecutionContext()
+          .cloudProviderSetting(SettingAttributeMapper.toSettingAttributeDTO(computeProvider))
+          .cloudProviderCredentials(emptyList());
 
   @Before
   public void setup() {
-    when(gkeClusterService.getCluster(any(SettingAttribute.class), eq(emptyList()), any(), any(), anyBoolean()))
+    when(gkeClusterService.getCluster(SettingAttributeMapper.toSettingAttributeDTO(any(SettingAttribute.class)),
+             eq(emptyList()), any(), any(), anyBoolean()))
         .thenReturn(kubernetesConfig);
     when(kubernetesContainerService.setControllerPodCount(
              eq(kubernetesConfig), eq(CLUSTER_NAME), any(), anyInt(), anyInt(), anyInt(), any()))

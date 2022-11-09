@@ -22,6 +22,7 @@ import software.wings.beans.GcpConfig;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.RancherConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.delegatetasks.validation.capabilities.ClusterMasterUrlValidationCapability;
 import software.wings.service.impl.ContainerServiceParams;
 
@@ -87,7 +88,8 @@ public class K8sClusterConfigTest extends WingsBaseTest {
     KubernetesClusterConfig clusterConfig = KubernetesClusterConfig.builder().masterUrl("http://localhost").build();
     ContainerServiceParams params =
         ContainerServiceParams.builder()
-            .settingAttribute(SettingAttribute.Builder.aSettingAttribute().withValue(clusterConfig).build())
+            .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+                SettingAttribute.Builder.aSettingAttribute().withValue(clusterConfig).build()))
             .masterUrl(masterUrl)
             .build();
 
@@ -100,7 +102,8 @@ public class K8sClusterConfigTest extends WingsBaseTest {
     KubernetesClusterConfig clusterConfig = KubernetesClusterConfig.builder().masterUrl("http://localhost").build();
     ContainerServiceParams params =
         ContainerServiceParams.builder()
-            .settingAttribute(SettingAttribute.Builder.aSettingAttribute().withValue(clusterConfig).build())
+            .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+                SettingAttribute.Builder.aSettingAttribute().withValue(clusterConfig).build()))
             .masterUrl("http://masterUrl")
             .build();
 

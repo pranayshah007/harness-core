@@ -117,6 +117,7 @@ import software.wings.beans.Service;
 import software.wings.beans.ServiceInstance;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.Variable;
@@ -1084,11 +1085,11 @@ public class CommandStateTest extends WingsBaseTest {
             .host(HOST)
             .serviceTemplateId(TEMPLATE_ID)
             .serviceVariables(emptyMap())
-            .hostConnectionAttributes(
-                aSettingAttribute().withValue(Builder.aHostConnectionAttributes().build()).build())
+            .hostConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(
+                aSettingAttribute().withValue(Builder.aHostConnectionAttributes().build()).build()))
             .hostConnectionCredentials(Collections.emptyList())
-            .bastionConnectionAttributes(
-                aSettingAttribute().withValue(Builder.aHostConnectionAttributes().build()).build())
+            .bastionConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(
+                aSettingAttribute().withValue(Builder.aHostConnectionAttributes().build()).build()))
             .bastionConnectionCredentials(Collections.emptyList())
             .safeDisplayServiceVariables(emptyMap())
             .deploymentType("ECS")

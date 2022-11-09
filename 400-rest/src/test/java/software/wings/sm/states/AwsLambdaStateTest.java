@@ -70,6 +70,7 @@ import software.wings.beans.Environment;
 import software.wings.beans.LambdaSpecification;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -209,13 +210,14 @@ public class AwsLambdaStateTest extends CategoryTest {
     doReturn(env).when(workflowStandardParamsExtensionService).getEnv(mockParams);
 
     DockerArtifactStream mockDockerArtifactStream = mock(DockerArtifactStream.class);
-    ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder()
-                                                            .artifactStreamType(ArtifactStreamType.AMAZON_S3.name())
-                                                            .metadataOnly(true)
-                                                            .metadata(mockMetadata(ArtifactStreamType.AMAZON_S3))
-                                                            .serverSetting(awsSetting)
-                                                            .artifactServerEncryptedDataDetails(Collections.emptyList())
-                                                            .build();
+    ArtifactStreamAttributes artifactStreamAttributes =
+        ArtifactStreamAttributes.builder()
+            .artifactStreamType(ArtifactStreamType.AMAZON_S3.name())
+            .metadataOnly(true)
+            .metadata(mockMetadata(ArtifactStreamType.AMAZON_S3))
+            .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(awsSetting))
+            .artifactServerEncryptedDataDetails(Collections.emptyList())
+            .build();
 
     ServiceCommand serviceCommand =
         aServiceCommand().withCommand(aCommand().withCommandUnits(asList(new AwsLambdaCommandUnit())).build()).build();

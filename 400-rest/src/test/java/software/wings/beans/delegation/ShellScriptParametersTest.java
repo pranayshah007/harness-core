@@ -23,6 +23,7 @@ import io.harness.rule.Owner;
 
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.service.impl.ContainerServiceParams;
 
 import java.util.Arrays;
@@ -48,7 +49,8 @@ public class ShellScriptParametersTest extends CategoryTest {
   public void fetchRequiredExecutionCapabilitiesWithoutInfraSelectors() {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(KubernetesClusterConfig.builder().useKubernetesDelegate(true).build());
-    when(containerServiceParams.getSettingAttribute()).thenReturn(settingAttribute);
+    when(containerServiceParams.getSettingAttribute())
+        .thenReturn(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute));
     when(containerServiceParams.fetchRequiredExecutionCapabilities(null))
         .thenReturn(Arrays.asList(SelectorCapability.builder().build()));
     ShellScriptParameters shellScriptParameters = ShellScriptParameters.builder()
@@ -69,7 +71,8 @@ public class ShellScriptParametersTest extends CategoryTest {
   public void fetchRequiredExecutionCapabilitiesWithInfraSelectors() {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(KubernetesClusterConfig.builder().useKubernetesDelegate(true).build());
-    when(containerServiceParams.getSettingAttribute()).thenReturn(settingAttribute);
+    when(containerServiceParams.getSettingAttribute())
+        .thenReturn(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute));
     when(containerServiceParams.fetchRequiredExecutionCapabilities(null))
         .thenReturn(Arrays.asList(SelectorCapability.builder().build()));
     ShellScriptParameters shellScriptParameters = ShellScriptParameters.builder()

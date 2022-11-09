@@ -28,6 +28,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.collect.ImmutableMap;
@@ -74,8 +75,9 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
     when(gkeClusterHelper.createCluster(serviceAccountKey, false, ZONE_CLUSTER, "default", CREATE_CLUSTER_PARAMS))
         .thenReturn(config);
 
-    KubernetesConfig result = gkeClusterService.createCluster(
-        COMPUTE_PROVIDER_SETTING, Collections.emptyList(), ZONE_CLUSTER, "default", CREATE_CLUSTER_PARAMS);
+    KubernetesConfig result =
+        gkeClusterService.createCluster(SettingAttributeMapper.toSettingAttributeDTO(COMPUTE_PROVIDER_SETTING),
+            Collections.emptyList(), ZONE_CLUSTER, "default", CREATE_CLUSTER_PARAMS);
 
     verify(gkeClusterHelper, times(1))
         .createCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"), eq(CREATE_CLUSTER_PARAMS));
@@ -89,8 +91,9 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
     when(gkeClusterHelper.createCluster(serviceAccountKey, false, ZONE_CLUSTER, "default", CREATE_CLUSTER_PARAMS))
         .thenReturn(null);
 
-    KubernetesConfig config = gkeClusterService.createCluster(
-        COMPUTE_PROVIDER_SETTING, Collections.emptyList(), ZONE_CLUSTER, "default", CREATE_CLUSTER_PARAMS);
+    KubernetesConfig config =
+        gkeClusterService.createCluster(SettingAttributeMapper.toSettingAttributeDTO(COMPUTE_PROVIDER_SETTING),
+            Collections.emptyList(), ZONE_CLUSTER, "default", CREATE_CLUSTER_PARAMS);
 
     verify(gkeClusterHelper, times(1))
         .createCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"), eq(CREATE_CLUSTER_PARAMS));
@@ -109,7 +112,8 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
     when(gkeClusterHelper.getCluster(serviceAccountKey, false, ZONE_CLUSTER, "default")).thenReturn(config);
 
     KubernetesConfig result =
-        gkeClusterService.getCluster(COMPUTE_PROVIDER_SETTING, Collections.emptyList(), ZONE_CLUSTER, "default", false);
+        gkeClusterService.getCluster(SettingAttributeMapper.toSettingAttributeDTO(COMPUTE_PROVIDER_SETTING),
+            Collections.emptyList(), ZONE_CLUSTER, "default", false);
 
     verify(gkeClusterHelper, times(1)).getCluster(eq(serviceAccountKey), eq(false), eq(ZONE_CLUSTER), eq("default"));
     assertThat(result).isEqualTo(config);
@@ -123,7 +127,8 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
         .thenThrow(WingsException.class);
 
     try {
-      gkeClusterService.getCluster(COMPUTE_PROVIDER_SETTING, Collections.emptyList(), ZONE_CLUSTER, "default", false);
+      gkeClusterService.getCluster(SettingAttributeMapper.toSettingAttributeDTO(COMPUTE_PROVIDER_SETTING),
+          Collections.emptyList(), ZONE_CLUSTER, "default", false);
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       // Expected
@@ -139,7 +144,8 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
     List<String> clusterList = Arrays.asList("zone-a/cluster-1", "zone-a/cluster-2");
     when(gkeClusterHelper.listClusters(serviceAccountKey, false)).thenReturn(clusterList);
 
-    List<String> result = gkeClusterService.listClusters(COMPUTE_PROVIDER_SETTING, Collections.emptyList());
+    List<String> result = gkeClusterService.listClusters(
+        SettingAttributeMapper.toSettingAttributeDTO(COMPUTE_PROVIDER_SETTING), Collections.emptyList());
 
     verify(gkeClusterHelper, times(1)).listClusters(eq(serviceAccountKey), eq(false));
     assertThat(result).containsExactlyInAnyOrder("zone-a/cluster-1", "zone-a/cluster-2");
@@ -151,7 +157,8 @@ public class GkeClusterServiceImplTest extends WingsBaseTest {
   public void shouldNotListClustersIfError() {
     when(gkeClusterHelper.listClusters(serviceAccountKey, false)).thenReturn(null);
 
-    List<String> result = gkeClusterService.listClusters(COMPUTE_PROVIDER_SETTING, Collections.emptyList());
+    List<String> result = gkeClusterService.listClusters(
+        SettingAttributeMapper.toSettingAttributeDTO(COMPUTE_PROVIDER_SETTING), Collections.emptyList());
 
     verify(gkeClusterHelper, times(1)).listClusters(eq(serviceAccountKey), eq(false));
     assertThat(result).isNull();

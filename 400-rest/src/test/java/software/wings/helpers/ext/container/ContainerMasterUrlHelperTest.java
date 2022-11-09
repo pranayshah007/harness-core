@@ -40,6 +40,7 @@ import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.RancherKubernetesInfrastructureMapping;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.SyncTaskContext;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.service.impl.ContainerServiceParams;
@@ -117,8 +118,8 @@ public class ContainerMasterUrlHelperTest extends WingsBaseTest {
         buildInfraMapping(InfrastructureMappingType.DIRECT_KUBERNETES, null);
     final ContainerServiceParams containerParams =
         ContainerServiceParams.builder()
-            .settingAttribute(
-                buildSettingAttribute(KubernetesClusterConfig.builder().delegateName("k8s-delegate").build()))
+            .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+                buildSettingAttribute(KubernetesClusterConfig.builder().delegateName("k8s-delegate").build())))
             .build();
     doReturn(containerParams)
         .when(containerDeploymentManagerHelper)
@@ -135,7 +136,8 @@ public class ContainerMasterUrlHelperTest extends WingsBaseTest {
         buildInfraMapping(InfrastructureMappingType.DIRECT_KUBERNETES, null);
     final ContainerServiceParams containerParams =
         ContainerServiceParams.builder()
-            .settingAttribute(buildSettingAttribute(KubernetesClusterConfig.builder().masterUrl(MASTER_URL).build()))
+            .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+                buildSettingAttribute(KubernetesClusterConfig.builder().masterUrl(MASTER_URL).build())))
             .build();
     doReturn(containerParams)
         .when(containerDeploymentManagerHelper)
@@ -153,8 +155,10 @@ public class ContainerMasterUrlHelperTest extends WingsBaseTest {
   public void testFetchMasterUrlForAzureK8s() {
     final ContainerInfrastructureMapping infraMapping =
         buildInfraMapping(InfrastructureMappingType.AZURE_KUBERNETES, null);
-    final ContainerServiceParams containerParams =
-        ContainerServiceParams.builder().settingAttribute(buildSettingAttribute(AzureConfig.builder().build())).build();
+    final ContainerServiceParams containerParams = ContainerServiceParams.builder()
+                                                       .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+                                                           buildSettingAttribute(AzureConfig.builder().build())))
+                                                       .build();
     doReturn(containerParams)
         .when(containerDeploymentManagerHelper)
         .getContainerServiceParams(infraMapping, null, executionContext);

@@ -17,6 +17,7 @@ import io.harness.k8s.model.KubernetesConfig;
 
 import software.wings.beans.GcpConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.cloudprovider.gke.GkeClusterServiceImpl;
 import software.wings.rules.Integration;
@@ -46,7 +47,8 @@ public abstract class KubernetesIntegrationTestBase extends CategoryTest {
     GkeClusterServiceImpl gkeClusterService = new GkeClusterServiceImpl();
     KubernetesContainerServiceImpl kubernetesService = new KubernetesContainerServiceImpl();
 
-    List<String> clusters = gkeClusterService.listClusters(COMPUTE_PROVIDER_SETTING, Collections.emptyList());
+    List<String> clusters = gkeClusterService.listClusters(
+        SettingAttributeMapper.toSettingAttributeDTO(COMPUTE_PROVIDER_SETTING), Collections.emptyList());
     log.info("Available clusters: {}", clusters);
 
     //    KubernetesConfig config = gkeClusterService.createCluster(COMPUTE_PROVIDER_SETTING, ZONE_CLUSTER,
@@ -58,7 +60,8 @@ public abstract class KubernetesIntegrationTestBase extends CategoryTest {
     //            .build());
 
     KubernetesConfig config =
-        gkeClusterService.getCluster(COMPUTE_PROVIDER_SETTING, Collections.emptyList(), ZONE_CLUSTER, NAMESPACE, false);
+        gkeClusterService.getCluster(SettingAttributeMapper.toSettingAttributeDTO(COMPUTE_PROVIDER_SETTING),
+            Collections.emptyList(), ZONE_CLUSTER, NAMESPACE, false);
 
     kubernetesService.createOrReplaceController(config,
         new ReplicationControllerBuilder()

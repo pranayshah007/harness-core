@@ -19,6 +19,7 @@ import io.harness.scm.SecretName;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.cloudprovider.CodeDeployDeploymentInfo;
 import software.wings.service.impl.AwsHelperService;
@@ -68,15 +69,19 @@ public class AwsCodeDeployServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldListApplication() {
-    awsCodeDeployService.listApplications(Regions.US_EAST_1.getName(), cloudProvider, Collections.emptyList())
+    awsCodeDeployService
+        .listApplications(Regions.US_EAST_1.getName(), SettingAttributeMapper.toSettingAttributeDTO(cloudProvider),
+            Collections.emptyList())
         .forEach(application -> { log.info(application.toString()); });
 
     awsCodeDeployService
-        .listDeploymentGroup(Regions.US_EAST_1.getName(), "todolistwar", cloudProvider, Collections.emptyList())
+        .listDeploymentGroup(Regions.US_EAST_1.getName(), "todolistwar",
+            SettingAttributeMapper.toSettingAttributeDTO(cloudProvider), Collections.emptyList())
         .forEach(dg -> { log.info(dg.toString()); });
 
     awsCodeDeployService
-        .listDeploymentConfiguration(Regions.US_EAST_1.getName(), cloudProvider, Collections.emptyList())
+        .listDeploymentConfiguration(Regions.US_EAST_1.getName(),
+            SettingAttributeMapper.toSettingAttributeDTO(cloudProvider), Collections.emptyList())
         .forEach(dc -> { log.info(dc.toString()); });
 
     CreateDeploymentRequest createDeploymentRequest =
@@ -89,9 +94,9 @@ public class AwsCodeDeployServiceTest extends WingsBaseTest {
                     .withBucket("harnessapps")
                     .withBundleType("zip")
                     .withKey("todolist_war/19/codedeploysample.zip")));
-    CodeDeployDeploymentInfo codeDeployDeploymentInfo =
-        awsCodeDeployService.deployApplication(Regions.US_EAST_1.getName(), cloudProvider, Collections.emptyList(),
-            createDeploymentRequest, new ExecutionLogCallback(), 10);
+    CodeDeployDeploymentInfo codeDeployDeploymentInfo = awsCodeDeployService.deployApplication(
+        Regions.US_EAST_1.getName(), SettingAttributeMapper.toSettingAttributeDTO(cloudProvider),
+        Collections.emptyList(), createDeploymentRequest, new ExecutionLogCallback(), 10);
     log.info(codeDeployDeploymentInfo.toString());
   }
 
@@ -101,8 +106,8 @@ public class AwsCodeDeployServiceTest extends WingsBaseTest {
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldListApplicationRevisions() {
     log.info(awsCodeDeployService
-                 .getApplicationRevisionList(Regions.US_EAST_1.getName(), "todolistwar", "todolistwarDG", cloudProvider,
-                     Collections.emptyList())
+                 .getApplicationRevisionList(Regions.US_EAST_1.getName(), "todolistwar", "todolistwarDG",
+                     SettingAttributeMapper.toSettingAttributeDTO(cloudProvider), Collections.emptyList())
                  .toString());
   }
 }

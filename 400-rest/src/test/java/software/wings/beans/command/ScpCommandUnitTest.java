@@ -57,6 +57,7 @@ import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.Log;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
@@ -182,7 +183,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
           .artifactStreamType(ArtifactStreamType.AMAZON_S3.name())
           .metadataOnly(true)
           .metadata(mockMetadata(ArtifactStreamType.AMAZON_S3))
-          .serverSetting(awsSetting)
+          .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(awsSetting))
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .build();
   private ArtifactStreamAttributes artifactStreamAttributesForArtifactory =
@@ -190,7 +191,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
           .artifactStreamType(ArtifactStreamType.ARTIFACTORY.name())
           .metadataOnly(true)
           .metadata(mockMetadata(ArtifactStreamType.ARTIFACTORY))
-          .serverSetting(artifactorySetting)
+          .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(artifactorySetting))
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .artifactType(ArtifactType.WAR)
           .build();
@@ -200,7 +201,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
           .artifactStreamType(ArtifactStreamType.ARTIFACTORY.name())
           .metadataOnly(true)
           .metadata(mockMetadata(ArtifactStreamType.ARTIFACTORY))
-          .serverSetting(artifactorySetting)
+          .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(artifactorySetting))
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .artifactType(ArtifactType.RPM)
           .build();
@@ -210,7 +211,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
           .artifactStreamType(ArtifactStreamType.AZURE_ARTIFACTS.name())
           .metadataOnly(true)
           .metadata(mockMetadata(ArtifactStreamType.AZURE_ARTIFACTS))
-          .serverSetting(azureArtifactsConfig)
+          .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(azureArtifactsConfig))
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .protocolType(AzureArtifactsArtifactStreamProtocolType.maven.name())
           .project("PROJECT")
@@ -227,7 +228,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
           .artifactFileMetadata(
               asList(builder().fileName(JENKINS_ARTIFACT_FILENAME_1).url(JENKINS_ARTIFACT_URL_1).build(),
                   builder().fileName(JENKINS_ARTIFACT_FILENAME_2).url(JENKINS_ARTIFACT_URL_2).build()))
-          .serverSetting(jenkinsConfig)
+          .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(jenkinsConfig))
           .artifactStreamId(ARTIFACT_STREAM_ID)
           .jobName("scheduler")
           .artifactPaths(asList("build/libs/docker-scheduler-1.0-SNAPSHOT-all.jar",
@@ -240,7 +241,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
           .artifactStreamType(ArtifactStreamType.JENKINS.name())
           .metadataOnly(true)
           .metadata(mockMetadata(ArtifactStreamType.JENKINS))
-          .serverSetting(jenkinsConfig)
+          .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(jenkinsConfig))
           .artifactStreamId(ARTIFACT_STREAM_ID)
           .jobName("scheduler")
           .artifactPaths(asList("build/libs/docker-scheduler-1.0-SNAPSHOT-all.jar",
@@ -264,7 +265,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
                       .fileName("todolist.war")
                       .url("http://localhost:9095/artifact/TOD-TOD/JOB1/build-11/artifacts/todolist.war")
                       .build()))
-          .serverSetting(bambooSetting)
+          .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(bambooSetting))
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .artifactStreamId(ARTIFACT_STREAM_ID)
           .build();
@@ -275,7 +276,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
           .metadataOnly(true)
           .metadata(mockMetadata(ArtifactStreamType.NEXUS))
           .artifactFileMetadata(asList(builder().fileName("todolist-7.0-sources.war").url(NEXUS_URL).build()))
-          .serverSetting(nexusSetting)
+          .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(nexusSetting))
           .artifactStreamId(ARTIFACT_STREAM_ID)
           .jobName("releases")
           .groupId("io.harness.test")
@@ -291,7 +292,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
           .metadataOnly(true)
           .metadata(mockMetadata(ArtifactStreamType.NEXUS))
           .artifactFileMetadata(Collections.emptyList())
-          .serverSetting(nexusSetting)
+          .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(nexusSetting))
           .artifactStreamId(ARTIFACT_STREAM_ID)
           .jobName("releases")
           .groupId("io.harness.test")

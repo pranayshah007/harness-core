@@ -22,6 +22,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.rule.Owner;
 
 import software.wings.beans.KubernetesClusterConfig;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
 import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
@@ -66,15 +67,15 @@ public class HelmValuesFetchTaskParametersTest extends CategoryTest {
         .extracting(ExecutionCapability::getCapabilityType)
         .containsExactly(CapabilityType.HELM_INSTALL, CapabilityType.SOCKET);
 
-    ContainerServiceParams containerServiceParams =
-        ContainerServiceParams.builder()
-            .settingAttribute(aSettingAttribute()
-                                  .withValue(KubernetesClusterConfig.builder()
-                                                 .useKubernetesDelegate(true)
-                                                 .delegateName("delegateName")
-                                                 .build())
-                                  .build())
-            .build();
+    ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
+                                                        .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+                                                            aSettingAttribute()
+                                                                .withValue(KubernetesClusterConfig.builder()
+                                                                               .useKubernetesDelegate(true)
+                                                                               .delegateName("delegateName")
+                                                                               .build())
+                                                                .build()))
+                                                        .build();
 
     taskParameters.setBindTaskFeatureSet(true);
     taskParameters.setContainerServiceParams(containerServiceParams);

@@ -35,6 +35,7 @@ import io.harness.rule.OwnerRule;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.DeploymentType;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.delegatetasks.validation.capabilities.SSHHostValidationCapability;
 import software.wings.delegatetasks.validation.capabilities.WinrmHostValidationCapability;
@@ -72,7 +73,8 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   public void shouldFetchRequiredExecutionCapabilitiesK8sWithDelegate() {
     CommandExecutionContext executionContext =
         contextBuilder.deploymentType(DeploymentType.KUBERNETES.name())
-            .cloudProviderSetting(SettingAttributeTestHelper.obtainKubernetesClusterSettingAttribute(true))
+            .cloudProviderSetting(SettingAttributeMapper.toSettingAttributeDTO(
+                SettingAttributeTestHelper.obtainKubernetesClusterSettingAttribute(true)))
             .build();
 
     List<ExecutionCapability> executionCapabilities = executionContext.fetchRequiredExecutionCapabilities(null);
@@ -84,10 +86,10 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldFetchRequiredExecutionCapabilitiesWinrm() {
-    CommandExecutionContext executionContext =
-        contextBuilder.deploymentType(DeploymentType.WINRM.name())
-            .cloudProviderSetting(SettingAttributeTestHelper.obtainWinrmSettingAttribute())
-            .build();
+    CommandExecutionContext executionContext = contextBuilder.deploymentType(DeploymentType.WINRM.name())
+                                                   .cloudProviderSetting(SettingAttributeMapper.toSettingAttributeDTO(
+                                                       SettingAttributeTestHelper.obtainWinrmSettingAttribute()))
+                                                   .build();
 
     List<ExecutionCapability> executionCapabilities = executionContext.fetchRequiredExecutionCapabilities(null);
     assertThat(executionCapabilities).hasSize(1);
@@ -100,7 +102,8 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   public void shouldFetchRequiredExecutionCapabilitiesWithDelegateSelectorsWinrm() {
     CommandExecutionContext executionContext =
         contextBuilder.deploymentType(DeploymentType.WINRM.name())
-            .cloudProviderSetting(SettingAttributeTestHelper.obtainWinrmSettingAttribute())
+            .cloudProviderSetting(
+                SettingAttributeMapper.toSettingAttributeDTO(SettingAttributeTestHelper.obtainWinrmSettingAttribute()))
             .delegateSelectors(Arrays.asList("selector1", "selector2", "selector3"))
             .executeOnDelegate(false)
             .build();
@@ -117,7 +120,8 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   public void shouldFetchRequiredExecutionCapabilitiesSSH() {
     CommandExecutionContext executionContext =
         contextBuilder.deploymentType(DeploymentType.SSH.name())
-            .cloudProviderSetting(SettingAttributeTestHelper.obtainSshSettingAttribute())
+            .cloudProviderSetting(
+                SettingAttributeMapper.toSettingAttributeDTO(SettingAttributeTestHelper.obtainSshSettingAttribute()))
             .executionCredential(aSSHExecutionCredential().withSshUser(USER_NAME).withSshPassword(PASSWORD).build())
             .build();
 
@@ -132,7 +136,8 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   public void shouldFetchRequiredExecutionCapabilitiesWithDelegateSelectorsSSH() {
     CommandExecutionContext executionContext =
         contextBuilder.deploymentType(DeploymentType.SSH.name())
-            .cloudProviderSetting(SettingAttributeTestHelper.obtainSshSettingAttribute())
+            .cloudProviderSetting(
+                SettingAttributeMapper.toSettingAttributeDTO(SettingAttributeTestHelper.obtainSshSettingAttribute()))
             .executionCredential(aSSHExecutionCredential().withSshUser(USER_NAME).withSshPassword(PASSWORD).build())
             .delegateSelectors(Arrays.asList("selector1", "selector2", "selector3"))
             .executeOnDelegate(true)
@@ -208,7 +213,8 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   public void testFetchRequiredExecutionCapabilitiesK8sWithParams() {
     CommandExecutionContext executionContext =
         contextBuilder.deploymentType(DeploymentType.KUBERNETES.name())
-            .cloudProviderSetting(SettingAttributeTestHelper.obtainKubernetesClusterSettingAttribute(false))
+            .cloudProviderSetting(SettingAttributeMapper.toSettingAttributeDTO(
+                SettingAttributeTestHelper.obtainKubernetesClusterSettingAttribute(false)))
             .containerSetupParams(aKubernetesSetupParams().withMasterUrl(MASTER_URL).build())
             .build();
 

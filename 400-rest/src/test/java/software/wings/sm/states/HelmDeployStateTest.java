@@ -162,6 +162,7 @@ import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.WorkflowExecution;
@@ -401,13 +402,14 @@ public class HelmDeployStateTest extends CategoryTest {
   private Service service = Service.builder().appId(APP_ID).uuid(SERVICE_ID).name(SERVICE_NAME).build();
   private ContainerServiceParams containerServiceParams =
       ContainerServiceParams.builder()
-          .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
-                                .withValue(KubernetesClusterConfig.builder()
-                                               .delegateName("delegateName")
-                                               .delegateSelectors(new HashSet<>(singletonList("delegateSelectors")))
-                                               .useKubernetesDelegate(true)
-                                               .build())
-                                .build())
+          .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+              SettingAttribute.Builder.aSettingAttribute()
+                  .withValue(KubernetesClusterConfig.builder()
+                                 .delegateName("delegateName")
+                                 .delegateSelectors(new HashSet<>(singletonList("delegateSelectors")))
+                                 .useKubernetesDelegate(true)
+                                 .build())
+                  .build()))
           .build();
   private ExecutionContextImpl context;
 
@@ -1752,8 +1754,10 @@ public class HelmDeployStateTest extends CategoryTest {
 
   private void testGetPreviousReleaseVersionInvalidResponse(
       HelmVersion version, GitConfig gitConfig, SettingValue settingValue, String expectedMessage) throws Exception {
-    ContainerServiceParams params =
-        ContainerServiceParams.builder().settingAttribute(aSettingAttribute().withValue(settingValue).build()).build();
+    ContainerServiceParams params = ContainerServiceParams.builder()
+                                        .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+                                            aSettingAttribute().withValue(settingValue).build()))
+                                        .build();
     assertThatThrownBy(()
                            -> helmDeployState.getPreviousReleaseVersion(context, app, RELEASE_NAME, params, gitConfig,
                                emptyList(), "", version, 0, HelmDeployStateExecutionData.builder(), null, null))

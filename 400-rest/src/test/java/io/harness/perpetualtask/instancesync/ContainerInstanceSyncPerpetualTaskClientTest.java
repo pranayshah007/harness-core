@@ -44,6 +44,7 @@ import software.wings.beans.EcsInfrastructureMapping;
 import software.wings.beans.Environment;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.delegatetasks.aws.AwsCommandHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
@@ -205,8 +206,8 @@ public class ContainerInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
                           .taskType(TaskType.CONTAINER_VALIDATION.name())
                           .parameters(new Object[] {null, null,
                               ContainerServiceParams.builder()
-                                  .settingAttribute(
-                                      SettingAttribute.Builder.aSettingAttribute().withValue(azureConfig).build())
+                                  .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+                                      SettingAttribute.Builder.aSettingAttribute().withValue(azureConfig).build()))
                                   .containerServiceName("container_service_name")
                                   .encryptionDetails(new ArrayList<>())
                                   .clusterName("cluster")
@@ -244,8 +245,8 @@ public class ContainerInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
                           .taskType(TaskType.CONTAINER_VALIDATION.name())
                           .parameters(new Object[] {null, null,
                               ContainerServiceParams.builder()
-                                  .settingAttribute(
-                                      SettingAttribute.Builder.aSettingAttribute().withValue(awsConfig).build())
+                                  .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+                                      SettingAttribute.Builder.aSettingAttribute().withValue(awsConfig).build()))
                                   .containerServiceName("container_service_name")
                                   .encryptionDetails(new ArrayList<>())
                                   .clusterName("cluster")

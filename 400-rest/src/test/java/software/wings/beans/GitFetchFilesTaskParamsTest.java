@@ -45,10 +45,11 @@ public class GitFetchFilesTaskParamsTest extends WingsBaseTest {
   public void testFetchRequiredExecutionCapabilities() {
     GitFetchFilesTaskParams gitFetchFilesTaskParams =
         GitFetchFilesTaskParams.builder()
-            .containerServiceParams(ContainerServiceParams.builder()
-                                        .settingAttribute(aSettingAttribute().build())
-                                        .masterUrl("http://foo.bar")
-                                        .build())
+            .containerServiceParams(
+                ContainerServiceParams.builder()
+                    .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(aSettingAttribute().build()))
+                    .masterUrl("http://foo.bar")
+                    .build())
             .build();
 
     gitFetchFilesTaskParams.setBindTaskFeatureSet(true);
@@ -114,10 +115,11 @@ public class GitFetchFilesTaskParamsTest extends WingsBaseTest {
   public void testFetchRequiredExecutionCapabilitiesForDifferentRepoTypes() {
     GitFetchFilesTaskParams gitFetchFilesTaskParams =
         GitFetchFilesTaskParams.builder()
-            .containerServiceParams(ContainerServiceParams.builder()
-                                        .settingAttribute(aSettingAttribute().build())
-                                        .masterUrl("http://foo.bar")
-                                        .build())
+            .containerServiceParams(
+                ContainerServiceParams.builder()
+                    .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(aSettingAttribute().build()))
+                    .masterUrl("http://foo.bar")
+                    .build())
             .build();
     Map<String, GitFetchFilesConfig> gitFetchFilesConfigMap = new HashMap<>();
     gitFetchFilesConfigMap.put("Service",
@@ -131,8 +133,10 @@ public class GitFetchFilesTaskParamsTest extends WingsBaseTest {
     sshSettingAttribute.setValue(hostConnectionAttributes);
     gitFetchFilesConfigMap.put("Environment",
         GitFetchFilesConfig.builder()
-            .gitConfig(
-                GitConfig.builder().repoUrl("git@github.com/abc").sshSettingAttribute(sshSettingAttribute).build())
+            .gitConfig(GitConfig.builder()
+                           .repoUrl("git@github.com/abc")
+                           .sshSettingAttribute(SettingAttributeMapper.toSettingAttributeDTO(sshSettingAttribute))
+                           .build())
             .encryptedDataDetails(Collections.emptyList())
             .build());
     gitFetchFilesTaskParams.setGitFetchFilesConfigMap(gitFetchFilesConfigMap);

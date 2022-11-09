@@ -41,6 +41,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.RancherConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.cloudprovider.gke.GkeClusterService;
 import software.wings.delegatetasks.rancher.RancherTaskHelper;
@@ -124,7 +125,8 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     KubernetesConfig kubernetesConfig = KubernetesConfig.builder().namespace("default").build();
     ContainerServiceParams containerServiceParams =
         ContainerServiceParams.builder()
-            .settingAttribute(SettingAttribute.Builder.aSettingAttribute().withValue(kubernetesClusterConfig).build())
+            .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+                SettingAttribute.Builder.aSettingAttribute().withValue(kubernetesClusterConfig).build()))
             .encryptionDetails(Collections.emptyList())
             .build();
     String version = "1.16";
@@ -142,13 +144,13 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void k8sVersionIsGreaterOrEqualTo116WithCharacter() {
     KubernetesConfig kubernetesConfig = KubernetesConfig.builder().namespace("default").build();
-    ContainerServiceParams containerServiceParams =
-        ContainerServiceParams.builder()
-            .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
-                                  .withValue(KubernetesClusterConfig.builder().build())
-                                  .build())
-            .encryptionDetails(Collections.emptyList())
-            .build();
+    ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
+                                                        .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+                                                            SettingAttribute.Builder.aSettingAttribute()
+                                                                .withValue(KubernetesClusterConfig.builder().build())
+                                                                .build()))
+                                                        .encryptionDetails(Collections.emptyList())
+                                                        .build();
     String version = "1.16+144";
 
     doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(containerServiceParams);
@@ -164,13 +166,13 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void k8sVersionIsLessThan116() {
     KubernetesConfig kubernetesConfig = KubernetesConfig.builder().namespace("default").build();
-    ContainerServiceParams containerServiceParams =
-        ContainerServiceParams.builder()
-            .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
-                                  .withValue(KubernetesClusterConfig.builder().build())
-                                  .build())
-            .encryptionDetails(Collections.emptyList())
-            .build();
+    ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
+                                                        .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(
+                                                            SettingAttribute.Builder.aSettingAttribute()
+                                                                .withValue(KubernetesClusterConfig.builder().build())
+                                                                .build()))
+                                                        .encryptionDetails(Collections.emptyList())
+                                                        .build();
     String version = "1.15";
 
     doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(containerServiceParams);
@@ -239,11 +241,12 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
   public void testGetKubernetesConfigForContainerParamsWithRancherWithException() throws IOException {
     RancherConfig rancherConfig = RancherConfig.builder().rancherUrl("sampleRancherUrl").build();
     SettingAttribute settingAttribute = mock(SettingAttribute.class);
-    ContainerServiceParams params = ContainerServiceParams.builder()
-                                        .settingAttribute(settingAttribute)
-                                        .clusterName("sampleCluster")
-                                        .namespace("sampleNamespace")
-                                        .build();
+    ContainerServiceParams params =
+        ContainerServiceParams.builder()
+            .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
+            .clusterName("sampleCluster")
+            .namespace("sampleNamespace")
+            .build();
 
     doReturn(rancherConfig).when(settingAttribute).getValue();
     doThrow(new RuntimeException("some exception message"))
@@ -258,11 +261,12 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
   public void testGetKubernetesConfigForContainerParamsWithRancher() throws IOException {
     RancherConfig rancherConfig = RancherConfig.builder().rancherUrl("sampleRancherUrl").build();
     SettingAttribute settingAttribute = mock(SettingAttribute.class);
-    ContainerServiceParams params = ContainerServiceParams.builder()
-                                        .settingAttribute(settingAttribute)
-                                        .clusterName("sampleCluster")
-                                        .namespace("sampleNamespace")
-                                        .build();
+    ContainerServiceParams params =
+        ContainerServiceParams.builder()
+            .settingAttribute(SettingAttributeMapper.toSettingAttributeDTO(settingAttribute))
+            .clusterName("sampleCluster")
+            .namespace("sampleNamespace")
+            .build();
 
     doReturn(rancherConfig).when(settingAttribute).getValue();
     doReturn(mock(KubernetesConfig.class))
