@@ -13,6 +13,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchFailurePassThroughData;
@@ -455,13 +456,22 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     // Get ArtifactsOutcome
     Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
     // Update expressions in ArtifactsOutcome
-    ExpressionEvaluatorUtils.updateExpressions(
-            artifactOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+
+    String image = null;
+    if(artifactOutcome.isPresent()) {
+
+      AMIArtifactOutcome amiArtifactOutcome = (AMIArtifactOutcome) artifactOutcome.get();
+      ExpressionEvaluatorUtils.updateExpressions(
+              amiArtifactOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+      image = amiArtifactOutcome.getAmiId();
+    }
+
 
     ElastigroupStepExecutorParams elastigroupStepExecutorParams =
             ElastigroupStepExecutorParams.builder()
                     .shouldOpenFetchFilesLogStream(false)
                     .startupScript(startupScript)
+                    .image(image)
                     .elastigroupParameters(elastigroupParameters)
                     .build();
 
