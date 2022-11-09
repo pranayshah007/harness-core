@@ -7,24 +7,20 @@
 
 package io.harness.delegate.task.elastigroup;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.ecs.EcsCommandTaskNGHandler;
 import io.harness.delegate.elastigroup.ElastigroupCommandTaskNGHandler;
 import io.harness.delegate.exception.TaskNGDataException;
-import io.harness.delegate.task.ecs.EcsInfraConfigHelper;
-import io.harness.delegate.task.ecs.request.EcsCommandRequest;
-import io.harness.delegate.task.ecs.response.EcsCommandResponse;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandResponse;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.inject.Inject;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
@@ -32,7 +28,7 @@ public class ElastigroupDelegateTaskHelper {
   @Inject private Map<String, ElastigroupCommandTaskNGHandler> commandTaskTypeToTaskHandlerMap;
 
   public ElastigroupCommandResponse getElastigroupCommandResponse(
-          ElastigroupCommandRequest elastigroupCommandRequest, ILogStreamingTaskClient iLogStreamingTaskClient) {
+      ElastigroupCommandRequest elastigroupCommandRequest, ILogStreamingTaskClient iLogStreamingTaskClient) {
     CommandUnitsProgress commandUnitsProgress = elastigroupCommandRequest.getCommandUnitsProgress() != null
         ? elastigroupCommandRequest.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();
@@ -43,12 +39,14 @@ public class ElastigroupDelegateTaskHelper {
     try {
       ElastigroupCommandResponse elastigroupCommandResponse =
           commandTaskHandler.executeTask(elastigroupCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
-      elastigroupCommandResponse.setCommandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
+      elastigroupCommandResponse.setCommandUnitsProgress(
+          UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
       return elastigroupCommandResponse;
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in processing elastigroup task [{}]",
-          elastigroupCommandRequest.getCommandName() + ":" + elastigroupCommandRequest.getElastigroupCommandType(), sanitizedException);
+          elastigroupCommandRequest.getCommandName() + ":" + elastigroupCommandRequest.getElastigroupCommandType(),
+          sanitizedException);
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     }

@@ -7,9 +7,15 @@
 
 package io.harness.cdng.elastigroup;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.ECS;
+
+import static java.lang.String.format;
+import static java.util.Collections.emptyList;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
@@ -36,17 +42,12 @@ import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
 
-import javax.annotation.Nonnull;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.List;
 import java.util.Optional;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.WingsException.USER;
-import static io.harness.ng.core.infrastructure.InfrastructureKind.ECS;
-import static java.lang.String.format;
-import static java.util.Collections.emptyList;
+import javax.annotation.Nonnull;
 
 @Singleton
 @OwnedBy(CDP)
@@ -55,7 +56,7 @@ public class ElastigroupEntityHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
   public List<EncryptedDataDetail> getEncryptionDataDetails(
-          @Nonnull ConnectorInfoDTO connectorDTO, @Nonnull NGAccess ngAccess) {
+      @Nonnull ConnectorInfoDTO connectorDTO, @Nonnull NGAccess ngAccess) {
     switch (connectorDTO.getConnectorType()) {
       case AWS:
         AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
@@ -69,14 +70,13 @@ public class ElastigroupEntityHelper {
         SpotConnectorDTO spotConnectorDTO = (SpotConnectorDTO) connectorDTO.getConnectorConfig();
         List<DecryptableEntity> spotConnectorDTODecryptableEntities = spotConnectorDTO.getDecryptableEntities();
         if (isNotEmpty(spotConnectorDTODecryptableEntities)) {
-          return secretManagerClientService.getEncryptionDetails(
-                  ngAccess, spotConnectorDTODecryptableEntities.get(0));
+          return secretManagerClientService.getEncryptionDetails(ngAccess, spotConnectorDTODecryptableEntities.get(0));
         } else {
           return emptyList();
         }
       default:
         throw new UnsupportedOperationException(
-                format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
+            format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
     }
   }
 
@@ -95,9 +95,9 @@ public class ElastigroupEntityHelper {
   public SpotInstConfig getSpotInstConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
     ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
     SpotConnectorDTO connectorConfigDTO = (SpotConnectorDTO) connectorDTO.getConnectorConfig();
-        return SpotInstConfig.builder()
-                .spotConnectorDTO(connectorConfigDTO)
-                .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
-                .build();
-    }
+    return SpotInstConfig.builder()
+        .spotConnectorDTO(connectorConfigDTO)
+        .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+        .build();
+  }
 }

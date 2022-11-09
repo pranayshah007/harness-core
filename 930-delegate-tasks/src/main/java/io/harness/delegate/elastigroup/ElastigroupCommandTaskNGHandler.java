@@ -11,17 +11,16 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.ecs.request.EcsCommandRequest;
-import io.harness.delegate.task.ecs.response.EcsCommandResponse;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandResponse;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public abstract class ElastigroupCommandTaskNGHandler {
   public ElastigroupCommandResponse executeTask(ElastigroupCommandRequest elastigroupCommandRequest,
-                                                ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
+      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
     return executeTaskInternal(elastigroupCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
   }
 

@@ -7,7 +7,6 @@
 
 package io.harness.delegate.task.elastigroup;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.git.GitDecryptionHelper;
@@ -32,14 +31,15 @@ import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
-import org.jose4j.lang.JoseException;
 
+import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
+import org.jose4j.lang.JoseException;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
@@ -47,8 +47,9 @@ public class ElastigroupParametersFetchTask extends AbstractDelegateRunnableTask
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private GitFetchTaskHelper gitFetchTaskHelper;
 
-  public ElastigroupParametersFetchTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
-                                        Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
+  public ElastigroupParametersFetchTask(DelegateTaskPackage delegateTaskPackage,
+      ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
+      BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
     SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
   }
@@ -62,10 +63,11 @@ public class ElastigroupParametersFetchTask extends AbstractDelegateRunnableTask
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     try {
-      ElastigroupParametersFetchRequest elastigroupParametersFetchRequest = (ElastigroupParametersFetchRequest) parameters;
+      ElastigroupParametersFetchRequest elastigroupParametersFetchRequest =
+          (ElastigroupParametersFetchRequest) parameters;
 
-      UnitProgressData unitProgressData =
-              getCommandUnitProgressData(ElastigroupCommandUnitConstants.fetchElastigroupJson.toString(), CommandExecutionStatus.SUCCESS);
+      UnitProgressData unitProgressData = getCommandUnitProgressData(
+          ElastigroupCommandUnitConstants.fetchElastigroupJson.toString(), CommandExecutionStatus.SUCCESS);
 
       return ElastigroupParametersFetchResponse.builder()
           .taskStatus(TaskStatus.SUCCESS)
@@ -81,15 +83,14 @@ public class ElastigroupParametersFetchTask extends AbstractDelegateRunnableTask
   }
 
   public UnitProgressData getCommandUnitProgressData(
-          String commandName, CommandExecutionStatus commandExecutionStatus) {
+      String commandName, CommandExecutionStatus commandExecutionStatus) {
     LinkedHashMap<String, CommandUnitProgress> commandUnitProgressMap = new LinkedHashMap<>();
     CommandUnitProgress commandUnitProgress = CommandUnitProgress.builder().status(commandExecutionStatus).build();
     commandUnitProgressMap.put(commandName, commandUnitProgress);
     CommandUnitsProgress commandUnitsProgress =
-            CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressMap).build();
+        CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressMap).build();
     return UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
   }
-
 
   public boolean isSupportingErrorFramework() {
     return true;

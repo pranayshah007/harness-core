@@ -24,11 +24,11 @@ import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
-import org.hibernate.validator.constraints.NotEmpty;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface ElastigroupCommandRequest extends TaskParameters, ExecutionCapabilityDemander {
@@ -46,7 +46,7 @@ public interface ElastigroupCommandRequest extends TaskParameters, ExecutionCapa
 
     List<ExecutionCapability> capabilities =
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-                spotInstConfigEncryptionDataDetails, maskingEvaluator));
+            spotInstConfigEncryptionDataDetails, maskingEvaluator));
 
     SpotConnectorDTO spotConnectorDTO = spotInstConfig.getSpotConnectorDTO();
     capabilities.addAll(SpotCapabilityHelper.fetchRequiredExecutionCapabilities(spotConnectorDTO, maskingEvaluator));

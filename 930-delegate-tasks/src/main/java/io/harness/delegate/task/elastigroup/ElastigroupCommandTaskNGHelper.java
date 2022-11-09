@@ -7,43 +7,6 @@
 
 package io.harness.delegate.task.elastigroup;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
-import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
-import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
-import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
-import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
-import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
-import io.harness.exception.WingsException;
-import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.logging.LogCallback;
-import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.spotinst.SpotInstRestClient;
-import io.harness.spotinst.model.ElastiGroup;
-import io.harness.spotinst.model.ElastiGroupInstanceHealth;
-import io.harness.spotinst.model.SpotInstConstants;
-import io.harness.spotinst.model.SpotInstListElastiGroupInstancesHealthResponse;
-import io.harness.spotinst.model.SpotInstListElastiGroupsResponse;
-import lombok.extern.slf4j.Slf4j;
-import retrofit2.Call;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
-
-import java.lang.reflect.Type;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -66,33 +29,73 @@ import static io.harness.spotinst.model.SpotInstConstants.SPOTINST_REST_TIMEOUT_
 import static io.harness.spotinst.model.SpotInstConstants.UNIT_INSTANCE;
 import static io.harness.spotinst.model.SpotInstConstants.listElastiGroupsQueryTime;
 import static io.harness.spotinst.model.SpotInstConstants.spotInstBaseUrl;
+
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
+import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
+import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
+import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.logging.LogCallback;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.spotinst.SpotInstRestClient;
+import io.harness.spotinst.model.ElastiGroup;
+import io.harness.spotinst.model.ElastiGroupInstanceHealth;
+import io.harness.spotinst.model.SpotInstConstants;
+import io.harness.spotinst.model.SpotInstListElastiGroupInstancesHealthResponse;
+import io.harness.spotinst.model.SpotInstListElastiGroupsResponse;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import java.lang.reflect.Type;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import retrofit2.Call;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
+
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
 public class ElastigroupCommandTaskNGHelper {
-
   @Inject private SecretDecryptionService secretDecryptionService;
 
-  public String generateFinalJson(ElastigroupSetupCommandRequest elastigroupSetupCommandRequest, String newElastiGroupName) {
-    Map<String, Object> jsonConfigMap = getJsonConfigMapFromElastigroupJson(elastigroupSetupCommandRequest.getElastigroupJson());
+  public String generateFinalJson(
+      ElastigroupSetupCommandRequest elastigroupSetupCommandRequest, String newElastiGroupName) {
+    Map<String, Object> jsonConfigMap =
+        getJsonConfigMapFromElastigroupJson(elastigroupSetupCommandRequest.getElastigroupJson());
     Map<String, Object> elastiGroupConfigMap = (Map<String, Object>) jsonConfigMap.get(GROUP_CONFIG_ELEMENT);
 
     removeUnsupportedFieldsForCreatingNewGroup(elastiGroupConfigMap);
     updateName(elastiGroupConfigMap, newElastiGroupName);
     updateInitialCapacity(elastiGroupConfigMap);
-    updateWithImageConfig(elastiGroupConfigMap,
-            elastigroupSetupCommandRequest.getImage(), elastigroupSetupCommandRequest.getStartupScript(), elastigroupSetupCommandRequest.isBlueGreen());
+    updateWithImageConfig(elastiGroupConfigMap, elastigroupSetupCommandRequest.getImage(),
+        elastigroupSetupCommandRequest.getStartupScript(), elastigroupSetupCommandRequest.isBlueGreen());
     Gson gson = new Gson();
     return gson.toJson(jsonConfigMap);
   }
 
-  private void updateWithImageConfig(Map<String, Object> elastiGroupConfigMap, String image, String userData, boolean blueGreen) {
+  private void updateWithImageConfig(
+      Map<String, Object> elastiGroupConfigMap, String image, String userData, boolean blueGreen) {
     Map<String, Object> computeConfigMap = (Map<String, Object>) elastiGroupConfigMap.get(COMPUTE);
     Map<String, Object> launchSpecificationMap = (Map<String, Object>) computeConfigMap.get(LAUNCH_SPECIFICATION);
 
@@ -105,7 +108,7 @@ public class ElastigroupCommandTaskNGHelper {
   }
 
   public LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,
-                                    boolean shouldOpenStream, CommandUnitsProgress commandUnitsProgress) {
+      boolean shouldOpenStream, CommandUnitsProgress commandUnitsProgress) {
     return new NGDelegateLogCallback(logStreamingTaskClient, commandUnitName, shouldOpenStream, commandUnitsProgress);
   }
 
@@ -148,7 +151,7 @@ public class ElastigroupCommandTaskNGHelper {
   }
 
   Map<String, Object> getGroup(String stageElastiGroupName) {
-    Map<String, Object>  groupConfig = new HashMap<>();
+    Map<String, Object> groupConfig = new HashMap<>();
     groupConfig.put(NAME_CONFIG_ELEMENT, stageElastiGroupName);
 
     Map<String, Object> capacityConfig = new HashMap<>();
@@ -171,26 +174,24 @@ public class ElastigroupCommandTaskNGHelper {
     return capacityConfig;
   }
 
-
-
   public List<ElastiGroup> listAllElastiGroups(
-          String spotInstToken, String spotInstAccountId, String elastiGroupNamePrefix) throws Exception {
+      String spotInstToken, String spotInstAccountId, String elastiGroupNamePrefix) throws Exception {
     List<ElastiGroup> items = listAllElstiGroups(spotInstToken, spotInstAccountId);
     if (isEmpty(items)) {
       return emptyList();
     }
     String prefix = format("%s__", elastiGroupNamePrefix);
     return items.stream()
-            .filter(item -> {
-              String name = item.getName();
-              if (!name.startsWith(prefix)) {
-                return false;
-              }
-              String temp = name.substring(prefix.length());
-              return temp.matches("[0-9]+");
-            })
-            .sorted(Comparator.comparingInt(g -> Integer.parseInt(g.getName().substring(prefix.length()))))
-            .collect(toList());
+        .filter(item -> {
+          String name = item.getName();
+          if (!name.startsWith(prefix)) {
+            return false;
+          }
+          String temp = name.substring(prefix.length());
+          return temp.matches("[0-9]+");
+        })
+        .sorted(Comparator.comparingInt(g -> Integer.parseInt(g.getName().substring(prefix.length()))))
+        .collect(toList());
   }
 
   public List<ElastiGroup> listAllElstiGroups(String spotInstToken, String spotInstAccountId) throws Exception {
@@ -198,7 +199,7 @@ public class ElastigroupCommandTaskNGHelper {
     long max = System.currentTimeMillis();
     long min = max - DAYS.toMillis(listElastiGroupsQueryTime);
     SpotInstListElastiGroupsResponse response =
-            executeRestCall(getSpotInstRestClient().listAllElastiGroups(auth, min, max, spotInstAccountId));
+        executeRestCall(getSpotInstRestClient().listAllElastiGroups(auth, min, max, spotInstAccountId));
     return response.getResponse().getItems();
   }
 
@@ -216,18 +217,18 @@ public class ElastigroupCommandTaskNGHelper {
 
   private SpotInstRestClient getSpotInstRestClient() {
     Retrofit retrofit = new Retrofit.Builder()
-            .baseUrl(spotInstBaseUrl)
-            .addConverterFactory(JacksonConverterFactory.create())
-            .client(getOkHttpClientBuilder()
-                    .readTimeout(SPOTINST_REST_TIMEOUT_MINUTES, MINUTES)
-                    .connectTimeout(SPOTINST_REST_TIMEOUT_MINUTES, MINUTES)
-                    .build())
-            .build();
+                            .baseUrl(spotInstBaseUrl)
+                            .addConverterFactory(JacksonConverterFactory.create())
+                            .client(getOkHttpClientBuilder()
+                                        .readTimeout(SPOTINST_REST_TIMEOUT_MINUTES, MINUTES)
+                                        .connectTimeout(SPOTINST_REST_TIMEOUT_MINUTES, MINUTES)
+                                        .build())
+                            .build();
     return retrofit.create(SpotInstRestClient.class);
   }
 
   public void updateElastiGroup(String spotInstToken, String spotInstAccountId, String elastiGroupId, Object group)
-          throws Exception {
+      throws Exception {
     String auth = getAuthToken(spotInstToken);
     Map<String, Object> groupMap = new HashMap<>();
     groupMap.put(SpotInstConstants.GROUP_CONFIG_ELEMENT, group);
@@ -236,20 +237,20 @@ public class ElastigroupCommandTaskNGHelper {
   }
 
   public void updateElastiGroupCapacity(
-          String spotInstToken, String spotInstAccountId, String elastiGroupId, ElastiGroup group) throws Exception {
+      String spotInstToken, String spotInstAccountId, String elastiGroupId, ElastiGroup group) throws Exception {
     String auth = getAuthToken(spotInstToken);
     Map<String, Object> groupCapacityMap = new HashMap<>();
     groupCapacityMap.put(SpotInstConstants.CAPACITY, group.getCapacity());
 
     executeRestCall(
-            getSpotInstRestClient().updateElastiGroupCapacity(auth, elastiGroupId, spotInstAccountId, groupCapacityMap));
+        getSpotInstRestClient().updateElastiGroupCapacity(auth, elastiGroupId, spotInstAccountId, groupCapacityMap));
   }
 
   public void updateElastiGroup(
-          String spotInstToken, String spotInstAccountId, String elastiGroupId, String jsonPayload) throws Exception {
+      String spotInstToken, String spotInstAccountId, String elastiGroupId, String jsonPayload) throws Exception {
     String auth = getAuthToken(spotInstToken);
     executeRestCall(getSpotInstRestClient().updateElastiGroup(
-            auth, elastiGroupId, spotInstAccountId, convertRawJsonToMap(jsonPayload)));
+        auth, elastiGroupId, spotInstAccountId, convertRawJsonToMap(jsonPayload)));
   }
 
   private Map<String, Object> convertRawJsonToMap(String jsonToConvert) {
@@ -259,13 +260,12 @@ public class ElastigroupCommandTaskNGHelper {
   }
 
   public ElastiGroup createElastiGroup(String spotInstToken, String spotInstAccountId, String jsonPayload)
-          throws Exception {
+      throws Exception {
     String auth = getAuthToken(spotInstToken);
     SpotInstListElastiGroupsResponse spotInstListElastiGroupsResponse = executeRestCall(
-            getSpotInstRestClient().createElastiGroup(auth, spotInstAccountId, convertRawJsonToMap(jsonPayload)));
+        getSpotInstRestClient().createElastiGroup(auth, spotInstAccountId, convertRawJsonToMap(jsonPayload)));
     return spotInstListElastiGroupsResponse.getResponse().getItems().get(0);
   }
-
 
   public void deleteElastiGroup(String spotInstToken, String spotInstAccountId, String elastiGroupId) throws Exception {
     String auth = getAuthToken(spotInstToken);
@@ -273,34 +273,36 @@ public class ElastigroupCommandTaskNGHelper {
   }
 
   public void scaleUpElastiGroup(String spotInstToken, String spotInstAccountId, String elastiGroupId, int adjustment)
-          throws Exception {
+      throws Exception {
     String auth = getAuthToken(spotInstToken);
     executeRestCall(getSpotInstRestClient().scaleUpElastiGroup(auth, spotInstAccountId, elastiGroupId, adjustment));
   }
 
   public void scaleDownElastiGroup(String spotInstToken, String spotInstAccountId, String elastiGroupId, int adjustment)
-          throws Exception {
+      throws Exception {
     String auth = getAuthToken(spotInstToken);
     executeRestCall(getSpotInstRestClient().scaleDownElastiGroup(auth, spotInstAccountId, elastiGroupId, adjustment));
   }
 
   public List<ElastiGroupInstanceHealth> listElastiGroupInstancesHealth(
-          String spotInstToken, String spotInstAccountId, String elastiGroupId) throws Exception {
+      String spotInstToken, String spotInstAccountId, String elastiGroupId) throws Exception {
     String auth = getAuthToken(spotInstToken);
     SpotInstListElastiGroupInstancesHealthResponse response =
-            executeRestCall(getSpotInstRestClient().listElastiGroupInstancesHealth(auth, elastiGroupId, spotInstAccountId));
+        executeRestCall(getSpotInstRestClient().listElastiGroupInstancesHealth(auth, elastiGroupId, spotInstAccountId));
     return response.getResponse().getItems();
   }
 
   public void decryptSpotInstConfig(SpotInstConfig spotInstConfig) {
     decryptSpotInstConfig(spotInstConfig.getSpotConnectorDTO(), spotInstConfig.getEncryptionDataDetails());
-    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(spotInstConfig.getSpotConnectorDTO(), spotInstConfig.getEncryptionDataDetails());
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+        spotInstConfig.getSpotConnectorDTO(), spotInstConfig.getEncryptionDataDetails());
   }
 
-  private void decryptSpotInstConfig(SpotConnectorDTO spotConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
+  private void decryptSpotInstConfig(
+      SpotConnectorDTO spotConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
     if (spotConnectorDTO.getCredential().getSpotCredentialType() == SpotCredentialType.PERMANENT_TOKEN) {
       SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO =
-              (SpotPermanentTokenConfigSpecDTO) spotConnectorDTO.getCredential().getConfig();
+          (SpotPermanentTokenConfigSpecDTO) spotConnectorDTO.getCredential().getConfig();
       secretDecryptionService.decrypt(spotPermanentTokenConfigSpecDTO, encryptedDataDetails);
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(spotPermanentTokenConfigSpecDTO, encryptedDataDetails);
     }
