@@ -10,10 +10,8 @@ package io.harness.ccm.views.service.impl;
 import io.harness.ccm.commons.dao.anomaly.AnomalyDao;
 import io.harness.ccm.commons.entities.CCMFilter;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
-import io.harness.ccm.commons.entities.anomaly.AnomalyQueryDTO;
 import io.harness.ccm.commons.utils.AnomalyQueryBuilder;
 import io.harness.ccm.commons.utils.AnomalyUtils;
-import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.helper.PerspectiveToAnomalyQueryHelper;
 import io.harness.ccm.views.service.CEViewService;
@@ -28,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import lombok.NonNull;
 import org.jooq.Condition;
-import org.jooq.impl.DSL;
 
 public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService {
   @Inject CEViewService viewService;
