@@ -124,6 +124,9 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
 
   private ElastiGroup calculateOldForDownsize(
       Capacity requestedCapacity, ElastiGroup setupElastigroup, boolean isFinalDeployStep) {
+    if (requestedCapacity == null) {
+      return null;
+    }
     if (setupElastigroup == null) {
       return null;
     }
