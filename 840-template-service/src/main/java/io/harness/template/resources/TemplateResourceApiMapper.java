@@ -217,11 +217,11 @@ public class TemplateResourceApiMapper {
     }
     return GitEntityInfo.builder()
         .branch(gitDetails.getBranchName())
-        .parentEntityProjectIdentifier(gitDetails.getParentProjectId())
-        .parentEntityOrgIdentifier(gitDetails.getParentOrgId())
-        .parentEntityAccountIdentifier(gitDetails.getParentAccountId())
-        .parentEntityRepoName(gitDetails.getParentRepoName())
-        .parentEntityConnectorRef(gitDetails.getParentConnectorRef())
+        .parentEntityProjectIdentifier(gitDetails.getParentEntityProjectId())
+        .parentEntityOrgIdentifier(gitDetails.getParentEntityOrgId())
+        .parentEntityAccountIdentifier(gitDetails.getParentEntityAccountId())
+        .parentEntityRepoName(gitDetails.getParentEntityRepoName())
+        .parentEntityConnectorRef(gitDetails.getParentEntityConnectorRef())
         .build();
   }
 }

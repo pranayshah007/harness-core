@@ -830,30 +830,30 @@ components:
       x-examples:
         example-1:
           branch_name: branch
-          parent_connector_ref: example_connector_ref
-          parent_repo_name: example_repo_name
-          parent_account_id: example_account_id
-          parent_org_id: example_org_id
-          parent_project_id: example_project_id
+          parent_entity_connector_ref: example_connector_ref
+          parent_entity_repo_name: example_repo_name
+          parent_entity_account_id: example_account_id
+          parent_entity_org_id: example_org_id
+          parent_entity_project_id: example_project_id
           comments: sample_comments
       description: Contains parameters related to Fetching an Entity for Git Experience.
       properties:
         branch_name:
           type: string
           description: Name of the branch.
-        parent_connector_ref:
+        parent_entity_connector_ref:
           type: string
           description: Connector ref of parent template if its remote
-        parent_repo_name:
+        parent_entity_repo_name:
           type: string
           description: Repo name of parent template if its remote
-        parent_account_id:
+        parent_entity_account_id:
           type: string
           description: Account name of parent template if its remote
-        parent_org_id:
+        parent_entity_org_id:
           type: string
           description: Organization name of parent template if its remote
-        parent_project_id:
+        parent_entity_project_id:
           type: string
           description: Project name of parent entity if its remote
         comments:
@@ -1193,35 +1193,35 @@ components:
         type: string
       description: Name of the branch
     ParentConnectorRef:
-      name: parent_connector_ref
+      name: parent_entity_connector_ref
       in: query
       required: false
       schema:
         type: string
       description: Connector ref of parent template if its remote
     ParentRepoName:
-      name: parent_repo_name
+      name: parent_entity_repo_name
       in: query
       required: false
       schema:
         type: string
       description: Repo name of parent template if its remote
     ParentAccountId:
-      name: parent_account_id
+      name: parent_entity_account_id
       in: query
       required: false
       schema:
         type: string
       description: Account name of parent template if its remote
     ParentOrgId:
-      name: parent_org_id
+      name: parent_entity_org_id
       in: query
       required: false
       schema:
         type: string
       description: Organization name of parent template if its remote
     ParentProjectId:
-      name: parent_project_id
+      name: parent_entity_project_id
       in: query
       required: false
       schema:
@@ -1379,11 +1379,11 @@ components:
             example-1:
               value:
                 branch_name: branch
-                parent_connector_ref: example_connector_ref
-                parent_repo_name: example_repo_name
-                parent_account_id: example_account_id
-                parent_org_id: example_org_id
-                parent_project_id: example_project_id
+                parent_entity_connector_ref: example_connector_ref
+                parent_entity_repo_name: example_repo_name
+                parent_entity_account_id: example_account_id
+                parent_entity_org_id: example_org_id
+                parent_entity_project_id: example_project_id
                 comments: sample_comments
         application/yaml:
           schema:
@@ -1392,11 +1392,11 @@ components:
             example-1:
               value: |
                 branch_name: branch
-                parent_connector_ref: example_connector_ref
-                parent_repo_name: example_repo_name
-                parent_account_id: example_account_id
-                parent_org_id: example_org_id
-                parent_project_id: example_project_id
+                parent_entity_connector_ref: example_connector_ref
+                parent_entity_repo_name: example_repo_name
+                parent_entity_account_id: example_account_id
+                parent_entity_org_id: example_org_id
+                parent_entity_project_id: example_project_id
                 comments: sample_comments
       description: Templates Fetch Request Body
     TemplateCreateBody:
