@@ -169,6 +169,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
           ElastigroupSetupResult.builder()
               .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
               .newElastiGroup(elastiGroup)
+              .elastigroupOriginalConfig(elastigroupSetupCommandRequest.getElastigroupOriginalConfig())
               .groupToBeDownsized(groupToDownsizeDuringDeploy)
               .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
               .isBlueGreen(elastigroupSetupCommandRequest.isBlueGreen())

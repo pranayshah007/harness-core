@@ -30,4 +30,5 @@ public class ElastigroupSetupResult {
   private String elastiGroupNamePrefix;
   private boolean useCurrentRunningInstanceCount;
   private Integer currentRunningInstanceCount;
+  private ElastiGroup elastigroupOriginalConfig;
 }

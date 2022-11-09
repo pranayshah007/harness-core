@@ -25,6 +25,7 @@ import io.harness.delegate.task.spotinst.request.SpotInstTaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.spotinst.model.ElastiGroup;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ public class ElastigroupSetupCommandRequest
   CommandUnitsProgress commandUnitsProgress;
   String elastiGroupJson;
   String elastigroupNamePrefix;
+  ElastiGroup elastigroupOriginalConfig;
   private Integer maxInstanceCount;
   private boolean useCurrentRunningInstanceCount;
   private Integer currentRunningInstanceCount;

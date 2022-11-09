@@ -114,6 +114,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
                 fetchCurrentRunningCountForSetupRequest(elastigroupSetupStepParameters.getInstances()))
             .useCurrentRunningInstanceCount(ElastigroupInstancesType.CURRENT_RUNNING.equals(
                 elastigroupSetupStepParameters.getInstances().getType()))
+            .elastigroupOriginalConfig(elastiGroupOriginalConfig)
             .build();
 
     return elastigroupStepCommonHelper.queueElastigroupTask(
@@ -200,6 +201,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
 
     ElastigroupSetupResult elastigroupSetupResult = elastigroupSetupResponse.getElastigroupSetupResult();
     ElastiGroup oldElastiGroup = elastigroupStepCommonHelper.fetchOldElasticGroup(elastigroupSetupResult);
+
     ElastigroupSetupDataOutcome elastigroupSetupDataOutcome =
         ElastigroupSetupDataOutcome.builder()
             .resizeStrategy(elastigroupSetupResult.getResizeStrategy())
@@ -209,12 +211,34 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .maxInstanceCount(elastigroupSetupResult.getMaxInstanceCount())
             .isBlueGreen(elastigroupSetupResult.isBlueGreen())
             .oldElastiGroupOriginalConfig(oldElastiGroup)
-            .newElastiGroupOriginalConfig(elastigroupSetupResult.getNewElastiGroup())
+            .newElastiGroupOriginalConfig(elastigroupSetupResult.getElastigroupOriginalConfig())
             .build();
     if (oldElastiGroup != null && oldElastiGroup.getCapacity() != null) {
       elastigroupSetupDataOutcome.setCurrentRunningInstanceCount(oldElastiGroup.getCapacity().getTarget());
     } else {
       elastigroupSetupDataOutcome.setCurrentRunningInstanceCount(DEFAULT_CURRENT_RUNNING_INSTANCE_COUNT);
+    }
+
+    elastigroupSetupDataOutcome.getNewElastiGroupOriginalConfig().setName(
+        elastigroupSetupResult.getNewElastiGroup().getName());
+    elastigroupSetupDataOutcome.getNewElastiGroupOriginalConfig().setId(
+        elastigroupSetupResult.getNewElastiGroup().getId());
+
+    if (elastigroupSetupResult.isUseCurrentRunningInstanceCount()) {
+      int min = DEFAULT_ELASTIGROUP_MIN_INSTANCES;
+      int max = DEFAULT_ELASTIGROUP_MAX_INSTANCES;
+      int target = DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
+      if (oldElastiGroup != null) {
+        ElastiGroupCapacity capacity = oldElastiGroup.getCapacity();
+        if (capacity != null) {
+          min = capacity.getMinimum();
+          max = capacity.getMaximum();
+          target = capacity.getTarget();
+        }
+      }
+      elastigroupSetupDataOutcome.getNewElastiGroupOriginalConfig().getCapacity().setMinimum(min);
+      elastigroupSetupDataOutcome.getNewElastiGroupOriginalConfig().getCapacity().setMaximum(max);
+      elastigroupSetupDataOutcome.getNewElastiGroupOriginalConfig().getCapacity().setTarget(target);
     }
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME,
