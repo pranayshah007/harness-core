@@ -216,7 +216,7 @@ deletedEntities {"name": "nextIteration_1", "background": true} {"nextIteration"
 deploymentEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 deploymentEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 deploymentReconciliation {"name": "accountId_durationEndTs", "background": true} {"accountId": 1, "durationEndTs": 1}
-deploymentReconciliation {"name": "accountId_durationEndTs_entityClass", "background": true} {"accountId": 1, "durationEndTs": 1, "entityClass": 1}
+deploymentReconciliation {"name": "accountId_entityClass_durationEndTs_sorted", "background": true} {"accountId": 1, "entityClass": 1, "durationEndTs": -1}
 deploymentReconciliation {"name": "accountId_reconciliationStatus", "background": true} {"accountId": 1, "reconciliationStatus": 1}
 deploymentReconciliation {"name": "accountId_reconciliationStatus_entityClass", "background": true} {"accountId": 1, "reconciliationStatus": 1, "entityClass": 1}
 deploymentReconciliation {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
