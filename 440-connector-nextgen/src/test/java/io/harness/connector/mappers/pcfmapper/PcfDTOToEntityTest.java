@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.connector.entities.embedded.pcfconnector.PcfConfig;
+import io.harness.connector.entities.embedded.pcfconnector.CloudFoundryConfig;
 import io.harness.connector.entities.embedded.pcfconnector.PcfManualCredential;
 import io.harness.delegate.beans.connector.pcfconnector.PcfConnectorDTO;
 import io.harness.delegate.beans.connector.pcfconnector.PcfCredentialDTO;
@@ -34,18 +34,18 @@ public class PcfDTOToEntityTest extends CategoryTest {
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void testToConnectorEntity() {
-    PcfConfig pcfConfig = pcfDTOToEntity.toConnectorEntity(getConnectorConfigDTO(true));
-    validate(pcfConfig);
+    CloudFoundryConfig cloudFoundryConfig = pcfDTOToEntity.toConnectorEntity(getConnectorConfigDTO(true));
+    validate(cloudFoundryConfig);
 
     assertThatThrownBy(() -> pcfDTOToEntity.toConnectorEntity(getConnectorConfigDTO(false)))
         .hasMessage("Invalid Credential type.");
   }
 
-  private void validate(PcfConfig pcfConfig) {
-    assertThat(pcfConfig).isNotNull();
-    assertThat(pcfConfig.getCredentialType()).isEqualTo(PcfCredentialType.MANUAL_CREDENTIALS);
-    assertThat(pcfConfig.getCredential()).isInstanceOf(PcfManualCredential.class);
-    PcfManualCredential credential = (PcfManualCredential) pcfConfig.getCredential();
+  private void validate(CloudFoundryConfig cloudFoundryConfig) {
+    assertThat(cloudFoundryConfig).isNotNull();
+    assertThat(cloudFoundryConfig.getCredentialType()).isEqualTo(PcfCredentialType.MANUAL_CREDENTIALS);
+    assertThat(cloudFoundryConfig.getCredential()).isInstanceOf(PcfManualCredential.class);
+    PcfManualCredential credential = (PcfManualCredential) cloudFoundryConfig.getCredential();
     assertThat(credential.getEndpointUrl()).isEqualTo(URL);
   }
 

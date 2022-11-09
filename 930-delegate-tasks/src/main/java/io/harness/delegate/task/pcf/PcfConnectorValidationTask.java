@@ -1,5 +1,7 @@
 package io.harness.delegate.task.pcf;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.pcf.PcfValidationHandler;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -21,6 +23,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.NotImplementedException;
 
+@OwnedBy(HarnessTeam.CDP)
 public class PcfConnectorValidationTask extends AbstractDelegateRunnableTask {
   @Inject private PcfValidationHandler pcfValidationHandler;
 
