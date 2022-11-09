@@ -64,6 +64,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.GITOPS)
@@ -123,6 +124,7 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
     MergePRStepParams gitOpsSpecParams = (MergePRStepParams) stepParameters.getSpec();
 
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
+    Map<String, Object> variables = gitOpsSpecParams.getVariables().getValue();
 
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CREATE_PR_OUTCOME));
@@ -194,6 +196,7 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
                 .sha(sha)
                 .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
                     MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .completionOptions(emptyIfNull(variables))
                 .build();
         break;
       case GITLAB:

@@ -14,6 +14,7 @@ import static java.lang.String.format;
 import io.harness.cistatus.StatusCreationResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.network.Http;
+import io.harness.pms.yaml.ParameterField;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -36,8 +37,11 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Slf4j
 public class AzureRepoServiceImpl implements AzureRepoService {
   private static final String STATE = "state";
-  private static final String MergeCommitMessage = "Harness: Updating config overrides";
-  private static final String MergeStatus = "completed";
+  private static final String MERGE_COMMIT_MESSAGE = "Harness: Updating config overrides";
+  private static final String MERGE_STATUS = "completed";
+  private static final String MERGED = "merged";
+  private static final String BYPASS_POLICY = "bypassPolicy";
+  private static final String BYPASS_REASON = "bypassReason";
 
   private static final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private static final int MAX_ATTEMPTS = 10;
@@ -62,7 +66,7 @@ public class AzureRepoServiceImpl implements AzureRepoService {
 
   @Override
   public JSONObject mergePR(AzureRepoConfig azureRepoConfig, String token, String sha, String org, String project,
-      String repo, String prNumber, boolean deleteSourceBranch) {
+      String repo, String prNumber, boolean deleteSourceBranch, Map<String, Object> completionOptions) {
     log.info("Merging PR for sha {}", sha);
 
     JSONObject commitId = new JSONObject();
@@ -70,16 +74,21 @@ public class AzureRepoServiceImpl implements AzureRepoService {
 
     JSONObject mergeStrategy = new JSONObject();
     mergeStrategy.put("mergeStrategy", "1");
-    mergeStrategy.put("mergeCommitMessage", MergeCommitMessage);
+    mergeStrategy.put("mergeCommitMessage", MERGE_COMMIT_MESSAGE);
     mergeStrategy.put("deleteSourceBranch", deleteSourceBranch);
+
+    if (completionOptions.get(BYPASS_POLICY) != null) {
+      mergeStrategy.put(BYPASS_POLICY,
+          Boolean.valueOf((String) (((ParameterField) completionOptions.get(BYPASS_POLICY)).getValue())));
+    }
+    if (completionOptions.get(BYPASS_REASON) != null) {
+      mergeStrategy.put(BYPASS_REASON, (String) (((ParameterField) completionOptions.get(BYPASS_REASON)).getValue()));
+    }
 
     JSONObject lastMergeSourceCommit = new JSONObject();
     lastMergeSourceCommit.put("lastMergeSourceCommit", commitId);
-    lastMergeSourceCommit.put("status", MergeStatus);
+    lastMergeSourceCommit.put("status", MERGE_STATUS);
     lastMergeSourceCommit.put("completionOptions", mergeStrategy);
-
-    Map<String, Object> bodyObjectMap = new HashMap<>();
-    bodyObjectMap.put("LastMergeSourceCommit", lastMergeSourceCommit.toString());
 
     try {
       Response<Object> response = null;
@@ -102,20 +111,33 @@ public class AzureRepoServiceImpl implements AzureRepoService {
         sleep(RETRY_SLEEP_DURATION);
       }
 
+      response = getAzureRepoRestClient(azureRepoConfig)
+                     .mergePR(getAuthToken(token), org, project, repo, prNumber,
+                         RequestBody.create(
+                             MediaType.parse("application/json; charset=utf-8"), lastMergeSourceCommit.toString()))
+                     .execute();
+      JSONObject json = new JSONObject();
       if (response.isSuccessful()) {
         log.info("Response from Azure Repo Merge {}", response.body().toString());
-        JSONObject json = new JSONObject();
         json.put("sha", ((LinkedHashMap) response.body()).get("mergeId"));
-        return json;
+        json.put(MERGED, true);
       } else {
-        log.warn("Merge Request for merging Azure repo with url {} and sha {} returned with response code {}",
-            azureRepoConfig.getAzureRepoUrl(), sha, response.code());
-        return new JSONObject();
+        JSONObject errObject = new JSONObject(response.errorBody().string());
+        log.warn(
+            "Merge Request for merging Azure repo with url {} and sha {} returned with response code {} and message {}",
+            azureRepoConfig.getAzureRepoUrl(), sha, response.code(), errObject.get("message"));
+        json.put("error", errObject.get("message"));
+        json.put("code", response.code());
+        json.put(MERGED, false);
       }
+      return json;
     } catch (Exception e) {
       log.error("Failed to merge pull request to Azure repo with url {} and sha {} ", azureRepoConfig.getAzureRepoUrl(),
           sha, e);
-      return new JSONObject();
+      JSONObject json = new JSONObject();
+      json.put(MERGED, false);
+      json.put("error", e.getMessage());
+      return json;
     }
   }
 
