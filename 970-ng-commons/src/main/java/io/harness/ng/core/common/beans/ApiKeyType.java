@@ -16,7 +16,8 @@ import lombok.Getter;
 @OwnedBy(PL)
 public enum ApiKeyType {
   USER("pat"),
-  SERVICE_ACCOUNT("sat");
+  SERVICE_ACCOUNT("sat"),
+  SERVICE_ACCOUNT_JWT_VERIFICATION("sat_jwt"); // only support jwt_verification_key at service account level
 
   @Getter public final String value;
 
