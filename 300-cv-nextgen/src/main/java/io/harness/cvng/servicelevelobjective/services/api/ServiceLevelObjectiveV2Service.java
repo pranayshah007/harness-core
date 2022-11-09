@@ -19,6 +19,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.ng.beans.PageResponse;
 
@@ -67,4 +68,7 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
 
   AbstractServiceLevelObjective get(String sloId);
+
+  List<CompositeServiceLevelObjective> getReferencedCompositeSLOs(
+      SimpleServiceLevelObjective simpleServiceLevelObjective);
 }
