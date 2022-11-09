@@ -21,7 +21,6 @@ import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
-import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -36,7 +35,7 @@ import lombok.experimental.UtilityClass;
 public class InfraRollbackPMSPlanCreator {
   public static final String INFRA_ROLLBACK_NODE_ID_SUFFIX = "_infraRollback";
 
-  public static PlanCreationResponse createInfraRollbackPlan(PlanCreationContext ctx, YamlField infraField) {
+  public static PlanCreationResponse createInfraRollbackPlan(YamlField infraField) {
     if (!isDynamicallyProvisioned(infraField)) {
       return PlanCreationResponse.builder().build();
     }
