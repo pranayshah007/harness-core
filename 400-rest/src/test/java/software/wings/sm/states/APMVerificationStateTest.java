@@ -68,6 +68,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
@@ -481,6 +482,7 @@ public class APMVerificationStateTest extends APMStateVerificationTestBase {
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
+  @Ignore("CI-6025: TI team to follow up")
   public void testCreateDataCollectionInfo_withoutExpressions() throws Exception {
     Map<String, String> hosts = new HashMap<>();
     ExecutionContextImpl executionContext = mock(ExecutionContextImpl.class);
@@ -518,6 +520,7 @@ public class APMVerificationStateTest extends APMStateVerificationTestBase {
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
+  @Ignore("CI-6025: TI team to follow up")
   public void testCreateDataCollectionInfo_withoutResolvedExpression() throws Exception {
     Map<String, String> hosts = new HashMap<>();
     ExecutionContextImpl executionContext = mock(ExecutionContextImpl.class);

@@ -346,10 +346,10 @@ public class PipelinesApiUtils {
 
   public static List<String> getSorting(String field, String order) {
     if (field == null) {
+      if (order != null) {
+        throw new InvalidRequestException("Order of sorting provided without Sort field.");
+      }
       return null;
-    }
-    if (order == null || (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc"))) {
-      throw new InvalidRequestException("Order of sorting unidentified or null. Accepted values: ASC / DESC");
     }
     switch (field) {
       case "slug":
@@ -366,6 +366,12 @@ public class PipelinesApiUtils {
       default:
         throw new InvalidRequestException(
             "Field provided for sorting unidentified. Accepted values: slug / name / created / updated");
+    }
+    if (order == null) {
+      order = "DESC";
+    }
+    if (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc")) {
+      throw new InvalidRequestException("Order of sorting unidentified. Accepted values: ASC / DESC");
     }
     return new ArrayList<>(Collections.singleton(field + "," + order));
   }

@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -60,6 +61,7 @@ public class InternalReferredEntityExtractorTest extends CategoryTest {
   @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
+  @Ignore("CI-6025: TI team to follow up")
   public void testExtractInternalEntities() {
     String dummy = "dummy";
     List<EntityDetail> entityDetailList = new ArrayList<>();

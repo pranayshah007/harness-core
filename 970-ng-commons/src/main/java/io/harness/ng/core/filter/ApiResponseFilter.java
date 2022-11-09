@@ -62,6 +62,10 @@ public class ApiResponseFilter implements ContainerResponseFilter {
           ErrorDTOBase errorDTOBase = (ErrorDTOBase) responseContext.getEntity();
           errorResponse.setMessage(String.format("Not Found. %s", errorDTOBase.getMessage()));
           responseContext.setStatus(404);
+        } else if (isaDuplicateField(responseContext)) {
+          ErrorDTOBase errorDTOBase = (ErrorDTOBase) responseContext.getEntity();
+          errorResponse.setMessage(String.format("Duplicate Field. %s", errorDTOBase.getMessage()));
+          responseContext.setStatus(409);
         } else {
           return;
         }
@@ -106,5 +110,10 @@ public class ApiResponseFilter implements ContainerResponseFilter {
   private boolean isaResourceNotFound(ContainerResponseContext responseContext) {
     return responseContext.getEntity() instanceof ErrorDTOBase
         && ErrorCode.RESOURCE_NOT_FOUND_EXCEPTION.equals(((ErrorDTOBase) responseContext.getEntity()).getCode());
+  }
+
+  private boolean isaDuplicateField(ContainerResponseContext responseContext) {
+    return responseContext.getEntity() instanceof ErrorDTOBase
+        && ErrorCode.DUPLICATE_FIELD.equals(((ErrorDTOBase) responseContext.getEntity()).getCode());
   }
 }

@@ -17,6 +17,7 @@ import static io.harness.connector.SecretSpecBuilder.getSecretName;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.ci.k8s.PodStatus.Status.RUNNING;
+import static io.harness.delegate.beans.ci.pod.CICommonConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.LITE_ENGINE;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -61,6 +62,8 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
 import io.kubernetes.client.openapi.models.V1KeyToPath;
 import io.kubernetes.client.openapi.models.V1KeyToPathBuilder;
 import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
@@ -109,6 +112,8 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   private static final String DOCKER_CONFIG_KEY = ".dockercfg";
   private static final String HARNESS_IMAGE_SECRET = "HARNESS_IMAGE_SECRET";
   private static final String HARNESS_SECRETS_LIST = "HARNESS_SECRETS_LIST";
+  private static final String HARNESS_ADDITIONAL_CERTS_DIR = "HARNESS_ADDITIONAL_CERTS_DIR";
+  private static final String LITE_ENGINE_CERTS_DIR = "/harness-certs/";
 
   @Override
   public Type getType() {
@@ -256,6 +261,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   private void updatePodWithDelegateVolumes(CoreV1Api coreV1Api, String namespace, V1Pod pod) {
     List<V1Volume> podVolumes = new ArrayList<>();
     List<V1VolumeMount> containerVolumeMounts = new ArrayList<>();
+    List<V1VolumeMount> liteEngineVolumeMounts = new ArrayList<>();
 
     Map<String, List<String>> srcDestMappings = secretVolumesHelper.getSecretVolumeMappings();
     if (isEmpty(srcDestMappings)) {
@@ -298,6 +304,15 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
 
       podVolumes.add(new V1VolumeBuilder().withSecret(secretVolumeSource).withName(secretKey).build());
 
+      // All certs get mounted to the lite engine certs directory
+      String liteEnginePath = LITE_ENGINE_CERTS_DIR + secretVolumesHelper.getName(srcPath);
+      liteEngineVolumeMounts.add(new V1VolumeMountBuilder()
+                                     .withName(secretKey)
+                                     .withMountPath(liteEnginePath)
+                                     .withSubPath(secretVolumesHelper.getName(liteEnginePath))
+                                     .withReadOnly(true)
+                                     .build());
+
       // Update container volume mounts with secret volume keys and destination paths.
       destPaths.forEach(path
           -> containerVolumeMounts.add(new V1VolumeMountBuilder()
@@ -313,7 +328,12 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
 
     // Update volume mounts for all containers in the pod (except the lite engine container)
     for (V1Container c : pod.getSpec().getContainers()) {
-      if (c.getName().equals("lite-engine")) { // TODO: Process this in ContainerParams to remove hardcoding here
+      if (c.getName().equals(LITE_ENGINE_CONTAINER_NAME)) {
+        liteEngineVolumeMounts.forEach(c::addVolumeMountsItem);
+        // Add in the certs directory to be used
+        V1EnvVar certVar =
+            new V1EnvVarBuilder().withName(HARNESS_ADDITIONAL_CERTS_DIR).withValue(LITE_ENGINE_CERTS_DIR).build();
+        c.addEnvItem(certVar);
         continue;
       }
 
