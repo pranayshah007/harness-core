@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -94,6 +95,7 @@ public class StagesPlanCreatorTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  @Ignore("CI-6025: TI team to follow up")
   public void testCreatePlanForChildrenNodes() {
     List<YamlNode> stages = stagesYamlField.getNode().asArray();
     YamlField approvalStage = stages.get(0).getField("stage");

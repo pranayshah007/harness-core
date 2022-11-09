@@ -20,6 +20,8 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.AutoLogContext;
@@ -39,6 +41,7 @@ import io.harness.service.intfc.DelegateTaskService;
 import io.harness.version.VersionInfoManager;
 import io.harness.waiter.WaitNotifyEngine;
 
+import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -108,7 +111,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
                                         .filter(DelegateTaskKeys.uuid, taskId);
 
     DelegateTask delegateTask = taskQuery.get();
-
+    copyTaskDataV2ToTaskData(delegateTask);
     if (delegateTask != null) {
       try (AutoLogContext ignore = new TaskLogContext(taskId, delegateTask.getData().getTaskType(),
                TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
@@ -136,6 +139,26 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     }
   }
 
+  private void copyTaskDataV2ToTaskData(DelegateTask delegateTask) {
+    if (delegateTask != null && delegateTask.getTaskDataV2() != null) {
+      TaskDataV2 taskDataV2 = delegateTask.getTaskDataV2();
+
+      TaskData taskData =
+          TaskData.builder()
+              .data(taskDataV2.getData())
+              .taskType(taskDataV2.getTaskType())
+              .async(taskDataV2.isAsync())
+              .parked(taskDataV2.isParked())
+              .parameters(taskDataV2.getParameters())
+              .timeout(taskDataV2.getTimeout())
+              .expressionFunctorToken(taskDataV2.getExpressionFunctorToken())
+              .expressions(taskDataV2.getExpressions())
+              .serializationFormat(SerializationFormat.valueOf(taskDataV2.getSerializationFormat().name()))
+              .build();
+      delegateTask.setData(taskData);
+    }
+  }
+
   private String getVersion() {
     return versionInfoManager.getVersionInfo().getVersion();
   }
@@ -146,6 +169,22 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
       handleInprocResponse(delegateTask, response);
     } else {
       handleDriverResponse(delegateTask, response);
+    }
+
+    if (taskQuery != null) {
+      persistence.deleteOnServer(taskQuery);
+    }
+
+    delegateMetricsService.recordDelegateTaskResponseMetrics(delegateTask, response, DELEGATE_TASK_RESPONSE);
+  }
+
+  @Override
+  public void handleResponseV2(
+      DelegateTask delegateTask, Query<DelegateTask> taskQuery, DelegateTaskResponse response) {
+    if (delegateTask.getDriverId() == null) {
+      handleInprocResponseV2(delegateTask, response);
+    } else {
+      handleDriverResponseV2(delegateTask, response);
     }
 
     if (taskQuery != null) {
@@ -205,8 +244,55 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     }
   }
 
+  @VisibleForTesting
+  void handleDriverResponseV2(DelegateTask delegateTask, DelegateTaskResponse response) {
+    if (delegateTask == null || response == null) {
+      return;
+    }
+
+    try (DelegateDriverLogContext driverLogContext =
+             new DelegateDriverLogContext(delegateTask.getDriverId(), OVERRIDE_ERROR);
+         TaskLogContext taskLogContext = new TaskLogContext(delegateTask.getUuid(), OVERRIDE_ERROR)) {
+      log.debug("Processing task response...");
+
+      DelegateCallbackService delegateCallbackService =
+          delegateCallbackRegistry.obtainDelegateCallbackService(delegateTask.getDriverId());
+      if (delegateCallbackService == null) {
+        log.info(
+            "Failed to obtain Delegate callback service for the given task. Skipping processing of task response.");
+        return;
+      }
+
+      if (delegateTask.getTaskDataV2().isAsync()) {
+        delegateCallbackService.publishAsyncTaskResponse(
+            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+      } else {
+        delegateCallbackService.publishSyncTaskResponse(
+            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+      }
+    } catch (Exception ex) {
+      log.error("Failed publishing task response", ex);
+    }
+  }
+
   private void handleInprocResponse(DelegateTask delegateTask, DelegateTaskResponse response) {
     if (delegateTask.getData().isAsync()) {
+      String waitId = delegateTask.getWaitId();
+      if (waitId != null) {
+        waitNotifyEngine.doneWith(waitId, response.getResponse());
+      } else {
+        log.error("Async task has no wait ID");
+      }
+    } else {
+      persistence.save(DelegateSyncTaskResponse.builder()
+                           .uuid(delegateTask.getUuid())
+                           .responseData(kryoSerializer.asDeflatedBytes(response.getResponse()))
+                           .build());
+    }
+  }
+
+  private void handleInprocResponseV2(DelegateTask delegateTask, DelegateTaskResponse response) {
+    if (delegateTask.getTaskDataV2().isAsync()) {
       String waitId = delegateTask.getWaitId();
       if (waitId != null) {
         waitNotifyEngine.doneWith(waitId, response.getResponse());

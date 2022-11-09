@@ -17,6 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusConstant;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
@@ -24,6 +25,8 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusResponseDTO;
 import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
 import io.harness.cdng.visitor.YamlTypes;
@@ -65,6 +68,7 @@ import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
@@ -75,6 +79,7 @@ public class ArtifactResourceUtils {
   @Inject ServiceEntityService serviceEntityService;
   @Inject EnvironmentService environmentService;
   @Inject NexusResourceService nexusResourceService;
+  @Inject GARResourceService garResourceService;
 
   // Checks whether field is fixed value or not, if empty then also we return false for fixed value.
   public static boolean isFieldFixedValue(String fieldValue) {
@@ -324,5 +329,63 @@ public class ArtifactResourceUtils {
     return nexusResourceService.getBuildDetails(connectorRef, repositoryName, repositoryPort, artifactPath,
         repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, groupId, artifactId, extension,
         classifier, packageName, group);
+  }
+  public GARResponseDTO getBuildDetailsV2GAR(String gcpConnectorIdentifier, String region, String repositoryName,
+      String project, String pkg, String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String version, String versionRegex, String fqnPath, String runtimeInputYaml,
+      String serviceRef, GitEntityFindInfoDTO gitEntityBasicInfo) {
+    if (StringUtils.isNotBlank(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
+      GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
+          (GoogleArtifactRegistryConfig) artifactSpecFromService;
+
+      if (StringUtils.isBlank(gcpConnectorIdentifier)) {
+        gcpConnectorIdentifier = (String) googleArtifactRegistryConfig.getConnectorRef().fetchFinalValue();
+      }
+
+      if (StringUtils.isBlank(region)) {
+        region = (String) googleArtifactRegistryConfig.getRegion().fetchFinalValue();
+      }
+
+      if (StringUtils.isBlank(repositoryName)) {
+        repositoryName = (String) googleArtifactRegistryConfig.getRepositoryName().fetchFinalValue();
+      }
+
+      if (StringUtils.isBlank(project)) {
+        project = (String) googleArtifactRegistryConfig.getProject().fetchFinalValue();
+      }
+
+      if (StringUtils.isBlank(pkg)) {
+        pkg = (String) googleArtifactRegistryConfig.getPkg().fetchFinalValue();
+      }
+    }
+
+    // Getting the resolvedConnectorRef
+    String resolvedConnectorRef = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, gcpConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    // Getting the resolvedRegion
+    String resolvedRegion = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    // Getting the resolvedRepositoryName
+    String resolvedRepositoryName = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, repositoryName, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    // Getting the resolvedProject
+    String resolvedProject = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, project, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    // Getting the resolvedPackage
+    String resolvedPackage = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, pkg, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(resolvedConnectorRef, accountId, orgIdentifier, projectIdentifier);
+
+    return garResourceService.getBuildDetails(connectorRef, resolvedRegion, resolvedRepositoryName, resolvedProject,
+        resolvedPackage, version, versionRegex, orgIdentifier, projectIdentifier);
   }
 }

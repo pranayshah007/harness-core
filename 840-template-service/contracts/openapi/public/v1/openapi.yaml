@@ -456,7 +456,7 @@ components:
           scope: org
           version: 1234567890
           git_details:
-            entity_identifier: example_object
+            object_id: example_object
             branch_name: branch
             file_path: /folder/file.json
             repo_name: example_repository
@@ -471,9 +471,6 @@ components:
         account:
           type: string
           description: Account identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
-          minLength: 1
-          maxLength: 64
         org:
           type: string
           description: Organization identifier
@@ -495,7 +492,7 @@ components:
         name:
           type: string
           description: Template Name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         description:
@@ -586,7 +583,7 @@ components:
           scope: org
           version: 1234567890
           git_details:
-            entity_identifier: example_object
+            object_id: example_object
             branch_name: branch
             file_path: /folder/file.json
             repo_name: example_repository
@@ -602,9 +599,6 @@ components:
         account:
           type: string
           description: Account identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
-          minLength: 1
-          maxLength: 64
         org:
           type: string
           description: Organization identifier
@@ -626,7 +620,7 @@ components:
         name:
           type: string
           description: Template Name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         description:
@@ -694,7 +688,7 @@ components:
       type: object
       x-examples:
         example-1:
-          template_response:
+          template:
             account: example_account
             org: example_organization
             project: example_project
@@ -736,7 +730,7 @@ components:
             scope: org
             version: 1234567890
             git_details:
-              entity_identifier: example_object
+              object_id: example_object
               branch_name: branch
               file_path: /folder/file.json
               repo_name: example_repository
@@ -747,12 +741,12 @@ components:
             store_type: INLINE
             connector_ref: example_connector_ref
             stable_template: true
-          template_input_yaml: example
+          inputs: example
       description: Returns Template input YAML with template response
       properties:
-        template_response:
+        template:
           $ref: '#/components/schemas/TemplateResponse'
-        input_yaml:
+        inputs:
           type: string
           description: Input Yaml for the Template
     TemplateMetaDataList:
@@ -779,7 +773,7 @@ components:
             scope: org
             version: 1234567890
             git_details:
-              entity_identifier: example_object
+              object_id: example_object
               branch_name: branch
               file_path: /folder/file.json
               repo_name: example_repository
@@ -799,7 +793,7 @@ components:
       description: Git Experience related details of the Entity.
       x-examples:
         example-git:
-          entity_identifier: example_object
+          object_id: example_object
           branch_name: branch
           file_path: /folder/file.json
           repo_name: example_repository
@@ -807,7 +801,7 @@ components:
           file_url: www.repo/folder/file.com
           repo_url: www.repo.com
       properties:
-        entity_identifier:
+        object_id:
           type: string
           description: Entity identifier
         branch_name:
@@ -836,30 +830,30 @@ components:
       x-examples:
         example-1:
           branch_name: branch
-          parent_connector_ref: example_connector_ref
-          parent_repo_name: example_repo_name
-          parent_account_id: example_account_id
-          parent_org_id: example_org_id
-          parent_project_id: example_project_id
+          parent_entity_connector_ref: example_connector_ref
+          parent_entity_repo_name: example_repo_name
+          parent_entity_account_id: example_account_id
+          parent_entity_org_id: example_org_id
+          parent_entity_project_id: example_project_id
           comments: sample_comments
       description: Contains parameters related to Fetching an Entity for Git Experience.
       properties:
         branch_name:
           type: string
           description: Name of the branch.
-        parent_connector_ref:
+        parent_entity_connector_ref:
           type: string
           description: Connector ref of parent template if its remote
-        parent_repo_name:
+        parent_entity_repo_name:
           type: string
           description: Repo name of parent template if its remote
-        parent_account_id:
+        parent_entity_account_id:
           type: string
           description: Account name of parent template if its remote
-        parent_org_id:
+        parent_entity_org_id:
           type: string
           description: Organization name of parent template if its remote
-        parent_project_id:
+        parent_entity_project_id:
           type: string
           description: Project name of parent entity if its remote
         comments:
@@ -1145,6 +1139,10 @@ components:
       required: false
       schema:
         type: string
+        enum:
+          - slug
+          - name
+          - updated
       description: Parameter on the basis of which sorting is done.
     SearchTerm:
       name: search_term
@@ -1195,35 +1193,35 @@ components:
         type: string
       description: Name of the branch
     ParentConnectorRef:
-      name: parent_connector_ref
+      name: parent_entity_connector_ref
       in: query
       required: false
       schema:
         type: string
       description: Connector ref of parent template if its remote
     ParentRepoName:
-      name: parent_repo_name
+      name: parent_entity_repo_name
       in: query
       required: false
       schema:
         type: string
       description: Repo name of parent template if its remote
     ParentAccountId:
-      name: parent_account_id
+      name: parent_entity_account_id
       in: query
       required: false
       schema:
         type: string
       description: Account name of parent template if its remote
     ParentOrgId:
-      name: parent_org_id
+      name: parent_entity_org_id
       in: query
       required: false
       schema:
         type: string
       description: Organization name of parent template if its remote
     ParentProjectId:
-      name: parent_project_id
+      name: parent_entity_project_id
       in: query
       required: false
       schema:
@@ -1281,7 +1279,7 @@ components:
         uniqueItems: true
         items:
           type: string
-      description: Template Child Types for filtering
+      description: Child types describe the type of Step or stage
   requestBodies:
     TemplateUpdateBody:
       content:
@@ -1381,11 +1379,11 @@ components:
             example-1:
               value:
                 branch_name: branch
-                parent_connector_ref: example_connector_ref
-                parent_repo_name: example_repo_name
-                parent_account_id: example_account_id
-                parent_org_id: example_org_id
-                parent_project_id: example_project_id
+                parent_entity_connector_ref: example_connector_ref
+                parent_entity_repo_name: example_repo_name
+                parent_entity_account_id: example_account_id
+                parent_entity_org_id: example_org_id
+                parent_entity_project_id: example_project_id
                 comments: sample_comments
         application/yaml:
           schema:
@@ -1394,11 +1392,11 @@ components:
             example-1:
               value: |
                 branch_name: branch
-                parent_connector_ref: example_connector_ref
-                parent_repo_name: example_repo_name
-                parent_account_id: example_account_id
-                parent_org_id: example_org_id
-                parent_project_id: example_project_id
+                parent_entity_connector_ref: example_connector_ref
+                parent_entity_repo_name: example_repo_name
+                parent_entity_account_id: example_account_id
+                parent_entity_org_id: example_org_id
+                parent_entity_project_id: example_project_id
                 comments: sample_comments
       description: Templates Fetch Request Body
     TemplateCreateBody:
@@ -1539,7 +1537,7 @@ components:
                 scope: org
                 version: 1234567890
                 git_details:
-                  entity_identifier: example_object
+                  object_id: example_object
                   branch_name: branch
                   file_path: /folder/file.json
                   repo_name: example_repository
@@ -1597,7 +1595,7 @@ components:
                 scope: org
                 version: 1234567890
                 git_details:
-                  entity_identifier: example_object
+                  object_id: example_object
                   branch_name: branch
                   file_path: /folder/file.json
                   repo_name: example_repository
@@ -1617,7 +1615,7 @@ components:
           examples:
             example-1:
               value:
-                template_response:
+                template:
                   account: example_account
                   org: example_organization
                   project: example_project
@@ -1659,7 +1657,7 @@ components:
                   scope: org
                   version: 1234567890
                   git_details:
-                    entity_identifier: example_object
+                    object_id: example_object
                     branch_name: branch
                     file_path: /folder/file.json
                     repo_name: example_repository
@@ -1670,14 +1668,14 @@ components:
                   store_type: INLINE
                   connector_ref: example_connector_ref
                   stable_template: true
-                template_input_yaml: example
+                inputs: example
         application/yaml:
           schema:
             $ref: '#/components/schemas/TemplateWithInputsResponse'
           examples:
             example-1:
               value: |
-                template_response:
+                template:
                   account: example_account
                   org: example_organization
                   project: example_project
@@ -1719,7 +1717,7 @@ components:
                   scope: org
                   version: 1234567890
                   git_details:
-                    entity_identifier: example_object
+                    object_id: example_object
                     branch_name: branch
                     file_path: /folder/file.json
                     repo_name: example_repository
@@ -1730,7 +1728,7 @@ components:
                   store_type: INLINE
                   connector_ref: example_connector_ref
                   stable_template: true
-                template_input_yaml: example
+                inputs: example
     TemplateMetaDataList:
       description: Template Lists Meta Data Response
       content:
@@ -1755,7 +1753,7 @@ components:
                   scope: org
                   version: 1234567890
                   git_details:
-                    entity_identifier: example_object
+                    object_id: example_object
                     branch_name: branch
                     file_path: /folder/file.json
                     repo_name: example_repository
@@ -1787,7 +1785,7 @@ components:
                   scope: org
                   version: 1234567890
                   git_details:
-                    entity_identifier: example_object
+                    object_id: example_object
                     branch_name: branch
                     file_path: /folder/file.json
                     repo_name: example_repository

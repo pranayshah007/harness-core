@@ -505,6 +505,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     assertThat(ngEncryptedData.getPath()).isEqualTo(SECRET_RELATIVE_PATH);
     assertThat(ngEncryptedData.getSecretManagerIdentifier()).isEqualTo(secretManagerIdentifier);
     assertThat(ngEncryptedData.getEncryptionType()).isEqualTo(EncryptionType.VAULT);
+    assertThat(ngEncryptedData.getId()).isNotBlank();
   }
 
   @Test

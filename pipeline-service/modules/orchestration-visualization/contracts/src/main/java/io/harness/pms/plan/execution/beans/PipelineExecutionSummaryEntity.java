@@ -36,6 +36,7 @@ import io.harness.persistence.UuidAware;
 import io.harness.pms.contracts.execution.ExecutionErrorInfo;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 
@@ -157,6 +158,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   }
 
   RetryExecutionMetadata retryExecutionMetadata;
+  PipelineStageInfo parentStageInfo;
   Boolean isLatestExecution;
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
   @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;

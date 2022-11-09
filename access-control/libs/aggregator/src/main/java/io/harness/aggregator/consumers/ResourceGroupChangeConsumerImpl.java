@@ -12,6 +12,7 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.aggregator.ACLUtils.buildACL;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.persistence.ACL;
@@ -25,6 +26,7 @@ import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.Ro
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
+import io.harness.mongo.DelayLogContext;
 
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -70,6 +72,7 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
 
   @Override
   public void consumeUpdateEvent(String id, ResourceGroupDBO updatedResourceGroup) {
+    long startTime = System.currentTimeMillis();
     if (updatedResourceGroup.getResourceSelectors() == null && updatedResourceGroup.getResourceSelectorsV2() == null
         && updatedResourceGroup.getScopeSelectors() == null) {
       return;
@@ -110,8 +113,13 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
       throw new GeneralException("", ex);
     }
 
-    log.info("Number of ACLs created: {}", numberOfACLsCreated);
-    log.info("Number of ACLs deleted: {}", numberOfACLsDeleted);
+    long permissionsChangeTime = System.currentTimeMillis() - startTime;
+    try (DelayLogContext ignore = new DelayLogContext(permissionsChangeTime, OVERRIDE_ERROR)) {
+      log.info("ResourceGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs created: {} for {} Time taken: {}",
+          numberOfACLsCreated, id, permissionsChangeTime);
+      log.info("ResourceGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for {} Time taken: {}",
+          numberOfACLsDeleted, id, permissionsChangeTime);
+    }
   }
 
   @Override

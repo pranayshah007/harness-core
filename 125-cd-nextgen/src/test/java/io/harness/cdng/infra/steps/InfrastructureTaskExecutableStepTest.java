@@ -708,19 +708,20 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
 
     assertThatCode(()
                        -> infrastructureStep.validateConnector(
-                           K8sGcpInfrastructure.builder().connectorRef(gcpSaConnectorRefs.get(0)).build(), ambiance))
+                           K8sGcpInfrastructure.builder().connectorRef(gcpSaConnectorRefs.get(0)).build(), ambiance,
+                           mockLogCallback))
         .doesNotThrowAnyException();
 
-    assertThatCode(
-        ()
-            -> infrastructureStep.validateConnector(
-                K8sGcpInfrastructure.builder().connectorRef(gcpDelegateConnectorRefs.get(0)).build(), ambiance))
+    assertThatCode(()
+                       -> infrastructureStep.validateConnector(
+                           K8sGcpInfrastructure.builder().connectorRef(gcpDelegateConnectorRefs.get(0)).build(),
+                           ambiance, mockLogCallback))
         .doesNotThrowAnyException();
   }
 
   private void assertConnectorValidationMessage(Infrastructure infrastructure, String message) {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
-    assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
+    assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance, mockLogCallback))
         .hasMessageContaining(message);
   }
 

@@ -21,6 +21,7 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.validation.Update;
@@ -57,6 +58,11 @@ public class UserInvite extends Base implements AccountAccess {
                  .name("accountId_email_1")
                  .field(UserInviteKeys.accountId)
                  .field(UserInviteKeys.email)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("email_createdAt")
+                 .field(UserInviteKeys.email)
+                 .descSortField("createdAt")
                  .build())
         .build();
   }

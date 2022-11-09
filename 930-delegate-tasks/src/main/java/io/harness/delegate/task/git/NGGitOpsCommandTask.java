@@ -230,15 +230,16 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
             ERROR);
         List<GitFile> gitFiles = new ArrayList<>();
         gitOpsTaskParams.getFilesToVariablesMap().forEach((file, values) -> {
-          if (file.contains(".yaml") || file.contains(".yml")) {
+          // default is yaml
+          if (file.toLowerCase().endsWith(".json")) {
+            gitFiles.add(GitFile.builder().filePath(file).fileContent(gson.toJson(values)).build());
+          } else {
             try {
               gitFiles.add(
                   GitFile.builder().filePath(file).fileContent(convertJsonToYaml(gson.toJson(values))).build());
             } catch (IOException ex) {
               throw new RuntimeException("Failed to convert json to yaml while fetching files.");
             }
-          } else {
-            gitFiles.add(GitFile.builder().filePath(file).fileContent(gson.toJson(values)).build());
           }
         });
         return FetchFilesResult.builder().files(gitFiles).build();
@@ -479,10 +480,10 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       stringObjectMap.forEach((k, v)
                                   -> logCallback.saveExecutionLog(
                                       format("Modifying %s:%s", color(k, White, Bold), color(v, White, Bold)), INFO));
-      if (gitFile.getFilePath().contains(".yaml") || gitFile.getFilePath().contains(".yml")) {
-        updatedFiles.add(replaceFields(convertYamlToJson(gitFile.getFileContent()), stringObjectMap));
-      } else if (gitFile.getFilePath().contains(".json")) {
+      if (gitFile.getFilePath().toLowerCase().endsWith(".json")) {
         updatedFiles.add(replaceFields(gitFile.getFileContent(), stringObjectMap));
+      } else {
+        updatedFiles.add(replaceFields(convertYamlToJson(gitFile.getFileContent()), stringObjectMap));
       }
     }
 
@@ -491,10 +492,10 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     // Update the files and then convert them to yaml format
     for (int i = 0; i < updatedFiles.size(); i++) {
       GitFile gitFile = fetchFilesResult.getFiles().get(i);
-      if (gitFile.getFilePath().contains(".yaml") || gitFile.getFilePath().contains(".yml")) {
-        gitFile.setFileContent(convertJsonToYaml(updatedFiles.get(i)));
-      } else {
+      if (gitFile.getFilePath().toLowerCase().endsWith(".json")) {
         gitFile.setFileContent(updatedFiles.get(i));
+      } else {
+        gitFile.setFileContent(convertJsonToYaml(updatedFiles.get(i)));
       }
       updatedGitFiles.add(gitFile);
     }

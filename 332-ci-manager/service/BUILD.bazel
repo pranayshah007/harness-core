@@ -426,7 +426,7 @@ java_library(
         "//332-ci-manager/service/src/main/resources:resource",
     ],
     visibility = [
-        "//325-sto-beans:__subpackages__",
+        "//315-sto-manager:__subpackages__",
         "//332-ci-manager/app:__subpackages__",
     ],
     deps = shared_dependencies + [

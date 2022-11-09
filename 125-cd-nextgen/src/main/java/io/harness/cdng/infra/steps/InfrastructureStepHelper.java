@@ -88,7 +88,7 @@ public class InfrastructureStepHelper {
         connectorService.get(connectorIdentifierRef.getAccountIdentifier(), connectorIdentifierRef.getOrgIdentifier(),
             connectorIdentifierRef.getProjectIdentifier(), connectorIdentifierRef.getIdentifier());
     ConnectorInfoDTO connectorInfoDTO;
-    if (!connectorDTO.isPresent()) {
+    if (connectorDTO.isEmpty()) {
       throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorRefValue));
     } else {
       saveExecutionLogSafely(logCallback, color("Connector fetched", Green));

@@ -34,6 +34,7 @@ import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
@@ -124,7 +125,8 @@ public class PipelinesApiImplTest extends CategoryTest {
                         .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                         .build());
     Response response = pipelinesApiImpl.createPipeline(pipelineRequestBody, org, project, account);
-    assertEquals(slug, response.getEntity());
+    PipelineCreateResponseBody responseBody = (PipelineCreateResponseBody) response.getEntity();
+    assertEquals(slug, responseBody.getSlug());
   }
 
   @Test
@@ -166,7 +168,8 @@ public class PipelinesApiImplTest extends CategoryTest {
     requestBody.setSlug(slug);
     requestBody.setName(name);
     Response response = pipelinesApiImpl.updatePipeline(requestBody, org, project, slug, account);
-    assertThat(response.getEntity()).isEqualTo(slug);
+    PipelineCreateResponseBody responseBody = (PipelineCreateResponseBody) response.getEntity();
+    assertEquals(slug, responseBody.getSlug());
   }
 
   @Test

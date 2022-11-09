@@ -8,20 +8,27 @@
 package io.harness.ng.core.artifacts.resources;
 
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.NgManagerTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
@@ -33,8 +40,10 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -55,7 +64,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Mock TemplateResourceClient templateResourceClient;
   @Mock ServiceEntityService serviceEntityService;
   @Mock EnvironmentService environmentService;
-
+  @Mock GARResourceService garResourceService;
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
@@ -338,6 +347,44 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         "<+env.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("env1");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsV2GAR() throws IOException {
+    // spy for ArtifactResourceUtils
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    // Creating GoogleArtifactRegistryConfig for mock
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
+        GoogleArtifactRegistryConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("connectorref").build())
+            .project(ParameterField.<String>builder().value("project").build())
+            .pkg(ParameterField.<String>builder().value("pkg").build())
+            .repositoryName(ParameterField.<String>builder().value("reponame").build())
+            .region(ParameterField.<String>builder().value("region").build())
+            .version(ParameterField.<String>builder().value("version").build())
+            .build();
+
+    // Creating GARResponseDTO for mock
+    GARResponseDTO buildDetails = GARResponseDTO.builder().build();
+
+    // Creating IdentifierRef for mock
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef("connectorref", "accountId", "orgId", "projectId");
+
+    doReturn(googleArtifactRegistryConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(any(), any(), any(), any(), any());
+
+    doReturn(buildDetails)
+        .when(garResourceService)
+        .getBuildDetails(
+            identifierRef, "region", "reponame", "project", "pkg", "version", "versionRegex", "orgId", "projectId");
+
+    assertThat(spyartifactResourceUtils.getBuildDetailsV2GAR(null, null, null, null, null, "accountId", "orgId",
+                   "projectId", "pipeId", "version", "versionRegex", "", "", "serviceref", null))
+        .isEqualTo(buildDetails);
   }
 
   private void mockEnvironmentGetCall() {

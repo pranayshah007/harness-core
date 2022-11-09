@@ -31,7 +31,6 @@ public enum FeatureName {
       "Enable to create a temporary folder (based on execution id) to store repository.yaml file", HarnessTeam.CDP),
   DEPRECATE_K8S_STEADY_STATE_CHECK_STEP,
   NG_GITOPS,
-  APPD_CV_TASK,
   ARGO_PHASE1,
   ARGO_PHASE2_MANAGED,
   ARTIFACT_PERPETUAL_TASK,
@@ -55,15 +54,12 @@ public enum FeatureName {
   CI_INDIRECT_LOG_UPLOAD,
   CI_LE_STATUS_REST_ENABLED(
       "Used for sending step status for CI via REST APIs instead of gRPC from Lite Engine to manager", HarnessTeam.CI),
-  CUSTOM_APM_24_X_7_CV_TASK,
-  CUSTOM_APM_CV_TASK,
   CUSTOM_DASHBOARD,
   CUSTOM_DEPLOYMENT_ARTIFACT_FROM_INSTANCE_JSON,
   CUSTOM_MAX_PAGE_SIZE,
   EXTRA_LARGE_PAGE_SIZE,
   CVNG_ENABLED,
   CV_DEMO,
-  CV_FEEDBACKS,
   CV_HOST_SAMPLING,
   CV_SUCCEED_FOR_ANOMALY,
   DEFAULT_ARTIFACT,
@@ -118,8 +114,6 @@ public enum FeatureName {
   MOVE_CONTAINER_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_PCF_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   PDC_PERPETUAL_TASK,
-  NEW_RELIC_CV_TASK,
-  NEWRELIC_24_7_CV_TASK,
   NG_DASHBOARDS("", HarnessTeam.CE),
   NODE_RECOMMENDATION_AGGREGATE("K8S Node recommendation Feature in CCM", HarnessTeam.CE),
   ON_NEW_ARTIFACT_TRIGGER_WITH_LAST_COLLECTED_FILTER,
@@ -361,6 +355,9 @@ public enum FeatureName {
   REMOVE_USERGROUP_CHECK(
       "Customers started facing NPE due to migration of usergroup reference, removed null check behind FF - ticket ID - CDS-39770, CG",
       HarnessTeam.SPG),
+
+  STO_STEP_PALETTE_V1("Enable first iteration of individual steps for STO", HarnessTeam.STO),
+  STO_STEP_PALETTE_V2("Enable second iteration of individual steps for STO", HarnessTeam.STO),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   CD_ONBOARDING_ENABLED,
   SPOT_ELASTIGROUP_NG("Enables Spot Elastigroup implementation on NG", HarnessTeam.CDP),
@@ -430,6 +427,7 @@ public enum FeatureName {
   LOOKER_ENTITY_RECONCILIATION,
   STAGE_AND_STEP_LEVEL_DEPLOYMENT_DETAILS,
   NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC),
+  NG_DEPLOYMENT_FREEZE_OVERRIDE("Override freeze for NG", HarnessTeam.CDC),
   PL_ENABLE_SWITCH_ACCOUNT_PAGINATION("Enables new API for Switch Account which is paginated", HarnessTeam.PL),
   SHELL_SCRIPT_PROVISION_NG("Used to allow customers to access Shell Script Provision NG", HarnessTeam.CDP),
   NEW_EXECUTION_LIST_VIEW(
@@ -479,6 +477,7 @@ public enum FeatureName {
   INSTANCE_SYNC_V2_CG("Enable Instance Sync V2 framework in CG for direct K8s cloud provider", HarnessTeam.CDP),
   CF_ROLLBACK_CUSTOM_STACK_NAME(
       "Use custom stack name and region to find lates successful couldformation rollback data", HarnessTeam.CDP),
+  IACM_MICRO_FE("Enable support for IACM micro front end capabilities", HarnessTeam.IACM),
   AZURE_WEB_APP_NG_NEXUS_PACKAGE("Enable support for Nexus package artifact in Azure Web App NG", HarnessTeam.CDP),
   BOOKING_RECOMMENDATIONS("Feature flag for booking.com recommendations", HarnessTeam.CE),
   USE_GET_FILE_V2_GIT_CALL(

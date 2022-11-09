@@ -198,7 +198,7 @@ public class ExecutionResource {
     pageRequest.setLimit(Integer.toString(Integer.parseInt(pageRequest.getLimit()) + 1));
 
     PageResponse<WorkflowExecution> workflowExecutions =
-        workflowExecutionService.listExecutions(pageRequest, includeGraph, true, true, false, true);
+        workflowExecutionService.listExecutions(pageRequest, includeGraph, true, true, false, true, true);
 
     int offset = Integer.parseInt(pageRequest.getOffset());
     int limit = Integer.parseInt(pageRequest.getLimit()) - 1;

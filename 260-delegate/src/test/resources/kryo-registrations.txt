@@ -207,8 +207,6 @@
 2012:com.google.api.services.monitoring.v3.model.Distribution
 2013:com.google.api.services.monitoring.v3.model.BucketOptions
 2014:com.google.api.services.monitoring.v3.model.Exponential
-2015:com.mongodb.BasicDBList
-2016:com.mongodb.BasicDBObject
 3001:io.harness.exception.VerificationOperationException
 3002:io.harness.exception.ServiceNowException
 3003:io.harness.encryption.SecretRefData
@@ -1157,6 +1155,7 @@
 19002:io.harness.delegate.beans.TaskData
 19003:io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability
 19004:io.harness.delegate.beans.executioncapability.CapabilityType
+19005:io.harness.delegate.beans.TaskDataV2
 19007:io.harness.delegate.beans.executioncapability.ProcessExecutorCapability
 19008:io.harness.delegate.beans.executioncapability.AwsRegionCapability
 19009:io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability
@@ -1791,6 +1790,7 @@
 55436:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest
 55437:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
+55499:io.harness.beans.SerializationFormat
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
 55503:io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo
@@ -1839,6 +1839,9 @@
 73990:io.harness.delegate.beans.NoAvailableDelegatesException
 73991:io.harness.delegate.beans.NoDelegatesException
 73992:io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails
+73993:io.harness.delegate.task.helm.HelmFetchChartVersionRequestNG
+73994:io.harness.delegate.beans.helm.HelmChartVersionDetails
+73995:io.harness.delegate.task.helm.HelmFetchChartVersionResponse
 80302:software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds
 80303:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile
 80304:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo

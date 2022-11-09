@@ -31,6 +31,7 @@ import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.template.NgTemplateService;
 import io.harness.ngmigration.template.TemplateFactory;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.template.beans.yaml.NGTemplateConfig;
@@ -58,6 +59,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
 @Slf4j
@@ -148,6 +150,7 @@ public class TemplateMigrationService extends NgMigrationService {
     Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
+    String description = StringUtils.isBlank(template.getDescription()) ? "" : template.getDescription();
 
     NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
     if (ngTemplateService.isMigrationSupported()) {
@@ -164,6 +167,7 @@ public class TemplateMigrationService extends NgMigrationService {
                               .identifier(MigratorUtility.generateIdentifier(template.getName()))
                               .variables(ngTemplateService.getTemplateVariables(template))
                               .name(template.getName())
+                              .description(ParameterField.createValueField(description))
                               .projectIdentifier(projectIdentifier)
                               .orgIdentifier(orgIdentifier)
                               .versionLabel("v" + template.getVersion().toString())
