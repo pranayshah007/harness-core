@@ -40,7 +40,7 @@ public class InfraRollbackPMSPlanCreator {
       return PlanCreationResponse.builder().build();
     }
 
-    Map<String, YamlField> dependencies = new HashMap();
+    Map<String, YamlField> dependencies = new HashMap<>();
 
     YamlField provisionerField = infraField.getNode()
                                      .getField(YamlTypes.INFRASTRUCTURE_DEF)
