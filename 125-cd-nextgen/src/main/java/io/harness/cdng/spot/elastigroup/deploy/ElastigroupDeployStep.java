@@ -10,6 +10,10 @@ package io.harness.cdng.spot.elastigroup.deploy;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGTimeConversionHelper;
@@ -32,7 +36,7 @@ import io.harness.supplier.ThrowingSupplier;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
-import java.util.Collections;
+import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -76,7 +80,9 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Ela
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
             .build();
 
-    return stepHelper.prepareTaskRequest(ambiance, taskData, Collections.singletonList(UNIT_NAME),
+    return stepHelper.prepareTaskRequest(ambiance, taskData,
+        Arrays.asList(UP_SCALE_COMMAND_UNIT, UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DOWN_SCALE_COMMAND_UNIT,
+            DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT),
         TaskType.ELASTIGROUP_DEPLOY.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(
             emptyIfNull(getParameterFieldValue(elastigroupDeployStepParameters.getDelegateSelectors()))));
