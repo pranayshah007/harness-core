@@ -70,11 +70,10 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
           accessControlList.get(0).getResourceType().toLowerCase());
       throw new NGAccessDeniedException(message, USER, emptyList());
     }
-    AccessCheckResponseDTO accessCheckResponseDTO = AccessCheckResponseDTO.builder()
-                                                        .principal(accessCheckResponseDTOs.get(0).getPrincipal())
-                                                        .accessControlList(accessControlList)
-                                                        .build();
-    return accessCheckResponseDTO;
+    return AccessCheckResponseDTO.builder()
+        .principal(accessCheckResponseDTOs.get(0).getPrincipal())
+        .accessControlList(accessControlList)
+        .build();
   }
 
   @Override
