@@ -7,22 +7,15 @@
 
 package io.harness.ccm.remote.resources.governance;
 
-import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_CREATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_DELETE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_UPDATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
-import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_NAME;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
-import static io.harness.telemetry.Destination.AMPLITUDE;
-import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
-
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.PolicyCreateEvent;
@@ -30,6 +23,12 @@ import io.harness.ccm.audittrails.events.PolicyDeleteEvent;
 import io.harness.ccm.audittrails.events.PolicyUpdateEvent;
 import io.harness.ccm.governance.faktory.FaktoryProducer;
 import io.harness.ccm.rbac.CCMRbacHelper;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_CREATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_DELETE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_POLICY_UPDATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.remote.resources.TelemetryConstants.POLICY_NAME;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePolicyDTO;
 import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
@@ -52,6 +51,8 @@ import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -62,17 +63,15 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import io.harness.outbox.api.OutboxService;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import io.harness.telemetry.Category;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 import io.harness.telemetry.TelemetryReporter;
-
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -84,14 +83,12 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -103,11 +100,14 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import lombok.extern.slf4j.Slf4j;
-import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -180,6 +180,14 @@ public class GovernancePolicyResource {
       @RequestBody(required = true,
           description = "Request body containing Policy  object") @Valid CreatePolicyDTO createPolicyDTO) {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
+    GovernancePolicyFilter governancePolicyFilter =GovernancePolicyFilter.builder().build();
+    governancePolicyFilter.setAccountId(accountId);
+    governancePolicyFilter.setIsOOTB(false);
+    //move size to config; seperate config variables
+    if(governancePolicyService.list(governancePolicyFilter).size()>=300)
+    {
+      throw new InvalidRequestException("You have exceeded the limit for policy creation");
+    }
     if (createPolicyDTO == null) {
       throw new InvalidRequestException("Request payload is malformed");
     }
@@ -200,14 +208,14 @@ public class GovernancePolicyResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_NAME, policy.getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_CREATED, null, accountId, properties,
-        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_CREATED,null,accountId, properties
+            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(
 
-        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-          outboxService.save(new PolicyCreateEvent(accountId, policy.toDTO()));
-          return governancePolicyService.listName(accountId, policy.getName(), false);
-        })));
+            Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+                      outboxService.save(new PolicyCreateEvent(accountId, policy.toDTO()));
+              return governancePolicyService.listName(accountId, policy.getName(), false);
+            })));
   }
 
   // Update a policy already made
@@ -242,14 +250,15 @@ public class GovernancePolicyResource {
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
     return ResponseDTO.newResponse(
-        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-          outboxService.save(new PolicyUpdateEvent(accountId, policy.toDTO()));
-          return governancePolicyService.update(policy, accountId);
-        })));
+            Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+              outboxService.save(new PolicyUpdateEvent(accountId, policy.toDTO()));
+              return governancePolicyService.update(policy, accountId);
+            })));
   }
 
   @PUT
   @Hidden
+  @InternalApi
   @Path("policyOOTB")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
@@ -262,11 +271,16 @@ public class GovernancePolicyResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<Policy>
-  updatePolicy(@RequestBody(
+  updatePolicyOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId, @RequestBody(
       required = true, description = "Request body containing policy object") @Valid CreatePolicyDTO createPolicyDTO) {
     // rbacHelper.checkPolicyEditPermission(accountId, null, null);
-    if (createPolicyDTO == null) {
+    if (createPolicyDTO == null ) {
       throw new InvalidRequestException("Request payload is malformed");
+    }
+    if(!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount()))
+    {
+      throw new InvalidRequestException("Editing OOTB policy is not allowed");
     }
     Policy policy = createPolicyDTO.getPolicy();
     policy.toDTO();
@@ -278,6 +292,8 @@ public class GovernancePolicyResource {
   @DELETE
   @Path("{policyID}")
   @Timed
+  @Hidden
+  @InternalApi
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @ExceptionMetered
@@ -292,8 +308,13 @@ public class GovernancePolicyResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<Boolean>
-  deleteOOTB(@PathParam("policyID") @Parameter(
+  deleteOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,@PathParam("policyID") @Parameter(
       required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
+    if(!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount()))
+    {
+      throw new InvalidRequestException("Editing OOTB policy is not allowed");
+    }
     governancePolicyService.listId("", uuid, false);
     boolean result = governancePolicyService.delete("", uuid);
     return ResponseDTO.newResponse(result);
@@ -324,13 +345,12 @@ public class GovernancePolicyResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_NAME, governancePolicyService.listId(accountId, uuid, false).getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_DELETE, null, accountId, properties,
-        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(
-        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-          outboxService.save(new PolicyDeleteEvent(accountId, governancePolicyService.listId(accountId, uuid, false)));
-          return governancePolicyService.delete(accountId, uuid);
-        })));
+    telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_DELETE,null,accountId, properties
+            ,Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      outboxService.save(new PolicyDeleteEvent(accountId,governancePolicyService.listId(accountId, uuid, false) ));
+      return governancePolicyService.delete(accountId, uuid);
+    })));
   }
 
   // API to list all OOTB Policies
@@ -413,11 +433,11 @@ public class GovernancePolicyResource {
 
       // Step-2 Prep unique policy Ids set from this enforcement
       Set<String> uniquePolicyIds = new HashSet<>();
-      if (policyEnforcement.getPolicyIds() != null && policyEnforcement.getPolicyIds().size() > 0) {
+      if (policyEnforcement.getPolicyIds().size() > 0) {
         // Assumption: The policyIds in the enforcement records are all valid ones
         uniquePolicyIds.addAll(policyEnforcement.getPolicyIds());
       }
-      if (policyEnforcement.getPolicyPackIDs() != null && policyEnforcement.getPolicyPackIDs().size() > 0) {
+      if (policyEnforcement.getPolicyPackIDs().size() > 0) {
         List<PolicyPack> policyPacks = policyPackService.listPacks(accountId, policyEnforcement.getPolicyPackIDs());
         for (PolicyPack policyPack : policyPacks) {
           uniquePolicyIds.addAll(policyPack.getPoliciesIdentifier());

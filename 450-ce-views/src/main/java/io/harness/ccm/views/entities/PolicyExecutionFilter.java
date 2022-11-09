@@ -19,6 +19,7 @@ import lombok.experimental.FieldDefaults;
 public class PolicyExecutionFilter {
   @Schema(description = "accountId") String accountId;
   @Schema(description = "Account Name") String targetAccount;
+  @Schema(description = "Execution Status") String executionStatus;
   @Schema(description = "region") List<String> region;
   @Schema(description = "cloudProvider") PolicyCloudProviderType cloudProvider;
   @Schema(description = "policyName") List<String> policyName;
@@ -29,7 +30,8 @@ public class PolicyExecutionFilter {
 
   @Builder
   public PolicyExecutionFilter(String accountId, String accountName, List<String> region, List<String> policyName,
-                               PolicyCloudProviderType cloudProvider, List<String> policyEnforcementId, List<CCMTimeFilter> time, int limit, int offset) {
+      PolicyCloudProviderType cloudProvider, List<String> policyEnforcementId, List<CCMTimeFilter> time, int limit,
+      int offset, String executionStatus) {
     this.accountId = accountId;
     this.targetAccount = accountName;
     this.region = region;
@@ -39,5 +41,6 @@ public class PolicyExecutionFilter {
     this.time = time;
     this.limit = limit;
     this.offset = offset;
+    this.executionStatus= executionStatus;
   }
 }

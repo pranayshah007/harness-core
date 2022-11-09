@@ -39,6 +39,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import io.harness.outbox.api.OutboxService;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -209,6 +210,7 @@ public class GovernancePolicyPackResource {
 
   @PUT
   @Hidden
+  @InternalApi
   @Path("policyPackOOTB")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Update an existing policy set", nickname = "updateOOTBPolicyPack")
@@ -220,11 +222,17 @@ public class GovernancePolicyPackResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<PolicyPack>
-  updatePolicy(@RequestBody(required = true,
-      description = "Request body containing Policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO) {
+  updatePolicyOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+                   @RequestBody(required = true,
+                           description = "Request body containing Policy pack object") @Valid CreatePolicyPackDTO createPolicyPackDTO)  {
     //  rbacHelper.checkPolicyPackEditPermission(accountId, null, null);
     if (createPolicyPackDTO == null) {
       throw new InvalidRequestException("Request payload is malformed");
+    }
+    if(!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount()))
+    {
+      throw new InvalidRequestException("Editing OOTB policy pack is not allowed");
     }
     PolicyPack policyPack = createPolicyPackDTO.getPolicyPack();
     policyPack.toDTO();
@@ -318,6 +326,7 @@ public class GovernancePolicyPackResource {
 
   @DELETE
   @Hidden
+  @InternalApi
   @Path("policyPackOOTB/{uuid}")
   @Timed
   @Produces(MediaType.APPLICATION_JSON)
@@ -333,8 +342,14 @@ public class GovernancePolicyPackResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<Boolean>
-  deleteOOTB(@PathParam("uuid") @Parameter(
-      required = true, description = "Unique identifier for the Policy Pack") @NotNull @Valid String uuid) {
+  deleteOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+             @PathParam("policyPackId") @Parameter(
+                     required = true, description = "Unique identifier for the policy") @NotNull @Valid String uuid) {
+    if(!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount()))
+    {
+      throw new InvalidRequestException("Editing OOTB policy pack is not allowed");
+    }
     boolean result = policyPackService.deleteOOTB(uuid);
     return ResponseDTO.newResponse(result);
   }

@@ -68,6 +68,11 @@ public class PolicyExecutionDAO {
       query.field(PolicyExecutionKeys.targetRegions).in(policyExecutionFilter.getRegion());
       log.info("Added  target Regions filter");
     }
+    if(policyExecutionFilter.getExecutionStatus()!=null)
+    {
+      query.field(PolicyExecutionKeys.executionStatus).equal(policyExecutionFilter.getExecutionStatus());
+      log.info("Added Execution Status filter");
+    }
     if (policyExecutionFilter.getCloudProvider() != null) {
       query.field(PolicyExecutionKeys.cloudProvider).equal(policyExecutionFilter.getCloudProvider());
       log.info("Added  cloud Provider filter");
