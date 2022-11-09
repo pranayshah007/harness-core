@@ -456,7 +456,7 @@ components:
           scope: org
           version: 1234567890
           git_details:
-            entity_identifier: example_object
+            object_id: example_object
             branch_name: branch
             file_path: /folder/file.json
             repo_name: example_repository
@@ -471,9 +471,6 @@ components:
         account:
           type: string
           description: Account identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
-          minLength: 1
-          maxLength: 64
         org:
           type: string
           description: Organization identifier
@@ -495,7 +492,7 @@ components:
         name:
           type: string
           description: Template Name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         description:
@@ -586,7 +583,7 @@ components:
           scope: org
           version: 1234567890
           git_details:
-            entity_identifier: example_object
+            object_id: example_object
             branch_name: branch
             file_path: /folder/file.json
             repo_name: example_repository
@@ -602,9 +599,6 @@ components:
         account:
           type: string
           description: Account identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
-          minLength: 1
-          maxLength: 64
         org:
           type: string
           description: Organization identifier
@@ -626,7 +620,7 @@ components:
         name:
           type: string
           description: Template Name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         description:
@@ -694,7 +688,7 @@ components:
       type: object
       x-examples:
         example-1:
-          template_response:
+          template:
             account: example_account
             org: example_organization
             project: example_project
@@ -736,7 +730,7 @@ components:
             scope: org
             version: 1234567890
             git_details:
-              entity_identifier: example_object
+              object_id: example_object
               branch_name: branch
               file_path: /folder/file.json
               repo_name: example_repository
@@ -747,12 +741,12 @@ components:
             store_type: INLINE
             connector_ref: example_connector_ref
             stable_template: true
-          template_input_yaml: example
+          inputs: example
       description: Returns Template input YAML with template response
       properties:
-        template_response:
+        template:
           $ref: '#/components/schemas/TemplateResponse'
-        input_yaml:
+        inputs:
           type: string
           description: Input Yaml for the Template
     TemplateMetaDataList:
@@ -779,7 +773,7 @@ components:
             scope: org
             version: 1234567890
             git_details:
-              entity_identifier: example_object
+              object_id: example_object
               branch_name: branch
               file_path: /folder/file.json
               repo_name: example_repository
@@ -799,7 +793,7 @@ components:
       description: Git Experience related details of the Entity.
       x-examples:
         example-git:
-          entity_identifier: example_object
+          object_id: example_object
           branch_name: branch
           file_path: /folder/file.json
           repo_name: example_repository
@@ -807,7 +801,7 @@ components:
           file_url: www.repo/folder/file.com
           repo_url: www.repo.com
       properties:
-        entity_identifier:
+        object_id:
           type: string
           description: Entity identifier
         branch_name:
@@ -1145,6 +1139,10 @@ components:
       required: false
       schema:
         type: string
+        enum:
+          - slug
+          - name
+          - updated
       description: Parameter on the basis of which sorting is done.
     SearchTerm:
       name: search_term
@@ -1281,7 +1279,7 @@ components:
         uniqueItems: true
         items:
           type: string
-      description: Template Child Types for filtering
+      description: Child types describe the type of Step or stage
   requestBodies:
     TemplateUpdateBody:
       content:
@@ -1539,7 +1537,7 @@ components:
                 scope: org
                 version: 1234567890
                 git_details:
-                  entity_identifier: example_object
+                  object_id: example_object
                   branch_name: branch
                   file_path: /folder/file.json
                   repo_name: example_repository
@@ -1597,7 +1595,7 @@ components:
                 scope: org
                 version: 1234567890
                 git_details:
-                  entity_identifier: example_object
+                  object_id: example_object
                   branch_name: branch
                   file_path: /folder/file.json
                   repo_name: example_repository
@@ -1617,7 +1615,7 @@ components:
           examples:
             example-1:
               value:
-                template_response:
+                template:
                   account: example_account
                   org: example_organization
                   project: example_project
@@ -1659,7 +1657,7 @@ components:
                   scope: org
                   version: 1234567890
                   git_details:
-                    entity_identifier: example_object
+                    object_id: example_object
                     branch_name: branch
                     file_path: /folder/file.json
                     repo_name: example_repository
@@ -1670,14 +1668,14 @@ components:
                   store_type: INLINE
                   connector_ref: example_connector_ref
                   stable_template: true
-                template_input_yaml: example
+                inputs: example
         application/yaml:
           schema:
             $ref: '#/components/schemas/TemplateWithInputsResponse'
           examples:
             example-1:
               value: |
-                template_response:
+                template:
                   account: example_account
                   org: example_organization
                   project: example_project
@@ -1719,7 +1717,7 @@ components:
                   scope: org
                   version: 1234567890
                   git_details:
-                    entity_identifier: example_object
+                    object_id: example_object
                     branch_name: branch
                     file_path: /folder/file.json
                     repo_name: example_repository
@@ -1730,7 +1728,7 @@ components:
                   store_type: INLINE
                   connector_ref: example_connector_ref
                   stable_template: true
-                template_input_yaml: example
+                inputs: example
     TemplateMetaDataList:
       description: Template Lists Meta Data Response
       content:
@@ -1755,7 +1753,7 @@ components:
                   scope: org
                   version: 1234567890
                   git_details:
-                    entity_identifier: example_object
+                    object_id: example_object
                     branch_name: branch
                     file_path: /folder/file.json
                     repo_name: example_repository
@@ -1787,7 +1785,7 @@ components:
                   scope: org
                   version: 1234567890
                   git_details:
-                    entity_identifier: example_object
+                    object_id: example_object
                     branch_name: branch
                     file_path: /folder/file.json
                     repo_name: example_repository
