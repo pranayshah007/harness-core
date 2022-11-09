@@ -101,7 +101,8 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
       String accountId = AmbianceUtils.getAccountId(ambiance);
       String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
       String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(accountId, orgId, projectId, accessControlClient)) {
+      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
+              ngFeatureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
         return null;
       }
       List<FreezeSummaryResponseDTO> globalFreezeConfigs;

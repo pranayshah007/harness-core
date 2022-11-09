@@ -22,6 +22,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -82,6 +83,7 @@ import lombok.extern.slf4j.Slf4j;
 public class FreezeEvalutationResource {
   private final FreezeEvaluateService freezeEvaluateService;
   private final AccessControlClient accessControlClient;
+  private final NGFeatureFlagHelperService featureFlagHelperService;
 
   @GET
   @Path("/isGlobalFreezeActive")
@@ -122,7 +124,8 @@ public class FreezeEvalutationResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
-    if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(accountId, orgId, projectId, accessControlClient)) {
+    if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
+            featureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
       return ResponseDTO.newResponse(ShouldDisableDeploymentFreezeResponseDTO.builder()
                                          .shouldDisable(false)
                                          .freezeReferences(new LinkedList<>())

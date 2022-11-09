@@ -726,7 +726,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         String accountId = planCreationContextValue.getAccountIdentifier();
         String orgId = planCreationContextValue.getOrgIdentifier();
         String projectId = planCreationContextValue.getProjectIdentifier();
-        if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(accountId, orgId, projectId, accessControlClient)) {
+        if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
+                featureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
           return;
         }
         projectFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
