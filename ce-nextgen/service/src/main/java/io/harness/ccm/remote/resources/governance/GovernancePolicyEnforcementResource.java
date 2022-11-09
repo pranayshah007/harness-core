@@ -66,6 +66,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -228,10 +229,10 @@ public class GovernancePolicyEnforcementResource {
         log.info(new Gson().toJson(schedulerDTO));
         okhttp3.RequestBody body =
             okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), new Gson().toJson(schedulerDTO));
-        Response res = schedulerClient.createSchedule(body).execute();
+        Response res = schedulerClient.createOrUpdateJob(body).execute();
         log.info("code: {}, message: {}, body: {}", res.code(), res.message(), res.body());
       } catch (Exception e) {
-        log.info("{}", e.toString());
+        log.error("Error in creating/updating job in dkron", e);
       }
     }
     return ResponseDTO.newResponse(
@@ -263,8 +264,17 @@ public class GovernancePolicyEnforcementResource {
           required = true, description = "Unique identifier for the policy enforcement") @NotNull @Valid String uuid) {
     // rbacHelper.checkPolicyEnforcementDeletePermission(accountId, null, null);
 
-    // TODO: Delete the record from dkron as well.
-
+    if (configuration.getGovernanceConfig().isUseDkron()) {
+      log.info("Use dkron is enabled in config");
+      try {
+        String schedulerName = uuid.toLowerCase();
+        okhttp3.RequestBody body = okhttp3.RequestBody.create(null, new byte[0]);
+        Response res = schedulerClient.deleteJob(body, schedulerName).execute();
+        log.info("code: {}, message: {}, body: {}", res.code(), res.message(), res.body());
+      } catch (Exception e) {
+        log.error("Error in deleting job from dkron", e);
+      }
+    }
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_ENFORCEMENT_NAME, policyEnforcementService.listId(accountId, uuid, false).getName());
@@ -302,19 +312,32 @@ public class GovernancePolicyEnforcementResource {
     }
     PolicyEnforcement policyEnforcement = createPolicyEnforcementDTO.getPolicyEnforcement();
     policyEnforcement.setAccountId(accountId);
-    policyEnforcementService.listId(accountId, policyEnforcement.getUuid(), false);
+    PolicyEnforcement policyEnforcementFromMongo =
+        policyEnforcementService.listId(accountId, policyEnforcement.getUuid(), false);
     if (policyEnforcement.getPolicyIds() != null) {
       policyService.check(accountId, policyEnforcement.getPolicyIds());
     }
     if (policyEnforcement.getPolicyPackIDs() != null) {
       policyPackService.check(policyEnforcement.getPolicyPackIDs());
     }
-    // TODO: Update the record in dkron as well.
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(POLICY_ENFORCEMENT_NAME, policyEnforcement.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_POLICY_ENFORCEMENT_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    // Update dkron if enforcement is toggled
+    if (configuration.getGovernanceConfig().isUseDkron()
+        && !Objects.equals(policyEnforcementFromMongo.getIsEnabled(), policyEnforcement.getIsEnabled())) {
+      log.info("Use dkron is enabled in config.");
+      try {
+        String schedulerName = policyEnforcement.getUuid().toLowerCase();
+        okhttp3.RequestBody body = okhttp3.RequestBody.create(null, new byte[0]);
+        Response res = schedulerClient.toggleJob(body, schedulerName).execute();
+        log.info("code: {}, message: {}, body: {}", res.code(), res.message(), res.body());
+      } catch (Exception e) {
+        log.error("Error in toggle'ing job from dkron", e);
+      }
+    }
     return ResponseDTO.newResponse(
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
           outboxService.save(new PolicyEnforcementUpdateEvent(accountId, policyEnforcement));
