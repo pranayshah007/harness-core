@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.TemplateServiceTestBase;
-import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -46,7 +45,6 @@ public class TemplateMongoIndexesTest extends TemplateServiceTestBase {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  @HarnessAlwaysRun
   public void testConfirmAllIndexesInManager() throws IOException {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setObjectFactory(objectFactory);

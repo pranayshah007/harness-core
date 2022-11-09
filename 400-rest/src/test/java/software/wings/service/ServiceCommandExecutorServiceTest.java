@@ -41,6 +41,7 @@ import software.wings.WingsBaseTest;
 import software.wings.api.DeploymentType;
 import software.wings.beans.ExecutionCredential;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.command.AbstractCommandUnit;
 import software.wings.beans.command.CommandExecutionContext;
@@ -230,21 +231,22 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testDecryptCredentialsHostConnectionAttribute() {
-    CommandExecutionContext context = CommandExecutionContext.Builder.aCommandExecutionContext()
-                                          .appId(APP_ID)
-                                          .activityId(ACTIVITY_ID)
-                                          .runtimePath(RUNTIME_PATH)
-                                          .executionCredential(credential)
-                                          .serviceTemplateId(TEMPLATE_ID)
-                                          .host(host)
-                                          .deploymentType(DeploymentType.ECS.name())
-                                          .executeOnDelegate(true)
-                                          .inlineSshCommand(true)
-                                          .bastionConnectionAttributes(new SettingAttribute())
-                                          .winRmConnectionAttributes(WinRmConnectionAttributes.builder().build())
-                                          .cloudProviderSetting(new SettingAttribute())
-                                          .hostConnectionAttributes(new SettingAttribute())
-                                          .build();
+    CommandExecutionContext context =
+        CommandExecutionContext.Builder.aCommandExecutionContext()
+            .appId(APP_ID)
+            .activityId(ACTIVITY_ID)
+            .runtimePath(RUNTIME_PATH)
+            .executionCredential(credential)
+            .serviceTemplateId(TEMPLATE_ID)
+            .host(host)
+            .deploymentType(DeploymentType.ECS.name())
+            .executeOnDelegate(true)
+            .inlineSshCommand(true)
+            .bastionConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(new SettingAttribute()))
+            .winRmConnectionAttributes(WinRmConnectionAttributes.builder().build())
+            .cloudProviderSetting(SettingAttributeMapper.toSettingAttributeDTO(new SettingAttribute()))
+            .hostConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(new SettingAttribute()))
+            .build();
     Command nestedCommand =
         Command.builder().name("NESTED_CMD").commandUnits(new ArrayList<>(Arrays.asList(command))).build();
     when(commandUnitExecutorServiceMap.get(DeploymentType.ECS.name())).thenReturn(sshCommandUnitExecutorService);

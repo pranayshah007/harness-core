@@ -56,6 +56,7 @@ import software.wings.beans.NewRelicConfig;
 import software.wings.beans.PcfConfig;
 import software.wings.beans.PrometheusConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.SplunkConfig;
 import software.wings.beans.SumoConfig;
 import software.wings.beans.config.LogzConfig;
@@ -424,7 +425,9 @@ public class SettingsServiceHelperTest extends WingsBaseTest {
     GitConfig config = null;
     settingServiceHelper.resetTransientFields(config);
 
-    config = GitConfig.builder().sshSettingAttribute(new SettingAttribute()).build();
+    config = GitConfig.builder()
+                 .sshSettingAttribute(SettingAttributeMapper.toSettingAttributeDTO(new SettingAttribute()))
+                 .build();
     settingServiceHelper.resetTransientFields(config);
     assertThat(config.getSshSettingAttribute()).isNull();
   }

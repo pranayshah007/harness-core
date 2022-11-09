@@ -37,6 +37,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.cloudprovider.aws.AwsClusterService;
 import software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsSetupCommandHandler;
 import software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsSetupCommandTaskHelper;
@@ -84,11 +85,12 @@ public class EcsSetupCommandUnitTest extends WingsBaseTest {
           .withClusterName("cluster")
           .build();
   private SettingAttribute computeProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
-  private CommandExecutionContext context = aCommandExecutionContext()
-                                                .cloudProviderSetting(computeProvider)
-                                                .containerSetupParams(setupParams)
-                                                .cloudProviderCredentials(emptyList())
-                                                .build();
+  private CommandExecutionContext context =
+      aCommandExecutionContext()
+          .cloudProviderSetting(SettingAttributeMapper.toSettingAttributeDTO(computeProvider))
+          .containerSetupParams(setupParams)
+          .cloudProviderCredentials(emptyList())
+          .build();
   private TaskDefinition taskDefinition;
 
   /**
@@ -100,7 +102,8 @@ public class EcsSetupCommandUnitTest extends WingsBaseTest {
     taskDefinition.setFamily(TASK_FAMILY);
     taskDefinition.setRevision(TASK_REVISION);
 
-    when(awsClusterService.createTask(eq(Regions.US_EAST_1.getName()), any(SettingAttribute.class), any(),
+    when(awsClusterService.createTask(eq(Regions.US_EAST_1.getName()),
+             SettingAttributeMapper.toSettingAttributeDTO(any(SettingAttribute.class)), any(),
              any(RegisterTaskDefinitionRequest.class)))
         .thenReturn(taskDefinition);
   }
@@ -114,8 +117,9 @@ public class EcsSetupCommandUnitTest extends WingsBaseTest {
     ecsService.setCreatedAt(new Date());
 
     when(awsClusterService.createTask(anyString(), any(), anyList(), any())).thenReturn(new TaskDefinition());
-    when(awsClusterService.getServices(
-             Regions.US_EAST_1.getName(), computeProvider, Collections.emptyList(), WingsTestConstants.CLUSTER_NAME))
+    when(awsClusterService.getServices(Regions.US_EAST_1.getName(),
+             SettingAttributeMapper.toSettingAttributeDTO(computeProvider), Collections.emptyList(),
+             WingsTestConstants.CLUSTER_NAME))
         .thenReturn(Lists.newArrayList(ecsService));
     doReturn(List.of(new Service().withServiceName("servicenm")))
         .when(awsEcsHelperServiceDelegate)
@@ -124,10 +128,12 @@ public class EcsSetupCommandUnitTest extends WingsBaseTest {
     CommandExecutionStatus status = ecsSetupCommandUnit.execute(context);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(awsClusterService)
-        .createTask(eq(Regions.US_EAST_1.getName()), any(SettingAttribute.class), any(),
+        .createTask(eq(Regions.US_EAST_1.getName()),
+            SettingAttributeMapper.toSettingAttributeDTO(any(SettingAttribute.class)), any(),
             any(RegisterTaskDefinitionRequest.class));
     verify(awsClusterService)
-        .createService(
-            eq(Regions.US_EAST_1.getName()), any(SettingAttribute.class), any(), any(CreateServiceRequest.class));
+        .createService(eq(Regions.US_EAST_1.getName()),
+            SettingAttributeMapper.toSettingAttributeDTO(any(SettingAttribute.class)), any(),
+            any(CreateServiceRequest.class));
   }
 }

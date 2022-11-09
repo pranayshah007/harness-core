@@ -121,6 +121,7 @@ import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.PcfConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams;
@@ -491,14 +492,15 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     sshSettingAttribute.setValue(hostConnectionAttributes);
     when(accountDelegatesCache.get(accountId)).thenReturn(singletonList(delegate));
     when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
-    TerraformProvisionParameters parameters = TerraformProvisionParameters.builder()
-                                                  .sourceRepo(GitConfig.builder()
-                                                                  .repoUrl("https://github.com/testtp")
-                                                                  .sshSettingAttribute(sshSettingAttribute)
-                                                                  .build())
-                                                  .secretManagerConfig(null)
-                                                  .isGitHostConnectivityCheck(true)
-                                                  .build();
+    TerraformProvisionParameters parameters =
+        TerraformProvisionParameters.builder()
+            .sourceRepo(GitConfig.builder()
+                            .repoUrl("https://github.com/testtp")
+                            .sshSettingAttribute(SettingAttributeMapper.toSettingAttributeDTO(sshSettingAttribute))
+                            .build())
+            .secretManagerConfig(null)
+            .isGitHostConnectivityCheck(true)
+            .build();
     DelegateTask delegateTask = DelegateTask.builder()
                                     .accountId(accountId)
                                     .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, requireNonNull(APP_ID))

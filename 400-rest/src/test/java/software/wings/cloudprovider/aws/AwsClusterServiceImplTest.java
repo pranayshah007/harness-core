@@ -34,6 +34,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.command.ExecutionLogCallback;
 
 import com.amazonaws.regions.Regions;
@@ -72,26 +73,29 @@ public class AwsClusterServiceImplTest extends WingsBaseTest {
   @Owner(developers = ANUBHAW)
   @Category(UnitTests.class)
   public void shouldCreateCluster() {
-    awsClusterService.createCluster(
-        Regions.US_EAST_1.getName(), cloudProviderSetting, Collections.emptyList(), clusterConfiguration, null);
+    awsClusterService.createCluster(Regions.US_EAST_1.getName(),
+        SettingAttributeMapper.toSettingAttributeDTO(cloudProviderSetting), Collections.emptyList(),
+        clusterConfiguration, null);
 
     ImmutableMap<String, Object> params =
         ImmutableMap.of("autoScalingGroupName", AUTO_SCALING_GROUP_NAME, "clusterName", CLUSTER_NAME,
             "availabilityZones", asList("AZ1", "AZ2"), "vpcZoneIdentifiers", "VPC_ZONE_1, VPC_ZONE_2");
 
     verify(ecsContainerService)
-        .provisionNodes(Regions.US_EAST_1.getName(), cloudProviderSetting, Collections.emptyList(), 5,
-            LAUNCHER_TEMPLATE_NAME, params, null);
+        .provisionNodes(Regions.US_EAST_1.getName(), SettingAttributeMapper.toSettingAttributeDTO(cloudProviderSetting),
+            Collections.emptyList(), 5, LAUNCHER_TEMPLATE_NAME, params, null);
   }
 
   @Test
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
   public void shouldResizeCluster() {
-    awsClusterService.resizeCluster(Regions.US_EAST_1.getName(), cloudProviderSetting, Collections.emptyList(),
-        CLUSTER_NAME, SERVICE_NAME, 0, 5, 10, new ExecutionLogCallback(), false);
+    awsClusterService.resizeCluster(Regions.US_EAST_1.getName(),
+        SettingAttributeMapper.toSettingAttributeDTO(cloudProviderSetting), Collections.emptyList(), CLUSTER_NAME,
+        SERVICE_NAME, 0, 5, 10, new ExecutionLogCallback(), false);
     verify(ecsContainerService)
-        .provisionTasks(eq(Regions.US_EAST_1.getName()), eq(cloudProviderSetting), eq(Collections.emptyList()),
+        .provisionTasks(eq(Regions.US_EAST_1.getName()),
+            eq(SettingAttributeMapper.toSettingAttributeDTO(cloudProviderSetting)), eq(Collections.emptyList()),
             eq(CLUSTER_NAME), eq(SERVICE_NAME), eq(0), eq(5), eq(10), any(ExecutionLogCallback.class), eq(false));
   }
 
@@ -99,32 +103,35 @@ public class AwsClusterServiceImplTest extends WingsBaseTest {
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
   public void shouldDeleteService() {
-    awsClusterService.deleteService(
-        Regions.US_EAST_1.getName(), cloudProviderSetting, Collections.emptyList(), CLUSTER_NAME, SERVICE_NAME);
+    awsClusterService.deleteService(Regions.US_EAST_1.getName(),
+        SettingAttributeMapper.toSettingAttributeDTO(cloudProviderSetting), Collections.emptyList(), CLUSTER_NAME,
+        SERVICE_NAME);
     verify(ecsContainerService)
-        .deleteService(
-            Regions.US_EAST_1.getName(), cloudProviderSetting, Collections.emptyList(), CLUSTER_NAME, SERVICE_NAME);
+        .deleteService(Regions.US_EAST_1.getName(), SettingAttributeMapper.toSettingAttributeDTO(cloudProviderSetting),
+            Collections.emptyList(), CLUSTER_NAME, SERVICE_NAME);
   }
 
   @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
   public void testGetService() {
-    awsClusterService.getService(
-        Regions.US_EAST_1.getName(), cloudProviderSetting, Collections.emptyList(), CLUSTER_NAME, SERVICE_NAME);
+    awsClusterService.getService(Regions.US_EAST_1.getName(),
+        SettingAttributeMapper.toSettingAttributeDTO(cloudProviderSetting), Collections.emptyList(), CLUSTER_NAME,
+        SERVICE_NAME);
     verify(ecsContainerService)
-        .getService(
-            Regions.US_EAST_1.getName(), cloudProviderSetting, Collections.emptyList(), CLUSTER_NAME, SERVICE_NAME);
+        .getService(Regions.US_EAST_1.getName(), SettingAttributeMapper.toSettingAttributeDTO(cloudProviderSetting),
+            Collections.emptyList(), CLUSTER_NAME, SERVICE_NAME);
   }
 
   @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
   public void testGetServices() {
-    awsClusterService.getServices(
-        Regions.US_EAST_1.getName(), cloudProviderSetting, Collections.emptyList(), CLUSTER_NAME, SERVICE_NAME_PREFIX);
+    awsClusterService.getServices(Regions.US_EAST_1.getName(),
+        SettingAttributeMapper.toSettingAttributeDTO(cloudProviderSetting), Collections.emptyList(), CLUSTER_NAME,
+        SERVICE_NAME_PREFIX);
     verify(ecsContainerService)
-        .getServices(Regions.US_EAST_1.getName(), cloudProviderSetting, Collections.emptyList(), CLUSTER_NAME,
-            SERVICE_NAME_PREFIX);
+        .getServices(Regions.US_EAST_1.getName(), SettingAttributeMapper.toSettingAttributeDTO(cloudProviderSetting),
+            Collections.emptyList(), CLUSTER_NAME, SERVICE_NAME_PREFIX);
   }
 }

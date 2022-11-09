@@ -56,6 +56,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.command.CommandUnit;
@@ -164,7 +165,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
 
     winRMCommandUnitExecutorService.execute(EXEC_COMMAND_UNIT,
         commandExecutionContextBuider.but()
-            .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+            .hostConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(HOST_CONN_ATTR_PWD))
             .winRmConnectionAttributes(winRmConnectionAttributes)
             .build());
 
@@ -208,7 +209,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
 
     winRMCommandUnitExecutorService.execute(EXEC_COMMAND_UNIT,
         commandExecutionContextBuider.but()
-            .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+            .hostConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(HOST_CONN_ATTR_PWD))
             .winRmConnectionAttributes(winRmConnectionAttributes)
             .build());
 
@@ -247,11 +248,12 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .useNoProfile(false)
                                                 .timeout(0)
                                                 .build();
-    CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
-                                                          .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
-                                                          .winRmConnectionAttributes(winRmConnectionAttributes)
-                                                          .build();
+    CommandExecutionContext commandExecutionContext =
+        commandExecutionContextBuider.but()
+            .timeout(0)
+            .hostConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(HOST_CONN_ATTR_PWD))
+            .winRmConnectionAttributes(winRmConnectionAttributes)
+            .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
 
     when(commandUnit.execute(any()))
@@ -320,11 +322,12 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .useNoProfile(false)
                                                 .timeout(0)
                                                 .build();
-    CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
-                                                          .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
-                                                          .winRmConnectionAttributes(winRmConnectionAttributes)
-                                                          .build();
+    CommandExecutionContext commandExecutionContext =
+        commandExecutionContextBuider.but()
+            .timeout(0)
+            .hostConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(HOST_CONN_ATTR_PWD))
+            .winRmConnectionAttributes(winRmConnectionAttributes)
+            .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
 
     when(commandUnit.execute(any()))
@@ -370,11 +373,12 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .useNoProfile(false)
                                                 .timeout(0)
                                                 .build();
-    CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
-                                                          .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
-                                                          .winRmConnectionAttributes(winRmConnectionAttributes)
-                                                          .build();
+    CommandExecutionContext commandExecutionContext =
+        commandExecutionContextBuider.but()
+            .timeout(0)
+            .hostConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(HOST_CONN_ATTR_PWD))
+            .winRmConnectionAttributes(winRmConnectionAttributes)
+            .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
 
     when(commandUnit.execute(any())).thenThrow(new NullPointerException("Test Exception"));
@@ -419,11 +423,12 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .useNoProfile(false)
                                                 .timeout(10)
                                                 .build();
-    CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
-                                                          .timeout(10)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
-                                                          .winRmConnectionAttributes(winRmConnectionAttributes)
-                                                          .build();
+    CommandExecutionContext commandExecutionContext =
+        commandExecutionContextBuider.but()
+            .timeout(10)
+            .hostConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(HOST_CONN_ATTR_PWD))
+            .winRmConnectionAttributes(winRmConnectionAttributes)
+            .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
 
     when(commandUnit.execute(any())).thenThrow(new UncheckedTimeoutException());
@@ -485,11 +490,12 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .useNoProfile(false)
                                                 .timeout(0)
                                                 .build();
-    CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
-                                                          .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
-                                                          .winRmConnectionAttributes(winRmConnectionAttributes)
-                                                          .build();
+    CommandExecutionContext commandExecutionContext =
+        commandExecutionContextBuider.but()
+            .timeout(0)
+            .hostConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(HOST_CONN_ATTR_PWD))
+            .winRmConnectionAttributes(winRmConnectionAttributes)
+            .build();
 
     final String errorMessage = "The directory name is invalid.";
 
@@ -554,11 +560,12 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .useNoProfile(false)
                                                 .timeout(0)
                                                 .build();
-    CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
-                                                          .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
-                                                          .winRmConnectionAttributes(winRmConnectionAttributes)
-                                                          .build();
+    CommandExecutionContext commandExecutionContext =
+        commandExecutionContextBuider.but()
+            .timeout(0)
+            .hostConnectionAttributes(SettingAttributeMapper.toSettingAttributeDTO(HOST_CONN_ATTR_PWD))
+            .winRmConnectionAttributes(winRmConnectionAttributes)
+            .build();
 
     final String errorMessage = "Network unreachable";
 

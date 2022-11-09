@@ -51,6 +51,7 @@ import io.harness.rule.Owner;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
@@ -261,7 +262,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
             .artifactStreamType(ArtifactStreamType.AMAZON_S3.name())
             .metadataOnly(true)
             .metadata(mockMetadata(ArtifactStreamType.AMAZON_S3))
-            .serverSetting(awsSetting)
+            .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(awsSetting))
             .artifactServerEncryptedDataDetails(Collections.emptyList())
             .build();
 
@@ -310,7 +311,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
             .artifactStreamType(ArtifactStreamType.ARTIFACTORY.name())
             .metadataOnly(true)
             .metadata(mockMetadata(ArtifactStreamType.ARTIFACTORY))
-            .serverSetting(awsSetting)
+            .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(awsSetting))
             .artifactServerEncryptedDataDetails(Collections.emptyList())
             .build();
 
@@ -369,7 +370,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
             .artifactStreamType(ArtifactStreamType.AMAZON_S3.name())
             .metadataOnly(true)
             .metadata(mockMetadata(ArtifactStreamType.AMAZON_S3))
-            .serverSetting(awsSetting)
+            .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(awsSetting))
             .artifactServerEncryptedDataDetails(Collections.emptyList())
             .build();
 
@@ -426,7 +427,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
             .artifactStreamType(ArtifactStreamType.ARTIFACTORY.name())
             .metadataOnly(true)
             .metadata(mockMetadata(ArtifactStreamType.ARTIFACTORY))
-            .serverSetting(awsSetting)
+            .serverSetting(SettingAttributeMapper.toSettingAttributeDTO(awsSetting))
             .artifactServerEncryptedDataDetails(Collections.emptyList())
             .build();
 

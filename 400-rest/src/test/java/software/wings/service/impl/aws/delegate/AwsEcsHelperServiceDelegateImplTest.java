@@ -29,6 +29,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttributeMapper;
 import software.wings.cloudprovider.aws.AwsClusterServiceImpl;
 import software.wings.cloudprovider.aws.EcsContainerServiceImpl;
 import software.wings.service.impl.AwsHelperService;
@@ -113,7 +114,8 @@ public class AwsEcsHelperServiceDelegateImplTest extends WingsBaseTest {
         .getService(anyString(), any(), anyList(), anyString(), eq("test-service"));
     doNothing().when(mockTracker).trackECSCall(anyString());
     boolean serviceExists = awsEcsHelperServiceDelegate.serviceExists(
-        SettingAttribute.Builder.aSettingAttribute().build(), emptyList(), "us-east-1", "cluster", "test-service");
+        SettingAttributeMapper.toSettingAttributeDTO(SettingAttribute.Builder.aSettingAttribute().build()), emptyList(),
+        "us-east-1", "cluster", "test-service");
     assertThat(serviceExists).isTrue();
   }
 }
