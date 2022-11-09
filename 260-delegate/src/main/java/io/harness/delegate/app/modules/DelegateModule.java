@@ -1941,15 +1941,17 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_RUN_TASK_NG).toInstance(EcsGitFetchRunTask.class);
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
 
-    //Elastigroup NG
-    mapBinder.addBinding(TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG).toInstance(ElastigroupStartupScriptFetchRunTask.class);
-    mapBinder.addBinding(TaskType.ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG).toInstance(ElastigroupParametersFetchTask.class);
+    // Elastigroup NG
+    mapBinder.addBinding(TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG)
+        .toInstance(ElastigroupStartupScriptFetchRunTask.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG)
+        .toInstance(ElastigroupParametersFetchTask.class);
     MapBinder<String, ElastigroupCommandTaskNGHandler> elastigroupCommandTaskNGHandlerMapBinder =
-              MapBinder.newMapBinder(binder(), String.class, ElastigroupCommandTaskNGHandler.class);
+        MapBinder.newMapBinder(binder(), String.class, ElastigroupCommandTaskNGHandler.class);
     elastigroupCommandTaskNGHandlerMapBinder.addBinding(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP.name())
-              .to(ElastigroupSetupCommandTaskHandler.class);
+        .to(ElastigroupSetupCommandTaskHandler.class);
 
-      mapBinder.addBinding(TaskType.ELASTIGROUP_COMMAND_TASK_NG).toInstance(ElastigroupCommandTaskNG.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_COMMAND_TASK_NG).toInstance(ElastigroupCommandTaskNG.class);
 
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);

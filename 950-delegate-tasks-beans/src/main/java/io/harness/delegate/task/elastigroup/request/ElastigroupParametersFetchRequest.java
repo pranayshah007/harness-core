@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.elastigroup.request;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -16,20 +18,18 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionReflectionUtils;
-import lombok.Builder;
-import lombok.Value;
-import lombok.experimental.NonFinal;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static io.harness.expression.Expression.ALLOW_SECRETS;
+import lombok.Builder;
+import lombok.Value;
+import lombok.experimental.NonFinal;
 
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupParametersFetchRequest implements ActivityAccess, TaskParameters, ExecutionCapabilityDemander,
-                                           ExpressionReflectionUtils.NestedAnnotationResolver {
+                                                          ExpressionReflectionUtils.NestedAnnotationResolver {
   String executionLogName;
   String activityId;
   String accountId;
