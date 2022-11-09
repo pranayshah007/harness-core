@@ -28,7 +28,8 @@ public class UtilizationQuery {
   @GraphQLQuery(name = "utilData", description = "Fetches the cpu and memory utilization data for ec2 instance")
   public List<EC2InstanceUtilizationData> utilData(
       @GraphQLArgument(name = "instanceId") String instanceId, @GraphQLEnvironment final ResolutionEnvironment env) {
-    final String accountId = graphQLUtils.getAccountIdentifier(env);
+    final String accountId = "JQ3KKI5yRTGe37OrCiZaTA";
+    //            graphQLUtils.getAccountIdentifier(env);
     return ec2InstanceUtilizationService.getEC2InstanceUtilizationData(accountId, instanceId);
   }
 }
