@@ -46,7 +46,8 @@ public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService 
     List<CCMFilter> filters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
     Condition condition = anomalyQueryBuilder.applyPerspectiveRuleFilters(filters);
     List<Anomalies> anomalies = anomalyDao.fetchAnomaliesForNotification(accountIdentifier, condition,
-        anomalyQueryBuilder.getOrderByFields(Collections.emptyList()), DEFAULT_OFFSET, DEFAULT_LIMIT, date.truncatedTo(ChronoUnit.DAYS));
+        anomalyQueryBuilder.getOrderByFields(Collections.emptyList()), DEFAULT_OFFSET, DEFAULT_LIMIT,
+        date.truncatedTo(ChronoUnit.DAYS));
     List<AnomalyData> anomalyData = new ArrayList<>();
     anomalies.forEach(anomaly -> anomalyData.add(AnomalyUtils.buildAnomalyData(anomaly)));
     return anomalyData;
