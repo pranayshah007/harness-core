@@ -17,6 +17,7 @@ import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRespons
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.RegionGar;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -32,6 +33,7 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -53,6 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GARArtifactResource {
   private final GARResourceService gARResourceService;
+  private ArtifactResourceUtils artifactResourceUtils;
 
   @GET
   @Path("getBuildDetails")
@@ -71,6 +74,30 @@ public class GARArtifactResource {
         connectorRef, region, repositoryName, project, pkg, version, versionRegex, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
   }
+
+  @POST
+  @Path("v2/getBuildDetails")
+  @ApiOperation(
+      value = "Gets google artifact registry build details v2", nickname = "getBuildDetailsForGoogleArtifactRegistryV2")
+  public ResponseDTO<GARResponseDTO>
+  getBuildDetailsV2(@QueryParam("connectorRef") String gcpConnectorIdentifier, @QueryParam("region") String region,
+      @QueryParam("repositoryName") String repositoryName, @QueryParam("project") String project,
+      @QueryParam("package") String pkg, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam("version") String version, @QueryParam("versionRegex") String versionRegex,
+      @NotNull @QueryParam("fqnPath") String fqnPath, @NotNull String runtimeInputYaml,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    // In case of ServiceV2 Calls
+
+    GARResponseDTO buildDetails = artifactResourceUtils.getBuildDetailsV2GAR(gcpConnectorIdentifier, region,
+        repositoryName, project, pkg, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, version,
+        versionRegex, fqnPath, runtimeInputYaml, serviceRef, gitEntityBasicInfo);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
   @GET
   @Path("getRegions")
   @ApiOperation(value = "Gets google artifact registry regions", nickname = "getRegionsForGoogleArtifactRegistry")
