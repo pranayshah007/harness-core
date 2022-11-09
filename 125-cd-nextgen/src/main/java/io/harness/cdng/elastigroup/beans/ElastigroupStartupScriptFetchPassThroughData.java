@@ -14,15 +14,10 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
-import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
-@OwnedBy(HarnessTeam.CDP)
-@Value
-@Builder
-@TypeAlias("ecsGitFetchPassThroughData")
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
