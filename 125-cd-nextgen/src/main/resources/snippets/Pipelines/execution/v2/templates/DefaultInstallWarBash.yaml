@@ -41,9 +41,9 @@ template:
 
                   # Creating runtime, backup and staging folders:
 
-                  mkdir -p $DestinationDirectory/runtime
-                  mkdir -p $DestinationDirectory/backup
-                  mkdir -p $DestinationDirectory/staging
+                  mkdir -p "$DestinationDirectory/runtime"
+                  mkdir -p "$DestinationDirectory/backup"
+                  mkdir -p "$DestinationDirectory/staging"
         - identifier: Copy_Artifact
           name: Copy Artifact
           type: Copy
