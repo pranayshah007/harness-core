@@ -80,7 +80,7 @@ public class ElastigroupCommandTaskNGHelper {
   @Inject private SecretDecryptionService secretDecryptionService;
 
   public String generateFinalJson(ElastigroupSetupCommandRequest elastigroupSetupCommandRequest, String newElastiGroupName) {
-    Map<String, Object> jsonConfigMap = getJsonConfigMapFromElastigroupJson(elastigroupSetupCommandRequest.getElastiGroupJson());
+    Map<String, Object> jsonConfigMap = getJsonConfigMapFromElastigroupJson(elastigroupSetupCommandRequest.getElastigroupJson());
     Map<String, Object> elastiGroupConfigMap = (Map<String, Object>) jsonConfigMap.get(GROUP_CONFIG_ELEMENT);
 
     removeUnsupportedFieldsForCreatingNewGroup(elastiGroupConfigMap);

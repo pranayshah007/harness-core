@@ -93,8 +93,6 @@ public class ElastigroupStepUtils extends CDStepHelper {
     return getFileContents(ngAccess, scopedFilePathList, "startupScript", logCallback);
   }
 
-  private LocalStoreFetchFilesResult getFileContents(
-      NGAccess ngAccess, List<String> scopedFilePathList, String manifestType, LogCallback logCallback) {
   private LocalStoreFetchFilesResult getFileContentsForElastigroupJson(
           ElastigroupConfigurationOutput elastigroupConfigurationOutput, NGAccess ngAccess, LogCallback logCallback) {
     HarnessStore localStoreConfig = (HarnessStore) elastigroupConfigurationOutput.getStoreConfig();
