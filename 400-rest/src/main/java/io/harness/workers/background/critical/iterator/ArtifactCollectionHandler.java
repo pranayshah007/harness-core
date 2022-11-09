@@ -36,7 +36,6 @@ import software.wings.beans.Account;
 import software.wings.beans.Permit;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStream.ArtifactStreamKeys;
-import software.wings.beans.artifact.ArtifactStreamCollectionStatus;
 import software.wings.delegatetasks.buildsource.ArtifactStreamLogContext;
 import software.wings.service.impl.PermitServiceImpl;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
