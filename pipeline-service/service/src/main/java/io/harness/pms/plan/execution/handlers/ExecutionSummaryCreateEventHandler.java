@@ -163,6 +163,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .projectIdentifier(projectId)
             .orgIdentifier(orgId)
             .executionTriggerInfo(metadata.getTriggerInfo())
+            .parentStageInfo(ambiance.getMetadata().getPipelineStageInfo())
             .entityGitDetails(pmsGitSyncHelper.getEntityGitDetailsFromBytes(metadata.getGitSyncBranchContext()))
             .tags(pipelineEntity.get().getTags())
             .modules(new ArrayList<>(modules))

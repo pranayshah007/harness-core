@@ -8,6 +8,7 @@
 package io.harness.pms.ngpipeline.inputset.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAMARTH;
@@ -77,6 +78,7 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Assertions;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -773,5 +775,46 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     assertThat(pmsInputSetServiceMock.getRepoUrlAndCheckForFileUniqueness(
                    ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, true))
         .isEqualTo(repoUrl);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testImportInputSetsValidationChecks() {
+    String importedInputSetYaml = "inputSet:\n"
+        + "  identifier: \"inputSet2\"\n"
+        + "  pipeline:\n"
+        + "    identifier: \"asdfasdfsadfadsfsaf\"\n"
+        + "    stages:\n"
+        + "    - stage:\n"
+        + "        identifier: \"asdfasdf\"\n"
+        + "        type: \"Approval\"\n"
+        + "        spec:\n"
+        + "          execution:\n"
+        + "            steps:\n"
+        + "            - step:\n"
+        + "                identifier: \"sdfasdfasfda\"\n"
+        + "                type: \"HarnessApproval\"\n"
+        + "                spec:\n"
+        + "                  approvers:\n"
+        + "                    minimumCount: 1\n"
+        + "                    userGroups:\n"
+        + "                    - \"account.ug3\"\n"
+        + "  name: \"inputSet2\"\n"
+        + "  orgIdentifier: \"default\"\n"
+        + "  projectIdentifier: \"GitX_Remote\"\n";
+    String orgIdentifier = "default";
+    String projectIdentifier = "GitX_Remote";
+    String pipelineIdentifier = "asdfasdfsadfadsfsaf";
+    String inputSetIdentifier = "inputSet2";
+    InputSetImportRequestDTO requestDTO = InputSetImportRequestDTO.builder()
+                                              .inputSetName("inputSet2")
+                                              .inputSetDescription("junk value description")
+                                              .build();
+
+    Assertions.assertDoesNotThrow(
+        ()
+            -> pmsInputSetServiceMock.checkAndThrowMismatchInImportedInputSetMetadata(orgIdentifier, projectIdentifier,
+                pipelineIdentifier, inputSetIdentifier, requestDTO, importedInputSetYaml));
   }
 }

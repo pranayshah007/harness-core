@@ -188,7 +188,7 @@ public class NGFreezeDtoMapper {
 
   private FreezeConfigEntity toFreezeConfigEntityResponse(String accountId, FreezeConfig freezeConfig,
       String freezeConfigYaml, FreezeType type, String orgId, String projectId) {
-    validateFreezeYaml(freezeConfig, orgId, projectId);
+    validateFreezeYaml(freezeConfig, orgId, projectId, type);
     String description = null;
     if (freezeConfig.getFreezeInfoConfig().getDescription() != null) {
       description = (String) freezeConfig.getFreezeInfoConfig().getDescription().fetchFinalValue();
@@ -231,7 +231,7 @@ public class NGFreezeDtoMapper {
     }
   }
 
-  public static void validateFreezeYaml(FreezeConfig freezeConfig, String orgId, String projectId) {
+  public static void validateFreezeYaml(FreezeConfig freezeConfig, String orgId, String projectId, FreezeType type) {
     if (freezeConfig.getFreezeInfoConfig() == null) {
       throw new InvalidRequestException("FreezeInfoConfig cannot be empty");
     }
@@ -239,8 +239,7 @@ public class NGFreezeDtoMapper {
 
     List<FreezeEntityRule> rules = freezeInfoConfig.getRules();
     List<FreezeWindow> windows = freezeInfoConfig.getWindows();
-    if (FreezeType.MANUAL.equals(freezeInfoConfig.getStatus())
-        && (EmptyPredicate.isEmpty(rules) || EmptyPredicate.isEmpty(windows))) {
+    if (FreezeType.MANUAL.equals(type) && (EmptyPredicate.isEmpty(rules) || EmptyPredicate.isEmpty(windows))) {
       throw new InvalidRequestException("Freeze Windows and Rules are required.");
     }
 

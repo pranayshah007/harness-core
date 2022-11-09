@@ -1,0 +1,34 @@
+inputSet:
+  name: inputSet1
+  tags: {}
+  identifier: inputSet1
+  orgIdentifier: default
+  projectIdentifier: TcSvcOverrideTest
+  pipeline:
+    identifier: parallelserial
+    stages:
+      - parallel:
+          - stage:
+              identifier: s1
+              type: Deployment
+              spec:
+                environment:
+                  environmentRef: Env
+                  infrastructureDefinitions:
+                    - identifier: Infra
+          - stage:
+              identifier: s2
+              type: Deployment
+              spec:
+                environment:
+                  environmentRef: Env
+                  infrastructureDefinitions:
+                    - identifier: Infra
+      - stage:
+          identifier: s3
+          type: Deployment
+          spec:
+            environment:
+              environmentRef: Env
+              infrastructureDefinitions:
+                - identifier: Infra

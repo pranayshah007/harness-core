@@ -381,6 +381,8 @@ cfClientConfig:
   configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
   eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
   analyticsEnabled: true
+  streamEnabled: true
+  sseReadTimeout: 5
   connectionTimeout: 10000
   readTimeout: 45000
   bufferSize: 10240

@@ -13,6 +13,7 @@ import static io.harness.beans.FeatureName.PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.encryption.SecretRefParsedData.SECRET_REFERENCE_DATA_ROOT_PREFIX;
 import static io.harness.encryption.SecretRefParsedData.SECRET_REFERENCE_EXPRESSION_DELIMITER;
 import static io.harness.eraro.ErrorCode.ENCRYPT_DECRYPT_ERROR;
@@ -403,6 +404,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .identifier(secretIdentifier)
+        .id(generateUuid())
         .name(secretIdentifier)
         .type(SettingVariableTypes.SECRET_TEXT)
         .path(secretRefParsedData.getRelativePath())

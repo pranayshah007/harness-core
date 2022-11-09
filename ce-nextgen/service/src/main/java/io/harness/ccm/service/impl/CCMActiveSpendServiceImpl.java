@@ -47,7 +47,7 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
     return CostOverviewDTO.builder()
         .statsLabel(ACTIVE_SPEND_LABEL)
         .statsTrend(trend)
-        .statsValue(String.format(SPEND_VALUE, activeSpend))
+        .statsValue(String.format(SPEND_VALUE, viewsQueryHelper.formatNumber(activeSpend)))
         .value(activeSpend)
         .build();
   }
@@ -65,7 +65,7 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
     double forecastedSpend = getRoundedDoubleValue((currentSpend * forecastPeriod) / spendPeriod);
     return CostOverviewDTO.builder()
         .statsLabel(FORECASTED_SPEND_LABEL)
-        .statsValue(String.format(SPEND_VALUE, forecastedSpend))
+        .statsValue(String.format(SPEND_VALUE, viewsQueryHelper.formatNumber(forecastedSpend)))
         .value(forecastedSpend)
         .build();
   }

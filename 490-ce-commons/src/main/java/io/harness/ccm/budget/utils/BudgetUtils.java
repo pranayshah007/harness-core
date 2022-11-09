@@ -52,6 +52,7 @@ public class BudgetUtils {
       "Error in create budget operation. Start time of budget is invalid.";
   public static final String INVALID_PERSPECTIVE_ID_EXCEPTION = "Invalid perspective id";
   public static final String INVALID_BUDGET_ID_EXCEPTION = "Invalid budget id";
+  public static final String MISSING_BUDGET_DATA_EXCEPTION = "Missing Budget data exception";
   private static final String UNDEFINED_BUDGET = "undefined";
   public static final String UNDEFINED_PERSPECTIVE = "undefined";
   private static final String DEFAULT_TIMEZONE = "GMT";
@@ -59,7 +60,7 @@ public class BudgetUtils {
   public static final String DEFAULT_TIME_UNIT = "days";
   public static final String DEFAULT_TIME_SCOPE = "monthly";
   public static final long OBSERVATION_PERIOD = 29 * ONE_DAY_MILLIS;
-  public static final long MONTHS = 12;
+  public static final int MONTHS = 12;
 
   public static void validateBudget(Budget budget, List<Budget> existingBudgets) {
     populateDefaultBudgetBreakdown(budget);
