@@ -2204,16 +2204,21 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     String appId = userDataSpecification.getAppId();
     String accountId = appService.getAccountIdByAppId(appId);
     userDataSpecification.setAccountId(accountId);
+    Service service = getWithDetails(appId, userDataSpecification.getServiceId());
 
-    UserDataSpecification persistedUserDataSpec =
-        wingsPersistence.saveAndGet(UserDataSpecification.class, userDataSpecification);
-    Service service = getWithDetails(appId, persistedUserDataSpec.getServiceId());
+    if (DeploymentType.AZURE_WEBAPP.equals(service.getDeploymentType()) && isEmpty(userDataSpecification.getData())) {
+      wingsPersistence.delete(userDataSpecification);
+      return userDataSpecification;
+    } else {
+      UserDataSpecification persistedUserDataSpec =
+          wingsPersistence.saveAndGet(UserDataSpecification.class, userDataSpecification);
+      service = getWithDetails(appId, persistedUserDataSpec.getServiceId());
 
-    Type type = isCreate ? Type.CREATE : Type.UPDATE;
-    yamlPushService.pushYamlChangeSet(
-        accountId, service, persistedUserDataSpec, type, userDataSpecification.isSyncFromGit());
-
-    return persistedUserDataSpec;
+      Type type = isCreate ? Type.CREATE : Type.UPDATE;
+      yamlPushService.pushYamlChangeSet(
+          accountId, service, persistedUserDataSpec, type, userDataSpecification.isSyncFromGit());
+      return persistedUserDataSpec;
+    }
   }
 
   @Override
