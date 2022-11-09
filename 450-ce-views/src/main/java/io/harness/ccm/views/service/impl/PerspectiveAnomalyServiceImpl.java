@@ -43,44 +43,17 @@ public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService 
   public List<AnomalyData> listPerspectiveAnomaliesForDate(
       @NonNull String accountIdentifier, @NonNull String perspectiveId, Instant date) {
     CEView perspective = viewService.get(perspectiveId);
-    CCMFilter filters =
-        perspectiveToAnomalyQueryHelper.getConvertedFiltersForPerspective(perspective, getDefaultPerspectiveQuery());
-    return listAnomalies(accountIdentifier,
-        AnomalyQueryDTO.builder()
-            .filter(filters)
-            .orderBy(Collections.emptyList())
-            .limit(DEFAULT_LIMIT)
-            .offset(DEFAULT_OFFSET)
-            .build(),
-        date);
-  }
-
-  @Override
-  public void updateAnomalySentStatus(@NonNull String accountId, String anomalyId, boolean notificationSentStatus) {
-    anomalyDao.updateAnomalyNotificationSentStatus(accountId, anomalyId, notificationSentStatus);
-  }
-
-  private List<AnomalyData> listAnomalies(
-      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, Instant date) {
-    if (anomalyQuery == null) {
-      anomalyQuery = AnomalyUtils.getDefaultAnomalyQuery();
-    }
-    Condition condition = anomalyQuery.getFilter() != null
-        ? anomalyQueryBuilder.applyAllFilters(anomalyQuery.getFilter())
-        : DSL.noCondition();
-
+    List<CCMFilter> filters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
+    Condition condition = anomalyQueryBuilder.applyPerspectiveRuleFilters(filters);
     List<Anomalies> anomalies = anomalyDao.fetchAnomaliesForNotification(accountIdentifier, condition,
-        anomalyQueryBuilder.getOrderByFields(
-            anomalyQuery.getOrderBy() != null ? anomalyQuery.getOrderBy() : Collections.emptyList()),
-        anomalyQuery.getOffset() != null ? anomalyQuery.getOffset() : DEFAULT_OFFSET,
-        anomalyQuery.getLimit() != null ? anomalyQuery.getLimit() : DEFAULT_LIMIT, date.truncatedTo(ChronoUnit.DAYS));
-
+        anomalyQueryBuilder.getOrderByFields(Collections.emptyList()), DEFAULT_OFFSET, DEFAULT_LIMIT, date.truncatedTo(ChronoUnit.DAYS));
     List<AnomalyData> anomalyData = new ArrayList<>();
     anomalies.forEach(anomaly -> anomalyData.add(AnomalyUtils.buildAnomalyData(anomaly)));
     return anomalyData;
   }
 
-  private PerspectiveQueryDTO getDefaultPerspectiveQuery() {
-    return PerspectiveQueryDTO.builder().filters(null).groupBy(null).build();
+  @Override
+  public void updateAnomalySentStatus(@NonNull String accountId, String anomalyId, boolean notificationSentStatus) {
+    anomalyDao.updateAnomalyNotificationSentStatus(accountId, anomalyId, notificationSentStatus);
   }
 }
