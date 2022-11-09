@@ -41,7 +41,6 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -53,8 +52,6 @@ import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
-import software.wings.sm.ExecutionContext;
-import software.wings.sm.states.spotinst.SpotInstServiceSetup;
 import software.wings.utils.ServiceVersionConvention;
 
 import com.google.inject.Inject;
@@ -221,7 +218,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     }
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME,
-        elastigroupSetupDataOutcome, StepOutcomeGroup.STEP.name());
+        elastigroupSetupDataOutcome, StepCategory.STAGE.name());
 
     return stepResponseBuilder.status(Status.SUCCEEDED).build();
   }
