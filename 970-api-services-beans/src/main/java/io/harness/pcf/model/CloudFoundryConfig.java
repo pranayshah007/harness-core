@@ -15,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(CDP)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class PcfConfig {
+public class CloudFoundryConfig {
   String endpointUrl;
   char[] userName;
   char[] passwordRef;

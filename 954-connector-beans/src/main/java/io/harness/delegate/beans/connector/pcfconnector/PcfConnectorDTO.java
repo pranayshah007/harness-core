@@ -1,7 +1,6 @@
 package io.harness.delegate.beans.connector.pcfconnector;
 
-import static io.harness.ConnectorConstants.INHERIT_FROM_DELEGATE_TYPE_ERROR_MSG;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -44,5 +43,10 @@ public class PcfConnectorDTO extends ConnectorConfigDTO implements DelegateSelec
   }
 
   @Override
-  public void validate() {}
+  public void validate() {
+    PcfManualDetailsDTO pcfManualDetailsDTO = (PcfManualDetailsDTO) credential.getSpec();
+    if (isNull(pcfManualDetailsDTO.getUsername()) && isNull(pcfManualDetailsDTO.getUsernameRef())) {
+      throw new InvalidRequestException("Username Can not be null for pcf Connector");
+    }
+  }
 }
