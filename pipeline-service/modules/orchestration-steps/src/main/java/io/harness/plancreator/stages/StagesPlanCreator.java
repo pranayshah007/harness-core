@@ -40,7 +40,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(onConstructor = @__({ @Inject }))
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
   @Inject KryoSerializer kryoSerializer;
 
