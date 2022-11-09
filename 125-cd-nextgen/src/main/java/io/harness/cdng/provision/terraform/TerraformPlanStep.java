@@ -142,9 +142,7 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
         .varFileInfos(helper.toTerraformVarFileInfo(configuration.getVarFiles(), ambiance))
         .backendConfig(helper.getBackendConfig(configuration.getBackendConfig()))
         .targets(ParameterFieldHelper.getParameterFieldValue(configuration.getTargets()))
-        .saveTerraformStateJson(
-            featureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.EXPORT_TF_PLAN_JSON_NG)
-            && !ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue())
+        .saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue())
         .environmentVariables(helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()) == null
                 ? new HashMap<>()
                 : helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()))
@@ -217,9 +215,7 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
 
       ParameterField<Boolean> exportTfPlanJsonField =
           planStepParameters.getConfiguration().getExportTerraformPlanJson();
-      boolean exportTfPlanJson =
-          featureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.EXPORT_TF_PLAN_JSON_NG)
-          && !ParameterField.isNull(exportTfPlanJsonField)
+      boolean exportTfPlanJson = !ParameterField.isNull(exportTfPlanJsonField)
           && ParameterFieldHelper.getBooleanParameterFieldValue(exportTfPlanJsonField);
       if (exportTfPlanJson) {
         String planJsonOutputName =

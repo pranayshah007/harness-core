@@ -681,8 +681,6 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     //            InvalidResourceData.builder().path("monitoredService\\sources\\healthSources\\spec\\newRelicMetricDefinitions\\responseMapping").property("metricValueJsonPath").replacementValue(null).expectedResponseCode(500).build());
     //    invalidResourceDataList.add(
     //            InvalidResourceData.builder().path("monitoredService\\sources\\healthSources\\spec\\newRelicMetricDefinitions\\responseMapping").property("timestampJsonPath").replacementValue(null).expectedResponseCode(500).build());
-    //    invalidResourceDataList.add(
-    //            InvalidResourceData.builder().path("monitoredService\\sources\\healthSources\\spec\\metricDefinitions\\analysis").property("riskProfile").replacementValue(null).expectedResponseCode(500).build());
     for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
       String msJson = InvalidResourceData.replace(monitoredServiceYaml, invalidResourceData);
       String msYaml = convertToYaml(msJson);

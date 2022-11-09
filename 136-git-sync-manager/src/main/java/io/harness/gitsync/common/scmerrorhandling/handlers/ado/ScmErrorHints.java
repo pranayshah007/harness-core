@@ -23,4 +23,6 @@ public class ScmErrorHints {
       "Please check the requested file path<FILEPATH> / branch<BRANCH> / Azure repo name<REPO> if they exist or not.";
   public static final String MISSING_PERMISSION_CREDS_HINTS =
       "Please provide the token with correct permissions in the Azure connector<CONNECTOR>.";
+  public static final String WRONG_REPO_OR_BRANCH =
+      "Please check if the provided branch<BRANCH> or the Azure repo name<REPO> are valid.";
 }

@@ -64,6 +64,7 @@ public class CompositeSLOTransformer implements SLOV2Transformer<CompositeServic
                            .build())
                 .collect(Collectors.toList()))
         .sloTargetPercentage(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage())
+        .startedAt(System.currentTimeMillis())
         .version(0)
         .enabled(isEnabled)
         .build();

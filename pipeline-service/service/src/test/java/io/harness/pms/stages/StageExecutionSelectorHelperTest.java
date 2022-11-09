@@ -8,18 +8,27 @@
 package io.harness.pms.stages;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -372,5 +381,92 @@ public class StageExecutionSelectorHelperTest extends CategoryTest {
         + "        manifests:\n"
         + "          - manifest:\n"
         + "              identifier: m1\n";
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetBasicStageInfo() throws IOException {
+    YamlNode stageYamlNode = YamlUtils.readTree(getPipelineYaml())
+                                 .getNode()
+                                 .getField(YAMLFieldNameConstants.PIPELINE)
+                                 .getNode()
+                                 .getField(STAGES)
+                                 .getNode()
+                                 .asArray()
+                                 .get(0);
+    BasicStageInfo basicStageInfo = StageExecutionSelectorHelper.getBasicStageInfo(stageYamlNode);
+    assertEquals("a1", basicStageInfo.getIdentifier());
+    assertEquals("a1", basicStageInfo.getName());
+    assertEquals("Approval", basicStageInfo.getType());
+    assertEquals(stageYamlNode, basicStageInfo.getStageYamlNode());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetNonExpressionReferences() throws IOException {
+    YamlNode arrayYamlNode = YamlUtils.readTree(getPipelineYamlForStagesRequired())
+                                 .getNode()
+                                 .getField(YAMLFieldNameConstants.PIPELINE)
+                                 .getNode()
+                                 .getField(STAGES)
+                                 .getNode();
+    Set<String> objectNodeReferences = new HashSet<>();
+    Set<String> arrayNodeReferences = new HashSet<>();
+    StageExecutionSelectorHelper.getNonExpressionReferences(arrayYamlNode, arrayNodeReferences);
+    YamlNode objectYamlNode = YamlUtils.readTree(getPipelineYamlForStagesRequired())
+                                  .getNode()
+                                  .getField(YAMLFieldNameConstants.PIPELINE)
+                                  .getNode()
+                                  .getField(YAMLFieldNameConstants.STAGES)
+                                  .getNode()
+                                  .asArray()
+                                  .get(0);
+    StageExecutionSelectorHelper.getNonExpressionReferences(objectYamlNode, objectNodeReferences);
+    assertEquals(2, objectNodeReferences.size());
+    assertEquals(3, arrayNodeReferences.size());
+    assertThat(objectNodeReferences).contains("s2");
+    assertThat(objectNodeReferences).contains("s3");
+    assertThat(arrayNodeReferences).contains("s1");
+    assertThat(arrayNodeReferences).contains("s2");
+    assertThat(arrayNodeReferences).contains("s3");
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetNonExpressionReferencesForArray() throws IOException {
+    YamlNode arrayYamlNode = YamlUtils.readTree(getPipelineYamlForStagesRequired())
+                                 .getNode()
+                                 .getField(YAMLFieldNameConstants.PIPELINE)
+                                 .getNode()
+                                 .getField(STAGES)
+                                 .getNode();
+    Set<String> arrayNodeReferences = new HashSet<>();
+    StageExecutionSelectorHelper.getNonExpressionReferences(arrayYamlNode, arrayNodeReferences);
+    assertThat(arrayNodeReferences).contains("s1");
+    assertThat(arrayNodeReferences).contains("s2");
+    assertThat(arrayNodeReferences).contains("s3");
+    assertEquals(3, arrayNodeReferences.size());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetNonExpressionReferencesForObject() throws IOException {
+    Set<String> objectNodeReferences = new HashSet<>();
+    YamlNode objectYamlNode = YamlUtils.readTree(getPipelineYamlForStagesRequired())
+                                  .getNode()
+                                  .getField(YAMLFieldNameConstants.PIPELINE)
+                                  .getNode()
+                                  .getField(YAMLFieldNameConstants.STAGES)
+                                  .getNode()
+                                  .asArray()
+                                  .get(0);
+    StageExecutionSelectorHelper.getNonExpressionReferences(objectYamlNode, objectNodeReferences);
+    assertEquals(2, objectNodeReferences.size());
+    assertThat(objectNodeReferences).contains("s2");
+    assertThat(objectNodeReferences).contains("s3");
   }
 }

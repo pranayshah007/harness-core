@@ -11,7 +11,6 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
-import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -53,9 +51,7 @@ public class DynatraceHealthSourceSpec extends MetricHealthSourceSpec {
   @NotEmpty String serviceId;
   String serviceName;
   List<String> serviceMethodIds;
-  @Valid Set<TimeSeriesMetricPackDTO> metricPacks;
   List<DynatraceMetricDefinition> metricDefinitions;
-
   @Override
   public String getConnectorRef() {
     return connectorRef;

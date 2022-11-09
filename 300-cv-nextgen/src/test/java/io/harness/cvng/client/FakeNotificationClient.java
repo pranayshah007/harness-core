@@ -7,16 +7,21 @@
 
 package io.harness.cvng.client;
 
+import io.harness.delegate.beans.NotificationTaskResponse;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
+import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.remote.dto.TemplateDTO;
 import io.harness.notification.templates.PredefinedTemplate;
 
+import java.io.IOException;
 import java.util.List;
+import retrofit2.Response;
 
 public class FakeNotificationClient implements NotificationClient {
   @Override
@@ -36,6 +41,11 @@ public class FakeNotificationClient implements NotificationClient {
 
   @Override
   public TemplateDTO saveNotificationTemplate(Team team, PredefinedTemplate template, Boolean harnessManaged) {
+    throw new UnsupportedOperationException("mocked method - TODO");
+  }
+
+  @Override
+  public Response<ResponseDTO<NotificationTaskResponse>> sendEmail(EmailDTO emailDTO) throws IOException {
     throw new UnsupportedOperationException("mocked method - TODO");
   }
 }

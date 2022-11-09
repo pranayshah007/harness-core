@@ -9,6 +9,7 @@ package io.harness.delegate.task.artifacts.response;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.ami.AMITagsResponse;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
 import io.harness.logging.CommandExecutionStatus;
@@ -39,6 +40,7 @@ public class ArtifactTaskExecutionResponse {
   List<AzureDevopsProject> azureArtifactsProjects;
   List<AzureArtifactsFeed> azureArtifactsFeeds;
   List<AzureArtifactsPackage> azureArtifactsPackages;
+  AMITagsResponse amiTags;
   List<String> artifactPath;
   List<NexusRepositories> repositories;
   JenkinsBuildTaskNGResponse jenkinsBuildTaskNGResponse;

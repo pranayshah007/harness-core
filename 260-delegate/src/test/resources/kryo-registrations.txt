@@ -207,8 +207,6 @@
 2012:com.google.api.services.monitoring.v3.model.Distribution
 2013:com.google.api.services.monitoring.v3.model.BucketOptions
 2014:com.google.api.services.monitoring.v3.model.Exponential
-2015:com.mongodb.BasicDBList
-2016:com.mongodb.BasicDBObject
 3001:io.harness.exception.VerificationOperationException
 3002:io.harness.exception.ServiceNowException
 3003:io.harness.encryption.SecretRefData
@@ -1157,6 +1155,7 @@
 19002:io.harness.delegate.beans.TaskData
 19003:io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability
 19004:io.harness.delegate.beans.executioncapability.CapabilityType
+19005:io.harness.delegate.beans.TaskDataV2
 19007:io.harness.delegate.beans.executioncapability.ProcessExecutorCapability
 19008:io.harness.delegate.beans.executioncapability.AwsRegionCapability
 19009:io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability
@@ -1786,8 +1785,12 @@
 55428:io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse
 55429:io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig
 55430:io.harness.delegate.task.azure.artifact.JenkinsAzureArtifactRequestDetails
+55431:io.harness.delegate.task.azure.artifact.AzureDevOpsArtifactRequestDetails
 55435:io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability
+55436:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest
+55437:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
+55499:io.harness.beans.SerializationFormat
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
 55503:io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo
@@ -1807,6 +1810,11 @@
 57502:io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest
 57503:io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse
 57504:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCapabilityHelper
+60011:io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest
+60012:io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse
+60013:io.harness.delegate.task.artifacts.ami.AMITag
+60014:io.harness.delegate.task.artifacts.ami.AMIFilter
+60015:io.harness.delegate.task.ssh.EmptyHostDelegateConfig
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
 71102:software.wings.beans.Log
@@ -1831,6 +1839,9 @@
 73990:io.harness.delegate.beans.NoAvailableDelegatesException
 73991:io.harness.delegate.beans.NoDelegatesException
 73992:io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails
+73993:io.harness.delegate.task.helm.HelmFetchChartVersionRequestNG
+73994:io.harness.delegate.beans.helm.HelmChartVersionDetails
+73995:io.harness.delegate.task.helm.HelmFetchChartVersionResponse
 80302:software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds
 80303:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile
 80304:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo
@@ -1841,6 +1852,7 @@
 80310:software.wings.helpers.ext.azure.devops.AzureDevopsProjects
 80311:io.harness.artifactory.ArtifactoryImagePath
 80312:io.harness.ngtriggers.WebhookSecretData
+81001:io.harness.ami.AMITagsResponse
 83071:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest
 83072:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse
 83073:software.wings.service.impl.aws.model.AwsEC2Instance
@@ -2365,6 +2377,9 @@
 955014:io.harness.beans.HookEventType
 955015:io.harness.beans.gitsync.GitFilePathDetails
 955016:io.harness.beans.response.GitFileResponse
+955017:io.harness.beans.response.ListFilesInCommitResponse
+955018:io.harness.beans.FileGitDetails
+955019:io.harness.beans.ContentType
 970001:io.harness.request.RequestContextData
 970002:io.harness.request.RequestContext
 970003:io.harness.gitsync.interceptor.GitSyncBranchContext
@@ -2411,6 +2426,8 @@
 980035:io.harness.exception.ngexception.AzureARMTaskException
 980036:io.harness.delegate.beans.DelegateTaskExpiredException
 980037:io.harness.exception.ngexception.AzureBPTaskException
+980100:software.wings.beans.infrastructure.instance.info.K8sPodInfo
+980101:software.wings.beans.infrastructure.instance.info.K8sContainerInfo
 1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
 9300122:io.harness.yaml.core.timeout.Timeout

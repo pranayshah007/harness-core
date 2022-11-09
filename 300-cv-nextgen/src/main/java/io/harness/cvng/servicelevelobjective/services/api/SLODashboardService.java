@@ -21,7 +21,7 @@ public interface SLODashboardService {
   PageResponse<SLODashboardWidget> getSloDashboardWidgets(
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
   PageResponse<SLOHealthListView> getSloHealthListView(
-      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName);
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
 
   SLODashboardDetail getSloDashboardDetail(
       ProjectParams projectParams, String sloIdentifier, Long startTime, Long endTime);

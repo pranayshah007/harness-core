@@ -94,14 +94,14 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             generateOriginalConfigFromJson(elastigroupStepExecutorParams.getElastigroupParameters(), elastigroupSetupStepParameters.getInstances(), ambiance);
 
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
-            ElastigroupSetupCommandRequest.builder()
-                    .blueGreen(false)
-                    .elastigroupNamePrefix(elastigroupNamePrefix)
+        ElastigroupSetupCommandRequest.builder()
+            .blueGreen(false)
+            .elastigroupNamePrefix(elastigroupNamePrefix)
             .accountId(accountId)
             .spotInstConfig(spotInstConfig)
-                    .elastiGroupJson(elastigroupStepExecutorParams.getElastigroupParameters())
+            .elastigroupJson(elastigroupStepExecutorParams.getElastigroupParameters())
             .elastigroupCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
-                    .startupScript(elastigroupStepCommonHelper.getBase64EncodedStartupScript(ambiance, elastigroupStepExecutorParams.getStartupScript()))
+            .startupScript(elastigroupStepCommonHelper.getBase64EncodedStartupScript(ambiance, elastigroupStepExecutorParams.getStartupScript()))
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
                     .image(elastigroupStepExecutorParams.getImage())
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))

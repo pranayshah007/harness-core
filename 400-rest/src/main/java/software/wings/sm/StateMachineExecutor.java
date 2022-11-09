@@ -55,12 +55,18 @@ import static software.wings.common.NotificationMessageResolver.NotificationMess
 import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
 import static software.wings.sm.StateExecutionData.StateExecutionDataBuilder.aStateExecutionData;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
+import static software.wings.sm.StateType.ENV_LOOP_STATE;
+import static software.wings.sm.StateType.ENV_ROLLBACK_STATE;
+import static software.wings.sm.StateType.ENV_STATE;
+import static software.wings.sm.StateType.FORK;
+import static software.wings.sm.StateType.PHASE;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
@@ -83,6 +89,7 @@ import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.eraro.ErrorCode;
+import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
@@ -103,6 +110,7 @@ import io.harness.waiter.OldNotifyCallback;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.api.ContinuePipelineResponseData;
+import software.wings.api.EnvStateExecutionData;
 import software.wings.api.SkipStateExecutionData;
 import software.wings.beans.Account;
 import software.wings.beans.Application;
@@ -110,6 +118,7 @@ import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.Environment;
 import software.wings.beans.ErrorStrategy;
 import software.wings.beans.InformationNotification;
+import software.wings.beans.LoopEnvStateParams;
 import software.wings.beans.NotificationRule;
 import software.wings.beans.Pipeline;
 import software.wings.beans.Workflow;
@@ -140,6 +149,8 @@ import software.wings.sm.states.ApprovalState;
 import software.wings.sm.states.BarrierState;
 import software.wings.sm.states.EnvLoopState;
 import software.wings.sm.states.EnvState;
+import software.wings.sm.states.ForkState;
+import software.wings.sm.states.ForkState.ForkStateExecutionData;
 import software.wings.sm.states.PhaseStepSubWorkflow;
 import software.wings.sm.states.PhaseSubWorkflow;
 import software.wings.sm.states.WorkflowState;
@@ -172,6 +183,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.FindAndModifyOptions;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 import org.mongodb.morphia.query.UpdateResults;
@@ -200,6 +212,8 @@ public class StateMachineExecutor implements StateInspectionListener {
   public static final String DEBUG_LINE = "stateMachine processor: ";
   private static final String STATE_PARAMS = "stateParams";
   private static final String STATE_MACHINE_EXECUTOR_DEBUG_LINE = "STATE_MACHINE_EXECUTOR_DEBUG_LOG: ";
+  private static final List<String> POSSIBLE_ROLLBACK_STATE_TYPES =
+      asList(ENV_ROLLBACK_STATE.getType(), ENV_LOOP_STATE.getType(), FORK.getType());
 
   @Getter private Subject<StateStatusUpdate> statusUpdateSubject = new Subject<>();
 
@@ -227,6 +241,7 @@ public class StateMachineExecutor implements StateInspectionListener {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private WorkflowExecutionUpdate workflowExecutionUpdate;
+  @Inject private UsageMetricsEventPublisher usageMetricsEventPublisher;
   /**
    * Execute.
    *
@@ -387,6 +402,12 @@ public class StateMachineExecutor implements StateInspectionListener {
 
     stateExecutionInstance.setExpiryTs(Long.MAX_VALUE);
     wingsPersistence.save(stateExecutionInstance);
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+    }
     return stateExecutionInstance;
   }
 
@@ -1022,6 +1043,9 @@ public class StateMachineExecutor implements StateInspectionListener {
         }
         throw new WingsException(INVALID_ARGUMENT).addParam("args", "rollbackStateMachineId or rollbackStateName");
       }
+      case ROLLBACK_PREVIOUS_STAGES_ON_PIPELINE: {
+        return rollbackPreviousPipelineStages(context, executionEventAdvice);
+      }
       case ROLLBACK_DONE: {
         if (checkIfOnDemand(context.getAppId(), context.getWorkflowExecutionId())) {
           updateEndStatus(stateExecutionInstance, SUCCESS, asList(status));
@@ -1066,6 +1090,104 @@ public class StateMachineExecutor implements StateInspectionListener {
     return stateExecutionInstance;
   }
 
+  private boolean hasRollbackInstancesOnExecution(String workflowExecutionId) {
+    List<StateExecutionInstance> rollbackInstances =
+        wingsPersistence.createQuery(StateExecutionInstance.class)
+            .filter(StateExecutionInstanceKeys.executionUuid, workflowExecutionId)
+            .filter(StateExecutionInstanceKeys.rollback, true)
+            .asList(new FindOptions().limit(1));
+
+    return !rollbackInstances.isEmpty();
+  }
+
+  private StateExecutionInstance rollbackPreviousPipelineStages(
+      ExecutionContextImpl context, ExecutionEventAdvice executionEventAdvice) {
+    StateMachine sm = context.getStateMachine();
+    State nextState = sm.getState(null, executionEventAdvice.getNextStateName());
+
+    StateExecutionData stateExecutionData = context.getStateExecutionData();
+    if (stateExecutionData instanceof EnvStateExecutionData) {
+      EnvStateExecutionData envStateExecutionData = (EnvStateExecutionData) context.getStateExecutionData();
+      if (hasRollbackInstancesOnExecution(envStateExecutionData.getWorkflowExecutionId())) {
+        nextState = sm.getNextState(nextState.getName(), TransitionType.SUCCESS);
+      }
+    } else if (stateExecutionData instanceof ForkStateExecutionData) {
+      Map<String, StateExecutionInstance> executionToInstanceMap = new HashMap<>();
+      StateExecutionInstance parentInstance = context.getStateExecutionInstance();
+      List<StateExecutionInstance> childFailedEnvInstances =
+          wingsPersistence.createQuery(StateExecutionInstance.class)
+              .filter(StateExecutionInstanceKeys.parentInstanceId, parentInstance.getUuid())
+              .filter(StateExecutionInstanceKeys.status, FAILED)
+              .filter(StateExecutionInstanceKeys.stateType, ENV_STATE.getType())
+              .asList();
+
+      Set<String> failedWorkflowExecutionIdsSet =
+          childFailedEnvInstances.stream()
+              .map(instance -> {
+                EnvStateExecutionData envStateExecutionData =
+                    (EnvStateExecutionData) instance.fetchStateExecutionData();
+                executionToInstanceMap.put(envStateExecutionData.getWorkflowExecutionId(), instance);
+                return envStateExecutionData.getWorkflowExecutionId();
+              })
+              .collect(Collectors.toSet());
+
+      List<StateExecutionInstance> rollbackInstances =
+          wingsPersistence.createQuery(StateExecutionInstance.class)
+              .field(StateExecutionInstanceKeys.executionUuid)
+              .in(failedWorkflowExecutionIdsSet)
+              .filter(StateExecutionInstanceKeys.rollback, true)
+              .filter(StateExecutionInstanceKeys.stateType, PHASE.getType())
+              .project(StateExecutionInstanceKeys.executionUuid, true)
+              .asList();
+
+      Set<String> executionsWithRollback =
+          rollbackInstances.stream().map(StateExecutionInstance::getExecutionUuid).collect(toSet());
+
+      List<StateExecutionInstance> instancesToBeSkipped =
+          executionsWithRollback.stream().map(executionToInstanceMap::get).collect(toList());
+
+      if (nextState instanceof ForkState) {
+        ForkState forkState = (ForkState) nextState;
+        instancesToBeSkipped.forEach(
+            instance -> forkState.getForkStateNames().remove("Rollback-" + instance.getStateName()));
+        if (forkState.getForkStateNames().isEmpty()) {
+          nextState = sm.getNextState(nextState.getName(), TransitionType.SUCCESS);
+        }
+      } else if (nextState instanceof EnvLoopState) {
+        EnvLoopState envLoopState = (EnvLoopState) nextState;
+        instancesToBeSkipped.forEach(instance -> {
+          LoopEnvStateParams loopEnvStateParams = (LoopEnvStateParams) instance.getLoopedStateParams();
+          loopEnvStateParams.getWorkflowVariables().values().forEach(
+              variableValue -> envLoopState.getLoopedValues().remove(variableValue));
+        });
+
+        if (envLoopState.getLoopedValues().isEmpty()) {
+          nextState = sm.getNextState(nextState.getName(), TransitionType.SUCCESS);
+        }
+      }
+
+      if (nextState == null) {
+        throw new StateMachineIssueException("No stages to rollback", ErrorCode.STATE_MACHINE_ISSUE);
+      }
+    }
+
+    if (nextState == null) {
+      throw new StateMachineIssueException(
+          String.format("The advice suggests as next state %s, that is not in state machine: %s.",
+              executionEventAdvice.getNextStateName(), executionEventAdvice.getNextChildStateMachineId()),
+          ErrorCode.STATE_MACHINE_ISSUE);
+    }
+
+    StateExecutionInstance cloned = clone(context.getStateExecutionInstance(), null, nextState);
+    if (executionEventAdvice.getNextStateDisplayName() != null) {
+      cloned.setDisplayName(executionEventAdvice.getNextStateDisplayName());
+    }
+    if (executionEventAdvice.getRollbackPhaseName() != null) {
+      cloned.setRollbackPhaseName(executionEventAdvice.getRollbackPhaseName());
+    }
+    return triggerExecution(sm, cloned);
+  }
+
   public static String getContinuePipelineWaitId(String pipelineStageElementId, String pipelineExecutionId) {
     return pipelineStageElementId + "_" + pipelineExecutionId;
   }
@@ -1091,6 +1213,15 @@ public class StateMachineExecutor implements StateInspectionListener {
       log.error("StateExecutionInstance status could not be updated - "
               + "stateExecutionInstance: {},  status: {}",
           stateExecutionInstance.getUuid(), status);
+    }
+
+    if (updateResult != null) {
+      try {
+        usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+            stateExecutionInstance.getAccountId(), stateExecutionInstance);
+      } catch (Exception e) {
+        log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+      }
     }
 
     final StateStatusUpdateInfo arg =
@@ -1130,6 +1261,15 @@ public class StateMachineExecutor implements StateInspectionListener {
       log.error("StateExecutionInstance status could not be updated - "
               + "stateExecutionInstance: {},  status: {}",
           stateExecutionInstance.getUuid(), status);
+    }
+
+    if (updateResult != null) {
+      try {
+        usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+            stateExecutionInstance.getAccountId(), stateExecutionInstance);
+      } catch (Exception e) {
+        log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+      }
     }
 
     final StateStatusUpdateInfo arg =
@@ -1420,6 +1560,12 @@ public class StateMachineExecutor implements StateInspectionListener {
     return null;
   }
 
+  private boolean isPipelineRollback(StateExecutionInstance stateExecutionInstance, StateMachine sm) {
+    State state = sm.getState(null, stateExecutionInstance.getStateName());
+    return POSSIBLE_ROLLBACK_STATE_TYPES.contains(stateExecutionInstance.getStateType()) && state.isRollback()
+        && state.getParentId() == null;
+  }
+
   private StateExecutionInstance successTransition(ExecutionContextImpl context) {
     StateExecutionInstance stateExecutionInstance = context.getStateExecutionInstance();
     StateMachine sm = context.getStateMachine();
@@ -1431,6 +1577,10 @@ public class StateMachineExecutor implements StateInspectionListener {
           "nextSuccessState is null.. ending execution  - currentState : {}", stateExecutionInstance.getStateName());
 
       log.info("State Machine execution ended for the stateMachine: {}", sm.getName());
+
+      if (isPipelineRollback(stateExecutionInstance, sm)) {
+        endTransition(context, stateExecutionInstance, FAILED, null);
+      }
 
       endTransition(context, stateExecutionInstance, SUCCESS, null);
     } else {
@@ -1799,6 +1949,13 @@ public class StateMachineExecutor implements StateInspectionListener {
           stateExecutionInstance.getUuid(), status, existingExecutionStatus);
       return false;
     }
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+    }
+
     final StateStatusUpdateInfo arg = StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance,
         reason != null
             && (RESUME_ALL == reason.getExecutionInterruptType()
@@ -1931,6 +2088,13 @@ public class StateMachineExecutor implements StateInspectionListener {
           stateExecutionInstance.getUuid(), stateExecutionData.toString(), status, errorMsg);
 
       return false;
+    }
+
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
     }
 
     final StateStatusUpdateInfo arg = StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance,
@@ -2240,6 +2404,14 @@ public class StateMachineExecutor implements StateInspectionListener {
     if (updateResult == null || updateResult.getWriteResult() == null || updateResult.getWriteResult().getN() != 1) {
       throw new WingsException(ErrorCode.RETRY_FAILED).addParam("displayName", stateExecutionInstance.getDisplayName());
     }
+
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+    }
+
     final StateStatusUpdateInfo arg =
         StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance, false);
     statusUpdateSubject.fireInform(StateStatusUpdate::stateExecutionStatusUpdated, arg);
@@ -2296,6 +2468,20 @@ public class StateMachineExecutor implements StateInspectionListener {
           workflowExecutionInterrupt.getAppId(), workflowExecutionInterrupt.getExecutionUuid());
       return false;
     }
+
+    if (updateResult != null) {
+      List<StateExecutionInstance> stateExecutionInstances =
+          getAllStateExecutionInstancesHavingTheseIds(leafInstanceIds);
+      for (StateExecutionInstance stateExecutionInstance : stateExecutionInstances) {
+        try {
+          usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+              stateExecutionInstance.getAccountId(), stateExecutionInstance);
+        } catch (Exception e) {
+          log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+        }
+      }
+    }
+
     return true;
   }
 
@@ -2339,6 +2525,16 @@ public class StateMachineExecutor implements StateInspectionListener {
 
     // Mark aborting
     return allInstanceIds;
+  }
+
+  private List<StateExecutionInstance> getAllStateExecutionInstancesHavingTheseIds(
+      List<String> stateExecutionInstanceIds) {
+    return wingsPersistence.createQuery(StateExecutionInstance.class)
+        .field(ID_KEY)
+        .exists()
+        .field(ID_KEY)
+        .in(stateExecutionInstanceIds)
+        .asList();
   }
 
   private StateExecutionInstance getStateExecutionInstance(

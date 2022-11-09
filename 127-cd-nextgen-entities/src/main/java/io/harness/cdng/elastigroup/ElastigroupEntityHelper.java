@@ -29,6 +29,7 @@ import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnsupportedOperationException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -50,8 +51,7 @@ import static java.util.Collections.emptyList;
 
 @Singleton
 @OwnedBy(CDP)
-public class
-ElastigroupEntityHelper {
+public class ElastigroupEntityHelper {
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
@@ -92,7 +92,6 @@ ElastigroupEntityHelper {
     }
     return connectorDTO.get().getConnector();
   }
-
 
   public SpotInstConfig getSpotInstConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
     ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);

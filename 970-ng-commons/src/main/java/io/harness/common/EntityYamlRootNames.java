@@ -132,11 +132,13 @@ public class EntityYamlRootNames {
   public static final String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
   public static final String ECS_RUN_TASK = "EcsRunTask";
   public static final String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
-  public static final String ELASTIGROUP_SETUP = "ElastigroupSetup";
   public static final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   public static final String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
   public static final String WAIT_STEP = "Wait";
   public static final String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
   public static final String FREEZE = "freeze";
   public static final String CHAOS_STEP = "Chaos";
+  public static final String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
+  public static final String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
+  public static final String ELASTIGROUP_SETUP = "ElastigroupSetup";
 }

@@ -52,5 +52,6 @@ public abstract class HealthSourceSpec {
       String projectIdentifier, String environmentRef, String serviceRef, String monitoredServiceIdentifier,
       String identifier, String name, List<CVConfig> existingCVConfigs, MetricPackService metricPackService);
   @JsonIgnore public abstract DataSourceType getType();
+
   public void validate() {}
 }

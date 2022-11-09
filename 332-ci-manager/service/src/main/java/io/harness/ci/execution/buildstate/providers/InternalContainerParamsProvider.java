@@ -23,13 +23,13 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_STAGE_I
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.LITE_ENGINE_CONTAINER_CPU;
 import static io.harness.ci.commonconstants.CIExecutionConstants.LITE_ENGINE_CONTAINER_MEM;
-import static io.harness.ci.commonconstants.CIExecutionConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PWSH_COMMAND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SETUP_ADDON_CONTAINER_NAME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SH_COMMAND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_SETUP_ADDON_ARGS;
 import static io.harness.ci.commonconstants.CIExecutionConstants.WIN_SETUP_ADDON_ARGS;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
+import static io.harness.delegate.beans.ci.pod.CICommonConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
 
 import io.harness.annotations.dev.HarnessTeam;

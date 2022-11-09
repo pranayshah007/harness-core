@@ -22,6 +22,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -122,6 +123,11 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap("stages", Collections.singleton(PlanCreatorUtils.ANY_TYPE));
+  }
+
+  @Override
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V0);
   }
 
   private List<YamlField> getStageYamlFields(PlanCreationContext planCreationContext) {

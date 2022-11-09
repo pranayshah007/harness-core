@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.git.model.ChangeType;
 import io.harness.pms.pipeline.PipelineEntity;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -71,4 +72,6 @@ public interface PMSPipelineRepositoryCustom {
   PipelineEntity savePipelineEntityForImportedYAML(PipelineEntity pipelineToSave);
 
   Long countFileInstances(String accountId, String repoURL, String filePath);
+
+  List<String> findAllUniqueRepos(Criteria criteria);
 }

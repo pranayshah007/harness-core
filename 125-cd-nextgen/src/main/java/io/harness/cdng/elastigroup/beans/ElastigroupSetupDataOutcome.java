@@ -7,7 +7,6 @@
 
 package io.harness.cdng.elastigroup.beans;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -15,6 +14,8 @@ import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.spotinst.model.ElastiGroup;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
@@ -26,7 +27,6 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("elastigroupSetupDataOutcome")
 @RecasterAlias("io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome")
 public class ElastigroupSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
-
   private Integer maxInstanceCount;
   private boolean useCurrentRunningInstanceCount;
   private Integer currentRunningInstanceCount;

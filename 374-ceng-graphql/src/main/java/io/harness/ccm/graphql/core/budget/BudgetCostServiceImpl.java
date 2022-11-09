@@ -19,6 +19,7 @@ import static io.harness.ccm.views.graphql.QLCEViewTimeGroupType.YEAR;
 
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.BudgetPeriod;
+import io.harness.ccm.budget.BudgetType;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetCostData;
@@ -123,6 +124,29 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     return getCostForPerspectiveBudget(filters, cloudProviderTableName, accountId);
   }
 
+  public Double[] getLastYearMonthlyCost(
+      String accountId, String perspectiveId, long startTime, BudgetPeriod period, BudgetType type) {
+    Double[] result;
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(
+        QLCEViewGroupBy.builder()
+            .timeTruncGroupBy(
+                QLCEViewTimeTruncGroupBy.builder().resolution(getTimeResolutionForBudget(BudgetPeriod.MONTHLY)).build())
+            .build());
+    long updatedStartTime = BudgetUtils.getStartOfMonthGivenTime(startTime);
+    long endTime = updatedStartTime - BudgetUtils.ONE_DAY_MILLIS;
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
+    filters.add(
+        viewsQueryHelper.getPerspectiveTimeFilter(BudgetUtils.getStartOfLastPeriod(updatedStartTime, period), AFTER));
+    filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
+    result = viewsBillingService.getActualCostGroupedByPeriod(bigQueryService.get(), filters, groupBy,
+        viewsQueryHelper.getPerspectiveTotalCostAggregation(), cloudProviderTableName,
+        viewsQueryHelper.buildQueryParams(accountId, false));
+    return result;
+  }
+
   @Override
   public BudgetData getBudgetTimeSeriesStats(Budget budget) {
     if (budget == null) {
@@ -139,8 +163,8 @@ public class BudgetCostServiceImpl implements BudgetCostService {
         BudgetUtils.getBudgetStartTime(budget), BudgetUtils.getBudgetPeriod(budget));
     int timeOffsetInDays = BudgetUtils.getTimeOffsetInDays(budget);
     try {
-      List<TimeSeriesDataPoints> monthlyCostData = getPerspectiveBudgetTimeSeriesCostData(
-          viewId, budget.getAccountId(), timeFilterValue, getTimeResolutionForBudget(budget), timeOffsetInDays);
+      List<TimeSeriesDataPoints> monthlyCostData = getPerspectiveBudgetTimeSeriesCostData(viewId, budget.getAccountId(),
+          timeFilterValue, getTimeResolutionForBudget(budget.getPeriod()), timeOffsetInDays);
       for (TimeSeriesDataPoints data : monthlyCostData) {
         double actualCost =
             data.getValues().stream().map(dataPoint -> dataPoint.getValue().doubleValue()).reduce(0D, Double::sum);
@@ -193,9 +217,9 @@ public class BudgetCostServiceImpl implements BudgetCostService {
         .getStats();
   }
 
-  private QLCEViewTimeGroupType getTimeResolutionForBudget(Budget budget) {
+  private QLCEViewTimeGroupType getTimeResolutionForBudget(BudgetPeriod period) {
     try {
-      switch (budget.getPeriod()) {
+      switch (period) {
         case DAILY:
           return DAY;
         case WEEKLY:

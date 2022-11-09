@@ -6,10 +6,8 @@
  */
 
 package io.harness.cdng.elastigroup;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
-import io.harness.delegate.beans.connector.pdcconnector.HostFilterKind;
 
 public enum ElastigroupInstancesType {
   @JsonProperty(ElastigroupInstancesKind.FIXED) FIXED(ElastigroupInstancesKind.FIXED),

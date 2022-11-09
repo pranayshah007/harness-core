@@ -17,8 +17,7 @@ import java.util.Collections;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class ElastigroupSetupStepVariableCreator
-    extends GenericStepVariableCreator<ElastigroupSetupStepNode> {
+public class ElastigroupSetupStepVariableCreator extends GenericStepVariableCreator<ElastigroupSetupStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     return Collections.singleton(StepSpecTypeConstants.ELASTIGROUP_SETUP);

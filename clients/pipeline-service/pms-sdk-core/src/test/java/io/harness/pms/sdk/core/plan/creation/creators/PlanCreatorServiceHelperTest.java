@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.plan.creation.creators;
 
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +19,7 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -46,7 +48,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     YamlField yamlField = YamlUtils.extractPipelineField(YamlUtils.injectUuid(yamlContent));
     Optional<PartialPlanCreator<?>> partialPlanCreatorOptional =
-        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField);
+        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, PipelineVersion.V0);
     assertThat(partialPlanCreatorOptional.isPresent()).isTrue();
     assertThat(partialPlanCreatorOptional.get().getClass()).isEqualTo(DummyChildrenPlanCreator.class);
   }
@@ -130,5 +132,19 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
         planCreationResponses, finalResponse, yamlContent, Dependencies.newBuilder().build(), dependenciesList);
     assertThat(dependencies).isEqualTo(Dependencies.newBuilder().setYaml(yamlContent).build());
     assertThat(finalResponse.getErrorMessages().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testFindPlanCreatorWithUnsupportedVersion() throws IOException {
+    List<PartialPlanCreator<?>> planCreators = Lists.newArrayList(new DummyChildrenPlanCreatorV2());
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipeline.yaml");
+    String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField yamlField = YamlUtils.extractPipelineField(YamlUtils.injectUuid(yamlContent));
+    Optional<PartialPlanCreator<?>> partialPlanCreatorOptional =
+        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, PipelineVersion.V1);
+    assertThat(partialPlanCreatorOptional.isPresent()).isFalse();
   }
 }

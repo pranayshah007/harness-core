@@ -20,6 +20,7 @@ import io.harness.eraro.Level;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
+import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -94,12 +95,16 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
 
   protected StepResponse executeFreezePart(Ambiance ambiance, Map<FreezeEntityType, List<String>> entityMap) {
     if (ngFeatureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_DEPLOYMENT_FREEZE)) {
+      String accountId = AmbianceUtils.getAccountId(ambiance);
+      String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+      String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(accountId, orgId, projectId, accessControlClient)) {
+        return null;
+      }
       List<FreezeSummaryResponseDTO> globalFreezeConfigs;
       List<FreezeSummaryResponseDTO> manualFreezeConfigs;
-      globalFreezeConfigs = freezeEvaluateService.anyGlobalFreezeActive(AmbianceUtils.getAccountId(ambiance),
-          AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-      manualFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(AmbianceUtils.getAccountId(ambiance),
-          AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), entityMap);
+      globalFreezeConfigs = freezeEvaluateService.anyGlobalFreezeActive(accountId, orgId, projectId);
+      manualFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId, entityMap);
       if (globalFreezeConfigs.size() + manualFreezeConfigs.size() > 0) {
         final List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
         FreezeOutcome freezeOutcome = FreezeOutcome.builder()

@@ -34,8 +34,10 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
+import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupParametersFetchRequest;
@@ -89,6 +91,7 @@ import software.wings.beans.container.UserDataSpecification;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.states.spotinst.SpotInstServiceSetup;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -338,14 +341,15 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
   }
 
   private TaskChainResponse getElastigroupStartupScriptTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters, ElastigroupStartupScriptFetchPassThroughData elastigroupStartupScriptFetchPassThroughData) {
+      StepElementParameters stepElementParameters,
+      ElastigroupStartupScriptFetchPassThroughData elastigroupStartupScriptFetchPassThroughData) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
     ElastigroupStartupScriptFetchRequest elastigroupStartupScriptFetchRequest =
-            ElastigroupStartupScriptFetchRequest.builder()
+        ElastigroupStartupScriptFetchRequest.builder()
             .accountId(accountId)
             .shouldOpenLogStream(shouldOpenLogStream)
-                    .startupScript(elastigroupStartupScriptFetchPassThroughData.getStartupScript())
+            .startupScript(elastigroupStartupScriptFetchPassThroughData.getStartupScript())
             .build();
 
     final TaskData taskData = TaskData.builder()
@@ -359,10 +363,11 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
     ElastigroupSpecParameters elastigroupSpecParameters = (ElastigroupSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-            elastigroupSpecParameters.getCommandUnits(), taskName,
-        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(elastigroupSpecParameters.getDelegateSelectors()))),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, elastigroupSpecParameters.getCommandUnits(), taskName,
+            TaskSelectorYaml.toTaskSelector(
+                emptyIfNull(getParameterFieldValue(elastigroupSpecParameters.getDelegateSelectors()))),
+            stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .chainEnd(false)
@@ -414,7 +419,8 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return elastigroupEntityHelper.getSpotInstConfig(infrastructureOutcome, ngAccess);
   }
 
-  private TaskChainResponse handleElastigroupStartupScriptFetchFilesResponse(ElastigroupStartupScriptFetchResponse elastigroupStartupScriptFetchResponse,
+  private TaskChainResponse handleElastigroupStartupScriptFetchFilesResponse(
+      ElastigroupStartupScriptFetchResponse elastigroupStartupScriptFetchResponse,
       ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
       ElastigroupStartupScriptFetchPassThroughData elastigroupStartupScriptFetchPassThroughData) {
     if (elastigroupStartupScriptFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
@@ -589,5 +595,15 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
   public static String getErrorMessage(ElastigroupCommandResponse elastigroupCommandResponse) {
     return elastigroupCommandResponse.getErrorMessage() == null ? "" : elastigroupCommandResponse.getErrorMessage();
+  }
+
+  public UnitProgressData getCommandUnitProgressData(
+          String commandName, CommandExecutionStatus commandExecutionStatus) {
+    LinkedHashMap<String, CommandUnitProgress> commandUnitProgressMap = new LinkedHashMap<>();
+    CommandUnitProgress commandUnitProgress = CommandUnitProgress.builder().status(commandExecutionStatus).build();
+    commandUnitProgressMap.put(commandName, commandUnitProgress);
+    CommandUnitsProgress commandUnitsProgress =
+            CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressMap).build();
+    return UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
   }
 }

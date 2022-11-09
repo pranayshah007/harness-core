@@ -39,13 +39,13 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 @Value
 @Builder
 @OwnedBy(CDP)
-public class ElastigroupSetupCommandRequest implements ElastigroupCommandRequest, ExpressionReflectionUtils.NestedAnnotationResolver {
-
+public class ElastigroupSetupCommandRequest
+    implements ElastigroupCommandRequest, ExpressionReflectionUtils.NestedAnnotationResolver {
   String accountId;
   ElastigroupCommandTypeNG elastigroupCommandType;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  String elastiGroupJson;
+  String elastigroupJson;
   String elastigroupNamePrefix;
   private Integer maxInstanceCount;
   private boolean useCurrentRunningInstanceCount;

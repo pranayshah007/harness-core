@@ -1,0 +1,181 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/workspaces/ws-bd297196-b5ca-48c5-9857-972fe759354f/api/v1/label/instance/values"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "aps-workspaces.us-east-1.amazonaws.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "end" : [ {
+            "matcher" : "exact",
+            "value" : "1667214000"
+          } ],
+          "match[]" : [ {
+            "matcher" : "exact",
+            "value" : "{alpha_eksctl_io_cluster_name=\"srm-eks-cluster-one\"}"
+          } ],
+          "start" : [ {
+            "matcher" : "exact",
+            "value" : "1667213700"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAA/6pWKi5JLCktVrJSKi5NTk4tLlbSUUpJLElUsopWyizQNbQ00jU0s9A1MtY1NDXTS0020svMK0ktykvMUdJBVmBqqWtobIiqILYWAAAA//8BAAD//0YudO9fAAAA",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Connection" : [ "keep-alive" ],
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "102" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 31 Oct 2022 18:02:12 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Server" : [ "amazon" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Amzn-Requestid" : [ "05408d85-05f4-44d9-b334-ea509d038d03" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/workspaces/ws-bd297196-b5ca-48c5-9857-972fe759354f/api/v1/query_range"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "aps-workspaces.us-east-1.amazonaws.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "end" : [ {
+            "matcher" : "exact",
+            "value" : "1667214000"
+          } ],
+          "query" : [ {
+            "matcher" : "exact",
+            "value" : "avg(container_threads{alpha_eksctl_io_cluster_name=\"srm-eks-cluster-one\",instance=\"ip-192-168-23-156.ec2.internal\"})"
+          } ],
+          "start" : [ {
+            "matcher" : "exact",
+            "value" : "1667213700"
+          } ],
+          "step" : [ {
+            "matcher" : "exact",
+            "value" : "60s"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "{\"status\":\"success\",\"data\":{\"resultType\":\"matrix\",\"result\":[{\"metric\":{},\"values\":[[1667213700,\"54.61363636363637\"],[1667213760,\"54.68181818181819\"],[1667213820,\"55.68181818181819\"],[1667213880,\"56.06818181818181\"],[1667213940,\"56.272727272727266\"],[1667214000,\"55.93181818181819\"]]}]}}",
+        "encodedBody" : false,
+        "templated" : false,
+        "headers" : {
+          "Connection" : [ "keep-alive" ],
+          "Content-Length" : [ "286" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 31 Oct 2022 18:02:12 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Server" : [ "amazon" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Amzn-Requestid" : [ "1cd77e44-7cd5-4158-adaa-3d86aa14a3df" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/workspaces/ws-bd297196-b5ca-48c5-9857-972fe759354f/api/v1/query_range"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "aps-workspaces.us-east-1.amazonaws.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "end" : [ {
+            "matcher" : "exact",
+            "value" : "1667214000"
+          } ],
+          "query" : [ {
+            "matcher" : "exact",
+            "value" : "avg(container_threads{alpha_eksctl_io_cluster_name=\"srm-eks-cluster-one\",instance=\"ip-192-168-59-131.ec2.internal\"})"
+          } ],
+          "start" : [ {
+            "matcher" : "exact",
+            "value" : "1667213700"
+          } ],
+          "step" : [ {
+            "matcher" : "exact",
+            "value" : "60s"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "{\"status\":\"success\",\"data\":{\"resultType\":\"matrix\",\"result\":[{\"metric\":{},\"values\":[[1667213700,\"32.98113207547169\"],[1667213760,\"32.396226415094326\"],[1667213820,\"32.132075471698116\"],[1667213880,\"32.132075471698116\"],[1667213940,\"32.0754716981132\"],[1667214000,\"31.943396226415096\"]]}]}}",
+        "encodedBody" : false,
+        "templated" : false,
+        "headers" : {
+          "Connection" : [ "keep-alive" ],
+          "Content-Length" : [ "288" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 31 Oct 2022 18:02:13 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Server" : [ "amazon" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Amzn-Requestid" : [ "b5e234da-0f2f-4eb5-beb6-e2da61dce3ec" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-10-31T18:02:20Z"
+  }
+}

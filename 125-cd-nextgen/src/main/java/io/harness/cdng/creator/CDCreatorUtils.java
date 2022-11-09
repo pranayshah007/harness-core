@@ -39,10 +39,11 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.AZURE_SWAP_SLOT, StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK,
         StepSpecTypeConstants.JENKINS_BUILD, StepSpecTypeConstants.ECS_ROLLING_DEPLOY,
         StepSpecTypeConstants.ECS_ROLLING_ROLLBACK, StepSpecTypeConstants.ECS_CANARY_DEPLOY,
-        StepSpecTypeConstants.ECS_CANARY_DELETE, StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE, StepSpecTypeConstants.ELASTIGROUP_SETUP,
+        StepSpecTypeConstants.ECS_CANARY_DELETE, StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE,
         StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS, StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK,
         StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT, StepSpecTypeConstants.SHELL_SCRIPT_PROVISION,
         StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.ECS_RUN_TASK,
-        StepSpecTypeConstants.CHAOS_STEP);
+        StepSpecTypeConstants.CHAOS_STEP, StepSpecTypeConstants.ELASTIGROUP_DEPLOY,
+        StepSpecTypeConstants.ELASTIGROUP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_SETUP);
   }
 }

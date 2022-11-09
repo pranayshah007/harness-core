@@ -7,20 +7,18 @@
 
 package io.harness.cdng.elastigroup;
 
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
+
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.harness.annotation.RecasterAlias;
-import io.harness.cdng.infra.beans.host.HostFilterSpec;
-import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
-
-import javax.validation.constraints.NotNull;
-
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 @Data
 @Builder

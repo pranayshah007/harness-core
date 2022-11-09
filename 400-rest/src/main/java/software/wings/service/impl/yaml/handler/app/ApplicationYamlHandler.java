@@ -10,6 +10,7 @@ package software.wings.service.impl.yaml.handler.app;
 import static io.harness.annotations.dev.HarnessModule._955_CG_YAML;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
+import static io.harness.beans.FeatureName.SPG_ALLOW_DISABLE_TRIGGERS;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 
 import static software.wings.beans.Application.Builder.anApplication;
@@ -92,6 +93,10 @@ public class ApplicationYamlHandler extends BaseYamlHandler<Application.Yaml, Ap
     if (featureFlagService.isEnabled(WEBHOOK_TRIGGER_AUTHORIZATION, application.getAccountId())) {
       yaml.setIsManualTriggerAuthorized(application.getIsManualTriggerAuthorized());
     }
+
+    if (featureFlagService.isEnabled(SPG_ALLOW_DISABLE_TRIGGERS, application.getAccountId())) {
+      yaml.setDisableTriggers(application.getDisableTriggers());
+    }
     updateYamlWithAdditionalInfo(application, appId, yaml);
     return yaml;
   }
@@ -121,6 +126,14 @@ public class ApplicationYamlHandler extends BaseYamlHandler<Application.Yaml, Ap
         current.setAreWebHookSecretsMandated(false);
       } else {
         current.setAreWebHookSecretsMandated(yaml.getAreWebHookSecretsMandated());
+      }
+    }
+
+    if (featureFlagService.isEnabled(SPG_ALLOW_DISABLE_TRIGGERS, accountId)) {
+      if (yaml.getDisableTriggers() == null && previous != null && previous.getDisableTriggers() != null) {
+        current.setDisableTriggers(false);
+      } else {
+        current.setDisableTriggers(yaml.getDisableTriggers());
       }
     }
 

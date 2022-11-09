@@ -52,11 +52,24 @@ public class DeploymentReconRecord implements PersistentEntity, UuidAware, Accou
                  .field(DeploymentReconRecordKeys.accountId)
                  .field(DeploymentReconRecordKeys.reconciliationStatus)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_durationEndTs_entityClass")
+                 .field(DeploymentReconRecordKeys.accountId)
+                 .field(DeploymentReconRecordKeys.durationEndTs)
+                 .field(DeploymentReconRecordKeys.entityClass)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_reconciliationStatus_entityClass")
+                 .field(DeploymentReconRecordKeys.accountId)
+                 .field(DeploymentReconRecordKeys.reconciliationStatus)
+                 .field(DeploymentReconRecordKeys.entityClass)
+                 .build())
         .build();
   }
 
   @Id private String uuid;
   private String accountId;
+  private String entityClass;
   private long durationStartTs;
   private long durationEndTs;
   private DetectionStatus detectionStatus;

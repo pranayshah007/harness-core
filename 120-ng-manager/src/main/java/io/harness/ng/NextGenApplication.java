@@ -271,7 +271,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      log.info("Shutdown hook, entering maintenance...");
+      log.warn("Shutdown hook, entering maintenance...");
       MaintenanceController.forceMaintenance(true);
     }));
     new NextGenApplication().run(args);

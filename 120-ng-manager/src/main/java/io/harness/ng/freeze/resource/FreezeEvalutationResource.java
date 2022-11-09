@@ -11,10 +11,12 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.freeze.beans.FreezeReference;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.response.ShouldDisableDeploymentFreezeResponseDTO;
+import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -79,6 +81,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FreezeEvalutationResource {
   private final FreezeEvaluateService freezeEvaluateService;
+  private final AccessControlClient accessControlClient;
 
   @GET
   @Path("/isGlobalFreezeActive")
@@ -119,6 +122,12 @@ public class FreezeEvalutationResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
+    if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(accountId, orgId, projectId, accessControlClient)) {
+      return ResponseDTO.newResponse(ShouldDisableDeploymentFreezeResponseDTO.builder()
+                                         .shouldDisable(false)
+                                         .freezeReferences(new LinkedList<>())
+                                         .build());
+    }
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTO =
         freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
     List<FreezeReference> freezeReferences = new LinkedList<>();

@@ -12,6 +12,7 @@ import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.ExecutionStatus.WAITING;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.shouldPerformReconciliation;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.RUSHABH;
 
@@ -40,6 +41,7 @@ import io.harness.event.reconciliation.DetectionStatus;
 import io.harness.event.reconciliation.ReconcilationAction;
 import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
+import io.harness.event.reconciliation.deployment.DeploymentReconRecordRepository;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;
@@ -48,6 +50,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.CountsByStatuses;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionBuilder;
+import software.wings.search.entities.deployment.DeploymentExecutionEntity;
 
 import com.google.inject.Inject;
 import java.sql.Array;
@@ -66,7 +69,12 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class DeploymentReconServiceImplTest extends WingsBaseTest {
   @Mock TimeScaleDBService timeScaleDBService;
   @Inject @InjectMocks DeploymentReconServiceImpl deploymentReconService;
+  @Inject DeploymentReconRecordRepository deploymentReconRecordRepository;
   @Inject private HPersistence persistence;
+  @Inject DeploymentExecutionEntity deploymentExecutionEntity;
+
+  String sourceEntityClass = WorkflowExecution.class.getCanonicalName();
+
   final Connection mockConnection = mock(Connection.class);
   final Statement mockStatement = mock(Statement.class);
   final ResultSet resultSet1 = mock(ResultSet.class);
@@ -173,8 +181,8 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
 
       when(timeScaleDBService.isValid()).thenReturn(false);
 
-      ReconciliationStatus status =
-          deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs);
+      ReconciliationStatus status = deploymentReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
       assertThat(status).isEqualTo(ReconciliationStatus.SUCCESS);
 
     } catch (Exception e) {
@@ -189,8 +197,10 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
     try {
       final long durationStartTs = System.currentTimeMillis() - 2000000;
       final long durationEndTs = System.currentTimeMillis();
-      deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs);
-      DeploymentReconRecord latestRecord = deploymentReconService.getLatestDeploymentReconRecord(ACCOUNT_ID);
+      deploymentReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
+      DeploymentReconRecord latestRecord =
+          deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, sourceEntityClass);
       assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
       assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
       assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
@@ -198,8 +208,8 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
       assertThat(latestRecord.getReconcilationAction()).isEqualTo(ReconcilationAction.NONE);
       assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
 
-      ReconciliationStatus status =
-          deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs);
+      ReconciliationStatus status = deploymentReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
       assertThat(status).isEqualTo(ReconciliationStatus.SUCCESS);
 
     } catch (Exception e) {
@@ -214,8 +224,9 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
     final long durationStartTs = System.currentTimeMillis() - 2000000;
     final long durationEndTs = System.currentTimeMillis();
     activateMissingRecords(durationEndTs - 1000L);
-    deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs);
-    DeploymentReconRecord latestRecord = deploymentReconService.getLatestDeploymentReconRecord(ACCOUNT_ID);
+    deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
+    DeploymentReconRecord latestRecord =
+        deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, sourceEntityClass);
     assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
     assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
@@ -232,8 +243,9 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
     final long durationStartTs = System.currentTimeMillis() - 2000000;
     final long durationEndTs = System.currentTimeMillis();
     activateMissingRecords(durationEndTs - 1300);
-    deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs);
-    DeploymentReconRecord latestRecord = deploymentReconService.getLatestDeploymentReconRecord(ACCOUNT_ID);
+    deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
+    DeploymentReconRecord latestRecord =
+        deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, sourceEntityClass);
     assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
     assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
@@ -254,8 +266,10 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
 
       final long durationStartTs = System.currentTimeMillis() - 2000000;
       final long durationEndTs = System.currentTimeMillis();
-      deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs);
-      DeploymentReconRecord latestRecord = deploymentReconService.getLatestDeploymentReconRecord(ACCOUNT_ID);
+      deploymentReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
+      DeploymentReconRecord latestRecord =
+          deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, sourceEntityClass);
       assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
       assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
       assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
@@ -280,18 +294,17 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
     persistence = mock(HPersistence.class);
     on(deploymentReconService).set("persistence", persistence);
 
-    assertThat(deploymentReconService.shouldPerformReconciliation(reconRecord, System.currentTimeMillis() - 1000))
-        .isFalse();
+    assertThat(shouldPerformReconciliation(reconRecord, System.currentTimeMillis() - 1000, persistence)).isFalse();
 
     reconRecord = DeploymentReconRecord.builder()
                       .reconciliationStatus(ReconciliationStatus.IN_PROGRESS)
-                      .durationEndTs(System.currentTimeMillis() - 2 * DeploymentReconServiceImpl.COOL_DOWN_INTERVAL)
+                      .durationEndTs(System.currentTimeMillis() - 2 * DeploymentReconServiceHelper.COOL_DOWN_INTERVAL)
                       .build();
 
     final UpdateOperations updateOperations = mock(UpdateOperations.class);
     when(persistence.createUpdateOperations(DeploymentReconRecord.class)).thenReturn(updateOperations);
-    assertThat(deploymentReconService.shouldPerformReconciliation(
-                   reconRecord, System.currentTimeMillis() - 2 * DeploymentReconServiceImpl.COOL_DOWN_INTERVAL))
+    assertThat(shouldPerformReconciliation(reconRecord,
+                   System.currentTimeMillis() - 2 * DeploymentReconServiceHelper.COOL_DOWN_INTERVAL, persistence))
         .isTrue();
 
     verify(persistence, times(1)).createUpdateOperations(DeploymentReconRecord.class);
@@ -299,18 +312,17 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
 
     reconRecord = DeploymentReconRecord.builder()
                       .reconciliationStatus(ReconciliationStatus.SUCCESS)
-                      .durationEndTs(System.currentTimeMillis() - 2 * DeploymentReconServiceImpl.COOL_DOWN_INTERVAL)
+                      .durationEndTs(System.currentTimeMillis() - 2 * DeploymentReconServiceHelper.COOL_DOWN_INTERVAL)
                       .build();
 
-    assertThat(deploymentReconService.shouldPerformReconciliation(reconRecord, System.currentTimeMillis())).isTrue();
+    assertThat(shouldPerformReconciliation(reconRecord, System.currentTimeMillis(), persistence)).isTrue();
 
     reconRecord = DeploymentReconRecord.builder()
                       .reconciliationStatus(ReconciliationStatus.SUCCESS)
                       .reconEndTs(System.currentTimeMillis() - 1000)
                       .durationEndTs(System.currentTimeMillis() - 1000)
                       .build();
-    assertThat(deploymentReconService.shouldPerformReconciliation(reconRecord, System.currentTimeMillis() - 1000))
-        .isFalse();
+    assertThat(shouldPerformReconciliation(reconRecord, System.currentTimeMillis() - 1000, persistence)).isFalse();
   }
 
   @Test
@@ -324,10 +336,12 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
       deactivateDuplicatesFound(resultSet1);
       deactivateMissingRecords(resultSet2);
       activateStatusMismatch(resultSet3, durationEndTs - 1300);
-      doReturn("DATA" + statusMismatchCount[0]).when(resultSet3).getString(any());
+      doReturn("DATA" + statusMismatchCount[0]).when(resultSet3).getString(anyInt());
 
-      deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs);
-      DeploymentReconRecord latestRecord = deploymentReconService.getLatestDeploymentReconRecord(ACCOUNT_ID);
+      deploymentReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
+      DeploymentReconRecord latestRecord =
+          deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, sourceEntityClass);
       assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
       assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
       assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
@@ -350,10 +364,12 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
 
       deactivateDuplicatesFound(resultSet1);
       activateStatusMismatch(resultSet4, durationEndTs - 1300);
-      doReturn("DATA" + statusMismatchCount[0]).when(resultSet4).getString(any());
+      doReturn("DATA" + statusMismatchCount[0]).when(resultSet4).getString(anyInt());
 
-      deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs);
-      DeploymentReconRecord latestRecord = deploymentReconService.getLatestDeploymentReconRecord(ACCOUNT_ID);
+      deploymentReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
+      DeploymentReconRecord latestRecord =
+          deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, sourceEntityClass);
       assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
       assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
       assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
@@ -380,10 +396,12 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
       deactivateMissingRecords(resultSet2);
       activateStatusMismatch(resultSet3, durationEndTs - 1300);
       doReturn("DATA" + duplicatesCount[0]).when(resultSet1).getString(any());
-      doReturn("DATA" + statusMismatchCount[0]).when(resultSet3).getString(any());
+      doReturn("DATA" + statusMismatchCount[0]).when(resultSet3).getString(anyInt());
 
-      deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs);
-      DeploymentReconRecord latestRecord = deploymentReconService.getLatestDeploymentReconRecord(ACCOUNT_ID);
+      deploymentReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
+      DeploymentReconRecord latestRecord =
+          deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, sourceEntityClass);
       assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
       assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
       assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
@@ -409,10 +427,12 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
       activateDuplicatesFound(resultSet1);
       activateStatusMismatch(resultSet4, durationEndTs - 1300);
       doReturn("DATA" + duplicatesCount[0]).when(resultSet1).getString(any());
-      doReturn("DATA" + statusMismatchCount[0]).when(resultSet4).getString(any());
+      doReturn("DATA" + statusMismatchCount[0]).when(resultSet4).getString(anyInt());
 
-      deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs);
-      DeploymentReconRecord latestRecord = deploymentReconService.getLatestDeploymentReconRecord(ACCOUNT_ID);
+      deploymentReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
+      DeploymentReconRecord latestRecord =
+          deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, sourceEntityClass);
       assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
       assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
       assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);

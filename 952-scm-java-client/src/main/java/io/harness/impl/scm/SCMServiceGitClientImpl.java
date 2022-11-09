@@ -17,7 +17,9 @@ import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.ListFilesInCommitRequest;
 import io.harness.beans.response.GitFileResponse;
+import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -106,6 +108,11 @@ public class SCMServiceGitClientImpl implements ScmClient {
   @Override
   public FindFilesInCommitResponse findFilesInCommit(ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails) {
     return scmServiceClient.findFilesInCommit(scmConnector, gitFilePathDetails, scmBlockingStub);
+  }
+
+  @Override
+  public ListFilesInCommitResponse listFilesInCommit(ScmConnector scmConnector, ListFilesInCommitRequest request) {
+    return scmServiceClient.listFilesInCommit(scmConnector, request, scmBlockingStub);
   }
 
   @Override

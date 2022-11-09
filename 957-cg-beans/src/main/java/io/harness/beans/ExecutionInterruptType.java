@@ -83,7 +83,8 @@ public enum ExecutionInterruptType {
 
   CONTINUE_PIPELINE_STAGE("Run the env state with runtime values"),
   ROLLBACK_ON_APPROVAL("Rollback on approval"),
-  ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL("Rollback Provisioner after Phases on approval");
+  ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL("Rollback Provisioner after Phases on approval"),
+  ROLLBACK_PREVIOUS_STAGES_ON_PIPELINE("Rollback for previous stages on pipeline");
 
   private String description;
 

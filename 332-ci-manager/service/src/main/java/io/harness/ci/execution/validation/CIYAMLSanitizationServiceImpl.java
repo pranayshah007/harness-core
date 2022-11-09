@@ -98,9 +98,10 @@ public class CIYAMLSanitizationServiceImpl implements CIYAMLSanitizationService 
   }
 
   private boolean defaultCommand(ParameterField<String> command) {
-    if (command.getValue().equals(command.getDefaultValue())) {
-      return true;
+    if (command != null && command.getValue() != null) {
+      return command.getValue().equals(command.getDefaultValue());
     }
-    return false;
+    // when command is null we treat it as default and no further validation required
+    return true;
   }
 }

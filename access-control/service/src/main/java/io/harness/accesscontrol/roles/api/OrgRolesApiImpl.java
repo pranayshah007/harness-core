@@ -41,9 +41,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.outbox.api.OutboxService;
-import io.harness.spec.server.accesscontrol.OrganizationRolesApi;
-import io.harness.spec.server.accesscontrol.model.CreateRoleRequest;
-import io.harness.spec.server.accesscontrol.model.RolesResponse;
+import io.harness.spec.server.accesscontrol.v1.OrganizationRolesApi;
+import io.harness.spec.server.accesscontrol.v1.model.CreateRoleRequest;
+import io.harness.spec.server.accesscontrol.v1.model.RolesResponse;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;

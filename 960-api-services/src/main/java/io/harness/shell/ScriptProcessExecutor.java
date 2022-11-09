@@ -145,7 +145,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
         ProcessResult processResult = processExecutor.execute();
         commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
         if (commandExecutionStatus == SUCCESS) {
-          saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO);
+          saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO, SUCCESS);
         } else {
           saveExecutionLog(format("CommandExecution failed with exit code: (%d)", processResult.getExitValue()), ERROR);
         }
@@ -333,11 +333,11 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       }
       executionDataBuilder.sweepingOutputEnvVariables(envVariablesMap);
 
-      if (config.isCloseLogStream()) {
-        saveExecutionLog(
-            format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO, commandExecutionStatus);
+      commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
+      if (commandExecutionStatus == SUCCESS) {
+        saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO, SUCCESS);
       } else {
-        saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO);
+        saveExecutionLog(format("CommandExecution failed with exit code: (%d)", processResult.getExitValue()), ERROR);
       }
 
     } catch (InterruptedException e) {

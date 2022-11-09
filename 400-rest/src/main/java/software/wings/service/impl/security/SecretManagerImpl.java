@@ -54,6 +54,7 @@ import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretMetadata;
 import io.harness.beans.SecretText;
 import io.harness.beans.SecretUsageLog;
+import io.harness.beans.SecretUsageLog.SecretUsageLogKeys;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
@@ -111,6 +112,8 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -453,9 +456,11 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
       String accountId, Collection<String> entityIds, SettingVariableTypes variableType) throws IllegalAccessException {
     List<String> secretIds = getSecretIds(accountId, entityIds, variableType);
     Query<SecretUsageLog> query = wingsPersistence.createQuery(SecretUsageLog.class)
-                                      .filter(SecretChangeLogKeys.accountId, accountId)
-                                      .field(SecretChangeLogKeys.encryptedDataId)
-                                      .in(secretIds);
+                                      .filter(SecretUsageLogKeys.accountId, accountId)
+                                      .field(SecretUsageLogKeys.encryptedDataId)
+                                      .in(secretIds)
+                                      .field(SecretUsageLogKeys.createdAt)
+                                      .greaterThan(Instant.now().minus(90, ChronoUnit.DAYS).toEpochMilli());
 
     AggregationPipeline aggregationPipeline =
         wingsPersistence.getDefaultAnalyticsDatastore(SecretUsageLog.class)

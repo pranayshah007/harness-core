@@ -95,10 +95,12 @@ scmConnectionConfig:
   url: localhost:8091
 
 logServiceConfig:
+  internalUrl: http://localhost:8079
   baseUrl: https://qa.harness.io/log-service/
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
+  internalUrl: http://localhost:8078
   baseUrl: http://localhost:8078
   globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
 
@@ -131,7 +133,7 @@ ciExecutionServiceConfig:
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
   addonImage: harness/ci-addon:1.14.19
-  liteEngineImage: harness/ci-lite-engine:1.14.19
+  liteEngineImage: harness/ci-lite-engine:1.14.20
   isLocal: false
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
@@ -159,7 +161,7 @@ ciExecutionServiceConfig:
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.6.6
+      image: plugins/kaniko-acr:1.6.7
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:

@@ -57,6 +57,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
+import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.utils.PageUtils;
@@ -142,7 +143,12 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String pipelineBranch, String pipelineRepoID,
       GitEntityCreateInfoDTO gitEntityCreateInfo, @NotNull String yaml) {
-    yaml = removeRuntimeInputFromYaml(yaml);
+    Optional<PipelineEntity> pipelineEntity =
+        pipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    if (pipelineEntity.isEmpty()) {
+      throw new InvalidRequestException("pipeline with identifier " + pipelineIdentifier + " not found");
+    }
+    yaml = removeRuntimeInputFromYaml(pipelineEntity.get().getYaml(), yaml);
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     log.info(String.format("Create input set with identifier %s for pipeline %s in project %s, org %s, account %s",
@@ -177,7 +183,12 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       String pipelineBranch, String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) {
     log.info(String.format("Updating input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    yaml = removeRuntimeInputFromYaml(yaml);
+    Optional<PipelineEntity> pipelineEntity =
+        pipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    if (pipelineEntity.isEmpty()) {
+      throw new InvalidRequestException("pipeline with identifier " + pipelineIdentifier + " not found");
+    }
+    yaml = removeRuntimeInputFromYaml(pipelineEntity.get().getYaml(), yaml);
 
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
@@ -314,7 +325,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
 
     log.info(String.format("Updating input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    newInputSetYaml = removeRuntimeInputFromYaml(newInputSetYaml);
+    newInputSetYaml = removeRuntimeInputFromYaml(pipelineYaml, newInputSetYaml);
 
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, newInputSetYaml);

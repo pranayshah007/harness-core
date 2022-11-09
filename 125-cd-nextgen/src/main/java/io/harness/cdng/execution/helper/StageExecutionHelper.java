@@ -96,7 +96,10 @@ public class StageExecutionHelper {
     return isSshWinRmInfrastructureKind(infrastructureKind)
         || InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind);
   }
-
+  public boolean isInfrastructureSupportCommands(String infrastructureKind) {
+    return isSshWinRmInfrastructureKind(infrastructureKind)
+        || InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind);
+  }
   public boolean isSshWinRmInfrastructureKind(String infrastructureKind) {
     return InfrastructureKind.PDC.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureKind)
@@ -189,7 +192,7 @@ public class StageExecutionHelper {
   public Set<String> saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(Ambiance ambiance,
       ExecutionInfoKey executionInfoKey, InfrastructureOutcome infrastructureOutcome, Set<String> hosts,
       final String serviceType, boolean skipInstances, LogCallback logCallback) {
-    if (!isSshWinRmInfrastructureKind(infrastructureOutcome.getKind())) {
+    if (!isInfrastructureSupportCommands(infrastructureOutcome.getKind())) {
       throw new InvalidArgumentsException(
           format("Skip instances not supported for infrastructure kind: [%s]", infrastructureOutcome.getKind()));
     }

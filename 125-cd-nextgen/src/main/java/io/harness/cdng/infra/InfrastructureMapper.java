@@ -226,6 +226,7 @@ public class InfrastructureMapper {
         EcsInfrastructureOutcome ecsInfrastructureOutcome =
             EcsInfrastructureOutcome.builder()
                 .connectorRef(ecsInfrastructure.getConnectorRef().getValue())
+                .environment(environmentOutcome)
                 .region(ecsInfrastructure.getRegion().getValue())
                 .cluster(ecsInfrastructure.getCluster().getValue())
                 .infrastructureKey(InfrastructureKey.generate(

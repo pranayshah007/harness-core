@@ -21,7 +21,9 @@ import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.ListFilesInCommitRequest;
 import io.harness.beans.response.GitFileResponse;
+import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.impl.ConnectorErrorMessagesHelper;
 import io.harness.connector.services.ConnectorService;
@@ -370,5 +372,11 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
     final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
     return scmClient.getLatestCommit(decryptedConnector, branch, null);
+  }
+
+  public ListFilesInCommitResponse listFiles(Scope scope, ScmConnector scmConnector, ListFilesInCommitRequest request) {
+    final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+    return scmClient.listFilesInCommit(decryptedConnector, request);
   }
 }

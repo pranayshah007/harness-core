@@ -82,6 +82,10 @@ public interface ViewsBillingService {
   ViewCostData getCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams);
 
+  Double[] getActualCostGroupedByPeriod(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
+      ViewQueryParams queryParams);
+
   Integer getTotalCountForQuery(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       String cloudProviderTableName, ViewQueryParams queryParams);
 

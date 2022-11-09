@@ -20,9 +20,11 @@ import io.harness.cdlicense.bean.CgServiceUsage;
 import io.harness.cdlicense.exception.CgLicenseUsageException;
 import io.harness.timescaledb.TimeScaleDBService;
 
+import software.wings.beans.Application;
+import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
-import software.wings.dl.WingsPersistence;
+import software.wings.dl.WingsMongoPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -36,16 +38,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @Singleton
 public class CgCdLicenseUsageQueryHelper {
   @Inject private TimeScaleDBService timeScaleDBService;
-  @Inject private WingsPersistence wingsPersistence;
+  @Inject private WingsMongoPersistence wingsPersistence;
 
   public long fetchServiceInstancesOver30Days(String accountId) {
     if (StringUtils.isEmpty(accountId)) {
@@ -169,8 +173,7 @@ public class CgCdLicenseUsageQueryHelper {
     return serviceUsageMap;
   }
 
-  @NonNull
-  public Map<String, String> fetchServicesNames(String accountId, List<String> serviceUuids) {
+  public Map<String, Pair<String, String>> fetchServicesNames(String accountId, List<String> serviceUuids) {
     if (isEmpty(serviceUuids)) {
       return Collections.emptyMap();
     }
@@ -181,7 +184,25 @@ public class CgCdLicenseUsageQueryHelper {
                                  .in(serviceUuids)
                                  .project(ServiceKeys.uuid, true)
                                  .project(ServiceKeys.name, true)
+                                 .project(ServiceKeys.appId, true)
                                  .asList();
-    return services.stream().collect(Collectors.toMap(Service::getUuid, Service::getName));
+    return services.stream().collect(
+        Collectors.toMap(Service::getUuid, service -> Pair.of(service.getName(), service.getAppId())));
+  }
+
+  public Map<String, String> fetchAppNames(String accountId, Set<String> appIds) {
+    if (isEmpty(appIds)) {
+      return Collections.emptyMap();
+    }
+
+    List<Application> applications = wingsPersistence.createQuery(Application.class)
+                                         .filter(ApplicationKeys.accountId, accountId)
+                                         .field(ApplicationKeys.appId)
+                                         .in(appIds)
+                                         .project(ApplicationKeys.appId, true)
+                                         .project(ApplicationKeys.name, true)
+                                         .asList(wingsPersistence.analyticNodePreferenceOptions());
+
+    return applications.parallelStream().collect(Collectors.toMap(Application::getAppId, Application::getName));
   }
 }

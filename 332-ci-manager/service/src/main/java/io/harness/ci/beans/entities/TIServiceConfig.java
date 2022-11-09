@@ -24,4 +24,5 @@ import org.springframework.data.annotation.TypeAlias;
 public class TIServiceConfig {
   String baseUrl;
   String globalToken;
+  String internalUrl;
 }

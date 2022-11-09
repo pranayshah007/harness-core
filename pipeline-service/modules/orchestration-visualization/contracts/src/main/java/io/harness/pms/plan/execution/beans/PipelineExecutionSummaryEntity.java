@@ -182,11 +182,13 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .field(PlanExecutionSummaryKeys.planExecutionId)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_organizationId_projectId_pipelineId")
+                 .name("accountId_organizationId_projectId_pipelineId_branch_repo")
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.orgIdentifier)
                  .field(PlanExecutionSummaryKeys.projectIdentifier)
                  .field(PlanExecutionSummaryKeys.pipelineIdentifier)
+                 .field(PlanExecutionSummaryKeys.entityGitDetailsBranch)
+                 .field(PlanExecutionSummaryKeys.entityGitDetailsRepoName)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_organizationId_projectId_createdAt_idx")
@@ -223,42 +225,43 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .descSortField(PlanExecutionSummaryKeys.createdAt)
                  .build())
         // Sort queries are added for list page
+        // New Index having all filters index without repo and branch
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_startTs_modules_isLatestExecution_idx")
+                 .name("accountId_orgId_projectId_startTs_pipelineIds_status_modules_range_idx")
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.orgIdentifier)
                  .field(PlanExecutionSummaryKeys.projectIdentifier)
                  .descSortField(PlanExecutionSummaryKeys.startTs)
-                 .field(PlanExecutionSummaryKeys.modules)
-                 .field(PlanExecutionSummaryKeys.isLatestExecution)
+                 // In pipeline Identifier list
+                 .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
+                 .ascRangeField(PlanExecutionSummaryKeys.status)
+                 .ascRangeField(PlanExecutionSummaryKeys.modules)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_name_modules_isLatestExecution_idx")
+                 .name("accountId_orgId_projectId_name_startTs_pipelineIds_status_modules_range_idx")
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.orgIdentifier)
                  .field(PlanExecutionSummaryKeys.projectIdentifier)
                  .descSortField(PlanExecutionSummaryKeys.name)
-                 .field(PlanExecutionSummaryKeys.modules)
-                 .field(PlanExecutionSummaryKeys.isLatestExecution)
+                 // For range in startTs
+                 .ascRangeField(PlanExecutionSummaryKeys.startTs)
+                 // In pipeline Identifier list
+                 .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
+                 .ascRangeField(PlanExecutionSummaryKeys.status)
+                 .ascRangeField(PlanExecutionSummaryKeys.modules)
                  .build())
+
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_status_modules_isLatestExecution_idx")
+                 .name("accountId_orgId_projectId_status_startTs_pipelineIds_modules_range_idx")
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.orgIdentifier)
                  .field(PlanExecutionSummaryKeys.projectIdentifier)
                  .descSortField(PlanExecutionSummaryKeys.status)
-                 .field(PlanExecutionSummaryKeys.modules)
-                 .field(PlanExecutionSummaryKeys.isLatestExecution)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_startTs_status_modules_isLatestExecution_idx")
-                 .field(PlanExecutionSummaryKeys.accountId)
-                 .field(PlanExecutionSummaryKeys.orgIdentifier)
-                 .field(PlanExecutionSummaryKeys.projectIdentifier)
-                 .descSortField(PlanExecutionSummaryKeys.startTs)
-                 .field(PlanExecutionSummaryKeys.status)
-                 .field(PlanExecutionSummaryKeys.modules)
-                 .field(PlanExecutionSummaryKeys.isLatestExecution)
+                 // For range in startTs
+                 .ascRangeField(PlanExecutionSummaryKeys.startTs)
+                 // In pipeline Identifier list
+                 .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
+                 .ascRangeField(PlanExecutionSummaryKeys.modules)
                  .build())
         .build();
   }
@@ -273,6 +276,16 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         + "rootExecutionId";
     public String parentExecutionId = PlanExecutionSummaryKeys.retryExecutionMetadata + "."
         + "parentExecutionId";
+    public String entityGitDetailsRepoName = PlanExecutionSummaryKeys.entityGitDetails + "."
+        + "repoName";
+    public String entityGitDetailsRepoIdentifier = PlanExecutionSummaryKeys.entityGitDetails + "."
+        + "repoIdentifier";
+    public String entityGitDetailsBranch = PlanExecutionSummaryKeys.entityGitDetails + "."
+        + "branch";
+    public String tagsKey = PlanExecutionSummaryKeys.tags + "."
+        + "key";
+    public String tagsValue = PlanExecutionSummaryKeys.tags + "."
+        + "value";
   }
 
   public boolean isStagesExecutionAllowed() {

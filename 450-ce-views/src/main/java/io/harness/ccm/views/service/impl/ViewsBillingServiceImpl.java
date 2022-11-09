@@ -204,6 +204,7 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 @OwnedBy(CE)
 public class ViewsBillingServiceImpl implements ViewsBillingService {
+  private static final int months = 12;
   @Inject private ViewsQueryBuilder viewsQueryBuilder;
   @Inject private CEViewService viewService;
   @Inject private ViewsQueryHelper viewsQueryHelper;
@@ -693,6 +694,35 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         Collections.emptyList(), cloudProviderTableName, queryParams, MAX_LIMIT_VALUE, 0, false);
     return getViewTrendStatsCostData(
         bigQuery, query, isClusterTableQuery, businessMapping, sharedCostFromFiltersAndRules);
+  }
+
+  public Double[] getActualCostGroupedByPeriod(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
+      ViewQueryParams queryParams) {
+    boolean isClusterTableQuery = isClusterTableQuery(filters, groupBy, queryParams);
+    List<QLCEViewFilter> idFilters = getModifiedIdFilters(getIdFilters(filters), isClusterTableQuery);
+    List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
+
+    SelectQuery query = getTrendStatsQuery(filters, idFilters, timeFilters, groupBy, aggregateFunction,
+        new ArrayList<>(), cloudProviderTableName, queryParams);
+    log.info("getActualCostGroupedByPeriod() query formed: " + query.toString());
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+    TableResult result;
+    try {
+      result = bigQuery.query(queryConfig);
+    } catch (InterruptedException e) {
+      log.error("Failed to getActualCostGroupedByPeriod() while running the bugQuery", e);
+      Thread.currentThread().interrupt();
+      return null;
+    }
+
+    Double[] monthlyCosts = new Double[months];
+    int i = ((Long) result.getTotalRows()).intValue();
+    for (FieldValueList row : result.iterateAll()) {
+      monthlyCosts[months - i] = row.get("cost").getNumericValue().doubleValue();
+      i--;
+    }
+    return monthlyCosts;
   }
 
   @Override

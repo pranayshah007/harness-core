@@ -174,7 +174,6 @@ public class CommonStepInfo {
                                .addFolderPaths(FolderPathConstants.SERVICENOW)
                                .build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_SERVICE_NOW.name())
-          .setFeatureFlag(FeatureName.CD_SERVICENOW_IMPORT_SET_NG.name())
           .build();
 
   public List<StepInfo> getCommonSteps(String category) {

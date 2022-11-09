@@ -158,9 +158,15 @@ public interface DelegateService extends OwnedByAccount {
 
   @ValidationGroups(Create.class) String queueTask(@Valid DelegateTask task);
 
+  @ValidationGroups(Create.class) String queueTaskV2(@Valid DelegateTask task);
+
   void scheduleSyncTask(DelegateTask task);
 
+  void scheduleSyncTaskV2(DelegateTask task);
+
   <T extends DelegateResponseData> T executeTask(DelegateTask task) throws InterruptedException;
+
+  <T extends DelegateResponseData> T executeTaskV2(DelegateTask task) throws InterruptedException;
 
   String obtainDelegateName(Delegate delegate);
 

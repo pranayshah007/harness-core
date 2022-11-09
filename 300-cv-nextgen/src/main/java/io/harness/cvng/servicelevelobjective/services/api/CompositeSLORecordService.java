@@ -29,4 +29,5 @@ public interface CompositeSLORecordService {
       Instant endTime, int totalErrorBudgetMinutes, int sloVersion, TimeRangeParams timeRangeParams);
   CompositeSLORecord getLatestCompositeSLORecord(String sloId);
   CompositeSLORecord getLatestCompositeSLORecordWithVersion(String sloId, int sloVersion);
+  List<CompositeSLORecord> getSLORecords(String sloId, Instant startTimeStamp, Instant endTimeStamp);
 }

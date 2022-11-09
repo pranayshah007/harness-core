@@ -23,9 +23,9 @@ import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.rule.Owner;
-import io.harness.spec.server.template.model.TemplateMetadataSummaryResponse;
-import io.harness.spec.server.template.model.TemplateResponse;
-import io.harness.spec.server.template.model.TemplateWithInputsResponse;
+import io.harness.spec.server.template.v1.model.TemplateMetadataSummaryResponse;
+import io.harness.spec.server.template.v1.model.TemplateResponse;
+import io.harness.spec.server.template.v1.model.TemplateWithInputsResponse;
 
 import java.util.Set;
 import javax.validation.ConstraintViolation;
@@ -79,7 +79,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
                                             .repoUrl(REPO_URL)
                                             .build();
 
-    io.harness.spec.server.template.model.EntityGitDetails responseGitDetails =
+    io.harness.spec.server.template.v1.model.EntityGitDetails responseGitDetails =
         templateResourceApiMapper.toEntityGitDetails(entityGitDetails);
 
     assertEquals(BRANCH, responseGitDetails.getBranchName());

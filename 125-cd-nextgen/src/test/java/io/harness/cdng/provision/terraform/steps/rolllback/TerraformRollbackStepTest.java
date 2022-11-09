@@ -27,7 +27,6 @@ import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.ArtifactoryStorageConfigDTO;
@@ -104,7 +103,6 @@ public class TerraformRollbackStepTest extends CategoryTest {
         TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled("test-account", FeatureName.EXPORT_TF_PLAN_JSON_NG);
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
 
     HIterator<TerraformConfig> iterator = mock(HIterator.class);

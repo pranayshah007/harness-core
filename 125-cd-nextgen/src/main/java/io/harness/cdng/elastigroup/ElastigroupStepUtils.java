@@ -54,35 +54,7 @@ import static software.wings.beans.LogHelper.color;
 
 public class ElastigroupStepUtils extends CDStepHelper {
   @Inject private EngineExpressionService engineExpressionService;
-  @Inject private EcsEntityHelper ecsEntityHelper;
   @Inject private FileStoreService fileStoreService;
-
-  public GitStoreDelegateConfig getGitStoreDelegateConfig(
-      Ambiance ambiance, GitStoreConfig gitStoreConfig, ManifestOutcome manifestOutcome) {
-    String connectorId = gitStoreConfig.getConnectorRef().getValue();
-    String validationMessage = format("Ecs manifest with Id [%s]", manifestOutcome.getIdentifier());
-    ConnectorInfoDTO connectorDTO = getConnectorDTO(connectorId, ambiance);
-    validateManifest(gitStoreConfig.getKind(), connectorDTO, validationMessage);
-    return getGitStoreDelegateConfig(
-        gitStoreConfig, connectorDTO, manifestOutcome, gitStoreConfig.getPaths().getValue(), ambiance);
-  }
-
-  public GitStoreDelegateConfig getGitStoreDelegateConfigForRunTask(
-      Ambiance ambiance, ManifestOutcome manifestOutcome) {
-    GitStoreConfig gitStoreConfig = (GitStoreConfig) manifestOutcome.getStore();
-    String connectorId = gitStoreConfig.getConnectorRef().getValue();
-    String validationMessage = format("Ecs run task configuration");
-    ConnectorInfoDTO connectorDTO = getConnectorDTO(connectorId, ambiance);
-    validateManifest(gitStoreConfig.getKind(), connectorDTO, validationMessage);
-
-    return getGitStoreDelegateConfig(
-        gitStoreConfig, connectorDTO, manifestOutcome, gitStoreConfig.getPaths().getValue(), ambiance);
-  }
-
-  private ConnectorInfoDTO getConnectorDTO(String connectorId, Ambiance ambiance) {
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    return ecsEntityHelper.getConnectorInfoDTO(connectorId, ngAccess);
-  }
 
   public List<String> fetchFilesContentFromLocalStore(
           Ambiance ambiance, StartupScriptOutcome startupScriptOutcome, LogCallback logCallback) {
@@ -134,16 +106,13 @@ public class ElastigroupStepUtils extends CDStepHelper {
       String manifestType, LogCallback logCallback) {
     List<String> fileContents = new ArrayList<>();
     if (isNotEmpty(scopedFilePathList)) {
-      logCallback.saveExecutionLog(
-          color(format("%nFetching %s files", manifestType), LogColor.White,
-              LogWeight.Bold));
+      logCallback.saveExecutionLog(color(format("%nFetching %s files", manifestType), LogColor.White, LogWeight.Bold));
       logCallback.saveExecutionLog(color(format("Fetching following Files :"), LogColor.White));
       printFilesFetchedFromHarnessStore(scopedFilePathList, logCallback);
       logCallback.saveExecutionLog(
           color(format("Successfully fetched following files: "), LogColor.White, LogWeight.Bold));
       for (String scopedFilePath : scopedFilePathList) {
-        Optional<FileStoreNodeDTO> valuesFile =
-            validateAndFetchFileFromHarnessStore(scopedFilePath, ngAccess);
+        Optional<FileStoreNodeDTO> valuesFile = validateAndFetchFileFromHarnessStore(scopedFilePath, ngAccess);
         FileStoreNodeDTO fileStoreNodeDTO = valuesFile.get();
         if (NGFileType.FILE.equals(fileStoreNodeDTO.getType())) {
           FileNodeDTO file = (FileNodeDTO) fileStoreNodeDTO;
@@ -164,11 +133,9 @@ public class ElastigroupStepUtils extends CDStepHelper {
     return LocalStoreFetchFilesResult.builder().LocalStoreFileContents(fileContents).build();
   }
 
-  private Optional<FileStoreNodeDTO> validateAndFetchFileFromHarnessStore(
-      String scopedFilePath, NGAccess ngAccess) {
+  private Optional<FileStoreNodeDTO> validateAndFetchFileFromHarnessStore(String scopedFilePath, NGAccess ngAccess) {
     if (isBlank(scopedFilePath)) {
-      throw new InvalidRequestException(
-          format("File reference cannot be null or empty"));
+      throw new InvalidRequestException(format("File reference cannot be null or empty"));
     }
     FileReference fileReference = FileReference.of(
         scopedFilePath, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
@@ -177,34 +144,15 @@ public class ElastigroupStepUtils extends CDStepHelper {
         fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(), fileReference.getOrgIdentifier(),
             fileReference.getProjectIdentifier(), fileReference.getPath(), true);
     if (!manifestFile.isPresent()) {
-      throw new InvalidRequestException(
-          format("File/Folder not found in File Store with path: [%s], scope: [%s]",
-              fileReference.getPath(), fileReference.getScope()));
+      throw new InvalidRequestException(format("File/Folder not found in File Store with path: [%s], scope: [%s]",
+          fileReference.getPath(), fileReference.getScope()));
     }
     return manifestFile;
-  }
-
-  public boolean areAllManifestsFromHarnessFileStore(List<? extends ManifestOutcome> manifestOutcomes) {
-    boolean retVal = true;
-    for (ManifestOutcome manifestOutcome : manifestOutcomes) {
-      retVal = retVal && ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind());
-    }
-    return retVal;
   }
 
   private void printFilesFetchedFromHarnessStore(List<String> scopedFilePathList, LogCallback logCallback) {
     for (String scopedFilePath : scopedFilePathList) {
       logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
     }
-  }
-
-  public UnitProgressData getCommandUnitProgressData(
-      String commandName, CommandExecutionStatus commandExecutionStatus) {
-    LinkedHashMap<String, CommandUnitProgress> commandUnitProgressMap = new LinkedHashMap<>();
-    CommandUnitProgress commandUnitProgress = CommandUnitProgress.builder().status(commandExecutionStatus).build();
-    commandUnitProgressMap.put(commandName, commandUnitProgress);
-    CommandUnitsProgress commandUnitsProgress =
-        CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressMap).build();
-    return UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
   }
 }

@@ -7,12 +7,8 @@
 
 package io.harness.serializer.morphia;
 
-import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.capability.CapabilityRequirement;
-import io.harness.capability.CapabilitySubjectPermission;
-import io.harness.capability.CapabilityTaskSelectionDetails;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
@@ -39,6 +35,10 @@ import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionC
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.task.HDelegateTask;
 import io.harness.delegate.task.ListNotifyResponseData;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
@@ -109,16 +109,11 @@ import software.wings.yaml.gitSync.YamlGitConfig;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.DEL)
-@BreakDependencyOn("io.harness.capability.CapabilityRequirement")
-@BreakDependencyOn("io.harness.capability.CapabilitySubjectPermission")
 public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
   private String cf = "helpers.ext.cloudformation.";
 
   @Override
   public void registerClasses(Set<Class> set) {
-    set.add(CapabilityRequirement.class);
-    set.add(CapabilitySubjectPermission.class);
-    set.add(CapabilityTaskSelectionDetails.class);
     set.add(HDelegateTask.class);
     set.add(ExecutionCapabilityDemander.class);
     set.add(ExecutionCapability.class);
@@ -169,6 +164,10 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     h.put("delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest", AzureArtifactsDelegateRequest.class);
     h.put(
         "delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse", AzureArtifactsDelegateResponse.class);
+    h.put("delegate.task.artifacts.ami.AMIArtifactDelegateRequest", AMIArtifactDelegateRequest.class);
+    h.put("delegate.task.artifacts.ami.AMIArtifactDelegateResponse", AMIArtifactDelegateResponse.class);
+    h.put("delegate.task.artifacts.ami.AMITag", AMITag.class);
+    h.put("delegate.task.artifacts.ami.AMIFilter", AMIFilter.class);
     h.put("delegate.task.artifacts.custom.CustomArtifactDelegateRequest", CustomArtifactDelegateRequest.class);
     h.put("delegate.task.artifacts.custom.CustomArtifactDelegateResponse", CustomArtifactDelegateResponse.class);
     h.put("delegate.task.artifacts.gcr.GcrArtifactDelegateRequest", GcrArtifactDelegateRequest.class);

@@ -52,6 +52,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.NoDelegatesException;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.exception.ExceptionUtils;
@@ -71,6 +72,7 @@ import software.wings.service.intfc.DelegateTaskServiceClassic;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
@@ -94,6 +96,8 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   private PerpetualTaskService perpetualTaskService;
   private DelegateService delegateService;
   private KryoSerializer kryoSerializer;
+
+  private KryoSerializer referenceFalseKryoSerializer;
   private DelegateTaskService delegateTaskService;
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
 
@@ -101,11 +105,13 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   public DelegateServiceGrpcImpl(DelegateCallbackRegistry delegateCallbackRegistry,
       PerpetualTaskService perpetualTaskService, DelegateService delegateService,
       DelegateTaskService delegateTaskService, KryoSerializer kryoSerializer,
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
       DelegateTaskServiceClassic delegateTaskServiceClassic) {
     this.delegateCallbackRegistry = delegateCallbackRegistry;
     this.perpetualTaskService = perpetualTaskService;
     this.delegateService = delegateService;
     this.kryoSerializer = kryoSerializer;
+    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.delegateTaskService = delegateTaskService;
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
   }
@@ -186,6 +192,83 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     }
   }
 
+  public void submitTaskV2(SubmitTaskRequest request, StreamObserver<SubmitTaskResponse> responseObserver) {
+    try {
+      String taskId = generateUuid();
+      TaskDetails taskDetails = request.getDetails();
+      Map<String, String> setupAbstractions = request.getSetupAbstractions().getValuesMap();
+      LinkedHashMap<String, String> logAbstractions =
+          request.getLogAbstractions() == null || request.getLogAbstractions().getValuesMap() == null
+          ? new LinkedHashMap<>()
+          : new LinkedHashMap<>(request.getLogAbstractions().getValuesMap());
+      List<ExecutionCapability> capabilities =
+          request.getCapabilitiesList()
+              .stream()
+              .map(capability
+                  -> (ExecutionCapability) referenceFalseKryoSerializer.asInflatedObject(
+                      capability.getKryoCapability().toByteArray()))
+              .collect(Collectors.toList());
+
+      if (isNotEmpty(request.getSelectorsList())) {
+        List<SelectorCapability> selectorCapabilities = request.getSelectorsList()
+                                                            .stream()
+                                                            .filter(s -> isNotEmpty(s.getSelector()))
+                                                            .map(this::toSelectorCapability)
+                                                            .collect(Collectors.toList());
+        capabilities.addAll(selectorCapabilities);
+      }
+
+      DelegateTaskBuilder taskBuilder =
+          DelegateTask.builder()
+              .uuid(taskId)
+              .driverId(request.hasCallbackToken() ? request.getCallbackToken().getToken() : null)
+              .waitId(taskId)
+              .accountId(request.getAccountId().getId())
+              .setupAbstractions(setupAbstractions)
+              .logStreamingAbstractions(logAbstractions)
+              .workflowExecutionId(setupAbstractions.get(DelegateTaskKeys.workflowExecutionId))
+              .executionCapabilities(capabilities)
+              .selectionLogsTrackingEnabled(request.getSelectionTrackingLogEnabled())
+              .eligibleToExecuteDelegateIds(new LinkedList<>(request.getEligibleToExecuteDelegateIdsList()))
+              .executeOnHarnessHostedDelegates(request.getExecuteOnHarnessHostedDelegates())
+              .emitEvent(request.getEmitEvent())
+              .stageId(request.getStageId())
+              .forceExecute(request.getForceExecute())
+              .taskDataV2(createTaskDataV2(taskDetails));
+
+      if (request.hasQueueTimeout()) {
+        taskBuilder.expiry(System.currentTimeMillis() + Durations.toMillis(request.getQueueTimeout()));
+      }
+
+      DelegateTask task = taskBuilder.build();
+
+      if (task.getTaskDataV2().isParked()) {
+        delegateTaskServiceClassic.processDelegateTaskV2(task, DelegateTask.Status.PARKED);
+      } else {
+        if (task.getTaskDataV2().isAsync()) {
+          delegateService.queueTask(task);
+        } else {
+          delegateService.scheduleSyncTaskV2(task);
+        }
+      }
+      responseObserver.onNext(
+          SubmitTaskResponse.newBuilder()
+              .setTaskId(TaskId.newBuilder().setId(taskId).build())
+              .setTotalExpiry(Timestamps.fromMillis(task.getExpiry() + task.getTaskDataV2().getTimeout()))
+              .build());
+      responseObserver.onCompleted();
+
+    } catch (Exception ex) {
+      if (ex instanceof NoDelegatesException) {
+        log.error("No delegate exception found while processing submit task request. reason {}",
+            ExceptionUtils.getMessage(ex));
+      } else {
+        log.error("Unexpected error occurred while processing submit task request.", ex);
+      }
+      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
+    }
+  }
+
   private TaskData createTaskData(TaskDetails taskDetails) {
     Object[] parameters = null;
     byte[] data;
@@ -211,6 +294,34 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
         .expressionFunctorToken((int) taskDetails.getExpressionFunctorToken())
         .expressions(taskDetails.getExpressionsMap())
         .serializationFormat(serializationFormat)
+        .build();
+  }
+
+  private TaskDataV2 createTaskDataV2(TaskDetails taskDetails) {
+    Object[] parameters = null;
+    byte[] data;
+    SerializationFormat serializationFormat;
+    if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.KRYO_PARAMETERS)) {
+      serializationFormat = SerializationFormat.KRYO;
+      data = taskDetails.getKryoParameters().toByteArray();
+      parameters = new Object[] {referenceFalseKryoSerializer.asInflatedObject(data)};
+    } else if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.JSON_PARAMETERS)) {
+      serializationFormat = SerializationFormat.JSON;
+      data = taskDetails.getJsonParameters().toStringUtf8().getBytes(StandardCharsets.UTF_8);
+    } else {
+      throw new InvalidRequestException("Invalid task response type.");
+    }
+
+    return TaskDataV2.builder()
+        .parked(taskDetails.getParked())
+        .async(taskDetails.getMode() == TaskMode.ASYNC)
+        .taskType(taskDetails.getType().getType())
+        .parameters(parameters)
+        .data(data)
+        .timeout(Durations.toMillis(taskDetails.getExecutionTimeout()))
+        .expressionFunctorToken((int) taskDetails.getExpressionFunctorToken())
+        .expressions(taskDetails.getExpressionsMap())
+        .serializationFormat(io.harness.beans.SerializationFormat.valueOf(serializationFormat.name()))
         .build();
   }
 

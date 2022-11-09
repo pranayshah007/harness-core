@@ -7,6 +7,8 @@
 
 package io.harness.ci.logserviceclient;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.beans.entities.LogServiceConfig;
@@ -39,8 +41,8 @@ public class CILogServiceUtils {
 
   @NotNull
   public String getLogServiceToken(String accountID) {
-    log.info("Initiating token request to log service: {}", this.logServiceConfig.getBaseUrl());
-    Call<String> tokenCall = ciLogServiceClient.generateToken(accountID, this.logServiceConfig.getGlobalToken());
+    log.info("Initiating token request to log service: {}", getInternalUrl());
+    Call<String> tokenCall = ciLogServiceClient.generateToken(accountID, logServiceConfig.getGlobalToken());
     Response<String> response = null;
     try {
       response = tokenCall.execute();
@@ -62,6 +64,13 @@ public class CILogServiceUtils {
           response.message() == null ? "null" : response.message(), response.errorBody() == null ? "null" : errorBody));
     }
     return response.body();
+  }
+
+  private String getInternalUrl() {
+    if (!isEmpty(logServiceConfig.getInternalUrl())) {
+      return logServiceConfig.getInternalUrl();
+    }
+    return logServiceConfig.getBaseUrl();
   }
 
   @NotNull

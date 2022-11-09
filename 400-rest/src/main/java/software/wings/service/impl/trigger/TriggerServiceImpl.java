@@ -300,6 +300,12 @@ public class TriggerServiceImpl implements TriggerService {
   @Override
   public Trigger save(Trigger trigger) {
     String accountId = appService.getAccountIdByAppId(trigger.getAppId());
+    if (featureFlagService.isEnabled(FeatureName.SPG_ALLOW_DISABLE_TRIGGERS, accountId)) {
+      Application app = appService.get(trigger.getAppId());
+      if (app != null && Boolean.TRUE.equals(app.getDisableTriggers())) {
+        throw new InvalidRequestException("Triggers are disabled for the application " + app.getName());
+      }
+    }
     trigger.setAccountId(accountId);
     validateInput(trigger, null);
     updateNextIterations(trigger);
@@ -348,6 +354,12 @@ public class TriggerServiceImpl implements TriggerService {
     String accountId = isEmpty(existingTrigger.getAccountId())
         ? appService.getAccountIdByAppId(existingTrigger.getAppId())
         : existingTrigger.getAccountId();
+    if (featureFlagService.isEnabled(FeatureName.SPG_ALLOW_DISABLE_TRIGGERS, accountId)) {
+      Application app = appService.get(trigger.getAppId());
+      if (app != null && Boolean.TRUE.equals(app.getDisableTriggers())) {
+        throw new InvalidRequestException("Triggers are disabled for the application " + app.getName());
+      }
+    }
     trigger.setAccountId(accountId);
 
     validateInput(trigger, existingTrigger);
@@ -1106,6 +1118,13 @@ public class TriggerServiceImpl implements TriggerService {
 
   private WorkflowExecution triggerDeployment(List<Artifact> artifacts, List<HelmChart> helmCharts,
       Map<String, String> parameters, TriggerExecution triggerExecution, Trigger trigger) {
+    String accountId = appService.getAccountIdByAppId(trigger.getAppId());
+    if (featureFlagService.isEnabled(FeatureName.SPG_ALLOW_DISABLE_TRIGGERS, accountId)) {
+      Application app = appService.get(trigger.getAppId());
+      if (app != null && Boolean.TRUE.equals(app.getDisableTriggers())) {
+        throw new InvalidRequestException("Triggers are disabled for the application " + app.getName());
+      }
+    }
     ExecutionArgs executionArgs = new ExecutionArgs();
 
     if (isNotEmpty(artifacts)) {

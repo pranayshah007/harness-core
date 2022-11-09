@@ -8,6 +8,7 @@
 package software.wings.service.impl.instance;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -76,6 +77,8 @@ import software.wings.beans.infrastructure.instance.info.Ec2InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.PhysicalHostInstanceInfo;
 import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
+import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
+import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.HostService;
@@ -109,6 +112,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -148,6 +152,7 @@ public class InstanceHelper {
   @Inject private InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject private InstanceSyncMonitoringService instanceSyncMonitoringService;
+  @Inject private CgInstanceSyncTaskDetailsService taskDetailsService;
 
   /**
    * The phaseExecutionData is used to process the instance information that is used by the service and infra
@@ -730,6 +735,24 @@ public class InstanceHelper {
           infrastructureMappingId);
       instanceSyncPerpetualTaskService.deletePerpetualTasks(accountId, infrastructureMappingId);
       return;
+    }
+
+    if (featureFlagService.isEnabled(INSTANCE_SYNC_V2_CG, infrastructureMapping.getAccountId())) {
+      InstanceSyncTaskDetails instanceSyncV2TaskDetails =
+          taskDetailsService.getForInfraMapping(infrastructureMapping.getAccountId(), infrastructureMapping.getUuid());
+      if (Objects.nonNull(instanceSyncV2TaskDetails) && instanceSyncV2TaskDetails.getLastSuccessfulRun() > 0) {
+        log.info(
+            "[INSTANCE_SYNC_V2_CG] Instance Sync for infra mapping: [{}] is moved to new Instance Sync V2 framework, and is handled via Perpetual Task Id: [{}], and instance sync task details id: [{}]. Skipping consuming response for this.",
+            infrastructureMapping.getUuid(), instanceSyncV2TaskDetails.getPerpetualTaskId(),
+            instanceSyncV2TaskDetails.getUuid());
+
+        perpetualTaskService.deleteTask(accountId, perpetualTaskId);
+        log.info(
+            "[INSTANCE_SYNC_V2_CG] Perpetual task with Id: [{}] deleted for infra mapping Id: [{}]. This is now migrated to new perpetual task: [{}], and instance sync task details: [{}]",
+            perpetualTaskId, infrastructureMappingId, instanceSyncV2TaskDetails.getPerpetualTaskId(),
+            instanceSyncV2TaskDetails.getUuid());
+        return;
+      }
     }
 
     log.debug("Handling Instance sync response. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());

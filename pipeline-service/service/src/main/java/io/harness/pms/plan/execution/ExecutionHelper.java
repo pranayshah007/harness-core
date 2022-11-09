@@ -26,6 +26,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.Builder;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -61,6 +62,8 @@ import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.stages.StagesExpressionExtractor;
+import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
@@ -75,6 +78,7 @@ import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -158,24 +162,39 @@ public class ExecutionHelper {
     try (AutoLogContext ignore =
              PlanCreatorUtils.autoLogContext(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
                  pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), executionId)) {
-      boolean isRetry = retryExecutionParameters.isRetry();
-      // RetryExecutionInfo
-      RetryExecutionInfo retryExecutionInfo = buildRetryInfo(isRetry, originalExecutionId);
-      TemplateMergeResponseDTO templateMergeResponseDTO =
-          getPipelineYamlAndValidate(mergedRuntimeInputYaml, pipelineEntity);
-      String pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
-      String pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
+      String version = pipelineEntity.getHarnessVersion();
+      String pipelineYaml;
+      String pipelineYamlWithTemplateRef;
+      boolean allowedStageExecution;
+      List<NotificationRules> notificationRules = new ArrayList<>();
+      switch (version) {
+        case PipelineVersion.V1:
+          allowedStageExecution = false;
+          pipelineYaml = pipelineEntity.getYaml();
+          pipelineYamlWithTemplateRef = pipelineEntity.getYaml();
+          break;
+        case PipelineVersion.V0:
+          TemplateMergeResponseDTO templateMergeResponseDTO =
+              getPipelineYamlAndValidate(mergedRuntimeInputYaml, pipelineEntity);
+          pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
+          pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
+          BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
+          allowedStageExecution = basicPipeline.isAllowStageExecutions();
+          notificationRules = basicPipeline.getNotificationRules();
+          break;
+        default:
+          throw new InvalidRequestException("version not supported");
+      }
 
-      BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
       StagesExecutionInfo stagesExecutionInfo = StagesExecutionInfo.builder()
                                                     .isStagesExecution(false)
                                                     .pipelineYamlToRun(pipelineYaml)
-                                                    .allowStagesExecution(basicPipeline.isAllowStageExecutions())
+                                                    .allowStagesExecution(allowedStageExecution)
                                                     .build();
       if (EmptyPredicate.isNotEmpty(stagesToRun)) {
-        if (!basicPipeline.isAllowStageExecutions()) {
+        if (!allowedStageExecution) {
           throw new InvalidRequestException(
-              String.format("Stage executions are not allowed for pipeline [%s]", basicPipeline.getIdentifier()));
+              String.format("Stage executions are not allowed for pipeline [%s]", pipelineEntity.getIdentifier()));
         }
 
         StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(pipelineYaml, stagesToRun);
@@ -185,8 +204,8 @@ public class ExecutionHelper {
             InputSetMergeHelper.removeNonRequiredStages(pipelineYamlWithTemplateRef, stagesToRun);
       }
 
-      PlanExecutionMetadata.Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml,
-          executionId, stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser);
+      Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml, executionId,
+          stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, version);
       if (stagesExecutionInfo.isStagesExecution()) {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity.getAccountId(),
             YamlUtils.extractPipelineField(planExecutionMetadataBuilder.build().getProcessedYaml()));
@@ -197,9 +216,12 @@ public class ExecutionHelper {
           pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef, true);
       planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
       PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
-      basicPipeline = YamlUtils.read(planExecutionMetadata.getYaml(), BasicPipeline.class);
+
+      boolean isRetry = retryExecutionParameters.isRetry();
+      // RetryExecutionInfo
+      RetryExecutionInfo retryExecutionInfo = buildRetryInfo(isRetry, originalExecutionId);
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
-          triggerInfo, pipelineEntity, executionId, retryExecutionInfo, basicPipeline.getNotificationRules());
+          triggerInfo, pipelineEntity, executionId, retryExecutionInfo, notificationRules);
       return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
     } finally {
       log.info("[PMS_EXECUTE] Pipeline build execution args took time {}ms", System.currentTimeMillis() - start);
@@ -218,7 +240,8 @@ public class ExecutionHelper {
             .setPipelineIdentifier(pipelineIdentifier)
             .setRetryInfo(retryExecutionInfo)
             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
-            .setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules));
+            .setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules))
+            .setHarnessVersion(pipelineEntity.getHarnessVersion());
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
     if (gitSyncBranchContext != null) {
@@ -304,7 +327,7 @@ public class ExecutionHelper {
 
   private PlanExecutionMetadata.Builder obtainPlanExecutionMetadata(String mergedRuntimeInputYaml, String executionId,
       StagesExecutionInfo stagesExecutionInfo, String originalExecutionId,
-      RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser) {
+      RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser, String version) {
     long start = System.currentTimeMillis();
     boolean isRetry = retryExecutionParameters.isRetry();
     String pipelineYaml = stagesExecutionInfo.getPipelineYamlToRun();
@@ -318,7 +341,17 @@ public class ExecutionHelper {
             .notifyOnlyUser(notifyOnlyUser);
     String currentProcessedYaml;
     try {
-      currentProcessedYaml = YamlUtils.injectUuid(pipelineYaml);
+      switch (version) {
+        case PipelineVersion.V1:
+          currentProcessedYaml = YamlUtils.injectUuidWithType(pipelineYaml, YAMLFieldNameConstants.PIPELINE);
+          break;
+        case PipelineVersion.V0:
+          currentProcessedYaml = YamlUtils.injectUuid(pipelineYaml);
+          break;
+        default:
+          throw new IllegalStateException("version not supported");
+      }
+
     } catch (IOException e) {
       log.error("Unable to inject Uuids into pipeline Yaml. Yaml:\n" + pipelineYaml, e);
       throw new InvalidYamlException("Unable to inject Uuids into pipeline Yaml", e);
@@ -367,8 +400,9 @@ public class ExecutionHelper {
              PlanCreatorUtils.autoLogContext(executionMetadata, accountId, orgIdentifier, projectIdentifier)) {
       PlanCreationBlobResponse resp;
       try {
-        resp = planCreatorMergeService.createPlan(
-            accountId, orgIdentifier, projectIdentifier, executionMetadata, planExecutionMetadata);
+        String version = executionMetadata.getHarnessVersion();
+        resp = planCreatorMergeService.createPlanVersioned(
+            accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
       } catch (IOException e) {
         log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(e)), e);
         throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(e)), e);

@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
 
@@ -60,7 +61,7 @@ public interface ServiceEntityService {
 
   ArtifactSourcesResponseDTO getArtifactSourceInputs(String yaml, String serviceIdentifier);
 
-  String mergeServiceInputs(
+  ServiceInputsMergedResponseDto mergeServiceInputs(
       String accountId, String orgId, String projectId, String serviceId, String oldServiceInputsYaml);
 
   boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);

@@ -13,9 +13,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -35,10 +41,10 @@ import io.harness.steps.approval.step.harness.HarnessApprovalStep;
 import io.harness.steps.approval.step.harness.beans.Approvers;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,8 +62,15 @@ public class HarnessApprovalStepTest {
   @Mock ApprovalInstanceService approvalInstanceService;
   @Mock ExecutorService executorService;
   @Mock ApprovalNotificationHandler approvalNotificationHandler;
-
+  @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
   @InjectMocks private HarnessApprovalStep harnessApprovalStep;
+  private ILogStreamingStepClient logStreamingStepClient;
+
+  @Before
+  public void setup() {
+    logStreamingStepClient = mock(ILogStreamingStepClient.class);
+    when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
+  }
 
   @Test
   @Owner(developers = PRABU)
@@ -82,6 +95,7 @@ public class HarnessApprovalStepTest {
     assertThat(instance.getApprovalMessage()).isEqualTo(APPROVAL_MESSAGE);
     assertThat(instance.getApprovers().getUserGroups().get(0)).isEqualTo(USER_GROUP);
     assertThat(instance.getApprovers().getMinimumCount()).isEqualTo(1);
+    verify(logStreamingStepClient, times(1)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -100,6 +114,7 @@ public class HarnessApprovalStepTest {
     StepResponse stepResponse =
         harnessApprovalStep.handleAsyncResponse(ambiance, parameters, Collections.singletonMap("key", responseData));
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -120,6 +135,7 @@ public class HarnessApprovalStepTest {
     assertThat(response.getStepOutcomes().iterator().next().getOutcome())
         .isNotNull()
         .isInstanceOf(HarnessApprovalOutcome.class);
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -143,6 +159,7 @@ public class HarnessApprovalStepTest {
     assertThat(response.getStepOutcomes().iterator().next().getOutcome())
         .isNotNull()
         .isInstanceOf(HarnessApprovalOutcome.class);
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -153,21 +170,24 @@ public class HarnessApprovalStepTest {
     StepElementParameters parameters = getStepElementParameters();
     harnessApprovalStep.handleAbort(ambiance, parameters, null);
     verify(approvalInstanceService).expireByNodeExecutionId(null);
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   private StepElementParameters getStepElementParameters() {
     return StepElementParameters.builder()
         .type("HARNESS_APPROVAL")
-        .spec(HarnessApprovalSpecParameters.builder()
-                  .approvalMessage(ParameterField.<String>builder().value(APPROVAL_MESSAGE).build())
-                  .includePipelineExecutionHistory(ParameterField.<Boolean>builder().value(false).build())
-                  .approvers(
-                      Approvers.builder()
-                          .userGroups(ParameterField.<List<String>>builder().value(Arrays.asList(USER_GROUP)).build())
-                          .minimumCount(ParameterField.<Integer>builder().value(1).build())
-                          .disallowPipelineExecutor(ParameterField.<Boolean>builder().value(false).build())
-                          .build())
-                  .build())
+        .spec(
+            HarnessApprovalSpecParameters.builder()
+                .approvalMessage(ParameterField.<String>builder().value(APPROVAL_MESSAGE).build())
+                .includePipelineExecutionHistory(ParameterField.<Boolean>builder().value(false).build())
+                .approvers(
+                    Approvers.builder()
+                        .userGroups(
+                            ParameterField.<List<String>>builder().value(Collections.singletonList(USER_GROUP)).build())
+                        .minimumCount(ParameterField.<Integer>builder().value(1).build())
+                        .disallowPipelineExecutor(ParameterField.<Boolean>builder().value(false).build())
+                        .build())
+                .build())
         .build();
   }
 

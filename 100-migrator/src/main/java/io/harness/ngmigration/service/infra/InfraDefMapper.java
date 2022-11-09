@@ -17,6 +17,8 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -25,4 +27,8 @@ public interface InfraDefMapper {
   InfrastructureType getInfrastructureType(InfrastructureDefinition infrastructureDefinition);
   Infrastructure getSpec(
       InfrastructureDefinition infrastructureDefinition, Map<CgEntityId, NGYamlFile> migratedEntities);
+
+  default List<String> getConnectorIds(InfrastructureDefinition infrastructureDefinition) {
+    return Collections.emptyList();
+  }
 }

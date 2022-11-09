@@ -165,7 +165,7 @@ import io.harness.serializer.NGTriggerRegistrars;
 import io.harness.serializer.OrchestrationStepsModuleRegistrars;
 import io.harness.serializer.PipelineServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
-import io.harness.spec.server.pipeline.PipelinesApi;
+import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;

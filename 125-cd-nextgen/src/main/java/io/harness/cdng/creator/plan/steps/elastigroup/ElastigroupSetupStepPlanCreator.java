@@ -7,7 +7,6 @@
 
 package io.harness.cdng.creator.plan.steps.elastigroup;
 
-import com.google.common.collect.Sets;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
@@ -17,11 +16,11 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
+import com.google.common.collect.Sets;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class ElastigroupSetupStepPlanCreator
-    extends CDPMSStepPlanCreatorV2<ElastigroupSetupStepNode> {
+public class ElastigroupSetupStepPlanCreator extends CDPMSStepPlanCreatorV2<ElastigroupSetupStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.ELASTIGROUP_SETUP);
@@ -33,8 +32,7 @@ public class ElastigroupSetupStepPlanCreator
   }
 
   @Override
-  public PlanCreationResponse createPlanForField(
-      PlanCreationContext ctx, ElastigroupSetupStepNode stepElement) {
+  public PlanCreationResponse createPlanForField(PlanCreationContext ctx, ElastigroupSetupStepNode stepElement) {
     return super.createPlanForField(ctx, stepElement);
   }
 

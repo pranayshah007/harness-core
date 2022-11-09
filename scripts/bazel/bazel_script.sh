@@ -80,7 +80,6 @@ BAZEL_MODULES="\
   //441-cg-instance-sync:module \
   //445-cg-connectors:module \
   //450-ce-views:module \
-  //460-capability:module \
   //490-ce-commons:module \
   //pipeline-service/service:module \
   //pipeline-service/modules/ng-triggers:module \
@@ -310,7 +309,6 @@ build_bazel_module 440-connector-nextgen
 build_bazel_module 440-secret-management-service
 build_bazel_module 445-cg-connectors
 build_bazel_module 450-ce-views
-build_bazel_module 460-capability
 build_bazel_module 490-ce-commons
 build_bazel_module 815-cg-triggers
 build_bazel_module 865-cg-events

@@ -18,6 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
@@ -158,6 +159,9 @@ public class ImagePullSecretUtils {
       case ArtifactSourceConstants.AZURE_ARTIFACTS_NAME:
         getImageDetailsFromAzureArtifacts((AzureArtifactsOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
+      case ArtifactSourceConstants.AMI_ARTIFACTS_NAME:
+        getImageDetailsForAMI((AMIArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactOutcome.getArtifactType()));
@@ -171,6 +175,31 @@ public class ImagePullSecretUtils {
       return getArtifactRegistryCredentialsFromUsernameRef(imageDetails);
     }
     return "";
+  }
+
+  private void getImageDetailsForAMI(
+      AMIArtifactOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = artifactOutcome.getConnectorRef();
+
+    ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+
+    AwsConnectorDTO connectorConfig = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+
+    if (connectorConfig.getCredential() != null && connectorConfig.getCredential().getConfig() != null
+        && connectorConfig.getCredential().getAwsCredentialType() == MANUAL_CREDENTIALS) {
+      AwsManualConfigSpecDTO credentials = (AwsManualConfigSpecDTO) connectorConfig.getCredential().getConfig();
+
+      String passwordRef = credentials.getSecretKeyRef().toSecretRefStringValue();
+
+      if (credentials.getAccessKeyRef() != null) {
+        imageDetailsBuilder.usernameRef(
+            getPasswordExpression(credentials.getAccessKeyRef().toSecretRefStringValue(), ambiance));
+      }
+
+      imageDetailsBuilder.username(credentials.getAccessKey());
+
+      imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
+    }
   }
 
   private void getImageDetailsFromS3(

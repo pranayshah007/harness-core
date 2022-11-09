@@ -18,6 +18,7 @@ import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.TemplateImportRequestDTO;
+import io.harness.template.beans.TemplateListRepoResponse;
 import io.harness.template.entity.TemplateEntity;
 
 import java.util.Optional;
@@ -80,4 +81,7 @@ public interface NGTemplateService {
 
   TemplateEntity importTemplateFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, TemplateImportRequestDTO templateImportRequest, boolean isForceImport);
+
+  TemplateListRepoResponse getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      boolean includeAllTemplatesAccessibleAtScope);
 }

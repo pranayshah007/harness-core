@@ -30,4 +30,5 @@ public class QLApplication implements QLObject {
   QLUser createdBy;
   Boolean isManualTriggerAuthorized;
   Boolean areWebHookSecretsMandated;
+  Boolean disableTriggers;
 }

@@ -51,12 +51,14 @@ import software.wings.api.ContainerDeploymentInfoWithLabels;
 import software.wings.api.ContainerDeploymentInfoWithNames;
 import software.wings.api.CustomDeploymentTypeInfo;
 import software.wings.api.DeploymentEvent;
+import software.wings.api.DeploymentStepTimeSeriesEvent;
 import software.wings.api.DeploymentSummary;
 import software.wings.api.DeploymentTimeSeriesEvent;
 import software.wings.api.EcsStepExecutionSummary;
 import software.wings.api.ElbStateExecutionData;
 import software.wings.api.EmailStateExecutionData;
 import software.wings.api.EnvStateExecutionData;
+import software.wings.api.ExecutionInterruptTimeSeriesEvent;
 import software.wings.api.HelmDeployStateExecutionData;
 import software.wings.api.HelmSetupExecutionSummary;
 import software.wings.api.HttpStateExecutionData;
@@ -338,6 +340,7 @@ import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.PcfInfraStructure;
 import software.wings.infra.PhysicalInfra;
 import software.wings.infra.PhysicalInfraWinrm;
+import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.metrics.TimeSeriesDataRecord;
 import software.wings.prune.PruneEvent;
 import software.wings.resources.DelegateFileResource.FileIdempotentResult;
@@ -678,6 +681,8 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(DeploymentSpecification.class);
     set.add(DeploymentSummary.class);
     set.add(DeploymentTimeSeriesEvent.class);
+    set.add(DeploymentStepTimeSeriesEvent.class);
+    set.add(ExecutionInterruptTimeSeriesEvent.class);
     set.add(DirectKubernetesInfrastructureMapping.class);
     set.add(RancherKubernetesInfrastructureMapping.class);
     set.add(DockerArtifactStream.class);
@@ -850,6 +855,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(AgentMtlsEndpoint.class);
     set.add(ArtifactView.class);
     set.add(LookerEntityReconRecord.class);
+    set.add(InstanceSyncTaskDetails.class);
   }
 
   @Override
