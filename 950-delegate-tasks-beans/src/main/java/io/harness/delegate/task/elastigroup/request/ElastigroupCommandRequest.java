@@ -9,8 +9,6 @@ package io.harness.delegate.task.elastigroup.request;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
-import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCapabilityHelper;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -18,15 +16,12 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.ecs.EcsCommandTypeNG;
-import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.hibernate.validator.constraints.NotEmpty;
 

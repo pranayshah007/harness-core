@@ -9,7 +9,6 @@ package io.harness.cdng.elastigroup;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;

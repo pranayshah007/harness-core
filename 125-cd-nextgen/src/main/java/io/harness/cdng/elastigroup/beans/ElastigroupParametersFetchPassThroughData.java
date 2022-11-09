@@ -11,7 +11,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import lombok.Builder;
