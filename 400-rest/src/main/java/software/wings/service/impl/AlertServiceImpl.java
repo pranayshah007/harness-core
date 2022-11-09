@@ -109,7 +109,7 @@ public class AlertServiceImpl implements AlertService {
 
   @Override
   public PageResponse<Alert> list(PageRequest<Alert> pageRequest) {
-    return wingsPersistence.query(Alert.class, pageRequest);
+    return wingsPersistence.querySecondary(Alert.class, pageRequest);
   }
 
   @Override
@@ -418,6 +418,16 @@ public class AlertServiceImpl implements AlertService {
         if (data.getArtifactStreamId().equals(artifactStreamId)) {
           wingsPersistence.delete(alert);
         }
+      }
+    }
+  }
+
+  @Override
+  public void deleteArtifactStreamAlertForAccount(String accountId) {
+    try (HIterator<Alert> alerts = findExistingAlertsOfType(accountId, null, AlertType.ARTIFACT_COLLECTION_FAILED)) {
+      for (Alert alert : alerts) {
+        ArtifactCollectionFailedAlert data = (ArtifactCollectionFailedAlert) alert.getAlertData();
+        wingsPersistence.delete(alert);
       }
     }
   }

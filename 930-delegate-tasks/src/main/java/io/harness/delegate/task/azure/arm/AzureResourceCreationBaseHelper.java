@@ -22,13 +22,19 @@ import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 public interface AzureResourceCreationBaseHelper {
   DeploymentResourceGroupContext toDeploymentResourceGroupContext(
       AzureARMTaskNGParameters azureARMTaskNGParameters, AzureConfig azureConfig, AzureLogCallbackProvider logCallback);
+
   AzureClientContext getAzureClientContext(AzureARMTaskNGParameters azureARMTaskNGParameters, AzureConfig azureConfig);
+
   String getDeploymentName(AzureARMTaskNGParameters deploymentParameters);
+
   DeploymentManagementGroupContext toDeploymentManagementGroupContext(AzureARMTaskNGParameters deploymentParameters,
       AzureConfig azureConfig, AzureLogCallbackProvider logStreamingTaskClient);
+
   AzureARMTaskNGResponse populateDeploymentResponse(String outputs);
+
   DeploymentTenantContext toDeploymentTenantContext(AzureARMTaskNGParameters deploymentParameters,
       AzureConfig azureConfig, AzureLogCallbackProvider logStreamingTaskClient);
+
   DeploymentSubscriptionContext toDeploymentSubscriptionContext(AzureARMTaskNGParameters deploymentParameters,
       AzureConfig azureConfig, AzureLogCallbackProvider logStreamingTaskClient);
 }

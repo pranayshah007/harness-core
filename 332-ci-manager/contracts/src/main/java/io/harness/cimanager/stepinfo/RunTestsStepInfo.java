@@ -26,6 +26,7 @@ import io.harness.beans.yaml.extended.TIBuildTool;
 import io.harness.beans.yaml.extended.TIDotNetBuildEnvName;
 import io.harness.beans.yaml.extended.TIDotNetVersion;
 import io.harness.beans.yaml.extended.TILanguage;
+import io.harness.beans.yaml.extended.TISplitStrategy;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -103,7 +104,6 @@ public class RunTestsStepInfo implements CIStepInfo {
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> runOnlySelectedTests;
-
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
   private ContainerResource resources;
@@ -126,12 +126,16 @@ public class RunTestsStepInfo implements CIStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.CIShellType")
   private ParameterField<CIShellType> shell;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.TISplitStrategy")
+  private ParameterField<TISplitStrategy> testSplitStrategy;
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) private ParameterField<Boolean> enableTestSplitting;
 
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "args", "language", "buildTool", "image", "connectorRef",
       "resources", "reports", "testAnnotations", "packages", "namespaces", "runOnlySelectedTests", "preCommand",
       "postCommand", "outputVariables", "envVariables", "buildEnvironment", "frameworkVersion", "privileged",
-      "runAsUser", "imagePullPolicy", "shell"})
+      "runAsUser", "imagePullPolicy", "shell", "testSplitStrategy", "enableTestSplitting"})
   public RunTestsStepInfo(String identifier, String name, Integer retry, ParameterField<String> args,
       ParameterField<TILanguage> language, ParameterField<TIBuildTool> buildTool, ParameterField<String> image,
       ParameterField<String> connectorRef, ContainerResource resources, ParameterField<UnitTestReport> reports,
@@ -141,7 +145,8 @@ public class RunTestsStepInfo implements CIStepInfo {
       ParameterField<Map<String, String>> envVariables, ParameterField<TIDotNetBuildEnvName> buildEnvironment,
       ParameterField<TIDotNetVersion> frameworkVersion, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<CIShellType> shell) {
+      ParameterField<CIShellType> shell, ParameterField<TISplitStrategy> testSplitStrategy,
+      ParameterField<Boolean> enableTestSplitting) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
@@ -166,6 +171,8 @@ public class RunTestsStepInfo implements CIStepInfo {
     this.shell = shell;
     this.buildEnvironment = buildEnvironment;
     this.frameworkVersion = frameworkVersion;
+    this.testSplitStrategy = testSplitStrategy;
+    this.enableTestSplitting = enableTestSplitting;
   }
 
   @Override

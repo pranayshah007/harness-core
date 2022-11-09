@@ -18,6 +18,7 @@ import io.harness.cvng.models.VerificationType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +42,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "SplunkMetricHealthSource",
+    description = "This is the Splunk Metric Health Source spec entity defined in Harness")
 public class SplunkMetricHealthSourceSpec extends MetricHealthSourceSpec {
   @NotNull String feature;
   private List<SplunkMetricDefinition> metricDefinitions;

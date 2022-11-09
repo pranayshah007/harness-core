@@ -98,14 +98,16 @@ public class LdapGroupScheduledHandler implements Handler<LdapSettings> {
   @Override
   public void handle(LdapSettings settings) {
     ldapGroupSyncJobHelper.syncJob(settings);
-    processForNG(settings);
+    if (!settings.isDisabled()) {
+      processForNG(settings);
+    }
   }
 
   private void processForNG(LdapSettings settings) {
     if (featureFlagService.isEnabled(FeatureName.NG_ENABLE_LDAP_CHECK, settings.getAccountId())) {
       publishEventToNG(settings);
     } else {
-      log.error("Please enable feature flag NG_ENABLE_LDAP_CHECK for your account");
+      log.error("Please enable feature flag NG_ENABLE_LDAP_CHECK for your account.");
     }
   }
 

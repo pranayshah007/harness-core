@@ -48,6 +48,28 @@
           }
         }
       ],
+      "excludeAppSelections":[
+        {
+          "filterType":"CUSTOM",
+          "envSelection":{
+            "filterType":"CUSTOM",
+            "environments":["env1"]
+          },
+          "apps":[
+            "aaOLwzRsTMOoSlDrjstIHQ1"
+          ],
+          "serviceSelection": {
+            "filterType": "CUSTOM",
+            "services": ["service1", "service2"]
+          }
+        },
+        {
+          "filterType":"ALL",
+          "envSelection": {
+            "filterType": "ALL_NON_PROD"
+          }
+        }
+      ],
       "userGroups": [
         "aaOLwzRsTMOoSlDrjstIHQ",
         "BH5_gD_VRDaWcSCsnZKSug"

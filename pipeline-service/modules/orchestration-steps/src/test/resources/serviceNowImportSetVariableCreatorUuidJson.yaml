@@ -1,0 +1,72 @@
+{
+  "pipeline":
+    {
+      "name": "snow approval stage",
+      "identifier": "snow_approval_stage",
+      "projectIdentifier": "defaultproject",
+      "orgIdentifier": "default",
+      "tags": { "__uuid": "50dff6F8STiLmQs8eBgSGg" },
+      "stages":
+        [
+          {
+            "stage":
+              {
+                "name": "Service Now Import Set Identifier",
+                "identifier": "Service_Now_Import_Set_Identifier",
+                "description": "description",
+                "type": "Approval",
+                "spec":
+                  {
+                    "execution":
+                      {
+                        "steps":
+                          [
+                            {
+                              "step":
+                                {
+                                  "type": "ServiceNowImportSet",
+                                  "name": "app",
+                                  "identifier": "app",
+                                  "description": "description",
+                                  "spec":
+                                    {
+                                      "connectorRef": "conn",
+                                      "stagingTableName": "u_testing002",
+                                      "importData":
+                                        {
+                                          "type": "Json",
+                                          "spec":
+                                            {
+                                              "jsonBody": "{\n    \"u_row1\" : \"false\"\n}",
+                                              "__uuid": "tZR9-af5RpiLKc4STu7aQQ",
+                                            },
+                                          "__uuid": "c_TSYK7ORaCU12gLWLAEeQ",
+                                        },
+                                      "__uuid": "v9B5OFFqSl-xWBbSNsfSOw",
+                                    },
+                                  "timeout": "1d",
+                                  "__uuid": "-QisXuoqS_eJZTnix7M2PQ",
+                                },
+                              "__uuid": "kUU8IQkISKKOi1dJk82wWA",
+                            },
+                          ],
+                        "__uuid": "w1746noKTceUuEzAyJef1A",
+                      },
+                    "__uuid": "4h4u3JKBSMmRJlki15eh8Q",
+                  },
+                "tags": { "__uuid": "VrC4hXhkQ5qe8zHLeGkKlg" },
+                "when":
+                  {
+                    "pipelineStatus": "All",
+                    "condition": "test_condition",
+                    "__uuid": "21KT6NKDT-Oj7XdkpG7poA",
+                  },
+                "__uuid": "xw0E_G7ESXuQKLNYGWm4Jw",
+              },
+            "__uuid": "C-QnijgRTYCMYGNkMGVw8A",
+          },
+        ],
+      "__uuid": "Bu0LfHSPQjehLiYDnaWmiQ",
+    },
+  "__uuid": "J8pwQtS-T5-u2lsritfotw",
+}

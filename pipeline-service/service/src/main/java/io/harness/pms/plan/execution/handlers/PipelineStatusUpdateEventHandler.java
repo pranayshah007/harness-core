@@ -27,7 +27,8 @@ import io.harness.pms.pipeline.observer.OrchestrationObserverUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
+import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -41,15 +42,19 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserver, OrchestrationEndObserver {
   private final PlanExecutionService planExecutionService;
-  private final PmsExecutionSummaryRespository pmsExecutionSummaryRepository;
+  private final PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   private OrchestrationEventEmitter eventEmitter;
+
+  private WaitNotifyEngine waitNotifyEngine;
 
   @Inject
   public PipelineStatusUpdateEventHandler(PlanExecutionService planExecutionService,
-      PmsExecutionSummaryRespository pmsExecutionSummaryRepository, OrchestrationEventEmitter eventEmitter) {
+      PmsExecutionSummaryRepository pmsExecutionSummaryRepository, OrchestrationEventEmitter eventEmitter,
+      WaitNotifyEngine waitNotifyEngine) {
     this.planExecutionService = planExecutionService;
     this.pmsExecutionSummaryRepository = pmsExecutionSummaryRepository;
     this.eventEmitter = eventEmitter;
+    this.waitNotifyEngine = waitNotifyEngine;
   }
 
   @Override
@@ -86,13 +91,21 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
       update.set(PlanExecutionSummaryKeys.executedModules, executedModules);
       Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(ambiance.getPlanExecutionId());
       Query query = new Query(criteria);
-      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity1 =
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryUpdatedEntity =
           pmsExecutionSummaryRepository.update(query, update);
       for (String module : executedModules) {
-        eventEmitter.emitEvent(buildEndEvent(ambiance, module,
-            pipelineExecutionSummaryEntity1.getStatus().getEngineStatus(),
-            pipelineExecutionSummaryEntity1.getModuleInfo().get(module), pipelineExecutionSummaryEntity1.getEndTs()));
+        eventEmitter.emitEvent(
+            buildEndEvent(ambiance, module, pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus(),
+                pipelineExecutionSummaryUpdatedEntity.getModuleInfo().get(module),
+                pipelineExecutionSummaryUpdatedEntity.getEndTs()));
       }
+
+      // Todo (sahil): Commenting this as this might cause issues, will fix it next week.
+      // Wait notify is for Pipeline Chain Parent Node.
+      //      waitNotifyEngine.doneWith(pipelineExecutionSummaryUpdatedEntity.getPlanExecutionId(),
+      //          PipelineStageResponseData.builder()
+      //              .status(pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus())
+      //              .build());
     }
   }
 

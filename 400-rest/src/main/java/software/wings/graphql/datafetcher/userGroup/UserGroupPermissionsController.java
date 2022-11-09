@@ -436,6 +436,7 @@ public class UserGroupPermissionsController {
       actionsList.add(QLActions.EXECUTE_WORKFLOW);
       actionsList.add(QLActions.EXECUTE_PIPELINE);
       actionsList.add(QLActions.ROLLBACK_WORKFLOW);
+      actionsList.add(QLActions.ABORT_WORKFLOW);
     }
     if (actionsList.contains(QLActions.EXECUTE_WORKFLOW)) {
       actionsList.add(QLActions.ABORT_WORKFLOW);

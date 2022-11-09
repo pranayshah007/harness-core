@@ -25,7 +25,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
-import org.simpleframework.xml.Transient;
+import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(PL)
 @Data

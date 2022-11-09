@@ -60,10 +60,12 @@ public class ServiceFilterHelperTest extends CategoryTest {
     Update updateOperations = ServiceFilterHelper.getUpdateOperations(serviceEntity);
     Set<String> stringSet = ((Document) updateOperations.getUpdateObject().get("$set")).keySet();
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(ServiceEntity.class);
-    Set<String> excludedFields = new HashSet<>(Arrays.asList(ServiceEntityKeys.id, ServiceEntityKeys.createdAt,
-        ServiceEntityKeys.deletedAt, ServiceEntityKeys.version, ServiceEntityKeys.objectIdOfYaml,
-        ServiceEntityKeys.isFromDefaultBranch, ServiceEntityKeys.branch, ServiceEntityKeys.yamlGitConfigRef,
-        ServiceEntityKeys.filePath, ServiceEntityKeys.rootFolder, "class"));
+    Set<String> excludedFields =
+        new HashSet<>(Arrays.asList(ServiceEntityKeys.id, ServiceEntityKeys.createdAt, ServiceEntityKeys.deletedAt,
+            ServiceEntityKeys.version, ServiceEntityKeys.objectIdOfYaml, ServiceEntityKeys.isFromDefaultBranch,
+            ServiceEntityKeys.branch, ServiceEntityKeys.yamlGitConfigRef, ServiceEntityKeys.filePath,
+            ServiceEntityKeys.rootFolder, "class", "templateReference", "data", ServiceEntityKeys.storeType,
+            ServiceEntityKeys.repo, ServiceEntityKeys.connectorRef, ServiceEntityKeys.repoURL));
 
     for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
       boolean shouldExist =
@@ -115,7 +117,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}, {\"$or\": [{\"type\": \"KUBERNETES\"}, {\"type\": null}]}], \"gitOpsEnabled\": true}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"KUBERNETES\", \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}], \"gitOpsEnabled\": true}");
   }
 
   @Test
@@ -127,6 +129,6 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}, {\"$or\": [{\"type\": \"NATIVE_HELM\"}, {\"type\": null}]}]}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"NATIVE_HELM\", \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}]}");
   }
 }

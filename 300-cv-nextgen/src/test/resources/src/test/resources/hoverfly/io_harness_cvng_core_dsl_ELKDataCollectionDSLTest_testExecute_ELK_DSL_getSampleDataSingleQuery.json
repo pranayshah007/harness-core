@@ -1,0 +1,48 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/*/_search"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "POST"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "elk6.dev.harness.io:9200"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "http"
+        } ],
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : "{\"query\":{\"query_string\":{\"query\":\"error\"}}}"
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAOyYX2/bIBDAv4rFUyfZCGM7sXlaN1VRu65/3ElNu04RDcRltcE1uE0V5bsPUnVzM02TEqmqVL/BwR1w/HR3sABGqVtAoiTzgREVZxPVGkBmtNTcBxN9QxumAVnYeYaWgIRx4gPdTqdc61nrBFFqBbeirjkDBPlgRkW5ai59cCNMVznCcZzGPqjofKKnquGAxDBJ48HzzO8LMBGS8TkgQEjDi4YaoWRguDbAbsc81lYHTJiauq6wy4AjWZ+ieP8Tq1o2vywOo1n66AbXFpho1TZTq70AN0obSStnyR5P2pMEmlZ1yQNa14FRTJVCm+COBmESDFk6zdI0vc4CncmysaZLfs/tycH5bn5ku5U1QAtn7Se9p7CksoB5K5039+ZTXrsTEG81JhTcP+4I95pGNV7DKROy8Khk3kMjjGsb5c2sH6/klaHGe6k34pJbx6gGFk8t3jG602n/mehWJ+Hgw7M9qQXjMOd3rfXs7w1Bpkbc7PwlXmljnP1PvaJC/kM7RInV/kxbzZl3/biNPyCEXuRVFp8rad3/0TlaG3uB9gYwwjhAaYDjbzgkcUxwCsPMioZgufQ3oEuM67xLlzkJ5q9D116eH+c9Xh063xxeCcERjJLB5nhdjs15Fy9WjMTr4NUHr7XY99boSpDNyjCMt6ArH5uLF8Frd99FzD41KvneU2MSERTCbLBFaszlOl1fWE/Xqtzr6SIIQzQYbp4ZL9ZiV/BwkPV09XTZst7GLowgdpX+pmU9koZ2M+No9/Cup6uny9EVkyiCOEOb03WwRtew+Br2dPV0Obrsm3EI0yzenK6TsWEvqvqH06inq6fL0ZWSCMEYbfFmPJHrdJ3136lPn7jvvqpf0ZU8110/lstfAAAA//8DAA1lUIU/GAAA",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "681" ],
+          "Content-Type" : [ "application/json; charset=UTF-8" ],
+          "Hoverfly" : [ "Was-Here" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-10-05T06:48:52Z"
+  }
+}

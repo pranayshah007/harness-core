@@ -7,13 +7,16 @@
 
 package io.harness.steps.servicenow.update;
 
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.internal.PMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 public class ServiceNowUpdateStepPlanCreator extends PMSStepPlanCreatorV2<ServiceNowUpdateStepNode> {
   @Override
@@ -28,6 +31,20 @@ public class ServiceNowUpdateStepPlanCreator extends PMSStepPlanCreatorV2<Servic
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, ServiceNowUpdateStepNode stepElement) {
+    validateServiceNowTemplate(stepElement.getServiceNowUpdateStepInfo());
     return super.createPlanForField(ctx, stepElement);
+  }
+
+  protected void validateServiceNowTemplate(ServiceNowUpdateStepInfo serviceNowUpdateStepInfo) {
+    ServiceNowUpdateSpecParameters specParameters =
+        (ServiceNowUpdateSpecParameters) serviceNowUpdateStepInfo.getSpecParameters();
+    if (specParameters.getUseServiceNowTemplate().getValue()) {
+      if (ParameterField.isNull(specParameters.getTemplateName())
+          || StringUtils.isBlank(specParameters.getTemplateName().getValue())) {
+        throw new InvalidRequestException(
+            String.format("Missing template name when updating ticket from ServiceNow template in %s step",
+                serviceNowUpdateStepInfo.getStepType().getType()));
+      }
+    }
   }
 }

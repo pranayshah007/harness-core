@@ -34,6 +34,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkModule;
@@ -120,6 +121,12 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
         return ImmutableSet.<Class<? extends TypeConverter>>builder()
             .addAll(PersistenceRegistrars.morphiaConverters)
             .build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

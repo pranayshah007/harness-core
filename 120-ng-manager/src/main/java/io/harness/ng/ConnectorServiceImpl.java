@@ -27,6 +27,7 @@ import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.ScopeLevel;
 import io.harness.common.EntityReference;
 import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorActivityDetails;
@@ -436,6 +437,12 @@ public class ConnectorServiceImpl implements ConnectorService {
           fullyQualifiedIdentifier, projectIdentifier, orgIdentifier, accountIdentifier, true);
       if (connectorOptional.isPresent()) {
         Connector connector = connectorOptional.get();
+        Boolean isSecretManager =
+            ConnectorRegistryFactory.getConnectorCategory(connector.getType()).equals(SECRET_MANAGER);
+        if (isSecretManager
+            && ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier).equals(ScopeLevel.ACCOUNT)) {
+          verifyOtherSecretManagerPresentInAccount(accountIdentifier, connectorIdentifier);
+        }
         boolean isConnectorHeartbeatDeleted = deleteConnectorHeartbeatTask(
             accountIdentifier, fullyQualifiedIdentifier, connector.getHeartbeatPerpetualTaskId());
         if (isConnectorHeartbeatDeleted || connector.getHeartbeatPerpetualTaskId() == null) {
@@ -464,6 +471,18 @@ public class ConnectorServiceImpl implements ConnectorService {
         throw new InvalidRequestException("Could not delete connector because heartbeat could not be deleted", USER);
       }
       throw new InvalidRequestException("No such connector found", USER);
+    }
+  }
+
+  private void verifyOtherSecretManagerPresentInAccount(String accountIdentifier, String connectorIdentifier) {
+    int page = 0;
+    int size = 2;
+    Page<ConnectorResponseDTO> connectorResponseDTOList =
+        list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null);
+    if (connectorResponseDTOList.getContent().size() == 1) {
+      throw new InvalidRequestException(
+          String.format("Cannot delete the connector: %s as no other secret manager is present in the account.",
+              connectorIdentifier));
     }
   }
 

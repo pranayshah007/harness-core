@@ -13,6 +13,7 @@ import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
+import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
 import static io.harness.k8s.model.Kind.Namespace;
@@ -495,17 +496,14 @@ public class K8sTaskHelper {
       helmTaskHelper.modifyRepoNameToIncludeBucket(helmChartConfigParams);
       boolean isEnvVarSet = helmTaskHelperBase.isHelmLocalRepoSet();
       if (isEnvVarSet) {
-        String localChartDirectory;
-        if (helmTaskHelperBase.doesChartExistInLocalRepo(helmChartConfigParams.getRepoName(),
-                helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion())) {
-          localChartDirectory = getChartDirectory(
-              helmTaskHelperBase.getHelmLocalRepositoryCompletePath(helmChartConfigParams.getRepoName(),
-                  helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion()),
-              helmChartConfigParams.getChartName());
-        } else {
-          throw new InvalidRequestException(
-              "Env Variable HELM_LOCAL_REPOSITORY set, expecting chart directory to exist locally after helm fetch but did not find it. Check if delegate has changed \n");
-        }
+        String parentDir = helmTaskHelperBase.getHelmLocalRepositoryCompletePath(helmChartConfigParams.getRepoName(),
+            helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion());
+        createDirectoryIfDoesNotExist(parentDir);
+        waitForDirectoryToBeAccessibleOutOfProcess(parentDir, 10);
+        helmTaskHelper.populateChartToLocalHelmRepo(
+            helmChartConfigParams, timeoutInMillis, parentDir, delegateManifestConfig.getHelmCommandFlag());
+        String localChartDirectory = getChartDirectory(parentDir, helmChartConfigParams.getChartName());
+
         String workingDirectory = helmTaskHelper.createDirectory(
             Paths.get(destinationDirectory, helmChartConfigParams.getChartName()).toString());
         log.info("Copying locally present chart from directory: {} to current working directory: {} \n",

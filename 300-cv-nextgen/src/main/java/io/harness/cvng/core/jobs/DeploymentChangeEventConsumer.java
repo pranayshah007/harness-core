@@ -38,7 +38,7 @@ public class DeploymentChangeEventConsumer extends AbstractStreamConsumer {
   }
 
   @Override
-  protected void processMessage(Message message) {
+  protected boolean processMessage(Message message) {
     DeploymentEventDTO deploymentEventDTO;
     try {
       deploymentEventDTO = DeploymentEventDTO.parseFrom(message.getMessage().getData());
@@ -47,6 +47,8 @@ public class DeploymentChangeEventConsumer extends AbstractStreamConsumer {
       throw new IllegalStateException(e);
     }
     registerChangeEvent(deploymentEventDTO);
+
+    return true;
   }
 
   private void registerChangeEvent(DeploymentEventDTO deploymentEventDTO) {

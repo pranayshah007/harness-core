@@ -277,9 +277,14 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
     if (null == referredByEntityType) {
       return Collections.emptyList();
     }
-    Criteria criteria = entitySetupUsageFilterHelper.createCriteriaForReferredEntitiesInScope(
-        scope, referredEntityFQScope, referredEntityType, referredByEntityType, referredByEntityName);
-
+    Criteria criteria;
+    if (referredByEntityType.equals(EntityType.INFRASTRUCTURE)) {
+      criteria = entitySetupUsageFilterHelper.createCriteriaForReferredEntitiesInScopeWithScopeName(
+          scope, referredEntityFQScope, referredEntityType, referredByEntityType, referredByEntityName);
+    } else {
+      criteria = entitySetupUsageFilterHelper.createCriteriaForReferredEntitiesInScope(
+          scope, referredEntityFQScope, referredEntityType, referredByEntityType, referredByEntityName);
+    }
     return entityReferenceRepository.findAll(criteria, Pageable.unpaged())
         .getContent()
         .stream()

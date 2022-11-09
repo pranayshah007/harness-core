@@ -9,6 +9,7 @@ package io.harness.cdng.provision.azure;
 
 import static io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -16,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -25,6 +27,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.model.AzureConstants;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.azure.webapp.AzureWebAppStepHelper;
@@ -35,8 +38,7 @@ import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepScope.AzureCreateARMResourceStepScopeBuilder;
-import io.harness.cdng.provision.azure.AzureResourceGroupSpec.AzureResourceGroupSpecBuilder;
-import io.harness.cdng.provision.azure.beans.AzureARMTemplateDataOutput;
+import io.harness.cdng.provision.azure.beans.AzureARMConfig;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
@@ -52,12 +54,15 @@ import io.harness.delegate.task.azure.arm.AzureARMPreDeploymentData;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGResponse;
 import io.harness.delegate.task.azure.arm.AzureARMTaskType;
+import io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskParameters;
+import io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
+import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
@@ -68,7 +73,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.rbac.PipelineRbacHelper;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -101,21 +105,18 @@ import org.mockito.MockitoAnnotations;
 public class AzureCreateARMResourceStepTest extends CategoryTest {
   private static final String AZURE_TEMPLATE_SELECTOR = "Azure ARM Template File";
   private static final String AZURE_PARAMETER_SELECTOR = "Azure ARM Parameter File";
-  @Mock PipelineRbacHelper pipelineRbacHelper;
-  @Mock CDStepHelper cdStepHelper;
-  @Mock StepHelper stepHelper;
-  AzureTestHelper azureHelperTest = new AzureTestHelper();
+  @Mock private PipelineRbacHelper pipelineRbacHelper;
+  @Mock private CDStepHelper cdStepHelper;
+  @Mock private StepHelper stepHelper;
   @Mock private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   @Mock private SecretManagerClientService secretManagerClientService;
   @Mock private AzureWebAppStepHelper azureWebAppStepHelper;
-  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
-
+  @Mock private AzureARMConfigDAL azureARMConfigDAL;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
-
   @Mock private AzureCommonHelper azureCommonHelper;
   @Mock private CDExpressionResolver cdExpressionResolver;
-  @Mock AzureARMConfigDAL azureARMConfigDAL;
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
+  private AzureTestHelper azureHelperTest = new AzureTestHelper();
 
   @InjectMocks private AzureCreateARMResourceStep azureCreateStep;
 
@@ -282,11 +283,19 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     parameterFileBuilder.setStore(fileStoreConfigWrapper);
     templateFileBuilder.setStore(templateStore);
 
-    stepParameters.setConfigurationParameters(AzureCreateARMResourceStepConfigurationParameters.builder()
-                                                  .templateFile(templateFileBuilder)
-                                                  .parameters(parameterFileBuilder)
-                                                  .connectorRef(ParameterField.createValueField("azure"))
-                                                  .build());
+    stepParameters.setConfigurationParameters(
+        AzureCreateARMResourceStepConfigurationParameters.builder()
+            .templateFile(templateFileBuilder)
+            .parameters(parameterFileBuilder)
+            .connectorRef(ParameterField.createValueField("azure"))
+            .scope(AzureCreateARMResourceStepScope.builder()
+                       .type(AzureScopeTypesNames.ManagementGroup)
+                       .spec(AzureManagementSpec.builder()
+                                 .location(ParameterField.<String>builder().value("abc").build())
+                                 .managementGroupId(ParameterField.<String>builder().value("cde").build())
+                                 .build())
+                       .build())
+            .build());
 
     TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("create-d-selector-1");
     stepParameters.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
@@ -298,10 +307,77 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     AzureCreateARMResourcePassThroughData passData = AzureCreateARMResourcePassThroughData.builder().build();
     when(azureCommonHelper.getAzureCreatePassThroughData(any())).thenReturn(passData);
     StepInputPackage inputPackage = StepInputPackage.builder().build();
+
     azureCreateStep.startChainLinkAfterRbac(azureHelperTest.getAmbiance(), step, inputPackage);
 
+    verify(azureARMConfigDAL).saveAzureARMConfig(any());
     verify(azureCommonHelper, times(1))
-        .getGitFetchFileTaskChainResponse(azureHelperTest.getAmbiance(), fetchFiles, step, passData);
+        .getGitFetchFileTaskChainResponse(eq(azureHelperTest.getAmbiance()), eq(fetchFiles), eq(step), eq(passData),
+            eq(Arrays.asList(K8sCommandUnitConstants.FetchFiles, AzureConstants.EXECUTE_ARM_DEPLOYMENT,
+                AzureConstants.ARM_DEPLOYMENT_STEADY_STATE, AzureConstants.ARM_DEPLOYMENT_OUTPUTS)),
+            eq(null));
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testExecuteAzurePreDeploymentDataShouldBeFetched() {
+    AzureCreateARMResourceStepParameters stepParameters = new AzureCreateARMResourceStepParameters();
+    AzureTemplateFile templateFileBuilder = new AzureTemplateFile();
+    AzureCreateARMResourceParameterFile parameterFileBuilder = new AzureCreateARMResourceParameterFile();
+
+    StoreConfigWrapper parametersStore =
+        StoreConfigWrapper.builder()
+            .spec(
+                HarnessStore.builder().files(ParameterField.createValueField(singletonList("project:/throne"))).build())
+            .build();
+    StoreConfigWrapper templateStore =
+        StoreConfigWrapper.builder()
+            .spec(HarnessStore.builder().files(ParameterField.createValueField(singletonList("project:/York"))).build())
+            .build();
+    parameterFileBuilder.setStore(parametersStore);
+    templateFileBuilder.setStore(templateStore);
+
+    stepParameters.setConfigurationParameters(AzureCreateARMResourceStepConfigurationParameters.builder()
+                                                  .templateFile(templateFileBuilder)
+                                                  .parameters(parameterFileBuilder)
+                                                  .connectorRef(ParameterField.createValueField("azure"))
+                                                  .build());
+
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("create-d-selector-1");
+    stepParameters.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
+    AzureCreateARMResourcePassThroughData passData = AzureCreateARMResourcePassThroughData.builder().build();
+    when(azureCommonHelper.getAzureCreatePassThroughData(any())).thenReturn(passData);
+    AppSettingsFile templateFile = AppSettingsFile.create("foobar");
+    AppSettingsFile parametersFile = AppSettingsFile.create("barbar");
+    when(azureWebAppStepHelper.fetchFileContentFromHarnessStore(
+             azureHelperTest.getAmbiance(), AZURE_TEMPLATE_SELECTOR, (HarnessStore) templateStore.getSpec()))
+        .thenReturn(templateFile);
+    when(azureWebAppStepHelper.fetchFileContentFromHarnessStore(
+             azureHelperTest.getAmbiance(), AZURE_PARAMETER_SELECTOR, (HarnessStore) parametersStore.getSpec()))
+        .thenReturn(parametersFile);
+    Mockito.mockStatic(StepUtils.class);
+    Mockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    Class<ArrayList<TaskSelector>> delegateSelectors = (Class<ArrayList<TaskSelector>>) (Class) ArrayList.class;
+    ArgumentCaptor<ArrayList<TaskSelector>> taskSelectorsArgumentCaptor = ArgumentCaptor.forClass(delegateSelectors);
+    StepInputPackage inputPackage = StepInputPackage.builder().build();
+
+    TaskChainResponse taskChainResponse = azureCreateStep.startChainLinkAfterRbac(
+        azureHelperTest.getAmbiance(), createStep("RG", templateStore, parametersStore), inputPackage);
+
+    assertThat(taskChainResponse).isNotNull();
+    verifyStatic(StepUtils.class, times(1));
+    StepUtils.prepareCDTaskRequest(
+        any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
+    assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
+    assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
+    AzureFetchArmPreDeploymentDataTaskParameters taskNGParameters =
+        (AzureFetchArmPreDeploymentDataTaskParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
+    assertThat(taskNGParameters.getResourceGroupName()).isEqualTo("abc");
+    assertThat(taskNGParameters.getSubscriptionId()).isEqualTo("cde");
+    assertThat(taskChainResponse.isChainEnd()).isFalse();
   }
 
   @Test
@@ -318,7 +394,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
                 HarnessStore.builder().files(ParameterField.createValueField(singletonList("project:/test2"))).build())
             .build();
     StepInputPackage inputPackage = StepInputPackage.builder().build();
-    StepElementParameters step = createStep("RG", templateStore, fileStoreConfigWrapper);
+    StepElementParameters step = createStep("SUBS", templateStore, fileStoreConfigWrapper);
     when(azureCommonHelper.getParametersGitFetchFileConfigs(any(), any())).thenReturn(null);
     when(azureCommonHelper.isTemplateStoredOnGit(any())).thenReturn(false);
     when(azureCommonHelper.getAzureEncryptionDetails(any(), any())).thenReturn(new ArrayList<>());
@@ -335,7 +411,9 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
 
     TaskChainResponse taskChainResponse =
         azureCreateStep.startChainLinkAfterRbac(azureHelperTest.getAmbiance(), step, inputPackage);
+
     assertThat(taskChainResponse).isNotNull();
+    verify(azureARMConfigDAL).saveAzureARMConfig(any());
     verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
@@ -394,13 +472,15 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     Class<ArrayList<TaskSelector>> delegateSelectors = (Class<ArrayList<TaskSelector>>) (Class) ArrayList.class;
     ArgumentCaptor<ArrayList<TaskSelector>> taskSelectorsArgumentCaptor = ArgumentCaptor.forClass(delegateSelectors);
     StepInputPackage inputPackage = StepInputPackage.builder().build();
+    ArgumentCaptor<List<String>> unitsArgumentCaptor = ArgumentCaptor.forClass(List.class);
 
     TaskChainResponse taskChainResponse = azureCreateStep.startChainLinkAfterRbac(
-        azureHelperTest.getAmbiance(), createStep("RG", templateStore, fileStoreConfigWrapper), inputPackage);
+        azureHelperTest.getAmbiance(), createStep("SUBS", templateStore, fileStoreConfigWrapper), inputPackage);
     assertThat(taskChainResponse).isNotNull();
+    verify(azureARMConfigDAL).saveAzureARMConfig(any());
     verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
-        any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
+    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), unitsArgumentCaptor.capture(), any(),
+        taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     AzureARMTaskNGParameters taskNGParameters =
@@ -408,6 +488,9 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     assertThat(taskNGParameters.getParametersBody()).isEqualTo(parametersFile);
     assertThat(taskNGParameters.getTemplateBody()).isEqualTo(templateFile);
     assertThat(taskChainResponse.isChainEnd()).isTrue();
+    assertThat(unitsArgumentCaptor.getValue())
+        .isEqualTo(Arrays.asList(AzureConstants.EXECUTE_ARM_DEPLOYMENT, AzureConstants.ARM_DEPLOYMENT_STEADY_STATE,
+            AzureConstants.ARM_DEPLOYMENT_OUTPUTS));
   }
 
   @Test
@@ -432,12 +515,19 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
             .build();
     parameterFileBuilder.setStore(fileStoreConfigWrapper);
     templateFileBuilder.setStore(templateStore);
-
-    stepParameters.setConfigurationParameters(AzureCreateARMResourceStepConfigurationParameters.builder()
-                                                  .templateFile(templateFileBuilder)
-                                                  .parameters(parameterFileBuilder)
-                                                  .connectorRef(ParameterField.createValueField("azure"))
-                                                  .build());
+    stepParameters.setConfigurationParameters(
+        AzureCreateARMResourceStepConfigurationParameters.builder()
+            .templateFile(templateFileBuilder)
+            .parameters(parameterFileBuilder)
+            .connectorRef(ParameterField.createValueField("azure"))
+            .scope(AzureCreateARMResourceStepScope.builder()
+                       .type(AzureScopeTypesNames.ManagementGroup)
+                       .spec(AzureManagementSpec.builder()
+                                 .location(ParameterField.<String>builder().value("abc").build())
+                                 .managementGroupId(ParameterField.<String>builder().value("cde").build())
+                                 .build())
+                       .build())
+            .build());
 
     TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("create-d-selector-1");
     stepParameters.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
@@ -457,10 +547,15 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     Mockito.mockStatic(StepUtils.class);
     when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
+
     azureCreateStep.startChainLinkAfterRbac(azureHelperTest.getAmbiance(), step, inputPackage);
 
+    verify(azureARMConfigDAL).saveAzureARMConfig(any());
     verify(azureCommonHelper, times(1))
-        .getGitFetchFileTaskChainResponse(azureHelperTest.getAmbiance(), fetchFiles, step, passData);
+        .getGitFetchFileTaskChainResponse(eq(azureHelperTest.getAmbiance()), eq(fetchFiles), eq(step), eq(passData),
+            eq(Arrays.asList(K8sCommandUnitConstants.FetchFiles, AzureConstants.EXECUTE_ARM_DEPLOYMENT,
+                AzureConstants.ARM_DEPLOYMENT_STEADY_STATE, AzureConstants.ARM_DEPLOYMENT_OUTPUTS)),
+            eq(null));
   }
 
   @Test
@@ -695,6 +790,89 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testExecuteNextLinkWithAzureFetchArmPreDeploymentDataTaskResponse() throws Exception {
+    AzureCreateARMResourceStepParameters stepParameters = new AzureCreateARMResourceStepParameters();
+    AzureTemplateFile templateFileBuilder = new AzureTemplateFile();
+    AzureCreateARMResourceParameterFile parameterFileBuilder = new AzureCreateARMResourceParameterFile();
+
+    StoreConfigWrapper fileStoreConfigWrapper =
+        StoreConfigWrapper.builder()
+            .spec(
+                HarnessStore.builder().files(ParameterField.createValueField(singletonList("project:/throne"))).build())
+            .build();
+    StoreConfigWrapper templateStore =
+        StoreConfigWrapper.builder()
+            .spec(GithubStore.builder()
+                      .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
+                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .build())
+            .build();
+    parameterFileBuilder.setStore(fileStoreConfigWrapper);
+    templateFileBuilder.setStore(templateStore);
+    stepParameters.setConfigurationParameters(
+        AzureCreateARMResourceStepConfigurationParameters.builder()
+            .templateFile(templateFileBuilder)
+            .parameters(parameterFileBuilder)
+            .connectorRef(ParameterField.createValueField("azure"))
+            .scope(AzureCreateARMResourceStepScope.builder()
+                       .type(AzureScopeTypesNames.ManagementGroup)
+                       .spec(AzureManagementSpec.builder()
+                                 .location(ParameterField.<String>builder().value("abc").build())
+                                 .managementGroupId(ParameterField.<String>builder().value("cde").build())
+                                 .build())
+                       .build())
+            .build());
+
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("create-d-selector-1");
+    stepParameters.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
+    StepElementParameters step = StepElementParameters.builder().spec(stepParameters).build();
+    AzureFetchArmPreDeploymentDataTaskResponse response =
+        AzureFetchArmPreDeploymentDataTaskResponse.builder()
+            .azureARMPreDeploymentData(AzureARMPreDeploymentData.builder()
+                                           .resourceGroup("resourceGroup")
+                                           .subscriptionId("subscriptionId")
+                                           .resourceGroupTemplateJson("{}")
+                                           .build())
+            .build();
+
+    ArrayList<GitFetchFilesConfig> fetchFiles = new ArrayList<>(Arrays.asList(azureHelperTest.getARMTemplate()));
+    when(azureCommonHelper.getParametersGitFetchFileConfigs(any(), any())).thenReturn(fetchFiles);
+    when(azureCommonHelper.isTemplateStoredOnGit(any())).thenReturn(true);
+    AzureCreateARMResourcePassThroughData passData = AzureCreateARMResourcePassThroughData.builder().build();
+    when(azureCommonHelper.getAzureCreatePassThroughData(any())).thenReturn(passData);
+    StepInputPackage inputPackage = StepInputPackage.builder().build();
+
+    AppSettingsFile parametersFile = AppSettingsFile.create("barbar");
+    when(azureWebAppStepHelper.fetchFileContentFromHarnessStore(
+             azureHelperTest.getAmbiance(), AZURE_PARAMETER_SELECTOR, (HarnessStore) fileStoreConfigWrapper.getSpec()))
+        .thenReturn(parametersFile);
+    Mockito.mockStatic(StepUtils.class);
+    when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    TaskChainResponse taskChainResponse = TaskChainResponse.builder()
+                                              .chainEnd(false)
+                                              .taskRequest(TaskRequest.newBuilder().build())
+                                              .passThroughData(null)
+                                              .build();
+    doReturn(taskChainResponse)
+        .when(azureCommonHelper)
+        .getGitFetchFileTaskChainResponse(any(), any(), any(), any(), any(), any());
+
+    TaskChainResponse resultTaskChainResponse =
+        azureCreateStep.executeNextLinkWithSecurityContext(azureHelperTest.getAmbiance(), step, inputPackage,
+            AzureCreateARMResourcePassThroughData.builder().build(), () -> response);
+    verify(azureARMConfigDAL).saveAzureARMConfig(any());
+    verify(azureCommonHelper, times(1))
+        .getGitFetchFileTaskChainResponse(eq(azureHelperTest.getAmbiance()), eq(fetchFiles), eq(step), eq(passData),
+            eq(Arrays.asList(K8sCommandUnitConstants.FetchFiles, AzureConstants.EXECUTE_ARM_DEPLOYMENT,
+                AzureConstants.ARM_DEPLOYMENT_STEADY_STATE, AzureConstants.ARM_DEPLOYMENT_OUTPUTS)),
+            eq(null));
+    assertThat(resultTaskChainResponse).isEqualTo(taskChainResponse);
+  }
+
+  @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testExecuteNextLinkWithSecurityContextTenant() throws Exception {
@@ -800,7 +978,6 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     azureCreateStep.finalizeExecutionWithSecurityContext(azureHelperTest.getAmbiance(),
         createStep("RG", templateStore, fileStoreConfigWrapper), passThroughData,
         () -> getTaskNGResponse(CommandExecutionStatus.FAILURE, UnitStatus.SUCCESS, "foobar"));
-    verify(azureARMConfigDAL, times(1)).saveAzureARMConfig(any());
     verify(azureCommonHelper, times(1)).getFailureResponse(any(), any());
   }
 
@@ -809,10 +986,6 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testFinalizeExecutionWithSucceededStep() throws Exception {
     AzureCreateARMResourcePassThroughData passThroughData = AzureCreateARMResourcePassThroughData.builder().build();
-    when(azureCommonHelper.generateIdentifier(any(), any())).thenReturn("foobar");
-    ArgumentCaptor<AzureARMTemplateDataOutput> taskDataArgumentCaptor =
-        ArgumentCaptor.forClass(AzureARMTemplateDataOutput.class);
-    when(executionSweepingOutputService.consume(any(), any(), taskDataArgumentCaptor.capture(), any())).thenReturn("");
     StoreConfigWrapper fileStoreConfigWrapper =
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
@@ -830,10 +1003,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     StepResponse response = azureCreateStep.finalizeExecutionWithSecurityContext(azureHelperTest.getAmbiance(),
         createStep("RG", templateStore, fileStoreConfigWrapper), passThroughData,
         () -> getTaskNGResponse(CommandExecutionStatus.SUCCESS, UnitStatus.SUCCESS, ""));
-    verify(azureARMConfigDAL, times(1)).saveAzureARMConfig(any());
-    assertThat(taskDataArgumentCaptor.getValue().getResourceGroup()).isEqualTo("123");
-    assertThat(taskDataArgumentCaptor.getValue().getSubscriptionId()).isEqualTo("234");
-    assertThat(taskDataArgumentCaptor.getValue().getResourceGroupTemplateJson()).isEqualTo("345");
+
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
     StepOutcome outcome = response.getStepOutcomes().stream().collect(Collectors.toList()).get(0);
     assertThat(response.getStepOutcomes().size()).isEqualTo(1);
@@ -843,12 +1013,10 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testFinalizeExecutionWithSucceededThowsException() throws Exception {
+  public void testFinalizeExecutionWithSucceededThrowsException() {
     AzureCreateARMResourcePassThroughData passThroughData = AzureCreateARMResourcePassThroughData.builder().build();
-    when(azureCommonHelper.generateIdentifier(any(), any())).thenReturn("foobar");
-    ArgumentCaptor<AzureARMTemplateDataOutput> taskDataArgumentCaptor =
-        ArgumentCaptor.forClass(AzureARMTemplateDataOutput.class);
-    when(executionSweepingOutputService.consume(any(), any(), taskDataArgumentCaptor.capture(), any())).thenReturn("");
+    ArgumentCaptor<AzureARMConfig> taskDataArgumentCaptor = ArgumentCaptor.forClass(AzureARMConfig.class);
+    doNothing().when(azureARMConfigDAL).saveAzureARMConfig(taskDataArgumentCaptor.capture());
     StoreConfigWrapper fileStoreConfigWrapper =
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
@@ -883,12 +1051,13 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     AzureCreateARMResourceStepScopeBuilder builder = AzureCreateARMResourceStepScope.builder();
     switch (type) {
       case "RG":
-        AzureResourceGroupSpecBuilder scopeR = AzureResourceGroupSpec.builder()
-                                                   .resourceGroup(ParameterField.<String>builder().value("abc").build())
-                                                   .subscription(ParameterField.<String>builder().value("cde").build())
-                                                   .mode(AzureARMResourceDeploymentMode.COMPLETE);
+        AzureResourceGroupSpec scopeR = AzureResourceGroupSpec.builder()
+                                            .resourceGroup(ParameterField.<String>builder().value("abc").build())
+                                            .subscription(ParameterField.<String>builder().value("cde").build())
+                                            .mode(AzureARMResourceDeploymentMode.COMPLETE)
+                                            .build();
 
-        builder.type(AzureScopeTypesNames.ResourceGroup).spec(scopeR.build());
+        builder.type(AzureScopeTypesNames.ResourceGroup).spec(scopeR);
         break;
       case "SUBS":
         AzureSubscriptionSpec scopeS = AzureSubscriptionSpec.builder()
@@ -964,11 +1133,6 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
             + "      \"value\": \"[variables('user')['user-name']]\"\n"
             + "    }\n"
             + "  }")
-        .azureARMPreDeploymentData(AzureARMPreDeploymentData.builder()
-                                       .resourceGroup("123")
-                                       .subscriptionId("234")
-                                       .resourceGroupTemplateJson("345")
-                                       .build())
         .commandExecutionStatus(status)
         .unitProgressData(UnitProgressData.builder()
                               .unitProgresses(asList(

@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 
 @Data
 @OwnedBy(PIPELINE)
@@ -64,14 +65,20 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
     PlanNode node = nodeExecution.getNode();
     FailureInfo failureInfo = FailureInfo.newBuilder()
                                   .setErrorMessage("ExecutionInputExpired")
-                                  .addFailureTypes(FailureType.EXECUTION_INPUT_TIMEOUT_FAILURE)
+                                  .addFailureTypes(FailureType.INPUT_TIMEOUT_FAILURE)
                                   .addFailureData(FailureData.newBuilder()
-                                                      .addFailureTypes(FailureType.EXECUTION_INPUT_TIMEOUT_FAILURE)
+                                                      .addFailureTypes(FailureType.INPUT_TIMEOUT_FAILURE)
                                                       .setLevel(Level.ERROR.name())
                                                       .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
                                                       .setMessage("ExecutionInputExpired")
                                                       .build())
                                   .build();
+    if (CollectionUtils.isEmpty(node.getAdviserObtainments())) {
+      nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.EXPIRED, null, EnumSet.noneOf(Status.class));
+      engine.endNodeExecution(nodeExecution.getAmbiance());
+      return;
+    }
+    // End nodeExecution if advisers are empty.
     adviseHelper.queueAdvisingEvent(nodeExecution, failureInfo, node, Status.INPUT_WAITING);
     log.warn("Execution input timed out for nodeExecutionId {}", nodeExecutionId);
   }

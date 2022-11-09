@@ -138,7 +138,7 @@ public class AzureResourceUtility {
       return DEPLOYMENT_SLOT_PRODUCTION_NAME;
     }
 
-    return deploymentSlotName.replace(format(DEPLOYMENT_SLOT_NAME_PREFIX_PATTERN, appName.toLowerCase()), EMPTY);
+    return deploymentSlotName.replaceFirst(format(DEPLOYMENT_SLOT_NAME_PREFIX_PATTERN, appName), EMPTY);
   }
 
   public String generateAssignmentNameIfBlank(final String assignmentName, final String blueprintName) {

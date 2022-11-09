@@ -73,11 +73,11 @@ public class DeploymentFreezeUtilsTest extends WingsBaseTest {
     TimeRange range = new TimeRange(100, 100_000, "Asia/Kolkatta", false, null, null, null, false);
     TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig = new TimeRangeBasedFreezeConfig(true,
         Collections.emptyList(), Collections.singletonList(EnvironmentType.PROD), range, "FREEZE1", null, false,
-        Collections.emptyList(), asList(USER_GROUP_ID, USER_GROUP_ID + 2), "uuid", null);
+        Collections.emptyList(), Collections.emptyList(), asList(USER_GROUP_ID, USER_GROUP_ID + 2), "uuid", null);
 
-    TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig2 =
-        new TimeRangeBasedFreezeConfig(true, Collections.emptyList(), Collections.singletonList(EnvironmentType.PROD),
-            range, "FREEZE2", null, true, Collections.emptyList(), asList(USER_GROUP_ID), "uuid", null);
+    TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig2 = new TimeRangeBasedFreezeConfig(true,
+        Collections.emptyList(), Collections.singletonList(EnvironmentType.PROD), range, "FREEZE2", null, true,
+        Collections.emptyList(), Collections.emptyList(), asList(USER_GROUP_ID), "uuid", null);
     List<String> freezeWindowIds = Arrays.asList(FREEZE_WINDOW_ID, FREEZE_WINDOW_ID + 2);
 
     when(governanceConfigService.getGovernanceFreezeConfigs(ACCOUNT_ID, freezeWindowIds))
@@ -116,7 +116,7 @@ public class DeploymentFreezeUtilsTest extends WingsBaseTest {
     TimeRange range = new TimeRange(100, 100_000, "Asia/Kolkatta", false, null, null, null, false);
     TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig = new TimeRangeBasedFreezeConfig(true,
         Collections.emptyList(), Collections.singletonList(EnvironmentType.PROD), range, "FREEZE1", null, false,
-        Collections.emptyList(), asList(USER_GROUP_ID, USER_GROUP_ID + 2), "uuid", null);
+        Collections.emptyList(), Collections.emptyList(), asList(USER_GROUP_ID, USER_GROUP_ID + 2), "uuid", null);
 
     List<String> freezeWindowIds = Arrays.asList(FREEZE_WINDOW_ID);
 
@@ -150,7 +150,7 @@ public class DeploymentFreezeUtilsTest extends WingsBaseTest {
     TimeRange range = new TimeRange(100, 100_000, "Asia/Kolkatta", false, null, null, null, false);
     TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig = new TimeRangeBasedFreezeConfig(true,
         Collections.emptyList(), Collections.singletonList(EnvironmentType.PROD), range, "FREEZE1", null, false,
-        Collections.emptyList(), asList(USER_GROUP_ID, USER_GROUP_ID + 2), "uuid", null);
+        Collections.emptyList(), Collections.emptyList(), asList(USER_GROUP_ID, USER_GROUP_ID + 2), "uuid", null);
 
     deploymentFreezeUtils.handleActivationEvent(timeRangeBasedFreezeConfig, ACCOUNT_ID);
     ArgumentCaptor<AlertData> alertCaptor = ArgumentCaptor.forClass(AlertData.class);
@@ -186,7 +186,7 @@ public class DeploymentFreezeUtilsTest extends WingsBaseTest {
     TimeRange range = new TimeRange(100, 100_000, "Asia/Kolkatta", false, null, null, null, false);
     TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig = new TimeRangeBasedFreezeConfig(true,
         Collections.emptyList(), Collections.singletonList(EnvironmentType.PROD), range, "FREEZE1", null, false,
-        Collections.emptyList(), asList(USER_GROUP_ID, USER_GROUP_ID + 2), "uuid", null);
+        Collections.emptyList(), Collections.emptyList(), asList(USER_GROUP_ID, USER_GROUP_ID + 2), "uuid", null);
 
     deploymentFreezeUtils.handleDeActivationEvent(timeRangeBasedFreezeConfig, ACCOUNT_ID);
     ArgumentCaptor<AlertData> alertCaptor = ArgumentCaptor.forClass(AlertData.class);

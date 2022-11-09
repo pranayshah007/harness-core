@@ -1,5 +1,6 @@
 singleServerConfig:
   address: "redis://127.0.0.1:6379"
+  connectionMinimumIdleSize: 5
 codec: !<io.harness.redis.RedissonKryoCodec> {}
 nettyThreads: 16
 useScriptCache: true

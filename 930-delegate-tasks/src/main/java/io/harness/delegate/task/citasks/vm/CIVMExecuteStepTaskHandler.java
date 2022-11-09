@@ -29,7 +29,6 @@ public class CIVMExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
   @Inject private SecretSpecBuilder secretSpecBuilder;
   @NotNull private Type type = Type.VM;
   @Inject private StepExecutionHelper stepExecutionHelper;
-
   @Inject private VmExecuteStepUtils vmExecuteStepUtils;
   private static final String DOCKER_REGISTRY_ENV = "PLUGIN_REGISTRY";
 

@@ -36,7 +36,12 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.management.ManagementGroupInfo;
 import io.harness.azure.model.tag.TagDetails;
 import io.harness.azure.utility.AzureUtils;
-import io.harness.exception.AzureClientException;
+import io.harness.exception.ngexception.AzureARMTaskException;
+import io.harness.exception.runtime.azure.AzureARMManagementScopeException;
+import io.harness.exception.runtime.azure.AzureARMResourceGroupScopeException;
+import io.harness.exception.runtime.azure.AzureARMSubscriptionScopeException;
+import io.harness.exception.runtime.azure.AzureARMTenantScopeException;
+import io.harness.exception.runtime.azure.AzureARMValidationException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.serializer.JsonUtils;
 
@@ -163,10 +168,10 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
         ResourceGroupExportTemplateOptions.valueOf(rgExportOptions.name());
 
     if (isBlank(resourceGroupName)) {
-      throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
     if (isBlank(subscriptionId)) {
-      throw new IllegalArgumentException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClientByContext(context);
@@ -186,13 +191,13 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
     String subscriptionId = context.getSubscriptionId();
 
     if (isBlank(resourceGroupName)) {
-      throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
     if (isBlank(subscriptionId)) {
-      throw new IllegalArgumentException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
     }
     if (isBlank(deploymentName)) {
-      throw new IllegalArgumentException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClientByContext(context);
@@ -211,16 +216,16 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
     String deploymentName = template.getDeploymentName();
 
     if (isBlank(resourceGroupName)) {
-      throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
     if (isBlank(subscriptionId)) {
-      throw new IllegalArgumentException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
     }
     if (isBlank(deploymentName)) {
-      throw new IllegalArgumentException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isNotBlank(template.getLocation())) {
-      throw new IllegalArgumentException(LOCATION_SET_AT_RESOURCE_GROUP_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(LOCATION_SET_AT_RESOURCE_GROUP_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClientByContext(context);
@@ -243,16 +248,16 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
     DeploymentMode deploymentMode = DeploymentMode.fromString(template.getDeploymentMode().name());
 
     if (isBlank(resourceGroupName)) {
-      throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
     if (isBlank(subscriptionId)) {
-      throw new IllegalArgumentException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
     }
     if (isBlank(deploymentName)) {
-      throw new IllegalArgumentException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isNotBlank(template.getLocation())) {
-      throw new IllegalArgumentException(LOCATION_SET_AT_RESOURCE_GROUP_VALIDATION_MSG);
+      throw new AzureARMResourceGroupScopeException(LOCATION_SET_AT_RESOURCE_GROUP_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClientByContext(context);
@@ -271,7 +276,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
       String errorMessage = format(
           "Error occurred while deploying at resource group scope, deploymentName: %s, subscriptionId: %s,  resourceGroupName: %s, deploymentMode: %s",
           deploymentName, subscriptionId, resourceGroupName, deploymentMode);
-      throw new AzureClientException(errorMessage, ExceptionMessageSanitizer.sanitizeException(e));
+      throw new AzureARMResourceGroupScopeException(errorMessage, ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 
@@ -279,10 +284,10 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
   public DeploymentExtendedInner getDeploymentAtSubscriptionScope(
       AzureConfig azureConfig, String subscriptionId, String deploymentName) {
     if (isBlank(subscriptionId)) {
-      throw new IllegalArgumentException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
+      throw new AzureARMSubscriptionScopeException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
     }
     if (isBlank(deploymentName)) {
-      throw new IllegalArgumentException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureARMSubscriptionScopeException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClient(azureConfig, subscriptionId);
@@ -297,13 +302,13 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
       AzureConfig azureConfig, String subscriptionId, AzureARMTemplate template) {
     String deploymentName = template.getDeploymentName();
     if (isBlank(subscriptionId)) {
-      throw new IllegalArgumentException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
+      throw new AzureARMSubscriptionScopeException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
     }
     if (isBlank(deploymentName)) {
-      throw new IllegalArgumentException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureARMSubscriptionScopeException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(template.getLocation())) {
-      throw new IllegalArgumentException(LOCATION_BLANK_VALIDATION_MSG);
+      throw new AzureARMSubscriptionScopeException(LOCATION_BLANK_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClient(azureConfig, subscriptionId);
@@ -325,13 +330,13 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
     DeploymentMode deploymentMode = DeploymentMode.fromString(template.getDeploymentMode().name());
 
     if (isBlank(subscriptionId)) {
-      throw new IllegalArgumentException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
+      throw new AzureARMSubscriptionScopeException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
     }
     if (isBlank(deploymentName)) {
-      throw new IllegalArgumentException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureARMSubscriptionScopeException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(template.getLocation())) {
-      throw new IllegalArgumentException(LOCATION_BLANK_VALIDATION_MSG);
+      throw new AzureARMSubscriptionScopeException(LOCATION_BLANK_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClient(azureConfig, subscriptionId);
@@ -351,10 +356,10 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
   public DeploymentExtendedInner getDeploymentAtManagementScope(
       AzureConfig azureConfig, String groupId, String deploymentName) {
     if (isBlank(deploymentName)) {
-      throw new IllegalArgumentException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureARMManagementScopeException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(groupId)) {
-      throw new IllegalArgumentException(MANAGEMENT_GROUP_ID_BLANK_VALIDATION_MSG);
+      throw new AzureARMManagementScopeException(MANAGEMENT_GROUP_ID_BLANK_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClientWithDefaultSubscription(azureConfig);
@@ -370,13 +375,13 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
     String deploymentName = template.getDeploymentName();
 
     if (isBlank(deploymentName)) {
-      throw new IllegalArgumentException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureARMManagementScopeException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(groupId)) {
-      throw new IllegalArgumentException(MANAGEMENT_GROUP_ID_BLANK_VALIDATION_MSG);
+      throw new AzureARMManagementScopeException(MANAGEMENT_GROUP_ID_BLANK_VALIDATION_MSG);
     }
     if (isBlank(template.getLocation())) {
-      throw new IllegalArgumentException(LOCATION_BLANK_VALIDATION_MSG);
+      throw new AzureARMManagementScopeException(LOCATION_BLANK_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClientWithDefaultSubscription(azureConfig);
@@ -399,13 +404,13 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
     DeploymentMode deploymentMode = DeploymentMode.fromString(template.getDeploymentMode().name());
 
     if (isBlank(deploymentName)) {
-      throw new IllegalArgumentException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureARMManagementScopeException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(groupId)) {
-      throw new IllegalArgumentException(MANAGEMENT_GROUP_ID_BLANK_VALIDATION_MSG);
+      throw new AzureARMManagementScopeException(MANAGEMENT_GROUP_ID_BLANK_VALIDATION_MSG);
     }
     if (isBlank(template.getLocation())) {
-      throw new IllegalArgumentException(LOCATION_BLANK_VALIDATION_MSG);
+      throw new AzureARMManagementScopeException(LOCATION_BLANK_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClientWithDefaultSubscription(azureConfig);
@@ -424,7 +429,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
   @Override
   public DeploymentExtendedInner getDeploymentAtTenantScope(AzureConfig azureConfig, String deploymentName) {
     if (isBlank(deploymentName)) {
-      throw new IllegalArgumentException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureARMTenantScopeException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClientWithDefaultSubscription(azureConfig);
@@ -439,10 +444,10 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
     String deploymentName = template.getDeploymentName();
 
     if (isBlank(deploymentName)) {
-      throw new IllegalArgumentException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureARMTenantScopeException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(template.getLocation())) {
-      throw new IllegalArgumentException(LOCATION_BLANK_VALIDATION_MSG);
+      throw new AzureARMTenantScopeException(LOCATION_BLANK_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClientWithDefaultSubscription(azureConfig);
@@ -463,10 +468,10 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
     DeploymentMode deploymentMode = DeploymentMode.fromString(template.getDeploymentMode().name());
 
     if (isBlank(deploymentName)) {
-      throw new IllegalArgumentException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureARMTenantScopeException(DEPLOYMENT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(template.getLocation())) {
-      throw new IllegalArgumentException(LOCATION_BLANK_VALIDATION_MSG);
+      throw new AzureARMTenantScopeException(LOCATION_BLANK_VALIDATION_MSG);
     }
 
     Azure azure = getAzureClientWithDefaultSubscription(azureConfig);
@@ -499,7 +504,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
       case RESOURCE_GROUP:
         String resourceGroup = context.getResourceGroup();
         if (!deploymentsInner.checkExistence(resourceGroup, deploymentName)) {
-          throw new IllegalArgumentException(
+          throw new AzureARMResourceGroupScopeException(
               String.format(DEPLOYMENT_DOES_NOT_EXIST_RESOURCE_GROUP, deploymentName, resourceGroup));
         }
 
@@ -508,7 +513,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
 
       case SUBSCRIPTION:
         if (!deploymentsInner.checkExistenceAtSubscriptionScope(deploymentName)) {
-          throw new IllegalArgumentException(
+          throw new AzureARMSubscriptionScopeException(
               String.format(DEPLOYMENT_DOES_NOT_EXIST_SUBSCRIPTION, deploymentName, context.getSubscriptionId()));
         }
         extendedInner = deploymentsInner.getAtSubscriptionScope(deploymentName);
@@ -517,7 +522,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
       case MANAGEMENT_GROUP:
         String managementGroupId = context.getManagementGroupId();
         if (!deploymentsInner.checkExistenceAtManagementGroupScope(managementGroupId, deploymentName)) {
-          throw new IllegalArgumentException(
+          throw new AzureARMManagementScopeException(
               String.format(DEPLOYMENT_DOES_NOT_EXIST_MANAGEMENT_GROUP, deploymentName, managementGroupId));
         }
 
@@ -526,14 +531,14 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
 
       case TENANT:
         if (!deploymentsInner.checkExistenceAtTenantScope(deploymentName)) {
-          throw new IllegalArgumentException(
+          throw new AzureARMTenantScopeException(
               String.format(DEPLOYMENT_DOES_NOT_EXIST_TENANT, deploymentName, context.getTenantId()));
         }
         extendedInner = deploymentsInner.getAtTenantScope(deploymentName);
         break;
 
       default:
-        throw new IllegalStateException("Unexpected value: " + context.getScopeType());
+        throw new AzureARMValidationException("Unexpected value: " + context.getScopeType());
     }
     return extendedInner;
   }
@@ -573,7 +578,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
         break;
 
       default:
-        throw new IllegalStateException("Unexpected value: " + context.getScopeType());
+        throw new AzureARMTaskException("Unexpected value: " + context.getScopeType());
     }
     return operationInners;
   }
@@ -598,7 +603,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
         extendedInner = deployments.getAtTenantScope(deploymentName);
         break;
       default:
-        throw new IllegalStateException("Unexpected value: " + context.getScopeType());
+        throw new AzureARMTaskException("Unexpected value: " + context.getScopeType());
     }
     Object outputs = extendedInner.properties().outputs();
     return outputs != null ? JsonUtils.asJson(outputs) : "";

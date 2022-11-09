@@ -53,6 +53,14 @@ public class K8sResourceUtils {
     return Resource.builder().cpuUnits(vCPU * CPU_UNITS).memoryMb(memoryGB * GBI_TO_MBI).build();
   }
 
+  public static double getAzureVMVCpu(double cpuUnit) {
+    return cpuUnit / CPU_UNITS;
+  }
+
+  public static double getAzureVMMemoryGb(double memoryMb) {
+    return memoryMb / GBI_TO_MBI;
+  }
+
   public static double getFargateVCpu(double cpuUnit) {
     double vCpu = cpuUnit / CPU_UNITS;
     if (vCpu <= 0.25) {

@@ -17,8 +17,6 @@ import io.harness.azure.model.ARMScopeType;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureConstants;
 import io.harness.delegate.task.azure.arm.AzureARMDeploymentService;
-import io.harness.delegate.task.azure.arm.AzureARMPreDeploymentData;
-import io.harness.delegate.task.azure.arm.AzureARMPreDeploymentData.AzureARMPreDeploymentDataBuilder;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGResponse;
 import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters;
@@ -69,24 +67,14 @@ public class AzureCreateArmResourceTaskHandler extends AzureResourceCreationAbst
   }
 
   private AzureResourceCreationTaskNGResponse deployAtResourceGroupScope(AzureConfig azureConfig,
-      AzureLogCallbackProvider logCallback, AzureARMTaskNGParameters azureARMTaskNGParameters) {
-    AzureARMPreDeploymentDataBuilder preDeploymentData =
-        AzureARMPreDeploymentData.builder()
-            .resourceGroup(azureARMTaskNGParameters.getResourceGroupName())
-            .subscriptionId(azureARMTaskNGParameters.getSubscriptionId());
-
+      AzureLogCallbackProvider logCallbackProvider, AzureARMTaskNGParameters azureARMTaskNGParameters) {
     DeploymentResourceGroupContext context =
-        azureARMBaseHelper.toDeploymentResourceGroupContext(azureARMTaskNGParameters, azureConfig, logCallback);
+        azureARMBaseHelper.toDeploymentResourceGroupContext(azureARMTaskNGParameters, azureConfig, logCallbackProvider);
+
     try {
-      if (!azureARMTaskNGParameters.isRollback()) {
-        azureARMDeploymentService.validateTemplate(context);
-        String existingResourceGroupTemplate = azureARMDeploymentService.exportExistingResourceGroupTemplate(context);
-        preDeploymentData.resourceGroupTemplateJson(existingResourceGroupTemplate);
-      }
-      String outPuts = azureARMDeploymentService.deployAtResourceGroupScope(context);
+      String outputs = azureARMDeploymentService.deployAtResourceGroupScope(context);
       return AzureARMTaskNGResponse.builder()
-          .outputs(outPuts)
-          .azureARMPreDeploymentData(preDeploymentData.build())
+          .outputs(outputs)
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .build();
     } catch (Exception ex) {

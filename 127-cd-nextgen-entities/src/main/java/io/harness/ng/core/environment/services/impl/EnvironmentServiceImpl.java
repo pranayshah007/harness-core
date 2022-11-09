@@ -7,7 +7,6 @@
 
 package io.harness.ng.core.environment.services.impl;
 
-import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -39,12 +38,17 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
+import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadata;
+import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadataDTO;
+import io.harness.ng.core.environment.beans.ServiceOverridesMetadata;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.events.EnvironmentCreateEvent;
 import io.harness.ng.core.events.EnvironmentDeleteEvent;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.events.EnvironmentUpsertEvent;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
@@ -52,7 +56,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -62,7 +65,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
-import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -101,26 +103,26 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ORG =
       "Environment [%s] under Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ACCOUNT = "Environment [%s] in Account [%s] already exists";
-  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final InfrastructureEntityService infrastructureEntityService;
   private final ClusterService clusterService;
   private final ServiceOverrideService serviceOverrideService;
+  private final ServiceEntityService serviceEntityService;
 
   @Inject
   public EnvironmentServiceImpl(EnvironmentRepository environmentRepository,
       EntitySetupUsageService entitySetupUsageService, @Named(ENTITY_CRUD) Producer eventProducer,
       OutboxService outboxService, TransactionTemplate transactionTemplate,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService, InfrastructureEntityService infrastructureEntityService,
-      ClusterService clusterService, ServiceOverrideService serviceOverrideService) {
+      InfrastructureEntityService infrastructureEntityService, ClusterService clusterService,
+      ServiceOverrideService serviceOverrideService, ServiceEntityService serviceEntityService) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
-    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.infrastructureEntityService = infrastructureEntityService;
     this.clusterService = clusterService;
     this.serviceOverrideService = serviceOverrideService;
+    this.serviceEntityService = serviceEntityService;
   }
 
   @Override
@@ -250,7 +252,6 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
     checkArgument(isNotEmpty(environmentIdentifier), "environment Identifier must be present");
 
-    final boolean hardDelete = ngFeatureFlagHelperService.isEnabled(accountId, HARD_DELETE_ENTITIES);
     Environment environment = Environment.builder()
                                   .accountId(accountId)
                                   .orgIdentifier(orgIdentifier)
@@ -264,8 +265,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
         get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, false);
     if (environmentOptional.isPresent()) {
       Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        final boolean deleted =
-            hardDelete ? environmentRepository.delete(criteria) : environmentRepository.softDelete(criteria);
+        final boolean deleted = environmentRepository.delete(criteria);
         if (!deleted) {
           throw new InvalidRequestException(
               String.format("Environment [%s] under Project[%s], Organization [%s] couldn't be deleted.",
@@ -306,18 +306,13 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    final boolean shouldHardDelete = ngFeatureFlagHelperService.isEnabled(accountId, HARD_DELETE_ENTITIES);
-    if (!shouldHardDelete) {
-      return false;
-    }
-
     checkArgument(isNotEmpty(orgIdentifier), "orgIdentifier must be present");
     checkArgument(isNotEmpty(projectIdentifier), "project Identifier must be present");
 
     Criteria criteria = getAllEnvironmentsEqualityCriteriaWithinProject(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      UpdateResult updateResult = environmentRepository.deleteMany(criteria);
-      if (!updateResult.wasAcknowledged()) {
+      boolean deleted = environmentRepository.delete(criteria);
+      if (!deleted) {
         throw new InvalidRequestException(
             String.format("Environments under Project[%s], Organization [%s] couldn't be deleted.", projectIdentifier,
                 orgIdentifier));
@@ -365,7 +360,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   @Override
   public String createEnvironmentInputsYaml(
-      String accountId, String projectIdentifier, String orgIdentifier, String envIdentifier) {
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
     Map<String, Object> yamlInputs =
         createEnvironmentInputsYamlInternal(accountId, orgIdentifier, projectIdentifier, envIdentifier);
 
@@ -400,11 +395,12 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     Map<String, Object> yamlInputs = new HashMap<>();
     Optional<Environment> environment = get(accountId, orgIdentifier, projectIdentifier, envIdentifier, false);
     if (environment.isPresent()) {
-      if (EmptyPredicate.isEmpty(environment.get().getYaml())) {
+      if (EmptyPredicate.isEmpty(environment.get().fetchNonEmptyYaml())) {
         throw new InvalidRequestException("Environment yaml cannot be empty");
       }
       try {
-        String environmentInputsYaml = RuntimeInputFormHelper.createRuntimeInputForm(environment.get().getYaml(), true);
+        String environmentInputsYaml =
+            RuntimeInputFormHelper.createRuntimeInputForm(environment.get().fetchNonEmptyYaml(), true);
         if (isEmpty(environmentInputsYaml)) {
           return null;
         }
@@ -519,5 +515,46 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       // ignore this
     }
     return false;
+  }
+
+  public EnvironmentInputSetYamlAndServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers,
+      List<String> serviceIdentifiers) {
+    List<EnvironmentInputSetYamlAndServiceOverridesMetadata> environmentInputSetYamlAndServiceOverridesMetadataList =
+        new ArrayList<>();
+    for (String env : envIdentifiers) {
+      Optional<Environment> environment =
+          environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+              accountId, orgIdentifier, projectIdentifier, env);
+      if (environment.isPresent()) {
+        String inputYaml = createEnvironmentInputsYaml(accountId, orgIdentifier, projectIdentifier, env);
+        List<ServiceOverridesMetadata> serviceOverridesMetadataList = new ArrayList<>();
+        for (String serviceId : serviceIdentifiers) {
+          Optional<ServiceEntity> serviceEntity =
+              serviceEntityService.getService(accountId, orgIdentifier, projectIdentifier, serviceId);
+          if (serviceEntity.isPresent()) {
+            String serviceOverrides = serviceOverrideService.createServiceOverrideInputsYaml(
+                accountId, orgIdentifier, projectIdentifier, env, serviceId);
+            serviceOverridesMetadataList.add(ServiceOverridesMetadata.builder()
+                                                 .serviceRef(serviceId)
+                                                 .serviceOverridesYaml(serviceOverrides)
+                                                 .serviceYaml(serviceEntity.get().getYaml())
+                                                 .serviceRuntimeInputYaml(serviceEntityService.createServiceInputsYaml(
+                                                     serviceEntity.get().getYaml(), serviceId))
+                                                 .build());
+          }
+        }
+        environmentInputSetYamlAndServiceOverridesMetadataList.add(
+            EnvironmentInputSetYamlAndServiceOverridesMetadata.builder()
+                .envRef(env)
+                .envRuntimeInputYaml(inputYaml)
+                .servicesOverrides(serviceOverridesMetadataList)
+                .envYaml(environment.get().getYaml())
+                .build());
+      }
+    }
+    return EnvironmentInputSetYamlAndServiceOverridesMetadataDTO.builder()
+        .environmentsInputYamlAndServiceOverrides(environmentInputSetYamlAndServiceOverridesMetadataList)
+        .build();
   }
 }

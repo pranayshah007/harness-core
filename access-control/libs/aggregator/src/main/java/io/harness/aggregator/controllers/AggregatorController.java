@@ -21,7 +21,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.queue.QueueController;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
@@ -46,22 +45,19 @@ public class AggregatorController implements Runnable {
   private final ACLRepository secondaryACLRepository;
   private final MongoReconciliationOffsetRepository mongoReconciliationOffsetRepository;
   private final PersistentLocker persistentLocker;
-  private final QueueController queueController;
 
   @Inject
   public AggregatorController(AggregatorSecondarySyncController secondarySyncController,
       AggregatorPrimarySyncController primarySyncJobController,
       AggregatorSecondarySyncStateRepository aggregatorSecondarySyncStateRepository,
       @Named(ACL.SECONDARY_COLLECTION) ACLRepository secondaryACLRepository,
-      MongoReconciliationOffsetRepository mongoReconciliationOffsetRepository, PersistentLocker persistentLocker,
-      QueueController queueController) {
+      MongoReconciliationOffsetRepository mongoReconciliationOffsetRepository, PersistentLocker persistentLocker) {
     this.secondarySyncController = secondarySyncController;
     this.primarySyncController = primarySyncJobController;
     this.aggregatorSecondarySyncStateRepository = aggregatorSecondarySyncStateRepository;
     this.secondaryACLRepository = secondaryACLRepository;
     this.mongoReconciliationOffsetRepository = mongoReconciliationOffsetRepository;
     this.persistentLocker = persistentLocker;
-    this.queueController = queueController;
   }
 
   @Override
@@ -75,21 +71,17 @@ public class AggregatorController implements Runnable {
     log.info("Aggregator Controller has started");
     try {
       while (true) {
-        if (!isServicePrimaryVersion()) {
+        if (isSwitchToPrimaryRequested()) {
           stopChildControllers(primarySyncFuture, secondarySyncFuture);
+          switchToPrimary();
         } else {
-          if (isSwitchToPrimaryRequested()) {
-            stopChildControllers(primarySyncFuture, secondarySyncFuture);
-            switchToPrimary();
-          } else {
-            if (!isControllerRunning(primarySyncFuture)) {
-              log.info("Starting aggregator primary sync controller");
-              primarySyncFuture = primarySyncExecutorService.submit(primarySyncController);
-            }
-            if (!isControllerRunning(secondarySyncFuture)) {
-              log.info("Starting aggregator secondary sync controller");
-              secondarySyncFuture = secondarySyncExecutorService.submit(secondarySyncController);
-            }
+          if (!isControllerRunning(primarySyncFuture)) {
+            log.info("Starting aggregator primary sync controller");
+            primarySyncFuture = primarySyncExecutorService.submit(primarySyncController);
+          }
+          if (!isControllerRunning(secondarySyncFuture)) {
+            log.info("Starting aggregator secondary sync controller");
+            secondarySyncFuture = secondarySyncExecutorService.submit(secondarySyncController);
           }
         }
         TimeUnit.SECONDS.sleep(30);
@@ -165,9 +157,5 @@ public class AggregatorController implements Runnable {
   private void stopController(Future<?> future) throws InterruptedException {
     future.cancel(true);
     TimeUnit.SECONDS.sleep(30);
-  }
-
-  private boolean isServicePrimaryVersion() {
-    return queueController.isPrimary();
   }
 }

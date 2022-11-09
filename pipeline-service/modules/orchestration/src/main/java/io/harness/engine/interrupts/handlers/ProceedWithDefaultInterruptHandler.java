@@ -54,7 +54,7 @@ public class ProceedWithDefaultInterruptHandler implements InterruptHandler {
   Interrupt validateAndSave(Interrupt interrupt) {
     if (isEmpty(interrupt.getNodeExecutionId())) {
       log.error("Failed to proceed with default value for nodeExecutionId: null. NodeExecutionId cannot be null");
-      throw new InterruptProcessingFailedException(InterruptType.ABORT,
+      throw new InterruptProcessingFailedException(InterruptType.PROCEED_WITH_DEFAULT,
           "Failed to proceed with default value for nodeExecutionId: null. NodeExecutionId cannot be null");
     }
     return interruptService.save(interrupt);

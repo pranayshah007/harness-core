@@ -42,10 +42,12 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import retrofit2.http.Body;
 
 @Api("slo-dashboard")
 @Path("slo-dashboard")
@@ -82,7 +84,7 @@ public class SLODashboardResource {
   @GET
   @Path("widgets")
   @ExceptionMetered
-  @ApiOperation(value = "get widget list", nickname = "getSLODashboardWidgets")
+  @ApiOperation(value = "get widget list", nickname = "getSLODashboardWidgets", hidden = true)
   @Operation(operationId = "getSLODashboardWidgets", summary = "Get widget list",
       responses =
       {
@@ -90,6 +92,7 @@ public class SLODashboardResource {
         ApiResponse(responseCode = "default", description = "Gets the SLOs for dashboard")
       })
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  @Deprecated
   public ResponseDTO<PageResponse<SLODashboardWidget>>
   getSloDashboardWidgets(@NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter filter,
       @BeanParam PageParams pageParams) {
@@ -109,10 +112,25 @@ public class SLODashboardResource {
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<SLOHealthListView>>
   getSloHealthListView(@NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter filter,
-      @BeanParam PageParams pageParams,
-      @Parameter(description = "For filtering on the basis of name") @QueryParam("filter") String filterByName) {
-    return ResponseDTO.newResponse(
-        sloDashboardService.getSloHealthListView(projectParams, filter, pageParams, filterByName));
+      @BeanParam PageParams pageParams) {
+    return ResponseDTO.newResponse(sloDashboardService.getSloHealthListView(projectParams, filter, pageParams));
+  }
+
+  @POST
+  @Path("widgets/list")
+  @ExceptionMetered
+  @ApiOperation(value = "get slo list view", nickname = "getSLOHealthListViewV2")
+  @Operation(operationId = "getSLOHealthListViewV2", summary = "Get SLO list view",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Gets the SLOs for list view")
+      })
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<SLOHealthListView>>
+  getSloHealthListViewV2(@NotNull @BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams,
+      @Valid @Body SLODashboardApiFilter filter) {
+    return ResponseDTO.newResponse(sloDashboardService.getSloHealthListView(projectParams, filter, pageParams));
   }
 
   @GET

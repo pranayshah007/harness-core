@@ -23,7 +23,7 @@ public class AdoCreateBranchScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String CREATE_BRANCH_FAILED_MESSAGE =
       "The requested branch<NEW_BRANCH> could not be created on Azure. ";
   public static final String CREATE_BRANCH_DOES_NOT_EXIST_ERROR_HINT =
-      "Please check if the requested Github base branch<BRANCH> exists.";
+      "Please check if the requested Azure base branch<BRANCH> exists.";
   public static final String CREATE_BRANCH_DOES_NOT_EXIST_ERROR_EXPLANATION =
       "The given base branch<BRANCH> does not exist.";
 

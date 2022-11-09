@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.service.entity.AccountMigrationService;
 import io.harness.ngmigration.service.entity.AppMigrationService;
 import io.harness.ngmigration.service.entity.ArtifactStreamMigrationService;
@@ -19,6 +21,7 @@ import io.harness.ngmigration.service.entity.PipelineMigrationService;
 import io.harness.ngmigration.service.entity.SecretManagerMigrationService;
 import io.harness.ngmigration.service.entity.SecretMigrationService;
 import io.harness.ngmigration.service.entity.ServiceMigrationService;
+import io.harness.ngmigration.service.entity.ServiceVariableMigrationService;
 import io.harness.ngmigration.service.entity.TemplateMigrationService;
 import io.harness.ngmigration.service.entity.WorkflowMigrationService;
 
@@ -26,6 +29,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
 
+@OwnedBy(HarnessTeam.CDC)
 public class NgMigrationFactory {
   @Inject PipelineMigrationService pipelineMigrationService;
   @Inject WorkflowMigrationService workflowMigrationService;
@@ -41,6 +45,7 @@ public class NgMigrationFactory {
   @Inject AppMigrationService appMigrationService;
   @Inject AccountMigrationService accountMigrationService;
   @Inject TemplateMigrationService templateMigrationService;
+  @Inject ServiceVariableMigrationService serviceVariableMigrationService;
 
   public NgMigrationService getMethod(NGMigrationEntityType type) {
     switch (type) {
@@ -72,6 +77,8 @@ public class NgMigrationFactory {
         return infraMigrationService;
       case MANIFEST:
         return manifestMigrationService;
+      case SERVICE_VARIABLE:
+        return serviceVariableMigrationService;
       default:
         throw new IllegalStateException();
     }

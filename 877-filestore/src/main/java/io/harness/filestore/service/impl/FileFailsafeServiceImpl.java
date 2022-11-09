@@ -109,7 +109,7 @@ public class FileFailsafeServiceImpl implements FileFailsafeService {
       }));
     } catch (Exception ex) {
       log.error("Failed to delete {} [{}].", ngFile.isFile() ? "file" : "folder", ngFile.getName(), ex);
-      return false;
+      throw ex;
     }
   }
 

@@ -445,8 +445,10 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
     String accountID = applicationDataForReporting.getAccountId();
 
     updateDeploymentInformation(workflowExecution);
-    usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(accountID, workflowExecution);
-    reportDeploymentEventToSegment(workflowExecution);
+    WorkflowExecution updatedWorkflowExecution =
+        workflowExecutionService.getUpdatedWorkflowExecution(workflowExecution.getAppId(), workflowExecution.getUuid());
+    usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(accountID, updatedWorkflowExecution);
+    reportDeploymentEventToSegment(updatedWorkflowExecution);
   }
 
   public void publish(WorkflowExecution execution, StateStatusUpdateInfo statusUpdateInfo, EventType eventType) {

@@ -104,8 +104,7 @@ public class LdapGroupSyncJobHelper {
   @Inject @Named(LdapFeature.FEATURE_NAME) private PremiumFeature ldapFeature;
 
   public void syncJob(SSOSettings ssoSettings) {
-    if (featureFlagService.isEnabled(FeatureName.LDAP_GROUP_SYNC_JOB_ITERATOR, ssoSettings.getAccountId())
-        && ssoSettings instanceof LdapSettings) {
+    if (ssoSettings instanceof LdapSettings) {
       LdapSettings ldapSettings = (LdapSettings) ssoSettings;
       String accountId = ldapSettings.getAccountId();
       if (isEmpty(accountId) || !ldapFeature.isAvailableForAccount(accountId)) {

@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PipelineDashboardServiceImpl implements PipelineDashboardService {
   @Inject PipelineDashboardQueryService pipelineDashboardQueryService;
 
-  private String tableName_default = "pipeline_execution_summary_ci";
+  private String tableName_default = "pipeline_execution_summary";
   private String CI_TableName = "pipeline_execution_summary_ci";
   private String CD_TableName = "pipeline_execution_summary_cd";
   private static final List<String> FAILED_STATUS_LIST =
@@ -70,10 +70,12 @@ public class PipelineDashboardServiceImpl implements PipelineDashboardService {
 
   public String selectTableFromModuleInfo(String moduleInfo) {
     String tableName = tableName_default;
-    if (moduleInfo.equalsIgnoreCase("CI")) {
-      tableName = CI_TableName;
-    } else if (moduleInfo.equalsIgnoreCase("CD")) {
-      tableName = CD_TableName;
+    if (moduleInfo != null) {
+      if (moduleInfo.equalsIgnoreCase("CI")) {
+        tableName = CI_TableName;
+      } else if (moduleInfo.equalsIgnoreCase("CD")) {
+        tableName = CD_TableName;
+      }
     }
     return tableName;
   }

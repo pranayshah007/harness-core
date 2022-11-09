@@ -39,6 +39,7 @@ import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.servicenow.ServiceNowFieldNG;
 import io.harness.servicenow.ServiceNowFieldSchemaNG;
 import io.harness.servicenow.ServiceNowFieldTypeNG;
+import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 
 import com.google.inject.Inject;
@@ -114,6 +115,14 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
 
     return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder)
         .getServiceNowTemplateList();
+  }
+
+  @Override
+  public List<ServiceNowStagingTable> getStagingTableList(IdentifierRef connectorRef, String orgId, String projectId) {
+    ServiceNowTaskNGParametersBuilder parametersBuilder =
+        ServiceNowTaskNGParameters.builder().action(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES);
+    return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder)
+        .getServiceNowStagingTableList();
   }
 
   private ServiceNowTaskNGResponse obtainServiceNowTaskNGResponse(IdentifierRef serviceNowConnectorRef, String orgId,

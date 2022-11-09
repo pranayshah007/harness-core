@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.beans.FeatureName;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
@@ -255,7 +254,6 @@ public class YamlChangeSetHelperTest extends CategoryTest {
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void test_compareYaml() {
-    when(featureFlagService.isEnabled(FeatureName.COMPARE_YAML_IN_GIT_SYNC, ACCOUNTID)).thenReturn(true);
     OrchestrationWorkflow orchestrationWorkflow1 =
         BuildWorkflow.BuildOrchestrationWorkflowBuilder.aBuildOrchestrationWorkflow().build();
     orchestrationWorkflow1.setOrchestrationWorkflowType(OrchestrationWorkflowType.BASIC);

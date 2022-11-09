@@ -104,6 +104,7 @@ public class FileBasedSshScriptExecutorHelper {
         }
         saveExecutionLog.accept(
             "Begin file transfer " + fileInfo.getKey() + " to " + config.getHost() + ":" + remoteFilePath);
+        logFileSize(saveExecutionLog, fileInfo.getKey(), fileInfo.getValue());
         fileProvider.downloadToStream(out);
         out.write(new byte[1], 0, 1);
         out.flush();
@@ -148,10 +149,6 @@ public class FileBasedSshScriptExecutorHelper {
    * @throws IOException Signals that an I/O exception has occurred.
    */
   static int checkAck(InputStream in, Consumer<String> saveExecutionLogError) throws IOException {
-    if (in.available() == 0) {
-      return 0;
-    }
-
     int b = in.read();
     // b may be 0 for success,
     //          1 for error,
@@ -188,5 +185,11 @@ public class FileBasedSshScriptExecutorHelper {
       log.info("Server response {}", sb);
       return 0;
     }
+  }
+
+  private static void logFileSize(Consumer<String> saveExecutionLog, String filename, long configFileLength) {
+    saveExecutionLog.accept(format("Size of file (%s) to be transferred %.2f %s", filename,
+        configFileLength > 1024 ? configFileLength / 1024.0 : configFileLength,
+        configFileLength > 1024 ? "(KB) KiloBytes" : "(B) Bytes"));
   }
 }

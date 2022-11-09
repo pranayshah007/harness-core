@@ -59,6 +59,13 @@ public class Host implements PersistentEntity, UuidAware, CreatedAtAware, Update
                  .field(HostKeys.appId)
                  .field(HostKeys.infraMappingId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("appId_envId_inframappingId_hostName")
+                 .field(HostKeys.appId)
+                 .field(HostKeys.envId)
+                 .field(HostKeys.infraMappingId)
+                 .field(HostKeys.hostName)
+                 .build())
         .build();
   }
 

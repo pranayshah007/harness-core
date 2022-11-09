@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 public interface StepSpecTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
+  String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String CLOUDFORMATION_CREATE_STACK = "CreateStack";
   String CLOUDFORMATION_DELETE_STACK = "DeleteStack";
   String CLOUDFORMATION_ROLLBACK_STACK = "RollbackStack";
@@ -46,6 +47,8 @@ public interface StepSpecTypeConstants {
   String SERVERLESS_AWS_LAMBDA_DEPLOY = "ServerlessAwsLambdaDeploy";
   String SERVERLESS_AWS_LAMBDA_ROLLBACK = "ServerlessAwsLambdaRollback";
   String COMMAND = "Command";
+  String ELASTIGROUP_DEPLOY = "ElastigroupDeploy";
+  String ELASTIGROUP_ROLLBACK = "ElastigroupRollback";
 
   String AZURE_SLOT_DEPLOYMENT = "AzureSlotDeployment";
   String AZURE_TRAFFIC_SHIFT = "AzureTrafficShift";
@@ -55,9 +58,18 @@ public interface StepSpecTypeConstants {
   String JENKINS_BUILD = "JenkinsBuild";
 
   String DEPLOYMENT_TYPE_CUSTOM_DEPLOYMENT = "CustomDeployment";
+  String CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT = "FetchInstanceScript";
 
   String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
   String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
   String ECS_CANARY_DELETE = "EcsCanaryDelete";
+  String ECS_RUN_TASK = "EcsRunTask";
+  String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
+  String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
+  String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
+
+  String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
+
+  String CHAOS_STEP = "Chaos";
 }

@@ -76,6 +76,12 @@ public class YamlGitConfig implements EncryptableSetting, PersistentEntity, Uuid
                  .field(YamlGitConfigKeys.entityId)
                  .field(YamlGitConfigKeys.entityType)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("account_gitconnector_branch")
+                 .field(YamlGitConfigKeys.accountId)
+                 .field(YamlGitConfigKeys.gitConnectorId)
+                 .field(YamlGitConfigKeys.branchName)
+                 .build())
         .build();
   }
 
@@ -117,7 +123,7 @@ public class YamlGitConfig implements EncryptableSetting, PersistentEntity, Uuid
   @NotEmpty private String entityId;
   @NotNull private EntityType entityType;
   @Transient private String entityName;
-  private long gitPollingIterator;
+  @FdIndex private long gitPollingIterator;
 
   @Override
   public SettingVariableTypes getSettingType() {

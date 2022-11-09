@@ -14,7 +14,9 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_INVA
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_ADDED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_INVITED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
+import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITE_NOT_REQUIRED;
 import static io.harness.rule.OwnerRule.ANKUSH;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
@@ -35,6 +37,7 @@ import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.invites.remote.InviteAcceptResponse;
@@ -49,8 +52,10 @@ import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.invites.entities.Invite;
 import io.harness.ng.core.invites.entities.Invite.InviteKeys;
+import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResultWithStatus;
 import io.harness.outbox.api.OutboxService;
@@ -59,17 +64,20 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.user.remote.UserClient;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.auth0.jwt.interfaces.Claim;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.query.Update;
@@ -86,6 +94,9 @@ public class InviteServiceImplTest extends CategoryTest {
   private static final String emailId = String.format("%s@%s", randomAlphabetic(7), randomAlphabetic(7));
   private static final String userId = randomAlphabetic(10);
   private static final String inviteId = randomAlphabetic(10);
+  private static final String EMAIL_NOTIFY_TEMPLATE_ID = "email_notify";
+  private static final String EMAIL_INVITE_TEMPLATE_ID = "email_invite";
+  private static final String SHOULD_MAIL_CONTAIN_TWO_FACTOR_INFO = "shouldMailContainTwoFactorInfo";
   @Mock private JWTGeneratorUtils jwtGeneratorUtils;
   @Mock private NgUserService ngUserService;
   @Mock private TransactionTemplate transactionTemplate;
@@ -98,6 +109,9 @@ public class InviteServiceImplTest extends CategoryTest {
   @Mock private UserGroupService userGroupService;
   @Mock private AccountOrgProjectHelper accountOrgProjectHelper;
   @Mock private TelemetryReporter telemetryReporter;
+  @Mock private ScheduledExecutorService executorService;
+  @Mock(answer = Answers.RETURNS_DEEP_STUBS) NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Captor private ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor;
 
   private InviteService inviteService;
 
@@ -107,7 +121,7 @@ public class InviteServiceImplTest extends CategoryTest {
     MongoConfig mongoConfig = MongoConfig.builder().uri("mongodb://localhost:27017/ng-harness").build();
     inviteService = new InviteServiceImpl(USER_VERIFICATION_SECRET, mongoConfig, jwtGeneratorUtils, ngUserService,
         transactionTemplate, inviteRepository, notificationClient, accountClient, outboxService, accessControlClient,
-        userClient, accountOrgProjectHelper, false, telemetryReporter);
+        userClient, accountOrgProjectHelper, false, telemetryReporter, ngFeatureFlagHelperService, executorService);
 
     when(accountClient.getAccountDTO(any()).execute())
         .thenReturn(Response.success(new RestResponse(AccountDTO.builder()
@@ -124,6 +138,12 @@ public class InviteServiceImplTest extends CategoryTest {
     Call<RestResponse<Boolean>> userCall = mock(Call.class);
     when(userClient.checkUserLimit(any(), anyString())).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
+
+    when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(false);
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any())).thenReturn(ffCall);
+    when(accountClient.checkPLNoEmailForSamlAccountInvitesEnabledForAccount(anyString())).thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
   }
 
   private Invite getDummyInvite() {
@@ -193,8 +213,6 @@ public class InviteServiceImplTest extends CategoryTest {
              any(), any(), any(), any()))
         .thenReturn(Optional.empty());
 
-    when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any()).execute())
-        .thenReturn(Response.success(new RestResponse(false)));
     InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
 
     assertThat(inviteOperationResponse).isEqualTo(USER_INVITED_SUCCESSFULLY);
@@ -458,5 +476,85 @@ public class InviteServiceImplTest extends CategoryTest {
     verify(inviteRepository, times(1)).updateInvite(idCapture.capture(), updateCapture.capture());
     assertThat(idCapture.getValue()).isEqualTo(inviteId);
     assertThat(updateCapture.getValue().modifies(InviteKeys.deleted)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testCreate_withSsoEnabled_withAutoInviteAcceptanceEnabled() throws IOException {
+    when(ngUserService.getUserByEmail(eq(emailId), anyBoolean())).thenReturn(Optional.empty());
+    when(inviteRepository.save(any())).thenReturn(getDummyInvite());
+    when(inviteRepository.findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any())).thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    Call<RestResponse<Boolean>> userCall = mock(Call.class);
+    when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean(), anyBoolean())).thenReturn(userCall);
+    when(userCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+
+    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
+
+    assertThat(inviteOperationResponse).isEqualTo(USER_INVITED_SUCCESSFULLY);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+    verify(notificationClient).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
+    assertThat(notificationChannelArgumentCaptor.getValue().getTemplateId()).isEqualTo(EMAIL_NOTIFY_TEMPLATE_ID);
+    assertThat(notificationChannelArgumentCaptor.getValue().getTemplateData().get(SHOULD_MAIL_CONTAIN_TWO_FACTOR_INFO))
+        .isEqualTo("false");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testCreate_withSsoEnabled_withPLNoEmailForSamlAccountInvitesEnabled() throws IOException {
+    when(ngUserService.getUserByEmail(eq(emailId), anyBoolean())).thenReturn(Optional.empty());
+    when(inviteRepository.save(any())).thenReturn(getDummyInvite());
+    when(inviteRepository.findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+    Call<RestResponse<Boolean>> call = mock(Call.class);
+    when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean(), anyBoolean())).thenReturn(call);
+    when(accountClient.checkPLNoEmailForSamlAccountInvitesEnabledForAccount(anyString())).thenReturn(call);
+    when(call.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+
+    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
+
+    assertThat(inviteOperationResponse).isEqualTo(USER_INVITE_NOT_REQUIRED);
+    verify(notificationClient, times(0)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testCreate_withInviteEmail_with2FaEnforcedAtAccountLevel() throws IOException {
+    when(ngUserService.getUserByEmail(eq(emailId), anyBoolean())).thenReturn(Optional.empty());
+    when(inviteRepository.save(any())).thenReturn(getDummyInvite());
+    when(inviteRepository.findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+    Call<RestResponse<Boolean>> userCall = mock(Call.class);
+    when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean(), anyBoolean())).thenReturn(userCall);
+    when(userCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    Call<RestResponse<Optional<UserInfo>>> userInfoCall = mock(Call.class);
+    when(userClient.updateUserTwoFactorAuthInfo(any(), any())).thenReturn(userInfoCall);
+    when(userInfoCall.execute())
+        .thenReturn(Response.success(new RestResponse<>(Optional.of(UserInfo.builder().build()))));
+    when(accountClient.getAccountDTO(any()).execute())
+        .thenReturn(Response.success(new RestResponse(AccountDTO.builder()
+                                                          .identifier(accountIdentifier)
+                                                          .companyName(accountIdentifier)
+                                                          .name(accountIdentifier)
+                                                          .isTwoFactorAdminEnforced(true)
+                                                          .build())));
+
+    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
+
+    assertThat(inviteOperationResponse).isEqualTo(USER_INVITED_SUCCESSFULLY);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+    verify(notificationClient).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
+    assertThat(notificationChannelArgumentCaptor.getValue().getTemplateId()).isEqualTo(EMAIL_INVITE_TEMPLATE_ID);
+    assertThat(notificationChannelArgumentCaptor.getValue().getTemplateData().get(SHOULD_MAIL_CONTAIN_TWO_FACTOR_INFO))
+        .isEqualTo("true");
   }
 }

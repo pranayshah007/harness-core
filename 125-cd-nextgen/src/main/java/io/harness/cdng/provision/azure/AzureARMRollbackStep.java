@@ -10,6 +10,8 @@ package io.harness.cdng.provision.azure;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.provision.azure.AzureCommonHelper.DEFAULT_TIMEOUT;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters.AzureARMTaskNGParametersBuilder;
 import static io.harness.delegate.task.azure.arm.AzureARMTaskType.ARM_DEPLOYMENT;
 
@@ -23,7 +25,6 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig;
-import io.harness.cdng.provision.azure.beans.AzureARMTemplateDataOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
@@ -35,7 +36,6 @@ import io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -50,9 +50,6 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
-import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
@@ -64,30 +61,21 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(CDP)
 public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<AzureARMTaskNGResponse> {
-  private static final String AZURE_TEMPLATE_DATA_FORMAT = "azureARMTemplateDataOutput_%s";
-
-  @Inject private ExecutionSweepingOutputService sweepingOutputService;
-
-  @Inject private AzureCommonHelper azureCommonHelper;
-
-  @Inject private AzureARMConfigDAL azureARMConfigDAL;
-  @Inject private CDStepHelper cdStepHelper;
-  @Inject private KryoSerializer kryoSerializer;
-  @Inject private StepHelper stepHelper;
-
-  protected static final String EMPTY_JSON = "{}";
-  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
-
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AZURE_ROLLBACK_ARM_RESOURCE.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
+  @Inject private AzureCommonHelper azureCommonHelper;
+  @Inject private AzureARMConfigDAL azureARMConfigDAL;
+  @Inject private CDStepHelper cdStepHelper;
+  @Inject private KryoSerializer kryoSerializer;
+  @Inject private StepHelper stepHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -98,8 +86,8 @@ public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<Azur
     }
     AzureARMRollbackStepParameters azureARMRollbackStepParameters =
         (AzureARMRollbackStepParameters) stepParameters.getSpec();
-    if (getParameterFieldValue(azureARMRollbackStepParameters.getProvisionerIdentifier()) == null) {
-      throw new InvalidRequestException("Provisioner ID can't be null");
+    if (isEmpty(getParameterFieldValue(azureARMRollbackStepParameters.getProvisionerIdentifier()))) {
+      throw new InvalidRequestException("Provisioner Identifier can't be null or empty");
     }
   }
 
@@ -114,24 +102,25 @@ public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<Azur
     AzureARMRollbackStepParameters azureARMRollbackStepParameters =
         (AzureARMRollbackStepParameters) stepParameters.getSpec();
     log.info("Starting execution for the Azure Rollback Step");
-    String provisionerID = getParameterFieldValue(azureARMRollbackStepParameters.getProvisionerIdentifier());
 
-    AzureARMTemplateDataOutput templateDataOutput = getAzureARMTemplateDataOutput(provisionerID, ambiance);
-
-    AzureARMPreDeploymentData data = validateIfRollbackCanBePerformed(templateDataOutput);
-
-    AzureARMConfig azureARMConfig = azureARMConfigDAL.getRollbackAzureARMConfig(ambiance, provisionerID);
+    String provisionerId = getParameterFieldValue(azureARMRollbackStepParameters.getProvisionerIdentifier());
+    AzureARMConfig azureARMConfig = azureARMConfigDAL.getAzureARMConfig(ambiance, provisionerId);
+    String errorMessage = validateIfRollbackCanBePerformed(azureARMConfig, provisionerId);
+    if (isNotEmpty(errorMessage)) {
+      return TaskRequest.newBuilder()
+          .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(errorMessage).build())
+          .build();
+    }
 
     ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(azureARMConfig.getConnectorRef(), ambiance);
-
     if (!(connectorDTO.getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidRequestException(format(
           "Invalid connector selected in Azure step. The connector type is %s. Please select a valid Azure connector",
           connectorDTO.getConnectorType()));
     }
 
-    AzureARMTaskNGParameters taskNGParameters =
-        getAzureTaskNGParams(ambiance, stepParameters, (AzureConnectorDTO) connectorDTO.getConnectorConfig(), data);
+    AzureARMTaskNGParameters taskNGParameters = getAzureTaskNGParams(ambiance, stepParameters,
+        (AzureConnectorDTO) connectorDTO.getConnectorConfig(), azureARMConfig.getAzureARMPreDeploymentData());
 
     return obtainAzureRollbackTask(ambiance, stepParameters, taskNGParameters);
   }
@@ -140,6 +129,9 @@ public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<Azur
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<AzureARMTaskNGResponse> responseDataSupplier) throws Exception {
     AzureARMTaskNGResponse response;
+    String provisionerID =
+        getParameterFieldValue(((AzureARMRollbackStepParameters) stepParameters.getSpec()).getProvisionerIdentifier());
+    azureARMConfigDAL.clearAzureARMConfig(ambiance, provisionerID);
 
     try {
       response = responseDataSupplier.get();
@@ -148,10 +140,6 @@ public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<Azur
       log.error(errorMessage, ex);
       throw ex;
     }
-    String provisionerID =
-        getParameterFieldValue(((AzureARMRollbackStepParameters) stepParameters.getSpec()).getProvisionerIdentifier());
-
-    azureARMConfigDAL.clearStoredAzureARMConfig(ambiance, provisionerID);
 
     if (response.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       return azureCommonHelper.getFailureResponse(
@@ -169,41 +157,15 @@ public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<Azur
         .build();
   }
 
-  private AzureARMTemplateDataOutput getAzureARMTemplateDataOutput(String provisionerIdentifier, Ambiance ambiance) {
-    String identifier = azureCommonHelper.generateIdentifier(provisionerIdentifier, ambiance);
-
-    String sweepingOutputKey = format(AZURE_TEMPLATE_DATA_FORMAT, identifier);
-
-    OptionalSweepingOutput output =
-        sweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(sweepingOutputKey));
-    if (!output.isFound()) {
-      return null;
+  private String validateIfRollbackCanBePerformed(AzureARMConfig azureARMConfig, String provisionerId) {
+    if (azureARMConfig == null) {
+      return format("There is no rollback data saved for the provisioner identifier: %s", provisionerId);
     }
-    return (AzureARMTemplateDataOutput) output.getOutput();
-  }
-
-  private AzureARMPreDeploymentData validateIfRollbackCanBePerformed(AzureARMTemplateDataOutput output) {
-    if (output == null) {
-      throw new InvalidArgumentsException("There is no state saved for the provisioner ID");
+    if (!AzureScopeTypesNames.ResourceGroup.equals(azureARMConfig.getScopeType())) {
+      return format(
+          "The only scope allowed to do rollback is ResourceGroup. %s is not supported", azureARMConfig.getScopeType());
     }
-    if (output.getScopeType() == null || !Objects.equals(output.getScopeType(), AzureScopeTypesNames.ResourceGroup)) {
-      throw new InvalidArgumentsException(
-          format("The only scope allowed to do rollback is ResourceGroup. %s is not supported", output.getScopeType()));
-    }
-    if (output.getResourceGroup() == null || output.getSubscriptionId() == null) {
-      throw new InvalidArgumentsException(
-          format("Missing relevant data for the rollback with resource group %s and subscription id %s",
-              output.getResourceGroup(), output.getSubscriptionId()));
-    }
-    return AzureARMPreDeploymentData.builder()
-        .resourceGroupTemplateJson(output.getResourceGroupTemplateJson())
-        .subscriptionId(output.getSubscriptionId())
-        .resourceGroup(output.getResourceGroup())
-        .build();
-  }
-
-  private TaskRequest obtainSkipRollbackTask(String reason) {
-    return TaskRequest.newBuilder().setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(reason).build()).build();
+    return null;
   }
 
   private TaskRequest obtainAzureRollbackTask(
@@ -234,7 +196,6 @@ public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<Azur
         .resourceGroupName(data.getResourceGroup())
         .subscriptionId(data.getSubscriptionId())
         .connectorDTO(connectorConfig)
-        .parametersBody(AppSettingsFile.create(EMPTY_JSON))
         .deploymentMode(AzureDeploymentMode.COMPLETE)
         .encryptedDataDetails(azureCommonHelper.getAzureEncryptionDetails(ambiance, connectorConfig))
         .timeoutInMs(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), DEFAULT_TIMEOUT))

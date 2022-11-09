@@ -23,10 +23,12 @@ import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 
 @Data
+@Builder
 public class FreezeInfoConfig {
   @JsonProperty("__uuid")
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -41,11 +43,11 @@ public class FreezeInfoConfig {
   String orgIdentifier;
   String projectIdentifier;
 
-  @JsonProperty("status") FreezeStatus active;
+  @NotNull @JsonProperty("status") FreezeStatus status;
 
   @JsonProperty("windows") List<FreezeWindow> windows;
 
   @JsonProperty("entityConfigs") List<FreezeEntityRule> rules;
 
-  FreezeNotifications notifications;
+  @JsonProperty("notificationRules") List<FreezeNotifications> notifications;
 }

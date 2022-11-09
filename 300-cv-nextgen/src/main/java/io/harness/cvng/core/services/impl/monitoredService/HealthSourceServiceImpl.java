@@ -27,7 +27,6 @@ import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.utils.monitoredService.CVConfigToHealthSourceTransformer;
 import io.harness.exception.DuplicateFieldException;
 
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,8 +35,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@Slf4j
 public class HealthSourceServiceImpl implements HealthSourceService {
   @Inject private Map<DataSourceType, CVConfigToHealthSourceTransformer> dataSourceTypeToHealthSourceTransformerMap;
   @Inject private CVConfigService cvConfigService;
@@ -92,11 +94,11 @@ public class HealthSourceServiceImpl implements HealthSourceService {
   @Override
   public Set<HealthSource> get(String accountId, String orgIdentifier, String projectIdentifier,
       String nameSpaceIdentifier, List<String> identifiers) {
-    Set<HealthSource> healthSources = new HashSet<>();
-    identifiers.forEach(identifier
-        -> healthSources.add(
-            transformCVConfigs(accountId, orgIdentifier, projectIdentifier, nameSpaceIdentifier, identifier)));
-    return healthSources;
+    return identifiers.stream()
+        .map(identifier
+            -> transformCVConfigs(accountId, orgIdentifier, projectIdentifier, nameSpaceIdentifier, identifier))
+        .filter(healthSource -> healthSource != null)
+        .collect(Collectors.toSet());
   }
 
   @Override
@@ -147,11 +149,14 @@ public class HealthSourceServiceImpl implements HealthSourceService {
       String accountId, String orgIdentifier, String projectIdentifier, String nameSpaceIdentifier, String identifier) {
     List<CVConfig> cvConfigs = cvConfigService.list(accountId, orgIdentifier, projectIdentifier,
         HealthSourceService.getNameSpacedIdentifier(nameSpaceIdentifier, identifier));
-    Preconditions.checkState(!cvConfigs.isEmpty(),
-        String.format("CVConfigs are not present for identifier %s, orgIdentifier %s and projectIdentifier %s",
-            HealthSourceService.getNameSpacedIdentifier(nameSpaceIdentifier, identifier), orgIdentifier,
-            projectIdentifier));
-
+    if (CollectionUtils.isEmpty(cvConfigs)) {
+      String errorMessage =
+          String.format("CVConfigs are not present for identifier %s, orgIdentifier %s and projectIdentifier %s",
+              HealthSourceService.getNameSpacedIdentifier(nameSpaceIdentifier, identifier), orgIdentifier,
+              projectIdentifier);
+      log.error(errorMessage, new IllegalStateException(errorMessage));
+      return null;
+    }
     HealthSource healthSource = HealthSourceDTO.toHealthSource(cvConfigs, dataSourceTypeToHealthSourceTransformerMap);
     healthSource.setIdentifier(identifier);
     return healthSource;

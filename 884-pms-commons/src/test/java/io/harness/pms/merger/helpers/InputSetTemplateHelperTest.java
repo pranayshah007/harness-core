@@ -42,7 +42,8 @@ public class InputSetTemplateHelperTest extends CategoryTest {
   public void testRemoveRuntimeInputFromYaml() {
     String filename = "inputset-with-execution-input.yaml";
     String yaml = readFile(filename);
-    String templateYaml = InputSetTemplateHelper.removeRuntimeInputFromYaml(yaml);
+    String pipelineYaml = readFile("pipeline-with-execution-input.yaml");
+    String templateYaml = InputSetTemplateHelper.removeRuntimeInputFromYaml(pipelineYaml, yaml);
 
     String resFile = "inputset-after-removing-execution-input.yaml";
     String resTemplate = readFile(resFile);

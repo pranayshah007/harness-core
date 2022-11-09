@@ -25,6 +25,7 @@ import static software.wings.app.ManagerCacheRegistrar.AUTH_TOKEN_CACHE;
 import static software.wings.app.ManagerCacheRegistrar.PRIMARY_CACHE_PREFIX;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
+import static software.wings.security.PermissionAttribute.Action.ABORT_WORKFLOW;
 import static software.wings.security.PermissionAttribute.Action.CREATE;
 import static software.wings.security.PermissionAttribute.Action.DELETE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_PIPELINE;
@@ -53,12 +54,11 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
+import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
-import io.harness.remote.client.NGRestUtils;
 import io.harness.security.DelegateTokenAuthenticator;
 import io.harness.security.dto.UserPrincipal;
-import io.harness.usermembership.remote.UserMembershipClient;
 import io.harness.version.VersionInfoManager;
 
 import software.wings.app.MainConfiguration;
@@ -170,7 +170,6 @@ public class AuthServiceImpl implements AuthService {
   @Inject private FeatureFlagService featureFlagService;
   @Inject private DelegateTokenAuthenticator delegateTokenAuthenticator;
   @Inject private OutboxService outboxService;
-  @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
 
   @Inject
   public AuthServiceImpl(GenericDbCache dbCache, HPersistence persistence, UserService userService,
@@ -708,7 +707,7 @@ public class AuthServiceImpl implements AuthService {
     return authHandler.evaluateUserPermissionInfo(accountId, userGroups, user);
   }
 
-  private List<UserGroup> getUserGroups(String accountId, User user) {
+  public List<UserGroup> getUserGroups(String accountId, User user) {
     List<UserGroup> userGroups = userGroupService.listByAccountId(accountId, user, false);
 
     if (isEmpty(userGroups) && !userService.isUserAssignedToAccount(user, accountId)) {
@@ -763,7 +762,7 @@ public class AuthServiceImpl implements AuthService {
                                       .appFilter(AppFilter.builder().filterType(AppFilter.FilterType.ALL).build())
                                       .permissionType(PermissionType.ALL_APP_ENTITIES)
                                       .actions(Sets.newHashSet(READ, UPDATE, DELETE, CREATE, EXECUTE_PIPELINE,
-                                          EXECUTE_WORKFLOW, EXECUTE_WORKFLOW_ROLLBACK))
+                                          EXECUTE_WORKFLOW, EXECUTE_WORKFLOW_ROLLBACK, ABORT_WORKFLOW))
                                       .build();
 
     AccountPermissions accountPermissions =
@@ -1087,6 +1086,26 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  public void checkIfUserAllowedToAbortWorkflowToEnv(String appId, String envId) {
+    if (isEmpty(envId)) {
+      return;
+    }
+    User user = UserThreadLocal.get();
+    if (user == null) {
+      throw new InvalidRequestException("User not found", USER);
+    }
+    Set<String> abortWorkflowExecutePermissionsForEnvs = user.getUserRequestContext()
+                                                             .getUserPermissionInfo()
+                                                             .getAppPermissionMapInternal()
+                                                             .get(appId)
+                                                             .getAbortWorkflowExecutePermissionsForEnvs();
+    if (isEmpty(abortWorkflowExecutePermissionsForEnvs) || !abortWorkflowExecutePermissionsForEnvs.contains(envId)) {
+      throw new InvalidRequestException(
+          "User doesn't have rights to abort Workflow in this Environment", ErrorCode.ACCESS_DENIED, USER);
+    }
+  }
+
+  @Override
   public void checkIfUserCanCreateEnv(String appId, EnvironmentType envType) {
     User user = UserThreadLocal.get();
     if (user == null) {
@@ -1255,30 +1274,16 @@ public class AuthServiceImpl implements AuthService {
     if (Objects.nonNull(loggedInUser) && Objects.nonNull(accountIds)) {
       for (String accountIdentifier : accountIds) {
         try {
-          if (isUserInScope(loggedInUser.getUuid(), accountIdentifier)) {
-            try {
-              outboxService.save(new LoginEvent(
-                  accountIdentifier, loggedInUser.getUuid(), loggedInUser.getEmail(), loggedInUser.getName()));
-            } catch (Exception ex) {
-              log.error("For account {} and userId {} the Audit trails for User Login event failed with exception: ",
-                  accountIdentifier, loggedInUser.getUuid(), ex);
-            }
-          }
+          OutboxEvent outboxEvent = outboxService.save(new LoginEvent(
+              accountIdentifier, loggedInUser.getUuid(), loggedInUser.getEmail(), loggedInUser.getName()));
+          log.info(
+              "NG Login Audits: for account {} and outboxEventId {} successfully saved the audit for LoginEvent to outbox",
+              accountIdentifier, outboxEvent.getId());
         } catch (Exception ex) {
-          log.error("Skipping audit for account {} and userId {} due to exception: ", accountIdentifier,
-              loggedInUser.getUuid(), ex);
+          log.error("NG Login Audits: for account {} saving the LoginEvent to outbox failed with exception: ",
+              accountIdentifier, ex);
         }
       }
-    }
-  }
-
-  private boolean isUserInScope(String userId, String accountIdentifier) {
-    try {
-      return NGRestUtils.getResponse(userMembershipClient.isUserInScope(userId, accountIdentifier, null, null));
-    } catch (Exception ex) {
-      log.error("For account {} and userId {} while auditing userMembershipClient call failed with exception: ",
-          accountIdentifier, userId, ex);
-      throw ex;
     }
   }
 

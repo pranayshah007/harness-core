@@ -155,11 +155,9 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
       }
     }
 
-    if (renewalIntervalMinutes <= 0) {
-      throw new InvalidRequestException(String.format("Invalid value for renewal interval"), INVALID_REQUEST, USER);
-    }
-    if (isReadOnly && isDefault) {
-      throw new InvalidRequestException("Read only secret manager cannot be set as default", INVALID_REQUEST, USER);
+    if (renewalIntervalMinutes < 0) {
+      throw new InvalidRequestException(
+          "Invalid value for renewal interval. It cannot be negative number", INVALID_REQUEST, USER);
     }
     if (isUseVaultAgent() && isUseAwsIam()) {
       throw new InvalidRequestException(

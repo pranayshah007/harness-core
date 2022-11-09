@@ -57,6 +57,9 @@ import org.apache.http.HttpHost;
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class Http {
+  public static final OkHttpClient DEFAULT_OKHTTP_CLIENT =
+      Http.getOkHttpClientWithProxyAuthSetup().connectionPool(new ConnectionPool()).build();
+
   private static UrlValidator urlValidator =
       new UrlValidator(new String[] {"http", "https"}, UrlValidator.ALLOW_LOCAL_URLS);
   public static ConnectionPool connectionPool = new ConnectionPool(0, 5, TimeUnit.MINUTES);

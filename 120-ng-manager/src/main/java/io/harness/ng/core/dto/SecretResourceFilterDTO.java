@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorCategory;
 import io.harness.secretmanagerclient.SecretType;
 
+import software.wings.stencils.DefaultValue;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Builder;
@@ -28,5 +30,9 @@ public class SecretResourceFilterDTO {
   @Schema(description = NGResourceFilterConstants.TYPE_LIST) List<SecretType> secretTypes;
   @Schema(description = "Specifies the connector category.") ConnectorCategory sourceCategory;
   @Schema(description = "This is true if secrets are filtered at each subsequent scope.")
+  @DefaultValue("false")
   boolean includeSecretsFromEverySubScope;
+  @Schema(description = "This is true if secrets are filtered from all super scopes.")
+  @DefaultValue("false")
+  boolean includeAllSecretsAccessibleAtScope;
 }

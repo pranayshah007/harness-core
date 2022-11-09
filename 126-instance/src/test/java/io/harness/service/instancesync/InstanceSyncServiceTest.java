@@ -27,7 +27,6 @@ import io.harness.InstancesTestBase;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
@@ -157,7 +156,6 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     doNothing().when(instanceSyncMonitoringService).recordMetrics(any(), anyBoolean(), anyLong());
     Call<RestResponse<Boolean>> request = mock(Call.class);
     when(request.execute()).thenReturn(Response.success(new RestResponse<>(true)));
-    when(accountClient.isFeatureFlagEnabled(eq(FeatureName.FIX_CORRUPTED_INSTANCES.name()), any())).thenReturn(request);
   }
 
   @After

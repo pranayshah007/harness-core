@@ -21,6 +21,7 @@ import static io.harness.yaml.schema.beans.SchemaConstants.INTEGER_TYPE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ITEMS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.MIN_LENGTH_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN;
+import static io.harness.yaml.schema.beans.SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN_WITH_EMPTY_VALUE;
 import static io.harness.yaml.schema.beans.SchemaConstants.NUMBER_TYPE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.OBJECT_TYPE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
@@ -577,6 +578,11 @@ public class YamlSchemaGenerator {
         objectNode.put(TYPE_NODE, STRING_TYPE_NODE);
         objectNode.put(PATTERN_NODE, NUMBER_STRING_WITH_EXPRESSION_PATTERN);
         return objectNode;
+      case numberStringWithEmptyValue:
+        objectNode.put(TYPE_NODE, STRING_TYPE_NODE);
+        objectNode.put(PATTERN_NODE, NUMBER_STRING_WITH_EXPRESSION_PATTERN_WITH_EMPTY_VALUE);
+        return objectNode;
+
       case runtimeButNotExecutionTime:
         /*
         added to support runtime field type, like <+input>. This includes allowedValues and default value. But the value

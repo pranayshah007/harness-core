@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Sort;
 
@@ -49,6 +50,7 @@ public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.
       StateType.PHASE_STEP.name(), StateType.PHASE.name(), StateType.SUB_WORKFLOW.name());
   /** Minutes past the creation time */
   private static final long CREATED_THRESHOLD = 45;
+  private static final long ENDED_THRESHOLD = 45;
 
   @Inject private WingsPersistence wingsPersistence;
   @Inject private WorkflowExecutionService workflowExecutionService;
@@ -56,31 +58,25 @@ public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.
 
   @Override
   public void handle(WorkflowExecution wfExecution) {
-    if (featureFlagService.isNotEnabled(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR, wfExecution.getAccountId())) {
-      return;
-    }
-    log.info("Evaluating if workflow execution {} is a zombie execution [workflowId={}]", wfExecution.getUuid(),
+    log.debug("Evaluating if workflow execution {} is a zombie execution [workflowId={}]", wfExecution.getUuid(),
         wfExecution.getWorkflowId());
 
     // SORT STATE EXECUTION INSTANCES BASED ON createdAt FIELD IN DESCENDING ORDER. WE NEED
     // THE MOST RECENTLY EXECUTION INSTANCE TO EVALUATE IF IT'S A ZOMBIE EXECUTION.
     List<StateExecutionInstance> stateExecutionInstances =
         CollectionUtils.emptyIfNull(wingsPersistence.createQuery(StateExecutionInstance.class)
+                                        .filter(StateExecutionInstanceKeys.appId, wfExecution.getAppId())
                                         .filter(StateExecutionInstanceKeys.workflowId, wfExecution.getWorkflowId())
                                         .filter(StateExecutionInstanceKeys.executionUuid, wfExecution.getUuid())
                                         .order(Sort.descending(StateExecutionInstanceKeys.createdAt))
                                         .asList(new FindOptions().limit(1)));
 
-    // WE MUST ABORT THE EXECUTION:
-    // -- THE ELEMENT HAS A ZOMBIE STATE TYPE
-    // -- HIT THE CREATED THRESHOLD
-    // -- IS AT RUNNING STATE
     Optional<StateExecutionInstance> opt = getElement(stateExecutionInstances);
     opt.ifPresent(seInstance -> {
-      if (isZombie(seInstance)) {
+      if (isZombie(seInstance) || isSuccessZombie(seInstance)) {
         log.info(
-            "Trigger force abort of workflow execution {} due remains in a zombie state [currentStateType={},createdAt={}]",
-            seInstance.getExecutionUuid(), seInstance.getStateType(), seInstance.getCreatedAt());
+            "Trigger force abort of workflow execution {} due remains in a zombie state [currentStateType={},createdAt={},endTs={}]",
+            seInstance.getExecutionUuid(), seInstance.getStateType(), seInstance.getCreatedAt(), seInstance.getEndTs());
 
         ExecutionInterrupt executionInterrupt = new ExecutionInterrupt();
         executionInterrupt.setAppId(seInstance.getAppId());
@@ -100,19 +96,57 @@ public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.
   }
 
   /**
-   * Check if state execution instance was created before {@code CREATED_THRESHOLD} minutes ago
+   * Check if state execution instance was created {@value CREATED_THRESHOLD} minutes ago
    */
   private boolean hitCreatedThreshold(StateExecutionInstance seInstance) {
     return seInstance.getCreatedAt() <= (System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(CREATED_THRESHOLD));
+  }
+
+  /**
+   * Check if state execution instance was ended {@value ENDED_THRESHOLD} minutes ago
+   */
+  private boolean hitEndedThreshold(StateExecutionInstance seInstance) {
+    return seInstance.getEndTs() != null
+        && seInstance.getEndTs() <= (System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(ENDED_THRESHOLD));
   }
 
   private Optional<StateExecutionInstance> getElement(List<StateExecutionInstance> elements) {
     return elements.isEmpty() ? Optional.empty() : Optional.ofNullable(elements.get(0));
   }
 
+  // WE MUST ABORT THE EXECUTION WHEN ALL CONDITIONS MATCH:
+  // -- THE ELEMENT HAS A ZOMBIE STATE TYPE
+  // -- HIT THE CREATED THRESHOLD
+  // -- IS AT RUNNING STATE
   private boolean isZombie(StateExecutionInstance seInstance) {
     return isZombieState(seInstance) && hitCreatedThreshold(seInstance)
         && ExecutionStatus.flowingStatuses().contains(seInstance.getStatus());
+  }
+
+  // A SUCCESS ZOMBIE IS DETECTED WHEN
+  // -- THE StateExecutionInstance STATUS IS SUCCESS
+  // -- HIT THE ENDED THRESHOLD
+  // -- PARENT IS NOT A FORK
+  //
+  // THE MOST RECENT StateExecutionInstance SHOULD NOT HAVE SUCCESS STATUS AND THE WORKFLOW
+  // EXECUTION STILL IN A RUNNING STATE.
+  private boolean isSuccessZombie(StateExecutionInstance seInstance) {
+    if (featureFlagService.isNotEnabled(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR, seInstance.getAccountId())) {
+      return false;
+    }
+    return hitEndedThreshold(seInstance) && ExecutionStatus.SUCCESS.equals(seInstance.getStatus())
+        && isNotParentFork(seInstance);
+  }
+
+  private boolean isNotParentFork(StateExecutionInstance seInstance) {
+    if (StringUtils.isEmpty(seInstance.getParentInstanceId())) {
+      return false;
+    }
+    long count = wingsPersistence.createQuery(StateExecutionInstance.class)
+                     .filter(StateExecutionInstanceKeys.uuid, seInstance.getParentInstanceId())
+                     .filter(StateExecutionInstanceKeys.stateType, StateType.FORK.name())
+                     .count();
+    return count == 0;
   }
 
   @VisibleForTesting

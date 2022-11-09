@@ -10,6 +10,7 @@ package io.harness.delegate.task.artifacts.docker;
 import static io.harness.artifacts.docker.service.DockerRegistryService.MAX_NO_OF_TAGS_PER_IMAGE;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
@@ -27,6 +28,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 
 import io.fabric8.utils.Lists;
+import java.util.Collections;
 import java.util.HashMap;
 import org.junit.Rule;
 import org.junit.Test;
@@ -249,5 +251,122 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
     sourceAttributes = DockerArtifactDelegateRequest.builder().imagePath("imagePath").tag("tag").build();
     regex = dockerArtifactService.isRegex(sourceAttributes);
     assertThat(regex).isFalse();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetLabelForBuild() {
+    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number("tag").build();
+    DockerInternalConfig dockerInternalConfig =
+        DockerInternalConfig.builder().dockerRegistryUrl("URL").username("username").build();
+    doReturn(buildDetailsInternal)
+        .when(dockerRegistryService)
+        .verifyBuildNumber(dockerInternalConfig, "imagePath", "tag");
+    doReturn(Collections.singletonList(Collections.singletonMap("author", "docker")))
+        .when(dockerRegistryService)
+        .getLabels(dockerInternalConfig, "imagePath", Collections.singletonList("tag"));
+    DockerArtifactDelegateRequest sourceAttributes =
+        DockerArtifactDelegateRequest.builder()
+            .imagePath("imagePath")
+            .tag("tag")
+            .dockerConnectorDTO(DockerConnectorDTO.builder()
+                                    .dockerRegistryUrl("URL")
+                                    .auth(DockerAuthenticationDTO.builder()
+                                              .credentials(DockerUserNamePasswordDTO.builder()
+                                                               .username("username")
+                                                               .passwordRef(SecretRefData.builder().build())
+                                                               .build())
+                                              .build())
+                                    .build())
+            .build();
+    ArtifactTaskExecutionResponse lastSuccessfulBuild = dockerArtifactService.getLastSuccessfulBuild(sourceAttributes);
+    assertThat(lastSuccessfulBuild).isNotNull();
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().get(0))
+        .isInstanceOf(DockerArtifactDelegateResponse.class);
+    DockerArtifactDelegateResponse attributes =
+        (DockerArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
+    assertThat(attributes.getImagePath()).isEqualTo(sourceAttributes.getImagePath());
+    assertThat(attributes.getTag()).isEqualTo(sourceAttributes.getTag());
+    assertThat(attributes.getLabel().get("author").equals("docker"));
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetLabelForNull() {
+    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number("tag").build();
+    DockerInternalConfig dockerInternalConfig =
+        DockerInternalConfig.builder().dockerRegistryUrl("URL").username("username").build();
+    doReturn(buildDetailsInternal)
+        .when(dockerRegistryService)
+        .verifyBuildNumber(dockerInternalConfig, "imagePath", "tag");
+    doReturn(Collections.EMPTY_LIST)
+        .when(dockerRegistryService)
+        .getLabels(dockerInternalConfig, "imagePath", Collections.singletonList("tag"));
+    DockerArtifactDelegateRequest sourceAttributes =
+        DockerArtifactDelegateRequest.builder()
+            .imagePath("imagePath")
+            .tag("tag")
+            .dockerConnectorDTO(DockerConnectorDTO.builder()
+                                    .dockerRegistryUrl("URL")
+                                    .auth(DockerAuthenticationDTO.builder()
+                                              .credentials(DockerUserNamePasswordDTO.builder()
+                                                               .username("username")
+                                                               .passwordRef(SecretRefData.builder().build())
+                                                               .build())
+                                              .build())
+                                    .build())
+            .build();
+    ArtifactTaskExecutionResponse lastSuccessfulBuild = dockerArtifactService.getLastSuccessfulBuild(sourceAttributes);
+    assertThat(lastSuccessfulBuild).isNotNull();
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().get(0))
+        .isInstanceOf(DockerArtifactDelegateResponse.class);
+    DockerArtifactDelegateResponse attributes =
+        (DockerArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
+    assertThat(attributes.getImagePath()).isEqualTo(sourceAttributes.getImagePath());
+    assertThat(attributes.getTag()).isEqualTo(sourceAttributes.getTag());
+    assertThat(attributes.getLabel()).isNull();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetLabelForRegex() {
+    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number("tag").build();
+    DockerInternalConfig dockerInternalConfig =
+        DockerInternalConfig.builder().dockerRegistryUrl("URL").username("username").build();
+    doReturn(buildDetailsInternal)
+        .when(dockerRegistryService)
+        .getLastSuccessfulBuildFromRegex(dockerInternalConfig, "imagePath", "tagRegex");
+    doReturn(Collections.singletonList(Collections.singletonMap("author", "docker")))
+        .when(dockerRegistryService)
+        .getLabels(dockerInternalConfig, "imagePath", Collections.singletonList("tag"));
+    DockerArtifactDelegateRequest sourceAttributes =
+        DockerArtifactDelegateRequest.builder()
+            .imagePath("imagePath")
+            .tagRegex("tagRegex")
+            .dockerConnectorDTO(DockerConnectorDTO.builder()
+                                    .dockerRegistryUrl("URL")
+                                    .auth(DockerAuthenticationDTO.builder()
+                                              .credentials(DockerUserNamePasswordDTO.builder()
+                                                               .username("username")
+                                                               .passwordRef(SecretRefData.builder().build())
+                                                               .build())
+                                              .build())
+                                    .build())
+            .build();
+    ArtifactTaskExecutionResponse lastSuccessfulBuild = dockerArtifactService.getLastSuccessfulBuild(sourceAttributes);
+    assertThat(lastSuccessfulBuild).isNotNull();
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().get(0))
+        .isInstanceOf(DockerArtifactDelegateResponse.class);
+    DockerArtifactDelegateResponse attributes =
+        (DockerArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
+    assertThat(attributes.getImagePath()).isEqualTo(sourceAttributes.getImagePath());
+    assertThat(attributes.getTag()).isEqualTo("tag");
+    assertThat(attributes.getLabel().get("author").equals("docker"));
   }
 }

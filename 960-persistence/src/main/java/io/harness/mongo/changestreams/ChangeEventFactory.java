@@ -76,6 +76,15 @@ public class ChangeEventFactory {
     return changeEventBuilder.build();
   }
 
+  private <T extends PersistentEntity> ChangeEvent<T> buildReplaceChangeEvent(ChangeEventBuilder<T> changeEventBuilder,
+      ChangeStreamDocument<DBObject> changeStreamDocument, Class<T> entityClass) {
+    T fullDocument = persistence.convertToEntity(entityClass, changeStreamDocument.getFullDocument());
+    changeEventBuilder.fullDocument(fullDocument);
+    changeEventBuilder.changes(null);
+    changeEventBuilder.changeType(ChangeType.UPDATE);
+    return changeEventBuilder.build();
+  }
+
   <T extends PersistentEntity> ChangeEvent<T> fromChangeStreamDocument(
       ChangeStreamDocument<DBObject> changeStreamDocument, Class<T> entityClass) {
     ChangeType changeType = getChangeTypefromChangeStream(changeStreamDocument);
@@ -88,9 +97,11 @@ public class ChangeEventFactory {
 
     ChangeEvent<T> changeEvent;
     switch (changeType) {
-      case REPLACE:
       case INSERT:
         changeEvent = buildInsertChangeEvent(changeEventBuilder, changeStreamDocument.getFullDocument(), entityClass);
+        break;
+      case REPLACE:
+        changeEvent = buildReplaceChangeEvent(changeEventBuilder, changeStreamDocument, entityClass);
         break;
       case UPDATE:
         changeEvent = buildUpdateChangeEvent(changeEventBuilder, changeStreamDocument, entityClass);

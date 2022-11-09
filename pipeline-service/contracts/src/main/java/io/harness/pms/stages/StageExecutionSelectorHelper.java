@@ -90,7 +90,8 @@ public class StageExecutionSelectorHelper {
     }
   }
 
-  private BasicStageInfo getBasicStageInfo(YamlNode stageYamlNode) {
+  @VisibleForTesting
+  BasicStageInfo getBasicStageInfo(YamlNode stageYamlNode) {
     String identifier = stageYamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getIdentifier();
     String name = stageYamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getName();
     String type = stageYamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getType();
@@ -111,7 +112,8 @@ public class StageExecutionSelectorHelper {
     return fullStageInfoList;
   }
 
-  private static void getNonExpressionReferences(YamlNode yamlNode, Set<String> references) {
+  @VisibleForTesting
+  static void getNonExpressionReferences(YamlNode yamlNode, Set<String> references) {
     if (yamlNode.isObject()) {
       getNonExpressionReferencesForObject(yamlNode, references);
     } else if (yamlNode.isArray()) {
@@ -119,14 +121,16 @@ public class StageExecutionSelectorHelper {
     }
   }
 
-  private static void getNonExpressionReferencesForArray(YamlNode yamlNode, Set<String> references) {
+  @VisibleForTesting
+  static void getNonExpressionReferencesForArray(YamlNode yamlNode, Set<String> references) {
     List<YamlNode> yamlNodes = yamlNode.asArray();
     for (YamlNode node : yamlNodes) {
       getNonExpressionReferences(node, references);
     }
   }
 
-  private static void getNonExpressionReferencesForObject(YamlNode yamlNode, Set<String> references) {
+  @VisibleForTesting
+  static void getNonExpressionReferencesForObject(YamlNode yamlNode, Set<String> references) {
     List<String> keys = yamlNode.fetchKeys();
     for (String key : keys) {
       if (stageReferenceKeys.contains(key)) {

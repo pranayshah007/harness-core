@@ -16,4 +16,5 @@ public class YAMLMetadataFieldNameConstants {
   public final String NAME = YAMLFieldNameConstants.NAME;
   public final String PROJECT_IDENTIFIER = YAMLFieldNameConstants.PROJECT_IDENTIFIER;
   public final String DESCRIPTION = YAMLFieldNameConstants.DESCRIPTION;
+  public final String TEMPLATE_VERSION = YAMLFieldNameConstants.TEMPLATE_VERSION;
 }

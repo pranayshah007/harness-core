@@ -15,7 +15,6 @@ import lombok.Data;
 @Data
 @Builder(toBuilder = true)
 public class TemplateParameters {
-  private final String delegateXmx;
   private final String accountId;
   private final String version;
   private final String managerHost;
@@ -41,4 +40,5 @@ public class TemplateParameters {
   private final String delegateGroupName;
   private final boolean watcher;
   private final boolean mtlsEnabled;
+  private final boolean runAsRoot;
 }

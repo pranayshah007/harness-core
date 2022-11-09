@@ -1,0 +1,6 @@
+# Creates destination directory if it doesn't exist
+                                    $DirectoryName = "%USERPROFILE%\<+service.name>\<+env.name>"
+                                    If (!(Test-Path $DirectoryName)) {
+                                      Write-Host "Creating directory" $DirectoryName
+                                      New-Item $DirectoryName -ItemType Directory
+                                    }

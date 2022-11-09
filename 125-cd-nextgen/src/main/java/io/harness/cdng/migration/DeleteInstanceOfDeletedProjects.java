@@ -9,118 +9,51 @@ package io.harness.cdng.migration;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.InfrastructureMapping;
 import io.harness.entities.InfrastructureMapping.InfrastructureMappingNGKeys;
-import io.harness.entities.Instance;
-import io.harness.entities.Instance.InstanceKeys;
-import io.harness.entities.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfo;
-import io.harness.entities.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfo.InstanceSyncPerpetualTaskInfoKeys;
 import io.harness.migration.NGMigration;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
-import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskService;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
-import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.UpdateResult;
-import java.util.Arrays;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(CDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class DeleteInstanceOfDeletedProjects implements NGMigration {
+  private AccountClient accountClient;
   private MongoTemplate mongoTemplate;
-  private InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
-  private final List<String> accountIdsToMigrate = Arrays.asList("yqYkJBYeTPO3bAqMl0Hh1A", "PcCzPoKDRjyi_TuERV9VCQ");
+  private CDMigrationUtils cdMigrationUtils;
 
   @Override
   public void migrate() {
     log.info("Migrating instances belonging to deleted projects");
     try {
-      for (String accountId : accountIdsToMigrate) {
-        for (Project project : getDeletedProjectsForAccount(accountId)) {
+      List<AccountDTO> accounts = CGRestUtils.getResponse(accountClient.getAllAccounts());
+      for (AccountDTO account : accounts) {
+        for (Project project : getDeletedProjectsForAccount(account.getIdentifier())) {
           for (InfrastructureMapping infrastructureMapping : getInfrastructureMappingsForProject(project)) {
             log.info("Deleting orphan entities for account {} belonging to deleted project {} with id {} and "
                     + "infrastructure mapping {}",
                 project.getAccountIdentifier(), project.getIdentifier(), project.getId(),
                 infrastructureMapping.getId());
-            deleteOrphanInstance(infrastructureMapping);
-            deleteRelatedOrphanEntities(infrastructureMapping);
+            cdMigrationUtils.deleteOrphanInstance(infrastructureMapping);
+            cdMigrationUtils.deleteRelatedOrphanEntities(infrastructureMapping);
           }
         }
       }
     } catch (Exception ex) {
       log.error("Unexpected error occurred while migrating instances for deleted project", ex);
-    }
-  }
-
-  private void deleteOrphanInstance(InfrastructureMapping infrastructureMapping) {
-    try {
-      Query query = new Query(new Criteria()
-                                  .and(InstanceKeys.infrastructureMappingId)
-                                  .is(infrastructureMapping.getId())
-                                  .and(InstanceKeys.accountIdentifier)
-                                  .is(infrastructureMapping.getAccountIdentifier())
-                                  .and(InstanceKeys.orgIdentifier)
-                                  .is(infrastructureMapping.getOrgIdentifier()));
-      Update update =
-          new Update().set(InstanceKeys.isDeleted, true).set(InstanceKeys.deletedAt, System.currentTimeMillis());
-      UpdateResult result = mongoTemplate.updateMulti(query, update, Instance.class);
-      log.info("{} Instances deleted successfully.", result.getModifiedCount());
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while deleting orphan instances", ex);
-    }
-  }
-
-  /**
-   * Deletes perpetualTask, instanceSyncPerpetualTaskInfo, and infrastructureMapping for the deleted project's
-   * infrastructureMapping
-   */
-  private void deleteRelatedOrphanEntities(InfrastructureMapping infrastructureMapping) {
-    try {
-      Query instanceSyncPerpetualTaskInfoQuery =
-          new Query(new Criteria()
-                        .and(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
-                        .is(infrastructureMapping.getAccountIdentifier())
-                        .and(InstanceSyncPerpetualTaskInfoKeys.infrastructureMappingId)
-                        .is(infrastructureMapping.getId()));
-      InstanceSyncPerpetualTaskInfo instanceSyncPerpetualTaskInfo =
-          mongoTemplate.findOne(instanceSyncPerpetualTaskInfoQuery, InstanceSyncPerpetualTaskInfo.class);
-
-      if (instanceSyncPerpetualTaskInfo != null) {
-        instanceSyncPerpetualTaskService.deletePerpetualTask(
-            instanceSyncPerpetualTaskInfo.getAccountIdentifier(), instanceSyncPerpetualTaskInfo.getPerpetualTaskId());
-        log.info("Deleted perpetualTask {}", instanceSyncPerpetualTaskInfo.getPerpetualTaskId());
-        deleteInstanceSyncPerpetualTaskInfo(instanceSyncPerpetualTaskInfo.getId());
-      }
-      deleteInfrastructureMapping(infrastructureMapping.getId());
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while deleting related orphan entities", ex);
-    }
-  }
-
-  private void deleteInfrastructureMapping(String id) {
-    DeleteResult result = mongoTemplate.remove(
-        new Query(new Criteria().and(InfrastructureMappingNGKeys.id).is(id)), InfrastructureMapping.class);
-    if (result.getDeletedCount() == 1) {
-      log.info("Deleted infrastructureMapping {}", id);
-    }
-  }
-
-  private void deleteInstanceSyncPerpetualTaskInfo(String id) {
-    DeleteResult result =
-        mongoTemplate.remove(new Query(new Criteria().and(InstanceSyncPerpetualTaskInfoKeys.id).is(id)),
-            InstanceSyncPerpetualTaskInfo.class);
-    if (result.getDeletedCount() == 1) {
-      log.info("Deleted instanceSyncPerpetualTaskInfo {}", id);
     }
   }
 

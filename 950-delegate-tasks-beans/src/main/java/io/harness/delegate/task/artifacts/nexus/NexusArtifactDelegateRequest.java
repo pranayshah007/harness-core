@@ -55,6 +55,18 @@ public class NexusArtifactDelegateRequest implements ArtifactSourceDelegateReque
   List<EncryptedDataDetail> encryptedDataDetails;
   /** Artifact Source type.*/
   ArtifactSourceType sourceType;
+  /** Artifact Group Id.*/
+  String groupId;
+  /** Artifact Name.*/
+  String artifactName;
+  /** Artifact Maven extension.*/
+  String extension;
+  /** Artifact Maven classifier.*/
+  String classifier;
+  /** Artifact packageName.*/
+  String packageName;
+  /** Artifact Raw group.*/
+  String group;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

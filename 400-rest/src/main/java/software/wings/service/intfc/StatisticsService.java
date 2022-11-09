@@ -16,5 +16,9 @@ import javax.validation.constraints.NotNull;
 public interface StatisticsService {
   DeploymentStatistics getDeploymentStatistics(@NotNull String accountId, List<String> appIds, int numOfDays);
 
+  DeploymentStatistics getDeploymentStatisticsNew(String accountId, List<String> appIds, int numOfDays);
+
+  ServiceInstanceStatistics getServiceInstanceStatisticsNew(String accountId, List<String> appIds, int numOfDays);
+
   ServiceInstanceStatistics getServiceInstanceStatistics(@NotNull String accountId, List<String> appIds, int numOfDays);
 }

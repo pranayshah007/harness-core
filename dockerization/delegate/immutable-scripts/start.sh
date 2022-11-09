@@ -25,6 +25,8 @@ if [ -e init.sh ]; then
     echo "Starting initialization script for delegate"
     CURRENT_WORKING_DIRECTORY=$(pwd)
     source ./init.sh
+    #if user does set -e, then revert that
+    set +e
     cd "$CURRENT_WORKING_DIRECTORY"
     if [ $? -eq 0 ];
     then
@@ -64,4 +66,4 @@ append_config "trustAllCertificates" ${TRUST_ALL_CERTIFICATES:-false}
 
 # 3. Start the delegate
 JAVA_OPTS=${JAVA_OPTS//UseCGroupMemoryLimitForHeap/UseContainerSupport}
-exec java $JAVA_OPTS $PROXY_SYS_PROPS -Xmx4096m -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 -jar delegate.jar server config.yml
+exec java $JAVA_OPTS $PROXY_SYS_PROPS -XX:MaxRAMPercentage=70.0 -XX:MinRAMPercentage=40.0 -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 -jar delegate.jar server config.yml

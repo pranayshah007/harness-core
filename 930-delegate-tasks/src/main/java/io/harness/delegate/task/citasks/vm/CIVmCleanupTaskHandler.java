@@ -60,6 +60,7 @@ public class CIVmCleanupTaskHandler implements CICleanupTaskHandler {
         .poolID(params.getPoolId())
         .id(params.getStageRuntimeId())
         .correlationID(taskId)
+        .infraType(params.getInfraInfo().toString())
         .build();
   }
 }

@@ -17,6 +17,7 @@ import io.harness.cdng.creator.plan.gitops.ClusterPlanCreatorUtils;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
@@ -28,6 +29,7 @@ import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.rollback.steps.InfrastructureDefinitionStep;
 import io.harness.cdng.rollback.steps.InfrastructureProvisionerStep;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
@@ -40,6 +42,7 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -92,8 +95,9 @@ public class InfrastructurePmsPlanCreator {
         .build();
   }
 
-  public PlanNode getInfraTaskExecutableStepV2PlanNode(
-      EnvironmentYamlV2 environmentYamlV2, List<AdviserObtainment> adviserObtainments) {
+  public PlanNode getInfraTaskExecutableStepV2PlanNode(EnvironmentYamlV2 environmentYamlV2,
+      List<AdviserObtainment> adviserObtainments, ServiceDefinitionType deploymentType,
+      ParameterField<Boolean> skipInstances) {
     ParameterField<String> infraRef;
     ParameterField<Map<String, Object>> infraInputs;
 
@@ -112,9 +116,12 @@ public class InfrastructurePmsPlanCreator {
                                                           .envRef(environmentYamlV2.getEnvironmentRef())
                                                           .infraRef(infraRef)
                                                           .infraInputs(infraInputs)
+                                                          .deploymentType(deploymentType)
+                                                          .skipInstances(skipInstances)
                                                           .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
+        .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
         .name(PlanCreatorConstants.INFRA_SECTION_NODE_NAME)
         .identifier(PlanCreatorConstants.INFRA_SECTION_NODE_IDENTIFIER)
         .stepType(InfrastructureTaskExecutableStepV2.STEP_TYPE)
@@ -122,7 +129,7 @@ public class InfrastructurePmsPlanCreator {
         .stepParameters(params)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
                 .build())
         .adviserObtainments(adviserObtainments)
         .build();
@@ -181,6 +188,16 @@ public class InfrastructurePmsPlanCreator {
         getAdviserObtainmentFromMetaDataToExecution(envField.getNode(), kryoSerializer);
     PlanNodeBuilder planNodeBuilder =
         ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(postServiceSpecUuid, envGroupPlanCreatorConfig);
+    planNodeBuilder.adviserObtainments(adviserObtainmentFromMetaDataToExecution);
+    return planNodeBuilder.build();
+  }
+
+  public static PlanNode createPlanForGitopsClusters(YamlField envField, String infraSectionUuid,
+      EnvironmentsPlanCreatorConfig envConfig, KryoSerializer kryoSerializer) {
+    List<AdviserObtainment> adviserObtainmentFromMetaDataToExecution =
+        getAdviserObtainmentFromMetaDataToExecution(envField.getNode(), kryoSerializer);
+    PlanNodeBuilder planNodeBuilder =
+        ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(infraSectionUuid, envConfig);
     planNodeBuilder.adviserObtainments(adviserObtainmentFromMetaDataToExecution);
     return planNodeBuilder.build();
   }

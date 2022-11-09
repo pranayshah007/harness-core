@@ -15,4 +15,5 @@ public class ExpansionKeysConstants {
   public static final String IDENTIFIER = "identifier";
   public static final String INFRASTRUCTURE = "infrastructure";
   public static final String ENVIRONMENT_REF = "environmentRef";
+  public static final String ENVIRONMENT = "environment";
 }

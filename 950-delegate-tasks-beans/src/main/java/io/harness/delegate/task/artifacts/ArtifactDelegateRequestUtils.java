@@ -10,21 +10,28 @@ package io.harness.delegate.task.artifacts;
 import static software.wings.utils.RepositoryType.generic;
 
 import static java.util.Objects.isNull;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
@@ -38,8 +45,10 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.helpers.ext.jenkins.JobDetails;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -126,6 +135,33 @@ public class ArtifactDelegateRequestUtils {
         .artifactRepositoryUrl(artifactRepositoryUrl)
         .build();
   }
+
+  public NexusArtifactDelegateRequest getNexusArtifactDelegateRequest(String repositoryName, String repositoryPort,
+      String imagePath, String repositoryFormat, String artifactRepositoryUrl, String tag, String tagRegex,
+      String connectorRef, NexusConnectorDTO nexusConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
+      ArtifactSourceType sourceType, String groupId, String artifactName, String extension, String classifier,
+      String packageName, String group) {
+    return NexusArtifactDelegateRequest.builder()
+        .repositoryName(repositoryName)
+        .repositoryPort(repositoryPort)
+        .artifactPath(trim(imagePath))
+        .repositoryFormat(repositoryFormat)
+        .tag(trim(tag))
+        .tagRegex(trim(tagRegex))
+        .connectorRef(connectorRef)
+        .nexusConnectorDTO(nexusConnectorDTO)
+        .encryptedDataDetails(encryptedDataDetails)
+        .sourceType(sourceType)
+        .artifactRepositoryUrl(artifactRepositoryUrl)
+        .groupId(groupId)
+        .artifactName(artifactName)
+        .extension(extension)
+        .classifier(classifier)
+        .packageName(packageName)
+        .group(group)
+        .build();
+  }
+
   public ArtifactSourceDelegateRequest getArtifactoryArtifactDelegateRequest(String repositoryName, String artifactPath,
       String repositoryFormat, String artifactRepositoryUrl, String tag, String tagRegex, String connectorRef,
       ArtifactoryConnectorDTO artifactoryConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
@@ -201,6 +237,23 @@ public class ArtifactDelegateRequestUtils {
         .build();
   }
 
+  public JenkinsArtifactDelegateRequest getJenkinsDelegateArtifactRequest(String connectorRef,
+      JenkinsConnectorDTO jenkinsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
+      ArtifactSourceType sourceType, List<JobDetails> jobDetails, String parentJobName, String jobName,
+      List<String> artifactPath, String BuildNumber) {
+    return JenkinsArtifactDelegateRequest.builder()
+        .connectorRef(connectorRef)
+        .jenkinsConnectorDTO(jenkinsConnectorDTO)
+        .encryptedDataDetails(encryptedDataDetails)
+        .sourceType(sourceType)
+        .jobDetails(jobDetails)
+        .parentJobName(parentJobName)
+        .jobName(jobName)
+        .artifactPaths(artifactPath)
+        .buildNumber(BuildNumber)
+        .build();
+  }
+
   public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(String connectorRef,
       JenkinsConnectorDTO jenkinsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
       ArtifactSourceType sourceType, List<JobDetails> jobDetails, String parentJobName, String jobName,
@@ -271,6 +324,59 @@ public class ArtifactDelegateRequestUtils {
         .sourceType(artifactSourceType)
         .packageType(packageType)
         .org(org)
+        .build();
+  }
+
+  public static AzureArtifactsDelegateRequest getAzureArtifactsDelegateRequest(String packageName, String packageType,
+      String version, String versionRegex, String project, String scope, String feed, String connectorRef,
+      AzureArtifactsConnectorDTO azureConnectorDTO, List<EncryptedDataDetail> encryptionDetails,
+      ArtifactSourceType artifactSourceType) {
+    return AzureArtifactsDelegateRequest.builder()
+        .azureArtifactsConnectorDTO(azureConnectorDTO)
+        .connectorRef(connectorRef)
+        .encryptedDataDetails(encryptionDetails)
+        .project(project)
+        .scope(scope)
+        .feed(feed)
+        .packageType(packageType)
+        .packageName(packageName)
+        .version(version)
+        .versionRegex(versionRegex)
+        .sourceType(artifactSourceType)
+        .build();
+  }
+
+  public static AMIArtifactDelegateRequest getAMIArtifactDelegateRequest(List<AMITag> tags, List<AMIFilter> filters,
+      String region, String version, String versionRegex, String connectorRef, AwsConnectorDTO awsConnectorDTO,
+      List<EncryptedDataDetail> encryptionDetails, ArtifactSourceType artifactSourceType) {
+    Map<String, List<String>> tagMap = new HashMap<>();
+
+    Map<String, String> filterMap = new HashMap<>();
+
+    if (tags != null) {
+      Map<String, List<AMITag>> collect = tags.stream().collect(Collectors.groupingBy(AMITag::getName));
+      tagMap = tags.stream()
+                   .collect(Collectors.groupingBy(AMITag::getName))
+                   .keySet()
+                   .stream()
+                   .collect(Collectors.toMap(identity(),
+                       s -> collect.get(s).stream().map(tag -> tag.getValue()).collect(toList()), (a, b) -> b));
+    }
+
+    if (filters != null) {
+      filterMap = filters.stream().collect(Collectors.toMap(AMIFilter::getName, AMIFilter::getValue, (a, b) -> b));
+    }
+
+    return AMIArtifactDelegateRequest.builder()
+        .awsConnectorDTO(awsConnectorDTO)
+        .connectorRef(connectorRef)
+        .encryptedDataDetails(encryptionDetails)
+        .version(version)
+        .versionRegex(versionRegex)
+        .region(region)
+        .tags(tagMap)
+        .filters(filterMap)
+        .sourceType(artifactSourceType)
         .build();
   }
 }

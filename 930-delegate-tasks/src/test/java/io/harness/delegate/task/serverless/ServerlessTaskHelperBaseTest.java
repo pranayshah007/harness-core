@@ -49,6 +49,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
+import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
@@ -128,7 +129,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
       ServerlessDelegateTaskParams.builder().workingDirectory("/dir/").serverlessClientPath("/scPath").build();
   private GitConfigDTO gitConfigDTO = GitConfigDTO.builder().url("url").build();
   @Mock LogCallback logCallback;
-  @Mock ServerlessGitFetchTaskHelper serverlessGitFetchTaskHelper;
+  @Mock GitFetchTaskHelper serverlessGitFetchTaskHelper;
   @Mock ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Mock GitDecryptionHelper gitDecryptionHelper;
   @Mock NGGitServiceImpl ngGitService;

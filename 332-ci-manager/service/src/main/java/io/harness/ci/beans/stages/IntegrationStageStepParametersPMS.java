@@ -13,6 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.steps.CIAbstractStepNode;
+import io.harness.beans.yaml.extended.cache.Caching;
+import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml.DockerInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
@@ -52,6 +55,7 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   BuildStatusUpdateParameter buildStatusUpdateParameter;
   List<String> stepIdentifiers;
   String childNodeID;
+  Caching caching;
 
   public static IntegrationStageStepParametersPMS getStepParameters(IntegrationStageNode stageNode, String childNodeID,
       BuildStatusUpdateParameter buildStatusUpdateParameter, PlanCreationContext ctx) {
@@ -72,7 +76,26 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
         .sharedPaths(integrationStageConfig.getSharedPaths())
         .enableCloneRepo(integrationStageConfig.getCloneCodebase())
         .stepIdentifiers(stepIdentifiers)
+        .caching(getCaching(stageNode))
         .build();
+  }
+
+  private static Infrastructure getRuntimeInfrastructure(IntegrationStageConfig integrationStageConfig) {
+    Runtime runtime = integrationStageConfig.getRuntime();
+    if (runtime != null && runtime.getType() == Runtime.Type.DOCKER) {
+      return DockerInfraYaml.builder()
+          .spec(DockerInfraSpec.builder().platform(integrationStageConfig.getPlatform()).build())
+          .build();
+    }
+
+    if (runtime != null && runtime.getType() == Runtime.Type.CLOUD) {
+      return HostedVmInfraYaml.builder()
+          .spec(HostedVmInfraSpec.builder().platform(integrationStageConfig.getPlatform()).build())
+          .build();
+    }
+
+    throw new CIStageExecutionException(
+        "Infrastructure or runtime field with type Cloud or type Docker is mandatory for execution");
   }
 
   public static Infrastructure getInfrastructure(IntegrationStageNode stageNode, PlanCreationContext ctx) {
@@ -96,16 +119,9 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
 
     return infrastructure;
   }
-
-  public static Infrastructure getRuntimeInfrastructure(IntegrationStageConfig integrationStageConfig) {
-    Runtime runtime = integrationStageConfig.getRuntime();
-    if (runtime == null || runtime.getType() != Runtime.Type.CLOUD) {
-      throw new CIStageExecutionException("Infrastructure or runtime field with Cloud type is mandatory for execution");
-    }
-
-    return HostedVmInfraYaml.builder()
-        .spec(HostedVmInfraSpec.builder().platform(integrationStageConfig.getPlatform()).build())
-        .build();
+  public static Caching getCaching(IntegrationStageNode stageNode) {
+    IntegrationStageConfig integrationStageConfig = stageNode.getIntegrationStageConfig();
+    return integrationStageConfig.getCaching();
   }
 
   private static IntegrationStageConfig getIntegrationStageConfig(YamlField yamlField, String identifier) {

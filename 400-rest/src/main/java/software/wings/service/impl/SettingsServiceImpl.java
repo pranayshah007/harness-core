@@ -171,6 +171,7 @@ import software.wings.settings.SettingValue;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.utils.ArtifactType;
 import software.wings.utils.CryptoUtils;
+import software.wings.utils.EmailHelperUtils;
 import software.wings.verification.CVConfiguration;
 import software.wings.verification.CVConfiguration.CVConfigurationKeys;
 
@@ -254,6 +255,7 @@ public class SettingsServiceImpl implements SettingsService {
   @Inject private AWSCEConfigValidationService awsCeConfigService;
   @Inject private AzureCEConfigValidationService azureCEConfigValidationService;
   @Inject @Named(CeCloudAccountFeature.FEATURE_NAME) private UsageLimitedFeature ceCloudAccountFeature;
+  @Inject EmailHelperUtils emailHelperUtils;
 
   @Inject @Getter(onMethod = @__(@SuppressValidation)) private Subject<CloudProviderObserver> subject = new Subject<>();
   @Inject
@@ -310,8 +312,14 @@ public class SettingsServiceImpl implements SettingsService {
       log.info("Time taken in DB Query for while fetching settings:  {}", System.currentTimeMillis() - timestamp);
 
       timestamp = System.currentTimeMillis();
-      List<SettingAttribute> filteredSettingAttributes = getFilteredSettingAttributes(
-          pageResponse.getResponse(), appIdFromRequest, envIdFromRequest, forUsageInNewApp);
+      List<SettingAttribute> filteredSettingAttributes =
+          getFilteredSettingAttributes(pageResponse.getResponse(), appIdFromRequest, envIdFromRequest, forUsageInNewApp)
+              .stream()
+              .filter(settingAttribute
+                  -> !(SettingCategory.CONNECTOR.equals(settingAttribute.getCategory())
+                      && "SMTP".equals(settingAttribute.getValue().getType())
+                      && emailHelperUtils.isNgSmtp(settingAttribute.getName())))
+              .collect(Collectors.toList());
       log.info("Total time taken in filtering setting records:  {}.", System.currentTimeMillis() - timestamp);
       return aPageResponse().withResponse(filteredSettingAttributes).withTotal(pageResponse.getTotal()).build();
     } catch (InvalidRequestException | InvalidCredentialsException | InvalidArgumentsException e) {

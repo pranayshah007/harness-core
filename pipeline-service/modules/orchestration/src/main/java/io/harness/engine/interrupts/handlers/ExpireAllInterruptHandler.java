@@ -14,6 +14,7 @@ import static io.harness.eraro.ErrorCode.EXPIRE_ALL_ALREADY;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.InterruptHandler;
 import io.harness.engine.interrupts.InterruptService;
@@ -28,6 +29,7 @@ import io.harness.pms.execution.utils.StatusUtils;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implements InterruptHandler {
   @Inject private InterruptService interruptService;
   @Inject private PlanExecutionService planExecutionService;
+  @Inject private NodeExecutionService nodeExecutionService;
   @Inject private ExpiryHelper expiryHelper;
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
 
@@ -68,7 +71,15 @@ public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implem
 
     // Check if plan is running
     PlanExecution planExecution = planExecutionService.get(interrupt.getPlanExecutionId());
-    if (StatusUtils.isFinalStatus(planExecution.getStatus())) {
+    Optional<NodeExecution> pipelineNodeExecution =
+        nodeExecutionService.getPipelineNodeExecution(interrupt.getPlanExecutionId());
+    if (pipelineNodeExecution.isEmpty()) {
+      throw new InvalidRequestException(
+          String.format("NodeExecution not found for pipeline node for planExecutionId %s and interruptId %s",
+              interrupt.getPlanExecutionId(), interrupt.getUuid()));
+    }
+    if (StatusUtils.isFinalStatus(planExecution.getStatus())
+        && StatusUtils.isFinalStatus(pipelineNodeExecution.get().getStatus())) {
       throw new InvalidRequestException("Plan Execution is already finished");
     }
 

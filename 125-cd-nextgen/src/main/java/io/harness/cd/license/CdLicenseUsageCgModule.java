@@ -16,6 +16,7 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.CDP)
 public class CdLicenseUsageCgModule extends AbstractModule {
@@ -23,14 +24,19 @@ public class CdLicenseUsageCgModule extends AbstractModule {
   private final String serviceSecret;
   private final String clientId;
 
-  public CdLicenseUsageCgModule(
-      ServiceHttpClientConfig serviceHttpClientConfig, String serviceSecret, String clientId) {
-    this.serviceHttpClientConfig = serviceHttpClientConfig;
+  public CdLicenseUsageCgModule(ServiceHttpClientConfig cgManagerHttpConfig, String serviceSecret, String clientId) {
+    this.serviceHttpClientConfig = ServiceHttpClientConfig.builder()
+                                       .baseUrl(cgManagerHttpConfig.getBaseUrl())
+                                       .connectTimeOutSeconds(cgManagerHttpConfig.getConnectTimeOutSeconds())
+                                       .readTimeOutSeconds(600L)
+                                       .enableHttpLogging(Boolean.FALSE)
+                                       .build();
     this.serviceSecret = serviceSecret;
     this.clientId = clientId;
   }
 
   @Provides
+  @Singleton
   private CdLicenseUsageCgClientFactory clientFactory(KryoConverterFactory kryoConverterFactory) {
     return new CdLicenseUsageCgClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

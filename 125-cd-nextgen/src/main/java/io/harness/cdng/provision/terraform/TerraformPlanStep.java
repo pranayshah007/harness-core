@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome.TerraformPlanOutcomeBuilder;
@@ -74,6 +75,7 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
   @Inject private CDFeatureFlagHelper featureFlagHelper;
+  @Inject TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -140,9 +142,7 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
         .varFileInfos(helper.toTerraformVarFileInfo(configuration.getVarFiles(), ambiance))
         .backendConfig(helper.getBackendConfig(configuration.getBackendConfig()))
         .targets(ParameterFieldHelper.getParameterFieldValue(configuration.getTargets()))
-        .saveTerraformStateJson(
-            featureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.EXPORT_TF_PLAN_JSON_NG)
-            && !ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue())
+        .saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue())
         .environmentVariables(helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()) == null
                 ? new HashMap<>()
                 : helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()))
@@ -215,13 +215,13 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
 
       ParameterField<Boolean> exportTfPlanJsonField =
           planStepParameters.getConfiguration().getExportTerraformPlanJson();
-      boolean exportTfPlanJson =
-          featureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.EXPORT_TF_PLAN_JSON_NG)
-          && !ParameterField.isNull(exportTfPlanJsonField)
+      boolean exportTfPlanJson = !ParameterField.isNull(exportTfPlanJsonField)
           && ParameterFieldHelper.getBooleanParameterFieldValue(exportTfPlanJsonField);
       if (exportTfPlanJson) {
         String planJsonOutputName =
             helper.saveTerraformPlanJsonOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
+
+        helper.saveTerraformPlanExecutionDetails(ambiance, terraformTaskNGResponse, provisionerIdentifier);
 
         if (planJsonOutputName != null) {
           tfPlanOutcomeBuilder.jsonFilePath(

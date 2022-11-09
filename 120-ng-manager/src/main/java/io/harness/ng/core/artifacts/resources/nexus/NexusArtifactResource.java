@@ -27,11 +27,15 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.utils.IdentifierRefHelper;
 
+import software.wings.helpers.ext.nexus.NexusRepositories;
+
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -66,15 +70,18 @@ public class NexusArtifactResource {
   public ResponseDTO<NexusResponseDTO> getBuildDetails(@QueryParam("repository") String repository,
       @QueryParam("repositoryPort") String repositoryPort, @QueryParam("repositoryFormat") String repositoryFormat,
       @QueryParam("repositoryUrl") String artifactRepositoryUrl, @QueryParam("artifactPath") String artifactPath,
-      @QueryParam("connectorRef") String nexusConnectorIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam("connectorRef") String nexusConnectorIdentifier, @QueryParam("groupId") String groupId,
+      @QueryParam("artifactId") String artifactId, @QueryParam("extension") String extension,
+      @QueryParam("classifier") String classifier, @QueryParam("packageName") String packageName,
+      @QueryParam("group") String group, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     NexusResponseDTO buildDetails = nexusResourceService.getBuildDetails(connectorRef, repository, repositoryPort,
-        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
+        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, groupId, artifactId,
+        extension, classifier, packageName, group);
     return ResponseDTO.newResponse(buildDetails);
   }
 
@@ -86,47 +93,19 @@ public class NexusArtifactResource {
   getBuildDetailsV2(@QueryParam("repository") String repository, @QueryParam("repositoryPort") String repositoryPort,
       @QueryParam("artifactPath") String artifactPath, @QueryParam("repositoryFormat") String repositoryFormat,
       @QueryParam("repositoryUrl") String artifactRepositoryUrl,
-      @QueryParam("connectorRef") String nexusConnectorIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
-    if (isNotEmpty(serviceRef)) {
-      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
-          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
-      NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactSpecFromService;
-      if (isEmpty(repository)) {
-        repository = (String) nexusRegistryArtifactConfig.getRepository().fetchFinalValue();
-      }
-      if (isEmpty(repositoryPort)) {
-        repositoryPort = (String) nexusRegistryArtifactConfig.getRepositoryPort().fetchFinalValue();
-      }
-
-      if (isEmpty(artifactPath)) {
-        artifactPath = (String) nexusRegistryArtifactConfig.getArtifactPath().fetchFinalValue();
-      }
-
-      if (isEmpty(repositoryFormat)) {
-        repositoryFormat = (String) nexusRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
-      }
-
-      if (isEmpty(artifactRepositoryUrl)) {
-        artifactRepositoryUrl = (String) nexusRegistryArtifactConfig.getRepositoryUrl().fetchFinalValue();
-      }
-
-      if (isEmpty(nexusConnectorIdentifier)) {
-        nexusConnectorIdentifier = nexusRegistryArtifactConfig.getConnectorRef().getValue();
-      }
-    }
-
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    artifactPath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
-    NexusResponseDTO buildDetails = nexusResourceService.getBuildDetails(connectorRef, repository, repositoryPort,
-        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
+      @QueryParam("connectorRef") String nexusConnectorIdentifier, @QueryParam("groupId") String groupId,
+      @QueryParam("artifactId") String artifactId, @QueryParam("extension") String extension,
+      @QueryParam("classifier") String classifier, @QueryParam("packageName") String packageName,
+      @QueryParam("group") String group, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    NexusResponseDTO buildDetails = artifactResourceUtils.getBuildDetails(nexusConnectorIdentifier, repository,
+        repositoryPort, artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier,
+        groupId, artifactId, extension, classifier, packageName, pipelineIdentifier, fqnPath, gitEntityBasicInfo,
+        runtimeInputYaml, serviceRef, accountId, group);
     return ResponseDTO.newResponse(buildDetails);
   }
 
@@ -163,5 +142,35 @@ public class NexusArtifactResource {
     boolean isValidArtifactServer =
         nexusResourceService.validateArtifactServer(connectorRef, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(isValidArtifactServer);
+  }
+
+  @POST
+  @Hidden
+  @Path("getRepositories")
+  @ApiOperation(value = "Get Repositories for nexus artifact server", nickname = "getRepositories")
+  public ResponseDTO<List<NexusRepositories>> getRepositories(
+      @QueryParam("connectorRef") String nexusConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam("repositoryFormat") String repositoryFormat, @QueryParam("fqnPath") String fqnPath,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, String runtimeInputYaml,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactSpecFromService;
+      if (isEmpty(nexusConnectorIdentifier)) {
+        nexusConnectorIdentifier = nexusRegistryArtifactConfig.getConnectorRef().getValue();
+      }
+      if (isEmpty(repositoryFormat)) {
+        repositoryFormat = nexusRegistryArtifactConfig.getRepositoryFormat().getValue();
+      }
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(
+        nexusResourceService.getRepositories(connectorRef, orgIdentifier, projectIdentifier, repositoryFormat));
   }
 }

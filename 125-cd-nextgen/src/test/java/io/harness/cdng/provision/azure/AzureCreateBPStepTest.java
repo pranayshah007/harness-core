@@ -158,13 +158,13 @@ public class AzureCreateBPStepTest extends CategoryTest {
     StepInputPackage inputPackage = StepInputPackage.builder().build();
     azureCreateBPStep.startChainLinkAfterRbac(azureHelperTest.getAmbiance(), step, inputPackage);
     verify(azureCommonHelper, times(1)).getGitStoreDelegateConfig(any(), any(), any());
-    verify(azureCommonHelper, times(1)).getGitFetchFileTaskChainResponse(any(), any(), any(), any());
+    verify(azureCommonHelper, times(1)).getGitFetchFileTaskChainResponse(any(), any(), any(), any(), any(), any());
   }
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testExecuteAzureCreateStepTaskWithFilesInHarnessStore() throws Exception {
+  public void testExecuteAzureCreateStepTaskWithFilesInHarnessStore() {
     StepElementParameters step = createStepHarnessStore();
     FileReference fileReference = FileReference.builder().build();
     Mockito.mockStatic(FileReference.class);
@@ -220,7 +220,7 @@ public class AzureCreateBPStepTest extends CategoryTest {
         azureCreateBPStep.startChainLinkAfterRbac(azureHelperTest.getAmbiance(), step, inputPackage);
 
     verify(azureCommonHelper, times(0)).getGitStoreDelegateConfig(any(), any(), any());
-    verify(azureCommonHelper, times(0)).getGitFetchFileTaskChainResponse(any(), any(), any(), any());
+    verify(azureCommonHelper, times(0)).getGitFetchFileTaskChainResponse(any(), any(), any(), any(), any(), any());
     assertThat(taskChainResponse).isNotNull();
     verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(

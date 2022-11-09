@@ -140,7 +140,10 @@ public class VariableCreatorHelper {
       if (stepField != null) {
         stepFields.add(stepField);
       } else if (stepGroupField != null) {
-        stepFields.add(stepGroupField);
+        List<YamlField> childYamlFields = getStepYamlFields(stepGroupField);
+        if (EmptyPredicate.isNotEmpty(childYamlFields)) {
+          stepFields.addAll(childYamlFields);
+        }
       } else if (parallelStepField != null) {
         List<YamlField> childYamlFields = Optional.of(parallelStepField.getNode().asArray())
                                               .orElse(Collections.emptyList())

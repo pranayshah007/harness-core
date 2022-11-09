@@ -21,6 +21,7 @@ import io.harness.engine.pms.advise.handlers.IgnoreFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.InterventionWaitAdviserResponseHandler;
 import io.harness.engine.pms.advise.handlers.MarkSuccessAdviseHandler;
 import io.harness.engine.pms.advise.handlers.NextStepHandler;
+import io.harness.engine.pms.advise.handlers.ProceedWithDefaultAdviserHandler;
 import io.harness.engine.pms.advise.handlers.RetryAdviserResponseHandler;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -45,6 +46,8 @@ public class AdviseHandlerFactoryTest extends OrchestrationTestBase {
     assertThat(factory.obtainHandler(AdviseType.END_PLAN)).isInstanceOf(EndPlanAdviserResponseHandler.class);
     assertThat(factory.obtainHandler(AdviseType.MARK_SUCCESS)).isInstanceOf(MarkSuccessAdviseHandler.class);
     assertThat(factory.obtainHandler(AdviseType.IGNORE_FAILURE)).isInstanceOf(IgnoreFailureAdviseHandler.class);
+    assertThat(factory.obtainHandler(AdviseType.PROCEED_WITH_DEFAULT))
+        .isInstanceOf(ProceedWithDefaultAdviserHandler.class);
 
     assertThatThrownBy(() -> factory.obtainHandler(AdviseType.UNKNOWN))
         .isInstanceOf(InvalidRequestException.class)

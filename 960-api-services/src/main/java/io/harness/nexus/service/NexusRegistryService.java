@@ -14,6 +14,7 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.nexus.NexusRequest;
 
 import java.util.List;
+import java.util.Map;
 
 @OwnedBy(CDP)
 public interface NexusRegistryService {
@@ -28,7 +29,8 @@ public interface NexusRegistryService {
    * @return the builds
    */
   List<BuildDetailsInternal> getBuilds(NexusRequest nexusConfig, String repositoryName, String port,
-      String artifactName, String repoFormat, int maxNumberOfBuilds);
+      String artifactName, String repoFormat, int maxNumberOfBuilds, String groupId, String artifactId,
+      String extension, String classifier, String packageName, String group);
 
   /**
    * Gets the last successful build with input as tag regex.
@@ -38,7 +40,8 @@ public interface NexusRegistryService {
    * @return the last successful build
    */
   BuildDetailsInternal getLastSuccessfulBuildFromRegex(NexusRequest nexusConfig, String repository, String port,
-      String artifactName, String repositoryFormat, String tagRegex);
+      String artifactName, String repositoryFormat, String tagRegex, String groupId, String artifactId,
+      String extension, String classifier, String packageName, String group);
 
   /**
    * Validates the Artifact Tag
@@ -46,7 +49,8 @@ public interface NexusRegistryService {
    * @param artifactName the artifact name
    */
   BuildDetailsInternal verifyBuildNumber(NexusRequest nexusConfig, String repository, String port, String artifactName,
-      String repositoryFormat, String tag);
+      String repositoryFormat, String tag, String groupId, String artifactId, String extension, String classifier,
+      String packageName, String group);
 
   /**
    * Validate the credentials
@@ -55,4 +59,5 @@ public interface NexusRegistryService {
    * @return boolean validate
    */
   boolean validateCredentials(NexusRequest nexusConfig);
+  Map<String, String> getRepository(NexusRequest nexusConfig, String repositoryFormat);
 }

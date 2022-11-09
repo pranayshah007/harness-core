@@ -22,4 +22,5 @@ public interface ArtifactMetadataKeys {
   String artifactProject = "artifactProject";
   String artifactRepositoryName = "artifactRepositoryName";
   String artifactRegion = "artifactRegion";
+  String url = "url";
 }

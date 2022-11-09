@@ -16,4 +16,5 @@ public interface NgCommandUnit {
   String getName();
   String getCommandUnitType();
   String getWorkingDirectory();
+  String getDestinationPath();
 }

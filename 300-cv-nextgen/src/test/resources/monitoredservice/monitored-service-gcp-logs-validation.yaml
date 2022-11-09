@@ -1,0 +1,45 @@
+---
+monitoredService:
+  type: "Application"
+  serviceRef: "template"
+  environmentRef: "gcpl"
+  tags: {}
+  sources:
+    changeSources:
+      - identifier: "harness_cd_next_gen"
+        type: "HarnessCDNextGen"
+        name: "Harness CD Next Gen"
+        enabled: true
+        category: "Deployment"
+        spec: {}
+    healthSources:
+      - identifier: "gcplogs"
+        type: "StackdriverLog"
+        name: "gcplogs"
+        spec:
+          connectorRef: "account.Google_Cloud_Provider"
+          feature: "Cloud Logs"
+          queries:
+            - identifier: "GCO_Logs_Query"
+              name: "GCO Logs Query"
+              query: "resource.type=\"k8s_container\"\nresource.labels.location=\"us-central1-c\""
+              serviceInstanceIdentifier: "hello"
+              messageIdentifier: "new"
+  template:
+    templateRef: "gcpLogs"
+    versionLabel: "version7"
+    templateInputs:
+      type: "Application"
+      serviceRef: "template"
+      environmentRef: "gcpl"
+      sources:
+        healthSources:
+          - identifier: "gcplogs"
+            type: "StackdriverLog"
+            spec:
+              queries:
+                - identifier: "GCO_Logs_Query"
+                  serviceInstanceIdentifier: "hello"
+                  messageIdentifier: "new"
+  identifier: "<+monitoredService.serviceRef>_<+monitoredService.environmentRef>"
+  name: "<+monitoredService.serviceRef>_<+monitoredService.environmentRef>"

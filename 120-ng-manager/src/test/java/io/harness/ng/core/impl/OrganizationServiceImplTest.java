@@ -52,7 +52,6 @@ import io.harness.rule.Owner;
 import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.telemetry.helpers.OrganizationInstrumentationHelper;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
@@ -85,15 +84,13 @@ public class OrganizationServiceImplTest extends CategoryTest {
   @Mock private ScopeAccessHelper scopeAccessHelper;
   @Mock private OrganizationInstrumentationHelper instrumentationHelper;
   private OrganizationServiceImpl organizationService;
-  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private DefaultUserGroupService defaultUserGroupService;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     organizationService = spy(new OrganizationServiceImpl(organizationRepository, outboxService, transactionTemplate,
-        ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper, ngFeatureFlagHelperService,
-        defaultUserGroupService));
+        ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper, defaultUserGroupService));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 
@@ -211,33 +208,6 @@ public class OrganizationServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
-  public void testDelete() {
-    String accountIdentifier = randomAlphabetic(10);
-    String identifier = randomAlphabetic(10);
-    Long version = 0L;
-    OrganizationDTO organizationDTO = createOrganizationDTO(identifier);
-    Organization organization = toOrganization(organizationDTO);
-    organization.setAccountIdentifier(accountIdentifier);
-    organization.setIdentifier(identifier);
-    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
-
-    when(organizationRepository.delete(any(), any(), any())).thenReturn(organization);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
-    when(transactionTemplate.execute(any()))
-        .thenAnswer(invocationOnMock
-            -> invocationOnMock.getArgument(0, TransactionCallback.class)
-                   .doInTransaction(new SimpleTransactionStatus()));
-
-    organizationService.delete(accountIdentifier, identifier, version);
-    verify(organizationRepository, times(1)).delete(any(), argumentCaptor.capture(), any());
-    assertEquals(identifier, argumentCaptor.getValue());
-    verify(transactionTemplate, times(1)).execute(any());
-    verify(outboxService, times(1)).save(any());
-  }
-
-  @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
   public void testHardDelete() {
     String accountIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
@@ -248,18 +218,14 @@ public class OrganizationServiceImplTest extends CategoryTest {
     organization.setIdentifier(identifier);
     ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
 
-    when(organizationRepository.delete(any(), any(), any())).thenReturn(organization);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
-    when(organizationRepository.hardDelete(any(), any(), any())).thenReturn(true);
+    when(organizationRepository.hardDelete(any(), any(), any())).thenReturn(organization);
 
     organizationService.delete(accountIdentifier, identifier, version);
     verify(organizationRepository, times(1)).hardDelete(any(), argumentCaptor.capture(), any());
-    assertEquals(identifier, argumentCaptor.getValue());
-    verify(organizationRepository, times(1)).delete(any(), argumentCaptor.capture(), any());
     assertEquals(identifier, argumentCaptor.getValue());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(any());

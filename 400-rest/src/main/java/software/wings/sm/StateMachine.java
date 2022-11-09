@@ -15,6 +15,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static software.wings.sm.ExpressionProcessor.EXPRESSION_PREFIX;
 import static software.wings.sm.ExpressionProcessor.EXPRESSION_SUFFIX;
 import static software.wings.sm.ExpressionProcessor.SUBFIELD_ACCESS;
+import static software.wings.sm.StateType.APPROVAL;
+import static software.wings.sm.StateType.ENV_ROLLBACK_STATE;
+import static software.wings.sm.StateType.ENV_STATE;
+import static software.wings.sm.StateType.FORK;
 import static software.wings.sm.StateType.REPEAT;
 import static software.wings.sm.Transition.Builder.aTransition;
 import static software.wings.sm.states.RepeatState.Builder.aRepeatState;
@@ -58,6 +62,7 @@ import software.wings.common.WingsExpressionProcessorFactory;
 import software.wings.common.WorkflowConstants;
 import software.wings.exception.DuplicateStateNameException;
 import software.wings.exception.StateMachineIssueException;
+import software.wings.sm.states.EnvLoopState;
 import software.wings.sm.states.EnvState.EnvStateKeys;
 import software.wings.sm.states.ForkState;
 import software.wings.sm.states.RepeatState;
@@ -68,11 +73,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -140,6 +148,8 @@ public class StateMachine implements PersistentEntity, UuidAware, CreatedAtAware
   @Transient private transient Map<String, State> cachedStatesMap;
 
   @Transient private transient Map<String, Map<TransitionType, List<State>>> cachedTransitionFlowMap;
+
+  private Map<String, String> rollbackPipelineMap = new HashMap<>();
 
   /**
    * Instantiates a new state machine.
@@ -213,11 +223,13 @@ public class StateMachine implements PersistentEntity, UuidAware, CreatedAtAware
   private void transformPipeline(Pipeline pipeline, Map<String, StateTypeDescriptor> stencilMap) {
     String originStateName = null;
     State prevState = null;
+    final Map<State, PipelineStage> stateToPipelineStageMap = new HashMap<>();
 
     if (isNotEmpty(pipeline.getPipelineStages())) {
       for (int i = 0; i < pipeline.getPipelineStages().size(); i++) {
         PipelineStage pipelineStage = pipeline.getPipelineStages().get(i);
         State state = convertToState(pipelineStage, pipeline, stencilMap);
+        stateToPipelineStageMap.put(state, pipelineStage);
 
         if (i > 0 && pipelineStage.isParallel()) {
           // part of fork - 2nd, 3rd stage in parallel
@@ -255,11 +267,103 @@ public class StateMachine implements PersistentEntity, UuidAware, CreatedAtAware
           }
         }
       }
+
+      if (pipeline.isRollbackPreviousStages()) {
+        adaptStateMachineWithPipelineRollback(originStateName, stateToPipelineStageMap, stencilMap, pipeline);
+      }
     }
 
     setInitialStateName(originStateName);
     validate();
     clearCache();
+  }
+
+  public State getRollbackState(String stateName) {
+    String rollbackStateName = this.rollbackPipelineMap.get(stateName);
+    return getState(rollbackStateName);
+  }
+
+  private void addIfStateIsNotNullAndNotApproval(List<State> orderedStatesToRollback, State stateToBeAdded) {
+    if (stateToBeAdded != null) {
+      orderedStatesToRollback.add(stateToBeAdded);
+    }
+  }
+
+  private State cloneAndTransformToRollbackState(State state, Map<State, PipelineStage> stateToPipelineStageMap,
+      Map<String, StateTypeDescriptor> stencilMap, Pipeline pipeline) {
+    if (FORK.getType().equals(state.getStateType())) {
+      ForkState forkState = (ForkState) state;
+      ForkState rollbackForkState = new ForkState("Rollback-" + forkState.getName());
+      rollbackForkState.setRollback(true);
+      State existingState = getState(rollbackForkState.getName());
+      if (existingState != null) {
+        return null;
+      }
+      List<State> states = forkState.getForkStateNames().stream().map(name -> this.getState(name)).collect(toList());
+      states.forEach(st -> {
+        State rollbackState = convertToRollbackState(st, stateToPipelineStageMap, pipeline, stencilMap);
+        if (rollbackState != null && !APPROVAL.getType().equals(rollbackState.getStateType())) {
+          rollbackForkState.addForkState(rollbackState);
+        }
+      });
+      addState(rollbackForkState);
+      return rollbackForkState;
+    }
+    return convertToRollbackState(state, stateToPipelineStageMap, pipeline, stencilMap);
+  }
+
+  private void adaptStateMachineWithPipelineRollback(String originStateName,
+      Map<State, PipelineStage> stateToPipelineStageMap, Map<String, StateTypeDescriptor> stencilMap,
+      Pipeline pipeline) {
+    if (transitions.size() == 0) {
+      State state = Objects.requireNonNull(getState(originStateName));
+      State rollbackState = cloneAndTransformToRollbackState(state, stateToPipelineStageMap, stencilMap, pipeline);
+      if (!APPROVAL.getType().equals(rollbackState.getStateType())) {
+        rollbackPipelineMap.put(state.getName(), rollbackState.getName());
+      }
+    } else {
+      List<State> orderedStates = new ArrayList<>();
+      List<Transition> reversedTransitions = new ArrayList<>(transitions);
+      Set<State> orderedStatesToRollbackSet = new LinkedHashSet<>();
+
+      Collections.reverse(reversedTransitions);
+
+      for (int i = 0; i < transitions.size(); i++) {
+        Transition transition = reversedTransitions.get(i);
+        State toState =
+            cloneAndTransformToRollbackState(transition.getFromState(), stateToPipelineStageMap, stencilMap, pipeline);
+        State fromState =
+            cloneAndTransformToRollbackState(transition.getToState(), stateToPipelineStageMap, stencilMap, pipeline);
+        addIfStateIsNotNullAndNotApproval(orderedStates, fromState);
+        addIfStateIsNotNullAndNotApproval(orderedStates, toState);
+      }
+
+      for (int i = 0; i < orderedStates.size(); i++) {
+        State rollbackState = orderedStates.get(i);
+        State state = getState(rollbackState.getName().replace("Rollback-", ""));
+        if (APPROVAL.getType().equals(rollbackState.getStateType())) {
+          if (i == orderedStates.size() - 1) {
+            break;
+          }
+          rollbackState = orderedStates.get(i + 1);
+        } else {
+          orderedStatesToRollbackSet.add(rollbackState);
+        }
+        rollbackPipelineMap.put(state.getName(), rollbackState.getName());
+      }
+
+      List<State> orderedStatesToRollback = new ArrayList<>(orderedStatesToRollbackSet);
+
+      if (transitions.size() > 0 && orderedStatesToRollbackSet.size() > 1) {
+        for (int i = 0; i < orderedStatesToRollback.size() - 1; i++) {
+          addTransition(aTransition()
+                            .withTransitionType(TransitionType.SUCCESS)
+                            .withFromState(orderedStatesToRollback.get(i))
+                            .withToState(orderedStatesToRollback.get(i + 1))
+                            .build());
+        }
+      }
+    }
   }
 
   private State convertToState(
@@ -292,6 +396,63 @@ public class StateMachine implements PersistentEntity, UuidAware, CreatedAtAware
     return forkName;
   }
 
+  private State convertToRollbackState(State state, Map<State, PipelineStage> stateToPipelineStageMap,
+      Pipeline pipeline, Map<String, StateTypeDescriptor> stencilMap) {
+    PipelineStage pipelineStage = stateToPipelineStageMap.get(state);
+    PipelineStageElement pipelineStageElement = pipelineStage.getPipelineStageElements().get(0);
+    int lastObjectIndex = pipeline.getPipelineStages().size() - 1;
+    int lastParallelIndex =
+        pipeline.getPipelineStages().get(lastObjectIndex).getPipelineStageElements().get(0).getParallelIndex();
+    int newParallelIndex = 2 * lastParallelIndex - pipelineStageElement.getParallelIndex() + 1;
+    String stageName = format("STAGE %s", newParallelIndex);
+
+    StateTypeDescriptor stateTypeDesc = null;
+    String stateType = pipelineStageElement.getType();
+    if (ENV_STATE.getType().equals(stateType)) {
+      stateTypeDesc = stencilMap.get(ENV_ROLLBACK_STATE.getType());
+    } else {
+      stateTypeDesc = stencilMap.get(stateType);
+    }
+
+    State rollbackState = stateTypeDesc.newInstance("Rollback-" + pipelineStageElement.getName());
+
+    if (state instanceof EnvLoopState) {
+      rollbackState.setRollback(true);
+    }
+
+    Map<String, Object> oldProperties = pipelineStageElement.getProperties();
+    Map<String, Object> properties = new HashMap<>();
+    properties.putAll(oldProperties);
+
+    properties = MapUtils.putToImmutable(EnvStateKeys.pipelineId, pipeline.getUuid(), properties);
+    properties.put(EnvStateKeys.pipelineStageElementId, pipelineStageElement.getUuid());
+    properties.put(EnvStateKeys.pipelineStageParallelIndex, newParallelIndex);
+    properties.put(EnvStateKeys.stageName, stageName);
+    properties.put(EnvStateKeys.disableAssertion, pipelineStageElement.getDisableAssertion());
+    properties.put(EnvStateKeys.disable, pipelineStageElement.isDisable());
+
+    if (pipelineStageElement.getWorkflowVariables() != null) {
+      properties.put(EnvStateKeys.workflowVariables, pipelineStageElement.getWorkflowVariables());
+    }
+    if (pipelineStageElement.getRuntimeInputsConfig() != null) {
+      properties.put(
+          EnvStateKeys.runtimeInputVariables, pipelineStageElement.getRuntimeInputsConfig().getRuntimeInputVariables());
+      properties.put(EnvStateKeys.timeout, pipelineStageElement.getRuntimeInputsConfig().getTimeout());
+      properties.put(EnvStateKeys.timeoutAction, pipelineStageElement.getRuntimeInputsConfig().getTimeoutAction());
+      properties.put(EnvStateKeys.userGroupIds, pipelineStageElement.getRuntimeInputsConfig().getUserGroupIds());
+    }
+    rollbackState.parseProperties(properties);
+    rollbackState.resolveProperties();
+    rollbackState.setRollback(true);
+    State existingState = getState(rollbackState.getName());
+    if (existingState != null) {
+      return null;
+    }
+    if (!APPROVAL.getType().equals(state.getStateType())) {
+      addState(rollbackState);
+    }
+    return rollbackState;
+  }
   private State convertToState(PipelineStageElement pipelineStageElement, Pipeline pipeline,
       Map<String, StateTypeDescriptor> stencilMap, String stageName) {
     StateTypeDescriptor stateTypeDesc = stencilMap.get(pipelineStageElement.getType());
@@ -1098,6 +1259,7 @@ public class StateMachine implements PersistentEntity, UuidAware, CreatedAtAware
   }
 
   public static final class StateMachineBuilder {
+    private Map<String, String> rollbackPipelineMap;
     private String originId;
     private Integer originVersion;
     private String name;
@@ -1116,6 +1278,11 @@ public class StateMachine implements PersistentEntity, UuidAware, CreatedAtAware
 
     public static StateMachineBuilder aStateMachine() {
       return new StateMachineBuilder();
+    }
+
+    public StateMachineBuilder withRollbackPipelineMap(Map<String, String> rollbackPipelineMap) {
+      this.rollbackPipelineMap = rollbackPipelineMap;
+      return this;
     }
 
     public StateMachineBuilder withOriginId(String originId) {
@@ -1195,6 +1362,7 @@ public class StateMachine implements PersistentEntity, UuidAware, CreatedAtAware
       stateMachine.setAppId(appId);
       stateMachine.setCreatedAt(createdAt);
       stateMachine.setAccountId(accountId);
+      stateMachine.setRollbackPipelineMap(rollbackPipelineMap);
       return stateMachine;
     }
   }

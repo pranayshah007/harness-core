@@ -29,6 +29,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import io.harness.CategoryTest;
 import io.harness.azure.AzureClient;
 import io.harness.azure.model.AzureConfig;
+import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.AzureVMSSTagsData;
 import io.harness.azure.model.VirtualMachineData;
@@ -446,8 +447,8 @@ public class AzureComputeClientImplTest extends CategoryTest {
     when(azure.virtualMachines()).thenReturn(mockedVirtualMachines);
 
     // When
-    List<VirtualMachineData> result = azureComputeClient.listHosts(
-        getAzureComputeConfig(), "subscriptionId", "resourceGroup", AzureOSType.LINUX, Collections.emptyMap(), true);
+    List<VirtualMachineData> result = azureComputeClient.listHosts(getAzureComputeConfig(), "subscriptionId",
+        "resourceGroup", AzureOSType.LINUX, Collections.emptyMap(), AzureHostConnectionType.HOSTNAME);
 
     // Then
     assertThat(result)
@@ -469,8 +470,8 @@ public class AzureComputeClientImplTest extends CategoryTest {
     when(azure.virtualMachines()).thenReturn(mockedVirtualMachines);
 
     // When
-    List<VirtualMachineData> result = azureComputeClient.listHosts(
-        getAzureComputeConfig(), "subscriptionId", "resourceGroup", AzureOSType.LINUX, Collections.emptyMap(), true);
+    List<VirtualMachineData> result = azureComputeClient.listHosts(getAzureComputeConfig(), "subscriptionId",
+        "resourceGroup", AzureOSType.LINUX, Collections.emptyMap(), AzureHostConnectionType.PRIVATE_IP);
 
     // Then
     assertThat(result).isNotNull().isEmpty();

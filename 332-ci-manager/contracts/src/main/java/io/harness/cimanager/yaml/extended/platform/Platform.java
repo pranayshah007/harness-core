@@ -18,12 +18,16 @@ import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonTypeName("platform")
 @TypeAlias("CIPlatform")
 @RecasterAlias("io.harness.beans.yaml.extended.platform.Platform")

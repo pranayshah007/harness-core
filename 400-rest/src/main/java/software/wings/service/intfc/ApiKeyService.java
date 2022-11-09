@@ -29,7 +29,7 @@ public interface ApiKeyService extends OwnedByAccount {
   ApiKeyEntry get(@NotEmpty String uuid, @NotEmpty String accountId);
   Boolean validate(String key, String accountId);
   String getAccountIdFromApiKey(String apiKey);
-  ApiKeyEntry getByKey(String key, String accountId, boolean details);
+  ApiKeyEntry getByKey(String key, String accountId);
   UserPermissionInfo getApiKeyPermissions(ApiKeyEntry apiKeyEntry, String accountId);
   UserRestrictionInfo getApiKeyRestrictions(
       ApiKeyEntry apiKeyEntry, UserPermissionInfo userPermissionInfo, String accountId);

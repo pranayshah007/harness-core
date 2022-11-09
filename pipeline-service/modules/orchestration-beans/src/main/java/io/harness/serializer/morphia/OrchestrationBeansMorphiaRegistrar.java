@@ -22,6 +22,7 @@ import io.harness.morphia.MorphiaRegistrarHelperPut;
 import io.harness.plan.NodeEntity;
 import io.harness.plan.Plan;
 import io.harness.pms.sdk.PmsSdkInstance;
+import io.harness.wait.WaitStepInstance;
 
 import java.util.Set;
 
@@ -30,7 +31,7 @@ public class OrchestrationBeansMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(ExecutionInputInstance.class);
-
+    set.add(WaitStepInstance.class);
     set.add(Interrupt.class);
     set.add(OutcomeInstance.class);
     set.add(ExecutionSweepingOutputInstance.class);

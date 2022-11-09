@@ -51,7 +51,7 @@ public class EntityCRUDStreamConsumerTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testStreamConsumerOnPrimaryMachine() throws InterruptedException {
-    runConsumerFor10ms();
+    runConsumerFor100ms();
     verify(consumer, atLeast(1)).read(Mockito.any());
   }
 
@@ -60,14 +60,14 @@ public class EntityCRUDStreamConsumerTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testStreamConsumerOnNonPrimaryMachine() throws InterruptedException {
     when(queueController.isNotPrimary()).thenReturn(true);
-    runConsumerFor10ms();
+    runConsumerFor100ms();
     verifyZeroInteractions(consumer);
   }
 
-  private void runConsumerFor10ms() throws InterruptedException {
+  private void runConsumerFor100ms() throws InterruptedException {
     Thread t = new Thread(entityCRUDStreamConsumer);
     t.start();
-    TimeUnit.MILLISECONDS.sleep(10);
+    TimeUnit.MILLISECONDS.sleep(100);
     t.interrupt();
   }
 }

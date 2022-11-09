@@ -37,8 +37,6 @@ io.harness.pms.sdk.core.plan.MapStepParameters
 io.harness.steps.jira.create.JiraCreateSpecParameters
 io.harness.steps.common.pipeline.PipelineSetupStepParameters
 io.harness.pms.yaml.validation.InputSetValidator
-io.harness.steps.shellscript.SshInfraDelegateConfigOutput
-io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput
 io.harness.steps.barriers.beans.BarrierOutcome
 io.harness.when.beans.StageWhenCondition
 io.harness.steps.approval.step.jira.JiraApprovalSpecParameters
@@ -66,6 +64,7 @@ io.harness.pms.yaml.ParameterDocumentField
 io.harness.advisers.rollback.RollbackTriggeredOutput
 io.harness.cdng.pipeline.stepinfo.ShellScriptStepInfo
 io.harness.steps.approval.stage.ApprovalStageNode
+io.harness.pms.pipeline.stage.PipelineStageNode
 io.harness.cf.pipeline.FeatureFlagStageNode
 io.harness.plancreator.steps.internal.FlagConfigurationStepNode
 io.harness.steps.policy.PolicyStepInfo

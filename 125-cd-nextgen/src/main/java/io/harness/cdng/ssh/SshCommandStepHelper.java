@@ -9,6 +9,9 @@ package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.execution.ExecutionInfoUtility.getScope;
+import static io.harness.cdng.ssh.CommandUnitSpecType.COPY;
+import static io.harness.cdng.ssh.CommandUnitSpecType.DOWNLOAD_ARTIFACT;
+import static io.harness.cdng.ssh.CommandUnitSpecType.SCRIPT;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getHost;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getOutputVariables;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getWorkingDirectory;
@@ -37,6 +40,8 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.service.steps.ServiceOutcomeHelper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
+import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.ssh.rollback.CommandStepRollbackHelper;
 import io.harness.cdng.ssh.rollback.SshWinRmRollbackData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -50,6 +55,7 @@ import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
 import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
@@ -83,8 +89,6 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.shellscript.HarnessFileStoreSource;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
-import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -127,7 +131,9 @@ public class SshCommandStepHelper extends CDStepHelper {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
     InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
     Map<String, String> mergedEnvVariables = getMergedEnvVariablesMap(ambiance, commandStepParameters, infrastructure);
-    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))
+        || ServiceSpecType.CUSTOM_DEPLOYMENT.toLowerCase(Locale.ROOT)
+               .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
       return buildSshCommandTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
     } else if (ServiceSpecType.WINRM.toLowerCase(Locale.ROOT)
                    .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
@@ -338,8 +344,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .host(onDelegate ? null : getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
-        .disableWinRMCommandEncodingFFSet(
-            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING))
+        .disableWinRMCommandEncodingFFSet(true)
+        .winrmScriptCommandSplit(true)
         .build();
   }
 
@@ -365,8 +371,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .host(onDelegate ? null : getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
-        .disableWinRMCommandEncodingFFSet(
-            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING))
+        .disableWinRMCommandEncodingFFSet(true)
+        .winrmScriptCommandSplit(true)
         .build();
   }
 
@@ -407,17 +413,28 @@ public class SshCommandStepHelper extends CDStepHelper {
     List<NgCommandUnit> commandUnits = new ArrayList<>(stepCommandUnits.size() + 2);
     commandUnits.add(NgInitCommandUnit.builder().build());
 
-    List<NgCommandUnit> commandUnitsFromStep =
-        stepCommandUnits.stream()
-            .map(stepCommandUnit
-                -> (stepCommandUnit.isScript())
-                    ? mapScriptCommandUnit(ambiance, stepCommandUnit, onDelegate, envVariablesMap)
-                    : mapCopyCommandUnit(stepCommandUnit, envVariablesMap))
-            .collect(Collectors.toList());
+    List<NgCommandUnit> commandUnitsFromStep = stepCommandUnits.stream()
+                                                   .map(getNgCommandUnitFunction(ambiance, onDelegate, envVariablesMap))
+                                                   .collect(Collectors.toList());
 
     commandUnits.addAll(commandUnitsFromStep);
     commandUnits.add(NgCleanupCommandUnit.builder().build());
     return commandUnits;
+  }
+
+  private Function<CommandUnitWrapper, NgCommandUnit> getNgCommandUnitFunction(
+      Ambiance ambiance, boolean onDelegate, Map<String, String> envVariablesMap) {
+    return stepCommandUnit -> {
+      if (SCRIPT.equals(stepCommandUnit.getType())) {
+        return mapScriptCommandUnit(ambiance, stepCommandUnit, onDelegate, envVariablesMap);
+      } else if (COPY.equals(stepCommandUnit.getType())) {
+        return mapCopyCommandUnit(stepCommandUnit, envVariablesMap);
+      } else if (DOWNLOAD_ARTIFACT.equals(stepCommandUnit.getType())) {
+        return mapDownloadArtifactCommandUnit(stepCommandUnit, envVariablesMap);
+      } else {
+        throw new InvalidRequestException("Unknown command unit specified");
+      }
+    };
   }
 
   private String resolveVariablesInString(String targetString, Map<String, String> envVariables) {
@@ -472,6 +489,23 @@ public class SshCommandStepHelper extends CDStepHelper {
         .build();
   }
 
+  private NgDownloadArtifactCommandUnit mapDownloadArtifactCommandUnit(
+      CommandUnitWrapper stepCommandUnit, Map<String, String> envVariablesMap) {
+    if (stepCommandUnit == null) {
+      throw new InvalidRequestException("Invalid command unit format specified");
+    }
+
+    if (!(stepCommandUnit.getSpec() instanceof DownloadArtifactCommandUnitSpec)) {
+      throw new InvalidRequestException("Invalid download artifact command unit specified");
+    }
+
+    DownloadArtifactCommandUnitSpec spec = (DownloadArtifactCommandUnitSpec) stepCommandUnit.getSpec();
+    return NgDownloadArtifactCommandUnit.builder()
+        .name(stepCommandUnit.getName())
+        .destinationPath(resolveVariablesInString(getParameterFieldValue(spec.getDestinationPath()), envVariablesMap))
+        .build();
+  }
+
   private List<TailFilePatternDto> mapTailFilePatterns(@Nonnull List<TailFilePattern> tailFiles) {
     if (isEmpty(tailFiles)) {
       return emptyList();
@@ -486,7 +520,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .collect(Collectors.toList());
   }
 
-  private String getShellScript(Ambiance ambiance, @Nonnull ShellScriptSourceWrapper shellScriptSourceWrapper) {
+  public String getShellScript(Ambiance ambiance, @Nonnull ShellScriptSourceWrapper shellScriptSourceWrapper) {
     if (INLINE.equals(shellScriptSourceWrapper.getType())) {
       ShellScriptInlineSource shellScriptInlineSource = (ShellScriptInlineSource) shellScriptSourceWrapper.getSpec();
       return (String) shellScriptInlineSource.getScript().fetchFinalValue();

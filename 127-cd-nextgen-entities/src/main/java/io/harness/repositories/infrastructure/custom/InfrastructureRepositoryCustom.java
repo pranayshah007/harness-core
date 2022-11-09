@@ -12,10 +12,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface InfrastructureRepositoryCustom {
@@ -31,4 +33,9 @@ public interface InfrastructureRepositoryCustom {
 
   List<InfrastructureEntity> findAllFromEnvIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
+  UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String envIdentifier, List<String> infraIdentifierList, Update update);
+
+  List<InfrastructureEntity> findAllFromProjectIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

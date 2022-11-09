@@ -1,0 +1,26 @@
+{
+  "connector" : {
+    "name" : "example_connector",
+    "identifier" : "example_connector",
+    "description" : "example_connector",
+    "orgIdentifier" : "default",
+    "projectIdentifier" : "example_project",
+    "tags" : {
+      "property1" : "example_connector"
+    },
+    "type" : "Azure",
+    "spec" : {
+      "credential" : {
+        "type" : "InheritFromDelegate",
+        "spec" : {
+          "auth" : {
+            "type" : "SystemAssignedManagedIdentity"
+          }
+        }
+      },
+      "delegateSelectors" : [ "pl1" ],
+      "azureEnvironmentType" : "AZURE",
+      "executeOnDelegate" : false
+    }
+  }
+}

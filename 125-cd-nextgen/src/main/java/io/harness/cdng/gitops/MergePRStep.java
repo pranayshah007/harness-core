@@ -126,6 +126,9 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
 
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CREATE_PR_OUTCOME));
+    OptionalSweepingOutput optionalSweepingOutputUpdateReleaseRepo = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.UPDATE_RELEASE_REPO_OUTCOME));
+
     int prNumber;
     String prLink;
     String sha;
@@ -136,6 +139,13 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
       prLink = createPROutcome.getPrlink();
       sha = createPROutcome.getCommitId();
       ref = createPROutcome.getRef();
+    } else if (optionalSweepingOutputUpdateReleaseRepo != null && optionalSweepingOutputUpdateReleaseRepo.isFound()) {
+      UpdateReleaseRepoOutcome updateReleaseRepoOutcome =
+          (UpdateReleaseRepoOutcome) optionalSweepingOutputUpdateReleaseRepo.getOutput();
+      prNumber = updateReleaseRepoOutcome.getPrNumber();
+      prLink = updateReleaseRepoOutcome.getPrlink();
+      sha = updateReleaseRepoOutcome.getCommitId();
+      ref = updateReleaseRepoOutcome.getRef();
     } else {
       throw new InvalidRequestException("Pull Request Details are missing", USER);
     }

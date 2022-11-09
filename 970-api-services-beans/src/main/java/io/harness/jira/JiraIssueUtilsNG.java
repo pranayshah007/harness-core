@@ -18,6 +18,8 @@ import io.harness.exception.JiraClientException;
 import com.google.common.base.Splitter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -228,6 +230,13 @@ public class JiraIssueUtilsNG {
         // ignored
       }
     }
-    throw new JiraClientException(String.format("Invalid datetime value for field [%s]", name), true);
+    try {
+      Long millis = Long.valueOf(value);
+      Timestamp timestamp = new Timestamp(millis);
+      SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+      return df.format(timestamp);
+    } catch (NumberFormatException ex) {
+      throw new JiraClientException(String.format("Invalid datetime value for field [%s]", name), true);
+    }
   }
 }

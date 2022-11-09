@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
+import static io.harness.beans.FeatureName.SPG_ALLOW_DISABLE_TRIGGERS;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.data.structure.CollectionUtils.trimmedLowercaseSet;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -395,6 +396,11 @@ public class AppServiceImpl implements AppService {
       operations.set(ApplicationKeys.areWebHookSecretsMandated, app.getAreWebHookSecretsMandated());
     }
 
+    if (featureFlagService.isEnabled(SPG_ALLOW_DISABLE_TRIGGERS, savedApp.getAccountId())
+        && app.getDisableTriggers() != null) {
+      operations.set(ApplicationKeys.disableTriggers, app.getDisableTriggers());
+    }
+
     setUnset(operations, "description", app.getDescription());
 
     PersistenceValidator.duplicateCheck(
@@ -630,5 +636,10 @@ public class AppServiceImpl implements AppService {
   @Override
   public List<Application> getAppsByIds(Set<String> appIds) {
     return wingsPersistence.createQuery(Application.class).field(ApplicationKeys.appId).hasAnyOf(appIds).asList();
+  }
+
+  @Override
+  public Boolean getDisableTriggersByAppId(String appId) {
+    return get(appId).getDisableTriggers();
   }
 }

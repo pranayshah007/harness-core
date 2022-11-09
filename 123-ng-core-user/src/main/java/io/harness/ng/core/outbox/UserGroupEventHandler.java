@@ -164,13 +164,14 @@ public class UserGroupEventHandler implements OutboxEventHandler {
 
   private boolean publishEvent(UserGroupDTO userGroup, String action) {
     try {
-      eventProducer.send(
+      String eventId = eventProducer.send(
           Message.newBuilder()
               .putAllMetadata(ImmutableMap.of("accountId", userGroup.getAccountIdentifier(),
                   EventsFrameworkMetadataConstants.ENTITY_TYPE, EventsFrameworkMetadataConstants.USER_GROUP,
                   EventsFrameworkMetadataConstants.ACTION, action))
               .setData(getUserGroupPayload(userGroup))
               .build());
+      log.info("Produced event id:[{}] for usergroupdto:[{}], action:[{}]", eventId, userGroup, action);
       return true;
     } catch (EventsFrameworkDownException e) {
       log.error("Failed to send event to events framework for user group identifier {}", userGroup.getIdentifier(), e);

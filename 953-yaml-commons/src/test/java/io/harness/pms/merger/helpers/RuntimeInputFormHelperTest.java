@@ -8,7 +8,6 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.pms.merger.helpers.RuntimeInputFormHelper.createRuntimeInputForm;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 
@@ -52,7 +51,7 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
   public void testCreateTemplateFromPipeline() {
     String filename = "pipeline-extensive.yml";
     String yaml = readFile(filename);
-    String templateYaml = createRuntimeInputForm(yaml, true);
+    String templateYaml = RuntimeInputFormHelper.createRuntimeInputForm(yaml, true);
 
     String resFile = "pipeline-extensive-template.yml";
     String resTemplate = readFile(resFile);
@@ -152,5 +151,18 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
         "<+input>.executionInput()");
     assertEquals(jsonNode.get("pipeline").get("stages").get(0).get("stage").get("description").asText(),
         "<+executionInput.stage.description>");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testJsonNodeMergeDoesNotChangeOrderInList() throws JsonProcessingException {
+    String filename = "jsonNodeWithList.yaml";
+    String yaml = readFile(filename);
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    JsonNode jsonNode = mapper.readTree(yaml);
+
+    RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(jsonNode);
+    assertThat(jsonNode).isEqualTo(mapper.readTree(yaml));
   }
 }

@@ -152,7 +152,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncP
           .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
           .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
           .tags(sshEntityHelper.filterInfraTags(azureInfrastructureOutcome.getTags()))
-          .usePublicDns(azureInfrastructureOutcome.getUsePublicDns())
+          .hostConnectionType(azureInfrastructureOutcome.getHostConnectionType())
           .build();
     } else if (secretSpecDTO instanceof WinRmCredentialsSpecDTO) {
       return AzureWinrmInfraDelegateConfig.winrmAzureBuilder()
@@ -162,7 +162,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncP
           .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
           .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
           .tags(sshEntityHelper.filterInfraTags(azureInfrastructureOutcome.getTags()))
-          .usePublicDns(azureInfrastructureOutcome.getUsePublicDns())
+          .hostConnectionType(azureInfrastructureOutcome.getHostConnectionType())
           .build();
     }
 

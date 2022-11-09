@@ -14,6 +14,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_ACCOUNT
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_BUILD_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_CI_INDIRECT_LOG_UPLOAD_FF;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_EXECUTION_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_LE_STATUS_REST_ENABLED;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_LOG_PREFIX_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_ORG_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PIPELINE_ID_VARIABLE;
@@ -22,13 +23,13 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_STAGE_I
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.LITE_ENGINE_CONTAINER_CPU;
 import static io.harness.ci.commonconstants.CIExecutionConstants.LITE_ENGINE_CONTAINER_MEM;
-import static io.harness.ci.commonconstants.CIExecutionConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PWSH_COMMAND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SETUP_ADDON_CONTAINER_NAME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SH_COMMAND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_SETUP_ADDON_ARGS;
 import static io.harness.ci.commonconstants.CIExecutionConstants.WIN_SETUP_ADDON_ARGS;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
+import static io.harness.delegate.beans.ci.pod.CICommonConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -142,6 +143,10 @@ public class InternalContainerParamsProvider {
     // Check whether FF to enable blob upload to log service (as opposed to directly blob storage) is enabled
     if (featureFlagService.isEnabled(FeatureName.CI_INDIRECT_LOG_UPLOAD, accountID)) {
       envVars.put(HARNESS_CI_INDIRECT_LOG_UPLOAD_FF, "true");
+    }
+    // Check whether FF is enabled to send LE to manager status update via rest
+    if (featureFlagService.isEnabled(FeatureName.CI_LE_STATUS_REST_ENABLED, accountID)) {
+      envVars.put(HARNESS_LE_STATUS_REST_ENABLED, "true");
     }
 
     // Add environment variables that need to be used inside the lite engine container

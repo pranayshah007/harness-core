@@ -26,6 +26,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.beans.TriggeredBy;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.TaskData;
@@ -97,6 +98,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.query.Query;
 
 @FieldNameConstants(innerTypeName = "CloudFormationStateKeys")
@@ -380,6 +382,15 @@ public abstract class CloudFormationState extends State {
     Query<CloudFormationRollbackConfig> query =
         wingsPersistence.createQuery(CloudFormationRollbackConfig.class)
             .filter(CloudFormationRollbackConfigKeys.entityId, getStackNameSuffix(context, provisionerId));
+    if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CONFIG_FILTER, context.getAccountId())) {
+      query.filter(CloudFormationRollbackConfigKeys.awsConfigId, fetchResolvedAwsConfigId(context));
+    }
+    if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CUSTOM_STACK_NAME, context.getAccountId())) {
+      String renderedCustomStackName =
+          useCustomStackName ? context.renderExpression(customStackName) : StringUtils.EMPTY;
+      query.filter(CloudFormationRollbackConfigKeys.customStackName, context.renderExpression(renderedCustomStackName));
+      query.filter(CloudFormationRollbackConfigKeys.region, context.renderExpression(region));
+    }
     wingsPersistence.delete(query);
   }
 
@@ -410,6 +421,8 @@ public abstract class CloudFormationState extends State {
                               .skipBasedOnStackStatus(rollbackInfo.isSkipBasedOnStackStatus())
                               .stackStatusesToMarkAsSuccess(rollbackInfo.getStackStatusesToMarkAsSuccess())
                               .entityId(getStackNameSuffix(context, provisionerId))
+                              .capabilities(rollbackInfo.getCapabilities())
+                              .tags(rollbackInfo.getTags())
                               .build());
   }
 

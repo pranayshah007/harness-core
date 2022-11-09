@@ -12,13 +12,20 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.exception.ngexception.NGTemplateException;
+import io.harness.ng.core.template.RefreshResponseDTO;
+import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.reconcile.remote.NgManagerReconcileClient;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.entity.TemplateEntityGetResponse;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -41,6 +48,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 public class TemplateInputsRefreshHelper {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
+  @Inject private NGTemplateFeatureFlagHelperService featureFlagHelperService;
+  @Inject private NgManagerReconcileClient ngManagerReconcileClient;
 
   // Returns the refreshed YAML when a YAML String is passed.
   public String refreshTemplates(String accountId, String orgId, String projectId, String yaml) {
@@ -66,7 +75,20 @@ public class TemplateInputsRefreshHelper {
         getRefreshedTemplateInputsMap(accountId, orgId, projectId, yamlNode, templateCacheMap);
 
     // Returning the Refreshed YAML corresponding to the ResMap
-    return YamlPipelineUtils.writeYamlString(refreshedTemplateInputsMap);
+    String inputsRefreshYaml = YamlPipelineUtils.writeYamlString(refreshedTemplateInputsMap);
+    if (featureFlagHelperService.isEnabled(accountId, FeatureName.CD_SERVICE_ENV_RECONCILIATION)) {
+      Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
+          accountId, orgId, projectId, yamlNode, templateCacheMap, 0);
+      String resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);
+      RefreshResponseDTO ngManagerRefreshResponseDto =
+          NGRestUtils.getResponse(ngManagerReconcileClient.refreshYaml(accountId, orgId, projectId,
+              NgManagerRefreshRequestDTO.builder()
+                  .yaml(inputsRefreshYaml)
+                  .resolvedTemplatesYaml(resolvedTemplatesYaml)
+                  .build()));
+      inputsRefreshYaml = ngManagerRefreshResponseDto.getRefreshedYaml();
+    }
+    return inputsRefreshYaml;
   }
 
   // Gets the Updated ResMap -> Key,Value pairs of the YAML with Refreshed Template Inputs
@@ -129,8 +151,9 @@ public class TemplateInputsRefreshHelper {
     JsonNode templateInputs = TemplateNodeValue.get(TEMPLATE_INPUTS);
 
     // Template YAML corresponding to the TemplateRef and Version Label
-    TemplateEntity templateEntity = templateMergeServiceHelper.getLinkedTemplateEntity(
+    TemplateEntityGetResponse templateEntityGetResponse = templateMergeServiceHelper.getLinkedTemplateEntity(
         accountId, orgId, projectId, TemplateNodeValue, templateCacheMap);
+    TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     String templateYaml = templateEntity.getYaml();
 
     // Generate the Template Spec from the Template YAML

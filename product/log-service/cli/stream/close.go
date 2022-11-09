@@ -18,7 +18,7 @@ type closeCommand struct {
 }
 
 func (c *closeCommand) run(*kingpin.ParseContext) error {
-	client := client.NewHTTPClient(c.server, c.accountID, c.token, false)
+	client := client.NewHTTPClient(c.server, c.accountID, c.token, false, "")
 	return client.Close(nocontext, c.key)
 }
 

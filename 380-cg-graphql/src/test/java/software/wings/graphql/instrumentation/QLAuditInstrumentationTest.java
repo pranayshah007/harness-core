@@ -95,14 +95,14 @@ public class QLAuditInstrumentationTest extends CategoryTest {
     graphQLContext.put("accountId", "accountid1");
     doReturn(ApiKeyEntry.builder().uuid("api_key_uuid_value").build())
         .when(apiKeyService)
-        .getByKey("api_key_value", "accountid1", false);
+        .getByKey("api_key_value", "accountid1");
     final InstrumentationContext<ExecutionResult> executionResultInstrumentationContext =
         qlAuditInstrumentation.beginExecuteOperation(mockParams.mockOperationParameters);
 
     verify(auditHelper, times(1))
         .create(any(AuditHeader.class), eq(AuditHeader.RequestType.REQUEST), any(InputStream.class));
     assertThat(executionResultInstrumentationContext).isNotNull();
-    verify(apiKeyService, times(1)).getByKey("api_key_value", "accountid1", false);
+    verify(apiKeyService, times(1)).getByKey("api_key_value", "accountid1");
 
     final ArgumentCaptor<AuditHeader> auditHeaderArgumentCaptor = ArgumentCaptor.forClass(AuditHeader.class);
     verify(auditHelper, times(1)).create(auditHeaderArgumentCaptor.capture());

@@ -28,6 +28,6 @@ import org.springframework.data.annotation.TypeAlias;
 @Persistent
 @TypeAlias("io.harness.license.entities.module.ChaosModuleLicense")
 public class ChaosModuleLicense extends ModuleLicense {
-  private Integer totalChaosScenarioRun;
-  private Integer totalChaosDelegates;
+  private Integer totalChaosExperimentRuns;
+  private Integer totalChaosInfrastructures;
 }

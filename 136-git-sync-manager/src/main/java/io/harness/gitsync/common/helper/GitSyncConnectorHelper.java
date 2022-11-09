@@ -10,10 +10,13 @@ package io.harness.gitsync.common.helper;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.exception.WingsException.USER;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -43,6 +46,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -304,5 +308,21 @@ public class GitSyncConnectorHelper {
     scmConnector.setGitConnectionUrl(
         scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build()));
     return scmConnector;
+  }
+
+  public void testConnectionAsync(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
+    CompletableFuture.runAsync(() -> {
+      try {
+        ConnectorValidationResult testConnectionResult =
+            connectorService.testConnection(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
+        log.info(format("testConnectionResult for %s Connector: %s, project %s, org %s, account %s", connectorRef,
+            testConnectionResult.getStatus(), projectIdentifier, orgIdentifier, accountIdentifier));
+      } catch (Exception ex) {
+        log.error(format("failed to test connection for %s Connector for project %s, org %s, account %s", connectorRef,
+                      projectIdentifier, orgIdentifier, accountIdentifier),
+            ex);
+      }
+    });
   }
 }

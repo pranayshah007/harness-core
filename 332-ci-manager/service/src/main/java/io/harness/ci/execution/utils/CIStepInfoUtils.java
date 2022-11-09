@@ -28,7 +28,7 @@ public class CIStepInfoUtils {
       PluginCompatibleStep step, CIExecutionConfigService ciExecutionConfigService, Type infraType, String accountId) {
     if (infraType == Type.K8) {
       return getK8PluginCustomStepImageConfig(step, ciExecutionConfigService, accountId).getImage();
-    } else if (infraType == Type.VM) {
+    } else if (infraType == Type.VM || infraType == Type.DLITE_VM) {
       return getVmPluginCustomStepImageConfig(step, ciExecutionConfigService, accountId);
     }
     return null;

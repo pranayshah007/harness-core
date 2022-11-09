@@ -31,6 +31,7 @@ import io.harness.nexus.model.DockerImageResponse;
 import io.harness.nexus.model.Nexus3ComponentResponse;
 import io.harness.nexus.model.Nexus3Repository;
 
+import software.wings.common.AlphanumComparator;
 import software.wings.utils.RepositoryFormat;
 
 import com.google.common.collect.Lists;
@@ -52,6 +53,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @Slf4j
 public class NexusThreeClientImpl {
+  private static final int MAX_PAGES = 10;
   private static final List<String> IGNORE_EXTENSIONS = Lists.newArrayList("pom", "sha1", "sha256", "sha512", "md5");
   private static final String REPO_PORT_REGEX = "^[\\d]+$";
 
@@ -275,6 +277,208 @@ public class NexusThreeClientImpl {
     return StringUtils.isNotBlank(artifactPath) ? artifactPath : defaultArtifactPath;
   }
 
+  public List<BuildDetailsInternal> getPackageVersions(
+      NexusRequest nexusConfig, String repositoryName, String packageName) throws IOException {
+    log.info("Retrieving package versions for repository {} package {} ", repositoryName, packageName);
+    List<String> versions = new ArrayList<>();
+    Map<String, Asset> versionToArtifactUrls = new HashMap<>();
+    Map<String, List<ArtifactFileMetadataInternal>> versionToArtifactDownloadUrls = new HashMap<>();
+    NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
+    Response<Nexus3ComponentResponse> response;
+    boolean hasMoreResults = true;
+    String continuationToken = null;
+    while (hasMoreResults) {
+      hasMoreResults = false;
+      if (nexusConfig.isHasCredentials()) {
+        response =
+            nexusThreeRestClient
+                .getPackageVersions(Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())),
+                    repositoryName, packageName, continuationToken)
+                .execute();
+
+      } else {
+        response = nexusThreeRestClient.getPackageVersions(repositoryName, packageName, continuationToken).execute();
+      }
+
+      if (isSuccessful(response)) {
+        if (response.body() != null) {
+          if (isNotEmpty(response.body().getItems())) {
+            for (Nexus3ComponentResponse.Component component : response.body().getItems()) {
+              String version = component.getVersion();
+              versions.add(version); // todo: add limit if results are returned in descending order of lastUpdatedTs
+
+              if (isNotEmpty(component.getAssets())) {
+                Asset asset = component.getAssets().get(0);
+                if (!asset.getRepository().equals(repositoryName)) {
+                  // For nuget, Eg. repository/nuget-hosted-group-repo/NuGet.Sample.Package/1.0.0.0
+                  // For npm,  Eg. repository/harness-npm-group/npm-app1/-/npm-app1-1.0.0.tgz
+                  String artifactUrl = asset.getDownloadUrl().replace(asset.getRepository(), repositoryName);
+                  // Update the asset with modified URL
+                  asset.setDownloadUrl(artifactUrl);
+                }
+                versionToArtifactUrls.put(version, asset);
+              }
+              // for each version - get all assets and store download urls in metadata
+              versionToArtifactDownloadUrls.put(version, getDownloadUrlsForPackageVersion(component));
+            }
+          }
+          if (response.body().getContinuationToken() != null) {
+            continuationToken = response.body().getContinuationToken();
+            hasMoreResults = true;
+          }
+        }
+      } else {
+        throw new InvalidArtifactServerException(
+            "Failed to fetch the versions for package [" + packageName + "]", WingsException.USER);
+      }
+    }
+    log.info("Versions come from nexus server {}", versions);
+    versions = versions.stream().sorted(new AlphanumComparator()).collect(toList());
+    log.info("After sorting alphanumerically versions {}", versions);
+
+    return versions.stream()
+        .map(version -> {
+          Map<String, String> metadata = new HashMap<>();
+          metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.repositoryName, repositoryName);
+          metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.nexusPackageName, packageName);
+          metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.version, version);
+          String url = null;
+          if (versionToArtifactUrls.get(version) != null) {
+            url = (versionToArtifactUrls.get(version)).getDownloadUrl();
+            metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.url, url);
+            metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.artifactPath,
+                (versionToArtifactUrls.get(version)).getPath());
+          }
+          return BuildDetailsInternal.builder()
+              .number(version)
+              .revision(version)
+              .buildUrl(url)
+              .metadata(metadata)
+              .uiDisplayName("Version# " + version)
+              .artifactFileMetadataList(versionToArtifactDownloadUrls.get(version))
+              .build();
+        })
+        .collect(toList());
+  }
+
+  private List<ArtifactFileMetadataInternal> getDownloadUrlsForPackageVersion(
+      Nexus3ComponentResponse.Component component) {
+    List<Asset> assets = component.getAssets();
+    List<ArtifactFileMetadataInternal> artifactFileMetadata = new ArrayList<>();
+    if (isNotEmpty(assets)) {
+      for (Asset asset : assets) {
+        String artifactUrl = asset.getDownloadUrl();
+        String artifactName;
+        if (RepositoryFormat.nuget.name().equals(component.getFormat())) {
+          artifactName = component.getName() + "-" + component.getVersion() + ".nupkg";
+        } else {
+          artifactName = artifactUrl.substring(artifactUrl.lastIndexOf('/') + 1);
+        }
+        if (IGNORE_EXTENSIONS.stream().anyMatch(artifactName::endsWith)) {
+          continue;
+        }
+        artifactFileMetadata.add(
+            ArtifactFileMetadataInternal.builder().fileName(artifactName).url(artifactUrl).build());
+      }
+    }
+    return artifactFileMetadata;
+  }
+
+  public List<BuildDetailsInternal> getVersions(NexusRequest nexusConfig, String repoId, String groupId,
+      String artifactName, String extension, String classifier) {
+    try {
+      log.info("Retrieving versions for repoId {} groupId {} and artifactName {}", repoId, groupId, artifactName);
+      List<String> versions = new ArrayList<>();
+      Map<String, String> versionToArtifactUrls = new HashMap<>();
+      Map<String, List<ArtifactFileMetadataInternal>> versionToArtifactDownloadUrls = new HashMap<>();
+      NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
+      Response<Nexus3ComponentResponse> response;
+      boolean hasMoreResults = true;
+      String continuationToken = null;
+      int page = 0;
+      while (hasMoreResults && page < MAX_PAGES) {
+        page++;
+        hasMoreResults = false;
+        if (nexusConfig.isHasCredentials()) {
+          response = nexusThreeRestClient
+                         .getArtifactVersions(
+                             Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())),
+                             repoId, groupId, artifactName, continuationToken)
+                         .execute();
+        } else {
+          response =
+              nexusThreeRestClient.getArtifactVersions(repoId, groupId, artifactName, continuationToken).execute();
+        }
+        if (isSuccessful(response)) {
+          if (response.body() != null) {
+            if (isNotEmpty(response.body().getItems())) {
+              for (Nexus3ComponentResponse.Component component : response.body().getItems()) {
+                String version = component.getVersion();
+                versions.add(version);
+                List<ArtifactFileMetadataInternal> artifactFileMetadata =
+                    getArtifactMetadata(component.getAssets(), repoId);
+
+                if (isNotEmpty(artifactFileMetadata)) {
+                  versionToArtifactUrls.put(
+                      version, getArtifactDownloadUrl(artifactFileMetadata, extension, classifier));
+                }
+                versionToArtifactDownloadUrls.put(version, artifactFileMetadata);
+              }
+            }
+            if (response.body().getContinuationToken() != null) {
+              continuationToken = response.body().getContinuationToken();
+              hasMoreResults = true;
+            }
+          }
+        } else {
+          throw new InvalidArtifactServerException(
+              "Failed to fetch the versions for groupId [" + groupId + "] and artifactId [" + artifactName + "]",
+              WingsException.USER);
+        }
+      }
+      return constructBuildDetails(repoId, groupId, artifactName, versions, versionToArtifactUrls,
+          versionToArtifactDownloadUrls, extension, classifier);
+
+    } catch (IOException | NexusRegistryException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check Nexus artifact configuration and verify that repository is valid.",
+          String.format("Failed to retrieve artifact '%s'", artifactName), new NexusRegistryException(e.getMessage()));
+    }
+  }
+
+  public List<BuildDetailsInternal> constructBuildDetails(String repoId, String groupId, String artifactName,
+      List<String> versions, Map<String, String> versionToArtifactUrls,
+      Map<String, List<ArtifactFileMetadataInternal>> versionToArtifactDownloadUrls, String extension,
+      String classifier) {
+    log.info("Versions come from nexus server {}", versions);
+    versions = versions.stream().sorted(new AlphanumComparator()).collect(toList());
+    log.info("After sorting alphanumerically versions {}", versions);
+
+    return versions.stream()
+        .map(version -> {
+          Map<String, String> metadata = new HashMap<>();
+          metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.repositoryName, repoId);
+          metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.nexusGroupId, groupId);
+          metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.nexusArtifactId, artifactName);
+          metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.version, version);
+          if (isNotEmpty(extension)) {
+            metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.extension, extension);
+          }
+          if (isNotEmpty(classifier)) {
+            metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.classifier, classifier);
+          }
+          return BuildDetailsInternal.builder()
+              .number(version)
+              .revision(version)
+              .buildUrl(versionToArtifactUrls.get(version))
+              .metadata(metadata)
+              .uiDisplayName("Version# " + version)
+              .artifactFileMetadataList(versionToArtifactDownloadUrls.get(version))
+              .build();
+        })
+        .collect(toList());
+  }
+
   public List<BuildDetailsInternal> getBuildDetails(NexusRequest nexusConfig, String repository, String port,
       String artifactName, String repositoryFormat, String tag) {
     String repositoryKey = ArtifactUtilities.trimSlashforwardChars(repository);
@@ -389,5 +593,82 @@ public class NexusThreeClientImpl {
       }
     }
     return components;
+  }
+
+  public List<BuildDetailsInternal> getPackageNamesBuildDetails(
+      NexusRequest nexusConfig, String repositoryName, String groupName) throws IOException {
+    log.info("Retrieving package names for repository {} package {} ", repositoryName, groupName);
+    List<String> names = new ArrayList<>();
+    Map<String, Asset> nameToArtifactUrls = new HashMap<>();
+    Map<String, List<ArtifactFileMetadataInternal>> nameToArtifactDownloadUrls = new HashMap<>();
+    NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
+    Response<Nexus3ComponentResponse> response;
+    String continuationToken;
+    do {
+      continuationToken = null;
+      if (nexusConfig.isHasCredentials()) {
+        response =
+            nexusThreeRestClient
+                .getGroupVersions(Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())),
+                    repositoryName, groupName, continuationToken)
+                .execute();
+
+      } else {
+        response = nexusThreeRestClient.getGroupVersions(repositoryName, groupName, continuationToken).execute();
+      }
+
+      if (isSuccessful(response)) {
+        if (response.body() != null) {
+          if (isNotEmpty(response.body().getItems())) {
+            for (Nexus3ComponentResponse.Component component : response.body().getItems()) {
+              String name = component.getName();
+              names.add(name);
+
+              if (isNotEmpty(component.getAssets())) {
+                Asset asset = component.getAssets().get(0);
+                if (!asset.getRepository().equals(repositoryName)) {
+                  String artifactUrl = asset.getDownloadUrl().replace(asset.getRepository(), repositoryName);
+                  // Update the asset with modified URL
+                  asset.setDownloadUrl(artifactUrl);
+                }
+                nameToArtifactUrls.put(name, asset);
+              }
+              // for each version - get all assets and store download urls in metadata
+              nameToArtifactDownloadUrls.put(name, getDownloadUrlsForPackageVersion(component));
+            }
+          }
+          continuationToken = response.body().getContinuationToken();
+        }
+      } else {
+        throw new InvalidArtifactServerException(
+            "Failed to fetch the names for package [" + groupName + "]", WingsException.USER);
+      }
+    } while (!StringUtils.isBlank(continuationToken));
+    names = names.stream().sorted(new AlphanumComparator()).collect(toList());
+    log.info("After sorting alphanumerically names coming from nexus server {}", names);
+
+    return names.stream()
+        .map(name -> {
+          Map<String, String> metadata = new HashMap<>();
+          metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.repositoryName, repositoryName);
+          metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.nexusPackageName, name);
+          metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.version, name);
+          String url = null;
+          if (nameToArtifactUrls.get(name) != null) {
+            url = (nameToArtifactUrls.get(name)).getDownloadUrl();
+            metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.url, url);
+            metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.artifactPath,
+                (nameToArtifactUrls.get(name)).getPath());
+          }
+          return BuildDetailsInternal.builder()
+              .number(name)
+              .revision(name)
+              .buildUrl(url)
+              .metadata(metadata)
+              .uiDisplayName(name)
+              .artifactFileMetadataList(nameToArtifactDownloadUrls.get(name))
+              .build();
+        })
+        .collect(toList());
   }
 }

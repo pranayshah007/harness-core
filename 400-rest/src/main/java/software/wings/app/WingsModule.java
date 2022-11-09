@@ -33,6 +33,10 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.annotations.retry.RetryOnExceptionInterceptor;
+import io.harness.artifacts.ami.service.AMIRegistryService;
+import io.harness.artifacts.ami.service.AMIRegistryServiceImpl;
+import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
+import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl;
 import io.harness.artifacts.gcr.service.GcrApiService;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
@@ -108,6 +112,7 @@ import io.harness.delegate.beans.StartupMode;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.event.listener.OrganizationEntityCRUDEventListener;
 import io.harness.delegate.event.listener.ProjectEntityCRUDEventListener;
+import io.harness.delegate.heartbeat.HeartbeatModule;
 import io.harness.delegate.outbox.DelegateOutboxEventHandler;
 import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
 import io.harness.delegate.service.impl.DelegateRingServiceImpl;
@@ -147,7 +152,6 @@ import io.harness.governance.pipeline.service.evaluators.OnPipeline;
 import io.harness.governance.pipeline.service.evaluators.OnWorkflow;
 import io.harness.governance.pipeline.service.evaluators.PipelineStatusEvaluator;
 import io.harness.governance.pipeline.service.evaluators.WorkflowStatusEvaluator;
-import io.harness.grpc.DelegateServiceClassicGrpcClientModule;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.instancesync.InstanceSyncResourceClientModule;
 import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
@@ -192,6 +196,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.polling.client.PollResourceClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
+import io.harness.redis.CompatibleFieldSerializerCodec;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.scheduler.PersistentScheduler;
@@ -243,6 +248,7 @@ import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.timescaledb.retention.RetentionManager;
 import io.harness.timescaledb.retention.RetentionManagerImpl;
+import io.harness.usergroups.UserGroupClientModule;
 import io.harness.usermembership.UserMembershipClientModule;
 import io.harness.version.VersionModule;
 
@@ -286,6 +292,7 @@ import software.wings.core.outbox.WingsOutboxEventHandler;
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.dl.WingsPersistence;
 import software.wings.dl.exportimport.WingsMongoExportImport;
+import software.wings.expression.SecretManagerModule;
 import software.wings.features.ApiKeysFeature;
 import software.wings.features.ApprovalFlowFeature;
 import software.wings.features.AuditTrailFeature;
@@ -459,7 +466,6 @@ import software.wings.service.impl.analysis.ContinuousVerificationService;
 import software.wings.service.impl.analysis.ContinuousVerificationServiceImpl;
 import software.wings.service.impl.analysis.ExperimentalAnalysisServiceImpl;
 import software.wings.service.impl.analysis.ExperimentalMetricAnalysisRecordServiceImpl;
-import software.wings.service.impl.analysis.LogLabelingServiceImpl;
 import software.wings.service.impl.analysis.MetricDataAnalysisServiceImpl;
 import software.wings.service.impl.analysis.TimeSeriesMLAnalysisRecordServiceImpl;
 import software.wings.service.impl.analysis.VerificationServiceImpl;
@@ -679,7 +685,6 @@ import software.wings.service.intfc.alert.NotificationRulesStatusService;
 import software.wings.service.intfc.analysis.AnalysisService;
 import software.wings.service.intfc.analysis.ExperimentalAnalysisService;
 import software.wings.service.intfc.analysis.ExperimentalMetricAnalysisRecordService;
-import software.wings.service.intfc.analysis.LogLabelingService;
 import software.wings.service.intfc.analysis.LogVerificationService;
 import software.wings.service.intfc.analysis.LogVerificationServiceImpl;
 import software.wings.service.intfc.analysis.TimeSeriesMLAnalysisRecordService;
@@ -810,6 +815,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -867,6 +873,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
   @Named("atmosphere")
   @Singleton
   RedisConfig redisAtmoshphereConfig() {
+    configuration.getRedisAtmosphereConfig().setCodec(CompatibleFieldSerializerCodec.class);
     return configuration.getRedisAtmosphereConfig();
   }
 
@@ -929,8 +936,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
     install(new DelegateServiceDriverGrpcClientModule(configuration.getPortal().getJwtNextGenManagerSecret(),
         configuration.getGrpcDelegateServiceClientConfig().getTarget(),
         configuration.getGrpcDelegateServiceClientConfig().getAuthority(), false));
-    install(new DelegateServiceClassicGrpcClientModule(configuration.getDmsSecret(),
-        configuration.getGrpcDMSClientConfig().getTarget(), configuration.getGrpcDMSClientConfig().getAuthority()));
 
     install(PersistentLockModule.getInstance());
     install(AlertModule.getInstance());
@@ -954,6 +959,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
         return configuration.getSegmentConfiguration();
       }
     });
+
+    install(new HeartbeatModule());
 
     bind(MainConfiguration.class).toInstance(configuration);
     bind(PortalConfig.class).toInstance(configuration.getPortal());
@@ -1084,6 +1091,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(GcrBuildService.class).to(GcrBuildServiceImpl.class);
     bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);
     bind(GithubPackagesRegistryService.class).to(GithubPackagesRegistryServiceImpl.class);
+    bind(AzureArtifactsRegistryService.class).to(AzureArtifactsRegistryServiceImpl.class);
+    bind(AMIRegistryService.class).to(AMIRegistryServiceImpl.class);
     bind(AcrService.class).to(AcrServiceImpl.class);
     bind(AcrBuildService.class).to(AcrBuildServiceImpl.class);
     bind(AmiService.class).to(AmiServiceImpl.class);
@@ -1137,7 +1146,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(SumoLogicAnalysisService.class).to(SumoLogicAnalysisServiceImpl.class);
     bind(InstanceStatService.class).to(InstanceStatServiceImpl.class);
     bind(StatsCollector.class).to(StatsCollectorImpl.class);
-    bind(LogLabelingService.class).to(LogLabelingServiceImpl.class);
+
     bind(AwsRoute53HelperServiceManager.class).to(AwsRoute53HelperServiceManagerImpl.class);
     bind(HarnessApiKeyService.class).to(HarnessApiKeyServiceImpl.class);
     bind(K8sGlobalConfigService.class).to(K8sGlobalConfigServiceUnsupported.class);
@@ -1309,6 +1318,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     }
 
     install(new FileServiceModule(configuration.getFileStorageMode(), configuration.getClusterName()));
+
     bind(AlertNotificationRuleChecker.class).to(AlertNotificationRuleCheckerImpl.class);
 
     bind(new TypeLiteral<NotificationDispatcher<UserGroup>>() {})
@@ -1345,6 +1355,15 @@ public class WingsModule extends AbstractModule implements ServersModule {
         .annotatedWith(Names.named("DeploymentReconTaskExecutor"))
         .toInstance(ThreadPool.create(1, 5, 10, TimeUnit.SECONDS,
             new ThreadFactoryBuilder().setNameFormat("DeploymentReconTaskExecutor-%d").build()));
+
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("CustomDashboardAPIExecutor"))
+        .toInstance(Executors.newFixedThreadPool(2));
+
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("LookerEntityReconTaskExecutor"))
+        .toInstance(ThreadPool.create(8, 16, 10, TimeUnit.SECONDS,
+            new ThreadFactoryBuilder().setNameFormat("LookerEntityReconTaskExecutor-%d").build()));
 
     bind(ExecutorService.class)
         .annotatedWith(Names.named("BuildSourceCallbackExecutor"))
@@ -1409,6 +1428,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     install(new PerpetualTaskServiceModule());
     install(CESetupServiceModule.getInstance());
+    install(new SecretManagerModule());
     install(new CVNextGenCommonsServiceModule());
     try {
       install(new ConnectorResourceClientModule(configuration.getNgManagerServiceHttpClientConfig(),
@@ -1422,6 +1442,10 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     // ng-usermembership Dependencies
     install(new UserMembershipClientModule(configuration.getNgManagerServiceHttpClientConfig(),
+        configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
+
+    // ng-user-group-membership dependencies
+    install(new UserGroupClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
 
     // ng-invite Dependencies

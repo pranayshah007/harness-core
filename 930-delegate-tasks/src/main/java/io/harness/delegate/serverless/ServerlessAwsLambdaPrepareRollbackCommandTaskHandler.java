@@ -112,7 +112,9 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
     try {
       setupDirectory(serverlessPrepareRollbackDataRequest, executionLogCallback, serverlessDelegateTaskParams);
     } catch (Exception ex) {
-      executionLogCallback.saveExecutionLog(color(format("%n setup directory failed."), LogColor.Red, LogWeight.Bold),
+      executionLogCallback.saveExecutionLog(
+          color(format("%n setup directory failed with error: %s", serverlessTaskHelperBase.getExceptionMessage(ex)),
+              LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
@@ -123,9 +125,10 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
           serverlessDelegateTaskParams, serverlessAwsLambdaCredentialType, serverlessClient, timeoutInMillis,
           crossAccountAccessFlag, environmentVariables, awsCliClient, serverlessAwsLambdaInfraConfig);
     } catch (Exception ex) {
-      executionLogCallback.saveExecutionLog(
-          color(format("%n configure credentials failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
-          CommandExecutionStatus.FAILURE);
+      executionLogCallback.saveExecutionLog(color(format("%n configure credentials failed with error: %s",
+                                                      serverlessTaskHelperBase.getExceptionMessage(ex)),
+                                                LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
 
@@ -133,7 +136,9 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
       serverlessAwsCommandTaskHelper.installPlugins(serverlessManifestSchema, serverlessDelegateTaskParams,
           executionLogCallback, serverlessClient, timeoutInMillis, serverlessManifestConfig);
     } catch (Exception ex) {
-      executionLogCallback.saveExecutionLog(color(format("%n installing plugin failed."), LogColor.Red, LogWeight.Bold),
+      executionLogCallback.saveExecutionLog(
+          color(format("%n installing plugin failed with error: %s", serverlessTaskHelperBase.getExceptionMessage(ex)),
+              LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
@@ -143,9 +148,10 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
           serverlessPrepareRollbackDataRequest, executionLogCallback, serverlessDelegateTaskParams);
 
     } catch (Exception ex) {
-      executionLogCallback.saveExecutionLog(
-          color(format("%n prepare rollback data failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
-          CommandExecutionStatus.FAILURE);
+      executionLogCallback.saveExecutionLog(color(format("%n prepare rollback data failed with error: %s",
+                                                      serverlessTaskHelperBase.getExceptionMessage(ex)),
+                                                LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
   }
@@ -173,8 +179,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
         ServerlessAwsLambdaPrepareRollbackDataResult.builder();
     if (!serverlessAwsCommandTaskHelper.cloudFormationStackExists(executionLogCallback,
             serverlessPrepareRollbackDataRequest, serverlessPrepareRollbackDataRequest.getManifestContent())) {
-      executionLogCallback.saveExecutionLog(
-          format("Skipping as there are no previous Deployments..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      executionLogCallback.saveExecutionLog(format("Skipping as there are no previous Deployments..%n"), LogLevel.INFO);
       serverlessAwsLambdaPrepareRollbackDataResultBuilder.previousVersionTimeStamp(null);
       serverlessAwsLambdaPrepareRollbackDataResultBuilder.isFirstDeployment(true);
       serverlessPrepareRollbackDataResponseBuilder.serverlessPrepareRollbackDataResult(
@@ -212,8 +217,11 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
           color(format("%n Done..."), LogColor.White, LogWeight.Bold), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     } else {
       executionLogCallback.saveExecutionLog(
-          color(format("%nDeploy List command failed..%n"), LogColor.Red, LogWeight.Bold), ERROR);
+          color(serverlessAwsCommandTaskHelper.serverlessCommandFailureMessage("Deploy List Command", response),
+              LogColor.Red, LogWeight.Bold),
+          ERROR);
       serverlessPrepareRollbackDataResponseBuilder.commandExecutionStatus(CommandExecutionStatus.FAILURE);
+      serverlessAwsCommandTaskHelper.handleCommandExecutionFailure(response, serverlessClient.deployList());
     }
     return serverlessPrepareRollbackDataResponseBuilder.build();
   }

@@ -18,9 +18,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
+import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
@@ -40,6 +42,10 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCredentialsDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
@@ -150,6 +156,12 @@ public class ImagePullSecretUtils {
       case ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME:
         getImageDetailsFromGar((GarArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
+      case ArtifactSourceConstants.AZURE_ARTIFACTS_NAME:
+        getImageDetailsFromAzureArtifacts((AzureArtifactsOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
+      case ArtifactSourceConstants.AMI_ARTIFACTS_NAME:
+        getImageDetailsForAMI((AMIArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactOutcome.getArtifactType()));
@@ -163,6 +175,31 @@ public class ImagePullSecretUtils {
       return getArtifactRegistryCredentialsFromUsernameRef(imageDetails);
     }
     return "";
+  }
+
+  private void getImageDetailsForAMI(
+      AMIArtifactOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = artifactOutcome.getConnectorRef();
+
+    ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+
+    AwsConnectorDTO connectorConfig = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+
+    if (connectorConfig.getCredential() != null && connectorConfig.getCredential().getConfig() != null
+        && connectorConfig.getCredential().getAwsCredentialType() == MANUAL_CREDENTIALS) {
+      AwsManualConfigSpecDTO credentials = (AwsManualConfigSpecDTO) connectorConfig.getCredential().getConfig();
+
+      String passwordRef = credentials.getSecretKeyRef().toSecretRefStringValue();
+
+      if (credentials.getAccessKeyRef() != null) {
+        imageDetailsBuilder.usernameRef(
+            getPasswordExpression(credentials.getAccessKeyRef().toSecretRefStringValue(), ambiance));
+      }
+
+      imageDetailsBuilder.username(credentials.getAccessKey());
+
+      imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
+    }
   }
 
   private void getImageDetailsFromS3(
@@ -181,6 +218,39 @@ public class ImagePullSecretUtils {
       imageDetailsBuilder.username(credentials.getAccessKey());
       imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
     }
+  }
+
+  private void getImageDetailsFromAzureArtifacts(
+      AzureArtifactsOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = artifactOutcome.getConnectorRef();
+
+    ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+
+    AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
+        (AzureArtifactsConnectorDTO) connectorDTO.getConnectorConfig();
+
+    String password = "";
+
+    if (azureArtifactsConnectorDTO.getAuth() != null && azureArtifactsConnectorDTO.getAuth().getCredentials() != null) {
+      AzureArtifactsCredentialsDTO httpDTO = azureArtifactsConnectorDTO.getAuth().getCredentials();
+
+      if (httpDTO.getType() == AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN) {
+        AzureArtifactsTokenDTO azureArtifactsHttpCredentialsSpecDTO = httpDTO.getCredentialsSpec();
+
+        password = new String(azureArtifactsHttpCredentialsSpecDTO.getTokenRef().getDecryptedValue());
+
+      } else {
+        throw new InvalidRequestException("Please select the Auth type as Username-Token");
+      }
+    }
+
+    if (password == null) {
+      throw new InvalidRequestException("The token is null");
+    }
+
+    imageDetailsBuilder.password(password);
+
+    imageDetailsBuilder.registryUrl(azureArtifactsConnectorDTO.getAzureArtifactsUrl());
   }
 
   private void getImageDetailsFromGithubPackages(

@@ -4,50 +4,93 @@ freeze:
   description: "desc"
   orgIdentifier: "oId"
   projectIdentifier: "pId"
-  status: "ACTIVE"
+  status: "Enabled"
   windows:
-    - timezone:
-      startTime: (YYYY-MM-DDThh:mm format)
-      endTime: (YYYY-MM-DDThh:mm format)
+    - timeZone: "America/Los_Angeles"
+      startTime: "2022-09-29 04:00 PM"
+      endTime: "2022-10-29 08:10 PM"
       recurrence:
         spec:
-          until: "until"
-          count: 1
-          expression: "exp"
-          dayRange:
-            - "Sat-Sun"
-            - "Mon-Tues"
-        type: "DAILY"
+          until: "2022-09-29T20:00"
+        type: "Daily"
   entityConfigs:
-    - entity:
-      - tags:
-          - "tag1"
-          - "tag2"
-        expression: "exp"
-        filterType: "ALL"
-        type: "SERVICE"
+    - name: "rule1"
+      entities:
+      - filterType: "All"
+        type: "Service"
         entityRefs:
           - "serv1"
           - "serv2"
-      - expression: "exp"
-        filterType: "ALL"
-        type: "PIPELINE"
+      - filterType: "Equals"
+        type: "Project"
         entityRefs:
           - "pip1"
           - "pip2"
-    - entity:
-        - tags:
-            - "tag1"
-            - "tag2"
-          expression: "exp"
-          filterType: "ALL"
-          type: "SERVICE"
-          entityRefs:
-            - "serv1"
-            - "serv2"
-        - expression: "exp"
-          filterType: "ALL"
-          type: "PIPELINE"
-          entityRefs:
-            - "pip1"
-            - "pip2"
+      - filterType: "Equals"
+        type: "Org"
+        entityRefs:
+          - "pip1"
+          - "pip2"
+      - filterType: "Equals"
+        type: "EnvType"
+        entityRefs:
+          - "Production"
+      - filterType: "Equals"
+        type: "Environment"
+        entityRefs:
+          - "pip1"
+          - "pip2"
+    - name: "rule2"
+      entities:
+        - filterType: "All"
+          type: "Service"
+        - filterType: "All"
+          type: "EnvType"
+  notificationRules:
+    - name: Rule 1
+      identifier: Rule_1
+      events:
+        - type: FreezeWindowEnabled
+      notificationMethod:
+        type: Slack
+        spec:
+          userGroups: [ ]
+          webhookUrl: https://hooks.slack.com/services/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
+      enabled: true
+    - name: Rule 2
+      identifier: Rule_2
+      events:
+        - type: DeploymentRejectedDueToFreeze
+        - type: TriggerInvocationRejectedDueToFreeze
+      notificationMethod:
+        type: PagerDuty
+        spec:
+          userGroups: [ ]
+          integrationKey: ${}
+      enabled: true
+    - name: Rule 3
+      identifier: Rule_1
+      events:
+        - type: FreezeWindowEnabled
+        - type: DeploymentRejectedDueToFreeze
+      notificationMethod:
+        type: Email
+        spec:
+          userGroups:
+            - account._account_all_users
+            - account.act_usergroup
+          recipients:
+            - utkarsh@gmail.com
+      enabled: true
+    - name: ytr
+      identifier: ytr
+      events:
+        - type: FreezeWindowEnabled
+        - type: DeploymentRejectedDueToFreeze
+      notificationMethod:
+        type: MsTeams
+        spec:
+          userGroups: [ ]
+          msTeamKeys:
+            - https://www.google.in/
+      enabled: true

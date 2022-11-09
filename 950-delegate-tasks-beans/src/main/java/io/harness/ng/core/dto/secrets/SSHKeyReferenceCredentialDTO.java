@@ -28,7 +28,7 @@ import lombok.EqualsAndHashCode;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SSHKeyReferenceCredentialDTO extends SSHCredentialSpecDTO implements DecryptableEntity {
   @NotNull private String userName;
-  @ApiModelProperty(dataType = "string") @SecretReference private SecretRefData key;
+  @ApiModelProperty(dataType = "string") @SecretReference @NotNull private SecretRefData key;
   @ApiModelProperty(dataType = "string") @SecretReference private SecretRefData encryptedPassphrase;
 
   @Override

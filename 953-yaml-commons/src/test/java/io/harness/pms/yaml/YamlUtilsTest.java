@@ -18,12 +18,14 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
+import io.harness.rule.OwnerRule;
 
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -59,11 +61,19 @@ public class YamlUtilsTest extends CategoryTest {
     YamlNode step2Node = stepsNode.asArray().get(1).getField("step").getNode();
     assertThat(step2Node.getIdentifier()).isEqualTo(step1SiblingNode.getNode().getIdentifier());
 
+    YamlField step2PreviousSiblingSiblingNode =
+        step2Node.previousSiblingFromParentArray("step", Arrays.asList("step", "stepGroup", "parallel"));
+    assertThat(step1Node.getIdentifier()).isEqualTo(step2PreviousSiblingSiblingNode.getNode().getIdentifier());
+
     // Stage2 Node
     YamlNode stage2Node = stagesNode.getNode().asArray().get(1).getField("stage").getNode();
 
     YamlField siblingOfStage1 = stage1Node.nextSiblingFromParentArray("stage", Arrays.asList("stage", "parallel"));
     assertThat(siblingOfStage1.getNode().getIdentifier()).isEqualTo(stage2Node.getIdentifier());
+
+    YamlField prevSiblingOfStage2 =
+        stage2Node.previousSiblingFromParentArray("stage", Arrays.asList("stage", "parallel"));
+    assertThat(prevSiblingOfStage2.getNode().getIdentifier()).isEqualTo(stage1Node.getIdentifier());
 
     // parallel stages node
     YamlNode parallel1Node = stagesNode.getNode().asArray().get(2).getField("parallel").getNode();
@@ -317,5 +327,12 @@ public class YamlUtilsTest extends CategoryTest {
         stage1Node.getField("spec").getNode().getField("execution").getNode().getField("steps").getNode();
     YamlNode step1Node = stepsNode.asArray().get(0).getField("step").getNode();
     assertThat(YamlUtils.getStageFqnPath(step1Node)).isEqualTo("pipeline.stages.qaStage");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testCoercionConfig() throws IOException {
+    assertThat(YamlUtils.read("\"\"", LinkedHashMap.class)).isNull();
   }
 }

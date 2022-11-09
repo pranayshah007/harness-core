@@ -21,7 +21,9 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.encryption.Encrypted;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.security.encryption.SecretManagerType;
 
@@ -54,6 +56,8 @@ public class CustomSecretNGManagerConfig extends SecretManagerConfig {
   @Encrypted(fieldName = "connectorRef")
   @Schema(description = SecretManagerDescriptionConstants.CUSTOM_AUTH_TOKEN)
   private String connectorRef;
+  private SSHKeySpecDTO sshKeySpecDTO;
+  private List<EncryptedDataDetail> sshKeyEncryptionDetails;
   private String host;
   private String workingDirectory;
   private TemplateLinkConfigForCustomSecretManager template;

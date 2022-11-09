@@ -15,6 +15,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 
+import software.wings.expression.SecretManagerMode;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.Data;
 import org.apache.commons.collections.map.SingletonMap;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlContext;
@@ -35,6 +38,7 @@ import org.apache.commons.text.StrSubstitutor;
  * The Class ExpressionEvaluator.
  */
 @OwnedBy(CDC)
+@Data
 public class ExpressionEvaluator {
   public static final String DEFAULT_ARTIFACT_VARIABLE_NAME = "artifact";
   public static final String DEFAULT_HELMCHART_VARIABLE_NAME = "helmChart";
@@ -46,6 +50,7 @@ public class ExpressionEvaluator {
   private static final Pattern serviceDefaultArtifactVariablePattern = Pattern.compile("\\$\\{artifact[.}]");
   private static final Pattern serviceArtifactVariablePattern = Pattern.compile("\\$\\{artifacts\\.([^.{}]+)[.}]");
   private static final Pattern emptyCustomExpression = Pattern.compile("\\$\\{[{ }]*}");
+  protected SecretManagerMode evaluationMode;
 
   private Map<String, Object> expressionFunctorMap = new HashMap<>();
 

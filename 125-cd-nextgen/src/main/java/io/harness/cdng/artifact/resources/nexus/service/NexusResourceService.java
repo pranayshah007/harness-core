@@ -14,8 +14,17 @@ import io.harness.cdng.artifact.resources.nexus.dtos.NexusBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusRequestDTO;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusResponseDTO;
 
+import software.wings.helpers.ext.nexus.NexusRepositories;
+
+import java.util.List;
+
 @OwnedBy(HarnessTeam.CDP)
 public interface NexusResourceService {
+  NexusResponseDTO getBuildDetails(IdentifierRef nexusConnectorRef, String repositoryName, String repositoryPort,
+      String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
+      String projectIdentifier, String groupId, String artifactId, String extension, String classifier,
+      String packageName, String group);
+
   NexusResponseDTO getBuildDetails(IdentifierRef nexusConnectorRef, String repositoryName, String repositoryPort,
       String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
       String projectIdentifier);
@@ -25,4 +34,6 @@ public interface NexusResourceService {
       String orgIdentifier, String projectIdentifier);
 
   boolean validateArtifactServer(IdentifierRef nexusConnectorRef, String orgIdentifier, String projectIdentifier);
+  List<NexusRepositories> getRepositories(
+      IdentifierRef nexusConnectorRef, String orgIdentifier, String projectIdentifier, String repositoryFormat);
 }

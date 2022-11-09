@@ -41,6 +41,26 @@ func (g *gradleRunner) AutoDetectPackages() ([]string, error) {
 	return DetectPkgs(g.log, g.fs)
 }
 
+func (g *gradleRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	javaTests, err := GetJavaTests()
+	if err != nil {
+		return tests, err
+	}
+	scalaTests, err := GetScalaTests()
+	if err != nil {
+		return tests, err
+	}
+	kotlinTests, err := GetKotlinTests()
+	if err != nil {
+		return tests, err
+	}
+	tests = append(tests, javaTests...)
+	tests = append(tests, scalaTests...)
+	tests = append(tests, kotlinTests...)
+	return tests, nil
+}
+
 /*
 The following needs to be added to a build.gradle to make it compatible with test intelligence:
 // This adds HARNESS_JAVA_AGENT to the testing command if it's provided through the command line.

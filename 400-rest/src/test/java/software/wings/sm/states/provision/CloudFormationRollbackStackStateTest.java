@@ -9,6 +9,7 @@ package software.wings.sm.states.provision;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.CF_ROLLBACK_CONFIG_FILTER;
+import static io.harness.beans.FeatureName.CF_ROLLBACK_CUSTOM_STACK_NAME;
 import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_BODY;
 import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_URL;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -20,6 +21,7 @@ import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.TaskType.CLOUD_FORMATION_TASK;
+import static software.wings.beans.infrastructure.CloudFormationRollbackConfig.CloudFormationRollbackConfigKeys;
 import static software.wings.helpers.ext.cloudformation.request.CloudFormationCommandRequest.CloudFormationCommandType.CREATE_STACK;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
@@ -34,6 +36,7 @@ import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -119,6 +122,8 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
   private SettingAttribute awsConfig;
 
   private static final String AWS_CONFIG_ID = "awsConfigId";
+  private static final String CUSTOM_STACK_NAME = "customStackName";
+
   @Before
   public void setUp() {
     Query mockQuery = mock(Query.class);
@@ -186,11 +191,19 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
                                                          .oldStackBody("oldBody")
                                                          .provisionerId(PROVISIONER_ID)
                                                          .awsConfigId(AWS_CONFIG_ID)
+                                                         .customStackName(CUSTOM_STACK_NAME)
+                                                         .region("region")
                                                          .oldStackParameters(ImmutableMap.of("oldKey", "oldVal"))
                                                          .build();
     doReturn(singletonList(stackElement)).when(mockContext).getContextElementList(any());
+    doReturn(true).when(featureFlagService).isEnabled(eq(CF_ROLLBACK_CUSTOM_STACK_NAME), any());
     state.setProvisionerId(PROVISIONER_ID);
     state.setTimeoutMillis(1000);
+    state.setCustomStackName(CUSTOM_STACK_NAME);
+    state.setRegion("region");
+    state.setUseCustomStackName(true);
+    doReturn(CUSTOM_STACK_NAME).when(mockContext).renderExpression(CUSTOM_STACK_NAME);
+    doReturn("region").when(mockContext).renderExpression("region");
     doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
     doReturn(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
         .when(sweepingOutputService)
@@ -214,6 +227,8 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
     assertThat(stackParam).isNotNull();
     assertThat(1).isEqualTo(stackParam.size());
     assertThat("oldVal").isEqualTo(stackParam.get("oldKey"));
+    verify(mockQuery).filter(CloudFormationRollbackConfigKeys.customStackName, CUSTOM_STACK_NAME);
+    verify(mockQuery).filter(CloudFormationRollbackConfigKeys.region, "region");
   }
 
   @Test
@@ -242,6 +257,8 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
     cloudFormationRollbackConfig.setVariables(null);
     cloudFormationRollbackConfig.setBody("body");
     cloudFormationRollbackConfig.setCreateType(CLOUDFORMATION_STACK_CREATE_BODY);
+    cloudFormationRollbackConfig.setCapabilities(Arrays.asList("C1"));
+    cloudFormationRollbackConfig.setTags("Tags");
     AwsConfig config = AwsConfig.builder().build();
     awsConfig.setValue(config);
     ExecutionResponse response = state.executeInternal(mockContext, ACTIVITY_ID);
@@ -266,6 +283,7 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
     doReturn(singletonList(stackElement)).when(mockContext).getContextElementList(any());
 
     state.provisionerId = PROVISIONER_ID;
+    state.setAwsConfigId(AWS_CONFIG_ID);
     doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
     doReturn(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
         .when(sweepingOutputService)
@@ -317,14 +335,59 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
   @Test
   @Owner(developers = BOJANA)
   @Category(UnitTests.class)
-  public void testHandleResponseStackDidntExist() {
-    CloudFormationRollbackInfoElement stackElement =
-        CloudFormationRollbackInfoElement.builder().stackExisted(false).provisionerId(PROVISIONER_ID).build();
+  public void testHandleResponseStackDidNotExist() {
+    CloudFormationRollbackInfoElement stackElement = CloudFormationRollbackInfoElement.builder()
+                                                         .stackExisted(false)
+                                                         .awsConfigId(AWS_CONFIG_ID)
+                                                         .provisionerId(PROVISIONER_ID)
+                                                         .build();
     doReturn(singletonList(stackElement)).when(mockContext).getContextElementList(any());
+    doReturn(CUSTOM_STACK_NAME).when(mockContext).renderExpression(eq(CUSTOM_STACK_NAME));
     CloudFormationCreateStackResponse commandResponse = CloudFormationCreateStackResponse.builder().build();
     state.setProvisionerId(PROVISIONER_ID);
+    state.setAwsConfigId(AWS_CONFIG_ID);
     List<CloudFormationElement> cloudFormationElementList = state.handleResponse(commandResponse, mockContext);
     assertThat(cloudFormationElementList).isEqualTo(emptyList());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testHandleResponseStackDidNotExistClearRollbackConfig() {
+    doReturn(true).when(featureFlagService).isEnabled(eq(CF_ROLLBACK_CUSTOM_STACK_NAME), anyString());
+    CloudFormationRollbackInfoElement stackElement1 = CloudFormationRollbackInfoElement.builder()
+                                                          .stackExisted(false)
+                                                          .customStackName(CUSTOM_STACK_NAME)
+                                                          .region("region")
+                                                          .provisionerId(PROVISIONER_ID)
+                                                          .awsConfigId(AWS_CONFIG_ID)
+                                                          .build();
+    CloudFormationRollbackInfoElement stackElement2 = CloudFormationRollbackInfoElement.builder()
+                                                          .stackExisted(false)
+                                                          .customStackName("customStackName2")
+                                                          .region("region")
+                                                          .provisionerId(PROVISIONER_ID)
+                                                          .awsConfigId(AWS_CONFIG_ID)
+                                                          .build();
+    doReturn(Arrays.asList(stackElement1, stackElement2)).when(mockContext).getContextElementList(any());
+    doReturn(CUSTOM_STACK_NAME).when(mockContext).renderExpression(eq(CUSTOM_STACK_NAME));
+    doReturn("region").when(mockContext).renderExpression("region");
+    CloudFormationCreateStackResponse commandResponse = CloudFormationCreateStackResponse.builder().build();
+    Query query = mock(Query.class);
+    doReturn(query).when(mockWingsPersistence).createQuery(any());
+    doReturn(query).when(query).filter(any(), any());
+    state.setProvisionerId(PROVISIONER_ID);
+    state.setAwsConfigId(AWS_CONFIG_ID);
+    state.setUseCustomStackName(true);
+    state.setCustomStackName(CUSTOM_STACK_NAME);
+    state.setRegion("region");
+
+    List<CloudFormationElement> cloudFormationElementList = state.handleResponse(commandResponse, mockContext);
+
+    assertThat(cloudFormationElementList).isEqualTo(emptyList());
+    verify(query).filter(CloudFormationRollbackConfigKeys.awsConfigId, AWS_CONFIG_ID);
+    verify(query).filter(CloudFormationRollbackConfigKeys.customStackName, CUSTOM_STACK_NAME);
+    verify(query).filter(CloudFormationRollbackConfigKeys.region, "region");
   }
 
   private void verifyDelegate(
@@ -360,6 +423,8 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
       assertThat(createRequest.getAwsConfig()).isEqualTo(config);
       assertThat(createRequest.getCommandType())
           .isEqualTo(CloudFormationCommandRequest.CloudFormationCommandType.CREATE_STACK);
+      assertThat(createRequest.getCapabilities()).isEqualTo(cloudFormationRollbackConfig.getCapabilities());
+      assertThat(createRequest.getTags()).isEqualTo(cloudFormationRollbackConfig.getTags());
     }
   }
 

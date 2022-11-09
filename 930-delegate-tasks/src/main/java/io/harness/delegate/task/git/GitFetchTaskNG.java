@@ -33,8 +33,8 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.k8s.K8sCommandUnitConstants;
@@ -75,10 +75,11 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
 
   @Override
   public GitFetchResponse run(TaskParameters parameters) {
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    GitFetchRequest gitFetchRequest = (GitFetchRequest) parameters;
+    CommandUnitsProgress commandUnitsProgress = gitFetchRequest.getCommandUnitsProgress() != null
+        ? gitFetchRequest.getCommandUnitsProgress()
+        : CommandUnitsProgress.builder().build();
     try {
-      GitFetchRequest gitFetchRequest = (GitFetchRequest) parameters;
-
       log.info("Running GitFetchFilesTask for activityId {}", gitFetchRequest.getActivityId());
 
       LogCallback executionLogCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(),

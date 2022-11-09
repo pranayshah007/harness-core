@@ -1,0 +1,104 @@
+service:
+  name: variableTestSvc
+  identifier: variableTestSvc
+  tags: {}
+  serviceDefinition:
+    spec:
+      artifacts:
+        primary:
+          primaryArtifactRef: <+input>
+          sources:
+            - spec:
+                connectorRef: dockerhub
+                imagePath: <+pipeline.variables.v1>
+                tag: alpha-1.0
+              identifier: docker
+              type: DockerRegistry
+            - spec:
+                connectorRef: cdplayGCP
+                imagePath: "hello-world"
+                tag: alpha-1.0
+                registryHostname: us.gcr.io
+              identifier: gcr
+              type: Gcr
+            - spec:
+                connectorRef: AWS
+                imagePath: "imagePath"
+                tag: alpha-1.0
+                region: us-east-1
+              identifier: ecr
+              type: Ecr
+            - spec:
+                connectorRef: account.n1
+                repository: alpha-1.0
+                repositoryFormat: docker
+                tag: alpha-1.0
+                spec:
+                  artifactPath: /paths
+                  repositoryUrl: someurl
+              identifier: nexus2
+              type: Nexus3Registry
+            - spec:
+                connectorRef: Artifactory
+                artifactPath: hello-world
+                tag: alpha-1.0
+                repository: docker-local
+                repositoryFormat: docker
+              identifier: artifactorydocker
+              type: ArtifactoryRegistry
+            - spec:
+                connectorRef: Artifactory
+                artifactDirectory: serverless
+                artifactPath: handler.zip
+                repository: lambda
+                repositoryFormat: generic
+              identifier: artifactory
+              type: ArtifactoryRegistry
+            - spec:
+                connectorRef: account.testAzureConnector
+                tag: alpha-1.0
+                subscriptionId: "1234"
+                registry: "sample"
+                repository: hello
+              identifier: azuredocker
+              type: Acr
+            - identifier: googleartifactregistry
+              spec:
+                connectorRef: cdplayGCP
+                repositoryType: docker
+                project: cd-play
+                region: us-east1
+                repositoryName: demo
+                package: demo
+                version: 1.0
+              type: GoogleArtifactRegistry
+            - identifier: customartifactsource
+              spec:
+                timeout: 2m
+                scripts:
+                  fetchAllArtifacts:
+                    artifactsArrayPath: items
+                    versionPath: version
+                    spec:
+                      shell: Bash
+                      source:
+                        spec:
+                          script: |-
+                            cat << EOF > $HARNESS_ARTIFACT_RESULT_PATH
+                            {
+                              "items": [
+                                {
+                                "id": "Y2RwL",
+                                "repository": "cdp-qa-automation-1",
+                                "format": "docker",
+                                "group": null,
+                                "name": "nginx",
+                                "version": "1.0"
+                              }
+                              ]
+                            }
+                            EOF
+                        type: Inline
+                version: <+input>
+              type: CustomArtifact
+    type: Kubernetes

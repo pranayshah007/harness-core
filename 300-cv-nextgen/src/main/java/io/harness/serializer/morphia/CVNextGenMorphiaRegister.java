@@ -29,6 +29,7 @@ import io.harness.cvng.analysis.entities.ServiceGuardLogAnalysisTask;
 import io.harness.cvng.analysis.entities.TestLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesAnomalousPatterns;
 import io.harness.cvng.analysis.entities.TimeSeriesCanaryLearningEngineTask;
+import io.harness.cvng.analysis.entities.TimeSeriesCanaryLearningEngineTask_v2;
 import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums;
 import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesLoadTestLearningEngineTask;
@@ -36,6 +37,7 @@ import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
 import io.harness.cvng.analysis.entities.TimeSeriesShortTermHistory;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
+import io.harness.cvng.core.entities.AwsPrometheusCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CVNGLog;
 import io.harness.cvng.core.entities.CloudWatchMetricCVConfig;
@@ -46,6 +48,7 @@ import io.harness.cvng.core.entities.DatadogLogCVConfig;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig;
 import io.harness.cvng.core.entities.DeploymentDataCollectionTask;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
+import io.harness.cvng.core.entities.ELKCVConfig;
 import io.harness.cvng.core.entities.EntityDisableTime;
 import io.harness.cvng.core.entities.ErrorTrackingCVConfig;
 import io.harness.cvng.core.entities.HostRecord;
@@ -85,6 +88,7 @@ import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.entities.SLONotificationRule;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
@@ -97,6 +101,7 @@ import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndic
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
+import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
@@ -173,6 +178,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(MonitoringSourcePerpetualTask.class);
     set.add(NewRelicCVConfig.class);
     set.add(CloudWatchMetricCVConfig.class);
+    set.add(AwsPrometheusCVConfig.class);
     set.add(CVNGStepTask.class);
     set.add(Comparable.class);
     set.add(PrometheusCVConfig.class);
@@ -216,6 +222,10 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(AbstractServiceLevelObjective.class);
     set.add(SimpleServiceLevelObjective.class);
     set.add(CompositeServiceLevelObjective.class);
+    set.add(ELKCVConfig.class);
+    set.add(CompositeSLORecord.class);
+    set.add(AutoVerificationJob.class);
+    set.add(TimeSeriesCanaryLearningEngineTask_v2.class);
   }
 
   @Override

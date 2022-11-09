@@ -11,7 +11,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -31,7 +30,6 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -66,14 +64,6 @@ public class CloudWatchServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
-  public void testFetchRegions() {
-    List<String> regions = cloudWatchService.fetchRegions();
-    assertThat(regions).isNotNull();
-  }
-
-  @Test
-  @Owner(developers = DHRUVX)
-  @Category(UnitTests.class)
   public void testFetchSampleData() throws IOException {
     String responseObject = readResource("sample-metric-data.json");
     when(verificationManagerService.getDataCollectionResponse(
@@ -89,16 +79,45 @@ public class CloudWatchServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
-  public void testFetchSampleData_unexpectedMultipleTimeSeriesResponse() throws IOException {
-    String responseObject = readResource("sample-metric-data-multiple-time-series.json");
+  public void testFetchSampleData_metricIdentifierIsBlank() throws IOException {
+    String responseObject = readResource("sample-metric-data.json");
     when(verificationManagerService.getDataCollectionResponse(
              anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
         .thenReturn(responseObject);
 
-    assertThatThrownBy(()
-                           -> cloudWatchService.fetchSampleData(builderFactory.getProjectParams(), connectorIdentifier,
-                               generateUuid(), generateUuid(), generateUuid(), generateUuid(), generateUuid()))
-        .hasMessageContaining("Single time-series expected.");
+    Map sampleDataResponse = cloudWatchService.fetchSampleData(builderFactory.getProjectParams(), connectorIdentifier,
+        generateUuid(), generateUuid(), generateUuid(), generateUuid(), null);
+
+    assertThat(sampleDataResponse).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testFetchSampleData_metricNameIsBlank() throws IOException {
+    String responseObject = readResource("sample-metric-data.json");
+    when(verificationManagerService.getDataCollectionResponse(
+             anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
+        .thenReturn(responseObject);
+
+    Map sampleDataResponse = cloudWatchService.fetchSampleData(builderFactory.getProjectParams(), connectorIdentifier,
+        generateUuid(), generateUuid(), generateUuid(), null, null);
+
+    assertThat(sampleDataResponse).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testFetchSampleData_multipleTimeSeriesResponse() throws IOException {
+    String responseObject = readResource("sample-metric-data-multiple-time-series.json");
+    when(verificationManagerService.getDataCollectionResponse(
+             anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
+        .thenReturn(responseObject);
+    Map sampleDataResponse = cloudWatchService.fetchSampleData(builderFactory.getProjectParams(), connectorIdentifier,
+        generateUuid(), generateUuid(), generateUuid(), generateUuid(), generateUuid());
+
+    assertThat(sampleDataResponse).isNotNull();
   }
 
   private String readResource(String fileName) throws IOException {

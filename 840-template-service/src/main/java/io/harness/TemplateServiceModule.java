@@ -57,11 +57,13 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.pipeline.yamlschema.PipelineYamlSchemaClientModule;
 import io.harness.project.ProjectClientModule;
+import io.harness.reconcile.NgManagerReconcileClientModule;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.service.ServiceResourceClientModule;
 import io.harness.template.event.OrgEntityCrudStreamListener;
 import io.harness.template.event.ProjectEntityCrudStreamListener;
 import io.harness.template.events.TemplateOutboxEventHandler;
@@ -111,9 +113,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
+import javax.validation.Validation;
+import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
 import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
+import ru.vyarus.guice.validator.ValidationModule;
 
 @Slf4j
 @OwnedBy(CDC)
@@ -155,6 +161,7 @@ public class TemplateServiceModule extends AbstractModule {
     install(PrimaryVersionManagerModule.getInstance());
     install(TimeModule.getInstance());
     install(FiltersModule.getInstance());
+    install(new ValidationModule(getValidatorFactory()));
     install(new ProjectClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(new OrganizationClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
@@ -172,6 +179,8 @@ public class TemplateServiceModule extends AbstractModule {
         this.templateServiceConfiguration.getManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId(),
         this.templateServiceConfiguration.isEnableAudit()));
     install(new CustomDeploymentClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
+        this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
+    install(new NgManagerReconcileClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, TEMPLATE_SERVICE.getServiceId(), false));
     install(new TokenClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
@@ -209,6 +218,9 @@ public class TemplateServiceModule extends AbstractModule {
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId(),
         templateServiceConfiguration.getEnforcementClientConfiguration()));
+
+    install(new ServiceResourceClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
+        this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
@@ -349,5 +361,12 @@ public class TemplateServiceModule extends AbstractModule {
             .build());
     log.info("delegate callback token generated =[{}]", delegateCallbackToken.getToken());
     return delegateCallbackToken;
+  }
+
+  private ValidatorFactory getValidatorFactory() {
+    return Validation.byDefaultProvider()
+        .configure()
+        .parameterNameProvider(new ReflectionParameterNameProvider())
+        .buildValidatorFactory();
   }
 }

@@ -180,11 +180,19 @@ public class NGLdapServiceImpl implements NGLdapService {
 
   @Override
   public void syncUserGroupsJob(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    log.info("NGLDAP: Sync user group for NG LDAP starting for account: {}, organization: {}, project: {}",
-        accountIdentifier, orgIdentifier, projectIdentifier);
     LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
         getLdapSettingsWithEncryptedDataInternal(accountIdentifier);
 
+    if (null != settingsWithEncryptedDataDetail && null != settingsWithEncryptedDataDetail.getLdapSettings()
+        && settingsWithEncryptedDataDetail.getLdapSettings().isDisabled()) {
+      log.info(
+          "NGLDAP: Sync user group is disabled for NG LDAP on account: {}, organization: {}, project: {}. Skipping user group sync",
+          accountIdentifier, orgIdentifier, projectIdentifier);
+      return;
+    }
+
+    log.info("NGLDAP: Sync user group for NG LDAP starting for account: {}, organization: {}, project: {}",
+        accountIdentifier, orgIdentifier, projectIdentifier);
     List<UserGroup> userGroupsToSync = userGroupService.getUserGroupsBySsoId(
         accountIdentifier, settingsWithEncryptedDataDetail.getLdapSettings().getUuid());
     Map<UserGroup, LdapGroupResponse> userGroupsToLdapGroupMap = new HashMap<>();

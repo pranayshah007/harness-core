@@ -26,6 +26,7 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
 import io.harness.artifacts.jenkins.client.JenkinsClient;
 import io.harness.artifacts.jenkins.client.JenkinsCustomServer;
@@ -175,6 +176,8 @@ public class JenkinsRegistryUtils {
 
   public BuildDetails getBuildDetails(BuildWithDetails buildWithDetails, List<String> artifactPaths) {
     List<ArtifactFileMetadata> artifactFileMetadata = getArtifactFileMetadata(buildWithDetails, artifactPaths);
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(ArtifactMetadataKeys.url, buildWithDetails.getUrl());
     BuildDetails buildDetails = aBuildDetails()
                                     .withNumber(String.valueOf(buildWithDetails.getNumber()))
                                     .withRevision(extractRevision(buildWithDetails))
@@ -185,6 +188,7 @@ public class JenkinsRegistryUtils {
                                     .withStatus(BuildDetails.BuildStatus.valueOf(buildWithDetails.getResult().name()))
                                     .withUiDisplayName("Build# " + buildWithDetails.getNumber())
                                     .withArtifactDownloadMetadata(artifactFileMetadata)
+                                    .withMetadata(metadata)
                                     .build();
     populateBuildParams(buildWithDetails, buildDetails);
     return buildDetails;

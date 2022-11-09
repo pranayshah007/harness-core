@@ -14,6 +14,7 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
+import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 
 import static java.util.Collections.emptyList;
@@ -46,6 +47,7 @@ import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent.TriggerWebhookEventsKeys;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatusData;
+import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.status.PollingSubscriptionStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.StatusResult;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
@@ -55,11 +57,13 @@ import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
+import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.events.TriggerCreateEvent;
 import io.harness.ngtriggers.events.TriggerDeleteEvent;
 import io.harness.ngtriggers.events.TriggerUpdateEvent;
 import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
+import io.harness.ngtriggers.helpers.TriggerCatalogHelper;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.mapper.TriggerFilterHelper;
@@ -70,7 +74,6 @@ import io.harness.ngtriggers.validations.TriggerValidationHandler;
 import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pipeline.remote.PipelineServiceClient;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
@@ -86,6 +89,7 @@ import io.harness.repositories.spring.NGTriggerRepository;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.repositories.spring.TriggerWebhookEventRepository;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.cronutils.model.Cron;
 import com.cronutils.model.CronType;
@@ -98,7 +102,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -121,6 +124,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.util.CollectionUtils;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -129,6 +133,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class NGTriggerServiceImpl implements NGTriggerService {
   public static final long TRIGGER_CURRENT_YML_VERSION = 3l;
   public static final int WEBHOOK_POLLING_UNSUBSCRIBE = 0;
+  public static final int WEBHOOOk_POLLING_MIN_INTERVAL = 2;
+  public static final int WEBHOOOk_POLLING_MAX_INTERVAL = 60;
   private final NGTriggerRepository ngTriggerRepository;
   private final TriggerWebhookEventRepository webhookEventQueueRepository;
   private final TriggerEventHistoryRepository triggerEventHistoryRepository;
@@ -140,6 +146,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private final KryoSerializer kryoSerializer;
   private final PipelineServiceClient pipelineServiceClient;
   private final BuildTriggerHelper buildTriggerHelper;
+  private final TriggerCatalogHelper triggerCatalogHelper;
   private final PollingResourceClient pollingResourceClient;
   private final NGTriggerElementMapper ngTriggerElementMapper;
   private final OutboxService outboxService;
@@ -156,7 +163,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   public NGTriggerEntity create(NGTriggerEntity ngTriggerEntity) {
     try {
       NGTriggerEntity savedNgTriggerEntity = ngTriggerRepository.save(ngTriggerEntity);
-      performPostUpsertFlow(savedNgTriggerEntity);
+      performPostUpsertFlow(savedNgTriggerEntity, false);
       outboxService.save(new TriggerCreateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
           ngTriggerEntity.getProjectIdentifier(), savedNgTriggerEntity));
       return savedNgTriggerEntity;
@@ -166,13 +173,13 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
-  private void performPostUpsertFlow(NGTriggerEntity ngTriggerEntity) {
+  private void performPostUpsertFlow(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     NGTriggerEntity validatedTrigger = validateTrigger(ngTriggerEntity);
     registerWebhookAsync(validatedTrigger);
-    registerPollingAsync(validatedTrigger);
+    registerPollingAsync(validatedTrigger, isUpdate);
   }
 
-  private void registerPollingAsync(NGTriggerEntity ngTriggerEntity) {
+  private void registerPollingAsync(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     if (checkForValidationFailure(ngTriggerEntity)) {
       log.warn(
           String.format("Trigger Validation Failed for Trigger: %s, Skipping Polling Framework subscription request",
@@ -185,10 +192,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       return;
     }
 
-    executorService.submit(() -> { subscribePolling(ngTriggerEntity); });
+    executorService.submit(() -> { subscribePolling(ngTriggerEntity, isUpdate); });
   }
 
-  private void subscribePolling(NGTriggerEntity ngTriggerEntity) {
+  private void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
 
     try {
@@ -203,6 +210,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           && executePollingUnSubscription(ngTriggerEntity, pollingItemBytes).equals(Boolean.TRUE)) {
         updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS);
       } else {
+        if (isUpdate) {
+          executePollingUnSubscription(ngTriggerEntity, pollingItemBytes);
+        }
+
         ResponseDTO<PollingResponseDTO> responseDTO = executePollingSubscription(ngTriggerEntity, pollingItemBytes);
         PollingDocument pollingDocument =
             (PollingDocument) kryoSerializer.asObject(responseDTO.getData().getPollingResponse());
@@ -293,7 +304,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
   private void checkAndEnableWebhookPolling(NGTriggerEntity ngTriggerEntity) {
-    if (pmsFeatureFlagService.isEnabled(ngTriggerEntity.getAccountId(), FeatureName.GIT_WEBHOOK_POLLING)) {
+    if (pmsFeatureFlagService.isEnabled(ngTriggerEntity.getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)
+        && GITHUB.getEntityMetadataName().equalsIgnoreCase(ngTriggerEntity.getMetadata().getWebhook().getType())) {
       String webhookId = ngTriggerEntity.getTriggerStatus().getWebhookInfo().getWebhookId();
       String pollInterval = ngTriggerEntity.getPollInterval();
 
@@ -303,7 +315,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
             ngTriggerEntity.getIdentifier(), webhookId, pollInterval));
         return;
       }
-      subscribePolling(ngTriggerEntity);
+      subscribePolling(ngTriggerEntity, false);
     }
   }
 
@@ -333,7 +345,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           String.format("NGTrigger [%s] couldn't be updated or doesn't exist", ngTriggerEntity.getIdentifier()));
     }
 
-    performPostUpsertFlow(updatedEntity);
+    performPostUpsertFlow(updatedEntity, true);
     return updatedEntity;
   }
 
@@ -364,18 +376,11 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     Optional<NGTriggerEntity> ngTriggerEntity =
         get(accountId, orgIdentifier, projectIdentifier, targetIdentifier, identifier, false);
 
-    if (pmsFeatureFlagService.isEnabled(accountId, FeatureName.HARD_DELETE_ENTITIES)) {
-      DeleteResult hardDeleteResult = ngTriggerRepository.hardDelete(criteria);
-      if (!hardDeleteResult.wasAcknowledged()) {
-        throw new InvalidRequestException(String.format("NGTrigger [%s] couldn't hard delete", identifier));
-      }
-      log.info("NGTrigger {} hard delete successful", identifier);
-    } else {
-      UpdateResult deleteResult = ngTriggerRepository.delete(criteria);
-      if (!deleteResult.wasAcknowledged() || deleteResult.getModifiedCount() != 1) {
-        throw new InvalidRequestException(String.format("NGTrigger [%s] couldn't be deleted", identifier));
-      }
+    DeleteResult hardDeleteResult = ngTriggerRepository.hardDelete(criteria);
+    if (!hardDeleteResult.wasAcknowledged()) {
+      throw new InvalidRequestException(String.format("NGTrigger [%s] couldn't hard delete", identifier));
     }
+    log.info("NGTrigger {} hard delete successful", identifier);
 
     if (ngTriggerEntity.isPresent()) {
       NGTriggerEntity foundTriggerEntity = ngTriggerEntity.get();
@@ -395,7 +400,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   private boolean isWebhookGitPollingEnabled(NGTriggerEntity foundTriggerEntity) {
     if (foundTriggerEntity.getType() == WEBHOOK
-        && pmsFeatureFlagService.isEnabled(foundTriggerEntity.getAccountId(), FeatureName.GIT_WEBHOOK_POLLING)) {
+        && GITHUB.getEntityMetadataName().equalsIgnoreCase(foundTriggerEntity.getMetadata().getWebhook().getType())
+        && pmsFeatureFlagService.isEnabled(foundTriggerEntity.getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)) {
       String webhookId = foundTriggerEntity.getTriggerStatus().getWebhookInfo().getWebhookId();
       String pollInterval = foundTriggerEntity.getPollInterval();
       return !StringUtils.isEmpty(webhookId) && !StringUtils.isEmpty(pollInterval);
@@ -479,8 +485,17 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   @Override
   public WebhookEventProcessingDetails fetchTriggerEventHistory(String accountId, String eventId) {
-    TriggerEventHistory triggerEventHistory =
+    List<TriggerEventHistory> triggerEventHistoryList =
         triggerEventHistoryRepository.findByAccountIdAndEventCorrelationId(accountId, eventId);
+    if (triggerEventHistoryList.size() == 0) {
+      throw new InvalidRequestException(String.format("Trigger event history %s does not exist", eventId));
+    }
+    TriggerEventHistory triggerEventHistory = triggerEventHistoryList.get(0);
+    String warningMsg = null;
+    if (triggerEventHistoryList.size() > 1) {
+      warningMsg =
+          "There are multiple trigger events generated from this eventId. This response contains only one of them.";
+    }
     WebhookEventProcessingDetailsBuilder builder =
         WebhookEventProcessingDetails.builder().eventId(eventId).accountIdentifier(accountId);
     if (triggerEventHistory == null) {
@@ -495,7 +510,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           .status(triggerEventHistory.getFinalStatus())
           .message(triggerEventHistory.getMessage())
           .payload(triggerEventHistory.getPayload())
-          .eventCreatedAt(triggerEventHistory.getCreatedAt());
+          .eventCreatedAt(triggerEventHistory.getCreatedAt())
+          .warningMsg(warningMsg);
 
       if (triggerEventHistory.getTargetExecutionSummary() != null) {
         builder.pipelineExecutionId(triggerEventHistory.getTargetExecutionSummary().getPlanExecutionId())
@@ -618,14 +634,37 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
 
     if (isNotEmpty(triggerDetails.getNgTriggerConfigV2().getInputYaml())) {
-      validatePipelineRef(triggerDetails);
+      Map<String, Map<String, String>> errorMap = validatePipelineRef(triggerDetails);
+      if (!CollectionUtils.isEmpty(errorMap)) {
+        throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
+      }
     }
 
     NGTriggerSourceV2 triggerSource = triggerDetails.getNgTriggerConfigV2().getSource();
     NGTriggerSpecV2 spec = triggerSource.getSpec();
     switch (triggerSource.getType()) {
       case WEBHOOK:
-        return; // TODO(adwait): define trigger source validation
+        // Validate webhook polling trigger
+        WebhookTriggerConfigV2 webhookTriggerConfig = (WebhookTriggerConfigV2) triggerSource.getSpec();
+        if (webhookTriggerConfig.getType() != GITHUB) {
+          return;
+        }
+
+        if (pmsFeatureFlagService.isEnabled(
+                triggerDetails.getNgTriggerEntity().getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)) {
+          String pollInterval = triggerDetails.getNgTriggerEntity().getPollInterval();
+          if (pollInterval == null) {
+            throw new InvalidArgumentsException("Poll Interval cannot be empty");
+          }
+          int pollInt = NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(
+              triggerDetails.getNgTriggerEntity().getPollInterval());
+          if (pollInt != WEBHOOK_POLLING_UNSUBSCRIBE
+              && (pollInt < WEBHOOOk_POLLING_MIN_INTERVAL || pollInt > WEBHOOOk_POLLING_MAX_INTERVAL)) {
+            throw new InvalidArgumentsException("Poll Interval should be between " + WEBHOOOk_POLLING_MIN_INTERVAL
+                + " and " + WEBHOOOk_POLLING_MAX_INTERVAL + " minutes");
+          }
+        }
+        return; // TODO define other trigger source validation
       case SCHEDULED:
         ScheduledTriggerConfig scheduledTriggerConfig = (ScheduledTriggerConfig) triggerSource.getSpec();
         CronTriggerSpec cronTriggerSpec = (CronTriggerSpec) scheduledTriggerConfig.getSpec();
@@ -638,10 +677,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         }
         return;
       case MANIFEST:
-        validateStageIdentifierAndBuildRef((BuildAware) spec, "manifestRef");
+        validateStageIdentifierAndBuildRef(
+            (BuildAware) spec, "manifestRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
       case ARTIFACT:
-        validateStageIdentifierAndBuildRef((BuildAware) spec, "artifactRef");
+        validateStageIdentifierAndBuildRef(
+            (BuildAware) spec, "artifactRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
       default:
         return; // not implemented
@@ -663,7 +704,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   public MergeInputSetResponseDTOPMS validateInputSetsInternal(TriggerDetails triggerDetails) {
     if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
-      validatePipelineRef(triggerDetails);
+      Map<String, Map<String, String>> errorMap = validatePipelineRef(triggerDetails);
+      if (!CollectionUtils.isEmpty(errorMap)) {
+        throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
+      }
       return null;
     } else {
       NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
@@ -684,8 +728,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
-  private void validatePipelineRef(TriggerDetails triggerDetails) {
+  @Override
+  public Map<String, Map<String, String>> validatePipelineRef(TriggerDetails triggerDetails) {
     Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(triggerDetails);
+    Map<String, Map<String, String>> errorMap = new HashMap<>();
     if (pipelineYmlOptional.isPresent()) {
       String pipelineYaml = pipelineYmlOptional.get();
       String templateYaml = createRuntimeInputForm(pipelineYaml);
@@ -693,17 +739,17 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       String triggerPipelineYml = getPipelineComponent(triggerYaml);
       Map<FQN, String> invalidFQNs = getInvalidFQNsInTrigger(templateYaml, triggerPipelineYml);
       if (EmptyPredicate.isEmpty(invalidFQNs)) {
-        return;
+        return errorMap;
       }
-      Map<String, Map<String, String>> errorMap = new HashMap<>();
+
       for (Map.Entry<FQN, String> entry : invalidFQNs.entrySet()) {
         Map<String, String> innerMap = new HashMap<>();
         innerMap.put("fieldName", entry.getKey().getFieldName());
         innerMap.put("message", entry.getValue());
         errorMap.put(entry.getKey().getExpressionFqn(), innerMap);
       }
-      throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
     }
+    return errorMap;
   }
 
   private String getPipelineComponent(String triggerYml) {
@@ -732,10 +778,16 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     YamlConfig triggerConfig = new YamlConfig(triggerPipelineCompYaml);
     Set<FQN> triggerFQNs = new LinkedHashSet<>(triggerConfig.getFqnToValueMap().keySet());
     if (EmptyPredicate.isEmpty(templateYaml)) {
-      triggerFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
+      triggerFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains runtime input"));
       return errorMap;
     }
     YamlConfig templateConfig = new YamlConfig(templateYaml);
+
+    if (CollectionUtils.isEmpty(triggerFQNs)) {
+      templateConfig.getFqnToValueMap().keySet().forEach(
+          fqn -> errorMap.put(fqn, "Trigger does not contain pipeline runtime input"));
+      return errorMap;
+    }
 
     // Make sure everything in trigger exist in pipeline
     templateConfig.getFqnToValueMap().keySet().forEach(key -> {
@@ -778,14 +830,14 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     return (new YamlConfig(templateMap, yamlConfig.getYamlMap())).getYaml();
   }
 
-  private void validateStageIdentifierAndBuildRef(BuildAware buildAware, String fieldName) {
+  private void validateStageIdentifierAndBuildRef(BuildAware buildAware, String fieldName, boolean serviceV2) {
     StringBuilder msg = new StringBuilder(128);
     boolean validationFailed = false;
-    if (isBlank(buildAware.fetchStageRef())) {
+    if (serviceV2 == false && isBlank(buildAware.fetchStageRef())) {
       msg.append("stageIdentifier can not be blank/missing. ");
       validationFailed = true;
     }
-    if (isBlank(buildAware.fetchbuildRef())) {
+    if (serviceV2 == false && isBlank(buildAware.fetchbuildRef())) {
       msg.append(fieldName).append(" can not be blank/missing. ");
       validationFailed = true;
     }
@@ -846,7 +898,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     try {
       ValidationResult validationResult = triggerValidationHandler.applyValidations(
           ngTriggerElementMapper.toTriggerDetails(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-              ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getYaml()));
+              ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getYaml(), ngTriggerEntity.getWithServiceV2()));
       if (!validationResult.isSuccess()) {
         ngTriggerEntity.setEnabled(false);
       }
@@ -911,11 +963,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   @Override
-  public TriggerDetails fetchTriggerEntity(
-      String accountId, String orgId, String projectId, String pipelineId, String triggerId, String newYaml) {
+  public TriggerDetails fetchTriggerEntity(String accountId, String orgId, String projectId, String pipelineId,
+      String triggerId, String newYaml, boolean withServiceV2) {
     NGTriggerConfigV2 config = ngTriggerElementMapper.toTriggerConfigV2(newYaml);
     Optional<NGTriggerEntity> existingEntity = get(accountId, orgId, projectId, pipelineId, triggerId, false);
-    NGTriggerEntity entity = ngTriggerElementMapper.toTriggerEntity(accountId, orgId, projectId, triggerId, newYaml);
+    NGTriggerEntity entity =
+        ngTriggerElementMapper.toTriggerEntity(accountId, orgId, projectId, triggerId, newYaml, withServiceV2);
     if (existingEntity.isPresent()) {
       ngTriggerElementMapper.copyEntityFieldsOutsideOfYml(existingEntity.get(), entity);
     }
@@ -932,5 +985,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   public Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId) {
     return NGRestUtils.getResponse(
         pipelineServiceClient.getExecutionDetailV2(planExecutionId, accountId, orgId, projectId));
+  }
+  @Override
+  public List<TriggerCatalogItem> getTriggerCatalog(String accountIdentifier) {
+    return triggerCatalogHelper.getTriggerTypeToCategoryMapping(accountIdentifier);
   }
 }

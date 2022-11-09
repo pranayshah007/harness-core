@@ -147,8 +147,6 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
     entityToSave.setRepo(gitEntityInfo.getRepoName());
     entityToSave.setFilePath(gitEntityInfo.getFilePath());
     return transactionHelper.performTransaction(() -> {
-      Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
-      gitAwareEntityHelper.updateFileImportedFromGit(entityToSave, yamlToPush, scope);
       InputSetEntity savedInputSetEntity = mongoTemplate.save(entityToSave);
       outboxService.save(InputSetCreateEvent.builder()
                              .accountIdentifier(accountIdentifier)

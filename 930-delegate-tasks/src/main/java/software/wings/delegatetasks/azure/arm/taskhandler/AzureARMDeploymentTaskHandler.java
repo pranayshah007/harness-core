@@ -30,6 +30,7 @@ import io.harness.delegate.task.azure.arm.request.AzureARMDeploymentParameters;
 import io.harness.delegate.task.azure.arm.response.AzureARMDeploymentResponse;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.logging.LogCallback;
 
 import software.wings.delegatetasks.azure.arm.AbstractAzureARMTaskHandler;
 
@@ -79,7 +80,9 @@ public class AzureARMDeploymentTaskHandler extends AbstractAzureARMTaskHandler {
     try {
       if (!deploymentParameters.isRollback()) {
         azureARMDeploymentService.validateTemplate(context);
-        String existingResourceGroupTemplate = azureARMDeploymentService.exportExistingResourceGroupTemplate(context);
+        LogCallback logCallback = azureARMDeploymentService.getARMDeploymentLogCallback(context);
+        String existingResourceGroupTemplate =
+            azureARMDeploymentService.exportExistingResourceGroupTemplate(context, logCallback);
         preDeploymentDataBuilder.resourceGroupTemplateJson(existingResourceGroupTemplate);
       }
       String outPuts = azureARMDeploymentService.deployAtResourceGroupScope(context);

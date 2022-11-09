@@ -32,7 +32,7 @@ public class StatemachineEventConsumer extends AbstractStreamConsumer {
   }
 
   @Override
-  protected void processMessage(Message message) {
+  protected boolean processMessage(Message message) {
     StateMachineTrigger trigger;
     try {
       trigger = StateMachineTrigger.parseFrom(message.getMessage().getData());
@@ -41,5 +41,7 @@ public class StatemachineEventConsumer extends AbstractStreamConsumer {
     } catch (Exception ex) {
       throw new InvalidRequestException("Invalid message for srm_statemachine_event topic  " + message);
     }
+
+    return true;
   }
 }

@@ -61,6 +61,8 @@ public class ServicePlanCreatorHelper {
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private ServicePlanCreator servicePlanCreator;
 
+  public static String SERVICE_IDENTIFIER_FIELD_IN_SPEC = "identifier";
+
   public YamlField getResolvedServiceField(
       YamlField parentSpecField, DeploymentStageNode stageNode, PlanCreationContext ctx) {
     YamlField serviceField = parentSpecField.getNode().getField(YamlTypes.SERVICE_CONFIG);
@@ -94,10 +96,6 @@ public class ServicePlanCreatorHelper {
           YamlTypes.ENVIRONMENT_NODE_ID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
       serviceDependencyMap.put(
           YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(infraSectionUuid)));
-      serviceDependencyMap.put(YamlTypes.ENVIRONMENT_REF,
-          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(
-              stageNode.getDeploymentStageConfig().getEnvironment().getEnvironmentRef())));
-
       if (overridesFromEnvironment != null) {
         final Map<String, Object> overridesDependencyMap = new HashMap<>();
         overridesDependencyMap.put(ENVIRONMENT_CONFIG, overridesFromEnvironment.getEnvironmentGlobalOverride());
@@ -268,6 +266,10 @@ public class ServicePlanCreatorHelper {
         .getField(YamlTypes.SERVICE_SPEC)
         .getNode()
         .getUuid();
+  }
+
+  public String getServiceRef(YamlField serviceField) {
+    return serviceField.getNode().getField(SERVICE_IDENTIFIER_FIELD_IN_SPEC).getNode().getCurrJsonNode().asText();
   }
 
   private ServiceYamlV2 useServiceYamlFromStage(@NotNull ServiceUseFromStageV2 useFromStage, YamlField serviceField) {

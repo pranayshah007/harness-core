@@ -11,10 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.integer;
 
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryConfigSpec;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -28,6 +32,8 @@ import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Arrays;
@@ -55,7 +61,6 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("nexusRegistryArtifactConfig")
 @OneOfField(fields = {"tag", "tagRegex"})
-@OneOfField(fields = {"repositoryPort", "repositoryUrl"})
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig")
 public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
@@ -69,14 +74,8 @@ public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, W
   /**
    * Artifacts in repos need to be referenced via a path.
    */
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> artifactPath;
-  /**
-   * Repo format.
-   */
-  @NotNull
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "docker")
-  @Wither
-  ParameterField<String> repositoryFormat;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> artifactPath;
+
   /**
    * Repo port.
    */
@@ -84,10 +83,23 @@ public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, W
   @YamlSchemaTypes(value = {integer})
   @Wither
   ParameterField<String> repositoryPort;
+
   /**
    * repo server hostname.
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> repositoryUrl;
+  /**
+   * Repo format.
+   */
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "docker, maven, npm, nuget, raw")
+  @Wither
+  ParameterField<String> repositoryFormat;
+
+  @JsonProperty("spec")
+  @JsonTypeInfo(use = NAME, property = "repositoryFormat", include = EXTERNAL_PROPERTY, visible = true)
+  NexusRegistryConfigSpec nexusRegistryConfigSpec;
+
   /**
    * Tag refers to exact tag number.
    */
@@ -96,6 +108,7 @@ public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, W
    * Tag regex is used to get latest build from builds matching regex.
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> tagRegex;
+
   /**
    * Identifier for artifact.
    */
@@ -113,7 +126,7 @@ public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, W
 
   @Override
   public String getUniqueHash() {
-    List<String> valuesList = Arrays.asList(connectorRef.getValue(), artifactPath.getValue());
+    List<String> valuesList = Arrays.asList(connectorRef.getValue(), repository.getValue());
     return ArtifactUtils.generateUniqueHashFromStringList(valuesList);
   }
 
@@ -123,18 +136,6 @@ public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, W
     NexusRegistryArtifactConfig resultantConfig = this;
     if (!ParameterField.isNull(nexusRegistryArtifactConfig.getConnectorRef())) {
       resultantConfig = resultantConfig.withConnectorRef(nexusRegistryArtifactConfig.getConnectorRef());
-    }
-    if (!ParameterField.isNull(nexusRegistryArtifactConfig.getRepository())) {
-      resultantConfig = resultantConfig.withArtifactPath(nexusRegistryArtifactConfig.getRepository());
-    }
-    if (!ParameterField.isNull(nexusRegistryArtifactConfig.getArtifactPath())) {
-      resultantConfig = resultantConfig.withArtifactPath(nexusRegistryArtifactConfig.getArtifactPath());
-    }
-    if (!ParameterField.isNull(nexusRegistryArtifactConfig.getRepositoryPort())) {
-      resultantConfig = resultantConfig.withArtifactPath(nexusRegistryArtifactConfig.getRepositoryPort());
-    }
-    if (!ParameterField.isNull(nexusRegistryArtifactConfig.getRepositoryUrl())) {
-      resultantConfig = resultantConfig.withArtifactPath(nexusRegistryArtifactConfig.getRepositoryUrl());
     }
     if (!ParameterField.isNull(nexusRegistryArtifactConfig.getTag())) {
       resultantConfig = resultantConfig.withTag(nexusRegistryArtifactConfig.getTag());

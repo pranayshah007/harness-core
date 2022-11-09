@@ -48,13 +48,15 @@ public class InitiateNodeHelper {
                                                      .put("newRuntimeId", runtimeId)
                                                      .putAll(AmbianceUtils.logContextMap(ambiance))
                                                      .build();
-    InitiateNodeEvent event = InitiateNodeEvent.newBuilder()
-                                  .setAmbiance(ambiance)
-                                  .setNodeId(nodeId)
-                                  .setRuntimeId(runtimeId)
-                                  .setStrategyMetadata(strategyMetadata)
-                                  .setInitiateMode(initiateMode)
-                                  .build();
-    return producer.send(Message.newBuilder().putAllMetadata(eventMetadata).setData(event.toByteString()).build());
+
+    InitiateNodeEvent.Builder event =
+        InitiateNodeEvent.newBuilder().setAmbiance(ambiance).setNodeId(nodeId).setRuntimeId(runtimeId).setInitiateMode(
+            initiateMode);
+
+    if (strategyMetadata != null) {
+      event.setStrategyMetadata(strategyMetadata);
+    }
+    return producer.send(
+        Message.newBuilder().putAllMetadata(eventMetadata).setData(event.build().toByteString()).build());
   }
 }

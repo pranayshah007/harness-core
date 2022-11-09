@@ -10,6 +10,7 @@ package io.harness.delegate.task.shell.ssh;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.ssh.CommandHandler.RESOLVED_ENV_VARIABLES_KEY;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,6 +37,9 @@ import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
@@ -227,7 +231,59 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
         .hasMessage("Invalid command unit specified for command task.");
   }
 
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldCopyArtifactWithEmptyDestinationPath() {
+    doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedSshScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
+
+    NgCommandUnit copyCommandUnit = CopyCommandUnit.builder().name("test").sourceType(FileSourceType.ARTIFACT).build();
+
+    assertThatThrownBy(()
+                           -> sshCopyCommandHandler.handle(getParameters(false, true), copyCommandUnit,
+                               logStreamingTaskClient, commandUnitsProgress, taskContext))
+        .isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldCopyArtifactWithSkipCopyArtifactDelegateConfig() {
+    doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedSshScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
+
+    SshWinRmArtifactDelegateConfig artifactDelegateConfig = ArtifactoryDockerArtifactDelegateConfig.builder().build();
+
+    CommandExecutionStatus status = sshCopyCommandHandler
+                                        .handle(getParameters(false, artifactDelegateConfig), copyCommandUnit,
+                                            logStreamingTaskClient, commandUnitsProgress, taskContext)
+                                        .getStatus();
+    assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldCopyArtifactWithCustomArtifactDelegateConfig() {
+    doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedSshScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
+
+    CustomArtifactDelegateConfig artifactDelegateConfig = CustomArtifactDelegateConfig.builder().build();
+    assertThatThrownBy(()
+                           -> sshCopyCommandHandler.handle(getParameters(false, artifactDelegateConfig),
+                               copyCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext))
+        .isInstanceOf(HintException.class);
+  }
+
   private CommandTaskParameters getParameters(boolean onDelegate, boolean withArtifact) {
+    SshWinRmArtifactDelegateConfig artifactDelegateConfig =
+        withArtifact ? ArtifactoryArtifactDelegateConfig.builder().build() : null;
+    return getParameters(onDelegate, artifactDelegateConfig);
+  }
+
+  private CommandTaskParameters getParameters(
+      boolean onDelegate, SshWinRmArtifactDelegateConfig artifactDelegateConfig) {
     return SshCommandTaskParameters.builder()
         .accountId("testAccount")
         .executeOnDelegate(onDelegate)
@@ -236,7 +292,7 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
                                     .encryptionDataDetails(encryptedDataDetailList)
                                     .sshKeySpecDto(SSH_KEY_SPEC)
                                     .build())
-        .artifactDelegateConfig(withArtifact ? ArtifactoryArtifactDelegateConfig.builder().build() : null)
+        .artifactDelegateConfig(artifactDelegateConfig)
         .fileDelegateConfig(
             FileDelegateConfig.builder()
                 .stores(Arrays.asList(

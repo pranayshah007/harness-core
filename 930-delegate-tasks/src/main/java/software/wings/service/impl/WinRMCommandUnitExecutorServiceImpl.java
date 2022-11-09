@@ -92,10 +92,10 @@ public class WinRMCommandUnitExecutorServiceImpl implements CommandUnitExecutorS
     String commandPath = getCommandPath(commandUnit, context);
 
     WinRmSessionConfig winRmSessionConfig = context.winrmSessionConfig(commandUnit.getName(), commandPath);
-    WinRmExecutor winRmExecutor =
-        winRmExecutorFactory.getExecutor(winRmSessionConfig, context.isDisableWinRMCommandEncodingFFSet());
+    WinRmExecutor winRmExecutor = winRmExecutorFactory.getExecutor(
+        winRmSessionConfig, context.isDisableWinRMCommandEncodingFFSet(), context.isWinrmScriptCommandSplit());
     FileBasedWinRmExecutor fileBasedWinRmExecutor = winRmExecutorFactory.getFiledBasedWinRmExecutor(
-        winRmSessionConfig, context.isDisableWinRMCommandEncodingFFSet());
+        winRmSessionConfig, context.isDisableWinRMCommandEncodingFFSet(), context.isWinrmScriptCommandSplit());
 
     ShellCommandExecutionContext shellCommandExecutionContext = new ShellCommandExecutionContext(context);
     shellCommandExecutionContext.setExecutor(winRmExecutor);

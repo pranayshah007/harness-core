@@ -62,8 +62,8 @@ public class BitbucketServiceImpl implements BitbucketService {
       return statusCreationResponseResponse.isSuccessful();
 
     } catch (Exception e) {
-      log.error("Failed to send status for Bitbucket url {} and sha {} ", bitbucketConfig.getBitbucketUrl(), sha, e);
-      return false;
+      throw new InvalidRequestException(
+          format("Failed to send status for Bitbucket url %s and sha %s ", bitbucketConfig.getBitbucketUrl(), sha), e);
     }
   }
 

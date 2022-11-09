@@ -22,6 +22,7 @@ import io.harness.gitsync.BranchDetails;
 import io.harness.gitsync.FileInfo;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.RepoDetails;
+import io.harness.gitsync.common.beans.GitOperation;
 import io.harness.gitsync.common.impl.HarnessToGitHelperServiceImpl;
 import io.harness.manage.GlobalContextManager;
 import io.harness.rule.Owner;
@@ -99,6 +100,14 @@ public class HarnessToGitPushInfoGrpcServiceTest extends GitSyncTestBase {
       assertThat(SecurityContextBuilder.getPrincipal().getType()).isEqualTo(PrincipalType.USER);
       assertThat(SourcePrincipalContextBuilder.getSourcePrincipal().getName()).isEqualTo(name);
     }
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetErrorMessageForRuntimeExceptions() {
+    String errorMessage = harnessToGitPushInfoGrpcService.getErrorMessageForRuntimeExceptions(GitOperation.GET_FILE);
+    assertThat(errorMessage).isNotNull();
   }
 
   @Test

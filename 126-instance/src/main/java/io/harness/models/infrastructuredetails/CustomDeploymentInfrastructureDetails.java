@@ -17,5 +17,5 @@ import lombok.Value;
 @Value
 @Builder
 public class CustomDeploymentInfrastructureDetails extends InfrastructureDetails {
-  private String hostname;
+  private String instanceName;
 }

@@ -21,6 +21,7 @@ import io.harness.event.client.EventPublisher;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
 import io.harness.perpetualtask.k8s.utils.ApiExceptionLogger;
+import io.harness.perpetualtask.k8s.utils.ApiInfoLogger;
 import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.google.common.collect.ImmutableMap;
@@ -37,7 +38,6 @@ import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.util.CallGeneratorParams;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import lombok.extern.slf4j.Slf4j;
@@ -84,13 +84,11 @@ public class NodeWatcher implements ResourceEventHandler<V1Node> {
         .sharedIndexInformerFor(
             (CallGeneratorParams callGeneratorParams)
                 -> {
-              log.info("Node watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
+              ApiInfoLogger.logInfoIfNotSeenRecently(
+                  "Node watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
                   callGeneratorParams.resourceVersion, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch);
-              if (!"0".equals(callGeneratorParams.resourceVersion)
-                  && Objects.nonNull(callGeneratorParams.timeoutSeconds)) {
-                K8sWatcherHelper.updateLastSeen(
-                    String.format(K8sWatcherHelper.NODE_WATCHER_PREFIX, clusterId), Instant.now());
-              }
+              K8sWatcherHelper.updateLastSeen(
+                  String.format(K8sWatcherHelper.NODE_WATCHER_PREFIX, clusterId), Instant.now());
               try {
                 return coreV1Api.listNodeCall(null, null, null, null, null, null, callGeneratorParams.resourceVersion,
                     null, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch, null);

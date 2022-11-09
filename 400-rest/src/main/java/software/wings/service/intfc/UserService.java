@@ -212,6 +212,8 @@ public interface UserService extends OwnedByAccount {
    */
   User get(@NotEmpty String userId);
 
+  User get(@NotEmpty String userId, boolean includeSupportAccounts);
+
   List<User> getUsers(Set<String> userIds);
 
   /**
@@ -390,7 +392,7 @@ public interface UserService extends OwnedByAccount {
    * @param userInvite the user invite DTO
    * @param isScimInvite if the Invite is created for a SCIM user
    */
-  void completeNGInvite(UserInviteDTO userInvite, boolean isScimInvite);
+  void completeNGInvite(UserInviteDTO userInvite, boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail);
 
   /**
    * Complete the user invite and login the user in one call.

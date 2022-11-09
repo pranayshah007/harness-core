@@ -60,6 +60,7 @@ public class TerraformExecutionData extends StateExecutionData implements Delega
 
   private String tfPlanJson;
   private String tfPlanHumanReadable;
+  private String tfPlanHumanReadableFileId;
   private String tfPlanJsonFiledId;
   private EncryptedRecordData encryptedTfPlan;
 

@@ -8,6 +8,10 @@
 package io.harness.pms.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.eraro.ErrorCode.SERVICENOW_ERROR;
+import static io.harness.exception.WingsException.USER;
+
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
@@ -25,6 +29,7 @@ import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNow
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -40,13 +45,18 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.servicenow.ServiceNowTicketOutcome;
 import io.harness.steps.servicenow.ServiceNowTicketOutcome.ServiceNowTicketOutcomeBuilder;
+import io.harness.steps.servicenow.importset.ServiceNowImportSetOutcome;
+import io.harness.steps.servicenow.importset.ServiceNowImportSetOutcome.ServiceNowImportSetOutcomeBuilder;
+import io.harness.steps.servicenow.importset.ServiceNowImportSetTransformMapOutcome;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -129,6 +139,37 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
         .status(Status.SUCCEEDED)
         .stepOutcome(
             StepResponse.StepOutcome.builder().name("ticket").outcome(serviceNowTicketOutcomeBuilder.build()).build())
+        .build();
+  }
+
+  @Override
+  public StepResponse prepareImportSetStepResponse(ThrowingSupplier<ServiceNowTaskNGResponse> responseSupplier)
+      throws Exception {
+    ServiceNowTaskNGResponse taskResponse = responseSupplier.get();
+    String importSet = taskResponse.getServiceNowImportSetResponseNG().getImportSet();
+    String stagingTable = taskResponse.getServiceNowImportSetResponseNG().getStagingTable();
+    if (isNull(importSet) || isNull(stagingTable)) {
+      throw new ServiceNowException(
+          "Invalid transform map details received from ServiceNow, missing import_set or staging_table field",
+          SERVICENOW_ERROR, USER);
+    }
+    ServiceNowImportSetOutcomeBuilder serviceNowImportSetOutcomeBuilder =
+        ServiceNowImportSetOutcome.builder().importSetNumber(importSet).stagingTable(stagingTable);
+
+    if (taskResponse.getServiceNowImportSetResponseNG().getServiceNowImportSetTransformMapResultList() != null) {
+      List<ServiceNowImportSetTransformMapOutcome> serviceNowImportSetTransformMapOutcomeList = new ArrayList<>();
+      taskResponse.getServiceNowImportSetResponseNG().getServiceNowImportSetTransformMapResultList().forEach(
+          transformMapResult
+          -> serviceNowImportSetTransformMapOutcomeList.add(
+              ServiceNowImportSetTransformMapOutcome.fromServiceNowImportSetTransformMapResult(transformMapResult)));
+      serviceNowImportSetOutcomeBuilder.transformMapOutcomes(serviceNowImportSetTransformMapOutcomeList);
+    }
+    return StepResponse.builder()
+        .status(Status.SUCCEEDED)
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name("output")
+                         .outcome(serviceNowImportSetOutcomeBuilder.build())
+                         .build())
         .build();
   }
 }

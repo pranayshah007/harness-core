@@ -31,16 +31,22 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
     implements PersistenceProvider<T, MorphiaFilterExpander<T>> {
   @Inject private HPersistence persistence;
 
-  public Query<T> createQuery(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander) {
-    Query<T> query = persistence.createQuery(clazz).order(Sort.ascending(fieldName));
+  private Query<T> createQuery(
+      Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, boolean unsorted) {
+    Query<T> query = persistence.createQuery(clazz);
+
+    if (!unsorted) {
+      query.order(Sort.ascending(fieldName));
+    }
     if (filterExpander != null) {
       filterExpander.filter(query);
     }
     return query;
   }
 
-  public Query<T> createQuery(long now, Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander) {
-    Query<T> query = createQuery(clazz, fieldName, filterExpander);
+  private Query<T> createQuery(
+      long now, Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, boolean unsorted) {
+    Query<T> query = createQuery(clazz, fieldName, filterExpander, unsorted);
     if (filterExpander == null) {
       query.field(fieldName).lessThan(now);
     } else {
@@ -57,9 +63,10 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
 
   @Override
   public T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName,
-      SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander) {
+      SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander,
+      boolean unsorted) {
     long now = currentTimeMillis();
-    Query<T> query = createQuery(now, clazz, fieldName, filterExpander);
+    Query<T> query = createQuery(now, clazz, fieldName, filterExpander, unsorted);
     UpdateOperations<T> updateOperations = persistence.createUpdateOperations(clazz);
     switch (schedulingType) {
       case REGULAR:
@@ -79,7 +86,7 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
 
   @Override
   public T findInstance(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander) {
-    Query<T> resultQuery = createQuery(clazz, fieldName, filterExpander).project(fieldName, true);
+    Query<T> resultQuery = createQuery(clazz, fieldName, filterExpander, false).project(fieldName, true);
     return resultQuery.get();
   }
 

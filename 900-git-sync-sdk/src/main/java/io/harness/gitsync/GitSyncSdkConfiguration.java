@@ -14,10 +14,10 @@ import io.harness.EntityType;
 import io.harness.Microservice;
 import io.harness.ScmConnectionConfig;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.gitsync.common.GitSyncEntityOrderComparatorInMsvc;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
-import io.harness.redis.RedisConfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
@@ -40,7 +40,7 @@ public class GitSyncSdkConfiguration {
   Microservice microservice;
   GrpcClientConfig grpcClientConfig;
   Supplier<List<EntityType>> gitSyncSortOrder;
-  RedisConfig eventsRedisConfig;
+  EventsFrameworkConfiguration eventsFrameworkConfiguration;
   DeployMode deployMode;
   ScmConnectionConfig scmConnectionConfig;
   AuthorizationServiceHeader serviceHeader;

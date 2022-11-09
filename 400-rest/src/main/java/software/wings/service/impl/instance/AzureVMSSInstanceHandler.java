@@ -7,7 +7,6 @@
 
 package software.wings.service.impl.instance;
 
-import static io.harness.beans.FeatureName.AZURE_VMSS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -153,7 +152,7 @@ public class AzureVMSSInstanceHandler extends InstanceHandler implements Instanc
 
   @Override
   public Optional<FeatureName> getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
-    return Optional.of(AZURE_VMSS);
+    return Optional.empty();
   }
 
   @Override
@@ -358,6 +357,6 @@ public class AzureVMSSInstanceHandler extends InstanceHandler implements Instanc
 
   @Override
   public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
-    return Optional.of(AZURE_VMSS);
+    return Optional.empty();
   }
 }

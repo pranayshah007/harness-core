@@ -16,6 +16,7 @@ import io.harness.pms.contracts.commons.RepairActionCode;
 public enum RollbackStrategy {
   STAGE_ROLLBACK("StageRollback"),
   STEP_GROUP_ROLLBACK("StepGroupRollback"),
+  PIPELINE_ROLLBACK("PipelineRollback"),
   UNKNOWN("Unknown");
 
   String yamlName;

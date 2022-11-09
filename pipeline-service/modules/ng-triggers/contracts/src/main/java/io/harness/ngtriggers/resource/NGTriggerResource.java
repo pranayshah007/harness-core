@@ -7,6 +7,7 @@
 
 package io.harness.ngtriggers.resource;
 
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
@@ -24,8 +25,10 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
+import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
+import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.rest.RestResponse;
@@ -39,6 +42,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -57,6 +61,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import org.hibernate.validator.constraints.NotBlank;
 
 @Api("triggers")
 @Path("triggers")
@@ -95,14 +100,14 @@ public interface NGTriggerResource {
         dataType = "io.harness.ngtriggers.beans.config.NGTriggerConfigV2", paramType = "body")
   })
   @ApiOperation(value = "Create Trigger", nickname = "createTrigger")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   ResponseDTO<NGTriggerResponseDTO>
   create(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Identifier of the target pipeline") @NotNull @QueryParam("targetIdentifier")
       @ResourceIdentifier String targetIdentifier, @NotNull @ApiParam(hidden = true, type = "") String yaml,
-      @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError);
+      @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError,
+      @QueryParam("withServiceV2") @DefaultValue("false") boolean withServiceV2);
 
   @GET
   @Path("/{triggerIdentifier}")
@@ -138,7 +143,6 @@ public interface NGTriggerResource {
         dataType = "io.harness.ngtriggers.beans.config.NGTriggerConfigV2", paramType = "body")
   })
   @ApiOperation(value = "Update a trigger by identifier", nickname = "updateTrigger")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   ResponseDTO<NGTriggerResponseDTO>
   update(@HeaderParam(IF_MATCH) String ifMatch,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -151,6 +155,7 @@ public interface NGTriggerResource {
       @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError);
 
   @PUT
+  @Hidden
   @Path("{triggerIdentifier}/status")
   @Operation(operationId = "updateTriggerStatus",
       summary = "Activates or deactivate trigger for pipeline with target pipeline identifier.",
@@ -247,4 +252,32 @@ public interface NGTriggerResource {
   @ExceptionMetered
   RestResponse<String>
   generateWebhookToken();
+
+  @GET
+  @Path("catalog")
+  @ApiOperation(value = "Get Trigger catalog", nickname = "getTriggerCatalog")
+  @Operation(operationId = "getTriggerCatalog", summary = "Lists all Triggers",
+      description = "Lists all the Triggers for the given Account ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Trigger catalogue response")
+      })
+  ResponseDTO<NGTriggerCatalogDTO>
+  getTriggerCatalog(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+      NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+
+  @GET
+  @Path("{triggerIdentifier}/validatePipelineInputs")
+  @ApiOperation(hidden = true, value = "This validates whether yaml of trigger is valid or not",
+      nickname = "validatePipelineInputs")
+  @Hidden
+  ResponseDTO<ValidatePipelineInputsResponseDTO>
+  validatePipelineInputs(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
+          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
+      @PathParam("triggerIdentifier") String triggerIdentifier);
 }

@@ -39,7 +39,6 @@ java_library(
         "//400-rest:supporter-test",
         "//490-ce-commons:module",
         "//990-commons-test:module",
-        "@maven//:com_bertramlabs_plugins_hcl4j",
         "@maven//:com_google_guava_guava",
         "@maven//:com_icegreen_greenmail",
         "@maven//:com_openpojo_openpojo",

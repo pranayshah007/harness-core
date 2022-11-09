@@ -83,7 +83,7 @@ import org.sonatype.nexus.rest.model.ContentListResourceResponse;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.converter.jackson.JacksonConverterFactory;
-import retrofit2.converter.simplexml.SimpleXmlConverterFactory;
+import retrofit2.converter.jaxb.JaxbConverterFactory;
 
 /**
  * Created by sgurubelli on 11/18/17.
@@ -871,7 +871,7 @@ public class NexusTwoServiceImpl {
   }
 
   private NexusRestClient getRestClient(final NexusRequest nexusConfig) {
-    return getRetrofit(nexusConfig, SimpleXmlConverterFactory.createNonStrict()).create(NexusRestClient.class);
+    return getRetrofit(nexusConfig, JaxbConverterFactory.create()).create(NexusRestClient.class);
   }
 
   private NexusRestClient getRestClientJacksonConverter(final NexusRequest nexusConfig) {

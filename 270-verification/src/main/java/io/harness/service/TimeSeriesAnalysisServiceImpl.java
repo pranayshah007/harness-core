@@ -30,7 +30,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.beans.SortOrder.OrderType;
-import io.harness.delegate.task.DataCollectionExecutorService;
+import io.harness.delegate.task.common.DataCollectionExecutorService;
 import io.harness.entities.TimeSeriesAnomaliesRecord;
 import io.harness.entities.TimeSeriesAnomaliesRecord.TimeSeriesAnomaliesRecordKeys;
 import io.harness.entities.TimeSeriesCumulativeSums;

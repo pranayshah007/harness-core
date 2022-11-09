@@ -64,7 +64,7 @@ import org.jetbrains.annotations.NotNull;
 @ValidateOnExecution
 @Slf4j
 public class ScriptSshExecutor extends AbstractScriptExecutor {
-  public static final int CHUNK_SIZE = 10 * 1024; // 10KB
+  public static final int CHUNK_SIZE = 512 * 1024; // 512KB
   /**
    * The constant DEFAULT_SUDO_PROMPT_PATTERN.
    */

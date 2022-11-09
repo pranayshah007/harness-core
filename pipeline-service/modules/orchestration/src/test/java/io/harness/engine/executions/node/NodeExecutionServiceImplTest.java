@@ -151,10 +151,12 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     String parentId1 = generateUuid();
     String nodeExecutionId2 = generateUuid();
     String parentId2 = generateUuid();
+    Ambiance am1 = AmbianceTestUtils.buildAmbiance();
+    Ambiance am2 = AmbianceTestUtils.buildAmbiance();
     NodeExecution nodeExecution1 =
         NodeExecution.builder()
             .uuid(nodeExecutionId1)
-            .ambiance(AmbianceTestUtils.buildAmbiance())
+            .ambiance(am1)
             .mode(ExecutionMode.SYNC)
             .nodeId(generateUuid())
             .name("name")
@@ -168,7 +170,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     NodeExecution nodeExecution2 =
         NodeExecution.builder()
             .uuid(nodeExecutionId2)
-            .ambiance(AmbianceTestUtils.buildAmbiance())
+            .ambiance(am2)
             .mode(ExecutionMode.CHILD)
             .nodeId(generateUuid())
             .name("name")
@@ -192,7 +194,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     assertThat(ne1.getStatus()).isEqualTo(RUNNING);
     assertThat(ne1.getParentId()).isEqualTo(parentId1);
     assertThat(ne1.getMode()).isEqualTo(ExecutionMode.SYNC);
-    assertThat(ne1.getAmbiance()).isNull();
+    assertThat(ne1.getAmbiance()).isEqualTo(am1);
   }
 
   @Test
@@ -333,50 +335,6 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     assertThat(found.isPresent()).isTrue();
 
     assertThat(found.get().getUuid()).isEqualTo(nodeExecutionId);
-  }
-
-  @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldTestFetchChildrenNodeExecutions() {
-    String planExecutionUuid = generateUuid();
-    String parentId = generateUuid();
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .uuid(generateUuid())
-            .parentId(parentId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .uuid(generateUuid())
-            .name("name")
-            .identifier(generateUuid())
-            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-            .module("CD")
-            .startTs(System.currentTimeMillis())
-            .status(Status.SUCCEEDED)
-            .build();
-    NodeExecution nodeExecution1 =
-        NodeExecution.builder()
-            .uuid(generateUuid())
-            .parentId(parentId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .uuid(generateUuid())
-            .name("name")
-            .identifier(generateUuid())
-            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-            .module("CD")
-            .startTs(System.currentTimeMillis())
-            .status(Status.SUCCEEDED)
-            .build();
-    nodeExecutionService.save(nodeExecution);
-    nodeExecutionService.save(nodeExecution1);
-
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchChildrenNodeExecutions(planExecutionUuid, parentId);
-    assertThat(nodeExecutions).isNotEmpty();
-
-    assertThat(nodeExecutions.size()).isEqualTo(2);
-    assertThat(nodeExecutions)
-        .extracting(NodeExecution::getUuid)
-        .containsExactlyInAnyOrder(nodeExecution.getUuid(), nodeExecution1.getUuid());
   }
 
   @Test
@@ -828,5 +786,22 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     Query query = argumentCaptor.getValue();
     assertThat(query.toString())
         .isEqualTo("Query: { \"ambiance.planExecutionId\" : \"tempId\", \"oldRetry\" : false}, Fields: {}, Sort: {}");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testGetPipelineNodeExecution() {
+    mongoTemplate = mock(MongoTemplate.class);
+
+    String planExecutionId = "tempId";
+    on(nodeExecutionService).set("mongoTemplate", mongoTemplate);
+    ArgumentCaptor<Query> argumentCaptor = ArgumentCaptor.forClass(Query.class);
+    nodeExecutionService.getPipelineNodeExecution(planExecutionId);
+    verify(mongoTemplate, times(1)).findOne(argumentCaptor.capture(), any());
+    Query query = argumentCaptor.getValue();
+    assertThat(query.toString())
+        .isEqualTo(
+            "Query: { \"ambiance.planExecutionId\" : \"tempId\", \"stepType.stepCategory\" : { \"$java\" : PIPELINE } }, Fields: {}, Sort: { \"createdAt\" : 1}");
   }
 }

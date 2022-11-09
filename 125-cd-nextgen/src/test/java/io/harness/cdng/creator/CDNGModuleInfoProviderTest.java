@@ -10,6 +10,8 @@ package io.harness.cdng.creator;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -25,6 +27,7 @@ import io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -38,6 +41,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,11 +58,14 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
   private final String APP_ID = "appId";
 
   @Mock OutcomeService outcomeService;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Mock private FreezeEvaluateService freezeEvaluateService;
   @InjectMocks CDNGModuleInfoProvider provider;
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.openMocks(this);
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
   }
 
   @Test
@@ -338,6 +345,19 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetStageLevelModuleInfo_RollbackDuration() {
+    Ambiance ambiance = buildAmbiance(
+        StepType.newBuilder().setType("ROLLBACK_OPTIONAL_CHILD_CHAIN").setStepCategory(StepCategory.STEP).build());
+
+    OrchestrationEvent event = OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build();
+    CDStageModuleInfo stageLevelModuleInfo = (CDStageModuleInfo) provider.getStageLevelModuleInfo(event);
+
+    assertThat(stageLevelModuleInfo.getRollbackDuration()).isPositive();
+  }
+
+  @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void testShouldRun_0() {
@@ -392,6 +412,22 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
         .isFalse();
   }
 
+  @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void testShouldRun_4() {
+    Ambiance ambiance = buildAmbiance(
+        StepType.newBuilder().setType("ROLLBACK_OPTIONAL_CHILD_CHAIN").setStepCategory(StepCategory.STEP).build());
+    assertThat(provider.shouldRun(OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build()))
+        .isTrue();
+
+    assertThat(provider.shouldRun(OrchestrationEvent.builder().ambiance(ambiance).status(Status.FAILED).build()))
+        .isTrue();
+
+    assertThat(provider.shouldRun(OrchestrationEvent.builder().ambiance(ambiance).status(Status.RUNNING).build()))
+        .isFalse();
+  }
+
   public Ambiance buildAmbiance(StepType stepType) {
     final String PHASE_RUNTIME_ID = generateUuid();
     final String PHASE_SETUP_ID = generateUuid();
@@ -404,6 +440,7 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
         .putAllSetupAbstractions(Map.of("accountId", ACCOUNT_ID, "appId", APP_ID))
         .addAllLevels(levels)
         .setExpressionFunctorToken(1234)
+        .setStartTs(0L)
         .build();
   }
 }

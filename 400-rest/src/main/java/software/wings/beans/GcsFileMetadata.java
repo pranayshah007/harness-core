@@ -16,9 +16,13 @@ import io.harness.delegate.beans.ChecksumType;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.file.GcsHarnessFileMetadata;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
+import com.google.common.collect.ImmutableList;
+import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,6 +56,17 @@ import org.mongodb.morphia.annotations.Entity;
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "GcsFileMetadataKeys")
 public class GcsFileMetadata extends Base implements AccountAccess, GcsHarnessFileMetadata {
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(SortCompoundMongoIndex.builder()
+                 .name("entityId_fileBucket_createdAt")
+                 .field(GcsFileMetadataKeys.entityId)
+                 .field(GcsFileMetadataKeys.fileBucket)
+                 .descSortField(GcsFileMetadataKeys.createdAt)
+                 .build())
+        .build();
+  }
+
   @NotEmpty @FdIndex private String accountId;
   @NotEmpty @FdIndex private String fileId; // Mongo GridFs fileId.
   @NotEmpty @FdIndex private String gcsFileId;

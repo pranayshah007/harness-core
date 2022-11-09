@@ -67,8 +67,6 @@ public interface AnalysisService {
 
   List<LogMLFeedbackRecord> get24x7MLFeedback(String cvConfigId);
 
-  List<LogMLFeedbackRecord> getMLFeedback(String accountId, String workflowId);
-
   void cleanUpForLogRetry(String stateExecutionId);
 
   boolean deleteFeedback(String feedbackId) throws IOException;

@@ -9,6 +9,7 @@ package io.harness.cdng.execution.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.instance.InstanceDeploymentInfoStatus.SUCCEEDED;
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.IVAN;
 
@@ -27,25 +28,36 @@ import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
+import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.customDeployment.CustomDeploymentExecutionDetails;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.sshwinrm.SshWinRmStageExecutionDetails;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.instance.service.InstanceDeploymentInfoService;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.entities.instanceinfo.PdcInstanceInfo;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.rule.Owner;
 import io.harness.utils.StageStatus;
+
+import software.wings.utils.ArtifactType;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.Test;
@@ -182,5 +194,155 @@ public class StageExecutionHelperTest extends CategoryTest {
     doReturn(Optional.of(NexusArtifactOutcome.builder().build())).when(cdStepHelper).resolveArtifactsOutcome(ambiance);
     result = stageExecutionHelper.excludeHostsWithSameArtifactDeployed(ambiance, executionInfoKey, infrastructureHosts);
     assertThat(result).contains("host1", "host3");
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testSaveStageExecutionInfoForCustomDeployment() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER)
+                            .setStageExecutionId(EXECUTION_ID)
+                            .build();
+
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+
+    ArtifactoryArtifactOutcome artifactOutcome = ArtifactoryArtifactOutcome.builder().build();
+    ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
+
+    when(cdStepHelper.resolveArtifactsOutcome(ambiance)).thenReturn(Optional.ofNullable(artifactOutcome));
+    when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
+
+    stageExecutionHelper.saveStageExecutionInfo(ambiance,
+        ExecutionInfoKey.builder()
+            .scope(scope)
+            .envIdentifier(ENV_IDENTIFIER)
+            .infraIdentifier(INFRA_IDENTIFIER)
+            .serviceIdentifier(SERVICE_IDENTIFIER)
+            .build(),
+        InfrastructureKind.CUSTOM_DEPLOYMENT);
+
+    verify(stageExecutionInfoService)
+        .save(StageExecutionInfo.builder()
+                  .accountIdentifier(ACCOUNT_IDENTIFIER)
+                  .orgIdentifier(ORG_IDENTIFIER)
+                  .projectIdentifier(PROJECT_IDENTIFIER)
+                  .envIdentifier(ENV_IDENTIFIER)
+                  .infraIdentifier(INFRA_IDENTIFIER)
+                  .serviceIdentifier(SERVICE_IDENTIFIER)
+                  .stageStatus(StageStatus.IN_PROGRESS)
+                  .stageExecutionId(EXECUTION_ID)
+                  .executionDetails(CustomDeploymentExecutionDetails.builder()
+                                        .artifactsOutcome(Lists.newArrayList(artifactOutcome))
+                                        .build())
+                  .build());
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testRollbackArtifactCustomDeploymentFirstRun() {
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+    stepResponseBuilder.status(Status.SUCCEEDED);
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER)
+                            .setStageExecutionId(EXECUTION_ID)
+                            .build();
+
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+
+    ExecutionInfoKey executionInfoKey = ExecutionInfoKey.builder()
+                                            .scope(scope)
+                                            .envIdentifier(ENV_IDENTIFIER)
+                                            .infraIdentifier(INFRA_IDENTIFIER)
+                                            .serviceIdentifier(SERVICE_IDENTIFIER)
+                                            .build();
+
+    doReturn(Optional.empty())
+        .when(stageExecutionInfoService)
+        .getLatestSuccessfulStageExecutionInfo(eq(executionInfoKey), eq(EXECUTION_ID));
+
+    stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
+        ambiance, stepResponseBuilder, executionInfoKey, InfrastructureKind.CUSTOM_DEPLOYMENT);
+
+    StepResponse stepResponse = stepResponseBuilder.build();
+    Collection<StepResponse.StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
+    assertThat(stepOutcomes.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testRollbackArtifactCustomDeployment() {
+    String image = "registry.hub.docker.com/library/nginx:latest";
+    String imagePath = "library/nginx";
+    String tag = "mainline-perl";
+    String connectorRef = "privateDockerId";
+
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+    stepResponseBuilder.status(Status.SUCCEEDED);
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER)
+                            .setStageExecutionId(EXECUTION_ID)
+                            .build();
+
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+
+    ExecutionInfoKey executionInfoKey = ExecutionInfoKey.builder()
+                                            .scope(scope)
+                                            .envIdentifier(ENV_IDENTIFIER)
+                                            .infraIdentifier(INFRA_IDENTIFIER)
+                                            .serviceIdentifier(SERVICE_IDENTIFIER)
+                                            .build();
+
+    DockerArtifactOutcome rollbackArtifactOutcome = DockerArtifactOutcome.builder()
+                                                        .primaryArtifact(true)
+                                                        .image(image)
+                                                        .imagePath(imagePath)
+                                                        .tag(tag)
+                                                        .connectorRef(connectorRef)
+                                                        .type(ArtifactType.DOCKER.name())
+                                                        .build();
+
+    CustomDeploymentExecutionDetails executionDetails =
+        CustomDeploymentExecutionDetails.builder()
+            .artifactsOutcome(Collections.singletonList(rollbackArtifactOutcome))
+            .build();
+
+    StageExecutionInfo executionInfo = StageExecutionInfo.builder().executionDetails(executionDetails).build();
+
+    doReturn(Optional.of(executionInfo))
+        .when(stageExecutionInfoService)
+        .getLatestSuccessfulStageExecutionInfo(eq(executionInfoKey), eq(EXECUTION_ID));
+
+    stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
+        ambiance, stepResponseBuilder, executionInfoKey, InfrastructureKind.CUSTOM_DEPLOYMENT);
+
+    StepResponse stepResponse = stepResponseBuilder.build();
+    Collection<StepResponse.StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
+    assertThat(stepOutcomes.size()).isEqualTo(1);
+
+    StepResponse.StepOutcome stepOutcome = stepOutcomes.iterator().next();
+    assertThat(stepOutcome.getGroup()).isEqualTo(StepCategory.STAGE.name());
+    assertThat(stepOutcome.getName()).isEqualTo(OutcomeExpressionConstants.ROLLBACK_ARTIFACT);
+
+    assertThat(stepOutcome.getOutcome()).isNotNull();
+    assertThat(stepOutcome.getOutcome()).isInstanceOf(DockerArtifactOutcome.class);
+
+    DockerArtifactOutcome rollbackOutCome = (DockerArtifactOutcome) stepOutcome.getOutcome();
+    assertThat(rollbackOutCome.getArtifactType()).isEqualTo(ArtifactType.DOCKER.name());
+    assertThat(rollbackOutCome.getImage()).isEqualTo(image);
+    assertThat(rollbackOutCome.getImagePath()).isEqualTo(imagePath);
+    assertThat(rollbackOutCome.getTag()).isEqualTo(tag);
+    assertThat(rollbackOutCome.getConnectorRef()).isEqualTo(connectorRef);
+    assertThat(rollbackOutCome.isPrimaryArtifact()).isEqualTo(true);
   }
 }

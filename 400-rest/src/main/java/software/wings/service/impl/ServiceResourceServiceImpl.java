@@ -728,8 +728,19 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     } else if (ArtifactType.AWS_LAMBDA == originalService.getArtifactType()) {
       cloneLambdaFunctionSpecification(appId, clonedServiceId, originalServiceId);
     }
-
+    if (originalService.getDeploymentType() == ECS) {
+      cloneECSServiceDefinition(appId, clonedServiceId, originalServiceId);
+    }
     cloneAppManifests(appId, clonedServiceId, originalServiceId);
+  }
+
+  private void cloneECSServiceDefinition(String appId, String clonedServiceId, String originalServiceId) {
+    EcsServiceSpecification ecsServiceSpecification = getEcsServiceSpecification(appId, originalServiceId);
+    if (ecsServiceSpecification != null) {
+      EcsServiceSpecification newEcsServiceSpecification = ecsServiceSpecification.cloneInternal();
+      newEcsServiceSpecification.setServiceId(clonedServiceId);
+      createEcsServiceSpecification(newEcsServiceSpecification);
+    }
   }
 
   private void cloneContainerTasks(String appId, String clonedServiceId, String originalServiceId) {

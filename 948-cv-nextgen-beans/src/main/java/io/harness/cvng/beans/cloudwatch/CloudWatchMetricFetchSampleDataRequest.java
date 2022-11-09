@@ -15,6 +15,8 @@ import io.harness.cvng.utils.CloudWatchUtils;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
@@ -56,5 +58,15 @@ public class CloudWatchMetricFetchSampleDataRequest extends DataCollectionReques
   public Map<String, Object> fetchDslEnvVariables() {
     return CloudWatchUtils.getDslEnvVariables(
         region, group, expression, metricName, metricIdentifier, SERVICE, getConnectorConfigDTO(), false);
+  }
+
+  @Override
+  public Instant getEndTime(Instant currentTime) {
+    return currentTime;
+  }
+
+  @Override
+  public Instant getStartTime(Instant currentTime) {
+    return currentTime.minus(Duration.ofHours(2));
   }
 }

@@ -19,6 +19,7 @@ import io.harness.licensing.beans.summary.CELicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CFLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CILicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CVLicenseSummaryDTO;
+import io.harness.licensing.beans.summary.ChaosLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.licensing.beans.summary.STOLicenseSummaryDTO;
 import io.harness.licensing.utils.ModuleLicenseUtils;
@@ -117,6 +118,10 @@ public class ModuleLicenseSummaryHelper {
             }
           }
         };
+        break;
+      case CHAOS:
+        licensesWithSummaryDTO = ChaosLicenseSummaryDTO.builder().build();
+        summaryHandler = (moduleLicenseDTO, summaryDTO, current) -> {};
         break;
       default:
         throw new UnsupportedOperationException("Unsupported module type");

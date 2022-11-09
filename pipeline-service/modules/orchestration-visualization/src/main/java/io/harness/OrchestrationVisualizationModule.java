@@ -12,13 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eventsframework.EventsFrameworkConstants.ORCHESTRATION_LOG;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.events.PmsRedissonClientFactory;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.service.GraphGenerationService;
 import io.harness.service.impl.GraphGenerationServiceImpl;
 import io.harness.skip.service.VertexSkipperService;
@@ -66,7 +66,7 @@ public class OrchestrationVisualizationModule extends AbstractModule {
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
     } else {
-      RedissonClient redissonClient = PmsRedissonClientFactory.getRedisClient(redisConfig);
+      RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(Consumer.class)
           .annotatedWith(Names.named(ORCHESTRATION_LOG))
           .toInstance(RedisConsumer.of(ORCHESTRATION_LOG, PIPELINE_SERVICE.getServiceId(), redissonClient,

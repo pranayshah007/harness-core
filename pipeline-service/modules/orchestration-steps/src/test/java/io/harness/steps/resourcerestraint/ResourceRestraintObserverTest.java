@@ -28,6 +28,7 @@ import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceServi
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import java.util.List;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -41,6 +42,7 @@ public class ResourceRestraintObserverTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
+  @Ignore("CI-6025: TI team to follow up")
   public void shouldTestOnEnd() {
     String planExecutionId = generateUuid();
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build();

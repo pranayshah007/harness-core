@@ -19,4 +19,4 @@ config:
     - "commons/**/*"
     - "**/*.hash"
     - "toolset/git-hooks/**/*"
-    - "build.properties"
+    - "**/build.properties"

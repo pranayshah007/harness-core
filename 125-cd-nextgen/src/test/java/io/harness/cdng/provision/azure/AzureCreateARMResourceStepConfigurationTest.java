@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.azure;
 
 import static io.harness.rule.OwnerRule.NGONZALEZ;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -25,6 +26,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.junit.Assert;
@@ -50,6 +53,110 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
             .build();
     assertThatThrownBy(azureCreateARMResourceStepConfiguration::validateParams)
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testWithFilesAndSecretsForTemplate() {
+    AzureTemplateFile templateFile = new AzureTemplateFile();
+    templateFile.setStore(StoreConfigWrapper.builder()
+                              .spec(HarnessStore.builder()
+                                        .files(ParameterField.createValueField(Arrays.asList("test")))
+                                        .secretFiles(ParameterField.createValueField(Arrays.asList("test")))
+                                        .build())
+                              .build());
+    AzureCreateARMResourceParameterFile parameterFile = new AzureCreateARMResourceParameterFile();
+    parameterFile.setStore(buildStoreConfig("git", 1, false));
+    AzureCreateARMResourceStepConfiguration azureCreateARMResourceStepConfiguration =
+        AzureCreateARMResourceStepConfiguration.builder()
+            .parameters(parameterFile)
+            .template(templateFile)
+            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .scope(createScope())
+            .build();
+
+    assertThatThrownBy(azureCreateARMResourceStepConfiguration::validateParams)
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Only one one files / secretFiles should be set for template");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testWithHarnessStoreButNoFilesOrSecretsForTemplate() {
+    AzureTemplateFile templateFile = new AzureTemplateFile();
+    templateFile.setStore(StoreConfigWrapper.builder()
+                              .spec(HarnessStore.builder()
+                                        .files(ParameterField.createValueField(Collections.emptyList()))
+                                        .secretFiles(ParameterField.createValueField(Collections.emptyList()))
+                                        .build())
+                              .build());
+    AzureCreateARMResourceParameterFile parameterFile = new AzureCreateARMResourceParameterFile();
+    parameterFile.setStore(buildStoreConfig("git", 1, false));
+    AzureCreateARMResourceStepConfiguration azureCreateARMResourceStepConfiguration =
+        AzureCreateARMResourceStepConfiguration.builder()
+            .parameters(parameterFile)
+            .template(templateFile)
+            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .scope(createScope())
+            .build();
+
+    assertThatThrownBy(azureCreateARMResourceStepConfiguration::validateParams)
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("At least one one files / secretFiles should be set for template");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testWithFilesAndSecretsForParameters() {
+    AzureTemplateFile templateFile = new AzureTemplateFile();
+    templateFile.setStore(buildStoreConfig("git", 1, false));
+    AzureCreateARMResourceParameterFile parameterFile = new AzureCreateARMResourceParameterFile();
+    parameterFile.setStore(StoreConfigWrapper.builder()
+                               .spec(HarnessStore.builder()
+                                         .files(ParameterField.createValueField(Arrays.asList("test")))
+                                         .secretFiles(ParameterField.createValueField(Arrays.asList("test")))
+                                         .build())
+                               .build());
+    AzureCreateARMResourceStepConfiguration azureCreateARMResourceStepConfiguration =
+        AzureCreateARMResourceStepConfiguration.builder()
+            .parameters(parameterFile)
+            .template(templateFile)
+            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .scope(createScope())
+            .build();
+
+    assertThatThrownBy(azureCreateARMResourceStepConfiguration::validateParams)
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Only one one files / secretFiles should be set for parameters");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testWithHarnessStoreButNoFilesOrSecretsForParameters() {
+    AzureTemplateFile templateFile = new AzureTemplateFile();
+    templateFile.setStore(buildStoreConfig("git", 1, false));
+    AzureCreateARMResourceParameterFile parameterFile = new AzureCreateARMResourceParameterFile();
+    parameterFile.setStore(StoreConfigWrapper.builder()
+                               .spec(HarnessStore.builder()
+                                         .files(ParameterField.createValueField(Collections.emptyList()))
+                                         .secretFiles(ParameterField.createValueField(Collections.emptyList()))
+                                         .build())
+                               .build());
+    AzureCreateARMResourceStepConfiguration azureCreateARMResourceStepConfiguration =
+        AzureCreateARMResourceStepConfiguration.builder()
+            .parameters(parameterFile)
+            .template(templateFile)
+            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .scope(createScope())
+            .build();
+
+    assertThatThrownBy(azureCreateARMResourceStepConfiguration::validateParams)
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("At least one one files / secretFiles should be set for parameters");
   }
 
   @Test
@@ -200,11 +307,9 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
   public void testInNumberOfFilesIsValidForTemplateHarnessWithNoParameters() {
     AzureTemplateFile templateFile = new AzureTemplateFile();
     templateFile.setStore(buildStoreConfig("harness", 1, false));
-    AzureCreateARMResourceParameterFile parameterFile = new AzureCreateARMResourceParameterFile();
-    parameterFile.setStore(buildStoreConfig("harness", 0, false));
     AzureCreateARMResourceStepConfiguration azureCreateARMResourceStepConfiguration =
         AzureCreateARMResourceStepConfiguration.builder()
-            .parameters(parameterFile)
+            .parameters(null)
             .template(templateFile)
             .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
             .scope(createScope())
@@ -232,6 +337,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
     }
     return storeConfigWrapper;
   }
+
   private List<String> createNumberOfFiles(int numberOfFiles) {
     int index = 0;
     List<String> files = new ArrayList<>();
@@ -249,6 +355,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
       Assert.fail();
     }
   }
+
   private AzureCreateARMResourceStepScope createScope() {
     return AzureCreateARMResourceStepScope.builder()
         .spec(AzureResourceGroupSpec.builder()

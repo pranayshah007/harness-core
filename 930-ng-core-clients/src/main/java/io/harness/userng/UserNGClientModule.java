@@ -17,8 +17,7 @@ import io.harness.userng.remote.UserNGHttpClientFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.name.Named;
-import com.google.inject.name.Names;
+import com.google.inject.Singleton;
 
 public class UserNGClientModule extends AbstractModule {
   private static UserNGClientModule instance;
@@ -42,24 +41,14 @@ public class UserNGClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private UserNGHttpClientFactory userNGHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new UserNGHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.NON_PRIVILEGED);
   }
 
-  @Provides
-  @Named("PRIVILEGED")
-  private UserNGHttpClientFactory privilegedUserNGClientFactory() {
-    return new UserNGHttpClientFactory(
-        serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), null, clientId, ClientMode.PRIVILEGED);
-  }
-
   @Override
   protected void configure() {
     bind(UserNGClient.class).toProvider(UserNGHttpClientFactory.class).in(Scopes.SINGLETON);
-    bind(UserNGClient.class)
-        .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
-        .toProvider(privilegedUserNGClientFactory())
-        .in(Scopes.SINGLETON);
   }
 }

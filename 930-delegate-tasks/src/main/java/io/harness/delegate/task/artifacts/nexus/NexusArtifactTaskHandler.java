@@ -19,10 +19,13 @@ import io.harness.nexus.NexusRequest;
 import io.harness.nexus.service.NexusRegistryService;
 import io.harness.security.encryption.SecretDecryptionService;
 
+import software.wings.helpers.ext.nexus.NexusRepositories;
+
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -39,14 +42,17 @@ public class NexusArtifactTaskHandler extends DelegateArtifactTaskHandler<NexusA
     BuildDetailsInternal lastSuccessfulBuild;
     NexusRequest nexusConfig = NexusRequestResponseMapper.toNexusInternalConfig(attributesRequest);
     if (isRegex(attributesRequest)) {
-      lastSuccessfulBuild =
-          nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, attributesRequest.getRepositoryName(),
-              attributesRequest.getRepositoryPort(), attributesRequest.getArtifactPath(),
-              attributesRequest.getRepositoryFormat(), attributesRequest.getTagRegex());
+      lastSuccessfulBuild = nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig,
+          attributesRequest.getRepositoryName(), attributesRequest.getRepositoryPort(),
+          attributesRequest.getArtifactPath(), attributesRequest.getRepositoryFormat(), attributesRequest.getTagRegex(),
+          attributesRequest.getGroupId(), attributesRequest.getArtifactName(), attributesRequest.getExtension(),
+          attributesRequest.getClassifier(), attributesRequest.getPackageName(), attributesRequest.getGroup());
     } else {
       lastSuccessfulBuild = nexusRegistryService.verifyBuildNumber(nexusConfig, attributesRequest.getRepositoryName(),
           attributesRequest.getRepositoryPort(), attributesRequest.getArtifactPath(),
-          attributesRequest.getRepositoryFormat(), attributesRequest.getTag());
+          attributesRequest.getRepositoryFormat(), attributesRequest.getTag(), attributesRequest.getGroupId(),
+          attributesRequest.getArtifactName(), attributesRequest.getExtension(), attributesRequest.getClassifier(),
+          attributesRequest.getPackageName(), attributesRequest.getGroup());
     }
 
     NexusArtifactDelegateResponse nexusArtifactDelegateResponse =
@@ -59,7 +65,9 @@ public class NexusArtifactTaskHandler extends DelegateArtifactTaskHandler<NexusA
     List<BuildDetailsInternal> builds = nexusRegistryService.getBuilds(
         NexusRequestResponseMapper.toNexusInternalConfig(attributesRequest), attributesRequest.getRepositoryName(),
         attributesRequest.getRepositoryPort(), attributesRequest.getArtifactPath(),
-        attributesRequest.getRepositoryFormat(), NexusRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT);
+        attributesRequest.getRepositoryFormat(), NexusRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT,
+        attributesRequest.getGroupId(), attributesRequest.getArtifactName(), attributesRequest.getExtension(),
+        attributesRequest.getClassifier(), attributesRequest.getPackageName(), attributesRequest.getGroup());
     List<NexusArtifactDelegateResponse> nexusArtifactDelegateResponseList =
         builds.stream()
             .sorted(new BuildDetailsInternalComparatorDescending())
@@ -82,6 +90,21 @@ public class NexusArtifactTaskHandler extends DelegateArtifactTaskHandler<NexusA
     boolean isServerValidated =
         nexusRegistryService.validateCredentials(NexusRequestResponseMapper.toNexusInternalConfig(attributesRequest));
     return ArtifactTaskExecutionResponse.builder().isArtifactServerValid(isServerValidated).build();
+  }
+
+  public ArtifactTaskExecutionResponse getRepositories(NexusArtifactDelegateRequest attributesRequest) {
+    Map<String, String> repositories = nexusRegistryService.getRepository(
+        NexusRequestResponseMapper.toNexusInternalConfig(attributesRequest), attributesRequest.getRepositoryFormat());
+    List<NexusRepositories> nexusRepositories = repositories.entrySet()
+                                                    .stream()
+                                                    .filter(repository -> !repositories.isEmpty())
+                                                    .map(repository
+                                                        -> NexusRepositories.builder()
+                                                               .repositoryId(repository.getKey())
+                                                               .repositoryName(repository.getValue())
+                                                               .build())
+                                                    .collect(Collectors.toList());
+    return ArtifactTaskExecutionResponse.builder().repositories(nexusRepositories).build();
   }
 
   boolean isRegex(NexusArtifactDelegateRequest artifactDelegateRequest) {

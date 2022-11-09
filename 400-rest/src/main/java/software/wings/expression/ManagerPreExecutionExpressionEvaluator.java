@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionFunctor;
@@ -30,6 +31,7 @@ import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import javax.cache.Cache;
 import lombok.Value;
 
@@ -46,7 +48,9 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
       FeatureFlagService featureFlagService, ManagerDecryptionService managerDecryptionService,
       SecretManager secretManager, String accountId, String workflowExecutionId, int expressionFunctorToken,
       SecretManagerClientService ngSecretService, Map<String, String> taskSetupAbstractions,
-      Cache<String, EncryptedDataDetails> secretsCache, DelegateMetricsService delegateMetricsService) {
+      Cache<String, EncryptedDataDetails> secretsCache, DelegateMetricsService delegateMetricsService,
+      ExecutorService expressionEvaluatorExecutor) {
+    setEvaluationMode(mode);
     String appId = taskSetupAbstractions == null ? null : taskSetupAbstractions.get(Cd1SetupFields.APP_ID_FIELD);
     String envId = taskSetupAbstractions == null ? null : taskSetupAbstractions.get(Cd1SetupFields.ENV_ID_FIELD);
     String serviceTemplateId =
@@ -71,6 +75,9 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
             .artifactCollectionUtils(artifactCollectionUtils)
             .build());
 
+    final boolean evalExpInSync =
+        featureFlagService.isEnabled(FeatureName.DEL_EVALUATE_SECRET_EXPRESSION_SYNC, accountId);
+
     secretManagerFunctor = SecretManagerFunctor.builder()
                                .mode(mode)
                                .featureFlagService(featureFlagService)
@@ -83,17 +90,22 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
                                .workflowExecutionId(workflowExecutionId)
                                .expressionFunctorToken(expressionFunctorToken)
                                .delegateMetricsService(delegateMetricsService)
+                               .expressionEvaluatorExecutor(expressionEvaluatorExecutor)
+                               .evaluateSync(evalExpInSync)
                                .build();
     addFunctor(SecretManagerFunctorInterface.FUNCTOR_NAME, secretManagerFunctor);
 
-    NgSecretManagerFunctorBuilder ngSecretManagerFunctorBuilder = NgSecretManagerFunctor.builder()
-                                                                      .mode(mode)
-                                                                      .accountId(accountId)
-                                                                      .expressionFunctorToken(expressionFunctorToken)
-                                                                      .secretManager(secretManager)
-                                                                      .secretsCache(secretsCache)
-                                                                      .delegateMetricsService(delegateMetricsService)
-                                                                      .ngSecretService(ngSecretService);
+    NgSecretManagerFunctorBuilder ngSecretManagerFunctorBuilder =
+        NgSecretManagerFunctor.builder()
+            .mode(mode)
+            .accountId(accountId)
+            .expressionFunctorToken(expressionFunctorToken)
+            .secretManager(secretManager)
+            .secretsCache(secretsCache)
+            .delegateMetricsService(delegateMetricsService)
+            .ngSecretService(ngSecretService)
+            .expressionEvaluatorExecutor(expressionEvaluatorExecutor)
+            .evaluateSync(evalExpInSync);
 
     if (EmptyPredicate.isNotEmpty(taskSetupAbstractions)) {
       ngSecretManagerFunctorBuilder.orgId(taskSetupAbstractions.get("orgIdentifier"))

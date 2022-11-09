@@ -6,26 +6,56 @@
  */
 package io.harness.cvng.servicelevelobjective.entities;
 
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
+
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.Size;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("Composite")
 @Data
 @SuperBuilder
-@NoArgsConstructor
 @FieldNameConstants(innerTypeName = "CompositeServiceLevelObjectiveKeys")
 @EqualsAndHashCode(callSuper = true)
 public class CompositeServiceLevelObjective extends AbstractServiceLevelObjective {
-  @Size(max = 20) List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
+  public CompositeServiceLevelObjective() {
+    super.setType(ServiceLevelObjectiveType.COMPOSITE);
+  }
+  private int version;
 
+  @Size(min = 2, max = 20) List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
+
+  @Data
+  @Builder
   public static class ServiceLevelObjectivesDetail {
+    String accountId;
+    String orgIdentifier;
+    String projectIdentifier;
     String serviceLevelObjectiveRef;
     Double weightagePercentage;
+  }
+
+  @Override
+  public Optional<String> mayBeGetMonitoredServiceIdentifier() {
+    return Optional.empty();
+  }
+
+  public static class CompositeServiceLevelObjectiveUpdatableEntity
+      extends AbstractServiceLevelObjectiveUpdatableEntity<CompositeServiceLevelObjective> {
+    @Override
+    public void setUpdateOperations(UpdateOperations<CompositeServiceLevelObjective> updateOperations,
+        CompositeServiceLevelObjective compositeServiceLevelObjective) {
+      setCommonOperations(updateOperations, compositeServiceLevelObjective);
+      updateOperations.set(CompositeServiceLevelObjectiveKeys.serviceLevelObjectivesDetails,
+          compositeServiceLevelObjective.getServiceLevelObjectivesDetails());
+      updateOperations.inc(CompositeServiceLevelObjectiveKeys.version);
+    }
   }
 }

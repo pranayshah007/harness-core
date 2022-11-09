@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.EngineJexlContext;
+import io.harness.expression.ExpressionMode;
 import io.harness.ngtriggers.expressions.functors.PayloadFunctor;
 import io.harness.ngtriggers.expressions.functors.TriggerPayloadFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -22,6 +23,7 @@ import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -67,8 +69,13 @@ public class TriggerExpressionEvaluator extends EngineExpressionEvaluator {
 
   @Override
   public Object evaluateExpression(String expression) {
+    return evaluateExpression(expression, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+  }
+
+  @Override
+  public Object evaluateExpression(String expression, ExpressionMode expressionMode) {
     try {
-      Object result = evaluateExpression(expression, null);
+      Object result = evaluateExpression(expression, (Map<String, Object>) null);
       return result == null ? "null" : result;
     } catch (Exception e) {
       log.warn("Failed to evaluated Trigger expression", e);

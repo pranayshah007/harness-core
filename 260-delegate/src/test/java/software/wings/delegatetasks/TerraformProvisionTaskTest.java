@@ -25,7 +25,6 @@ import static software.wings.utils.WingsTestConstants.WORKSPACE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyMap;
@@ -56,6 +55,7 @@ import io.harness.delegate.task.terraform.TerraformBaseHelperImpl;
 import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.filesystem.FileIo;
+import io.harness.logging.LogCallback;
 import io.harness.provision.TerraformPlanSummary;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -69,11 +69,12 @@ import software.wings.WingsBaseTest;
 import software.wings.api.TerraformExecutionData;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
+import software.wings.beans.GitOperationContext;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.delegation.TerraformProvisionParameters.TerraformProvisionParametersBuilder;
-import software.wings.beans.yaml.GitFetchFilesRequest;
 import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.yaml.GitClientHelper;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
 import software.wings.utils.WingsTestConstants;
@@ -98,7 +99,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
-import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -108,14 +108,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.zeroturnaround.exec.stream.LogOutputStream;
+import wiremock.org.apache.commons.io.FileUtils;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
 @RunWith(JUnitParamsRunner.class)
 public class TerraformProvisionTaskTest extends WingsBaseTest {
+  @Mock private LogCallback logCallback;
   @Mock private EncryptionService mockEncryptionService;
   @Mock private GitClient gitClient;
   @Mock private DelegateLogService logService;
+  @Mock private GitClientHelper gitClientHelper;
   @Mock private DelegateFileManager delegateFileManager;
   @Mock private EncryptDecryptHelper planEncryptDecryptHelper;
   @Mock private AwsHelperService awsHelperService;
@@ -163,6 +166,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     on(terraformProvisionTask).set("encryptionService", mockEncryptionService);
     on(terraformProvisionTask).set("gitClient", gitClient);
     on(terraformProvisionTask).set("logService", logService);
+    on(terraformProvisionTask).set("gitClientHelper", gitClientHelper);
     on(terraformProvisionTask).set("delegateFileManager", delegateFileManager);
     on(terraformProvisionTask).set("planEncryptDecryptHelper", planEncryptDecryptHelper);
     on(terraformProvisionTask).set("awsHelperService", awsHelperService);
@@ -185,12 +189,14 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     sourceRepoEncryptionDetails.add(EncryptedDataDetail.builder().build());
 
     doAnswer(invocation -> {
-      String dest = invocation.getArgument(2);
+      String dest = invocation.getArgument(1);
       FileUtils.copyDirectory(new File(GIT_REPO_DIRECTORY), new File(dest));
       return null;
     })
         .when(gitClient)
-        .downloadFiles(any(GitConfig.class), any(GitFetchFilesRequest.class), anyString(), anyBoolean());
+        .cloneRepoAndCopyToDestDir(any(GitOperationContext.class), anyString(), any(LogCallback.class));
+
+    doReturn(GIT_REPO_DIRECTORY).when(gitClientHelper).getRepoDirectory(any(GitOperationContext.class));
 
     terraformProvisionTaskSpy = spy(terraformProvisionTask);
 
@@ -198,6 +204,9 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
         .when(terraformProvisionTaskSpy)
         .executeShellCommand(
             anyString(), anyString(), any(TerraformProvisionParameters.class), anyMap(), any(LogOutputStream.class));
+    doReturn("latestCommit")
+        .when(terraformProvisionTaskSpy)
+        .getLatestCommitSHAFromLocalRepo(any(GitOperationContext.class));
     doReturn(new ArrayList<String>())
         .when(terraformProvisionTaskSpy)
         .getWorkspacesList(anyString(), any(), anyLong(), any(), any());
@@ -436,7 +445,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
   }
 
   /**
-   *  should not skip refresh since not using approved plan
+   * should not skip refresh since not using approved plan
    */
   @Test
   @Owner(developers = OwnerRule.YOGESH)
@@ -512,7 +521,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
   }
 
   /**
-   *  should not skip refresh since not using approved plan
+   * should not skip refresh since not using approved plan
    */
   @Test
   @Owner(developers = OwnerRule.YOGESH)
@@ -874,11 +883,13 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
 
   private void verify(TerraformExecutionData terraformExecutionData, TerraformCommand command) {
     Mockito.verify(mockEncryptionService, times(1)).decrypt(gitConfig, sourceRepoEncryptionDetails, false);
+    Mockito.verify(gitClient, times(1)).ensureRepoLocallyClonedAndUpdated(any(GitOperationContext.class));
+    Mockito.verify(gitClientHelper, times(1)).getRepoDirectory(any(GitOperationContext.class));
     Mockito.verify(delegateFileManager, times(1)).upload(any(DelegateFile.class), any(InputStream.class));
     assertThat(terraformExecutionData.getWorkspace()).isEqualTo(WORKSPACE);
     assertThat(terraformExecutionData.getEntityId()).isEqualTo(ENTITY_ID);
     assertThat(terraformExecutionData.getCommandExecuted()).isEqualTo(command);
-    assertThat(terraformExecutionData.getSourceRepoReference()).isEqualTo(null);
+    assertThat(terraformExecutionData.getSourceRepoReference()).isEqualTo("latestCommit");
     assertThat(terraformExecutionData.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
   }
 
@@ -938,7 +949,8 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
         .useOptimizedTfPlanJson(useOptimizedTfPlan)
         .skipRefreshBeforeApplyingPlan(skipRefresh)
         .secretManagerConfig(KmsConfig.builder().name("config").uuid("uuid").build())
-        .analyseTfPlanSummary(shouldAnalyseTfPlanSummary);
+        .analyseTfPlanSummary(shouldAnalyseTfPlanSummary)
+        .syncGitCloneAndCopyToDestDir(false);
   }
 
   @Test

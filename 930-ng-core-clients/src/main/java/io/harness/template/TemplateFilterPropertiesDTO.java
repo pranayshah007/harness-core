@@ -13,6 +13,7 @@ import static io.harness.filter.FilterConstants.TEMPLATE_FILTER;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
+import io.harness.ng.core.template.ListingScope;
 import io.harness.ng.core.template.TemplateEntityType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -45,6 +46,8 @@ public class TemplateFilterPropertiesDTO extends FilterPropertiesDTO {
   String description;
   List<TemplateEntityType> templateEntityTypes;
   List<String> childTypes;
+  ListingScope listingScope;
+  String repoName;
 
   @Override
   public FilterType getFilterType() {

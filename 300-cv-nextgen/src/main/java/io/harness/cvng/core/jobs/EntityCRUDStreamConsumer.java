@@ -45,7 +45,7 @@ public class EntityCRUDStreamConsumer extends AbstractStreamConsumer {
   }
 
   @Override
-  protected void processMessage(Message message) {
+  protected boolean processMessage(Message message) {
     if (message.hasMessage()) {
       Map<String, String> metadataMap = message.getMessage().getMetadataMap();
       if (metadataMap != null && metadataMap.containsKey(EventsFrameworkMetadataConstants.ENTITY_TYPE)) {
@@ -61,5 +61,7 @@ public class EntityCRUDStreamConsumer extends AbstractStreamConsumer {
         }
       }
     }
+
+    return true;
   }
 }

@@ -29,6 +29,8 @@ cp ../../120-ng-manager/key.pem .
 cp ../../120-ng-manager/cert.pem .
 cp ../../120-ng-manager/src/main/resources/redisson-jcache.yaml .
 cp ../../120-ng-manager/src/main/resources/enterprise-redisson-jcache.yaml .
+cp ../../120-ng-manager/src/main/resources/jfr/default.jfc .
+cp ../../120-ng-manager/src/main/resources/jfr/profile.jfc .
 
 cp ../../dockerization/ng-manager/Dockerfile-ng-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/ng-manager/Dockerfile-ng-manager-cie-jdk ./Dockerfile-cie-jdk

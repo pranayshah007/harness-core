@@ -99,6 +99,18 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
                  .field(ArtifactKeys.artifactStreamId)
                  .descSortField(ArtifactKeys.createdAt)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("appId_artifactStreamId_metadata_image")
+                 .field(ArtifactKeys.appId)
+                 .field(ArtifactKeys.artifactStreamId)
+                 .field(ArtifactKeys.metadata_image)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_createdAt_artifactStreamIds")
+                 .field(ArtifactKeys.accountId)
+                 .descSortField(ArtifactKeys.createdAt)
+                 .rangeField(ArtifactKeys.artifactStreamId)
+                 .build())
         .build();
   }
 
@@ -407,6 +419,8 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
     private String artifactStreamType;
     private String uiDisplayName;
 
+    private String buildNo;
+
     private Builder() {}
 
     public static Builder anArtifact() {
@@ -533,6 +547,11 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
       return this;
     }
 
+    public Builder withBuildNo(String buildNo) {
+      this.buildNo = buildNo;
+      return this;
+    }
+
     public Builder but() {
       return anArtifact()
           .withArtifactStreamId(artifactStreamId)
@@ -558,6 +577,7 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
           .withSettingId(settingId)
           .withAccountId(accountId)
           .withArtifactStreamType(artifactStreamType)
+          .withBuildNo(buildNo)
           .withUiDisplayName(uiDisplayName);
     }
 

@@ -11,12 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.CDStepHelper;
+import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -31,26 +31,20 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sBlueGreenStepParameters")
 public class K8sBlueGreenStepParameters extends K8sBlueGreenBaseStepInfo implements K8sSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public K8sBlueGreenStepParameters(
-      ParameterField<Boolean> skipDryRun, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(skipDryRun, delegateSelectors);
+  public K8sBlueGreenStepParameters(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    super(skipDryRun, pruningEnabled, delegateSelectors);
   }
   @NotNull
   @Override
   public List<String> getCommandUnits() {
-    return new ArrayList<>(
-        Arrays.asList(K8sCommandUnitConstants.FetchFiles, K8sCommandUnitConstants.Init, K8sCommandUnitConstants.Prepare,
-            K8sCommandUnitConstants.Apply, K8sCommandUnitConstants.WaitForSteadyState, K8sCommandUnitConstants.WrapUp));
-  }
-
-  @NotNull
-  @Override
-  public List<String> getCommandUnits(boolean isPruningEnabled) {
+    List<String> commandUnits = K8sSpecParameters.super.getCommandUnits();
+    boolean isPruningEnabled =
+        CDStepHelper.getParameterFieldBooleanValue(pruningEnabled, K8sBlueGreenBaseStepInfoKeys.pruningEnabled,
+            String.format("%s step", ExecutionNodeType.K8S_BLUE_GREEN.getYamlType()));
     if (isPruningEnabled) {
-      return new ArrayList<>(Arrays.asList(K8sCommandUnitConstants.FetchFiles, K8sCommandUnitConstants.Init,
-          K8sCommandUnitConstants.Prepare, K8sCommandUnitConstants.Apply, K8sCommandUnitConstants.WaitForSteadyState,
-          K8sCommandUnitConstants.WrapUp, K8sCommandUnitConstants.Prune));
+      commandUnits.add(K8sCommandUnitConstants.Prune);
     }
-    return getCommandUnits();
+    return commandUnits;
   }
 }

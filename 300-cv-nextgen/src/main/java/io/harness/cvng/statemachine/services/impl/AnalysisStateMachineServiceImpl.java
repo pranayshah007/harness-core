@@ -11,6 +11,8 @@ import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_DEFAULT;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_FOR_DEMO;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_FOR_SLI;
+import static io.harness.cvng.models.VerificationType.LOG;
+import static io.harness.cvng.models.VerificationType.TIME_SERIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -23,7 +25,10 @@ import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
+import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
 import io.harness.cvng.models.VerificationType;
@@ -36,6 +41,7 @@ import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine.AnalysisStateMachineKeys;
 import io.harness.cvng.statemachine.entities.CanaryTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogClusterState;
+import io.harness.cvng.statemachine.entities.HostSamplingState;
 import io.harness.cvng.statemachine.entities.PreDeploymentLogClusterState;
 import io.harness.cvng.statemachine.entities.SLIMetricAnalysisState;
 import io.harness.cvng.statemachine.entities.ServiceGuardLogClusterState;
@@ -62,7 +68,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.mongodb.morphia.query.Sort;
 
 @Slf4j
@@ -77,6 +83,8 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
   @Inject private ExecutionLogService executionLogService;
   @Inject private MetricService metricService;
   @Inject private MetricContextBuilder metricContextBuilder;
+  @Inject private TimeSeriesRecordService timeSeriesRecordService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public void initiateStateMachine(String verificationTaskId, AnalysisStateMachine stateMachine) {
@@ -374,6 +382,13 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
           testTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
           testTimeSeriesAnalysisState.setInputs(inputForAnalysis);
           stateMachine.setCurrentState(testTimeSeriesAnalysisState);
+        } else if (featureFlagService.isFeatureFlagEnabled(
+                       stateMachine.getAccountId(), FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)) {
+          HostSamplingState hostSamplingState = new HostSamplingState();
+          hostSamplingState.setStatus(AnalysisStatus.CREATED);
+          hostSamplingState.setInputs(inputForAnalysis);
+          hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+          stateMachine.setCurrentState(hostSamplingState);
         } else {
           CanaryTimeSeriesAnalysisState canaryTimeSeriesAnalysisState = CanaryTimeSeriesAnalysisState.builder().build();
           canaryTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);

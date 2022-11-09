@@ -22,7 +22,7 @@ import io.harness.azure.model.ARMScopeType;
 import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.azure.arm.ARMDeploymentSteadyStateChecker;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.runtime.azure.AzureARMDeploymentException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -80,7 +80,7 @@ public class ARMDeploymentSteadyStateCheckerTest extends CategoryTest {
     doReturn("Failed").when(azureManagementClient).getARMDeploymentStatus(eq(context));
     assertThatThrownBy(
         () -> armSteadyStateChecker.waitUntilCompleteWithTimeout(context, azureManagementClient, mockLogCallback))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(AzureARMDeploymentException.class)
         .hasMessageContaining("ARM Deployment failed for deployment");
 
     doReturn("Accepted").when(azureManagementClient).getARMDeploymentStatus(eq(context));

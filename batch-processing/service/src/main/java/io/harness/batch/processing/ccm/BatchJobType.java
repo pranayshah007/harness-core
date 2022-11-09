@@ -31,6 +31,7 @@ import org.springframework.batch.core.Job;
 @Getter
 @OwnedBy(HarnessTeam.CE)
 public enum BatchJobType {
+  AWS_EC2_SERVICE_RECOMMENDATION(10, 1, ChronoUnit.DAYS, emptyList(), OUT_OF_CLUSTER_ECS),
   BILLING_DATA_PIPELINE(50, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
   SYNC_BILLING_REPORT_S3(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
   SYNC_BILLING_REPORT_AZURE(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),

@@ -1,0 +1,29 @@
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          identifier: Step_Group_<+phase>
+          name: "Step Group"
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              start: <+start>
+              end: <+end>
+              unit: <+unit>
+          steps:
+            - step:
+                name: "Deploy"
+                identifier: Deploy_<+phase>
+                timeout: 10m
+                template:
+                  templateRef: account.Default_Install_Jar_Bash
+                  templateInputs:
+                    type: Command
+                    spec:
+                      environmentVariables:
+                        - name: DestinationDirectory
+                          type: String
+                          value: "$HOME/<+service.name>/<+env.name>"
+                        - name: WorkingDirectory
+                          type: String
+                          value: "$HOME/<+service.name>/<+env.name>/tomcat/bin"

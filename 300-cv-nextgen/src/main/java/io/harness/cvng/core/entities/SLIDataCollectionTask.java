@@ -8,6 +8,7 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.CVConstants.DATA_COLLECTION_TIME_RANGE_FOR_SLI;
+import static io.harness.cvng.core.entities.DeploymentDataCollectionTask.MAX_RETRY_COUNT;
 
 import io.harness.cvng.core.utils.DateTimeUtils;
 
@@ -34,7 +35,7 @@ public class SLIDataCollectionTask extends DataCollectionTask {
 
   @Override
   public boolean eligibleForRetry(Instant currentTime) {
-    return getStartTime().isAfter(getDataCollectionPastTimeCutoff(currentTime));
+    return getStartTime().isAfter(getDataCollectionPastTimeCutoff(currentTime)) && getRetryCount() <= MAX_RETRY_COUNT;
   }
 
   @Override

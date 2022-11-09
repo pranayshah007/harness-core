@@ -1,0 +1,30 @@
+{
+  "import_set": "ISET0010075",
+  "staging_table": "u_testing0001",
+  "result": [
+    {
+      "transform_map": "Testing 2 transform maps",
+      "table": "incident",
+      "display_name": "number",
+      "display_value": "INC0083151",
+      "record_link": "https://harness.service-now.com/api/now/table/incident/a639e9ccdb4651909e7c2a5913961911",
+      "status": "inserted",
+      "sys_id": "a639e9ccdb4651909e7c2a5913961911"
+    },
+    {
+      "transform_map": "Testing Full Flow",
+      "table": "problem",
+      "display_name": "number",
+      "display_value": "PRB0066379",
+      "record_link": "https://harness.service-now.com/api/now/table/problem/123929ccdb4651909e7c2a5913961985",
+      "status": "inserted",
+      "sys_id": "123929ccdb4651909e7c2a5913961985"
+    },
+    {
+      "transform_map": "testing permissions",
+      "table": "sqanda_vote",
+      "status": "error",
+      "error_message": "No transform entry or scripts are defined; Target record not found"
+    }
+  ]
+}

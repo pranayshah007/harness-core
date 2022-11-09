@@ -8,12 +8,9 @@
 package io.harness.batch.processing.pricing.service.impl;
 
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
+import io.harness.batch.processing.pricing.service.impl.util.CloudResourceIdHelper;
 import io.harness.batch.processing.pricing.service.intfc.AwsCustomBillingService;
 import io.harness.batch.processing.pricing.vmpricing.VMInstanceBillingData;
-import io.harness.batch.processing.service.intfc.InstanceDataService;
-import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
-import io.harness.ccm.commons.beans.InstanceType;
-import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -31,13 +28,13 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class AwsCustomBillingServiceImpl implements AwsCustomBillingService {
   private BigQueryHelperService bigQueryHelperService;
-  private InstanceDataService instanceDataService;
+  private CloudResourceIdHelper cloudResourceIdHelper;
 
   @Autowired
   public AwsCustomBillingServiceImpl(
-      BigQueryHelperService bigQueryHelperService, InstanceDataService instanceDataService) {
+      BigQueryHelperService bigQueryHelperService, CloudResourceIdHelper cloudResourceIdHelper) {
     this.bigQueryHelperService = bigQueryHelperService;
-    this.instanceDataService = instanceDataService;
+    this.cloudResourceIdHelper = cloudResourceIdHelper;
   }
 
   private Cache<CacheKey, VMInstanceBillingData> awsResourceBillingCache =
@@ -72,36 +69,11 @@ public class AwsCustomBillingServiceImpl implements AwsCustomBillingService {
 
   @Override
   public VMInstanceBillingData getComputeVMPricingInfo(InstanceData instanceData, Instant startTime, Instant endTime) {
-    String resourceId = getResourceId(instanceData);
+    String resourceId = cloudResourceIdHelper.getResourceId(instanceData);
     if (null != resourceId) {
       return awsResourceBillingCache.getIfPresent(new CacheKey(resourceId, startTime, endTime));
     }
     return null;
-  }
-
-  String getResourceId(InstanceData instanceData) {
-    String resourceId = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
-        InstanceMetaDataConstants.CLOUD_PROVIDER_INSTANCE_ID, instanceData.getMetaData());
-    if (null == resourceId && instanceData.getInstanceType() == InstanceType.K8S_POD) {
-      String parentResourceId = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
-          InstanceMetaDataConstants.ACTUAL_PARENT_RESOURCE_ID, instanceData);
-      InstanceData parentInstanceData = null;
-      if (null != parentResourceId) {
-        parentInstanceData = instanceDataService.fetchInstanceData(parentResourceId);
-      } else {
-        parentResourceId = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
-            InstanceMetaDataConstants.PARENT_RESOURCE_ID, instanceData);
-        if (null != parentResourceId) {
-          parentInstanceData = instanceDataService.fetchInstanceDataWithName(
-              instanceData.getAccountId(), instanceData.getClusterId(), parentResourceId, Instant.now().toEpochMilli());
-        }
-      }
-      if (null != parentInstanceData) {
-        resourceId = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
-            InstanceMetaDataConstants.CLOUD_PROVIDER_INSTANCE_ID, parentInstanceData.getMetaData());
-      }
-    }
-    return resourceId;
   }
 
   @Override

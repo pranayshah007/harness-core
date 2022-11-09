@@ -61,7 +61,7 @@ public class CommandParameters extends CommandExecutionContext implements TaskPa
       ContainerResizeParams containerResizeParams, Map<String, String> metadata,
       CommandExecutionData commandExecutionData, Integer timeout, String deploymentType,
       List<EncryptedDataDetail> artifactServerEncryptedDataDetails, boolean inlineSshCommand, boolean executeOnDelegate,
-      boolean disableWinRMCommandEncodingFFSet, boolean disableWinRMEnvVariables,
+      boolean disableWinRMCommandEncodingFFSet, boolean winrmScriptCommandSplit, boolean disableWinRMEnvVariables,
       boolean useWinRMKerberosUniqueCacheFile, List<String> delegateSelectors, Map<String, Artifact> multiArtifactMap,
       Map<String, ArtifactStreamAttributes> artifactStreamAttributesMap, boolean multiArtifact,
       Map<String, List<EncryptedDataDetail>> artifactServerEncryptedDataDetailsMap, String artifactFileName,
@@ -73,9 +73,9 @@ public class CommandParameters extends CommandExecutionContext implements TaskPa
         winrmConnectionEncryptedDataDetails, artifactStreamAttributes, cloudProviderSetting, cloudProviderCredentials,
         codeDeployParams, containerSetupParams, containerResizeParams, metadata, commandExecutionData, timeout,
         deploymentType, artifactServerEncryptedDataDetails, inlineSshCommand, executeOnDelegate,
-        disableWinRMCommandEncodingFFSet, disableWinRMEnvVariables, useWinRMKerberosUniqueCacheFile, delegateSelectors,
-        multiArtifactMap, artifactStreamAttributesMap, multiArtifact, artifactServerEncryptedDataDetailsMap,
-        artifactFileName, sshVaultConfig);
+        disableWinRMCommandEncodingFFSet, winrmScriptCommandSplit, disableWinRMEnvVariables,
+        useWinRMKerberosUniqueCacheFile, delegateSelectors, multiArtifactMap, artifactStreamAttributesMap,
+        multiArtifact, artifactServerEncryptedDataDetailsMap, artifactFileName, sshVaultConfig);
 
     this.command = command;
   }

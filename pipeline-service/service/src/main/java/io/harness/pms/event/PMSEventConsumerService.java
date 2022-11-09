@@ -41,10 +41,6 @@ public class PMSEventConsumerService implements Managed {
     entityCRUDConsumerService =
         Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(ENTITY_CRUD).build());
     entityCRUDConsumerService.execute(entityCRUDStreamConsumer);
-
-    pollingEventConsumerService = Executors.newFixedThreadPool(
-        5, new ThreadFactoryBuilder().setNameFormat(EventsFrameworkConstants.POLLING_EVENTS_STREAM).build());
-    pollingEventConsumerService.execute(pollingEventStreamConsumer);
   }
 
   @Override

@@ -7,6 +7,8 @@
 
 package io.harness.delegate.service.impl;
 
+import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateGroup;
@@ -40,9 +42,19 @@ public class DelegateUpgraderServiceImpl implements DelegateUpgraderService {
   public UpgradeCheckResult getDelegateImageTag(
       String accountId, String currentDelegateImageTag, String delegateGroupName) {
     String newDelegateImageTag = delegateVersionService.getImmutableDelegateImageTag(accountId);
-    updateDelegateUpgrader(accountId, delegateGroupName);
+    updateDelegateUpgrader(accountId, fetchDelegateGroupName(delegateGroupName, accountId));
     final boolean shouldUpgrade = !currentDelegateImageTag.equals(newDelegateImageTag);
     return new UpgradeCheckResult(shouldUpgrade ? newDelegateImageTag : currentDelegateImageTag, shouldUpgrade);
+  }
+
+  private String fetchDelegateGroupName(String delegateGroupName, String accountId) {
+    String accountShort = getAccountIdentifier(accountId);
+    String[] split = delegateGroupName.split("-");
+    // In CG deployment name is appended with accountIdShort.
+    if (split.length > 0 && split[split.length - 1].equals(accountShort)) {
+      return delegateGroupName.substring(0, delegateGroupName.lastIndexOf('-'));
+    }
+    return delegateGroupName;
   }
 
   private void updateDelegateUpgrader(String accountId, String delegateGroupName) {

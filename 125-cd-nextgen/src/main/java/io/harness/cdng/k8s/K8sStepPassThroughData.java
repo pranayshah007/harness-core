@@ -28,8 +28,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
+import lombok.Setter;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDP)
@@ -50,7 +53,9 @@ public class K8sStepPassThroughData implements PassThroughData {
   Map<String, Collection<CustomSourceFile>> customFetchContent;
   String zippedManifestFileId;
 
-  boolean closeFetchFilesStream;
+  @Setter @NonFinal boolean shouldCloseFetchFilesStream;
+  @Setter @NonFinal Boolean shouldOpenFetchFilesStream;
+  Set<String> manifestStoreTypeVisited;
 
   public List<ValuesManifestOutcome> getValuesManifestOutcomes() {
     if (isEmpty(manifestOutcomeList)) {

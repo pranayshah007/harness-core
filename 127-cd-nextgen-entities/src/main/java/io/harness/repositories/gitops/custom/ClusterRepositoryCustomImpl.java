@@ -85,6 +85,21 @@ public class ClusterRepositoryCustomImpl implements ClusterRepositoryCustom {
   }
 
   @Override
+  public long bulkDelete(Criteria criteria) {
+    Query query = new Query(criteria);
+
+    try {
+      return mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, Cluster.class)
+          .remove(query)
+          .execute()
+          .getDeletedCount();
+    } catch (Exception ex) {
+      log.warn(String.format("Failed to delete gitops clusters. Exception: %s", ex.getCause().getMessage()));
+      throw ex;
+    }
+  }
+
+  @Override
   public Cluster update(Criteria criteria, Cluster cluster) {
     Query query = new Query(criteria);
     Update update = getUpdateOperations(cluster);

@@ -19,4 +19,7 @@ public interface ServiceRepository extends PagingAndSortingRepository<ServiceEnt
   Optional<ServiceEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
       boolean notDeleted);
+
+  Optional<ServiceEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
 }

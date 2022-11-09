@@ -104,7 +104,7 @@ public interface AzureConstants {
   String NO_VMSS_FOR_UPSCALE_DURING_ROLLBACK = "There is no old Virtual machine for up scaling during rollback";
 
   // Validation messages
-  String RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG = "Parameter resourceGroupName is required and cannot be null";
+  String RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG = "Parametermeter resourceGroupName is required and cannot be null";
   String RESOURCE_ID_NAME_NULL_VALIDATION_MSG = "Parameter resourceId is required and cannot be null";
   String LOAD_BALANCER_NAME_NULL_VALIDATION_MSG = "Parameter loadBalancerName is required and cannot be null";
   String BACKEND_POOL_NAME_NULL_VALIDATION_MSG = "Parameter backendPoolName is required and cannot be null";
@@ -223,7 +223,7 @@ public interface AzureConstants {
   String SLOT_SWAP_JOB_PROCESSOR_STR = "SlotSwapJobProcessor";
   String SUCCESS_REQUEST = "Request sent successfully";
   String DEPLOYMENT_SLOT_FULL_NAME_PATTERN = "%s-%s";
-  String DEPLOYMENT_SLOT_NAME_PREFIX_PATTERN = "%s-";
+  String DEPLOYMENT_SLOT_NAME_PREFIX_PATTERN = "(?i)^%s-";
   String DEPLOYMENT_SLOT_NON_PRODUCTION_TYPE = "non-production";
   String DEPLOYMENT_SLOT_PRODUCTION_TYPE = "production";
   String UPDATING_SLOT_CONFIGURATIONS = "Start updating configurations settings for  slot - [%s]";
@@ -334,6 +334,7 @@ public interface AzureConstants {
   // ARM & Blueprint command units
   String EXECUTE_ARM_DEPLOYMENT = "Execute ARM Deployment";
   String ARM_DEPLOYMENT_STEADY_STATE = "ARM Deployment Steady state";
+  String FETCH_RESOURCE_GROUP_TEMPLATE = "Fetch Resource Group Template";
   String ARM_DEPLOYMENT_OUTPUTS = "ARM Deployment Outputs";
   String BLUEPRINT_DEPLOYMENT = "Execute Blueprint Deployment";
   String BLUEPRINT_DEPLOYMENT_STEADY_STATE = "Blueprint Deployment Steady state";
@@ -383,4 +384,9 @@ public interface AzureConstants {
   String KUBECFG_TENANT_ID = "tenant-id";
   String ACR_DEFAULT_DOCKER_USERNAME = "00000000-0000-0000-0000-000000000000";
   String AZURE_ARM_ROLLBACK_PATTERN = "rollback_";
+  String ERROR_CODE_LOCATION_NOT_FOUND = "LocationNotAvailableForDeployment";
+  String ERROR_LOCATION_NOT_FOUND = "The location %s is not a valid region.";
+  String ERROR_INVALID_MANAGEMENT_GROUP_ID = "Invalid credentials for Management Group ID";
+  String ERROR_INVALID_TENANT_CREDENTIALS = "Invalid credentials at Tenant Level";
+  String AUTHORIZATION_ERROR = "does not have authorization";
 }

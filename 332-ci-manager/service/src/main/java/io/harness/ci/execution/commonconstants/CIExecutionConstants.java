@@ -32,6 +32,7 @@ public class CIExecutionConstants {
   public static final String STEP_VOLUME = "harness";
   public static final String STEP_MOUNT_PATH = "/harness";
   public static final String OSX_STEP_MOUNT_PATH = "/tmp/harness";
+  public static final String OSX_ADDON_MOUNT_PATH = "/tmp/addon";
   public static final String STEP_WORK_DIR = STEP_MOUNT_PATH;
   public static final String ETC_DIR = "/etc";
 
@@ -46,6 +47,14 @@ public class CIExecutionConstants {
   public static final String GIT_SSL_NO_VERIFY = "GIT_SSL_NO_VERIFY";
   public static final String GIT_URL_SUFFIX = ".git";
   public static final String PATH_SEPARATOR = "/";
+
+  // Constants for implict cache steps
+  public static final String RESTORE_CACHE_STEP_ID = "restore-cache-harness";
+  public static final String SAVE_CACHE_STEP_ID = "save-cache-harness";
+  public static final String RESTORE_CACHE_STEP_NAME = "Restore Cache From Harness";
+  public static final String SAVE_CACHE_STEP_NAME = "Save Cache to Harness";
+  public static final String CACHE_ARCHIVE_TYPE_TAR = "tar";
+  public static final String CACHE_GCS_BACKEND = "gcs";
 
   // Constant for
   public static final String UNIX_STEP_COMMAND = "/addon/bin/ci-addon";
@@ -65,15 +74,13 @@ public class CIExecutionConstants {
   // Container constants for setting up addon binary
   public static final String SETUP_ADDON_CONTAINER_NAME = "setup-addon";
   public static final String UNIX_SETUP_ADDON_ARGS =
-      "mkdir -p /addon/bin; mkdir -p /addon/tmp; chmod -R 776 /addon/tmp; if [ -e /usr/local/bin/ci-addon-linux-amd64 ];then cp /usr/local/bin/ci-addon-linux-amd64 /addon/bin/ci-addon;else cp /usr/local/bin/ci-addon-linux /addon/bin/ci-addon;fi; chmod +x /addon/bin/ci-addon; cp /usr/local/bin/java-agent.jar /addon/bin/java-agent.jar; chmod +x /addon/bin/java-agent.jar; cp /usr/local/bin/split_tests /addon/bin/split_tests; chmod +x /addon/bin/split_tests; export PATH=$PATH:/addon/bin";
+      "mkdir -p /addon/bin; mkdir -p /addon/tmp; chmod -R 776 /addon/tmp; if [ -e /usr/local/bin/ci-addon-linux-amd64 ];then cp /usr/local/bin/ci-addon-linux-amd64 /addon/bin/ci-addon;else cp /usr/local/bin/ci-addon-linux /addon/bin/ci-addon;fi; chmod +x /addon/bin/ci-addon; cp /usr/local/bin/java-agent.jar /addon/bin/java-agent.jar; chmod +x /addon/bin/java-agent.jar; if [ -e /usr/local/bin/split_tests ];then cp /usr/local/bin/split_tests /addon/bin/split_tests; chmod +x /addon/bin/split_tests; export PATH=$PATH:/addon/bin; fi;";
 
   public static final String WIN_SETUP_ADDON_ARGS =
-      "mkdir /addon/bin; mkdir /addon/tmp; cp C:/addon.exe /addon/bin/addon.exe; cp C:/split_tests.exe /addon/bin/split_tests.exe";
+      "mkdir /addon/bin; mkdir /addon/tmp; cp C:/addon.exe /addon/bin/addon.exe; If (Test-Path -Path C:/split_tests.exe ) {cp C:/split_tests.exe /addon/bin/split_tests.exe}";
 
   public static final String ADDON_VOLUME = "addon";
   public static final String ADDON_VOL_MOUNT_PATH = "/addon";
-  // Lite engine container constants
-  public static final String LITE_ENGINE_CONTAINER_NAME = "lite-engine";
 
   public static final Integer LITE_ENGINE_CONTAINER_MEM = 100;
   public static final Integer DEFAULT_CONTAINER_MEM_POV = 3000;
@@ -142,6 +149,8 @@ public class CIExecutionConstants {
   // All FFs go here
   public static final String HARNESS_CI_INDIRECT_LOG_UPLOAD_FF = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF";
 
+  public static final String HARNESS_LE_STATUS_REST_ENABLED = "HARNESS_LE_STATUS_REST_ENABLED";
+
   // Deprecated
   public static final List<String> SH_COMMAND = Collections.unmodifiableList(Arrays.asList("sh", "-c", "--"));
   public static final List<String> PWSH_COMMAND = Collections.unmodifiableList(Arrays.asList("pwsh", "-Command"));
@@ -158,4 +167,9 @@ public class CIExecutionConstants {
 
   public static final String MEMORY = "MEMORY";
   public static final String CPU = "CPU";
+
+  // build multiplier values
+  public static final Double MACOS_BUILD_MULTIPLIER = 10.0;
+  public static final Double WINDOWS_BUILD_MULTIPLIER = 2.0;
+  public static final Double DEFAULT_BUILD_MULTIPLIER = 1.0;
 }

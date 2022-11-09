@@ -8,14 +8,17 @@
 package io.harness.event.app;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.LoggingInitializer.initializeLogging;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.event.metrics.jobs.EventServiceRecordMetrics;
 import io.harness.govern.ProviderModule;
+import io.harness.health.HealthService;
+import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -26,82 +29,117 @@ import io.harness.persistence.Store;
 import io.harness.persistence.UserProvider;
 import io.harness.secret.ConfigSecretUtils;
 import io.harness.serializer.PersistenceRegistrars;
-import io.harness.serializer.YamlUtils;
+import io.harness.threading.ExecutorModule;
+import io.harness.threading.ThreadPool;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ServiceManager;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import java.io.File;
-import java.io.IOException;
+import io.dropwizard.Application;
+import io.dropwizard.configuration.ConfigurationSourceProvider;
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
+import io.dropwizard.configuration.SubstitutingSourceProvider;
+import io.dropwizard.jersey.protobuf.ProtobufBundle;
+import io.dropwizard.setup.Bootstrap;
+import io.dropwizard.setup.Environment;
+import io.federecio.dropwizard.swagger.SwaggerBundle;
+import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
+import java.util.concurrent.TimeUnit;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.apache.log4j.LogManager;
+import org.glassfish.jersey.server.model.Resource;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
 import org.mongodb.morphia.converters.TypeConverter;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 import ru.vyarus.guice.validator.ValidationModule;
 
 @Slf4j
-public class EventServiceApplication {
+@OwnedBy(HarnessTeam.CE)
+public class EventServiceApplication extends Application<EventServiceConfig> {
   public static final String EVENTS_DB = "events";
   public static final Store EVENTS_STORE = Store.builder().name(EVENTS_DB).build();
+  private static final String APPLICATION_NAME = "CE Event Service";
+  private final MetricRegistry metricRegistry = new MetricRegistry();
 
-  private final EventServiceConfig config;
-
-  private EventServiceApplication(EventServiceConfig config) {
-    this.config = config;
-  }
-
-  public static void main(String[] args) throws IOException, InterruptedException {
-    // Optionally remove existing handlers attached to j.u.l root logger
-    SLF4JBridgeHandler.removeHandlersForRootLogger(); // (since SLF4J 1.6.5)
-
-    // add SLF4JBridgeHandler to j.u.l's root logger, should be done once during
-    // the initialization phase of your application
-    SLF4JBridgeHandler.install();
-
-    // Set logging level
-    java.util.logging.LogManager.getLogManager().getLogger("").setLevel(Level.INFO);
+  public static void main(String[] args) throws Exception {
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      log.info("Shutdown hook, entering maintenance...");
+      MaintenanceController.forceMaintenance(true);
+    }));
 
     log.info("Starting event service application...");
-
-    File configFile = new File(args[0]);
-    if (args.length == 2) {
-      configFile = new File(args[1]);
-    }
-    EventServiceConfig config =
-        new YamlUtils().read(FileUtils.readFileToString(configFile, UTF_8), EventServiceConfig.class);
-    ConfigSecretUtils.resolveSecrets(config.getSecretsConfiguration(), config);
-    new EventServiceApplication(config).run();
+    new EventServiceApplication().run(args);
   }
 
-  private void run() throws InterruptedException {
-    log.info("Starting application using config: {}", config);
+  @Override
+  public String getName() {
+    return APPLICATION_NAME;
+  }
+
+  @Override
+  public void initialize(Bootstrap<EventServiceConfig> bootstrap) {
+    initializeLogging();
+    // Enable variable substitution with environment variables
+    bootstrap.setConfigurationSourceProvider(getConfigurationProvider(bootstrap.getConfigurationSourceProvider()));
+    bootstrap.addBundle(getSwaggerBundle());
+    bootstrap.setMetricRegistry(metricRegistry);
+    bootstrap.addBundle(new ProtobufBundle<>());
+  }
+
+  private static SubstitutingSourceProvider getConfigurationProvider(ConfigurationSourceProvider sourceProvider) {
+    return new SubstitutingSourceProvider(sourceProvider, new EnvironmentVariableSubstitutor(false));
+  }
+
+  private static SwaggerBundle<EventServiceConfig> getSwaggerBundle() {
+    return new SwaggerBundle<EventServiceConfig>() {
+      @Override
+      protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(EventServiceConfig appConfig) {
+        return appConfig.getSwaggerBundleConfiguration();
+      }
+    };
+  }
+
+  @Override
+  public void run(EventServiceConfig configuration, Environment environment) throws Exception {
+    log.info("Starting application using config: {}", configuration);
+    MaintenanceController.forceMaintenance(true);
+    ExecutorModule.getInstance().setExecutorService(ThreadPool.create(
+        1, 10, 500L, TimeUnit.MILLISECONDS, new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
+
+    ConfigSecretUtils.resolveSecrets(configuration.getSecretsConfiguration(), configuration);
+
     ValidatorFactory validatorFactory = Validation.byDefaultProvider()
                                             .configure()
                                             .parameterNameProvider(new ReflectionParameterNameProvider())
                                             .buildValidatorFactory();
 
     List<Module> modules = new ArrayList<>();
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
+      }
+    });
     modules.add(new ValidationModule(validatorFactory));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
       MongoConfig mongoConfig() {
-        return config.getHarnessMongo();
+        return configuration.getHarnessMongo();
       }
     });
 
@@ -134,24 +172,18 @@ public class EventServiceApplication {
     });
 
     modules.add(MorphiaModule.getInstance());
-    modules.add(new EventServiceModule(config));
+    modules.add(new EventServiceModule(configuration));
 
     Injector injector = Guice.createInjector(modules);
-    registerStores(config, injector);
+    registerStores(configuration, injector);
     // Initialise metrics collection.
     injector.getInstance(MetricService.class).initializeMetrics();
     injector.getInstance(EventServiceRecordMetrics.class).scheduleMetricsTasks();
+    initializeGrpcServer(injector);
 
-    ServiceManager serviceManager = injector.getInstance(ServiceManager.class).startAsync();
-    serviceManager.awaitHealthy();
-    log.info("Server startup complete");
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      log.info("Shutting down server...");
-      serviceManager.stopAsync().awaitStopped();
-    }));
-    serviceManager.awaitStopped();
-    log.info("Server shutdown complete");
-    LogManager.shutdown();
+    registerResources(environment, injector);
+    registerHealthCheck(environment, injector);
+    MaintenanceController.forceMaintenance(false);
   }
 
   private static void registerStores(EventServiceConfig config, Injector injector) {
@@ -160,5 +192,26 @@ public class EventServiceApplication {
       final HPersistence hPersistence = injector.getInstance(HPersistence.class);
       hPersistence.register(EVENTS_STORE, config.getEventsMongo().getUri());
     }
+  }
+
+  private void registerHealthCheck(Environment environment, Injector injector) {
+    final HealthService healthService = injector.getInstance(HealthService.class);
+    environment.healthChecks().register("Event Service Health Check", healthService);
+    healthService.registerMonitor(injector.getInstance(HPersistence.class));
+  }
+
+  private void registerResources(Environment environment, Injector injector) {
+    for (Class<?> resource : EventServiceConfig.getResourceClasses()) {
+      if (Resource.isAcceptable(resource)) {
+        environment.jersey().register(injector.getInstance(resource));
+      }
+    }
+  }
+
+  private void initializeGrpcServer(Injector injector) {
+    log.info("Initializing gRPC server...");
+    ServiceManager serviceManager = injector.getInstance(ServiceManager.class).startAsync();
+    serviceManager.awaitHealthy();
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> serviceManager.stopAsync().awaitStopped()));
   }
 }

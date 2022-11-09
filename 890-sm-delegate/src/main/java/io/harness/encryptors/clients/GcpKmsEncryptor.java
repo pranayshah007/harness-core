@@ -40,6 +40,7 @@ import software.wings.beans.GcpKmsConfig;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.api.gax.rpc.ApiException;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.kms.v1.CryptoKeyName;
 import com.google.cloud.kms.v1.DecryptResponse;
@@ -95,6 +96,15 @@ public class GcpKmsEncryptor implements KmsEncryptor {
       try {
         return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(DEFAULT_GCP_KMS_TIMEOUT),
             () -> encryptInternal(accountId, value, gcpKmsConfig));
+      } catch (ApiException e) {
+        if (!e.isRetryable() || failedAttempts == NUM_OF_RETRIES) {
+          log.error(e.toString());
+          throw hintWithExplanationException(HintException.HINT_GCP_ACCESS_DENIED,
+              ExplanationException.INVALID_PARAMETER,
+              new InvalidRequestException(e.toString(), GCP_KMS_OPERATION_ERROR, USER));
+        } else {
+          failedAttempts++;
+        }
       } catch (Exception e) {
         failedAttempts++;
         log.warn("Encryption failed. Trial Number {}", failedAttempts, e);
@@ -160,11 +170,20 @@ public class GcpKmsEncryptor implements KmsEncryptor {
       try {
         byte[] cachedEncryptedKey = getCachedEncryptedKey(encryptedData);
         if (isNotEmpty(cachedEncryptedKey)) {
-          return decryptInternalIfCached(encryptedData, cachedEncryptedKey, System.currentTimeMillis());
+          return decryptInternalIfCached(encryptedData, cachedEncryptedKey);
         } else {
           // Use HTimeLimiter.callInterruptible only if the KMS plain text key is not cached.
           return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(DEFAULT_GCP_KMS_TIMEOUT),
               () -> decryptInternal(encryptedData, gcpKmsConfig));
+        }
+      } catch (ApiException e) {
+        if (!e.isRetryable() || failedAttempts == NUM_OF_RETRIES) {
+          log.error(e.toString());
+          throw hintWithExplanationException(HintException.HINT_GCP_ACCESS_DENIED,
+              ExplanationException.INVALID_PARAMETER,
+              new InvalidRequestException(e.toString(), GCP_KMS_OPERATION_ERROR, USER));
+        } else {
+          failedAttempts++;
         }
       } catch (Exception e) {
         failedAttempts++;
@@ -202,17 +221,16 @@ public class GcpKmsEncryptor implements KmsEncryptor {
       return encryptedKey;
     });
 
-    return decryptInternalIfCached(data, encryptedPlainTextKey, startTime);
+    return decryptInternalIfCached(data, encryptedPlainTextKey);
   }
 
-  private char[] decryptInternalIfCached(EncryptedRecord data, byte[] encryptedPlainTextKey, long startTime)
+  private char[] decryptInternalIfCached(EncryptedRecord data, byte[] encryptedPlainTextKey)
       throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException,
              NoSuchPaddingException {
     KmsEncryptionKeyCacheKey cacheKey = new KmsEncryptionKeyCacheKey(data.getUuid(), data.getEncryptionKey());
     byte[] plainTextKey = simpleDecryptDek(encryptedPlainTextKey, cacheKey.getUuid());
     String decrypted = decryptDataUsingDek(data.getEncryptedValue(), new SecretKeySpec(plainTextKey, "AES"));
 
-    log.info("Finished decrypting secret {} in {} ms.", data.getUuid(), System.currentTimeMillis() - startTime);
     return decrypted == null ? null : decrypted.toCharArray();
   }
 

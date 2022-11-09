@@ -21,6 +21,7 @@ public class LdapSettingsMapper {
         .uuid(ldapSettings.getUuid())
         .userSettings(ldapSettings.getUserSettings())
         .groupSettings(ldapSettings.getGroupSettings())
+        .disabled(ldapSettings.isDisabled())
         .build();
   }
 
@@ -35,6 +36,7 @@ public class LdapSettingsMapper {
     ssoSettings.setUserSettings(ldapSettings.getUserSettings());
     ssoSettings.setGroupSettings(ldapSettings.getGroupSettings());
     ssoSettings.setUuid(ldapSettings.getUuid());
+    ssoSettings.setDisabled(ldapSettings.isDisabled());
     return ssoSettings;
   }
 }

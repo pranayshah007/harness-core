@@ -16,7 +16,7 @@ if [ ! -e start.sh ]; then
   exit 1
 fi
 
-JRE_DIR=${jreDirectory}
+JRE_DIR=jdk-11.0.14+9-jre
 JRE_BINARY=$JRE_DIR/bin/java
 case "$OSTYPE" in
   solaris*)
@@ -24,7 +24,6 @@ case "$OSTYPE" in
     ;;
   darwin*)
     OS=macosx
-    JRE_DIR=${jreMacDirectory}
     JRE_BINARY=$JRE_DIR/Contents/Home/bin/java
     ;;
   linux*)
@@ -47,12 +46,35 @@ case "$OSTYPE" in
     ;;
 esac
 
-JVM_URL=${delegateStorageUrl}/${jreTarPath}
+case "$(uname -m)" in
+  x86_64*)
+    ARCH=x64
+    ;;
+  amd64*)
+    ARCH=x64
+    ;;
+  aarch64*)
+    ARCH=arm64
+    ;;
+  arm64*)
+    ARCH=arm64
+    ;;
+  *)
+    echo "unknown architecture $(uname -m). Proceeding as amd64 arch"
+    ARCH=x64
+    ;;
+esac
 
-<#if alpnJarPath?? >
-ALPN_BOOT_JAR_URL=${delegateStorageUrl}/${alpnJarPath}
+DELEGATE_STORAGE_URL=${delegateStorageUrl}
+
+<#if useCdn == "true">
+  <#noparse>
+    JVM_URL=$DELEGATE_STORAGE_URL/public/shared/jre/openjdk-11.0.14_9/OpenJDK11U-jre_${ARCH}_${OS}_hotspot_11.0.14_9.tar.gz
+  </#noparse>
 <#else>
-ALPN_BOOT_JAR_URL=""
+  <#noparse>
+    JVM_URL=$DELEGATE_STORAGE_URL/jre/openjdk-11.0.14_9/OpenJDK11U-jre_${ARCH}_${OS}_hotspot_11.0.14_9.tar.gz
+  </#noparse>
 </#if>
 
 <#noparse>

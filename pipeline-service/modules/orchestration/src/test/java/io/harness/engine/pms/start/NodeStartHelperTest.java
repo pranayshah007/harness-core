@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
@@ -26,7 +26,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.ExecutionCheck;
 import io.harness.engine.executions.node.NodeExecutionService;
-import io.harness.engine.executions.node.NodeExecutionUpdateFailedException;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.pms.commons.events.PmsEventSender;
@@ -108,11 +107,10 @@ public class NodeStartHelperTest extends OrchestrationTestBase {
 
     when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
 
-    assertThatThrownBy(()
-                           -> nodeStartHelper.startNode(ambiance,
-                               FacilitatorResponseProto.newBuilder().setExecutionMode(ExecutionMode.TASK).build()))
-        .isInstanceOf(NodeExecutionUpdateFailedException.class)
-        .hasMessage("Cannot Start node Execution");
+    assertThatCode(()
+                       -> nodeStartHelper.startNode(ambiance,
+                           FacilitatorResponseProto.newBuilder().setExecutionMode(ExecutionMode.TASK).build()))
+        .doesNotThrowAnyException();
 
     verify(pmsEventSender, times(0)).sendEvent(any(), any(), any(), any(), eq(true));
   }

@@ -213,9 +213,10 @@ public class NGVaultTaskHelper {
     }
     String errorMsg = "";
     if (response.errorBody() != null) {
-      errorMsg =
-          String.format("Failed to %s for Vault: %s And Namespace: %s due to the following error from vault: \"%s\".",
-              operation, baseVaultConfig.getName(), baseVaultConfig.getNamespace(), response.errorBody().string());
+      errorMsg = String.format(
+          "Failed to %s for Vault: %s And Namespace: %s due to the following error from vault: \"%s\" \"%s\".",
+          operation, baseVaultConfig.getName(), baseVaultConfig.getNamespace(), response.message(),
+          response.errorBody().string());
     } else {
       errorMsg = String.format(
           "Failed to %s for Vault: %s And Namespace: %s due to the following error from vault: \"%s\".", operation,

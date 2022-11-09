@@ -16,6 +16,7 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.service.impl.security.customsecretsmanager.CustomSecretsManagerValidationUtils.buildShellScriptTaskParametersNG;
 
+import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
 
 import io.harness.concurrent.HTimeLimiter;
@@ -97,8 +98,15 @@ public class NGCustomSecretManagerEncryptor implements CustomEncryptor {
         (ShellExecutionData) shellScriptTaskResponseNG.getExecuteCommandResponse().getCommandExecutionData();
     String result = shellExecutionData.getSweepingOutputEnvVariables().get(OUTPUT_VARIABLE);
     if (isEmpty(result) || result.equals("null")) {
-      String errorMessage = "Empty or null value returned by custom shell script for the given secret: "
-          + encryptedRecord.getName() + ", for accountId: " + accountId;
+      String secretId = (customSecretNGManagerConfig.getNgMetadata() != null)
+          ? customSecretNGManagerConfig.getNgMetadata().getIdentifier()
+          : encryptedRecord.getName();
+      String templateRef = (customSecretNGManagerConfig.getTemplate() != null)
+          ? customSecretNGManagerConfig.getTemplate().getTemplateRef()
+          : null;
+      String errorMessage =
+          format("The custom shell script returned an empty or null value - accountId: %s, secret: %s, template: %s",
+              accountId, secretId, templateRef);
       throw new SecretManagementDelegateException(SECRET_MANAGEMENT_ERROR, errorMessage, USER);
     }
     return result.toCharArray();

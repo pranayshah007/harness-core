@@ -1,0 +1,30 @@
+---
+monitoredService:
+  type: "Application"
+  serviceRef: "template"
+  environmentRef: "gcpl"
+  tags: {}
+  sources:
+    changeSources:
+      - identifier: "harness_cd_next_gen"
+        type: "HarnessCDNextGen"
+        name: "Harness CD Next Gen"
+        enabled: true
+        category: "Deployment"
+        spec: {}
+    healthSources:
+      - identifier: "elasticsearch"
+        type: "ElasticSearch"
+        name: "elasticsearch"
+        spec:
+          connectorRef: "account.ElasticSearch"
+          feature: "ELK Logs"
+          queries:
+            - identifier: "ElasticSearch_Logs_Query"
+              name: "ElasticSearch Logs Query"
+              query: "error"
+              index: "*"
+              serviceInstanceIdentifier: "host"
+              messageIdentifier: "message"
+              timeStampIdentifier: "@timestamp"
+              timeStampFormat: "yyyy-MM-dd’T’HH:mm:ss.SSSX"

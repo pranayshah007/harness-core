@@ -703,8 +703,10 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
     return criteria;
   }
+
   private Criteria getUserGroupbySsoIdCriteria(String accountIdentifier, String ssoId) {
-    Criteria criteria = createScopeCriteria(accountIdentifier, null, null);
+    Criteria criteria = new Criteria();
+    criteria.and(UserGroupKeys.accountIdentifier).is(accountIdentifier);
     criteria.and(UserGroupKeys.isSsoLinked).is(true);
     criteria.and(UserGroupKeys.linkedSsoId).is(ssoId);
     return criteria;
@@ -730,13 +732,6 @@ public class UserGroupServiceImpl implements UserGroupService {
     criteria.and(UserGroupKeys.accountIdentifier).is(accountIdentifier);
     criteria.and(UserGroupKeys.externallyManaged).is(true);
     return userGroupRepository.findAll(criteria, null, null);
-  }
-
-  private Criteria getUserGroupbySsoIdCriteria(String ssoId) {
-    Criteria criteria = new Criteria();
-    criteria.and(UserGroupKeys.isSsoLinked).is(true);
-    criteria.and(UserGroupKeys.linkedSsoId).is(ssoId);
-    return criteria;
   }
 
   @Override

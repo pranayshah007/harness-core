@@ -34,10 +34,12 @@ public class PolledItemPublisher {
   @Inject NgWebhookResource ngWebhookResource;
 
   public void publishPolledItems(PollingResponse pollingResponse) {
-    eventProducer.send(Message.newBuilder()
-                           .putAllMetadata(ImmutableMap.of("accountId", pollingResponse.getAccountId()))
-                           .setData(pollingResponse.toByteString())
-                           .build());
+    String messageId =
+        eventProducer.send(Message.newBuilder()
+                               .putAllMetadata(ImmutableMap.of("accountId", pollingResponse.getAccountId()))
+                               .setData(pollingResponse.toByteString())
+                               .build());
+    log.info("Published the webhook polled item with message id {} ", messageId);
   }
 
   public void sendWebhookRequest(String accountId, List<GitPollingWebhookData> redeliveries) {

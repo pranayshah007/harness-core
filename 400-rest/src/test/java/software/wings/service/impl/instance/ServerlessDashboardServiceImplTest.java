@@ -122,7 +122,7 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
     instanceCount.setCount(1);
     doReturn(singletonList(instanceCount).iterator())
         .when(mocks.aggregationPipelineMock)
-        .aggregate(nullable(Class.class));
+        .aggregate(nullable(Class.class), any());
     doReturn(Collections.emptyList())
         .when(serverlessDashboardService)
         .getEntitySummaryStats(any(), any(), any(), nullable(Query.class), any());
@@ -197,7 +197,9 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
     serviceInstanceCount.setServiceInfo(getEntitySummaryList().get(0));
     serviceInstanceCount.setAppInfo(getEntitySummaryList().get(0));
     serviceInstanceCount.setEnvTypeList(singletonList(new EnvType()));
-    doReturn(Arrays.asList(serviceInstanceCount).iterator()).when(aggregationPipelineMOck).aggregate(any(Class.class));
+    doReturn(Arrays.asList(serviceInstanceCount).iterator())
+        .when(aggregationPipelineMOck)
+        .aggregate(any(Class.class), any());
 
     PageResponse<InstanceSummaryStatsByService> appInstanceSummaryStatsByService =
         serverlessDashboardService.getAppInstanceSummaryStatsByService(ACCOUNTID, Arrays.asList(APPID_1), 0, 0, 10);
@@ -246,7 +248,7 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
     AggregationPipeline aggregationPipelineMock = setup_AggregationPipeline().getAggregationPipelineMock();
     doReturn(Arrays.asList(new ServiceAggregationInfo()).iterator())
         .when(aggregationPipelineMock)
-        .aggregate(any(Class.class));
+        .aggregate(any(Class.class), any());
 
     doReturn(mock(PageResponse.class))
         .when(serverlessDashboardService)
@@ -410,7 +412,7 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
     flatEntitySummaryStats.setEntityName("entityname");
     doReturn(Arrays.asList(flatEntitySummaryStats).iterator())
         .when(aggregationPipelineMOck)
-        .aggregate(any(Class.class));
+        .aggregate(any(Class.class), any());
 
     final List<EntitySummaryStats> summaryStats = serverlessDashboardService.getEntitySummaryStats(
         SERVICE_ID, "serviceName", EntityType.SERVICE.name(), queryMock, 1);

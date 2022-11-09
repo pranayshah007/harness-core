@@ -8,7 +8,6 @@
 package io.harness.engine.interrupts.statusupdate;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -22,7 +21,6 @@ import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
 import java.util.EnumSet;
-import java.util.List;
 
 @OwnedBy(CDC)
 public class PausedStepStatusUpdate implements NodeStatusUpdateHandler {
@@ -36,9 +34,9 @@ public class PausedStepStatusUpdate implements NodeStatusUpdateHandler {
       planExecutionService.updateCalculatedStatus(nodeStatusUpdateInfo.getPlanExecutionId());
       return;
     }
-    List<NodeExecution> flowingChildren = nodeExecutionService.findByParentIdAndStatusIn(
+    long flowingChildrenCount = nodeExecutionService.findCountByParentIdAndStatusIn(
         nodeExecution.getParentId(), StatusUtils.unpausableChildStatuses());
-    if (isEmpty(flowingChildren)) {
+    if (flowingChildrenCount == 0) {
       nodeExecutionService.updateStatusWithOps(nodeExecution.getParentId(), PAUSED, null, EnumSet.noneOf(Status.class));
     }
     planExecutionService.updateCalculatedStatus(nodeStatusUpdateInfo.getPlanExecutionId());

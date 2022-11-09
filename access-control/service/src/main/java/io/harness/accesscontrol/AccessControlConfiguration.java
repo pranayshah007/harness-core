@@ -84,7 +84,7 @@ public class AccessControlConfiguration extends Configuration {
   public static final String AGGREGATOR_PACKAGE = "io.harness.accesscontrol.aggregator.api";
   public static final String HEALTH_PACKAGE = "io.harness.accesscontrol.health";
   public static final String ENFORCEMENT_PACKAGE = "io.harness.enforcement.client.resources";
-  public static final String ACCESSCONTROL_SERVER_STUB = "io.harness.spec.server.accesscontrol";
+  public static final String ACCESSCONTROL_SERVER_STUB = "io.harness.spec.server.accesscontrol.v1";
 
   @JsonProperty("mongo") private MongoConfig mongoConfig;
   @JsonProperty("allowedOrigins") private final List<String> allowedOrigins = Lists.newArrayList();
@@ -115,6 +115,7 @@ public class AccessControlConfiguration extends Configuration {
   @JsonProperty("hostname") private String hostname = "localhost";
   @JsonProperty("basePathPrefix") private String basePathPrefix = "";
   @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 
   public static final Collection<Class<?>> ALL_ACCESS_CONTROL_RESOURCES = getResourceClasses();
 

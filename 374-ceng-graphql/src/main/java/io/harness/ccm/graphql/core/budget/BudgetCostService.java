@@ -18,5 +18,11 @@ public interface BudgetCostService {
   double getForecastCost(String accountId, String perspectiveId, long startTime, BudgetPeriod period);
   double getLastPeriodCost(Budget budget);
   double getLastPeriodCost(String accountId, String perspectiveId, long startTime, BudgetPeriod period);
+  Double[] getActualMonthlyCost(Budget budget);
+  Double[] getActualMonthlyCost(String accountId, String perspectiveId, long startOfPeriod, BudgetPeriod period);
+  Double[] getForecastMonthlyCost(Budget budget);
+  Double[] getForecastMonthlyCost(String accountId, String perspectiveId, long startOfPeriod, BudgetPeriod period);
+  Double[] getLastYearMonthlyCost(Budget budget);
+  Double[] getLastYearMonthlyCost(String accountId, String perspectiveId, long startTime, BudgetPeriod period);
   BudgetData getBudgetTimeSeriesStats(Budget budget);
 }

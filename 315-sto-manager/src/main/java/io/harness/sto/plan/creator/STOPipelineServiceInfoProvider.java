@@ -7,15 +7,22 @@
 
 package io.harness.sto.plan.creator;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.steps.STOStepType;
 import io.harness.beans.steps.StepSpecTypeConstants;
+import io.harness.ci.creator.variables.RunStepVariableCreator;
+import io.harness.ci.creator.variables.STOCommonStepVariableCreator;
 import io.harness.ci.creator.variables.STOStageVariableCreator;
 import io.harness.ci.creator.variables.STOStepVariableCreator;
 import io.harness.ci.creator.variables.SecurityStepVariableCreator;
+import io.harness.ci.plancreator.RunStepPlanCreator;
 import io.harness.ci.plancreator.SecurityStepPlanCreator;
-import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
 import io.harness.filters.ParallelGenericFilterJsonCreator;
 import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
@@ -26,8 +33,11 @@ import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
+import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
+import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.sto.plan.creator.filter.STOStageFilterJsonCreator;
 import io.harness.sto.plan.creator.stage.SecurityStagePMSPlanCreator;
 import io.harness.sto.plan.creator.step.STOPMSStepFilterJsonCreator;
@@ -38,12 +48,21 @@ import io.harness.variables.ExecutionVariableCreator;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Singleton
 @OwnedBy(HarnessTeam.STO)
 public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvider {
+  private static final String TEST = "Test";
+  private static final String PUBLISH_ARTIFACTS = "PublishArtifacts";
+  private static final String LITE_ENGINE_TASK = "liteEngineTask";
+  private static final String SAVE_CACHE = "SaveCache";
+  private static final String CLEANUP = "Cleanup";
+
   @Inject InjectorUtils injectorUtils;
 
   @Override
@@ -52,6 +71,10 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     planCreators.add(new SecurityStagePMSPlanCreator());
     planCreators.add(new STOPMSStepPlanCreator());
 
+    planCreators.addAll(
+        Arrays.asList(STOStepType.values()).stream().map(e -> e.getPlanCreator()).collect(Collectors.toList()));
+
+    planCreators.add(new RunStepPlanCreator());
     planCreators.add(new SecurityStepPlanCreator());
     planCreators.add(new NGStageStepsPlanCreator());
     planCreators.add(new ExecutionPmsPlanCreator());
@@ -68,6 +91,7 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     filterJsonCreators.add(new STOStepFilterJsonCreatorV2());
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
     filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
+    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STEPS)));
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -80,9 +104,23 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new STOStepVariableCreator());
 
+    variableCreators.add(new STOCommonStepVariableCreator());
+    variableCreators.add(new RunStepVariableCreator());
     variableCreators.add(new SecurityStepVariableCreator());
+    variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS)));
+    variableCreators.add(
+        new EmptyVariableCreator(STEP, Set.of(TEST, PUBLISH_ARTIFACTS, LITE_ENGINE_TASK, SAVE_CACHE, CLEANUP)));
 
     return variableCreators;
+  }
+
+  private StepInfo createStepInfo(STOStepType stoStepType, String stepCategory) {
+    return StepInfo.newBuilder()
+        .setName(stoStepType.getName())
+        .setType(stoStepType.getName())
+        //.setFeatureFlag(stoStepType.getFeatureName().name())
+        .setStepMetaData(StepMetaData.newBuilder().addFolderPaths(stepCategory).build())
+        .build();
   }
 
   @Override
@@ -91,13 +129,20 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
                                     .setName("Security")
                                     .setType(StepSpecTypeConstants.SECURITY)
                                     .setFeatureFlag(FeatureName.SECURITY.name())
-                                    .setFeatureRestrictionName(FeatureRestrictionName.SECURITY.name())
                                     .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Security").build())
                                     .build();
+    StepInfo runStepInfo = StepInfo.newBuilder()
+                               .setName("Run")
+                               .setType(StepSpecTypeConstants.RUN)
+                               .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                               .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(securityStepInfo);
+    stepInfos.add(runStepInfo);
+    Arrays.asList(STOStepType.values())
+        .forEach(e -> e.getStepCategories().forEach(category -> stepInfos.add(createStepInfo(e, category))));
 
     return stepInfos;
   }

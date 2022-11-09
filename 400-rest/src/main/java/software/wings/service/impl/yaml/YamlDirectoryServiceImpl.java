@@ -2062,6 +2062,10 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
             .addOrder(Pipeline.NAME_KEY, SortOrder.OrderType.ASC)
             .addFieldsIncluded(Pipeline.UUID_KEY, Pipeline.NAME_KEY, Pipeline.APP_ID_KEY2)
             .build();
+    if (featureFlagService.isEnabled(FeatureName.SPG_2K_DEFAULT_PAGE_SIZE, accountId)) {
+      pageRequest.setLimit(PageRequest.LIMIT_2K_PAGE_SIZE);
+    }
+
     List<Pipeline> pipelines = pipelineService.listPipelines(pageRequest).getResponse();
 
     if (pipelines != null) {

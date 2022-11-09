@@ -10,6 +10,7 @@ package io.harness.cvng.core.jobs;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.queue.QueueController;
 
 import java.time.Duration;
@@ -20,12 +21,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor
 @Slf4j
-public abstract class AbstractStreamConsumer implements Runnable {
+public abstract class AbstractStreamConsumer extends RedisTraceConsumer {
   private int maxWaitTimeInSeconds = 10;
   private Consumer consumer;
   private QueueController queueController;
 
-  protected abstract void processMessage(Message message);
+  protected abstract boolean processMessage(Message message);
 
   @Override
   public void run() {
@@ -64,18 +65,6 @@ public abstract class AbstractStreamConsumer implements Runnable {
       if (messageProcessed) {
         consumer.acknowledge(messageId);
       }
-    }
-  }
-
-  private boolean handleMessage(Message message) {
-    try {
-      processMessage(message);
-      return true;
-    } catch (Exception ex) {
-      // This is not evicted from events framework so that it can be processed
-      // by other consumer if the error is a runtime error
-      log.error(String.format("Error occurred in processing message with id %s", message.getId()), ex);
-      return false;
     }
   }
 }

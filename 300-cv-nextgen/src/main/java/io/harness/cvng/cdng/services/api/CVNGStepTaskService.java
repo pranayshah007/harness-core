@@ -21,7 +21,6 @@ import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
 import io.harness.cvng.core.beans.params.logsFilterParams.DeploymentLogsFilter;
-import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
@@ -31,7 +30,6 @@ public interface CVNGStepTaskService {
   void create(CVNGStepTask cvngStepTask);
   void notifyCVNGStep(CVNGStepTask entity);
   CVNGStepTask getByCallBackId(String callBackId);
-  VerificationJobInstance getByVerificationJobInstanceId(String verificationJobInstanceId);
 
   DeploymentActivitySummaryDTO getDeploymentSummary(String callBackId);
   TransactionMetricInfoSummaryPageDTO getDeploymentActivityTimeSeriesData(String accountId, String callBackId,

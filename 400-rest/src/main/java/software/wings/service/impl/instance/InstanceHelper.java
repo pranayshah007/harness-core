@@ -8,6 +8,7 @@
 package software.wings.service.impl.instance;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -76,6 +77,8 @@ import software.wings.beans.infrastructure.instance.info.Ec2InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.PhysicalHostInstanceInfo;
 import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
+import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
+import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.HostService;
@@ -109,6 +112,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -148,6 +152,7 @@ public class InstanceHelper {
   @Inject private InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject private InstanceSyncMonitoringService instanceSyncMonitoringService;
+  @Inject private CgInstanceSyncTaskDetailsService taskDetailsService;
 
   /**
    * The phaseExecutionData is used to process the instance information that is used by the service and infra
@@ -650,23 +655,23 @@ public class InstanceHelper {
     try (AcquiredLock lock =
              persistentLocker.tryToAcquireLock(InfrastructureMapping.class, infraMappingId, Duration.ofSeconds(180))) {
       if (lock == null) {
-        log.warn("Couldn't acquire infra lock for infraMapping of appId [{}]", appId);
+        log.warn("Couldn't acquire infra lock. appId [{}]", appId);
         return;
       }
 
       try {
         InstanceHandler instanceHandler = instanceHandlerFactory.getInstanceHandler(infraMapping);
         if (instanceHandler == null) {
-          log.warn("Instance handler null for infraMapping of appId [{}]", appId);
+          log.warn("Instance handler null. appId [{}]", appId);
           return;
         }
-        log.info("Instance sync started for infraMapping");
+        log.info("Instance sync started");
         instanceHandler.syncInstances(appId, infraMappingId, instanceSyncFlow);
         instanceService.updateSyncSuccess(appId, infraMapping.getServiceId(), infraMapping.getEnvId(), infraMappingId,
             infraMapping.getDisplayName(), System.currentTimeMillis());
-        log.info("Instance sync completed for infraMapping");
+        log.info("Instance sync completed");
       } catch (Exception ex) {
-        log.warn("Instance sync failed for infraMapping", ex);
+        log.warn("Instance sync failed", ex);
         String errorMsg = getErrorMsg(ex);
 
         instanceService.handleSyncFailure(appId, infraMapping.getServiceId(), infraMapping.getEnvId(), infraMappingId,
@@ -693,8 +698,8 @@ public class InstanceHelper {
   void createPerpetualTaskForNewDeploymentIfEnabled(
       InfrastructureMapping infrastructureMapping, List<DeploymentSummary> deploymentSummaries) {
     if (isInstanceSyncByPerpetualTaskEnabled(infrastructureMapping)) {
-      log.info("Creating Perpetual tasks for new deployment for account: [{}] and infrastructure mapping [{}]",
-          infrastructureMapping.getAccountId(), infrastructureMapping.getUuid());
+      log.info("Creating Perpetual tasks for new deployment for infrastructure mapping [{}]",
+          infrastructureMapping.getUuid());
       instanceSyncPerpetualTaskService.createPerpetualTasksForNewDeployment(infrastructureMapping, deploymentSummaries);
     }
   }
@@ -732,22 +737,38 @@ public class InstanceHelper {
       return;
     }
 
-    log.debug("Handling Instance sync response. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
-        infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid());
+    if (featureFlagService.isEnabled(INSTANCE_SYNC_V2_CG, infrastructureMapping.getAccountId())) {
+      InstanceSyncTaskDetails instanceSyncV2TaskDetails =
+          taskDetailsService.getForInfraMapping(infrastructureMapping.getAccountId(), infrastructureMapping.getUuid());
+      if (Objects.nonNull(instanceSyncV2TaskDetails) && instanceSyncV2TaskDetails.getLastSuccessfulRun() > 0) {
+        log.info(
+            "[INSTANCE_SYNC_V2_CG] Instance Sync for infra mapping: [{}] is moved to new Instance Sync V2 framework, and is handled via Perpetual Task Id: [{}], and instance sync task details id: [{}]. Skipping consuming response for this.",
+            infrastructureMapping.getUuid(), instanceSyncV2TaskDetails.getPerpetualTaskId(),
+            instanceSyncV2TaskDetails.getUuid());
+
+        perpetualTaskService.deleteTask(accountId, perpetualTaskId);
+        log.info(
+            "[INSTANCE_SYNC_V2_CG] Perpetual task with Id: [{}] deleted for infra mapping Id: [{}]. This is now migrated to new perpetual task: [{}], and instance sync task details: [{}]",
+            perpetualTaskId, infrastructureMappingId, instanceSyncV2TaskDetails.getPerpetualTaskId(),
+            instanceSyncV2TaskDetails.getUuid());
+        return;
+      }
+    }
+
+    log.debug("Handling Instance sync response. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());
 
     try (AcquiredLock<?> lock = persistentLocker.tryToAcquireLock(
              InfrastructureMapping.class, infrastructureMapping.getUuid(), Duration.ofSeconds(180))) {
       if (lock == null) {
-        log.warn(
-            "Couldn't acquire lock on Infrastructure Mapping. Infrastructure Mapping : [{}], Application Id : [{}]",
+        log.warn("Couldn't acquire lock on Infrastructure Mapping : [{}], Application Id : [{}]",
             infrastructureMappingId, appId);
         return;
       }
       handleInstanceSyncResponseFromPerpetualTask(infrastructureMapping, perpetualTaskRecord, response);
     }
 
-    log.debug("Handled Instance sync response successfully. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
-        infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid());
+    log.debug(
+        "Handled Instance sync response successfully. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());
   }
 
   private void handleInstanceSyncResponseFromPerpetualTask(InfrastructureMapping infrastructureMapping,
@@ -764,12 +785,10 @@ public class InstanceHelper {
       handler.processInstanceSyncResponseFromPerpetualTask(infrastructureMapping, response);
     } catch (NoInstancesException ex) {
       checkAndDeletePerpetualTask(infrastructureMapping, ex);
-      log.warn("Error handling Instance sync response. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
-          infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid(), ex);
     } catch (Exception ex) {
       checkAndDeletePerpetualTask(infrastructureMapping, ex);
-      log.error("Error handling Instance sync response. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
-          infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid(), ex);
+      log.error(
+          "Error handling Instance sync response. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());
       throw ex;
     } finally {
       Status status = handler.getStatus(infrastructureMapping, response);
@@ -779,14 +798,13 @@ public class InstanceHelper {
             System.currentTimeMillis());
       }
       if (!status.isRetryable()) {
-        log.info("Task Not Retryable. Deleting Perpetual Task. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
-            infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid());
+        log.info("Task Not Retryable. Deleting Perpetual Task. Infrastructure Mapping : [{}]",
+            infrastructureMapping.getUuid());
         instanceSyncPerpetualTaskService.deletePerpetualTask(
             infrastructureMapping.getAccountId(), infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid());
       }
       if (!status.isSuccess()) {
-        log.info("Sync Failure. Reset Perpetual Task. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
-            infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid());
+        log.info("Sync Failure. Reset Perpetual Task. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());
         instanceSyncPerpetualTaskService.resetPerpetualTask(
             infrastructureMapping.getAccountId(), perpetualTaskRecord.getUuid());
       }

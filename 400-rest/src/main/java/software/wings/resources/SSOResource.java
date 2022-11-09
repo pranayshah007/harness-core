@@ -265,6 +265,7 @@ public class SSOResource {
 
   @POST
   @Path("ldap/iterations")
+  @AuthRule(permissionType = LOGGED_IN)
   public RestResponse<List<Long>> getIterationsFromCron(
       @QueryParam("accountId") @NotBlank String accountId, CronExpressionRequest cronExpressionRequest) {
     return new RestResponse<>(ssoService.getIterationsFromCron(accountId, cronExpressionRequest.getCronExpression()));

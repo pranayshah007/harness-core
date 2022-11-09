@@ -28,6 +28,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.FeatureName;
 import io.harness.data.encoding.EncodingUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.exception.FunctorException;
 import io.harness.exception.InvalidRequestException;
@@ -44,9 +45,10 @@ import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
 import java.nio.charset.Charset;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
 import lombok.Builder;
@@ -70,11 +72,13 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   private String envId;
   private String workflowExecutionId;
   private int expressionFunctorToken;
+  private final ExecutorService expressionEvaluatorExecutor;
+  private final boolean evaluateSync;
 
-  @Default private Map<String, String> evaluatedSecrets = new HashMap<>();
-  @Default private Map<String, String> evaluatedDelegateSecrets = new HashMap<>();
-  @Default private Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
-  @Default private Map<String, SecretDetail> secretDetails = new HashMap<>();
+  @Default private Map<String, String> evaluatedSecrets = new ConcurrentHashMap<>();
+  @Default private Map<String, String> evaluatedDelegateSecrets = new ConcurrentHashMap<>();
+  @Default private Map<String, EncryptionConfig> encryptionConfigs = new ConcurrentHashMap<>();
+  @Default private Map<String, SecretDetail> secretDetails = new ConcurrentHashMap<>();
 
   DelegateMetricsService delegateMetricsService;
 
@@ -84,6 +88,13 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
       throw new FunctorException("Inappropriate usage of internal functor");
     }
     try {
+      if (!evaluateSync) {
+        if (expressionEvaluatorExecutor != null) {
+          // Offload expression evaluation of secrets to another threadpool.
+          return expressionEvaluatorExecutor.submit(() -> obtainInternal(secretName));
+        }
+      }
+      log.warn("Expression evaluation is being processed synchronously");
       return obtainInternal(secretName);
     } catch (Exception ex) {
       throw new FunctorException("Error occurred while evaluating the secret [" + secretName + "]", ex);
@@ -143,6 +154,7 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   }
 
   private Object obtainInternal(String secretName) {
+    boolean updateSecretUsage = !SecretManagerMode.DRY_RUN.equals(mode);
     if (evaluatedSecrets.containsKey(secretName)) {
       return returnSecretValue(secretName, evaluatedSecrets.get(secretName));
     }
@@ -182,9 +194,10 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
 
     if (isEmpty(encryptedDataDetails)) {
       // Cache miss.
-      encryptedDataDetails = secretManager.getEncryptionDetails(serviceVariable, appId, workflowExecutionId);
+      encryptedDataDetails =
+          secretManager.getEncryptionDetails(serviceVariable, appId, workflowExecutionId, updateSecretUsage);
 
-      if (io.harness.data.structure.EmptyPredicate.isEmpty(encryptedDataDetails)) {
+      if (EmptyPredicate.isEmpty(encryptedDataDetails)) {
         throw new InvalidRequestException("No secret found with identifier + [" + secretName + "]", USER);
       }
 

@@ -10,64 +10,76 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq write -i "$CONFIG_FILE" "$CONFIG_KEY" "$CONFIG_VALUE"
+    export CONFIG_VALUE; export CONFIG_KEY; export CONFIG_KEY=.$CONFIG_KEY; yq -i 'eval(strenv(CONFIG_KEY))=env(CONFIG_VALUE)' $CONFIG_FILE
   fi
 }
 
-yq delete -i /opt/harness/verification-config.yml server.adminConnectors
-yq delete -i /opt/harness/verification-config.yml server.applicationConnectors[0]
+yq -i 'del(.server.adminConnectors)' $CONFIG_FILE
+yq -i 'del(.server.applicationConnectors[0])' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-  yq write -i /opt/harness/verification-config.yml logging.level "$LOGGING_LEVEL"
+  export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$VERIFICATION_PORT" ]]; then
-  yq write -i /opt/harness/verification-config.yml server.applicationConnectors[0].port "$VERIFICATION_PORT"
+  export VERIFICATION_PORT; yq -i '.server.applicationConnectors[0].port=env(VERIFICATION_PORT)' $CONFIG_FILE
 else
-  yq write -i /opt/harness/verification-config.yml server.applicationConnectors[0].port "7070"
+  yq -i '.server.applicationConnectors[0].port=7070' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq write -i /opt/harness/verification-config.yml mongo.uri "${MONGO_URI//\\&/&}"
+  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SSL_CONFIG" ]]; then
-  yq write -i /opt/harness/verification-config.yml mongo.mongoSSLConfig.mongoSSLEnabled "$MONGO_SSL_CONFIG"
+  export MONGO_SSL_CONFIG; yq -i '.mongo.mongoSSLConfig.mongoSSLEnabled=env(MONGO_SSL_CONFIG)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SSL_CA_TRUST_STORE_PATH" ]]; then
-  yq write -i /opt/harness/verification-config.yml mongo.mongoSSLConfig.mongoTrustStorePath "$MONGO_SSL_CA_TRUST_STORE_PATH"
+  export MONGO_SSL_CA_TRUST_STORE_PATH; yq -i '.mongo.mongoSSLConfig.mongoTrustStorePath=env(MONGO_SSL_CA_TRUST_STORE_PATH)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
-  yq write -i /opt/harness/verification-config.yml mongo.mongoSSLConfig.mongoTrustStorePassword "$MONGO_SSL_CA_TRUST_STORE_PASSWORD"
+  export MONGO_SSL_CA_TRUST_STORE_PASSWORD; yq -i '.mongo.mongoSSLConfig.mongoTrustStorePassword=env(MONGO_SSL_CA_TRUST_STORE_PASSWORD)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_URL" ]]; then
-  yq write -i /opt/harness/verification-config.yml managerUrl "$MANAGER_URL"
+  export MANAGER_URL; yq -i '.managerUrl=env(MANAGER_URL)' $CONFIG_FILE
 fi
 
-  yq write -i /opt/harness/verification-config.yml server.requestLog.appenders[0].type "console"
-  yq write -i /opt/harness/verification-config.yml server.requestLog.appenders[0].threshold "TRACE"
-  yq write -i /opt/harness/verification-config.yml server.requestLog.appenders[0].target "STDOUT"
+if [[ "" != "$SG_ITERATOR_ENABLED" ]]; then
+  export SG_ITERATOR_ENABLED; yq -i '.serviceGuardIteratorConfig.enabled=env(SG_ITERATOR_ENABLED)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SG_ITERATOR_THREAD_COUNT" ]]; then
+  export SG_ITERATOR_THREAD_COUNT; yq -i '.serviceGuardIteratorConfig.threadPoolCount=env(SG_ITERATOR_THREAD_COUNT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SG_ITERATOR_INTERVAL_SECS" ]]; then
+  export SG_ITERATOR_INTERVAL_SECS; yq -i '.serviceGuardIteratorConfig.targetIntervalInSeconds=env(SG_ITERATOR_INTERVAL_SECS)' $CONFIG_FILE
+fi
+
+  yq -i '.server.requestLog.appenders[0].type="console"' $CONFIG_FILE
+  yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
+  yq -i '.server.requestLog.appenders[0].target="STDOUT"' $CONFIG_FILE
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq delete -i /opt/harness/verification-config.yml logging.appenders[2]
-  yq delete -i /opt/harness/verification-config.yml logging.appenders[0]
-  yq write -i /opt/harness/verification-config.yml logging.appenders[0].stackdriverLogEnabled "true"
+  yq -i 'del(.logging.appenders[2])' $CONFIG_FILE
+  yq -i 'del(.logging.appenders[0])' $CONFIG_FILE
+  yq -i '.logging.appenders[0].stackdriverLogEnabled=true' $CONFIG_FILE
 else
   if [[ "$ROLLING_FILE_LOGGING_ENABLED" == "true" ]]; then
-    yq delete -i /opt/harness/verification-config.yml logging.appenders[1]
-    yq write -i /opt/harness/verification-config.yml logging.appenders[1].currentLogFilename "/opt/harness/logs/verification.log"
-    yq write -i /opt/harness/verification-config.yml logging.appenders[1].archivedLogFilenamePattern "/opt/harness/logs/verification.%d.%i.log"
+    yq -i 'del(.logging.appenders[1])' $CONFIG_FILE
+    yq -i '.logging.appenders[1].currentLogFilename="/opt/harness/logs/verification.log"' $CONFIG_FILE
+    yq -i '.logging.appenders[1].archivedLogFilenamePattern="/opt/harness/logs/verification.%d.%i.log"' $CONFIG_FILE
   else
-    yq delete -i /opt/harness/verification-config.yml logging.appenders[2]
-    yq delete -i /opt/harness/verification-config.yml logging.appenders[1]
+    yq -i 'del(.logging.appenders[2])' $CONFIG_FILE
+    yq -i 'del(.logging.appenders[1])' $CONFIG_FILE
   fi
 fi
 
 if [[ "" != "$DATA_STORE" ]]; then
-  yq write -i /opt/harness/verification-config.yml dataStorageMode "$DATA_STORE"
+  export DATA_STORE; yq -i '.dataStorageMode=env(DATA_STORE)' $CONFIG_FILE
 fi
 
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"

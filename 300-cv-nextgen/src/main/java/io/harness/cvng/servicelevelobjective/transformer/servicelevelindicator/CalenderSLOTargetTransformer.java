@@ -11,9 +11,9 @@ import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec.MonthlyCalenderSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec.WeeklyCalendarSpec;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.CalenderSLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.MonthlyCalenderTarget;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.QuarterlyCalenderTarget;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.WeeklyCalenderTarget;
 
 public class CalenderSLOTargetTransformer implements SLOTargetTransformer<CalenderSLOTarget, CalenderSLOTargetSpec> {
@@ -27,7 +27,7 @@ public class CalenderSLOTargetTransformer implements SLOTargetTransformer<Calend
             .windowEndDayOfMonth(((MonthlyCalenderSpec) spec.getSpec()).getDayOfMonth())
             .build();
       case QUARTERLY:
-        return ServiceLevelObjective.QuarterlyCalenderTarget.builder().build();
+        return QuarterlyCalenderTarget.builder().build();
       default:
         throw new IllegalStateException("type: " + spec.getSpec().getType() + " is not handled");
     }

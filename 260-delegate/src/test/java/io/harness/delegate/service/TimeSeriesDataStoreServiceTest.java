@@ -22,43 +22,45 @@ import io.harness.rule.OwnerRule;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 public class TimeSeriesDataStoreServiceTest extends CategoryTest {
+  @Spy TimeSeriesDataStoreService timeSeriesDataStoreService;
+
+  String accountId = generateUuid();
+  String verificationTaskId = generateUuid();
+  int numOfMins = 10;
+  int numOfMetrics = 5;
+  int numOfTxns = 15;
+  int numberOfHosts = 10;
+
+  AutoCloseable mocks;
+  @Before
+  public void before() {
+    mocks = MockitoAnnotations.openMocks(this);
+    Mockito.doReturn(true).when(timeSeriesDataStoreService).saveTimeSeriesToCVNG(Mockito.any(), Mockito.any());
+  }
+
   @Test
   @Owner(developers = OwnerRule.RAGHU)
   @Category(UnitTests.class)
   public void testConvertToCollectionRecords() {
-    String accountId = generateUuid();
-    String verificationTaskId = generateUuid();
-    int numOfMins = 10;
-    int numOfMetrics = 5;
-    int numOfTxns = 15;
-    Set<String> metrics = new HashSet<>();
-    Set<String> txns = new HashSet<>();
-    List<TimeSeriesRecord> timeSeriesRecords = new ArrayList<>();
-    for (int i = 0; i < numOfMins; i++) {
-      for (int j = 0; j < numOfMetrics; j++) {
-        metrics.add("metric-" + j);
-        for (int k = 0; k < numOfTxns; k++) {
-          txns.add("txn-" + k);
-          timeSeriesRecords.add(TimeSeriesRecord.builder()
-                                    .txnName("txn-" + k)
-                                    .metricName("metric-" + j)
-                                    .metricValue(10.0)
-                                    .timestamp(TimeUnit.MINUTES.toMillis(i))
-                                    .build());
-        }
-      }
-    }
-
+    numberOfHosts = 0;
+    List<TimeSeriesRecord> timeSeriesRecords = getSampleTimeSeriesRecords();
+    Set<String> metrics = getMetricNames(timeSeriesRecords);
+    Set<String> txns = getTransactionNames(timeSeriesRecords);
     List<TimeSeriesDataCollectionRecord> dataCollectionRecords =
-        new TimeSeriesDataStoreService().convertToCollectionRecords(accountId, verificationTaskId, timeSeriesRecords);
+        timeSeriesDataStoreService.convertToCollectionRecords(accountId, verificationTaskId, timeSeriesRecords);
     System.out.println(dataCollectionRecords);
     assertThat(dataCollectionRecords.size()).isEqualTo(numOfMins);
     Collections.sort(dataCollectionRecords, Comparator.comparingLong(TimeSeriesDataCollectionRecord::getTimeStamp));
@@ -75,5 +77,63 @@ public class TimeSeriesDataStoreServiceTest extends CategoryTest {
         });
       });
     }
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHIJITH)
+  @Category(UnitTests.class)
+  public void testTimeSeriesRecordsPartitionedCall() {
+    numberOfHosts = 10;
+    List<TimeSeriesRecord> timeSeriesRecords = getSampleTimeSeriesRecords();
+    ArgumentCaptor<List<TimeSeriesDataCollectionRecord>> dataCollectionCapture = ArgumentCaptor.forClass(List.class);
+    timeSeriesDataStoreService.saveTimeSeriesDataRecords(accountId, verificationTaskId, timeSeriesRecords);
+    Mockito.verify(timeSeriesDataStoreService, Mockito.times(20))
+        .saveTimeSeriesToCVNG(Mockito.any(), dataCollectionCapture.capture());
+    List<List<TimeSeriesDataCollectionRecord>> partitionedData = dataCollectionCapture.getAllValues();
+    assertThat(partitionedData.get(0).get(0).getHost()).isEqualTo("host-0");
+    assertThat(partitionedData.get(0).get(0).getTimeStamp()).isEqualTo(0L);
+    assertThat(partitionedData.get(19).get(4).getHost()).isEqualTo("host-9");
+    assertThat(partitionedData.get(19).get(4).getTimeStamp()).isEqualTo(540000);
+  }
+
+  private List<TimeSeriesRecord> getSampleTimeSeriesRecords() {
+    List<TimeSeriesRecord> timeSeriesRecords = new ArrayList<>();
+    for (int i = 0; i < numOfMins; i++) {
+      for (int j = 0; j < numOfMetrics; j++) {
+        for (int k = 0; k < numOfTxns; k++) {
+          if (numberOfHosts <= 0) {
+            timeSeriesRecords.add(TimeSeriesRecord.builder()
+                                      .txnName("txn-" + k)
+                                      .metricName("metric-" + j)
+                                      .metricValue(10.0)
+                                      .timestamp(TimeUnit.MINUTES.toMillis(i))
+                                      .build());
+          } else {
+            for (int l = 0; l < numberOfHosts; l++) {
+              timeSeriesRecords.add(TimeSeriesRecord.builder()
+                                        .txnName("txn-" + k)
+                                        .metricName("metric-" + j)
+                                        .hostname("host-" + l)
+                                        .metricValue(10.0)
+                                        .timestamp(TimeUnit.MINUTES.toMillis(i))
+                                        .build());
+            }
+          }
+        }
+      }
+    }
+    return timeSeriesRecords;
+  }
+
+  private Set<String> getMetricNames(List<TimeSeriesRecord> timeSeriesRecords) {
+    return timeSeriesRecords.stream()
+        .map(timeSeriesRecord -> timeSeriesRecord.getMetricName())
+        .collect(Collectors.toSet());
+  }
+
+  private Set<String> getTransactionNames(List<TimeSeriesRecord> timeSeriesRecords) {
+    return timeSeriesRecords.stream()
+        .map(timeSeriesRecord -> timeSeriesRecord.getTxnName())
+        .collect(Collectors.toSet());
   }
 }

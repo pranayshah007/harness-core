@@ -9,9 +9,9 @@ package io.harness.eventsframework.monitor;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -38,14 +38,13 @@ public class EventsFrameworkMonitorModule extends AbstractModule {
   @Provides
   @Singleton
   RedissonClient getRedissonClient() {
-    RedisConfig redisConfig = this.appConfig.getEventsFrameworkConfiguration().getRedisConfig();
-    return RedisUtils.getClient(redisConfig);
+    return RedissonClientFactory.getClient(appConfig.getEventsFrameworkConfiguration().getRedisConfig());
   }
 
   @Provides
   @Singleton
   RedisClient getLowLevelRedisClient() {
     RedisConfig redisConfig = this.appConfig.getEventsFrameworkConfiguration().getRedisConfig();
-    return RedisUtils.getLowLevelClient(redisConfig);
+    return RedissonClientFactory.getLowLevelClient(redisConfig);
   }
 }

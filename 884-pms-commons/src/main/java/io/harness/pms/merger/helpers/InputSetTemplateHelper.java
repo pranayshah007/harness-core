@@ -8,7 +8,6 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.pms.merger.helpers.RuntimeInputFormHelper.createRuntimeInputForm;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
@@ -26,19 +25,19 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class InputSetTemplateHelper {
   public String createTemplateFromPipeline(String pipelineYaml) {
-    return createRuntimeInputForm(pipelineYaml, true);
+    return RuntimeInputFormHelper.createRuntimeInputForm(pipelineYaml, true);
   }
 
   public String createTemplateFromPipelineForGivenStages(String pipelineYaml, List<String> stageIdentifiers) {
-    String template = createRuntimeInputForm(pipelineYaml, true);
+    String template = RuntimeInputFormHelper.createRuntimeInputForm(pipelineYaml, true);
     if (EmptyPredicate.isEmpty(template)) {
       return null;
     }
     return removeNonRequiredStages(template, pipelineYaml, stageIdentifiers);
   }
 
-  public String removeRuntimeInputFromYaml(String runtimeInputYaml) {
-    return createRuntimeInputForm(runtimeInputYaml, false);
+  public String removeRuntimeInputFromYaml(String pipelineYaml, String runtimeInputYaml) {
+    return RuntimeInputFormHelper.removeRuntimeInputsFromYaml(pipelineYaml, runtimeInputYaml, false);
   }
 
   public String removeNonRequiredStages(String template, String pipelineYaml, List<String> stageIdentifiers) {

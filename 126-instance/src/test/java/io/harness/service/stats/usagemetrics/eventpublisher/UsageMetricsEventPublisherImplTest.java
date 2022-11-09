@@ -19,6 +19,7 @@ import io.harness.dtos.InstanceDTO;
 import io.harness.entities.InstanceType;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -62,7 +63,7 @@ public class UsageMetricsEventPublisherImplTest extends InstancesTestBase {
                                    .projectIdentifier(PROJECT_IDENTIFIER)
                                    .serviceIdentifier(SERVICE_IDENTIFIER)
                                    .envIdentifier(ENVIRONMENT_IDENTIFIER)
-                                   .infrastructureMappingId(INFRASTRUCTURE_ID_2)
+                                   .infrastructureKind(InfrastructureKind.GITOPS)
                                    .connectorRef(CONNECTOR_REF)
                                    .instanceType(InstanceType.K8S_INSTANCE)
                                    .build();

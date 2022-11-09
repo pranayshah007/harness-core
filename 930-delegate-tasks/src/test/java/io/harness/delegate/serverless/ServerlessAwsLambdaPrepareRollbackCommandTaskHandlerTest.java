@@ -8,7 +8,6 @@
 package io.harness.delegate.serverless;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
@@ -16,6 +15,7 @@ import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -178,8 +178,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
         .saveExecutionLog(
             color(format("%n Done..."), LogColor.White, LogWeight.Bold), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     verify(executionLogCallback)
-        .saveExecutionLog(
-            format("Skipping as there are no previous Deployments..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+        .saveExecutionLog(format("Skipping as there are no previous Deployments..%n"), LogLevel.INFO);
   }
 
   @Test(expected = InvalidArgumentsException.class)
@@ -343,12 +342,12 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
         .deployList(serverlessClient, serverlessDelegateTaskParams, executionLogCallback,
             serverlessAwsLambdaInfraConfig, (long) timeout * 60000, serverlessAwsLambdaManifestConfig, new HashMap<>());
 
+    doReturn("failed").when(serverlessAwsCommandTaskHelper).serverlessCommandFailureMessage(any(), any());
+
     ServerlessCommandResponse serverlessCommandResponse =
         serverlessAwsLambdaPrepareRollbackCommandTaskHandler.executeTaskInternal(
             serverlessCommandRequest, serverlessDelegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
 
     assertThat(serverlessCommandResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
-    verify(executionLogCallback)
-        .saveExecutionLog(color(format("%nDeploy List command failed..%n"), LogColor.Red, LogWeight.Bold), ERROR);
   }
 }

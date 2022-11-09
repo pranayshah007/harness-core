@@ -26,4 +26,9 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     return requestExecutor.execute(verificationManagerClient.isFeatureEnabled(featureFlagName, accountId))
         .getResource();
   }
+
+  public boolean isGlobalFlagEnabled(String featureFlagName) {
+    Preconditions.checkNotNull(featureFlagName);
+    return requestExecutor.execute(verificationManagerClient.getFeatureFlag(featureFlagName)).getResource().isEnabled();
+  }
 }

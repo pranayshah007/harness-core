@@ -57,7 +57,7 @@ public class WaitStepPlanCreator extends AbstractStepPlanCreator<WaitStepNode> {
     }
 
     List<AdviserObtainment> adviserObtainmentFromMetaData =
-        PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField());
+        PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
     stepElement.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));

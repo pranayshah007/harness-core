@@ -185,12 +185,14 @@ public class OrganizationEventHandler implements OutboxEventHandler {
 
   private boolean publishOrganizationChangeEventToRedis(String accountIdentifier, String identifier, String action) {
     try {
-      eventProducer.send(Message.newBuilder()
-                             .putAllMetadata(ImmutableMap.of("accountId", accountIdentifier,
-                                 EventsFrameworkMetadataConstants.ENTITY_TYPE, ORGANIZATION_ENTITY,
-                                 EventsFrameworkMetadataConstants.ACTION, action))
-                             .setData(getOrganizationPayload(accountIdentifier, identifier))
-                             .build());
+      String eventId = eventProducer.send(Message.newBuilder()
+                                              .putAllMetadata(ImmutableMap.of("accountId", accountIdentifier,
+                                                  EventsFrameworkMetadataConstants.ENTITY_TYPE, ORGANIZATION_ENTITY,
+                                                  EventsFrameworkMetadataConstants.ACTION, action))
+                                              .setData(getOrganizationPayload(accountIdentifier, identifier))
+                                              .build());
+      log.info("Produced event id:[{}] for orgId:[{}], accountId: [{}], action:[{}]", eventId, identifier,
+          accountIdentifier, action);
     } catch (EventsFrameworkDownException e) {
       log.error("Failed to send event to events framework orgIdentifier: " + identifier, e);
       return false;

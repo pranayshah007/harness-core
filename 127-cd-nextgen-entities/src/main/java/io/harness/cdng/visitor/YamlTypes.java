@@ -19,6 +19,7 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 public interface YamlTypes {
   String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
+  String UPDATE_RELEASE_REPO = StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO;
 
   String PRIMARY_ARTIFACT = "primary";
   String PRIMARY_ARTIFACT_REF = "primaryArtifactRef";
@@ -54,15 +55,23 @@ public interface YamlTypes {
   String SERVERLESS_AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK;
   String COMMAND = StepSpecTypeConstants.COMMAND;
 
+  String ELASTIGROUP_DEPLOY = StepSpecTypeConstants.ELASTIGROUP_DEPLOY;
+  String ELASTIGROUP_ROLLBACK = StepSpecTypeConstants.ELASTIGROUP_ROLLBACK;
+
   String ECS_ROLLING_DEPLOY = StepSpecTypeConstants.ECS_ROLLING_DEPLOY;
   String ECS_ROLLING_ROLLBACK = StepSpecTypeConstants.ECS_ROLLING_ROLLBACK;
   String ECS_CANARY_DEPLOY = StepSpecTypeConstants.ECS_CANARY_DEPLOY;
   String ECS_CANARY_DELETE = StepSpecTypeConstants.ECS_CANARY_DELETE;
+  String ECS_RUN_TASK = StepSpecTypeConstants.ECS_RUN_TASK;
+  String ECS_BLUE_GREEN_CREATE_SERVICE = StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE;
+  String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS;
+  String ECS_BLUE_GREEN_ROLLBACK = StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK;
 
   String AZURE_SLOT_DEPLOYMENT = StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT;
   String AZURE_TRAFFIC_SHIFT = StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT;
   String AZURE_SWAP_SLOT = StepSpecTypeConstants.AZURE_SWAP_SLOT;
   String AZURE_WEBAPP_ROLLBACK = StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK;
+  String FETCH_INSTANCE_SCRIPT = StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT;
 
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
@@ -83,6 +92,7 @@ public interface YamlTypes {
   String STAGE_OVERRIDES_CONFIG = "stageOverrides";
   String PATH_CONNECTOR = VisitorParentPathUtils.PATH_CONNECTOR;
   String CONNECTOR_REF = "connectorRef";
+  String CONFIGURATION = "configuration";
   String TAG = "tag";
   String TAG_REGEX = "tagRegex";
   String IMAGE_PATH = "imagePath";
@@ -105,9 +115,18 @@ public interface YamlTypes {
   String COMMAND_FLAGS_WRAPPER = "commandFlags";
   String REGION = "region";
   String STAGE = "stage";
+  String TEMPLATE = "template";
   String CREDENTIALS_REF = "credentialsRef";
   String HOSTS = "hosts";
   String HOST_FILTER = "hostFilter";
+  String SIDECARS = "sidecars";
+  String SIDECAR = "sidecar";
+  String ARTIFACTS = "artifacts";
+  String ROLLBACK_STEPS = "rollbackSteps";
+  String STEPS = "steps";
+  String STRATEGY = "strategy";
+  String STEP_GROUP = "stepGroup";
+  String PRIMARY = "primary";
 
   String SUBSCRIPTION = "subscription";
   String RESOURCE_GROUP = "resourceGroup";
@@ -133,8 +152,18 @@ public interface YamlTypes {
   String STARTUP_COMMAND = "startupCommand";
 
   String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
+  String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
 
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";
   String DEPLOYMENT_TYPE = "deploymentType";
+
+  String ENV_PRODUCTION = "Production";
+  String ENV_PRE_PRODUCTION = "PreProduction";
+
+  String SERVICE_ENTITIES = "services";
+
+  String PIPELINE = "pipeline";
+  String PARALLEL_STAGE = "parallel";
+  String STAGES = "stages";
 }

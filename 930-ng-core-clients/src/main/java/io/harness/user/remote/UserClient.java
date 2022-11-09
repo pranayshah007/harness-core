@@ -76,8 +76,7 @@ public interface UserClient {
   @GET(CHECK_USER_LIMIT)
   Call<RestResponse<Boolean>> checkUserLimit(@Query("accountId") String accountId, @Query("email") String email);
 
-  @PUT(USERS_SIGNUP_INVITE_API)
-  Call<RestResponse<UserInfo>> completeSignupInvite(@Query("email") String email, @Query("referer") String referer);
+  @PUT(USERS_SIGNUP_INVITE_API) Call<RestResponse<UserInfo>> completeSignupInvite(@Query("email") String email);
 
   @PUT(SCIM_USER_PATCH_UPDATE)
   Call<RestResponse<ScimUser>> scimUserPatchUpdate(
@@ -114,8 +113,9 @@ public interface UserClient {
   @PUT(UPDATE_USER_API) Call<RestResponse<Optional<UserInfo>>> updateUser(@Body UserInfo userInfo);
 
   @PUT(CREATE_USER_VIA_INVITE)
-  Call<RestResponse<Boolean>> createUserAndCompleteNGInvite(
-      @Body UserInviteDTO userInviteDTO, @Query("isScimInvite") boolean isScimInvite);
+  Call<RestResponse<Boolean>> createUserAndCompleteNGInvite(@Body UserInviteDTO userInviteDTO,
+      @Query("isScimInvite") boolean isScimInvite,
+      @Query("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail);
 
   @GET(USER_IN_ACCOUNT_VERIFICATION)
   Call<RestResponse<Boolean>> isUserInAccount(

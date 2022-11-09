@@ -14,11 +14,14 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import org.springframework.data.annotation.TypeAlias;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = CloudRuntime.class)
-@JsonSubTypes({ @JsonSubTypes.Type(value = CloudRuntime.class, name = "Cloud")
-                , })
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = CloudRuntime.class, name = "Cloud")
+  , @JsonSubTypes.Type(value = DockerRuntime.class, name = "Docker"),
+})
 public interface Runtime {
   @TypeAlias("runtime_type")
   enum Type {
+    @JsonProperty("Docker") DOCKER("Docker"),
     @JsonProperty("Cloud") CLOUD("Cloud");
 
     private final String yamlName;

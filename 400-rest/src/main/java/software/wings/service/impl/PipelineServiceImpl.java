@@ -221,7 +221,7 @@ public class PipelineServiceImpl implements PipelineService {
                 .build();
         try {
           List<WorkflowExecution> workflowExecutions =
-              workflowExecutionService.listExecutions(innerPageRequest, false, false, false, false, false)
+              workflowExecutionService.listExecutions(innerPageRequest, false, false, false, false, false, true)
                   .getResponse();
           pipeline.setWorkflowExecutions(workflowExecutions);
         } catch (Exception e) {
@@ -269,6 +269,7 @@ public class PipelineServiceImpl implements PipelineService {
     setUnset(ops, "pipelineStages", pipeline.getPipelineStages());
     setUnset(ops, "failureStrategies", pipeline.getFailureStrategies());
     setUnset(ops, "keywords", trimmedLowercaseSet(keywords));
+    setUnset(ops, "rollbackPreviousStages", pipeline.rollbackPreviousStages);
 
     wingsPersistence.update(wingsPersistence.createQuery(Pipeline.class)
                                 .filter("appId", pipeline.getAppId())
@@ -1043,6 +1044,8 @@ public class PipelineServiceImpl implements PipelineService {
             Variable cloned = variable.cloneInternal();
             cloned.setRuntimeInput(false);
             pipelineVariables.add(cloned);
+          } else {
+            mergeNonEntityPipelineVariables(variable, false, pipelineVariables, variable.getName(), variable.getName());
           }
         });
       }
@@ -1207,26 +1210,76 @@ public class PipelineServiceImpl implements PipelineService {
         newVar = variable.cloneInternal();
         newVar.setName(variableName);
       }
+      mergeNonEntityPipelineVariables(newVar, isRuntime, pipelineVariables, variableName, variable.getName());
+    }
+  }
 
-      if (newVar != null) {
-        if (!contains(pipelineVariables, variableName)) {
-          pipelineVariables.add(newVar);
-          newVar.setRuntimeInput(isRuntime);
-        } else {
-          String finalVariableName = variableName;
-          Variable existingVar =
-              pipelineVariables.stream().filter(t -> t.getName().equals(finalVariableName)).findFirst().orElse(null);
-          if (existingVar != null) {
-            if (existingVar.getRuntimeInput() == null) {
-              existingVar.setRuntimeInput(isRuntime);
-            } else if (existingVar.getRuntimeInput() != isRuntime) {
-              throw new InvalidRequestException(
-                  String.format("Variable %s is not marked as runtime in all pipeline stages", variable.getName()));
-            }
-          }
+  @VisibleForTesting
+  void mergeNonEntityPipelineVariables(
+      Variable newVar, boolean isRuntime, List<Variable> pipelineVariables, String variableName, String originalName) {
+    if (newVar != null) {
+      if (!contains(pipelineVariables, variableName)) {
+        pipelineVariables.add(newVar);
+        newVar.setRuntimeInput(isRuntime);
+      } else {
+        Variable existingVar =
+            pipelineVariables.stream().filter(t -> t.getName().equals(variableName)).findFirst().orElse(null);
+        if (existingVar != null) {
+          mergeRequired(existingVar, newVar);
+          mergeAllowedValuesAndList(existingVar, newVar);
+          checkRuntime(existingVar, isRuntime);
+          overWriteDefaultValue(existingVar, newVar.getValue());
         }
       }
     }
+  }
+
+  private void overWriteDefaultValue(Variable existingVar, String value) {
+    if (value != null && !value.equals("")) {
+      if (existingVar.getAllowedList() == null) {
+        existingVar.setValue(value);
+      } else if (existingVar.getAllowedList().contains(value)) {
+        existingVar.setValue(value);
+      }
+    }
+  }
+
+  private void mergeAllowedValuesAndList(Variable existingVar, Variable newVar) {
+    if (newVar.getAllowedList() != null) {
+      if (existingVar.getAllowedList() == null) {
+        existingVar.setAllowedList(newVar.getAllowedList());
+      }
+      List<String> newAllowedList = existingVar.getAllowedList()
+                                        .stream()
+                                        .distinct()
+                                        .filter(newVar.getAllowedList()::contains)
+                                        .collect(Collectors.toList());
+      existingVar.setAllowedList(newAllowedList);
+      existingVar.setAllowedValues(join(",", existingVar.getAllowedList()));
+      if (existingVar.getAllowedList() != null && existingVar.getAllowedList().size() == 0) {
+        throw new InvalidRequestException(String.format(
+            "Variable %s does not have any common allowed values between all stages", existingVar.getName()));
+      }
+      if (existingVar.getValue() != null && (!existingVar.getAllowedList().contains(existingVar.getValue()))) {
+        existingVar.setValue(null);
+      }
+    }
+  }
+
+  private void checkRuntime(Variable existingVar, boolean isRuntime) {
+    if (existingVar.getRuntimeInput() == null) {
+      existingVar.setRuntimeInput(isRuntime);
+    } else if (existingVar.getRuntimeInput() != isRuntime) {
+      throw new InvalidRequestException(
+          String.format("Variable %s is not marked as runtime in all pipeline stages", existingVar.getName()));
+    }
+  }
+
+  private void mergeRequired(Variable existingVar, Variable newVar) {
+    if (existingVar.isMandatory()) {
+      return;
+    }
+    existingVar.setMandatory(newVar.isMandatory());
   }
 
   @VisibleForTesting

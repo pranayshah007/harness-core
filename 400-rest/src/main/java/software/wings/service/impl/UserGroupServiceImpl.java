@@ -20,7 +20,6 @@ import static io.harness.validation.Validator.unEqualCheck;
 
 import static software.wings.beans.security.UserGroup.DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME;
 import static software.wings.beans.security.UserGroupSearchTermType.APPLICATION_NAME;
-import static software.wings.scheduler.LdapGroupSyncJob.add;
 import static software.wings.security.PermissionAttribute.Action.ABORT_WORKFLOW;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_PIPELINE;
@@ -213,7 +212,10 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   private AccountPermissions addDefaultCePermissions(AccountPermissions accountPermissions) {
     Set<PermissionType> accountPermissionsSet =
-        Optional.ofNullable(accountPermissions.getPermissions()).orElse(new HashSet<>());
+        accountPermissions == null || CollectionUtils.isEmpty(accountPermissions.getPermissions())
+        ? new HashSet<>()
+        : accountPermissions.getPermissions();
+
     accountPermissionsSet.add(PermissionType.CE_VIEWER);
     if (accountPermissionsSet.contains(PermissionType.ACCOUNT_MANAGEMENT)) {
       accountPermissionsSet.add(PermissionType.CE_ADMIN);
@@ -652,9 +654,6 @@ public class UserGroupServiceImpl implements UserGroupService {
             actionSet.add(EXECUTE_WORKFLOW_ROLLBACK);
             actionSet.add(ABORT_WORKFLOW);
           }
-          if (action != null && action.equals(EXECUTE_WORKFLOW)) {
-            actionSet.add(ABORT_WORKFLOW);
-          }
           actionSet.add(action);
         });
         appPermission.setActions(actionSet);
@@ -1049,7 +1048,6 @@ public class UserGroupServiceImpl implements UserGroupService {
     auditServiceHelper.reportForAuditingUsingAccountId(accountId, group, updatedGroup, Type.LINK_SSO);
 
     if (ssoType == SSOType.LDAP) {
-      add(jobScheduler, accountId, ssoId);
       ldapGroupSyncJobHelper.syncJob(ssoSettings);
     }
 

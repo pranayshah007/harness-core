@@ -36,6 +36,7 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.dao.intfc.InstanceDataDao;
 import io.harness.batch.processing.pricing.service.intfc.AwsCustomBillingService;
 import io.harness.batch.processing.pricing.service.intfc.AzureCustomBillingService;
+import io.harness.batch.processing.pricing.service.intfc.GcpCustomBillingService;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.batch.processing.service.intfc.InstanceDataService;
 import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
@@ -85,6 +86,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
   @Autowired private InstanceDataService instanceDataService;
   @Autowired private AwsCustomBillingService awsCustomBillingService;
   @Autowired private AzureCustomBillingService azureCustomBillingService;
+  @Autowired private GcpCustomBillingService gcpCustomBillingService;
   @Autowired private CustomBillingMetaDataService customBillingMetaDataService;
   @Autowired private InstanceDataDao instanceDataDao;
   @Autowired private BatchMainConfig config;
@@ -175,6 +177,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
       Map<String, InstanceBillingData> claimRefToPVInstanceBillingData, Map<String, MutableInt> pvcClaimCount) {
     Set<String> parentInstanceIds = new HashSet<>();
     Instant prevStartTime = startTime.minus(3, ChronoUnit.DAYS);
+
     instanceDataLists.forEach(instanceData -> {
       if (null == instanceData.getActiveInstanceIterator() && null == instanceData.getUsageStopTime()) {
         instanceDataDao.updateInstanceActiveIterationTime(instanceData);
@@ -248,6 +251,27 @@ public class InstanceBillingDataTasklet implements Tasklet {
       }
     }
 
+    String gcpDataSetId = customBillingMetaDataService.getGcpDataSetId(accountId);
+    if (gcpDataSetId != null) {
+      Set<String> resourceIds = new HashSet<>();
+      instanceDataLists.forEach(instanceData -> {
+        addParentInstanceId(instanceData, parentInstanceIds);
+        String resourceId =
+            getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.CLOUD_PROVIDER_INSTANCE_ID, instanceData);
+        String cloudProvider =
+            getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.CLOUD_PROVIDER, instanceData);
+
+        if (null != resourceId && cloudProvider.equals(CloudProvider.GCP.name())) {
+          resourceIds.add(resourceId);
+        }
+      });
+
+      if (isNotEmpty(resourceIds)) {
+        gcpCustomBillingService.updateGcpVMBillingDataCache(
+            new ArrayList<>(resourceIds), startTime, endTime, gcpDataSetId);
+      }
+    }
+
     List<InstanceBillingData> instanceBillingDataList = new ArrayList<>();
     instanceDataGroupedCluster.forEach((clusterRecordId, instanceDataList) -> {
       InstanceData firstInstanceData = instanceDataList.get(0);
@@ -286,13 +310,14 @@ public class InstanceBillingDataTasklet implements Tasklet {
     }
   }
 
-  private boolean validInstanceForBilling(InstanceData instanceData) {
+  public boolean validInstanceForBilling(InstanceData instanceData) {
     String computeType = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
         InstanceMetaDataConstants.COMPUTE_TYPE, instanceData.getMetaData());
     boolean validInstance = true;
     if ((instanceData.getInstanceType() == null)
         || (instanceData.getInstanceType() == K8S_NODE
-            && K8sCCMConstants.AWS_FARGATE_COMPUTE_TYPE.equals(computeType))) {
+            && (K8sCCMConstants.AWS_FARGATE_COMPUTE_TYPE.equals(computeType)
+                || InstanceMetaDataUtils.isAzureVirtualNode(instanceData)))) {
       validInstance = false;
     }
     return validInstance;
@@ -305,6 +330,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
     InstanceType instanceType = instanceData.getInstanceType();
     String computeType = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
         InstanceMetaDataConstants.COMPUTE_TYPE, instanceData.getMetaData());
+
     if (instanceData.getInstanceType() == K8S_POD && K8sCCMConstants.AWS_FARGATE_COMPUTE_TYPE.equals(computeType)) {
       instanceType = InstanceType.K8S_POD_FARGATE;
       instanceData.setInstanceType(instanceType);
@@ -479,7 +505,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
       BillingData billingData, UtilizationData utilizationData, InstanceData instanceData) {
     if (K8S_PV == instanceData.getInstanceType()) {
       BigDecimal storageUnallocatedFraction = BigDecimal.ZERO;
-      if (instanceData.getStorageResource() != null && instanceData.getStorageResource().getCapacity() > 0) {
+      if (instanceData.getStorageResource() != null && instanceData.getStorageResource().getCapacity() > 0
+          && utilizationData.getAvgStorageRequestValue() > 0) {
         BigDecimal capacityFromInstanceData = BigDecimal.valueOf(instanceData.getStorageResource().getCapacity());
         storageUnallocatedFraction =
             capacityFromInstanceData.subtract(BigDecimal.valueOf(utilizationData.getAvgStorageRequestValue()))
@@ -490,7 +517,12 @@ public class InstanceBillingDataTasklet implements Tasklet {
             utilizationData.getAvgStorageCapacityValue(), instanceData.toString());
         return BigDecimal.ZERO;
       }
-      return billingData.getBillingAmountBreakup().getStorageBillingAmount().multiply(storageUnallocatedFraction);
+      BigDecimal storageUnallocatedCost =
+          billingData.getBillingAmountBreakup().getStorageBillingAmount().multiply(storageUnallocatedFraction);
+      if (storageUnallocatedCost.compareTo(billingData.getBillingAmountBreakup().getStorageBillingAmount()) > 0) {
+        return billingData.getBillingAmountBreakup().getStorageBillingAmount();
+      }
+      return storageUnallocatedCost;
     }
     return BigDecimal.ZERO;
   }

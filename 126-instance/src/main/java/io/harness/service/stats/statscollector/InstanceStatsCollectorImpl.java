@@ -11,6 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
 import io.harness.helper.SnapshotTimeProvider;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.persistence.HIterator;
+import io.harness.persistence.HPersistence;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instancestats.InstanceStatsService;
 import io.harness.service.stats.usagemetrics.eventpublisher.UsageMetricsEventPublisher;
@@ -25,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.Query;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -38,29 +43,56 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
   private InstanceStatsService instanceStatsService;
   private InstanceService instanceService;
   private UsageMetricsEventPublisher usageMetricsEventPublisher;
+  private HPersistence persistence;
 
   @Override
   public boolean createStats(String accountId) {
-    Instant lastSnapshot = instanceStatsService.getLastSnapshotTime(accountId);
-    if (null == lastSnapshot) {
-      return createStats(accountId, alignedWithMinute(Instant.now(), SYNC_INTERVAL_MINUTES));
-    }
-
-    SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
+    // Currently we are fetching last snapshot for each service separately in the loop.
+    // We explored other options as well, these can be revisited if we see any perf issues,
+    // - group by org, project, service - takes more than a minute
+    // - IN / UNION query for each org, project, service combination
+    // - store metadata and latest time snapshot in a separate table
     boolean ranAtLeastOnce = false;
-    while (snapshotTimeProvider.hasNext()) {
-      Instant nextTs = snapshotTimeProvider.next();
-      if (nextTs == null) {
-        throw new IllegalStateException("nextTs is null even though hasNext() returned true. Shouldn't be possible");
+    log.info("Collect and publish stats. Account: {}", accountId);
+    try (HIterator<ServiceEntity> services = new HIterator<>(getFetchServicesQuery(accountId).fetch())) {
+      while (services.hasNext()) {
+        ServiceEntity service = services.next();
+        Instant lastSnapshot = instanceStatsService.getLastSnapshotTime(
+            accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier());
+        if (null == lastSnapshot) {
+          boolean success = createStats(accountId, service.getOrgIdentifier(), service.getProjectIdentifier(),
+              service.getIdentifier(), alignedWithMinute(Instant.now(), SYNC_INTERVAL_MINUTES));
+          ranAtLeastOnce = ranAtLeastOnce || success;
+        } else {
+          SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
+          while (snapshotTimeProvider.hasNext()) {
+            Instant nextTs = snapshotTimeProvider.next();
+            if (nextTs == null) {
+              throw new IllegalStateException(
+                  "nextTs is null even though hasNext() returned true. Shouldn't be possible");
+            }
+            boolean success = createStats(
+                accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier(), nextTs);
+            ranAtLeastOnce = ranAtLeastOnce || success;
+          }
+        }
       }
-      boolean success = createStats(accountId, nextTs);
-      ranAtLeastOnce = ranAtLeastOnce || success;
     }
+    log.info("Published instance stats. Account: {}", accountId);
 
     return ranAtLeastOnce;
   }
 
   // ------------------------ PRIVATE METHODS -----------------------------
+
+  private Query<ServiceEntity> getFetchServicesQuery(String accountId) {
+    return persistence.createQuery(ServiceEntity.class)
+        .filter(ServiceEntityKeys.accountId, accountId)
+        .filter(ServiceEntityKeys.deleted, false)
+        .project(ServiceEntityKeys.orgIdentifier, true)
+        .project(ServiceEntityKeys.projectIdentifier, true)
+        .project(ServiceEntityKeys.identifier, true);
+  }
 
   private Instant alignedWithMinute(Instant instant, int minuteToTruncateTo) {
     if (LocalDateTime.ofInstant(instant, ZoneOffset.UTC).getMinute() % minuteToTruncateTo == 0) {
@@ -74,22 +106,22 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
 
     return value;
   }
-
-  private boolean createStats(String accountId, Instant instant) {
+  private boolean createStats(String accountId, String orgId, String projectId, String serviceId, Instant instant) {
     List<InstanceDTO> instances;
     try {
       if (isRecentCollection(instant)) {
-        instances = instanceService.getActiveInstancesByAccount(accountId, -1);
+        instances =
+            instanceService.getActiveInstancesByAccountOrgProjectAndService(accountId, orgId, projectId, serviceId, -1);
         usageMetricsEventPublisher.publishInstanceStatsTimeSeries(accountId, Instant.now().toEpochMilli(), instances);
       } else {
-        instances = instanceService.getActiveInstancesByAccount(accountId, instant.toEpochMilli());
+        instances = instanceService.getActiveInstancesByAccountOrgProjectAndService(
+            accountId, orgId, projectId, serviceId, instant.toEpochMilli());
         usageMetricsEventPublisher.publishInstanceStatsTimeSeries(accountId, instant.toEpochMilli(), instances);
       }
-
-      log.info("Fetched instances. Count: {}, Account: {}, Time: {}", instances.size(), accountId, instant);
       return true;
     } catch (Exception e) {
-      log.error("Unable to publish instance stats for Account [{}] with exception {}", accountId, e);
+      log.error("Unable to publish instance stats for service: {} (account: {}, org: {}, project: {}) at {}", serviceId,
+          accountId, orgId, projectId, instant, e);
       return false;
     }
   }

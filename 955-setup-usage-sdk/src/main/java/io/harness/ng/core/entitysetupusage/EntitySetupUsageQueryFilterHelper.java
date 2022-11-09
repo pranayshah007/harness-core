@@ -203,4 +203,27 @@ public class EntitySetupUsageQueryFilterHelper {
     populateGitCriteriaForReferredEntity(criteria);
     return criteria;
   }
+  public Criteria createCriteriaForReferredEntitiesInScopeWithScopeName(Scope scope, String referredEntityFQScope,
+      EntityType referredEntityType, EntityType referredByEntityType, String referredByEntityName) {
+    Criteria criteria = new Criteria();
+    criteria.and(EntitySetupUsageKeys.accountIdentifier).is(scope.getAccountIdentifier());
+    criteria.and(EntitySetupUsageKeys.referredEntityFQN).is(referredEntityFQScope);
+    if (ScopeLevel.of(scope).name().equals("ORGANIZATION")) {
+      criteria.and(EntitySetupUsageKeys.referredEntityRefScope).is(io.harness.encryption.Scope.ORG);
+    } else {
+      criteria.and(EntitySetupUsageKeys.referredEntityRefScope)
+          .is(io.harness.encryption.Scope.fromString(ScopeLevel.of(scope).name()));
+    }
+    if (referredEntityType != null) {
+      criteria.and(EntitySetupUsageKeys.referredEntityType).is(referredEntityType.getYamlName());
+    }
+    if (referredByEntityType != null) {
+      criteria.and(EntitySetupUsageKeys.referredByEntityType).is(referredByEntityType.getYamlName());
+    }
+    if (isNotEmpty(referredByEntityName)) {
+      criteria.and(EntitySetupUsageKeys.referredByEntityName).regex(referredByEntityName);
+    }
+    populateGitCriteriaForReferredEntity(criteria);
+    return criteria;
+  }
 }

@@ -42,6 +42,10 @@ func (_ *nunitConsoleRunner) AutoDetectPackages() ([]string, error) {
 	return []string{}, errors.New("not implemented")
 }
 
+func (b *nunitConsoleRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
+	return []types.RunnableTest{}, nil
+}
+
 func (b *nunitConsoleRunner) GetCmd(_ context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	/*
 		i) Get the DLL list from the command (assume it runs at the root of the repository)

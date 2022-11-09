@@ -57,10 +57,11 @@ public class TimeRangeBasedFreezeConfig extends GovernanceFreezeConfig {
       @JsonProperty("timeRange") TimeRange timeRange, @JsonProperty("name") String name,
       @JsonProperty("description") String description, @JsonProperty("applicable") boolean applicable,
       @JsonProperty("appSelections") List<ApplicationFilter> appSelections,
+      @JsonProperty("excludeAppSelections") List<ApplicationFilter> excludeAppSelections,
       @JsonProperty("userGroups") List<String> userGroups, @JsonProperty("uuid") String uuid,
       @JsonProperty("userGroupSelections") UserGroupFilter userGroupSelection) {
-    super(freezeForAllApps, appIds, environmentTypes, name, description, applicable, appSelections, userGroups, uuid,
-        userGroupSelection);
+    super(freezeForAllApps, appIds, environmentTypes, name, description, applicable, appSelections,
+        excludeAppSelections, userGroups, uuid, userGroupSelection);
     this.timeRange = Objects.requireNonNull(timeRange, "time-range not provided for deployment freeze");
 
     if (timeRange.getFrom() > timeRange.getTo()) {
@@ -73,13 +74,13 @@ public class TimeRangeBasedFreezeConfig extends GovernanceFreezeConfig {
     if (!isApplicable()) {
       return false;
     }
-    long currentTime = System.currentTimeMillis();
-    log.info("Window id: {}, Current time: {}, from: {}, to: {}", getUuid(), currentTime, getTimeRange().getFrom(),
-        getTimeRange().getTo());
     if (timeRange == null) {
       log.warn("Time range is null for deployment freeze window: " + getUuid());
       return false;
     }
+    long currentTime = System.currentTimeMillis();
+    log.info("Window id: {}, Current time: {}, from: {}, to: {}", getUuid(), currentTime, getTimeRange().getFrom(),
+        getTimeRange().getTo());
     if (timeRange.getFreezeOccurrence() != null) {
       return timeRange.isInRange();
     }
@@ -90,13 +91,13 @@ public class TimeRangeBasedFreezeConfig extends GovernanceFreezeConfig {
     if (!isApplicable()) {
       return FreezeWindowStateType.INACTIVE;
     }
-    long currentTime = System.currentTimeMillis();
-    log.info("Window id: {}, Current time: {}, from: {}, to: {}", getUuid(), currentTime, getTimeRange().getFrom(),
-        getTimeRange().getTo());
     if (timeRange == null) {
       log.warn("Time range is null for deployment freeze window: " + getUuid());
       return FreezeWindowStateType.INACTIVE;
     }
+    long currentTime = System.currentTimeMillis();
+    log.info("Window id: {}, Current time: {}, from: {}, to: {}", getUuid(), currentTime, getTimeRange().getFrom(),
+        getTimeRange().getTo());
     if (timeRange.getFreezeOccurrence() != null) {
       return timeRange.isInRange() ? FreezeWindowStateType.ACTIVE : FreezeWindowStateType.INACTIVE;
     }
@@ -143,18 +144,21 @@ public class TimeRangeBasedFreezeConfig extends GovernanceFreezeConfig {
     private boolean applicable;
     private List<String> userGroups;
     private List<ApplicationFilterYaml> appSelections;
+    private List<ApplicationFilterYaml> excludeAppSelections;
     private TimeRange.Yaml timeRange;
     private UserGroupFilterYaml userGroupSelection;
 
     @Builder
     public Yaml(String type, String name, String description, boolean applicable, List<String> userGroups,
-        List<ApplicationFilterYaml> appSelections, TimeRange.Yaml timeRange, UserGroupFilterYaml userGroupSelection) {
+        List<ApplicationFilterYaml> appSelections, List<ApplicationFilterYaml> excludeAppSelections,
+        TimeRange.Yaml timeRange, UserGroupFilterYaml userGroupSelection) {
       super(type);
       setName(name);
       setDescription(description);
       setApplicable(applicable);
       setUserGroups(userGroups);
       setAppSelections(appSelections);
+      setExcludeAppSelections(excludeAppSelections);
       setTimeRange(timeRange);
       setUserGroupSelection(userGroupSelection);
     }

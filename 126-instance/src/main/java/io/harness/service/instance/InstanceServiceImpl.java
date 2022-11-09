@@ -142,8 +142,10 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
-  public List<InstanceDTO> getActiveInstancesByAccount(String accountIdentifier, long timestamp) {
-    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByAccount(accountIdentifier, timestamp));
+  public List<InstanceDTO> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, long timestamp) {
+    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByAccountOrgProjectAndService(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp));
   }
 
   @Override
@@ -222,6 +224,13 @@ public class InstanceServiceImpl implements InstanceService {
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     return instanceRepository.getActiveServiceInstanceInfo(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+  }
+
+  @Override
+  public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    return instanceRepository.getActiveServiceGitOpsInstanceInfo(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
   }
 

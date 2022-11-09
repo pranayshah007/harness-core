@@ -2661,14 +2661,13 @@ public class K8sTaskHelperBase {
       String chartVersion = ((HelmChartManifestDelegateConfig) manifestDelegateConfig).getChartVersion();
       String repoName = helmTaskHelperBase.getRepoNameNG(manifestDelegateConfig.getStoreDelegateConfig());
       if (isEnvVarSet) {
-        String localChartDirectory;
-        if (helmTaskHelperBase.doesChartExistInLocalRepo(repoName, chartName, chartVersion)) {
-          localChartDirectory = HelmTaskHelperBase.getChartDirectory(
-              helmTaskHelperBase.getHelmLocalRepositoryCompletePath(repoName, chartName, chartVersion), chartName);
-        } else {
-          throw new InvalidRequestException(
-              "Env Variable HELM_LOCAL_REPOSITORY set, expecting chart directory to exist locally after helm fetch but did not find it. Check if delegate has changed \n");
-        }
+        String parentDir = helmTaskHelperBase.getHelmLocalRepositoryCompletePath(repoName, chartName, chartVersion);
+        helmTaskHelperBase.createAndWaitForDir(parentDir);
+        helmTaskHelperBase.populateChartToLocalHelmRepo(
+            (HelmChartManifestDelegateConfig) manifestDelegateConfig, timeoutInMillis, logCallback, parentDir);
+
+        String localChartDirectory = HelmTaskHelperBase.getChartDirectory(parentDir, chartName);
+
         String workingDirectory =
             helmTaskHelperBase.createDirectoryIfNotExist(Paths.get(destinationDirectory, chartName).toString());
         log.info("Copying locally present chart from directory: {} to current working directory: {} \n",
@@ -3004,7 +3003,8 @@ public class K8sTaskHelperBase {
 
   private String getManifestDirectoryForHelmChart(
       String baseManifestDirectory, HelmChartManifestDelegateConfig helmChartManifest) {
-    if (StoreDelegateConfigType.HARNESS.equals(helmChartManifest.getStoreDelegateConfig().getType())) {
+    if (StoreDelegateConfigType.HARNESS.equals(helmChartManifest.getStoreDelegateConfig().getType())
+        || StoreDelegateConfigType.CUSTOM_REMOTE.equals(helmChartManifest.getStoreDelegateConfig().getType())) {
       return baseManifestDirectory;
     }
     if (GIT != helmChartManifest.getStoreDelegateConfig().getType()) {

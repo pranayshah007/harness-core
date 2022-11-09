@@ -7,6 +7,8 @@
 
 package io.harness.cistatus.service;
 
+import static io.harness.threading.Morpheus.sleep;
+
 import static java.lang.String.format;
 
 import io.harness.cistatus.GithubAppTokenCreationResponse;
@@ -29,6 +31,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -54,6 +57,11 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Slf4j
 public class GithubServiceImpl implements GithubService {
   private static final int EXP_TIME = 5 * 60 * 1000;
+  private static final String MERGED = "merged";
+  private static final String MESSAGE = "message";
+
+  private static final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
+  private static final int MAX_ATTEMPTS = 10;
 
   @Override
   public String getToken(GithubAppConfig githubAppConfig) {
@@ -96,8 +104,8 @@ public class GithubServiceImpl implements GithubService {
       return githubStatusCreationResponseResponse.isSuccessful();
 
     } catch (Exception e) {
-      log.error("Failed to send status for github url {} and sha {} ", githubAppConfig.getGithubUrl(), sha, e);
-      return false;
+      throw new InvalidRequestException(
+          format("Failed to send status for Github url %s and sha %s ", githubAppConfig.getGithubUrl(), sha), e);
     }
   }
 
@@ -123,23 +131,44 @@ public class GithubServiceImpl implements GithubService {
   @Override
   public JSONObject mergePR(String apiUrl, String token, String owner, String repo, String prNumber) {
     try {
-      Response<Object> response = getGithubClient(GithubAppConfig.builder().githubUrl(apiUrl).build())
-                                      .mergePR(getAuthToken(token), owner, repo, prNumber)
-                                      .execute();
-      if (response.isSuccessful()) {
-        JSONObject json = new JSONObject();
-        json.put("sha", ((LinkedHashMap) response.body()).get("sha"));
-        json.put("merged", ((LinkedHashMap) response.body()).get("merged"));
-        json.put("message", ((LinkedHashMap) response.body()).get("message"));
-        return json;
-      } else {
-        log.error("Failed to merge pr error {}, message {}", response.errorBody().string(), response.message());
-        log.warn("Merge Request for merging PR returned with response code {}", prNumber, response.code());
-        return new JSONObject();
+      Response<Object> response = null;
+
+      int i = MAX_ATTEMPTS;
+      while (i > 0) {
+        response = getGithubClient(GithubAppConfig.builder().githubUrl(apiUrl).build())
+                       .mergePR(getAuthToken(token), owner, repo, prNumber)
+                       .execute();
+        i--;
+        // This error code denotes that the base branch has been modified. This can happen if two merge requests
+        // are sent for the same branch but the first one has not yet complete and second request reached github.
+        // https://github.com/orgs/community/discussions/24462
+        if (response.code() != 405) {
+          break;
+        }
+        log.info(format("Received code {}, retrying attempt {} after sleeping for {}", response.code()), i,
+            RETRY_SLEEP_DURATION);
+        sleep(RETRY_SLEEP_DURATION);
       }
+
+      JSONObject json = new JSONObject();
+      if (response.isSuccessful()) {
+        json.put("sha", ((LinkedHashMap) response.body()).get("sha"));
+        json.put(MERGED, ((LinkedHashMap) response.body()).get(MERGED));
+        json.put(MESSAGE, ((LinkedHashMap) response.body()).get(MESSAGE));
+      } else {
+        JSONObject errObject = new JSONObject(response.errorBody().string());
+        log.error("Failed to merge PR {}. error {}, code {}", prNumber, errObject.get(MESSAGE), response.code());
+        json.put("error", errObject.get(MESSAGE));
+        json.put("code", response.code());
+        json.put(MERGED, false);
+      }
+      return json;
     } catch (Exception e) {
       log.error("Failed to merge PR for github url {} and prNum {} ", apiUrl, prNumber, e);
-      return new JSONObject();
+      JSONObject json = new JSONObject();
+      json.put("error", e.getMessage());
+      json.put(MERGED, false);
+      return json;
     }
   }
 

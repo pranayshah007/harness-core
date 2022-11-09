@@ -31,6 +31,7 @@ import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.opaclient.OpaServiceClient;
@@ -50,7 +51,6 @@ import io.harness.serializer.kryo.OrchestrationTestKryoRegistrar;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
-import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -135,6 +135,12 @@ public class OrchestrationRule implements MethodRule, InjectorRuleMixin, MongoRu
 
       @Provides
       @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
+      }
+
+      @Provides
+      @Singleton
       List<Class<? extends Converter<?, ?>>> springConverters() {
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(OrchestrationRegistrars.springConverters)
@@ -210,7 +216,7 @@ public class OrchestrationRule implements MethodRule, InjectorRuleMixin, MongoRu
     modules.add(VersionModule.getInstance());
     modules.add(TimeModule.getInstance());
     modules.add(TestMongoModule.getInstance());
-    modules.add(new SpringPersistenceTestModule());
+    modules.add(new OrchestrationPersistenceTestModule());
     modules.add(
         OrchestrationModule.getInstance(OrchestrationModuleConfig.builder()
                                             .serviceName("ORCHESTRATION_TEST")

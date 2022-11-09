@@ -15,6 +15,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.NoResultFoundException;
 import io.harness.health.HealthException;
 import io.harness.health.HealthService;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
 
@@ -24,6 +25,7 @@ import com.codahale.metrics.health.HealthCheck;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -66,5 +68,14 @@ public class HealthResource {
     }
 
     throw new HealthException(check.getMessage(), check.getError());
+  }
+
+  @GET
+  @Path("time-format")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "get time formats for Health Source", nickname = "getTimeFormat")
+  public ResponseDTO<List<String>> getTimeStampFormats() {
+    return ResponseDTO.newResponse(healthService.getTimeStampFormats());
   }
 }

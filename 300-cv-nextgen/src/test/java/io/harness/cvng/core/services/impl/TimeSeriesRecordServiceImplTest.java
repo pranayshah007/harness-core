@@ -158,6 +158,22 @@ public class TimeSeriesRecordServiceImplTest extends CvNextGenTestBase {
       }
       collectionRecords.add(collectionRecord);
     }
+    // add a collectionRecord with Nan, that will be filtered out.
+    collectionRecords.add(TimeSeriesDataCollectionRecord.builder()
+                              .accountId(accountId)
+                              .verificationTaskId(verificationTaskId)
+                              .timeStamp(TimeUnit.MINUTES.toMillis(10))
+                              .metricValues(Collections.singleton(
+                                  TimeSeriesDataRecordMetricValue.builder()
+                                      .metricIdentifier("nanMetric")
+                                      .metricName("nanMetric")
+                                      .timeSeriesValues(Collections.singleton(TimeSeriesDataRecordGroupValue.builder()
+                                                                                  .percent(Double.NaN)
+                                                                                  .value(Double.NaN)
+                                                                                  .groupName("group")
+                                                                                  .build()))
+                                      .build()))
+                              .build());
     timeSeriesRecordService.save(collectionRecords);
     List<TimeSeriesRecord> timeSeriesRecords = hPersistence.createQuery(TimeSeriesRecord.class, excludeAuthority)
                                                    .order(Sort.ascending(TimeSeriesRecordKeys.metricName))

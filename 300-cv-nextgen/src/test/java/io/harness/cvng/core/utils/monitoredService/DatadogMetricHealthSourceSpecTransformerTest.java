@@ -43,7 +43,6 @@ public class DatadogMetricHealthSourceSpecTransformerTest extends CvNextGenTestB
   private static final String MOCKED_METRIC_GROUP_NAME = "testMetricGroupName";
   private static final String MOCKED_METRIC_QUERY = "system.user.cpu{*}";
   private static final String CONNECTOR_IDENTIFIER = "connectorId";
-  private static final String METRIC_PACK_IDENTIFIER = "mock_metric_pack_identifier";
   private static final String CUSTOM_IDENTIFIER = "Custom";
 
   private BuilderFactory builderFactory;
@@ -87,7 +86,7 @@ public class DatadogMetricHealthSourceSpecTransformerTest extends CvNextGenTestB
     DatadogMetricCVConfig cvConfig = builderFactory.datadogMetricCVConfigBuilder().build();
     cvConfig.setConnectorIdentifier(CONNECTOR_IDENTIFIER);
     cvConfig.setMetricPack(MetricPack.builder()
-                               .identifier(METRIC_PACK_IDENTIFIER)
+                               .identifier(CUSTOM_IDENTIFIER)
                                .category(CVMonitoringCategory.ERRORS)
                                .metrics(Collections.singleton(
                                    MetricPack.MetricDefinition.builder()

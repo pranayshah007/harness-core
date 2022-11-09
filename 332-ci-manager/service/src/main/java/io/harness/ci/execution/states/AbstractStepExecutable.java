@@ -66,6 +66,7 @@ import io.harness.delegate.beans.ci.CIExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
+import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
@@ -302,24 +303,28 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
   private CIExecuteStepTaskParams getVmTaskParams(Ambiance ambiance, VmStepInfo vmStepInfo, Set<String> secrets,
       StageInfraDetails stageInfraDetails, StageDetails stageDetails, VmDetailsOutcome vmDetailsOutcome,
       String runtimeId, String stepIdentifier, String logKey) {
-    if (stageInfraDetails.getType() != StageInfraDetails.Type.VM
-        && stageInfraDetails.getType() != StageInfraDetails.Type.DLITE_VM) {
-      throw new CIStageExecutionException("Invalid stage infra details for vm");
+    StageInfraDetails.Type type = stageInfraDetails.getType();
+    if (type != StageInfraDetails.Type.VM && type != StageInfraDetails.Type.DLITE_VM) {
+      throw new CIStageExecutionException("Invalid stage infra details type for vm or docker");
     }
 
-    String poolId;
     String workingDir;
     Map<String, String> volToMountPath;
-    if (stageInfraDetails.getType() == StageInfraDetails.Type.VM) {
+    String poolId;
+    // InfraInfo infraInfo;
+    CIVmInitializeTaskParams.Type infraInfo;
+    if (type == StageInfraDetails.Type.VM) {
       VmStageInfraDetails infraDetails = (VmStageInfraDetails) stageInfraDetails;
       poolId = infraDetails.getPoolId();
       volToMountPath = infraDetails.getVolToMountPathMap();
       workingDir = infraDetails.getWorkDir();
+      infraInfo = infraDetails.getInfraInfo();
     } else {
       DliteVmStageInfraDetails infraDetails = (DliteVmStageInfraDetails) stageInfraDetails;
       poolId = infraDetails.getPoolId();
       volToMountPath = infraDetails.getVolToMountPathMap();
       workingDir = infraDetails.getWorkDir();
+      infraInfo = infraDetails.getInfraInfo();
     }
 
     CIVmExecuteStepTaskParams ciVmExecuteStepTaskParams = CIVmExecuteStepTaskParams.builder()
@@ -333,8 +338,9 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
                                                               .secrets(new ArrayList<>(secrets))
                                                               .logKey(logKey)
                                                               .workingDir(workingDir)
+                                                              .infraInfo(infraInfo)
                                                               .build();
-    if (stageInfraDetails.getType() == StageInfraDetails.Type.VM) {
+    if (type == StageInfraDetails.Type.VM) {
       return ciVmExecuteStepTaskParams;
     }
 

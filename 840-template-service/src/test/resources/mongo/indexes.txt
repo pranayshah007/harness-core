@@ -21,6 +21,7 @@ primaryVersion {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt":
 progressUpdate {"name": "correlation", "background": true} {"correlationId": 1, "createdAt": -1}
 progressUpdate {"name": "createdAt_1", "background": true} {"createdAt": 1}
 progressUpdate {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+templatesNG {"name": "accountId_orgId_projectId_repo", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "repo": 1}
 templatesNG {"name": "accountId_org_project_childType", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "childType": 1}
 templatesNG {"name": "accountId_organizationId_projectId_identifier", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 templatesNG {"name": "accountId_organizationId_projectId_identifier_isLastUpdated_repo_branch", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "isLastUpdatedTemplate": 1, "yamlGitConfigRef": 1, "branch": 1}

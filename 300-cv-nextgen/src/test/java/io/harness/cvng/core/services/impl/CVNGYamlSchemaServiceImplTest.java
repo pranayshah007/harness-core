@@ -59,6 +59,7 @@ public class CVNGYamlSchemaServiceImplTest extends CvNextGenTestBase {
         CVNGYamlSchemaServiceImplTest.class.getResource("/schema/DeploymentSteps/partialSchemaDTO.json"),
         Charsets.UTF_8);
     // String s = JsonUtils.asPrettyJson(partialSchemaDTO); // s -- string to be pasted in the .json file
-    assertThat(partialSchemaDTO.get(0)).isEqualTo(JsonUtils.asObject(partialSchemaJson, PartialSchemaDTO.class));
+    PartialSchemaDTO expectedPartialSchemaDTO = JsonUtils.asObject(partialSchemaJson, PartialSchemaDTO.class);
+    assertThat(partialSchemaDTO.get(0)).isEqualTo(expectedPartialSchemaDTO);
   }
 }

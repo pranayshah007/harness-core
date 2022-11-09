@@ -4,33 +4,33 @@ clients:
     clientConfig: chaosServiceClientConfig
     secretConfig: nextGenConfig.chaosServiceSecret
 features:
-  - name: MAX_CHAOS_SCENARIO_RUNS_PER_MONTH
-    description: The max chaos scenarios runs per month
+  - name: MAX_CHAOS_EXPERIMENT_RUNS_PER_MONTH
+    description: The max chaos experiment runs per month
     restrictions:
       FREE:
         restrictionType: STATIC_LIMIT
-        limit: 60
+        limit: 10000
         clientName: chaos
       TEAM:
         restrictionType: LICENSE_STATIC_LIMIT
-        fieldName: totalChaosScenarioRun
+        fieldName: totalChaosExperimentRuns
         clientName: chaos
       ENTERPRISE:
         restrictionType: LICENSE_STATIC_LIMIT
-        fieldName: totalChaosScenarioRun
+        fieldName: totalChaosExperimentRuns
         clientName: chaos
-  - name: MAX_CHAOS_DELEGATES
-    description: Maximum Chaos Delegates
+  - name: MAX_CHAOS_INFRASTRUCTURES
+    description: Maximum Chaos Infrastructures
     restrictions:
       FREE:
         restrictionType: STATIC_LIMIT
-        limit: 2
+        limit: 1000
         clientName: chaos
       TEAM:
         restrictionType: LICENSE_STATIC_LIMIT
-        fieldName: totalChaosDelegates
+        fieldName: totalChaosInfrastructures
         clientName: chaos
       ENTERPRISE:
         restrictionType: LICENSE_STATIC_LIMIT
-        fieldName: totalChaosDelegates
+        fieldName: totalChaosInfrastructures
         clientName: chaos

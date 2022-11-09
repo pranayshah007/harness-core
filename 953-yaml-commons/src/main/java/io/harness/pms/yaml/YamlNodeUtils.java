@@ -24,6 +24,8 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class YamlNodeUtils {
+  public static final String FQN_SEP = "\\.";
+
   public void addToPath(YamlNode yamlNode, String path, JsonNode newNode) {
     if (EmptyPredicate.isEmpty(path)) {
       return;
@@ -61,5 +63,161 @@ public class YamlNodeUtils {
       ObjectNode objectNode = (ObjectNode) curr;
       objectNode.setAll((ObjectNode) newNode);
     }
+  }
+
+  /**
+   * This method returns yamlNode at the fqn provided, starting from the given root yamlNode
+   * @param yamlNode - Starting point of yamlNode traversal.
+   * @param fqn - dot separated path, where arrays are uniquely identified using identifiers or name instead of indexes.
+   * @return yamlNode at the fqn path.
+   */
+  public YamlNode goToPathUsingFqn(YamlNode yamlNode, String fqn) {
+    if (EmptyPredicate.isEmpty(fqn)) {
+      return yamlNode;
+    }
+
+    List<String> pathList = Arrays.asList(fqn.split(FQN_SEP));
+    if (EmptyPredicate.isEmpty(pathList)) {
+      return yamlNode;
+    }
+
+    YamlNode curr = yamlNode;
+    for (String currName : pathList) {
+      if (curr == null) {
+        return null;
+      }
+
+      JsonNode next = null;
+      if (curr.isObject()) {
+        next = curr.getCurrJsonNode().get(currName);
+        if (next != null && next.isNull()) {
+          next = null;
+        }
+      } else if (curr.isArray()) {
+        next = getNextNodeFromArray(curr, currName);
+      }
+
+      curr = next == null ? null : new YamlNode(currName, next, curr);
+    }
+
+    return curr;
+  }
+
+  private JsonNode getNextNodeFromArray(YamlNode yamlNode, String currName) {
+    JsonNode next = null;
+    for (YamlNode arrayElement : yamlNode.asArray()) {
+      /* For nodes such as variables where only value field is associated with name, key.
+      Example: fqn - variables.something
+        variables:
+          - name: something
+            value: something
+      Another Example: fqn - sources.something
+        sources:
+          - identifier: something
+            etc...
+      */
+      if (EmptyPredicate.isNotEmpty(arrayElement.getArrayUniqueIdentifier())
+          && currName.equals(arrayElement.getArrayUniqueIdentifier())) {
+        next = arrayElement.getCurrJsonNode();
+        break;
+      } else if (arrayElement.isObject()) {
+        /*
+          For nodes having root field and then identifier inside that or cases where there is array inside array.
+          Example: fqn - stages.something
+            stages:
+              - stage:
+                  identifier: something
+                  ...
+          Another Example: fqn = stages.something (notice parallel is not there in fqn)
+            stages:
+              - parallel:
+                - stage:
+                    identifier: something
+                    ....
+         */
+        for (YamlField field : arrayElement.fields()) {
+          // Nodes having identifier to refer uniquely from the array.
+          if (EmptyPredicate.isNotEmpty(field.getNode().getIdentifier())
+              && currName.equals(field.getNode().getIdentifier())) {
+            next = field.getNode().getCurrJsonNode();
+            break;
+          }
+          // If the node is like parallel, a dummy node having another list.
+          else if (field.getNode().isArray()) {
+            next = getNextNodeFromArray(yamlNode, currName);
+          }
+        }
+      }
+      // if next is populated in this iteration, break the loop.
+      if (next != null) {
+        break;
+      }
+    }
+    return next;
+  }
+
+  public YamlNode findFirstNodeMatchingFieldName(YamlNode yamlNode, String fieldName) {
+    if (yamlNode == null) {
+      return null;
+    }
+
+    if (yamlNode.isObject()) {
+      return findFieldNameInObject(yamlNode, fieldName);
+    } else if (yamlNode.isArray()) {
+      return findFieldNameInArray(yamlNode, fieldName);
+    } else if (fieldName.equals(yamlNode.getFieldName())) {
+      return yamlNode;
+    }
+
+    return null;
+  }
+
+  private YamlNode findFieldNameInObject(YamlNode yamlNode, String fieldName) {
+    if (yamlNode == null) {
+      return null;
+    }
+    for (YamlField childYamlField : yamlNode.fields()) {
+      if (fieldName.equals(childYamlField.getName())) {
+        return childYamlField.getNode();
+      }
+
+      YamlNode currentYamlNode = childYamlField.getNode();
+      JsonNode value = currentYamlNode.getCurrJsonNode();
+      YamlNode requiredNode = null;
+      if (value.isArray() && !YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
+        // Value -> Array
+        requiredNode = findFieldNameInArray(childYamlField.getNode(), fieldName);
+      } else if (value.isObject()) {
+        // Value -> Object
+        requiredNode = findFieldNameInObject(childYamlField.getNode(), fieldName);
+      }
+      if (requiredNode != null) {
+        return requiredNode;
+      }
+    }
+    return null;
+  }
+
+  private YamlNode findFieldNameInArray(YamlNode yamlNode, String fieldName) {
+    if (yamlNode == null) {
+      return null;
+    }
+    for (YamlNode arrayElement : yamlNode.asArray()) {
+      if (fieldName.equals(arrayElement.getName())) {
+        return arrayElement;
+      }
+      YamlNode requiredNode = null;
+      if (arrayElement.isArray()) {
+        // Value -> Array
+        requiredNode = findFieldNameInArray(arrayElement, fieldName);
+      } else if (arrayElement.isObject()) {
+        // Value -> Object
+        requiredNode = findFieldNameInArray(arrayElement, fieldName);
+      }
+      if (requiredNode != null) {
+        return requiredNode;
+      }
+    }
+    return null;
   }
 }

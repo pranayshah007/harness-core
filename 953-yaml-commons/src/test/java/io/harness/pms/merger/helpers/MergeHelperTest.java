@@ -12,7 +12,9 @@ import static io.harness.pms.merger.helpers.MergeHelper.mergeRuntimeInputValuesI
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
@@ -63,6 +65,29 @@ public class MergeHelperTest extends CategoryTest {
     String mergedYaml = readFile(mergedYamlFile);
 
     assertThat(resYaml).isEqualTo(mergedYaml);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testMergeInputSetIntoPipelineRegex() {
+    String filename = "pipeline-regex.yml";
+    String yaml = readFile(filename);
+
+    String inputSet = "pipeline-regex-input.yml";
+    String inputSetYaml = readFile(inputSet);
+
+    String res = mergeRuntimeInputValuesIntoOriginalYaml(yaml, inputSetYaml, true);
+    String resYaml = res.replace("\"", "");
+
+    String mergedYamlFile = "pipeline-regex-merged.yml";
+    String mergedYaml = readFile(mergedYamlFile);
+
+    assertEquals(removeWhiteSpaces(resYaml), removeWhiteSpaces(mergedYaml));
+  }
+
+  String removeWhiteSpaces(String input) {
+    return input.replaceAll("\\s+", "");
   }
 
   @Test

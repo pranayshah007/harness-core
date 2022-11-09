@@ -42,4 +42,5 @@ public interface PipelineResourceConstants {
 
   String START_TIME_EPOCH_PARAM_MESSAGE = "Start Date Epoch time in ms";
   String END_TIME_EPOCH_PARAM_MESSAGE = "End Date Epoch time in ms";
+  String GET_METADATA_ONLY_PARAM_KEY = "getMetadataOnly";
 }

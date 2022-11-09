@@ -28,7 +28,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.concurent.HTimeLimiterMocker;
 import io.harness.delegate.beans.DelegateConfiguration;
-import io.harness.event.client.impl.tailer.ChronicleEventTailer;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.watcher.app.WatcherConfiguration;
@@ -72,7 +71,6 @@ public class WatcherServiceImplTest {
   private static final String VALID_SIX_DIGITS_VERSION_WITH_HYPHEN = "1.0.703000-000";
 
   // Do not remove, identifies the use of powermock.mockito for the unused dependency check
-  private static final Class DUMMY = ChronicleEventTailer.class;
 
   @Test
   @Owner(developers = VUK)
@@ -336,15 +334,15 @@ public class WatcherServiceImplTest {
             .build();
 
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter, ofSeconds(30))
+        .thenReturn(null)
         .thenReturn(restResponse)
-        .thenReturn(selfDestructRestResponse)
-        .thenReturn(null);
+        .thenReturn(selfDestructRestResponse);
 
     List<String> expectedDelegateVersions = watcherService.findExpectedDelegateVersions();
-    assertThat(expectedDelegateVersions).containsExactlyInAnyOrder("1", "2");
+    assertThat(expectedDelegateVersions).isNull();
 
     expectedDelegateVersions = watcherService.findExpectedDelegateVersions();
-    assertThat(expectedDelegateVersions).isNull();
+    assertThat(expectedDelegateVersions).containsExactlyInAnyOrder("1", "2");
   }
 
   private File getFileFromResources(String fileName) {

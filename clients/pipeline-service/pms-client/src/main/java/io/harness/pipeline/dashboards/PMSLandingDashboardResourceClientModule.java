@@ -17,6 +17,7 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 @OwnedBy(PIPELINE)
 public class PMSLandingDashboardResourceClientModule extends AbstractModule {
@@ -42,6 +43,7 @@ public class PMSLandingDashboardResourceClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private PMSLandingDashboardResourceClientFactory pmsLandingDashboardResourceClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new PMSLandingDashboardResourceClientFactory(

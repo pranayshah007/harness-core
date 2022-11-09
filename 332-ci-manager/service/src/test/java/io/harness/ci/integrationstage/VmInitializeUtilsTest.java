@@ -87,6 +87,7 @@ public class VmInitializeUtilsTest extends CIExecutionTestBase {
 
     Map<String, String> expected = new HashMap<>();
     expected.put("harness", "/tmp/harness");
+    expected.put("addon", "/tmp/addon");
     expected.put("shared-0", "/shared1");
     expected.put("shared-1", "/shared2");
 
@@ -102,6 +103,7 @@ public class VmInitializeUtilsTest extends CIExecutionTestBase {
 
     Map<String, String> expected = new HashMap<>();
     expected.put("harness", "/harness");
+    expected.put("addon", "/addon");
     expected.put("shared-0", "/shared1");
     expected.put("shared-1", "/shared2");
 

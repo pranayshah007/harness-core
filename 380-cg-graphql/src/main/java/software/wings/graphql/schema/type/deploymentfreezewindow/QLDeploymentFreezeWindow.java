@@ -31,6 +31,7 @@ public class QLDeploymentFreezeWindow {
   Boolean applicable;
   List<String> notifyTo;
   List<QLFreezeWindow> freezeWindows;
+  List<QLFreezeWindow> excludeFreezeWindows;
   QLSetup setup;
   QLUserGroupFilterInput userGroupSelection;
 }

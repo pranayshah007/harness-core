@@ -54,8 +54,7 @@ public class ArtifactStep implements TaskExecutable<ArtifactStepParameters, Arti
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.ARTIFACT.getName()).setStepCategory(StepCategory.STEP).build();
 
-  // Default timeout of 1 minute.
-  private static final long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
+  private static final long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
 
   @Inject private ArtifactStepHelper artifactStepHelper;
   @Inject private KryoSerializer kryoSerializer;

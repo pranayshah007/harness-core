@@ -31,7 +31,7 @@ import java.util.Optional;
 @OwnedBy(CDC)
 public interface ArtifactoryBuildService extends BuildService<ArtifactoryConfig> {
   @Override
-  @DelegateTaskType(TaskType.ARTIFACTORY_GET_BUILDS)
+  @DelegateTaskType(TaskType.ARTIFACTORY_GET_LABELS)
   List<Map<String, String>> getLabels(ArtifactStreamAttributes artifactStreamAttributes, List<String> buildNos,
       ArtifactoryConfig artifactoryConfig, List<EncryptedDataDetail> encryptionDetails);
 

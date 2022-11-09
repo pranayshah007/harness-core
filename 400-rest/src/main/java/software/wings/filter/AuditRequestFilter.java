@@ -122,7 +122,7 @@ public class AuditRequestFilter implements ContainerRequestFilter {
         accountId = apiKeyService.getAccountIdFromApiKey(requestContext.getHeaderString("X-Api-Key"));
       }
       if (isNotEmpty(accountId)) {
-        ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(requestContext.getHeaderString("X-Api-Key"), accountId, false);
+        ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(requestContext.getHeaderString("X-Api-Key"), accountId);
         header.setApiKeyAuditDetails(
             ApiKeyAuditDetails.builder().apiKeyName(apiKeyEntry.getName()).apiKeyId(apiKeyEntry.getUuid()).build());
       }

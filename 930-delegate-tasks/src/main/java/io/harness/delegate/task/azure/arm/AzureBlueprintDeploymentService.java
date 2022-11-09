@@ -29,7 +29,7 @@ import io.harness.azure.model.blueprint.assignment.Assignment;
 import io.harness.azure.model.blueprint.assignment.WhoIsBlueprintContract;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentBlueprintSteadyStateContext;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.runtime.azure.AzureBPDeploymentException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -84,7 +84,7 @@ public class AzureBlueprintDeploymentService {
       String message = AzureResourceUtility.getAzureCloudExceptionMessage(ex);
       blueprintDeploymentLogCallback.saveExecutionLog(
           format("%nBlueprint deployment failed."), LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw new InvalidRequestException(format(
+      throw new AzureBPDeploymentException(format(
           "Unable to deploy blueprint, Definition Scope: %s, Blueprint Name: %s, Assignment Name: %s, Assignment Scope: %s, Error msg: %s",
           context.getDefinitionResourceScope(), context.getBlueprintName(), context.getAssignment().getName(),
           context.getAssignmentResourceScope(), message));

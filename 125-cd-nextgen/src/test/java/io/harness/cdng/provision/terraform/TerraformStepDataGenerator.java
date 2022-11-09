@@ -6,9 +6,6 @@
  */
 
 package io.harness.cdng.provision.terraform;
-
-import static java.util.Arrays.asList;
-
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
@@ -204,7 +201,6 @@ public class TerraformStepDataGenerator {
     varFilesMap.put("var-file-02",
         TerraformVarFile.builder().identifier("var-file-02").type("Remote").spec(remoteTerraformVarFileSpec).build());
     return TerraformApplyStepParameters.infoBuilder()
-        .planStepsFqn(asList("plan1", "plan2"))
         .provisionerIdentifier(ParameterField.createValueField("provId_$"))
         .configuration(TerraformStepConfigurationParameters.builder()
                            .type(TerraformStepConfigurationType.INLINE)

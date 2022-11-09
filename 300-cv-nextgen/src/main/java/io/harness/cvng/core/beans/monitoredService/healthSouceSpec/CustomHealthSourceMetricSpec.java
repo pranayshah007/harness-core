@@ -29,6 +29,7 @@ import io.harness.exception.DataFormatException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +49,8 @@ import org.apache.commons.lang3.StringUtils;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "CustomHealthSourceMetric",
+    description = "This is the Custom Metric Health Source spec entity defined in Harness")
 public class CustomHealthSourceMetricSpec extends MetricHealthSourceSpec {
   private static final String JSON_PATH_ARRAY_DELIMITER = ".[*].";
   private static final String INVALID_DATA_PATH_ERROR_MESSAGE = "Json paths do not match.";

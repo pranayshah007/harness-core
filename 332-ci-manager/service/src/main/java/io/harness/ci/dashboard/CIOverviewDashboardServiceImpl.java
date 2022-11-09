@@ -71,11 +71,10 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
   // This ID comes, and should only come from internal source only. No need to use prepare statement here
   public String queryBuilderServiceTag(String queryIdCdTable) {
-    String selectStatusQuery =
-        "select service_name,tag,pipeline_execution_summary_cd_id from " + tableNameServiceAndInfra + " where ";
-
-    return String.format(
-        selectStatusQuery + "pipeline_execution_summary_cd_id in (%s) and service_name is not null;", queryIdCdTable);
+    return String.format("select service_name,tag,pipeline_execution_summary_cd_id from " + tableNameServiceAndInfra
+            + " where "
+            + "pipeline_execution_summary_cd_id=%s and service_name is not null;",
+        queryIdCdTable);
   }
 
   public long getActiveCommitterCount(String accountId) {

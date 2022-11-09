@@ -77,6 +77,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -1656,15 +1657,15 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     ClusterSummary clusterSummary2 = createClusterSummary(0, 0, 3, 2, Arrays.asList(2D), ClusterType.KNOWN_EVENT);
     ClusterSummary clusterSummary3 = createClusterSummary(2, 2.2, 55, 3, Arrays.asList(4D), ClusterType.KNOWN_EVENT);
 
-    ResultSummary resultSummary =
-        createResultSummary(1, 1, Arrays.asList(clusterSummary1, clusterSummary2, clusterSummary3), null);
+    ResultSummary resultSummary = createResultSummary(
+        1, 1, Arrays.asList(clusterSummary1, clusterSummary2, clusterSummary3), getControlClusterSummaries(3));
 
     ClusterSummary clusterSummary4 = createClusterSummary(2, 0.7, 36, 1, Arrays.asList(2D), ClusterType.KNOWN_EVENT);
     ClusterSummary clusterSummary5 = createClusterSummary(2, 0, 3, 2, Arrays.asList(2D), ClusterType.KNOWN_EVENT);
     ClusterSummary clusterSummary6 = createClusterSummary(2, 2.2, 55, 3, Arrays.asList(4D), ClusterType.KNOWN_EVENT);
 
-    ResultSummary resultSummary2 =
-        createResultSummary(2, 1, Arrays.asList(clusterSummary4, clusterSummary5, clusterSummary6), null);
+    ResultSummary resultSummary2 = createResultSummary(
+        2, 1, Arrays.asList(clusterSummary4, clusterSummary5, clusterSummary6), getControlClusterSummaries(3));
 
     HostSummary hostSummary1 = createHostSummary(hostname1, resultSummary);
     HostSummary hostSummary2 = createHostSummary(hostname2, resultSummary2);
@@ -1744,6 +1745,14 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
                 .host("host")
                 .build()))
         .build();
+  }
+
+  private List<ControlClusterSummary> getControlClusterSummaries(int labelCount) {
+    return IntStream.range(0, labelCount)
+        .boxed()
+        .map(label
+            -> ControlClusterSummary.builder().label(label).controlFrequencyData(Arrays.asList(0.0, 0.2, 0.9)).build())
+        .collect(Collectors.toList());
   }
 
   private HostSummary createHostSummary(String host, ResultSummary resultSummary) {

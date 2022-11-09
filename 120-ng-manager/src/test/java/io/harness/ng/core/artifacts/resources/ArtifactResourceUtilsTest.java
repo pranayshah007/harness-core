@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -221,7 +222,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   public void testGetResolvedPathWithImagePathAsServiceAndEnvExpression() throws IOException {
     String yaml = readFile("artifacts/pipeline-without-ser-env-refactoring.yaml");
     mockMergeInputSetCall(yaml);
-    mockServiceGetCall();
+    mockServiceGetCall("svc1");
     mockEnvironmentGetCall();
 
     // resolve expressions like <+service.name> in normal stage
@@ -270,7 +271,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   public void testGetResolvedPathWithImagePathAsServiceAndEnvExpressionAfterSerEnvRefactoring() throws IOException {
     String yaml = readFile("artifacts/pipeline-with-service-env-ref.yaml");
     mockMergeInputSetCall(yaml);
-    mockServiceV2GetCall();
+    mockServiceV2GetCall("variableTestSvc");
     mockEnvironmentV2GetCall();
 
     // resolve expressions like <+service.name> in normal stage
@@ -322,10 +323,10 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   public void testGetResolvedPathWhenServiceAndEnvironmentDoesNotHaveYaml() throws IOException {
     String yaml = readFile("artifacts/pipeline-without-ser-env-refactoring.yaml");
     mockMergeInputSetCall(yaml);
-    when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(serviceEntityService.get(anyString(), anyString(), anyString(), eq("svc1"), anyBoolean()))
         .thenReturn(Optional.of(ServiceEntity.builder().name("svc1").identifier("svc1").build()));
 
-    when(environmentService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(environmentService.get(anyString(), anyString(), anyString(), eq("env1"), anyBoolean()))
         .thenReturn(Optional.of(Environment.builder().name("env1").identifier("env1").build()));
 
     String imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
@@ -340,7 +341,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   }
 
   private void mockEnvironmentGetCall() {
-    when(environmentService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(environmentService.get(anyString(), anyString(), anyString(), eq("env1"), anyBoolean()))
         .thenReturn(Optional.of(Environment.builder()
                                     .name("env1")
                                     .identifier("env1")
@@ -352,8 +353,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                     .build()));
   }
 
-  private void mockServiceGetCall() {
-    when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+  private void mockServiceGetCall(String svcId) {
+    when(serviceEntityService.get(anyString(), anyString(), anyString(), eq(svcId), anyBoolean()))
         .thenReturn(Optional.of(ServiceEntity.builder()
                                     .name("svc1")
                                     .identifier("svc1")
@@ -365,7 +366,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   }
 
   private void mockEnvironmentV2GetCall() {
-    when(environmentService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(environmentService.get(anyString(), anyString(), anyString(), eq("env1"), anyBoolean()))
         .thenReturn(Optional.of(Environment.builder()
                                     .name("env1")
                                     .identifier("env1")
@@ -381,8 +382,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                     .build()));
   }
 
-  private void mockServiceV2GetCall() {
-    when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+  private void mockServiceV2GetCall(String svcId) {
+    when(serviceEntityService.get(anyString(), anyString(), anyString(), eq(svcId), anyBoolean()))
         .thenReturn(Optional.of(ServiceEntity.builder()
                                     .name("svc1")
                                     .identifier("svc1")

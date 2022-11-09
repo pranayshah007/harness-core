@@ -12,8 +12,10 @@ import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
+import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -43,10 +45,8 @@ import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -104,7 +104,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void testCreateService() throws IOException {
+  public void testCreateService() {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
@@ -119,9 +119,57 @@ public class ServiceResourceV2Test extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testCRUDMustBeAtProjectLevel() {
+    ServiceRequestDTO accLevel = ServiceRequestDTO.builder().identifier("id").build();
+    ServiceRequestDTO orgLevel = ServiceRequestDTO.builder().identifier("id").orgIdentifier("org").build();
+    ServiceRequestDTO invalidLevel = ServiceRequestDTO.builder().identifier("id").projectIdentifier("proj").build();
+
+    // Create
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> serviceResourceV2.create("accountId", accLevel))
+        .withMessage("org identifier must be specified. Services can only be created at Project scope");
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> serviceResourceV2.create("accountId", orgLevel))
+        .withMessage("project identifier must be specified. Services can only be created at Project scope");
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> serviceResourceV2.create("accountId", invalidLevel))
+        .withMessage("org identifier must be specified. Services can only be created at Project scope");
+
+    // update
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> serviceResourceV2.update("yes", "accountId", accLevel))
+        .withMessage("org identifier must be specified. Services can only be created at Project scope");
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> serviceResourceV2.update("yes", "accountId", orgLevel))
+        .withMessage("project identifier must be specified. Services can only be created at Project scope");
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> serviceResourceV2.update("yes", "accountId", invalidLevel))
+        .withMessage("org identifier must be specified. Services can only be created at Project scope");
+
+    // upsert
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> serviceResourceV2.upsert("yes", "accountId", accLevel))
+        .withMessage("org identifier must be specified. Services can only be created at Project scope");
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> serviceResourceV2.upsert("yes", "accountId", orgLevel))
+        .withMessage("project identifier must be specified. Services can only be created at Project scope");
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> serviceResourceV2.upsert("yes", "accountId", invalidLevel))
+        .withMessage("org identifier must be specified. Services can only be created at Project scope");
+  }
+
+  @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void testCreateServices() throws IOException {
+  public void testCreateServices() {
     List<ServiceRequestDTO> serviceRequestDTOList = new ArrayList<>();
     List<ServiceEntity> serviceEntityList = new ArrayList<>();
     List<ServiceEntity> outputServiceEntitiesList = new ArrayList<>();
@@ -162,7 +210,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void testUpdateService() throws IOException {
+  public void testUpdateService() {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
@@ -177,7 +225,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void testUpsertService() throws IOException {
+  public void testUpsertService() {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
@@ -232,26 +280,5 @@ public class ServiceResourceV2Test extends CategoryTest {
                    .map(ServiceV2YamlMetadata::getInputSetTemplateYaml)
                    .collect(Collectors.toList()))
         .containsExactlyInAnyOrder("input-set1", "input-set2");
-  }
-
-  @Test
-  @Owner(developers = TATHAGAT)
-  @Category(UnitTests.class)
-  public void testGetServicesYamlAndRuntimeInputsFail() {
-    final ServicesYamlMetadataApiInput servicesYamlMetadataApiInput =
-        ServicesYamlMetadataApiInput.builder().serviceIdentifiers(Collections.singletonList("svcId1")).build();
-
-    ServiceEntity service1 = ServiceEntity.builder().identifier("svcId1").build();
-
-    doReturn(Collections.singletonList(service1))
-        .when(serviceEntityService)
-        .getServices(anyString(), anyString(), anyString(), anyList());
-
-    assertThatThrownBy(()
-                           -> serviceResourceV2.getServicesYamlAndRuntimeInputs(
-                               servicesYamlMetadataApiInput, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining(
-            "Service with identifier svcId1 is not configured with a Service definition. Service Yaml is empty");
   }
 }

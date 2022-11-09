@@ -39,6 +39,9 @@ import io.harness.validation.Update;
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.artifact.ArtifactStreamSummary;
 import software.wings.beans.entityinterface.ApplicationAccess;
+import software.wings.ngmigration.CgBasicInfo;
+import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.settings.SettingVariableTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -78,7 +81,7 @@ import org.mongodb.morphia.annotations.Transient;
 @Entity(value = "serviceVariables", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class ServiceVariable implements EncryptableSetting, PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware,
-                                        UpdatedAtAware, UpdatedByAware, ApplicationAccess {
+                                        UpdatedAtAware, UpdatedByAware, ApplicationAccess, NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -189,6 +192,24 @@ public class ServiceVariable implements EncryptableSetting, PersistentEntity, Uu
     }
 
     return EncryptionReflectUtils.getEncryptedFields(this.getClass());
+  }
+
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .name(getName())
+        .id(getUuid())
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .type(NGMigrationEntityType.SERVICE)
+        .build();
   }
 
   public enum OverrideType {

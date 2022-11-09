@@ -20,7 +20,8 @@ public enum InviteOperationResponse {
   USER_ALREADY_INVITED("USER_ALREADY_INVITED"),
   FAIL("FAIL"),
   INVITE_EXPIRED("INVITE_EXPIRED"),
-  INVITE_INVALID("INVITE_INVALID");
+  INVITE_INVALID("INVITE_INVALID"),
+  USER_INVITE_NOT_REQUIRED("USER_INVITE_NOT_REQUIRED");
 
   private String type;
   InviteOperationResponse(String type) {

@@ -17,7 +17,6 @@ import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -85,16 +84,6 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
         .get(()
                  -> mongoTemplate.findAndModify(
                      query, update, new FindAndModifyOptions().returnNew(true), NGTriggerEntity.class));
-  }
-
-  @Override
-  public UpdateResult delete(Criteria criteria) {
-    Query query = new Query(criteria);
-    Update updateOperationsForDelete = TriggerFilterHelper.getUpdateOperationsForDelete();
-    RetryPolicy<Object> retryPolicy = getRetryPolicy(
-        "[Retrying]: Failed deleting Trigger; attempt: {}", "[Failed]: Failed deleting Trigger; attempt: {}");
-    return Failsafe.with(retryPolicy)
-        .get(() -> mongoTemplate.updateFirst(query, updateOperationsForDelete, NGTriggerEntity.class));
   }
 
   @Override

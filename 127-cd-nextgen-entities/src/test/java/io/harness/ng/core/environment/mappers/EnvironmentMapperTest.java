@@ -34,6 +34,7 @@ import io.harness.rule.OwnerRule;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -108,7 +109,7 @@ public class EnvironmentMapperTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testToEnvironment() {
-    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", environmentRequestDTO, false, false);
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", environmentRequestDTO);
     assertThat(environment).isNotNull();
     assertThat(environment).isEqualTo(requestEnvironment);
   }
@@ -126,7 +127,7 @@ public class EnvironmentMapperTest extends CategoryTest {
                                                  .type(PreProduction)
                                                  .yaml(yaml)
                                                  .build();
-    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true, false);
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
     assertThat(environment).isNotNull();
   }
 
@@ -143,7 +144,7 @@ public class EnvironmentMapperTest extends CategoryTest {
                                                  .type(PreProduction)
                                                  .yaml(yaml)
                                                  .build();
-    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true, true);
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
     assertThat(environment).isNotNull();
     final NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
     assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()).isNotNull();
@@ -172,7 +173,7 @@ public class EnvironmentMapperTest extends CategoryTest {
                                                  .type(PreProduction)
                                                  .yaml(yaml)
                                                  .build();
-    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, false, true);
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
     assertThat(environment).isNotNull();
     final NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
     assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()).isNotNull();
@@ -191,6 +192,30 @@ public class EnvironmentMapperTest extends CategoryTest {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
+  public void testToEnvForInputFromRequestDTO() {
+    final String filename = "env-with-no-override.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV1")
+                                                 .orgIdentifier("ORG_ID1")
+                                                 .projectIdentifier("PROJECT_ID1")
+                                                 .description("dto description")
+                                                 .type(PreProduction)
+                                                 .tags(Collections.singletonMap("dto_key", "dto_value"))
+                                                 .yaml(yaml)
+                                                 .build();
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
+    assertThat(environment).isNotNull();
+    assertThat(environment.getTags()).hasSize(1);
+    assertThat(environment.getTags().get(0).getKey()).isEqualTo("dto_key");
+    assertThat(environment.getTags().get(0).getValue()).isEqualTo("dto_value");
+    assertThat(environment.getDescription()).isEqualTo(requestDTO.getDescription());
+    assertThat(environment.getType()).isEqualTo(requestDTO.getType());
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
   public void testToEnvironmentNoOverrideFfBehaviour() {
     final String filename = "env-with-no-override.yaml";
     final String yaml = readFile(filename, getClass());
@@ -201,45 +226,26 @@ public class EnvironmentMapperTest extends CategoryTest {
                                                  .type(PreProduction)
                                                  .yaml(yaml)
                                                  .build();
-    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true, true);
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
     assertThat(environment).isNotNull();
     NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
     assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()).isNotNull();
     assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride()).isNull();
 
-    environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, false, true);
+    environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
     ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
     assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()).isNotNull();
     assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride()).isNull();
 
-    environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, false, false);
+    environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
     ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
     assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()).isNotNull();
     assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride()).isNull();
 
-    environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true, false);
+    environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
     ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
     assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()).isNotNull();
     assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride()).isNull();
-  }
-
-  @Test
-  @Owner(developers = TATHAGAT)
-  @Category(UnitTests.class)
-  public void testToEnvironmentValidateConfigFilesOverrideFailFfOff() {
-    final String filename = "env-with-only-config-files-only.yaml";
-    final String yaml = readFile(filename, getClass());
-    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
-                                                 .identifier("ENV")
-                                                 .orgIdentifier("ORG_ID")
-                                                 .projectIdentifier("PROJECT_ID")
-                                                 .type(PreProduction)
-                                                 .yaml(yaml)
-                                                 .build();
-    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true, false))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining(
-            "Config Files Override is not supported with FF disabled NG_SERVICE_CONFIG_FILES_OVERRIDE");
   }
 
   @Test
@@ -255,27 +261,9 @@ public class EnvironmentMapperTest extends CategoryTest {
                                                  .type(PreProduction)
                                                  .yaml(yaml)
                                                  .build();
-    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true, true))
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Found duplicate configFiles identifiers [c1,c2]");
-  }
-
-  @Test
-  @Owner(developers = TATHAGAT)
-  @Category(UnitTests.class)
-  public void testToEnvironmentValidateManifestOverrideFailFfOff() {
-    final String filename = "env-with-manifest-overrides.yaml";
-    final String yaml = readFile(filename, getClass());
-    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
-                                                 .identifier("ENV")
-                                                 .orgIdentifier("ORG_ID")
-                                                 .projectIdentifier("PROJECT_ID")
-                                                 .type(PreProduction)
-                                                 .yaml(yaml)
-                                                 .build();
-    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, false, false))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Manifest Override is not supported with FF NG_SERVICE_MANIFEST_OVERRIDE disabled");
   }
 
   @Test
@@ -291,7 +279,7 @@ public class EnvironmentMapperTest extends CategoryTest {
                                                  .type(PreProduction)
                                                  .yaml(yaml)
                                                  .build();
-    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true, false))
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Found duplicate manifest identifiers [m1]");
   }

@@ -118,6 +118,7 @@ public class WebhookTriggerProcessorUtils {
         .authorAvatar(author.getAvatar())
         .sender(prHook.getSender().getLogin())
         .action(prHook.getAction().toString().toLowerCase())
+        .mergeSha(pr.getMergeSha())
         .build();
   }
 

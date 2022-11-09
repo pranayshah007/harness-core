@@ -45,8 +45,9 @@ public class HelmDeployStepInfo extends HelmDeployBaseStepInfo implements CDStep
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public HelmDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String helmDeployFqn) {
-    super(delegateSelectors, helmDeployFqn);
+  public HelmDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String helmDeployFqn,
+      ParameterField<Boolean> ignoreReleaseHistFailStatus) {
+    super(delegateSelectors, helmDeployFqn, ignoreReleaseHistFailStatus);
   }
   @Override
   public StepType getStepType() {
@@ -60,7 +61,10 @@ public class HelmDeployStepInfo extends HelmDeployBaseStepInfo implements CDStep
 
   @Override
   public SpecParameters getSpecParameters() {
-    return HelmDeployStepParams.infoBuilder().delegateSelectors(delegateSelectors).build();
+    return HelmDeployStepParams.infoBuilder()
+        .delegateSelectors(delegateSelectors)
+        .ignoreReleaseHistFailStatus(ignoreReleaseHistFailStatus)
+        .build();
   }
 
   @Override

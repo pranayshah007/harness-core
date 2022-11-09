@@ -6,7 +6,7 @@ services:
       resources:
         limits:
           cpus: "${delegateCpu}"
-          memory: ${delegateXmx}M
+          memory: ${delegateRam}M
     image: ${delegateDockerImage}
     environment:
       - ACCOUNT_ID=${accountId}
@@ -30,3 +30,5 @@ services:
       - DELEGATE_TAGS=${delegateTags}
       - PROXY_MANAGER=true
       - INIT_SCRIPT=echo "Docker delegate init script executed."
+# If proxy setting is required, Please refer to
+# https://docs.harness.io/article/pfim3oig7o-configure-delegate-proxy-settings for Docker Proxy Settings

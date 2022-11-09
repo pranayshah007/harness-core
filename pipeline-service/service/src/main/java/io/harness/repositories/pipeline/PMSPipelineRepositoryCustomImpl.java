@@ -92,6 +92,14 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   @Override
+  public Long countAllPipelinesInAccount(String accountId) {
+    Criteria criteria =
+        Criteria.where(PipelineEntityKeys.accountId).is(accountId).and(PipelineEntityKeys.deleted).is(false);
+    Query query = new Query().addCriteria(criteria);
+    return mongoTemplate.count(query, PipelineEntity.class);
+  }
+
+  @Override
   public PipelineEntity saveForOldGitSync(PipelineEntity pipelineToSave) {
     return transactionHelper.performTransaction(() -> {
       PipelineEntity savedEntity = gitAwarePersistence.save(
@@ -374,5 +382,11 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   public Long countFileInstances(String accountId, String repoURL, String filePath) {
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFileUniquenessCheck(accountId, repoURL, filePath);
     return countAllPipelines(criteria);
+  }
+
+  @Override
+  public List<String> findAllUniqueRepos(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findDistinct(query, PipelineEntityKeys.repo, PipelineEntity.class, String.class);
   }
 }

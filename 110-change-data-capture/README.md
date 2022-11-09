@@ -1,3 +1,4 @@
+
 ## Running the Service Locally 
 
 ### Mongo Replicaset Setup 
@@ -56,9 +57,9 @@ CREATE DATABASE harness;
 
 ```
 timescaledb:
-  timescaledbUrl: "jdbc:postgresql://34.83.25.129:5432/harnessdev"
-  timescaledbUsername: "harnessappdev"
-  timescaledbPassword: "harnessappdev"
+  timescaledbUrl: ""
+  timescaledbUsername: ""
+  timescaledbPassword: ""
   connectTimeout: 10
   socketTimeout: 30
   logUnclosedConnections: false

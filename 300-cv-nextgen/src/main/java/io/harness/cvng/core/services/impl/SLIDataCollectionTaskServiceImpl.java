@@ -43,11 +43,11 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
 
   @Override
   public void handleCreateNextTask(ServiceLevelIndicator serviceLevelIndicator) {
-    String serviceGuardVerificationTaskId = verificationTaskService.getSLIVerificationTaskId(
+    String sliVerificationTaskId = verificationTaskService.getSLIVerificationTaskId(
         serviceLevelIndicator.getAccountId(), serviceLevelIndicator.getUuid());
 
     DataCollectionTask dataCollectionTask = dataCollectionTaskService.getLastDataCollectionTask(
-        serviceLevelIndicator.getAccountId(), serviceGuardVerificationTaskId);
+        serviceLevelIndicator.getAccountId(), sliVerificationTaskId);
     if (dataCollectionTask == null) {
       enqueueFirstTask(serviceLevelIndicator);
     } else {
@@ -93,7 +93,6 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
     DataCollectionTask dataCollectionTask = getDataCollectionTaskForSLI(
         cvConfigList, serviceLevelIndicator, nextTaskStartTime, nextTaskStartTime.plus(5, ChronoUnit.MINUTES));
     if (prevSLITask.getStatus() != DataCollectionExecutionStatus.SUCCESS) {
-      dataCollectionTask.setRetryCount(prevSLITask.getRetryCount());
       dataCollectionTask.setValidAfter(dataCollectionTask.getNextValidAfter(clock.instant()));
     }
     dataCollectionTaskService.validateIfAlreadyExists(dataCollectionTask);

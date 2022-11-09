@@ -19,12 +19,14 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rest.RestResponse;
-import io.harness.security.annotations.InternalApi;
+import io.harness.security.annotations.LearningEngineAuth;
 
 import software.wings.beans.User;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.intfc.HarnessUserGroupService;
 
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -75,7 +77,9 @@ public class FeatureFlagResource {
 
   @GET
   @Path("{featureFlagName}")
-  @InternalApi
+  @Timed
+  @ExceptionMetered
+  @LearningEngineAuth
   public RestResponse<FeatureFlag> getFeatureFlag(@PathParam("featureFlagName") String featureFlagName) {
     return new RestResponse<>(featureFlagService.getFeatureFlag(FeatureName.valueOf(featureFlagName)).orElse(null));
   }

@@ -16,31 +16,40 @@ import io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.persistence.HPersistence;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.BasicDBObject;
 import java.time.Duration;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.FilterOperator;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
+@Slf4j
 public class MorphiaPersistenceProvider<T extends PersistentIterable>
     implements PersistenceProvider<T, MorphiaFilterExpander<T>> {
   @Inject private HPersistence persistence;
 
-  public Query<T> createQuery(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander) {
-    Query<T> query = persistence.createQuery(clazz).order(Sort.ascending(fieldName));
+  @VisibleForTesting
+  Query<T> createQuery(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, boolean unsorted) {
+    Query<T> query = persistence.createQuery(clazz);
+    if (!unsorted) {
+      query.order(Sort.ascending(fieldName));
+    }
     if (filterExpander != null) {
       filterExpander.filter(query);
     }
     return query;
   }
 
-  public Query<T> createQuery(long now, Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander) {
-    Query<T> query = createQuery(clazz, fieldName, filterExpander);
+  @VisibleForTesting
+  Query<T> createQuery(
+      long now, Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, boolean unsorted) {
+    Query<T> query = createQuery(clazz, fieldName, filterExpander, unsorted);
     if (filterExpander == null) {
       query.or(query.criteria(fieldName).lessThan(now), query.criteria(fieldName).doesNotExist());
     } else {
@@ -57,9 +66,10 @@ public class MorphiaPersistenceProvider<T extends PersistentIterable>
 
   @Override
   public T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName,
-      SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander) {
+      SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander,
+      boolean unsorted) {
     long now = currentTimeMillis();
-    Query<T> query = createQuery(now, clazz, fieldName, filterExpander);
+    Query<T> query = createQuery(now, clazz, fieldName, filterExpander, unsorted);
     UpdateOperations<T> updateOperations = persistence.createUpdateOperations(clazz);
     switch (schedulingType) {
       case REGULAR:
@@ -79,7 +89,7 @@ public class MorphiaPersistenceProvider<T extends PersistentIterable>
 
   @Override
   public T findInstance(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander) {
-    Query<T> resultQuery = createQuery(clazz, fieldName, filterExpander).project(fieldName, true);
+    Query<T> resultQuery = createQuery(clazz, fieldName, filterExpander, false).project(fieldName, true);
     return resultQuery.get();
   }
 

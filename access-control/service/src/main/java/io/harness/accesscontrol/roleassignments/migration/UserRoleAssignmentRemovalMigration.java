@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.accesscontrol.roleassignments.migration;
 
 import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
@@ -21,7 +28,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.NGMigration;
 import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
@@ -72,7 +79,7 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
   private void doMigration() {
     List<AccountDTO> accountDTOS = new ArrayList<>();
     try {
-      accountDTOS = RestClientUtils.getResponse(accountClient.getAllAccounts());
+      accountDTOS = CGRestUtils.getResponse(accountClient.getAllAccounts());
     } catch (Exception ex) {
       log.error(DEBUG_MESSAGE + "Failed to fetch all accounts");
     }

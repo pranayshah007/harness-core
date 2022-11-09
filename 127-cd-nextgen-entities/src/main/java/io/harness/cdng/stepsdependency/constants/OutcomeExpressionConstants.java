@@ -40,6 +40,7 @@ public class OutcomeExpressionConstants {
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_OUTCOME = "serverlessAwsLambdaRollbackOutcome";
   public final String CONFIG_FILES = "configFiles";
   public final String STARTUP_COMMAND = "startupCommand";
+  public final String STARTUP_SCRIPT = "startupScript";
   public final String APPLICATION_SETTINGS = "applicationSettings";
   public final String CONNECTION_STRINGS = "connectionStrings";
   public final String ECS_ROLLING_ROLLBACK_OUTCOME = "ecsRollingRollbackOutcome";
@@ -47,4 +48,13 @@ public class OutcomeExpressionConstants {
   public final String ECS_CANARY_DELETE_OUTCOME = "ecsCanaryDeleteOutcome";
   public final String ECS_CANARY_DEPLOY_OUTCOME = "ecsCanaryDeployOutcome";
   public final String ROLLBACK_ARTIFACT = "rollbackArtifact";
+  public final String ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA_OUTCOME = "ecsBlueGreenPrepareRollbackOutcome";
+  public final String ECS_BLUE_GREEN_CREATE_SERVICE_OUTCOME = "ecsBlueGreenCreateServiceOutcome";
+  public final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_OUTCOME = "ecsBlueGreenSwapTargetGroupsOutcome";
+  public final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_START_OUTCOME = "ecsBlueGreenSwapTargetGroupsStartOutcome";
+  public final String ECS_BLUE_GREEN_ROLLBACK_OUTCOME = "ecsBlueGreenRollbackOutcome";
+  public final String UPDATE_RELEASE_REPO_OUTCOME = "updateReleaseRepoOutcome";
+  public final String INSTANCES = "instances";
+  public final String ELASTIGROUP_CONFIGURATION_OUTPUT = "elastigroupConfigurationOutput";
+  public final String FREEZE_OUTCOME = "freezeOutcome";
 }

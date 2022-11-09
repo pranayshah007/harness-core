@@ -9,7 +9,9 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
+	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/harness-core/product/ci/common/external"
+	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"github.com/mattn/go-zglob"
 	"go.uber.org/zap"
 	"io"
@@ -32,7 +34,88 @@ func getFiles(path string) ([]string, error) {
 	return matches, err
 }
 
-// detect java packages by reading all the files and parsing their package names
+// GetJavaTests returns list of RunnableTests in the workspace with java extension.
+// In case of errors, return empty list
+func GetJavaTests() ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	wp, err := getWorkspace()
+	if err != nil {
+		return tests, err
+	}
+
+	files, _ := getFiles(fmt.Sprintf("%s/**/*.java", wp))
+	for _, path := range files {
+		if path == "" {
+			continue
+		}
+		node, _ := utils.ParseJavaNode(path)
+		if node.Type != utils.NodeType_TEST {
+			continue
+		}
+		test := types.RunnableTest{
+			Pkg:   node.Pkg,
+			Class: node.Class,
+		}
+		tests = append(tests, test)
+	}
+	return tests, nil
+}
+
+// GetScalaTests returns list of RunnableTests in the workspace with scala extension.
+// In case of errors, return empty list
+func GetScalaTests() ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	wp, err := getWorkspace()
+	if err != nil {
+		return tests, err
+	}
+
+	files, _ := getFiles(fmt.Sprintf("%s/**/*.scala", wp))
+	for _, path := range files {
+		if path == "" {
+			continue
+		}
+		node, _ := utils.ParseJavaNode(path)
+		if node.Type != utils.NodeType_TEST {
+			continue
+		}
+		test := types.RunnableTest{
+			Pkg:   node.Pkg,
+			Class: node.Class,
+		}
+		tests = append(tests, test)
+	}
+	return tests, nil
+}
+
+// GetKotlinTests returns list of RunnableTests in the workspace with kotlin extension.
+// In case of errors, return empty list
+func GetKotlinTests() ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	wp, err := getWorkspace()
+	if err != nil {
+		return tests, err
+	}
+
+	files, _ := getFiles(fmt.Sprintf("%s/**/*.kt", wp))
+	for _, path := range files {
+		if path == "" {
+			continue
+		}
+		node, _ := utils.ParseJavaNode(path)
+		if node.Type != utils.NodeType_TEST {
+			continue
+		}
+		test := types.RunnableTest{
+			Pkg:   node.Pkg,
+			Class: node.Class,
+		}
+		tests = append(tests, test)
+	}
+	return tests, nil
+}
+
+// DetectPkgs detects java packages by reading all the files and parsing their package names
 func DetectPkgs(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]string, error) {
 	plist := []string{}
 	excludeList := []string{"com.google"} // exclude any instances of these packages from the package list
@@ -48,8 +131,13 @@ func DetectPkgs(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]string, err
 	if err != nil {
 		return plist, err
 	}
-	// Create a list with all *.java and *.kt file paths
+	scalaFiles, err := getFiles(fmt.Sprintf("%s/**/*.scala", wp))
+	if err != nil {
+		return plist, err
+	}
+	// Create a list with all *.java, *.kt and *.scala file paths
 	files = append(files, kotlinFiles...)
+	files = append(files, scalaFiles...)
 	fmt.Println("files: ", files)
 	m := make(map[string]struct{})
 	for _, f := range files {

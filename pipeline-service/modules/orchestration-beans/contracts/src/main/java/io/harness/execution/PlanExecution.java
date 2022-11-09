@@ -23,8 +23,10 @@ import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.UuidAccess;
 import io.harness.plan.NodeType;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
@@ -80,6 +82,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   @Wither @Version Long version;
 
   @Getter @NonFinal @Setter Long nextIteration;
+  Ambiance ambiance;
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
@@ -115,6 +118,15 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
                  .name("exec_tag_status_idx")
                  .field(ExecutionMetadataKeys.tagExecutionKey)
                  .field(PlanExecutionKeys.status)
+                 .descSortField(PlanExecutionKeys.createdAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_pipelineId_status_createdAt_idx")
+                 .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
+                 .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
+                 .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
+                 .field(PlanExecutionKeys.metadata + ".pipelineIdentifier")
+                 .field(NodeExecutionKeys.status)
                  .descSortField(PlanExecutionKeys.createdAt)
                  .build())
         .build();

@@ -35,6 +35,7 @@ import io.harness.delegate.task.azure.arm.AzureBlueprintDeploymentService;
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentBlueprintSteadyStateContext;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.runtime.azure.AzureBPDeploymentException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -161,7 +162,7 @@ public class AzureBlueprintDeploymentServiceTest extends CategoryTest {
             deploymentBlueprintContext.getDefinitionResourceScope(), deploymentBlueprintContext.getBlueprintName());
 
     assertThatThrownBy(() -> azureBlueprintDeploymentService.deployBlueprintAtResourceScope(deploymentBlueprintContext))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(AzureBPDeploymentException.class)
         .hasMessage(
             "Unable to deploy blueprint, Definition Scope: definition-resource-scope, Blueprint Name: blueprint-name,"
             + " Assignment Name: assignment-name, Assignment Scope: assignment-resource-scope,"

@@ -8,12 +8,19 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.RAJ;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.XIN;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -21,10 +28,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
+import io.harness.beans.FeatureName;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.delegate.service.DelegateVersionService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
@@ -47,10 +56,14 @@ import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mongodb.morphia.query.Query;
@@ -72,6 +85,8 @@ public class AccountServiceImplTest extends WingsBaseTest {
   @Mock Query<Account> accountQuery2;
 
   @InjectMocks AccountServiceImpl accountService;
+
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   private static final String INDIVIDUAL_VERSION = "individualVersion";
   private static final String INDIVIDUAL_ACCOUNT = "individualAccount";
@@ -243,6 +258,73 @@ public class AccountServiceImplTest extends WingsBaseTest {
                      .samlRedirectUrl("testredirecturl")
                      .build(),
         accountService.getAuthenticationInfo(ACCOUNT_ID));
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGetFeatureFlagEnabledAccountIds() {
+    FeatureName featureName = FeatureName.values()[0];
+    Set<String> accountIds = new HashSet<>(Collections.singleton(randomAlphabetic(10)));
+    accountIds.addAll(new ArrayList<>());
+    when(featureFlagService.getAccountIds(featureName)).thenReturn(accountIds);
+    Set<String> featureFlagEnabledAccounts = accountService.getFeatureFlagEnabledAccountIds(featureName.name());
+    verify(featureFlagService, times(1)).getAccountIds(featureName);
+    assertEquals(featureFlagEnabledAccounts, accountIds);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGetFeatureFlagEnabledAccountIds_InvalidFeatureName() {
+    String featureFlagName = randomAlphabetic(10);
+    exceptionRule.expect(InvalidRequestException.class);
+    exceptionRule.expectMessage(String.format("Invalid feature flag name received: %s", featureFlagName));
+    accountService.getFeatureFlagEnabledAccountIds(featureFlagName);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testIsAutoInviteAcceptanceEnabled() {
+    buildAccountWithAuthMechanism(AuthenticationMechanism.SAML, false);
+    when(featureFlagService.isEnabled(any(FeatureName.class), anyString())).thenReturn(true);
+    assertTrue(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.LDAP, false);
+    assertTrue(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.OAUTH, false);
+    assertTrue(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.USER_PASSWORD, false);
+    assertFalse(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.SAML, false);
+    when(featureFlagService.isEnabled(any(FeatureName.class), anyString())).thenReturn(false);
+    assertFalse(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID));
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testIsPLNoEmailForSamlAccountInvitesEnabled() {
+    buildAccountWithAuthMechanism(AuthenticationMechanism.SAML, false);
+    when(featureFlagService.isEnabled(any(FeatureName.class), anyString())).thenReturn(true);
+    assertTrue(accountService.isPLNoEmailForSamlAccountInvitesEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.LDAP, false);
+    assertTrue(accountService.isPLNoEmailForSamlAccountInvitesEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.OAUTH, false);
+    assertTrue(accountService.isPLNoEmailForSamlAccountInvitesEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.USER_PASSWORD, false);
+    assertFalse(accountService.isPLNoEmailForSamlAccountInvitesEnabled(ACCOUNT_ID));
+
+    buildAccountWithAuthMechanism(AuthenticationMechanism.SAML, false);
+    when(featureFlagService.isEnabled(any(FeatureName.class), anyString())).thenReturn(false);
+    assertFalse(accountService.isPLNoEmailForSamlAccountInvitesEnabled(ACCOUNT_ID));
   }
 
   private Account buildAccountWithAuthMechanism(

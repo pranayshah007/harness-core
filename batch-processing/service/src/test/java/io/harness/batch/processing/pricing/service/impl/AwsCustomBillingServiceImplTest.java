@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
+import io.harness.batch.processing.pricing.service.impl.util.CloudResourceIdHelper;
 import io.harness.batch.processing.pricing.vmpricing.VMInstanceBillingData;
 import io.harness.batch.processing.service.intfc.InstanceDataService;
 import io.harness.category.element.UnitTests;
@@ -30,11 +31,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @Slf4j
@@ -43,6 +47,13 @@ public class AwsCustomBillingServiceImplTest extends CategoryTest {
   @InjectMocks private AwsCustomBillingServiceImpl awsCustomBillingService;
   @Mock BigQueryHelperService bigQueryHelperService;
   @Mock InstanceDataService instanceDataService;
+  @InjectMocks CloudResourceIdHelper cloudResourceIdHelper;
+
+  @Before
+  public void setUp() {
+    cloudResourceIdHelper = Mockito.spy(new CloudResourceIdHelper());
+    MockitoAnnotations.initMocks(this);
+  }
 
   private final String DATA_SET_ID = "dataSetId";
   private final String RESOURCE_ID = "resourceId1";
@@ -84,7 +95,7 @@ public class AwsCustomBillingServiceImplTest extends CategoryTest {
     metaData.put(InstanceMetaDataConstants.ACTUAL_PARENT_RESOURCE_ID, PARENT_RESOURCE_ID);
     InstanceData instanceData = InstanceData.builder().instanceType(InstanceType.K8S_POD).metaData(metaData).build();
     when(instanceDataService.fetchInstanceData(PARENT_RESOURCE_ID)).thenReturn(getParentInstanceData());
-    String resourceId = awsCustomBillingService.getResourceId(instanceData);
+    String resourceId = cloudResourceIdHelper.getResourceId(instanceData);
     assertThat(resourceId).isEqualTo(RESOURCE_ID);
   }
 
@@ -96,7 +107,7 @@ public class AwsCustomBillingServiceImplTest extends CategoryTest {
     metaData.put(InstanceMetaDataConstants.PARENT_RESOURCE_ID, PARENT_RESOURCE_ID);
     InstanceData instanceData = InstanceData.builder().instanceType(InstanceType.K8S_POD).metaData(metaData).build();
     when(instanceDataService.fetchInstanceDataWithName(any(), any(), any(), any())).thenReturn(getParentInstanceData());
-    String resourceId = awsCustomBillingService.getResourceId(instanceData);
+    String resourceId = cloudResourceIdHelper.getResourceId(instanceData);
     assertThat(resourceId).isEqualTo(RESOURCE_ID);
   }
 

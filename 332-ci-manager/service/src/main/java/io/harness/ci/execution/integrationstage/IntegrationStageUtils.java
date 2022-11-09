@@ -16,9 +16,12 @@ import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_HOSTED;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
 import static io.harness.ci.commonconstants.CIExecutionConstants.AZURE_REPO_BASE_URL;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_BUILD_MULTIPLIER;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_URL_SUFFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.MACOS_BUILD_MULTIPLIER;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.WINDOWS_BUILD_MULTIPLIER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
@@ -56,7 +59,9 @@ import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.license.CILicenseService;
 import io.harness.ci.pipeline.executions.beans.CIImageDetails;
 import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
@@ -297,8 +302,7 @@ public class IntegrationStageUtils {
     return treatWebhookAsManualExecution(connectorDetails, codeBase, parsedPayload, version);
   }
 
-  private static BaseNGAccess getBaseNGAccess(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public static BaseNGAccess getBaseNGAccess(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return BaseNGAccess.builder()
         .accountIdentifier(accountIdentifier)
         .orgIdentifier(orgIdentifier)
@@ -749,22 +753,30 @@ public class IntegrationStageUtils {
     String infraType = infrastructure.getType().getYamlName();
     String infraOSType = null;
     String infraHostType = null;
+    String infraOSArchType = ArchType.Amd64.toString();
 
-    if (infrastructure.getType() == KUBERNETES_DIRECT) {
+    Infrastructure.Type type = infrastructure.getType();
+    if (type == KUBERNETES_DIRECT) {
       infraOSType = getK8OS(infrastructure).toString();
       infraHostType = SELF_HOSTED;
-    } else if (infrastructure.getType() == VM) {
-      infraOSType = VmInitializeUtils.getOS(infrastructure).toString();
+    } else if (type == VM || type == Infrastructure.Type.DOCKER) {
+      infraOSType = InfraInfoUtils.getInfraOS(infrastructure).toString();
       infraHostType = SELF_HOSTED;
     } else if (infrastructure.getType() == KUBERNETES_HOSTED) {
       infraOSType = getK8OS(infrastructure).toString();
       infraHostType = HARNESS_HOSTED;
     } else if (infrastructure.getType() == HOSTED_VM) {
       infraOSType = VmInitializeUtils.getOS(infrastructure).toString();
+      infraOSArchType = VmInitializeUtils.getArchType(infrastructure).toString();
       infraHostType = HARNESS_HOSTED;
     }
 
-    return CIInfraDetails.builder().infraType(infraType).infraOSType(infraOSType).infraHostType(infraHostType).build();
+    return CIInfraDetails.builder()
+        .infraType(infraType)
+        .infraOSType(infraOSType)
+        .infraHostType(infraHostType)
+        .infraArchType(infraOSArchType)
+        .build();
   }
 
   public static CIScmDetails getCiScmDetails(ConnectorUtils connectorUtils, ConnectorDetails connectorDetails) {
@@ -785,5 +797,23 @@ public class IntegrationStageUtils {
       return CIConstants.STAGE_MAX_TTL_SECS_HOSTED_FREE;
     }
     return CIConstants.STAGE_MAX_TTL_SECS;
+  }
+
+  public static Double getBuildTimeMultiplierForHostedInfra(Infrastructure infrastructure) {
+    CIInfraDetails ciInfraDetails = getCiInfraDetails(infrastructure);
+    switch (infrastructure.getType()) {
+      case KUBERNETES_HOSTED:
+      case HOSTED_VM:
+        switch (ciInfraDetails.getInfraOSType()) {
+          case "MacOs":
+            return MACOS_BUILD_MULTIPLIER;
+          case "Windows":
+            return WINDOWS_BUILD_MULTIPLIER;
+          default:
+            return DEFAULT_BUILD_MULTIPLIER;
+        }
+      default:
+    }
+    return DEFAULT_BUILD_MULTIPLIER;
   }
 }

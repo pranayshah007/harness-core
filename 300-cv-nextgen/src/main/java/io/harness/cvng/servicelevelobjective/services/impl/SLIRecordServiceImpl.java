@@ -209,6 +209,14 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         }
         if (!isCalculatingSLI && sliRecord.getSliVersion() != sliVersion) {
           isReCalculatingSLI = true;
+          return SLOGraphData.builder()
+              .errorBudgetBurndown(errorBudgetBurndown)
+              .errorBudgetRemaining(errorBudgetRemaining)
+              .sloPerformanceTrend(sliTread)
+              .isRecalculatingSLI(isReCalculatingSLI)
+              .isCalculatingSLI(isCalculatingSLI)
+              .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
+              .build();
         }
         sliValue = sliMissingDataType.calculateSLIValue(
             goodCountFromStart, badCountFromStart, minutesFromStart, disabledMinutesFromStart);
@@ -357,8 +365,8 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .asList();
   }
 
-  @VisibleForTesting
-  List<SLIRecord> getSLIRecords(String sliId, Instant startTimeStamp, Instant endTimeStamp) {
+  @Override
+  public List<SLIRecord> getSLIRecords(String sliId, Instant startTimeStamp, Instant endTimeStamp) {
     return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
         .filter(SLIRecordKeys.sliId, sliId)
         .field(SLIRecordKeys.timestamp)
@@ -369,6 +377,20 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .asList();
   }
 
+  @Override
+  public List<SLIRecord> getSLIRecordsWithSLIVersion(
+      String sliId, Instant startTimeStamp, Instant endTimeStamp, int sliVersion) {
+    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
+        .filter(SLIRecordKeys.sliId, sliId)
+        .field(SLIRecordKeys.timestamp)
+        .greaterThanOrEq(startTimeStamp)
+        .field(SLIRecordKeys.sliVersion)
+        .equal(sliVersion)
+        .field(SLIRecordKeys.timestamp)
+        .lessThan(endTimeStamp)
+        .order(Sort.ascending(SLIRecordKeys.timestamp))
+        .asList();
+  }
   @Override
   public void delete(List<String> sliIds) {
     hPersistence.delete(hPersistence.createQuery(SLIRecord.class).field(SLIRecordKeys.sliId).in(sliIds));

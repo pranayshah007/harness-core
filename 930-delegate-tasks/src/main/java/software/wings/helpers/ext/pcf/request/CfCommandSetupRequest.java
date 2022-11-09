@@ -66,11 +66,11 @@ public class CfCommandSetupRequest extends CfCommandRequest {
       Integer timeoutIntervalInMin, Integer maxCount, Integer currentRunningCount, boolean useCurrentCount,
       boolean blueGreen, Integer olderActiveVersionCountToKeep, boolean useCLIForPcfAppCreation,
       PcfManifestsPackage pcfManifestsPackage, boolean useAppAutoscalar, boolean enforceSslValidation,
-      boolean limitPcfThreads, boolean ignorePcfConnectionContextCache, String artifactProcessingScript,
-      CfCliVersion cfCliVersion, boolean isNonVersioning, boolean nonVersioningInactiveRollbackEnabled) {
+      boolean limitPcfThreads, String artifactProcessingScript, CfCliVersion cfCliVersion, boolean isNonVersioning,
+      boolean nonVersioningInactiveRollbackEnabled) {
     super(accountId, appId, commandName, activityId, pcfCommandType, organization, space, pcfConfig,
         workflowExecutionId, timeoutIntervalInMin, useCLIForPcfAppCreation, enforceSslValidation, useAppAutoscalar,
-        limitPcfThreads, ignorePcfConnectionContextCache, cfCliVersion);
+        limitPcfThreads, cfCliVersion);
     this.releaseNamePrefix = releaseNamePrefix;
     this.manifestYaml = manifestYaml;
     this.artifactFiles = artifactFiles;

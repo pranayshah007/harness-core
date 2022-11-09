@@ -50,6 +50,8 @@ import software.wings.utils.WingsTestConstants;
 import com.google.common.util.concurrent.FakeTimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -192,7 +194,7 @@ public class AuditServiceTest extends WingsBaseTest {
     auditServiceTestHelper.createAuditHeader(appId);
     auditServiceTestHelper.createAuditHeader(appId);
 
-    auditService.deleteAuditRecords(0);
+    auditService.deleteAuditRecords(LocalDateTime.now().plusDays(2).toInstant(ZoneOffset.UTC).toEpochMilli());
     assertThat(auditService.list(aPageRequest().addFilter(ArtifactStreamKeys.appId, EQ, appId).build())).hasSize(0);
   }
 

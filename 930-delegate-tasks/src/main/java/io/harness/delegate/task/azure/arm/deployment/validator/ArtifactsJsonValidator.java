@@ -10,8 +10,7 @@ package io.harness.delegate.task.azure.arm.deployment.validator;
 import static java.lang.String.format;
 
 import io.harness.delegate.task.azure.common.validator.Validator;
-import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.WingsException;
+import io.harness.exception.runtime.azure.AzureBPDeploymentException;
 import io.harness.serializer.JsonUtils;
 
 import java.util.Map;
@@ -26,8 +25,7 @@ public class ArtifactsJsonValidator implements Validator<Map<String, String>> {
     try {
       JsonUtils.readTree(artifactJson);
     } catch (Exception e) {
-      throw new InvalidArgumentsException(
-          format("Invalid Artifact JSON, artifact file name: %s", artifactName), e, WingsException.USER);
+      throw new AzureBPDeploymentException(format("Invalid Artifact JSON, artifact file name: %s", artifactName));
     }
   }
 }

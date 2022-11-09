@@ -17,6 +17,7 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.exception.IllegalArgumentException;
 import io.harness.exception.WingsException;
 import io.harness.licensing.Edition;
+import io.harness.licensing.NGLicensingEntityConstants;
 import io.harness.licensing.accesscontrol.ResourceTypes;
 import io.harness.licensing.beans.EditionActionDTO;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
@@ -200,8 +201,10 @@ public class LicenseResource {
       @Parameter(required = true, description = "A Harness Platform module.") @NotNull @QueryParam(
           NGCommonEntityConstants.MODULE_TYPE) ModuleType moduleType,
       @Parameter(required = true, description = "Referer URL") @QueryParam(
-          NGCommonEntityConstants.REFERER) String referer) {
-    return ResponseDTO.newResponse(licenseService.startFreeLicense(accountIdentifier, moduleType, referer));
+          NGCommonEntityConstants.REFERER) String referer,
+      @Parameter(required = true, description = "Google Analytics Client Id") @QueryParam(
+          NGLicensingEntityConstants.GA_CLIENT_ID) String gaClientId) {
+    return ResponseDTO.newResponse(licenseService.startFreeLicense(accountIdentifier, moduleType, referer, gaClientId));
   }
 
   @POST

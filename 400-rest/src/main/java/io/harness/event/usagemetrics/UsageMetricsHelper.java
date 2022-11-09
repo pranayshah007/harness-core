@@ -37,9 +37,11 @@ import software.wings.verification.CVConfiguration.CVConfigurationKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.AggregationOptions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.mongodb.morphia.annotations.Id;
@@ -94,12 +96,16 @@ public class UsageMetricsHelper {
     Map<String, Integer> instanceCountMap = new HashMap<>();
     Query<Instance> query = wingsPersistence.createQuery(Instance.class);
     query.criteria("isDeleted").equal(false);
+    int maxOperationTimeInMillis = wingsPersistence.getMaxTimeMs(Instance.class);
     wingsPersistence.getDatastore(Instance.class)
         .createAggregation(Instance.class)
         .match(query)
         .project(projection("accountId"))
         .group(id(grouping("accountId")), grouping("count", accumulator("$sum", 1)))
-        .aggregate(InstanceCount.class)
+        .aggregate(InstanceCount.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(
             instanceCount -> instanceCountMap.put(instanceCount.getId().getAccountId(), instanceCount.getCount()));
     return instanceCountMap;
