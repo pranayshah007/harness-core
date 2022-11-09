@@ -16,7 +16,7 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.ConnectorValidationException;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.model.CfRequestConfig;
-import io.harness.pcf.model.PcfConfig;
+import io.harness.pcf.model.CloudFoundryConfig;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.inject.Inject;
@@ -48,11 +48,11 @@ public class PcfValidationHandler implements ConnectorValidationHandler {
 
   private ConnectorValidationResult validateInternal(
       PcfConnectorDTO pcfConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
-    PcfConfig pcfConfig = ngConfigMapper.mapPcfConfigWithDecryption(pcfConnectorDTO, encryptedDataDetails);
+    CloudFoundryConfig pcfConfig = ngConfigMapper.mapPcfConfigWithDecryption(pcfConnectorDTO, encryptedDataDetails);
     return handleValidateTask(pcfConfig);
   }
 
-  private ConnectorValidationResult handleValidateTask(PcfConfig pcfConfig) {
+  private ConnectorValidationResult handleValidateTask(CloudFoundryConfig pcfConfig) {
     try {
       // todo: ask about limit pcf threads FF
       pcfDeploymentManager.getOrganizations(CfRequestConfig.builder()
@@ -66,9 +66,10 @@ public class PcfValidationHandler implements ConnectorValidationHandler {
           .testedAt(System.currentTimeMillis())
           .build();
     } catch (Exception e) {
-      String errorMessage = "Testing connection to Pcf has Failed.";
+      String errorMessage = "Testing connection to Pcf has Failed: ";
       throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Pcf connector",
-          "Please check you Pcf connector configuration.", new ConnectorValidationException(errorMessage));
+          "Please check you Pcf connector configuration.",
+          new ConnectorValidationException(errorMessage + e.getMessage()));
     }
   }
 }

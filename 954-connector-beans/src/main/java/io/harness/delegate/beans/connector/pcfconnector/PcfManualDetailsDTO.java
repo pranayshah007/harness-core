@@ -21,7 +21,8 @@ import lombok.Value;
 @ApiModel("PcfManualDetails")
 @Schema(name = "PcfManualDetails", description = "This contains Pcf manual credentials connector details")
 public class PcfManualDetailsDTO implements PcfCredentialSpecDTO {
+  String username;
   @Schema(description = "Endpoint URL of the PCF Cluster.") @JsonProperty("endpointUrl") @NotNull String endpointUrl;
-  @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData userName;
+  @ApiModelProperty(dataType = "string") @SecretReference SecretRefData usernameRef;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;
 }

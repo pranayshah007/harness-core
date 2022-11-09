@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.connector.entities.embedded.pcfconnector.PcfConfig;
+import io.harness.connector.entities.embedded.pcfconnector.CloudFoundryConfig;
 import io.harness.connector.entities.embedded.pcfconnector.PcfManualCredential;
 import io.harness.delegate.beans.connector.pcfconnector.PcfConnectorDTO;
 import io.harness.delegate.beans.connector.pcfconnector.PcfCredentialType;
@@ -47,14 +47,14 @@ public class PcfEntityToDTOTest extends CategoryTest {
     assertThat(credential.getEndpointUrl()).isEqualTo(URL);
   }
 
-  private PcfConfig getConnectorConfigDTO(boolean manualCred) {
+  private CloudFoundryConfig getConnectorConfigDTO(boolean manualCred) {
     if (manualCred) {
-      return PcfConfig.builder()
+      return CloudFoundryConfig.builder()
           .credentialType(PcfCredentialType.MANUAL_CREDENTIALS)
           .credential(PcfManualCredential.builder().endpointUrl(URL).build())
           .build();
     } else {
-      return PcfConfig.builder().credentialType(null).build();
+      return CloudFoundryConfig.builder().credentialType(null).build();
     }
   }
 }
