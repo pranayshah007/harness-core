@@ -139,7 +139,14 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
       final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters, entityMap);
 
-      executeEnvironmentPart(ambiance, stepParameters, servicePartResponse, logCallback, entityMap);
+      // Support GitOps Flow
+      // If environment group is only set for GitOps or if GitOps flow and deploying to multi-environments
+      if (ParameterField.isNotNull(stepParameters.getGitOpsMultiSvcEnvEnabled())
+          && stepParameters.getGitOpsMultiSvcEnvEnabled().getValue()) {
+        executeGitOpsEnvironmentPart(ambiance, servicePartResponse, logCallback);
+      } else {
+        executeEnvironmentPart(ambiance, stepParameters, servicePartResponse, logCallback, entityMap);
+      }
 
       ChildrenExecutableResponse childrenExecutableResponse = executeFreezePart(ambiance, entityMap);
       if (childrenExecutableResponse != null) {
@@ -159,6 +166,17 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
   }
 
+  private void executeGitOpsEnvironmentPart(
+      Ambiance ambiance, ServicePartResponse servicePartResponse, NGLogCallback logCallback) {
+    processServiceVariables(ambiance, servicePartResponse, logCallback, null);
+
+    serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
+        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_MANIFESTS_SWEEPING_OUTPUT);
+
+    serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(
+        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
+  }
+
   private void validate(ServiceStepV3Parameters stepParameters) {
     if (ParameterField.isNull(stepParameters.getServiceRef())) {
       throw new InvalidRequestException("service ref not provided");
@@ -174,8 +192,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private void executeEnvironmentPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
-      ServicePartResponse servicePartResponse, NGLogCallback logCallback, Map<FreezeEntityType, List<String>> entityMap)
-      throws IOException {
+      ServicePartResponse servicePartResponse, NGLogCallback logCallback,
+      Map<FreezeEntityType, List<String>> entityMap) {
     final ParameterField<String> envRef = parameters.getEnvRef();
     final ParameterField<Map<String, Object>> envInputs = parameters.getEnvInputs();
     if (ParameterField.isNull(envRef)) {
@@ -259,8 +277,14 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   private void processServiceVariables(Ambiance ambiance, ServicePartResponse servicePartResponse,
       NGLogCallback logCallback, EnvironmentOutcome environmentOutcome) {
-    VariablesSweepingOutput variablesSweepingOutput = getVariablesSweepingOutput(
-        servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(), logCallback, environmentOutcome);
+    VariablesSweepingOutput variablesSweepingOutput;
+    if (environmentOutcome != null) {
+      variablesSweepingOutput = getVariablesSweepingOutput(
+          servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(), logCallback, environmentOutcome);
+    } else {
+      variablesSweepingOutput = getVariablesSweepingOutputForGitOps(
+          servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(), logCallback);
+    }
 
     sweepingOutputService.consume(ambiance, YAMLFieldNameConstants.VARIABLES, variablesSweepingOutput, null);
 
@@ -435,6 +459,14 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       envVariables.putAll(environmentOutcome.getVariables());
     }
     Map<String, Object> variables = getFinalVariablesMap(serviceV2InfoConfig, envVariables, logCallback);
+    VariablesSweepingOutput variablesOutcome = new VariablesSweepingOutput();
+    variablesOutcome.putAll(variables);
+    return variablesOutcome;
+  }
+
+  private VariablesSweepingOutput getVariablesSweepingOutputForGitOps(
+      NGServiceV2InfoConfig serviceV2InfoConfig, NGLogCallback logCallback) {
+    Map<String, Object> variables = getFinalVariablesMap(serviceV2InfoConfig, Map.of(), logCallback);
     VariablesSweepingOutput variablesOutcome = new VariablesSweepingOutput();
     variablesOutcome.putAll(variables);
     return variablesOutcome;
