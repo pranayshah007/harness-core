@@ -1363,7 +1363,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void startChroniqleQueueMonitor() {
     if (chronicleEventTailer != null) {
-      chronicleEventTailer.setAccountId(accountId);
       chronicleEventTailer.startAsync().awaitRunning();
     }
   }
