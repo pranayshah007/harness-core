@@ -305,6 +305,10 @@ func getStepStatusPayload(ctx context.Context, stepID, accountID, delegateID, de
 		artifactMetadata.Spec = fileArtifactmetadata
 	}
 
+	var stepOutputData = &payloads.Output{}
+	if stepOutput != nil {
+		stepOutputData.Output = stepOutput.Output.Variables
+	}
 	stepStatusTaskResponseData := payloads.StepStatusTaskResponseData{
 		DelegateMetaInfo: payloads.DelegateMetaInfo{
 			ID:       delegateID,
@@ -314,11 +318,9 @@ func getStepStatusPayload(ctx context.Context, stepID, accountID, delegateID, de
 			NumberOfRetries:        numRetries,
 			TotalTimeTakenInMillis: timeTaken.Milliseconds(),
 			StepExecutionStatus:    payloads.StepStatus(status),
-			StepOutput: &payloads.Output{
-				Output: stepOutput.Output.Variables,
-			},
-			Error:            errMsg,
-			ArtifactMetadata: &artifactMetadata,
+			StepOutput:             stepOutputData,
+			Error:                  errMsg,
+			ArtifactMetadata:       &artifactMetadata,
 		},
 	}
 	return stepStatusTaskResponseData
