@@ -1,9 +1,13 @@
 package io.harness.delegate.beans.connector.pcfconnector;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+@OwnedBy(HarnessTeam.CDP)
 public enum PcfCredentialType {
   @JsonProperty(PcfConstants.MANUAL_CONFIG) MANUAL_CREDENTIALS(PcfConstants.MANUAL_CONFIG, true);
 
