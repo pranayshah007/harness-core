@@ -175,9 +175,12 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
     if (validateTemplateInputsResponse.isValidYaml()) {
       return YamlFullRefreshResponseDTO.builder().shouldRefreshYaml(false).build();
     }
-
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     refreshTemplateInputsForErrorNodes(
         accountId, orgId, projectId, validateTemplateInputsResponse.getErrorNodeSummary());
+
+    // Setting parent context again for fetching refreshLinkedTemplateInputs call
+    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo.toBuilder().build());
     String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, yaml);
     return YamlFullRefreshResponseDTO.builder().shouldRefreshYaml(true).refreshedYaml(refreshedYaml).build();
   }
