@@ -22,22 +22,21 @@
 
 ## List Query Parameters
 
-| Field Name | Type    | Default | Validation     | Description                                                                                                                                                                                     |
-|------------|---------|---------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| order      | string  | desc    | enum(asc,desc) | Order to sort on                                                                                                                                                                                |
-| sort       | string  | none    |                | The field to sort against. Note: Specify the fields which are to be used for sorting. Thought should be given to operational overhead of sort fields. |
-| limit      | int     | 30      | min(1)         | Pagination: Number of items to return                                                                                                                                                           |
-| page       | int     | 1       | min(1)         | Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page                                                            |
-| after      |         | none    |                | Pagination cursor strategy: Returns items after the given cursor value within sort criteria.                                                                                                    |
-| before     |         | none    |                | Pagination cursor strategy: Returns items before the given cursor value within sort criteria.                                                                                                   |
-| org        | string  | none    |                | Limit to provided org slugs                                                                                                                                                                     |
-| project    | string  | none    |                | Limit to provided project slugs                                                                                                                                                                 |
-| slug       | string  | none    |                | Limit to the provided resource slugs                                                                                                                                                            |
-| tag        | string  | none    |                | Limit to the provided tags                                                                                                                                                                      |
-| recursive  | boolean | false   |                | Expand current scope to include all child scopes within the hierarchy                                                                                                                           |
+| Field Name | Type    | Default | Validation       | Description                                                                                                                                           |
+|------------|---------|---------|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| order      | string  | desc    | enum(asc,desc)   | Order to sort on                                                                                                                                      |
+| sort       | string  | none    |                  | The field to sort against. Note: Specify the fields which are to be used for sorting. Thought should be given to operational overhead of sort fields. |
+| limit      | int     | 30      | min(1), max(100) | Pagination: Number of items to return                                                                                                                 |
+| page       | int     | 1       | min(1)           | Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page                  |
+| cursor     | string  | none    |                  | Pagination cursor strategy: Used to return items before/after the given cursor value within sort criteria.                                            |
+| org        | string  | none    |                  | Limit to provided org slugs                                                                                                                           |
+| project    | string  | none    |                  | Limit to provided project slugs                                                                                                                       |
+| slug       | string  | none    |                  | Limit to the provided resource slugs                                                                                                                  |
+| tag        | string  | none    |                  | Limit to the provided tags                                                                                                                            |
+| recursive  | boolean | false   |                  | Expand current scope to include all child scopes within the hierarchy                                                                                 |
 
 ## Common Response Headers
 
 | Header Name  | Type   | Description |
 |--------------|--------|-------------|
-| X-Request-ID | string | A short random string to corolate a request to a log message within the bounds of an account and relative time. eg urlencoded base64 of 6 bytes |
+| X-Request-ID | string | A short random string to correlate a request to a log message within the bounds of an account and relative time. eg urlencoded base64 of 6 bytes |
