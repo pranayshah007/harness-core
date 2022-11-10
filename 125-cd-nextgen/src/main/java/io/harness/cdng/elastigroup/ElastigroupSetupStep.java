@@ -21,7 +21,6 @@ import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
-import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -43,6 +42,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -83,15 +84,14 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .accountId(accountId)
             .spotInstConfig(spotInstConfig)
             .elastigroupJson(elastigroupJson)
-            .elastigroupCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
             .startupScript(elastigroupStepExecutorParams.getStartupScript())
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .build();
 
-    return elastigroupStepCommonHelper.queueElastigroupTask(
-        stepParameters, elastigroupSetupCommandRequest, ambiance, executionPassThroughData, true);
+    return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSetupCommandRequest, ambiance,
+        executionPassThroughData, true, TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG);
   }
 
   @Override

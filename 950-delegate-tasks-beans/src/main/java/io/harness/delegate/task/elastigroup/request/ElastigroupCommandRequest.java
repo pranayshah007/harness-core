@@ -13,17 +13,14 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.expression.ExpressionEvaluator;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface ElastigroupCommandRequest extends TaskParameters, ExecutionCapabilityDemander {
   String getAccountId();
-  @NotEmpty ElastigroupCommandTypeNG getElastigroupCommandType();
   String getCommandName();
   CommandUnitsProgress getCommandUnitsProgress();
   Integer getTimeoutIntervalInMin();

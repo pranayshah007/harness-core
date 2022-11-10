@@ -275,16 +275,15 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
   public TaskChainResponse queueElastigroupTask(StepElementParameters stepElementParameters,
       ElastigroupCommandRequest elastigroupCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
-      boolean isChainEnd) {
+      boolean isChainEnd, TaskType taskType) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {elastigroupCommandRequest})
-                            .taskType(TaskType.ELASTIGROUP_COMMAND_TASK_NG.name())
+                            .taskType(taskType.name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
                             .async(true)
                             .build();
 
-    String taskName =
-        TaskType.ELASTIGROUP_COMMAND_TASK_NG.getDisplayName() + " : " + elastigroupCommandRequest.getCommandName();
+    String taskName = taskType.getDisplayName();
 
     ElastigroupSpecParameters elastigroupSpecParameters = (ElastigroupSpecParameters) stepElementParameters.getSpec();
 
