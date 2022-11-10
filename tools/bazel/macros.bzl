@@ -72,9 +72,9 @@ def run_analysis_per_module(
     run_analysis(checkstyle_srcs, pmd_srcs, sonarqube_srcs)
 
 def run_analysis(
-        checkstyle_srcs = ["src/**/*"],
-        pmd_srcs = ["src/main/**/*"],
-        sonarqube_srcs = ["src/main/java/**/*.java"],
+        checkstyle_srcs = ["**/src/**/*"],
+        pmd_srcs = ["**/src/main/**/*"],
+        sonarqube_srcs = ["**/src/main/java/**/*.java"],
         run_checkstyle = True,
         run_pmd = True,
         run_sonar = True,
