@@ -37,7 +37,6 @@ public class ElastigroupSetupBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @NotNull
-  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   ParameterField<String> name;
 
