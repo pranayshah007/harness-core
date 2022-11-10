@@ -167,10 +167,11 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       TimePeriod timePeriod = sloTarget.getCurrentTimeRange(currentLocalDate);
       TimePeriod currentTimePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
 
-      List<String> referencedCompositeSLOIdentifiers = compositeSLOService.getReferencedCompositeSLOs(projectParams, simpleServiceLevelObjective.getIdentifier())
-                                                           .stream()
-                                                           .map(CompositeServiceLevelObjective::getIdentifier)
-                                                           .collect(Collectors.toList());
+      List<String> referencedCompositeSLOIdentifiers =
+          compositeSLOService.getReferencedCompositeSLOs(projectParams, simpleServiceLevelObjective.getIdentifier())
+              .stream()
+              .map(CompositeServiceLevelObjective::getIdentifier)
+              .collect(Collectors.toList());
       if (isNotEmpty(referencedCompositeSLOIdentifiers)
           && !sloTarget.equals(simpleServiceLevelObjective.getSloTarget())) {
         throw new InvalidRequestException(String.format(
@@ -274,7 +275,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
 
     if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       List<String> referencedCompositeSLOIdentifiers =
-              compositeSLOService.getReferencedCompositeSLOs(projectParams, identifier)
+          compositeSLOService.getReferencedCompositeSLOs(projectParams, identifier)
               .stream()
               .map(CompositeServiceLevelObjective::getIdentifier)
               .collect(Collectors.toList());
