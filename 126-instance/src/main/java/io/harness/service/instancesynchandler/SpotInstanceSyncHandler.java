@@ -27,8 +27,8 @@ import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
 
 import com.google.inject.Singleton;
-import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
@@ -59,7 +59,11 @@ public class SpotInstanceSyncHandler extends AbstractInstanceSyncHandler {
     }
 
     SpotInstanceInfoDTO spotInstanceInfoDTO = (SpotInstanceInfoDTO) instanceInfoDTO;
-    return SpotInfrastructureDetails.builder().ec2InstanceId(spotInstanceInfoDTO.getEc2InstanceId()).build();
+    return SpotInfrastructureDetails.builder()
+        .infrastructureKey(spotInstanceInfoDTO.getInfrastructureKey())
+        .ec2InstanceId(spotInstanceInfoDTO.getEc2InstanceId())
+        .elastigroupId(spotInstanceInfoDTO.getElastigroupId())
+        .build();
   }
 
   @Override
@@ -71,7 +75,6 @@ public class SpotInstanceSyncHandler extends AbstractInstanceSyncHandler {
 
     SpotServerInstanceInfo spotServerInstanceInfo = (SpotServerInstanceInfo) serverInstanceInfo;
     return SpotInstanceInfoDTO.builder()
-        .serviceType(spotServerInstanceInfo.getServiceType())
         .infrastructureKey(spotServerInstanceInfo.getInfrastructureKey())
         .elastigroupId(spotServerInstanceInfo.getElastigroupId())
         .ec2InstanceId(spotServerInstanceInfo.getEc2InstanceId())
@@ -95,15 +98,18 @@ public class SpotInstanceSyncHandler extends AbstractInstanceSyncHandler {
 
     return SpotDeploymentInfoDTO.builder()
         .infrastructureKey(infrastructureOutcome.getInfrastructureKey())
-        .ec2InstanceIds(getEc2InstanceIds(serverInstanceInfoList))
-        .elastigroupId(((SpotServerInstanceInfo) serverInstanceInfoList.get(0)).getElastigroupId())
+        .elastigroupEc2InstancesMap(getElastigroupEc2InstancesMap(serverInstanceInfoList))
         .build();
   }
 
-  private Set<String> getEc2InstanceIds(List<ServerInstanceInfo> serverInstanceInfoList) {
-    return serverInstanceInfoList.stream()
-        .map(SpotServerInstanceInfo.class ::cast)
-        .map(SpotServerInstanceInfo::getEc2InstanceId)
-        .collect(Collectors.toCollection(LinkedHashSet::new));
+  private Map<String, Set<String>> getElastigroupEc2InstancesMap(List<ServerInstanceInfo> serverInstanceInfoList) {
+    Map<String, List<SpotServerInstanceInfo>> groupedMap =
+        serverInstanceInfoList.stream()
+            .map(SpotServerInstanceInfo.class ::cast)
+            .collect(Collectors.groupingBy(SpotServerInstanceInfo::getElastigroupId));
+
+    return groupedMap.entrySet().stream().collect(Collectors.toMap(entry
+        -> entry.getKey(),
+        entry -> entry.getValue().stream().map(SpotServerInstanceInfo::getEc2InstanceId).collect(Collectors.toSet())));
   }
 }

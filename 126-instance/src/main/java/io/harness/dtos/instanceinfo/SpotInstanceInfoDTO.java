@@ -15,7 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 public class SpotInstanceInfoDTO extends InstanceInfoDTO {
-  @NotNull private String serviceType;
   @NotNull private String infrastructureKey;
   @NotNull private String ec2InstanceId;
   @NotNull private String elastigroupId;

@@ -12,8 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.network.SafeHttpCall.execute;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -37,7 +38,11 @@ import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 
 import com.google.inject.Inject;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,10 +67,15 @@ public class SpotinstPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
 
   private PerpetualTaskResponse executeTask(
       PerpetualTaskId taskId, SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams) {
-    List<String> instanceIds = getInstanceIds(taskParams);
+    Map<String, Set<String>> instanceIdsMap = getInstanceIdsMap(taskParams);
 
     List<ServerInstanceInfo> serverInstanceInfos =
-        getServerInstanceInfoList(instanceIds, taskParams.getInfrastructureKey(), taskParams.getElastigroupId());
+        instanceIdsMap.entrySet()
+            .stream()
+            .map(
+                entry -> getServerInstanceInfoList(entry.getValue(), taskParams.getInfrastructureKey(), entry.getKey()))
+            .flatMap(Collection::stream)
+            .collect(toList());
 
     log.info("Spot Instance sync Instances: {}, task id: {}",
         serverInstanceInfos == null ? 0 : serverInstanceInfos.size(), taskId);
@@ -74,37 +84,43 @@ public class SpotinstPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
     return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(instanceSyncResponseMsg).build();
   }
 
-  private List<String> getInstanceIds(SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams) {
+  private Map<String, Set<String>> getInstanceIdsMap(SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams) {
     SpotConnectorDTO spotConnectorDTO =
         (SpotConnectorDTO) kryoSerializer.asObject(taskParams.getSpotinstConfig().toByteArray());
     List<EncryptedDataDetail> encryptionDetails =
         (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getSpotinstEncryptedData().toByteArray());
     SpotConfig spotConfig = ngConfigMapper.mapSpotConfigWithDecryption(spotConnectorDTO, encryptionDetails);
     String spotAccountId = spotConfig.getCredential().getSpotAccountId();
-    String spotGroupId = taskParams.getElastigroupId();
+    String appTokenId = spotConfig.getCredential().getAppTokenId();
 
+    return taskParams.getElastigroupIdsList().stream().collect(
+        Collectors.toMap(Function.identity(), groupId -> getInstanceIdsByGroupId(appTokenId, spotAccountId, groupId)));
+  }
+
+  private Set<String> getInstanceIdsByGroupId(String appTokenId, String spotAccountId, String spotGroupId) {
     try {
-      List<ElastiGroupInstanceHealth> instanceHealths = spotInstHelperServiceDelegate.listElastiGroupInstancesHealth(
-          spotConfig.getCredential().getAppTokenId(), spotAccountId, spotGroupId);
+      List<ElastiGroupInstanceHealth> instanceHealths =
+          spotInstHelperServiceDelegate.listElastiGroupInstancesHealth(appTokenId, spotAccountId, spotGroupId);
 
       if (isEmpty(instanceHealths)) {
-        return emptyList();
+        return emptySet();
       }
 
-      return instanceHealths.stream().map(ElastiGroupInstanceHealth::getInstanceId).collect(toList());
+      return instanceHealths.stream().map(ElastiGroupInstanceHealth::getInstanceId).collect(toSet());
     } catch (Exception e) {
       log.error(
           "Unable to get list of Spot instances for spotAccountId:{} and groupId:{}", spotAccountId, spotGroupId, e);
-      return emptyList();
+      return emptySet();
     }
   }
 
   private List<ServerInstanceInfo> getServerInstanceInfoList(
-      List<String> ec2Instances, String infrastructureKey, String elastigroupId) {
+      Set<String> ec2Instances, String infrastructureKey, String elastigroupId) {
     return ec2Instances.stream()
         .map(ec2Instance -> mapToServerInstanceInfo(ec2Instance, infrastructureKey, elastigroupId))
         .collect(Collectors.toList());
   }
+
   private String publishInstanceSyncResult(
       PerpetualTaskId taskId, String accountId, List<ServerInstanceInfo> serverInstanceInfos) {
     InstanceSyncPerpetualTaskResponse instanceSyncResponse = SpotInstanceSyncPerpetualTaskResponse.builder()

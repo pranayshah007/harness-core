@@ -14,9 +14,17 @@ import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_COMMAND_UNI
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.SpotServerInstanceInfo;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskParameters;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskResponse;
 import io.harness.exception.InvalidArgumentsException;
@@ -28,6 +36,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.StepUtils;
@@ -37,6 +46,11 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -50,6 +64,9 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Ela
   public static final String UNIT_NAME = "Execute";
 
   @Inject private ElastigroupDeployStepHelper stepHelper;
+  @Inject private CDStepHelper cdStepHelper;
+  @Inject ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -102,7 +119,61 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Ela
           new InvalidArgumentsException("Failed to process elastigroup deploy task response"));
     }
 
-    return stepHelper.handleTaskResult(ambiance, stepParameters, taskResponse);
+    StepResponse.StepOutcome stepOutcome = saveSpotServerInstanceInfosToSweepingOutput(taskResponse, ambiance);
+
+    return stepHelper.handleTaskResult(ambiance, stepParameters, taskResponse, stepOutcome);
+  }
+
+  private StepResponse.StepOutcome saveSpotServerInstanceInfosToSweepingOutput(
+      ElastigroupDeployTaskResponse elastigroupDeployTaskResponse, Ambiance ambiance) {
+    List<ServerInstanceInfo> spotServerInstanceInfos =
+        createSpotServerInstanceInfos(elastigroupDeployTaskResponse, ambiance);
+    if (isNotEmpty(spotServerInstanceInfos)) {
+      return instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, spotServerInstanceInfos);
+    }
+    return null;
+  }
+
+  private List<ServerInstanceInfo> createSpotServerInstanceInfos(
+      ElastigroupDeployTaskResponse elastigroupDeployTaskResponse, Ambiance ambiance) {
+    if (isEmpty(elastigroupDeployTaskResponse.getEc2InstanceIdsExisting())
+        && isEmpty(elastigroupDeployTaskResponse.getEc2InstanceIdsAdded())) {
+      return null;
+    }
+
+    InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
+
+    ElastigroupSetupDataOutcome elastigroupSetupDataOutcome = stepHelper.getElastigroupSetupOutcome(ambiance);
+    String oldElastigroupId = elastigroupSetupDataOutcome.getOldElastiGroupOriginalConfig().getId();
+    String newElastigroupId = elastigroupSetupDataOutcome.getNewElastiGroupOriginalConfig().getId();
+
+    List<String> oldInstanceIds = elastigroupDeployTaskResponse.getEc2InstanceIdsExisting();
+    List<String> newInstanceIds = elastigroupDeployTaskResponse.getEc2InstanceIdsAdded();
+
+    List<SpotServerInstanceInfo> oldSpotServerInstanceInfos = oldInstanceIds == null
+        ? Collections.emptyList()
+        : oldInstanceIds.stream()
+              .map(id -> mapToSpotServerInstanceInfo(infrastructure.getInfrastructureKey(), oldElastigroupId, id))
+              .collect(Collectors.toList());
+
+    List<SpotServerInstanceInfo> newSpotServerInstanceInfos = newInstanceIds == null
+        ? Collections.emptyList()
+        : newInstanceIds.stream()
+              .map(id -> mapToSpotServerInstanceInfo(infrastructure.getInfrastructureKey(), newElastigroupId, id))
+              .collect(Collectors.toList());
+
+    return Stream.of(oldSpotServerInstanceInfos, newSpotServerInstanceInfos)
+        .flatMap(Collection::stream)
+        .collect(Collectors.toList());
+  }
+
+  private SpotServerInstanceInfo mapToSpotServerInstanceInfo(
+      String infrastructureKey, String groupId, String instanceId) {
+    return SpotServerInstanceInfo.builder()
+        .infrastructureKey(infrastructureKey)
+        .ec2InstanceId(instanceId)
+        .elastigroupId(groupId)
+        .build();
   }
 
   private void validateStepParameters(ElastigroupDeployStepParameters elastigroupDeployStepParameters) {}

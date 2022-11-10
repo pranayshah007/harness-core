@@ -97,6 +97,9 @@ public class SpotInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase 
   }
 
   private SpotDeploymentInfoDTO getDeploymentInfoDto() {
-    return SpotDeploymentInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).elastigroupId(ELASTIGROUP_ID).build();
+    return SpotDeploymentInfoDTO.builder()
+        .infrastructureKey(INFRASTRUCTURE_KEY)
+        .elastigroupEc2InstancesMap(Collections.singletonMap(ELASTIGROUP_ID, Collections.singleton("ec2Id")))
+        .build();
   }
 }

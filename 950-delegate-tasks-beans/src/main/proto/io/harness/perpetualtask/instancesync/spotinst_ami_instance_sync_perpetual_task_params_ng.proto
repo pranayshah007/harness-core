@@ -14,5 +14,5 @@ message SpotinstAmiInstanceSyncPerpetualTaskParamsNg {
   string infrastructure_key = 2;
   bytes spotinst_config = 3;
   bytes spotinst_encrypted_data = 4;
-  string elastigroup_id = 5;
+  repeated string elastigroup_ids = 5;
 }

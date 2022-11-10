@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Before;
@@ -120,13 +121,14 @@ public class SpotinstPerpetualTaskExecutorNgTest extends DelegateTestBase {
     ByteString spotConnectorDTOBytes = ByteString.copyFrom(kryoSerializer.asBytes(SpotConnectorDTO.builder().build()));
     ByteString encryptedDataDetailBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
 
-    SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams = SpotinstAmiInstanceSyncPerpetualTaskParamsNg.newBuilder()
-                                                                  .setElastigroupId(ELASTIGROUP_ID)
-                                                                  .setAccountId("accId")
-                                                                  .setSpotinstConfig(spotConnectorDTOBytes)
-                                                                  .setSpotinstEncryptedData(encryptedDataDetailBytes)
-                                                                  .setInfrastructureKey("infraKey")
-                                                                  .build();
+    SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams =
+        SpotinstAmiInstanceSyncPerpetualTaskParamsNg.newBuilder()
+            .addAllElastigroupIds(Collections.singletonList(ELASTIGROUP_ID))
+            .setAccountId("accId")
+            .setSpotinstConfig(spotConnectorDTOBytes)
+            .setSpotinstEncryptedData(encryptedDataDetailBytes)
+            .setInfrastructureKey("infraKey")
+            .build();
 
     return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
   }

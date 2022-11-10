@@ -19,7 +19,6 @@ import lombok.experimental.UtilityClass;
 public class SpotInstanceInfoMapper {
   public SpotInstanceInfoDTO toDTO(SpotInstanceInfo instanceInfo) {
     return SpotInstanceInfoDTO.builder()
-        .serviceType(instanceInfo.getServiceType())
         .infrastructureKey(instanceInfo.getInfrastructureKey())
         .elastigroupId(instanceInfo.getElastigroupId())
         .ec2InstanceId(instanceInfo.getEc2InstanceId())
@@ -28,7 +27,6 @@ public class SpotInstanceInfoMapper {
 
   public SpotInstanceInfo toEntity(SpotInstanceInfoDTO instanceInfoDTO) {
     return SpotInstanceInfo.builder()
-        .serviceType(instanceInfoDTO.getServiceType())
         .infrastructureKey(instanceInfoDTO.getInfrastructureKey())
         .elastigroupId(instanceInfoDTO.getElastigroupId())
         .ec2InstanceId(instanceInfoDTO.getEc2InstanceId())

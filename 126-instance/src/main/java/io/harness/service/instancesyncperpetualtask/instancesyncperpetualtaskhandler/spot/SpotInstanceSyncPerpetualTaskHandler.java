@@ -47,7 +47,8 @@ public class SpotInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualT
   @Override
   public PerpetualTaskExecutionBundle getExecutionBundle(InfrastructureMappingDTO infrastructure,
       List<DeploymentInfoDTO> deploymentInfoDTOList, InfrastructureOutcome infrastructureOutcome) {
-    SpotDeploymentInfoDTO spotDeploymentInfoDTO = (SpotDeploymentInfoDTO) deploymentInfoDTOList.get(0);
+    SpotDeploymentInfoDTO spotDeploymentInfoDTO =
+        (SpotDeploymentInfoDTO) deploymentInfoDTOList.get(deploymentInfoDTOList.size() - 1);
 
     BaseNGAccess access = BaseNGAccess.builder()
                               .accountIdentifier(infrastructure.getAccountIdentifier())
@@ -62,10 +63,11 @@ public class SpotInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualT
 
     SpotinstAmiInstanceSyncPerpetualTaskParamsNg spotinstAmiInstanceSyncPerpetualTaskParamsNg =
         SpotinstAmiInstanceSyncPerpetualTaskParamsNg.newBuilder()
+            .setAccountId(infrastructure.getAccountIdentifier())
             .setInfrastructureKey(infrastructure.getInfrastructureKey())
             .setSpotinstConfig(ByteString.copyFrom(kryoSerializer.asBytes(spotConnectorDTO)))
             .setSpotinstEncryptedData(ByteString.copyFrom(kryoSerializer.asBytes(encryptionDetails)))
-            .setElastigroupId(spotDeploymentInfoDTO.getElastigroupId())
+            .addAllElastigroupIds(spotDeploymentInfoDTO.getElastigroupEc2InstancesMap().keySet())
             .build();
 
     Any perpetualTaskPack = Any.pack(spotinstAmiInstanceSyncPerpetualTaskParamsNg);

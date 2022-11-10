@@ -194,7 +194,7 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
     result.getCapacity().setMaximum(result.getCapacity().getTarget());
   }
 
-  private ElastigroupSetupDataOutcome getElastigroupSetupOutcome(Ambiance ambiance) {
+  public ElastigroupSetupDataOutcome getElastigroupSetupOutcome(Ambiance ambiance) {
     OptionalSweepingOutput optionalSetupDataOutput = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME));
     if (!optionalSetupDataOutput.isFound()) {
@@ -253,8 +253,8 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
         .build();
   }
 
-  public StepResponse handleTaskResult(
-      Ambiance ambiance, StepElementParameters stepParameters, ElastigroupDeployTaskResponse taskResponse) {
+  public StepResponse handleTaskResult(Ambiance ambiance, StepElementParameters stepParameters,
+      ElastigroupDeployTaskResponse taskResponse, StepResponse.StepOutcome stepOutcome) {
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
 
     List<UnitProgress> unitProgresses = taskResponse.getUnitProgressData() == null
@@ -263,6 +263,7 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
     stepResponseBuilder.unitProgressList(unitProgresses);
 
     stepResponseBuilder.status(StepUtils.getStepStatus(taskResponse.getStatus()));
+    stepResponseBuilder.stepOutcome(stepOutcome);
 
     if (isNotEmpty(taskResponse.getErrorMessage())) {
       FailureInfo.Builder failureInfoBuilder = FailureInfo.newBuilder();

@@ -28,6 +28,8 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -40,7 +42,6 @@ public class SpotInstanceSyncHandlerTest extends InstancesTestBase {
   private static final String EC2_INSTANCE_ID = "ec2InstanceId";
 
   private ServerInstanceInfo serverInstanceInfo = SpotServerInstanceInfo.builder()
-                                                      .serviceType(ELASTIGROUP_SERVICE)
                                                       .elastigroupId(ELASTIGROUP_ID)
                                                       .infrastructureKey(INFRASTRUCTURE_KEY)
                                                       .ec2InstanceId(EC2_INSTANCE_ID)
@@ -80,7 +81,10 @@ public class SpotInstanceSyncHandlerTest extends InstancesTestBase {
         spotInstanceSyncHandler.getDeploymentInfo(outcome, Collections.singletonList(serverInstanceInfo));
     assertThat(deploymentInfo.getType()).isEqualTo(ELASTIGROUP_SERVICE);
     assertThat(((SpotDeploymentInfoDTO) deploymentInfo).getInfrastructureKey()).isEqualTo(INFRASTRUCTURE_KEY);
-    assertThat(((SpotDeploymentInfoDTO) deploymentInfo).getElastigroupId()).isEqualTo(ELASTIGROUP_ID);
-    assertThat(((SpotDeploymentInfoDTO) deploymentInfo).getEc2InstanceIds()).contains(EC2_INSTANCE_ID);
+
+    Map<String, Set<String>> elastigroupEc2InstancesMap =
+        ((SpotDeploymentInfoDTO) deploymentInfo).getElastigroupEc2InstancesMap();
+    assertThat(elastigroupEc2InstancesMap.size()).isEqualTo(1);
+    assertThat(elastigroupEc2InstancesMap.get(ELASTIGROUP_ID)).contains(EC2_INSTANCE_ID);
   }
 }

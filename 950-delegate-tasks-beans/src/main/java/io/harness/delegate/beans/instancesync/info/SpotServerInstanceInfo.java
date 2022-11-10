@@ -20,7 +20,6 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class SpotServerInstanceInfo extends ServerInstanceInfo {
-  private String serviceType;
   private String infrastructureKey;
   private String ec2InstanceId;
   private String elastigroupId;

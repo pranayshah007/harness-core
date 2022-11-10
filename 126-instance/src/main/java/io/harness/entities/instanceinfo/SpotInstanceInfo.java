@@ -13,7 +13,6 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 public class SpotInstanceInfo extends InstanceInfo {
-  @NotNull private String serviceType;
   @NotNull private String infrastructureKey;
   @NotNull private String ec2InstanceId;
   @NotNull private String elastigroupId;
