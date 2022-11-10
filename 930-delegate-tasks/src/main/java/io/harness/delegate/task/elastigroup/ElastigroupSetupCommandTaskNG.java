@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.elastigroup.ElastigroupSetupCommandTaskHandler;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
@@ -24,10 +25,11 @@ import java.util.function.Consumer;
 import org.apache.commons.lang3.NotImplementedException;
 
 @OwnedBy(HarnessTeam.CDP)
-public class ElastigroupCommandTaskNG extends AbstractDelegateRunnableTask {
+public class ElastigroupSetupCommandTaskNG extends AbstractDelegateRunnableTask {
   @Inject private ElastigroupDelegateTaskHelper elastigroupDelegateTaskHelper;
+  @Inject private ElastigroupSetupCommandTaskHandler elastigroupSetupCommandTaskHandler;
 
-  public ElastigroupCommandTaskNG(DelegateTaskPackage delegateTaskPackage,
+  public ElastigroupSetupCommandTaskNG(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
@@ -44,7 +46,7 @@ public class ElastigroupCommandTaskNG extends AbstractDelegateRunnableTask {
   public ElastigroupCommandResponse run(TaskParameters parameters) {
     ElastigroupCommandRequest elastigroupCommandRequest = (ElastigroupCommandRequest) parameters;
     return elastigroupDelegateTaskHelper.getElastigroupCommandResponse(
-        elastigroupCommandRequest, getLogStreamingTaskClient());
+        elastigroupSetupCommandTaskHandler, elastigroupCommandRequest, getLogStreamingTaskClient());
   }
 
   @Override

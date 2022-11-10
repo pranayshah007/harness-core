@@ -28,7 +28,6 @@ import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
-import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -53,6 +52,7 @@ import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.TaskType;
 import software.wings.utils.ServiceVersionConvention;
 
 import com.google.inject.Inject;
@@ -103,7 +103,6 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .accountId(accountId)
             .spotInstConfig(spotInstConfig)
             .elastigroupJson(elastigroupStepExecutorParams.getElastigroupParameters())
-            .elastigroupCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
             .startupScript(elastigroupStepCommonHelper.getBase64EncodedStartupScript(
                 ambiance, elastigroupStepExecutorParams.getStartupScript()))
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
@@ -118,7 +117,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .build();
 
     return elastigroupStepCommonHelper.queueElastigroupTask(
-        stepParameters, elastigroupSetupCommandRequest, ambiance, executionPassThroughData, true);
+        stepParameters, elastigroupSetupCommandRequest, ambiance, executionPassThroughData, true, TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG);
   }
 
   private Integer fetchCurrentRunningCountForSetupRequest(ElastigroupInstances elastigroupInstances) {
