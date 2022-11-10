@@ -24,4 +24,5 @@ import lombok.Value;
 public class CustomScriptInfo {
   @NotNull @Schema(description = "Script") String script;
   @Schema(description = "Inputs to the script") List<NGVariable> inputs;
+  @Schema(description = "runtimeInputYaml") String runtimeInputYaml;
 }

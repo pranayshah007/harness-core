@@ -14,5 +14,5 @@ import java.util.Map;
 
 public interface CustomResourceService {
   List<BuildDetails> getBuilds(String script, String versionPath, String arrayPath, Map<String, String> inputs,
-      String accountIdentifier, String orgIdentifier, String projectIdentifier);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, int secretFunctor);
 }
