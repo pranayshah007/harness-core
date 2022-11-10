@@ -20,6 +20,7 @@ import io.harness.common.NGTimeConversionHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskParameters;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskResponse;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -95,10 +96,15 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Ela
     try {
       taskResponse = responseDataSupplier.get();
     } catch (Exception ex) {
-      log.error("Error while processing Elastigroup Deploy Step response: {}", ex.getMessage(), ex);
-      // TODO throw exception or return error response
+      return stepHelper.handleTaskFailure(ambiance, stepParameters, ex);
     }
-    throw new IllegalStateException("Not implemented");
+
+    if (taskResponse == null) {
+      return stepHelper.handleTaskFailure(ambiance, stepParameters,
+          new InvalidArgumentsException("Failed to process elastigroup deploy task response"));
+    }
+
+    return stepHelper.handleTaskResult(ambiance, stepParameters, taskResponse);
   }
 
   private void validateStepParameters(ElastigroupDeployStepParameters elastigroupDeployStepParameters) {}

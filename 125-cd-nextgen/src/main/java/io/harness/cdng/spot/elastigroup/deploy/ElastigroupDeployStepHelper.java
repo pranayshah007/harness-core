@@ -8,6 +8,10 @@
 package io.harness.cdng.spot.elastigroup.deploy;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+
+import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
@@ -18,23 +22,40 @@ import io.harness.cdng.common.capacity.PercentageCapacitySpec;
 import io.harness.cdng.elastigroup.ElastigroupEntityHelper;
 import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.ssh.CommandStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskParameters;
+import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskResponse;
+import io.harness.eraro.Level;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logging.UnitProgress;
+import io.harness.logging.UnitStatus;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.model.ElastiGroup;
+import io.harness.steps.StepUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -192,5 +213,66 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
     ConnectorInfoDTO connectorDTO =
         entityHelper.getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), AmbianceUtils.getNgAccess(ambiance));
     return (SpotConnectorDTO) connectorDTO.getConnectorConfig();
+  }
+
+  public StepResponse handleTaskFailure(Ambiance ambiance, StepElementParameters stepElementParameters, Exception e)
+      throws Exception {
+    log.error("Error in elastigroup step: {}", e.getMessage(), e);
+
+    // Trying to figure out if exception is coming from command task or it is an exception from delegate service.
+    // In the second case we need to close log stream and provide unit progress data as part of response
+    if (ExceptionUtils.cause(TaskNGDataException.class, e) != null) {
+      throw e;
+    }
+    CommandStepParameters executeCommandStepParameters = (CommandStepParameters) stepElementParameters.getSpec();
+    List<UnitProgress> commandExecutionUnits =
+        executeCommandStepParameters.getCommandUnits()
+            .stream()
+            .map(cu -> UnitProgress.newBuilder().setUnitName(cu.getName()).setStatus(UnitStatus.RUNNING).build())
+            .collect(Collectors.toList());
+
+    UnitProgressData currentUnitProgressData = UnitProgressData.builder().unitProgresses(commandExecutionUnits).build();
+    UnitProgressData unitProgressData =
+        completeUnitProgressData(currentUnitProgressData, ambiance, ExceptionUtils.getMessage(e));
+    FailureData failureData = FailureData.newBuilder()
+                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                  .setLevel(Level.ERROR.name())
+                                  .setCode(GENERAL_ERROR.name())
+                                  .setMessage(emptyIfNull(ExceptionUtils.getMessage(e)))
+                                  .build();
+
+    return StepResponse.builder()
+        .unitProgressList(unitProgressData.getUnitProgresses())
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder()
+                         .addAllFailureTypes(failureData.getFailureTypesList())
+                         .setErrorMessage(failureData.getMessage())
+                         .addFailureData(failureData)
+                         .build())
+        .build();
+  }
+
+  public StepResponse handleTaskResult(
+      Ambiance ambiance, StepElementParameters stepParameters, ElastigroupDeployTaskResponse taskResponse) {
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+
+    List<UnitProgress> unitProgresses = taskResponse.getUnitProgressData() == null
+        ? emptyList()
+        : taskResponse.getUnitProgressData().getUnitProgresses();
+    stepResponseBuilder.unitProgressList(unitProgresses);
+
+    stepResponseBuilder.status(StepUtils.getStepStatus(taskResponse.getStatus()));
+
+    if (taskResponse.getErrorMessage() != null) {
+      FailureInfo.Builder failureInfoBuilder = FailureInfo.newBuilder();
+      failureInfoBuilder.addFailureData(FailureData.newBuilder()
+                                            .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                            .setLevel(Level.ERROR.name())
+                                            .setCode(GENERAL_ERROR.name())
+                                            .setMessage(taskResponse.getErrorMessage()));
+      stepResponseBuilder.failureInfo(failureInfoBuilder.build());
+    }
+
+    return stepResponseBuilder.build();
   }
 }
