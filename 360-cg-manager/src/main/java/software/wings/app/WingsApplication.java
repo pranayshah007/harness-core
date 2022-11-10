@@ -38,7 +38,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.GraphQLModule;
 import io.harness.artifact.ArtifactCollectionPTaskServiceClient;
 import io.harness.cache.CacheModule;
-import io.harness.capability.CapabilityModule;
 import io.harness.ccm.CEPerpetualTaskHandler;
 import io.harness.ccm.KubernetesClusterHandler;
 import io.harness.ccm.cluster.ClusterRecordHandler;
@@ -263,7 +262,9 @@ import software.wings.service.impl.artifact.ArtifactStreamPTaskMigrationJob;
 import software.wings.service.impl.artifact.ArtifactStreamSettingAttributePTaskManager;
 import software.wings.service.impl.compliance.DeploymentFreezeActivationHandler;
 import software.wings.service.impl.compliance.DeploymentFreezeDeactivationHandler;
+import software.wings.service.impl.event.DeploymentStepTimeSeriesEventListener;
 import software.wings.service.impl.event.DeploymentTimeSeriesEventListener;
+import software.wings.service.impl.event.ExecutionInterruptTimeSeriesEventListener;
 import software.wings.service.impl.infrastructuredefinition.InfrastructureDefinitionServiceImpl;
 import software.wings.service.impl.instance.AuditCleanupJob;
 import software.wings.service.impl.instance.DeploymentEventListener;
@@ -881,7 +882,6 @@ public class WingsApplication extends Application<MainConfiguration> {
       }
     });
     modules.add(new DelegateServiceModule());
-    modules.add(new CapabilityModule());
     modules.add(MigrationModule.getInstance());
     registerRemoteObserverModule(configuration, modules);
     modules.add(new WingsModule(configuration, startupMode));
@@ -1225,6 +1225,10 @@ public class WingsApplication extends Application<MainConfiguration> {
         configuration.getEventListenersCountConfig().getInstanceEventListenerCount());
     queueListenerController.register(injector.getInstance(DeploymentTimeSeriesEventListener.class),
         configuration.getEventListenersCountConfig().getDeploymentTimeSeriesEventListenerCount());
+    queueListenerController.register(injector.getInstance(DeploymentStepTimeSeriesEventListener.class),
+        configuration.getEventListenersCountConfig().getDeploymentStepTimeSeriesEventListenerCount());
+    queueListenerController.register(injector.getInstance(ExecutionInterruptTimeSeriesEventListener.class),
+        configuration.getEventListenersCountConfig().getExecutionInterruptTimeSeriesEventListenerCount());
     queueListenerController.register(injector.getInstance(EmailNotificationListener.class), 1);
     queueListenerController.register(injector.getInstance(ExecutionEventListener.class),
         configuration.getEventListenersCountConfig().getExecutionEventListenerCount());

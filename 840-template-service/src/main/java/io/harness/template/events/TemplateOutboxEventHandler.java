@@ -36,6 +36,7 @@ import io.harness.security.PrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.helpers.TemplateReferenceHelper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -52,10 +53,13 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
   private final ObjectMapper objectMapper;
   private final AuditClientService auditClientService;
   private final Producer eventProducer;
+  private final TemplateReferenceHelper templateReferenceHelper;
 
   @Inject
-  public TemplateOutboxEventHandler(
-      AuditClientService auditClientService, @Named(EventsFrameworkConstants.ENTITY_CRUD) Producer eventProducer) {
+  public TemplateOutboxEventHandler(AuditClientService auditClientService,
+      @Named(EventsFrameworkConstants.ENTITY_CRUD) Producer eventProducer,
+      TemplateReferenceHelper templateReferenceHelper) {
+    this.templateReferenceHelper = templateReferenceHelper;
     this.objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
     this.auditClientService = auditClientService;
     this.eventProducer = eventProducer;
@@ -133,6 +137,7 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
         objectMapper.readValue(outboxEvent.getEventData(), TemplateDeleteEvent.class);
     boolean publishedToRedis = publishEvent(
         outboxEvent, EventsFrameworkMetadataConstants.DELETE_ACTION, templateDeleteEvent.getTemplateEntity());
+    templateReferenceHelper.deleteTemplateReferences(templateDeleteEvent.getTemplateEntity());
     TemplateEventData templateEventData = new TemplateEventData(templateDeleteEvent.getComments(), null);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)

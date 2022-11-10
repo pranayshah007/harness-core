@@ -16,6 +16,7 @@ import static io.harness.git.model.ChangeType.RENAME;
 import static io.harness.git.model.PushResultGit.pushResultBuilder;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.lang.String.format;
@@ -54,6 +55,8 @@ import io.harness.git.model.GitFileChange;
 import io.harness.git.model.PushResultGit;
 import io.harness.rule.Owner;
 
+import software.wings.misc.CustomUserGitConfigSystemReader;
+
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -84,6 +87,7 @@ import org.eclipse.jgit.api.errors.NoFilepatternException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.util.SystemReader;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
@@ -696,7 +700,7 @@ public class GitClientV2ImplTest extends CategoryTest {
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
   public void testCommitAndPush() throws Exception {
-    doNothing().when(gitClient).updateRemoteOriginInConfig(any(), any());
+    doNothing().when(gitClient).updateRemoteOriginInConfig(any(), any(), any());
     List<GitFileChange> gitFileChanges = getSampleGitFileChanges();
     CommitAndPushRequest gitCommitAndPushRequest =
         CommitAndPushRequest.builder().gitFileChanges(gitFileChanges).build();
@@ -728,7 +732,7 @@ public class GitClientV2ImplTest extends CategoryTest {
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
   public void testPush() {
-    doNothing().when(gitClient).updateRemoteOriginInConfig(any(), any());
+    doNothing().when(gitClient).updateRemoteOriginInConfig(any(), any(), any());
 
     GitFileChange gitFileChange = GitFileChange.builder().changeType(ADD).filePath(repoPath + "/1.txt").build();
     CommitAndPushRequest gitCommitAndPushRequest =
@@ -753,7 +757,7 @@ public class GitClientV2ImplTest extends CategoryTest {
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
   public void testUpdateRemoteOriginInConfig_Exceptions() throws Exception {
-    gitClient.updateRemoteOriginInConfig(repoPath, new File("wrong_path"));
+    gitClient.updateRemoteOriginInConfig(repoPath, new File("wrong_path"), false);
   }
 
   @Test
@@ -830,5 +834,36 @@ public class GitClientV2ImplTest extends CategoryTest {
     assertThat(emptyPredicate.test(path)).isTrue();
     assertThat(validPredicate.test(path)).isTrue();
     assertThat(invalidPredicate.test(path)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testDisablingLocalGitConfigWithCustomUserGitConfigSystemReader() throws Exception {
+    String rightRemoteUrl = "rightUrl";
+    String wrongRemoteUrl = "wrongUrl";
+    String repoPathInternal = Files.createTempDirectory(UUID.randomUUID().toString()).toString();
+    createRepo(repoPathInternal, false);
+    String command =
+        new StringBuilder(128)
+            .append("cd " + repoPathInternal + ";")
+            .append("git remote add origin " + rightRemoteUrl + ";")
+            .append("printf '[url \"" + wrongRemoteUrl + "\"]\\n insteadOf = " + rightRemoteUrl + "\\n' >> .gitconfig;")
+            .toString();
+    executeCommand(command);
+    String userGitConfigPath = repoPathInternal + "/.gitconfig";
+    SystemReader.setInstance(new CustomUserGitConfigSystemReader(userGitConfigPath));
+    Git git1 = Git.open(new File(repoPathInternal));
+    assertThat(git1.remoteList().call().get(0).getURIs().get(0).getPath()).isEqualTo(wrongRemoteUrl);
+    git1.close();
+    SystemReader.setInstance(null);
+    Git git2 = Git.open(new File(repoPathInternal));
+    assertThat(git2.remoteList().call().get(0).getURIs().get(0).getPath()).isEqualTo(rightRemoteUrl);
+    git2.close();
+    SystemReader.setInstance(new CustomUserGitConfigSystemReader(userGitConfigPath));
+    Git git3 = Git.open(new File(repoPathInternal));
+    assertThat(git3.remoteList().call().get(0).getURIs().get(0).getPath()).isEqualTo(wrongRemoteUrl);
+    git3.close();
+    SystemReader.setInstance(null);
   }
 }

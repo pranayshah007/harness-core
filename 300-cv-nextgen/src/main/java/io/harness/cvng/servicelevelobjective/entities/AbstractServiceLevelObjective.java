@@ -78,6 +78,7 @@ public abstract class AbstractServiceLevelObjective
   private boolean enabled;
   private long lastUpdatedAt;
   private long createdAt;
+  private long startedAt;
   @NotNull private Double sloTargetPercentage;
   @FdIndex private long nextNotificationIteration;
   @FdIndex private long nextVerificationIteration;
@@ -128,7 +129,7 @@ public abstract class AbstractServiceLevelObjective
     long totalErrorBudgetIncrementMinutesFromReset =
         CollectionUtils.emptyIfNull(sloErrorBudgetResets)
             .stream()
-            .mapToLong(sloErrorBudgetResetDTO -> sloErrorBudgetResetDTO.getErrorBudgetIncrementMinutes())
+            .mapToLong(SLOErrorBudgetResetDTO::getErrorBudgetIncrementMinutes)
             .sum();
     return Math.toIntExact(Math.min(getCurrentTimeRange(currentDateTime).totalMinutes(),
         totalErrorBudgetMinutes + totalErrorBudgetIncrementMinutesFromReset));
@@ -167,10 +168,9 @@ public abstract class AbstractServiceLevelObjective
 
   public abstract Optional<String> mayBeGetMonitoredServiceIdentifier();
 
-  public abstract static class AbstractServiceLevelObjectiveUpdatableEntity<T extends AbstractServiceLevelObjective, D
-                                                                                extends AbstractServiceLevelObjective>
-      implements UpdatableEntity<T, D> {
-    protected void setCommonOperations(UpdateOperations<T> updateOperations, D abstractServiceLevelObjective) {
+  public abstract static class AbstractServiceLevelObjectiveUpdatableEntity<T extends AbstractServiceLevelObjective>
+      implements UpdatableEntity<T, T> {
+    protected void setCommonOperations(UpdateOperations<T> updateOperations, T abstractServiceLevelObjective) {
       updateOperations.set(ServiceLevelObjectiveV2Keys.orgIdentifier, abstractServiceLevelObjective.getOrgIdentifier())
           .set(ServiceLevelObjectiveV2Keys.projectIdentifier, abstractServiceLevelObjective.getProjectIdentifier())
           .set(ServiceLevelObjectiveV2Keys.name, abstractServiceLevelObjective.getName())

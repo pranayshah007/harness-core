@@ -31,7 +31,6 @@ java_binary(
         "//400-rest:module",
         "//420-delegate-service:module",
         "//430-cv-nextgen-commons:module",
-        "//460-capability:module",
         "//840-template-service:module",
         "//870-cg-orchestration:module",
         "//874-orchestration-delay:module",

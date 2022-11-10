@@ -23,6 +23,8 @@ public class NGCommonEntityConstants {
   public static final String ORG_KEY = "orgIdentifier";
   public static final String ORGS_KEY = "orgIdentifiers";
   public static final String PROJECT_KEY = "projectIdentifier";
+
+  public static final String FORCE_DELETE = "forceDelete";
   public static final String VERSION_LABEL_KEY = "versionLabel";
   public static final String SERVICE_KEY = "serviceId";
   public static final String ENVIRONMENT_KEY = "envId";
@@ -83,6 +85,8 @@ public class NGCommonEntityConstants {
   public static final String ORG_PARAM_MESSAGE = "Organization Identifier for the Entity.";
   public static final String ORG_LIST_PARAM_MESSAGE = "List of Organization Identifiers for the Entities.";
   public static final String PROJECT_PARAM_MESSAGE = "Project Identifier for the Entity.";
+  public static final String FORCE_DELETE_MESSAGE =
+      "If true, the Entity will be forced delete, without checking any references/usages";
   public static final String IDENTIFIER_PARAM_MESSAGE = "Identifier for the Entity.";
   public static final String TAGS = "Tags";
   public static final String DESCRIPTION = "Description of the entity";

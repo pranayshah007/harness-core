@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AWSConnectorImpl implements BaseConnector {
@@ -58,22 +59,22 @@ public class AWSConnectorImpl implements BaseConnector {
   public ConnectorConfigDTO getConfigDTO(
       SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     AwsConfig clusterConfig = (AwsConfig) settingAttribute.getValue();
-    AwsConnectorDTOBuilder builder = builder().delegateSelectors(Collections.singleton(clusterConfig.getTag()));
+    AwsConnectorDTOBuilder builder = builder();
     AwsCredentialDTO awsCredentialDTO;
 
     if (clusterConfig.isUseEc2IamCredentials()) {
       awsCredentialDTO = getEc2IamCredentials(clusterConfig);
-    }
-
-    else if (clusterConfig.isUseIRSA()) {
+    } else if (clusterConfig.isUseIRSA()) {
       awsCredentialDTO = getIrsaCredentials(clusterConfig);
-    }
-
-    else {
+    } else {
       awsCredentialDTO = getManualCredentials(clusterConfig, migratedEntities);
     }
 
-    return builder.credential(awsCredentialDTO).build();
+    if (StringUtils.isNotBlank(clusterConfig.getTag())) {
+      builder.delegateSelectors(Collections.singleton(clusterConfig.getTag()));
+    }
+
+    return builder.executeOnDelegate(true).credential(awsCredentialDTO).build();
   }
 
   private AwsCredentialDTO getEc2IamCredentials(AwsConfig clusterConfig) {

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.threading.Morpheus.sleep;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ExceptionUtils;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -61,9 +62,10 @@ public final class FibonacciBackOff {
 
   private static void handleFailure(int attempt, IOException e) {
     if (attempt == 0) {
-      log.error("Error while executing, on attempt {} ", attempt + 1, e);
+      log.error("Error [{}], on attempt {} ", ExceptionUtils.getMessage(e), attempt + 1, e);
     } else {
-      log.warn("Error while executing, on attempt {}, please refer attempt 1 for stacktrace", attempt + 1);
+      log.warn("Error [{}], on attempt {}, please refer attempt 1 for stacktrace", ExceptionUtils.getMessage(e),
+          attempt + 1);
     }
     sleep(Duration.ofSeconds(FIBONACCI[attempt]));
   }

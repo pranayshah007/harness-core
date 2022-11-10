@@ -93,8 +93,6 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       "Error getting clusters from Harness Gitops..retrying", "Failed to fetch clusters from Harness Gitops",
       Collections.singletonList(IOException.class), Duration.ofMillis(10), 3, log);
 
-  private LogCallback logger;
-
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_CLUSTERS.getName())
                                                .setStepCategory(StepCategory.STEP)
@@ -109,7 +107,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     final StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     CommandExecutionStatus status = FAILURE;
 
-    logger = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, true);
+    final LogCallback logger = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, true);
 
     log.info("Starting execution for GitopsClustersStep [{}]", stepParameters);
 
@@ -125,7 +123,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       resolveVariables(ambiance, variables);
     }
     try {
-      final Map<String, IndividualClusterInternal> validatedClusters = validatedClusters(ambiance, stepParameters);
+      final Map<String, IndividualClusterInternal> validatedClusters =
+          validatedClusters(ambiance, stepParameters, logger);
 
       final GitopsClustersOutcome outcome = toOutcome(validatedClusters, variables);
 
@@ -150,10 +149,11 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     return StepUtils.generateLogKeys(ambiance, null);
   }
 
-  private Map<String, IndividualClusterInternal> validatedClusters(Ambiance ambiance, ClusterStepParameters params) {
+  private Map<String, IndividualClusterInternal> validatedClusters(
+      Ambiance ambiance, ClusterStepParameters params, LogCallback logger) {
     final Collection<EnvClusterRefs> envClusterRefs;
     if (params.getEnvGroupRef() != null) {
-      saveExecutionLog(format("Deploying to gitops clusters in environment group %s", params.getEnvGroupRef()));
+      saveExecutionLog(format("Deploying to gitops clusters in environment group %s", params.getEnvGroupRef()), logger);
     }
 
     envClusterRefs = params.getEnvClusterRefs();
@@ -162,23 +162,23 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       throw new InvalidRequestException("No Gitops Cluster is selected with the current environment configuration");
     }
 
-    logEnvironments(envClusterRefs);
+    logEnvironments(envClusterRefs, logger);
 
     // clusterId -> IndividualClusterInternal
     final Map<String, IndividualClusterInternal> individualClusters =
-        fetchClusterRefs(params.getEnvGroupRef(), ambiance, envClusterRefs);
+        fetchClusterRefs(params.getEnvGroupRef(), ambiance, envClusterRefs, logger);
 
     if (isEmpty(individualClusters)) {
-      saveExecutionLog("No gitops cluster is selected");
+      saveExecutionLog("No gitops cluster is selected", logger);
       throw new InvalidRequestException("No Gitops Cluster is selected with the current environment configuration");
     }
 
-    return filterClustersFromGitopsService(ambiance, individualClusters);
+    return filterClustersFromGitopsService(ambiance, individualClusters, logger);
   }
 
   @NotNull
   private Map<String, IndividualClusterInternal> filterClustersFromGitopsService(
-      Ambiance ambiance, Map<String, IndividualClusterInternal> individualClusters) {
+      Ambiance ambiance, Map<String, IndividualClusterInternal> individualClusters, LogCallback logger) {
     final Set<String> accountLevelClustersIds = individualClusters.keySet()
                                                     .stream()
                                                     .filter(ref -> StringUtils.beginsWithIgnoreCase(ref, "account."))
@@ -204,22 +204,23 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       }
     }
 
-    final Map<String, IndividualClusterInternal> projectLevelFilteredClusters = filterClustersFromGitopsService(
-        getAccountId(ambiance), getOrgIdentifier(ambiance), getProjectIdentifier(ambiance), projectLevelClusters);
-    final Map<String, IndividualClusterInternal> orgLevelFilteredClusters =
-        filterClustersFromGitopsService(getAccountId(ambiance), getOrgIdentifier(ambiance), "", orgLevelClusters);
+    final Map<String, IndividualClusterInternal> projectLevelFilteredClusters =
+        filterClustersFromGitopsService(getAccountId(ambiance), getOrgIdentifier(ambiance),
+            getProjectIdentifier(ambiance), projectLevelClusters, logger);
+    final Map<String, IndividualClusterInternal> orgLevelFilteredClusters = filterClustersFromGitopsService(
+        getAccountId(ambiance), getOrgIdentifier(ambiance), "", orgLevelClusters, logger);
     final Map<String, IndividualClusterInternal> accountLevelFilteredClusters =
-        filterClustersFromGitopsService(getAccountId(ambiance), "", "", accountLevelClusters);
+        filterClustersFromGitopsService(getAccountId(ambiance), "", "", accountLevelClusters, logger);
 
     return combine(projectLevelFilteredClusters, orgLevelFilteredClusters, accountLevelFilteredClusters);
   }
 
-  private Map<String, IndividualClusterInternal> filterClustersFromGitopsService(
-      String accountId, String orgId, String projectId, Map<String, IndividualClusterInternal> individualClusters) {
+  private Map<String, IndividualClusterInternal> filterClustersFromGitopsService(String accountId, String orgId,
+      String projectId, Map<String, IndividualClusterInternal> individualClusters, LogCallback logger) {
     if (isEmpty(individualClusters)) {
       return new HashMap<>();
     }
-    saveExecutionLog("Processing clusters at scope " + ScopeLevel.of(accountId, orgId, projectId).toString());
+    saveExecutionLog("Processing clusters at scope " + ScopeLevel.of(accountId, orgId, projectId).toString(), logger);
     Map<String, Object> filter = ImmutableMap.of("identifier", ImmutableMap.of("$in", individualClusters.keySet()));
     try {
       final ClusterQuery query = ClusterQuery.builder()
@@ -236,7 +237,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       if (response.isSuccessful() && response.body() != null) {
         List<Cluster> content = CollectionUtils.emptyIfNull(response.body().getContent());
 
-        logDataFromGitops(content);
+        logDataFromGitops(content, logger);
 
         content.forEach(c -> {
           if (individualClusters.containsKey(c.getIdentifier())) {
@@ -247,9 +248,10 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
         logSkippedClusters(individualClusters.values()
                                .stream()
                                .filter(GitopsClustersStep::clusterNameNull)
-                               .collect(Collectors.toList()));
+                               .collect(Collectors.toList()),
+            logger);
         individualClusters.values().removeIf(GitopsClustersStep::clusterNameNull);
-        logFinalSelectedClusters(individualClusters);
+        logFinalSelectedClusters(individualClusters, logger);
         return individualClusters;
       }
       throw new InvalidRequestException(format("Failed to fetch clusters from gitops. %s",
@@ -261,7 +263,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
   }
 
   private Map<String, IndividualClusterInternal> fetchClusterRefs(
-      String envGroupRef, Ambiance ambiance, Collection<EnvClusterRefs> envClusterRefs) {
+      String envGroupRef, Ambiance ambiance, Collection<EnvClusterRefs> envClusterRefs, LogCallback logger) {
     final List<IndividualClusterInternal> clusterRefs = envClusterRefs.stream()
                                                             .filter(not(EnvClusterRefs::isDeployToAll))
                                                             .map(ec
@@ -286,7 +288,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
     // Todo: Proper handling for large number of clusters
     if (isNotEmpty(envsWithAllClustersAsTarget)) {
-      logIdentifiers("Deploying to all gitops clusters in environment(s)", envsWithAllClustersAsTarget.keySet());
+      logIdentifiers(
+          "Deploying to all gitops clusters in environment(s)", envsWithAllClustersAsTarget.keySet(), logger);
       clusterRefs.addAll(clusterService
                              .listAcrossEnv(0, UNLIMITED_SIZE, getAccountId(ambiance), getOrgIdentifier(ambiance),
                                  getProjectIdentifier(ambiance), envsWithAllClustersAsTarget.keySet())
@@ -364,43 +367,45 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     return combined;
   }
 
-  private void logDataFromGitops(List<Cluster> content) {
-    saveExecutionLog(format("Following %d cluster(s) are present in Harness Gitops", content.size()));
-    logIdentifiers("Identifiers:", content.stream().map(Cluster::getIdentifier).collect(Collectors.toSet()));
+  private void logDataFromGitops(List<Cluster> content, LogCallback logger) {
+    saveExecutionLog(format("Following %d cluster(s) are present in Harness Gitops", content.size()), logger);
+    logIdentifiers("Identifiers:", content.stream().map(Cluster::getIdentifier).collect(Collectors.toSet()), logger);
   }
 
-  private void logFinalSelectedClusters(Map<String, IndividualClusterInternal> individualClusters) {
-    saveExecutionLog(format("Following %d cluster(s) are selected after filtering", individualClusters.size()));
-    logIdentifiers("Identifiers:", individualClusters.keySet());
+  private void logFinalSelectedClusters(Map<String, IndividualClusterInternal> individualClusters, LogCallback logger) {
+    saveExecutionLog(format("Following %d cluster(s) are selected after filtering", individualClusters.size()), logger);
+    logIdentifiers("Identifiers:", individualClusters.keySet(), logger);
   }
 
-  private void logEnvironments(Collection<EnvClusterRefs> envClusterRefs) {
+  private void logEnvironments(Collection<EnvClusterRefs> envClusterRefs, LogCallback logger) {
     logIdentifiers(
-        "Environment(s):", envClusterRefs.stream().map(EnvClusterRefs::getEnvRef).collect(Collectors.toSet()));
+        "Environment(s):", envClusterRefs.stream().map(EnvClusterRefs::getEnvRef).collect(Collectors.toSet()), logger);
   }
 
-  private void logSkippedClusters(List<IndividualClusterInternal> clusterInternals) {
+  private void logSkippedClusters(List<IndividualClusterInternal> clusterInternals, LogCallback logger) {
     if (isEmpty(clusterInternals)) {
       return;
     }
 
     saveExecutionLog(
-        "Following clusters were skipped either because clusters were not linked to the environment or not present in harness gitops");
+        "Following clusters were skipped either because clusters were not linked to the environment or not present in harness gitops",
+        logger);
     Map<String, List<IndividualClusterInternal>> groupedClusters =
         clusterInternals.stream().collect(Collectors.groupingBy(IndividualClusterInternal::getEnvRef));
     groupedClusters.forEach(
         (key, value)
             -> logIdentifiers("Environment: " + key,
-                value.stream().map(IndividualClusterInternal::getClusterRef).collect(Collectors.toList())));
+                value.stream().map(IndividualClusterInternal::getClusterRef).collect(Collectors.toList()), logger));
   }
 
-  private void logIdentifiers(String logPrefix, Collection<String> strings) {
+  private void logIdentifiers(String logPrefix, Collection<String> strings, LogCallback logger) {
     int maxSize = STRINGS_LOGGING_LIMIT;
     saveExecutionLog(logPrefix + " " + strings.stream().limit(maxSize).collect(Collectors.joining(",", "{", "}")) + " "
-        + (strings.size() > maxSize ? "..." : "\n\n"));
+            + (strings.size() > maxSize ? "..." : "\n\n"),
+        logger);
   }
 
-  private void saveExecutionLog(String log) {
+  private void saveExecutionLog(String log, LogCallback logger) {
     logger.saveExecutionLog(log);
   }
 

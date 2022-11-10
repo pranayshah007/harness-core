@@ -62,6 +62,7 @@ import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
@@ -614,8 +615,9 @@ public class ServiceResourceV2 {
   @Path("/mergeServiceInputs/{serviceIdentifier}")
   @ApiOperation(value = "This api merges old and new service inputs YAML", nickname = "mergeServiceInputs")
   @Hidden
-  public ResponseDTO<String> mergeServiceInputs(@Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(
-                                                    "serviceIdentifier") @ResourceIdentifier String serviceIdentifier,
+  public ResponseDTO<ServiceInputsMergedResponseDto> mergeServiceInputs(
+      @Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(
+          "serviceIdentifier") @ResourceIdentifier String serviceIdentifier,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(

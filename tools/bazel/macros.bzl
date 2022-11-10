@@ -4,6 +4,15 @@ load("//tools/bazel/pmd:defs.bzl", "pmd")
 load("//:tools/bazel/duplicated.bzl", "report_duplicated")
 load("@rules_jvm_external//:specs.bzl", "maven")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests_targets")
+load("//:tools/bazel/openapi.bzl", "openapi_gen")
+
+def openapi_stub_generator(name):
+    openapi_gen(
+        name = name,
+        config_file = "jaxrs-spec-config.json",
+        language = "jaxrs-spec",
+        spec = "openapi.yaml",
+    )
 
 def resources(name = "resources", runtime_deps = [], testonly = 0, visibility = None):
     native.java_library(

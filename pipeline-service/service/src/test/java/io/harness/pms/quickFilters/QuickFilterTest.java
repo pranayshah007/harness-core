@@ -154,7 +154,7 @@ public class QuickFilterTest extends CategoryTest {
 
     // Verify that the time range is present in criteria.
     assertEquals(form.getCriteriaObject().get("$and").toString(),
-        "[Document{{createdAt=Document{{$gte=1651480019931, $lte=1651480019931}}}}]");
+        "[Document{{startTs=Document{{$gte=1651480019931, $lte=1651480019931}}}}]");
 
     // ENdTime not provided in filter. Should throw exception.
 

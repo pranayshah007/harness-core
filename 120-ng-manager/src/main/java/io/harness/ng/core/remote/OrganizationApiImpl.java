@@ -24,10 +24,10 @@ import io.harness.ng.core.dto.OrganizationFilterDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.spec.server.ng.OrganizationApi;
-import io.harness.spec.server.ng.model.CreateOrganizationRequest;
-import io.harness.spec.server.ng.model.OrganizationResponse;
-import io.harness.spec.server.ng.model.UpdateOrganizationRequest;
+import io.harness.spec.server.ng.v1.OrganizationApi;
+import io.harness.spec.server.ng.v1.model.CreateOrganizationRequest;
+import io.harness.spec.server.ng.v1.model.OrganizationResponse;
+import io.harness.spec.server.ng.v1.model.UpdateOrganizationRequest;
 
 import com.google.inject.Inject;
 import java.util.List;

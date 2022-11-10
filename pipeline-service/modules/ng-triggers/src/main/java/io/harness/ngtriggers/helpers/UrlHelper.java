@@ -32,8 +32,8 @@ public class UrlHelper {
   }
 
   public String buildApiExecutionUrl(String uuid, String accountIdentifier) {
-    return format("%swebhook/triggerExecutionDetails/%s?accountIdentifier=%s",
-        webhookConfigProvider.getCustomApiBaseUrl(), uuid, accountIdentifier);
+    return format("%sgateway/pipeline/api/webhook/triggerExecutionDetails/%s?accountIdentifier=%s",
+        getBaseUrl(accountIdentifier), uuid, accountIdentifier);
   }
 
   public String buildUiUrl(

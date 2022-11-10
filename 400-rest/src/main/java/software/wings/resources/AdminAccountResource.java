@@ -133,7 +133,7 @@ public class AdminAccountResource {
   @Path("{accountId}/is-product-led")
   public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") String accountId,
       @QueryParam("isProductLed") @DefaultValue("false") boolean isProductLed) {
-    return new RestResponse<>(adminAccountService.enableOrDisableNextGen(accountId, isProductLed));
+    return new RestResponse<>(adminAccountService.updateIsProductLed(accountId, isProductLed));
   }
 
   @PUT

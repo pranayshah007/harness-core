@@ -21,6 +21,7 @@ public class ErrorMessageFormatter {
   public final String TARGET_BRANCH_NAME_FORMAT_KEY = "<TARGET_BRANCH>";
   public final String NEW_BRANCH_NAME_FORMAT_KEY = "<NEW_BRANCH>";
   public final String CONNECTOR_REF_FORMAT_KEY = "<CONNECTOR>";
+  public final String REF_FORMAT_KEY = "<REF>";
 
   public String formatMessage(String message, ErrorMetadata errorMetadata) {
     if (isEmpty(message)) {
@@ -34,6 +35,7 @@ public class ErrorMessageFormatter {
         message.replaceAll(TARGET_BRANCH_NAME_FORMAT_KEY, getFormattedKeyValue(errorMetadata.getTargetBranchName()));
     message = message.replaceAll(NEW_BRANCH_NAME_FORMAT_KEY, getFormattedKeyValue(errorMetadata.getNewBranchName()));
     message = message.replaceAll(CONNECTOR_REF_FORMAT_KEY, getFormattedKeyValue(errorMetadata.getConnectorRef()));
+    message = message.replaceAll(REF_FORMAT_KEY, getFormattedKeyValue(errorMetadata.getRef()));
     return message;
   }
 

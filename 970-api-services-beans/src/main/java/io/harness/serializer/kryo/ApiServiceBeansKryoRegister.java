@@ -223,8 +223,6 @@ import com.google.api.services.monitoring.v3.model.Point;
 import com.google.api.services.monitoring.v3.model.TimeInterval;
 import com.google.api.services.monitoring.v3.model.TimeSeries;
 import com.google.api.services.monitoring.v3.model.TypedValue;
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
 import com.sumologic.client.SumoServerException;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -274,8 +272,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(Distribution.class, 2012);
     kryo.register(BucketOptions.class, 2013);
     kryo.register(Exponential.class, 2014);
-    kryo.register(BasicDBList.class, 2015);
-    kryo.register(BasicDBObject.class, 2016);
     kryo.register(CommandExecutionStatus.class, 5037);
     kryo.register(ResizeCommandUnitExecutionData.class, 5053);
     kryo.register(EncryptionConfig.class, 5305);

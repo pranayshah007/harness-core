@@ -48,6 +48,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -181,7 +182,8 @@ public class ScmFetchFilesHelperNG {
     }
 
     createDirectoryIfDoesNotExist(parent.toString());
-    FileIo.writeUtf8StringToFile(finalPath.toString(), fileContent.getContent());
+    byte[] content = Base64.getDecoder().decode(fileContent.getContent());
+    FileIo.writeFile(finalPath.toString(), content);
   }
 
   private void throwFailedToFetchFileException(
@@ -200,7 +202,7 @@ public class ScmFetchFilesHelperNG {
     FileContentBatchResponse fileBatchContentResponse;
     if (gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH) {
       fileBatchContentResponse = scmDelegateClient.processScmRequest(c
-          -> scmServiceClient.listFiles(
+          -> scmServiceClient.listFilesV2(
               scmConnector, filePaths, gitStoreDelegateConfig.getBranch(), SCMGrpc.newBlockingStub(c)));
     } else {
       fileBatchContentResponse = scmDelegateClient.processScmRequest(c

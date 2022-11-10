@@ -228,7 +228,7 @@ public class StateExecutionServiceImpl implements StateExecutionService {
       return Collections.emptyList();
     }
 
-    return wingsPersistence.createQuery(StateExecutionInstance.class, excludeAuthority)
+    return wingsPersistence.createAnalyticsQuery(StateExecutionInstance.class, excludeAuthority)
         .field(StateExecutionInstanceKeys.uuid)
         .in(stateExecutionInstanceIds)
         .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));

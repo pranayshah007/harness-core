@@ -321,6 +321,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
     }
   }
 
+  // TODO: ARPIT remove this method and heartbeat once changes for delegate agent goes in immutable delegate DEL-5026
   @Override
   public boolean triggerCallback(String taskId, long heartbeatMillis, PerpetualTaskResponse perpetualTaskResponse) {
     int responseCode = perpetualTaskResponse.getResponseCode();
@@ -338,6 +339,19 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
       return saveHeartbeat;
     }
     return perpetualTaskRecordDao.saveHeartbeat(taskId, heartbeatMillis, taskFailedExecutionCount);
+  }
+
+  public void recordTaskFailure(String taskId, String exceptionMessage) {
+    PerpetualTaskRecord taskRecord = perpetualTaskRecordDao.getTask(taskId);
+    long taskFailedExecutionCount = taskRecord.getFailedExecutionCount();
+    taskFailedExecutionCount++;
+    if (taskFailedExecutionCount >= TASK_FAILED_EXECUTION_LIMIT) {
+      setTaskUnassigned(taskId);
+      updateTaskUnassignedReason(
+          taskId, PerpetualTaskUnassignedReason.MULTIPLE_FAILED_PERPETUAL_TASK, taskRecord.getAssignTryCount());
+      taskFailedExecutionCount = 0;
+    }
+    perpetualTaskRecordDao.saveTaskFailureExceptionAndCount(taskId, exceptionMessage, taskFailedExecutionCount);
   }
 
   @Override

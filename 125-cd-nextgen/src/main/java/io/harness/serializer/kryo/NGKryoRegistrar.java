@@ -85,6 +85,7 @@ import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo;
+import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
@@ -193,5 +194,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(FetchInstanceScriptStepParameters.class, 12615);
     kryo.register(ChaosStepNotifyData.class, 12616);
     kryo.register(ElastigroupDeployStepInfo.class, 12617);
+    kryo.register(ElastigroupRollbackStepInfo.class, 12618);
   }
 }

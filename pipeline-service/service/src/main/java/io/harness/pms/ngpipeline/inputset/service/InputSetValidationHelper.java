@@ -99,7 +99,7 @@ public class InputSetValidationHelper {
   operation is to a new branch or not. If it is to a new branch, then it creates a guard to fetch the pipeline from the
   base branch. If not, no guard is needed.
   */
-  PipelineEntity getPipelineEntity(PMSPipelineService pmsPipelineService, String accountId, String orgIdentifier,
+  public PipelineEntity getPipelineEntity(PMSPipelineService pmsPipelineService, String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier) {
     Optional<PipelineEntity> optionalPipelineEntity;
     if (GitContextHelper.isUpdateToNewBranch()) {
@@ -107,12 +107,12 @@ public class InputSetValidationHelper {
       GitSyncBranchContext branchContext =
           GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().branch(baseBranch).build()).build();
       try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
-        optionalPipelineEntity =
-            pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
       }
     } else {
-      optionalPipelineEntity =
-          pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+      optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     }
     if (!optionalPipelineEntity.isPresent()) {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
@@ -149,8 +149,9 @@ public class InputSetValidationHelper {
     return InputSetErrorsHelper.getErrorMap(pipelineYaml, yaml);
   }
 
-  String getPipelineYamlForOldGitSyncFlow(PMSPipelineService pmsPipelineService, String accountId, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, String pipelineBranch, String pipelineRepoID) {
+  public String getPipelineYamlForOldGitSyncFlow(PMSPipelineService pmsPipelineService, String accountId,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String pipelineBranch,
+      String pipelineRepoID) {
     if (EmptyPredicate.isEmpty(pipelineBranch) || EmptyPredicate.isEmpty(pipelineRepoID)) {
       return getPipelineYamlForOldGitSyncFlowInternal(
           pmsPipelineService, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
@@ -168,8 +169,8 @@ public class InputSetValidationHelper {
 
   String getPipelineYamlForOldGitSyncFlowInternal(PMSPipelineService pmsPipelineService, String accountId,
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
-    Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> pipelineEntity = pmsPipelineService.getAndValidatePipeline(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     if (pipelineEntity.isPresent()) {
       return pipelineEntity.get().getYaml();
     } else {

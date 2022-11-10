@@ -199,6 +199,9 @@ public class PipelineEntity
   }
 
   public String getHarnessVersion() {
-    return harnessVersion != null ? harnessVersion : PipelineVersion.V0;
+    if (harnessVersion == null || harnessVersion.equals("V0")) {
+      return PipelineVersion.V0;
+    }
+    return harnessVersion;
   }
 }

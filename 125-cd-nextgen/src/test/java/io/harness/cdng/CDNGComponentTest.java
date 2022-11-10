@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.GEORGE;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 
+import io.harness.agent.sdk.HarnessHierarchy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.testing.TestExecution;
@@ -18,6 +19,7 @@ import io.harness.testing.TestExecution;
 import com.google.inject.Inject;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -28,6 +30,8 @@ public class CDNGComponentTest extends CDNGTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
+  @HarnessHierarchy(TestExecution.class)
+  @Ignore("CI-6025: TI team to follow up")
   public void componentCDNGTests() {
     for (Map.Entry<String, TestExecution> test : tests.entrySet()) {
       assertThatCode(() -> test.getValue().run()).as(test.getKey()).doesNotThrowAnyException();

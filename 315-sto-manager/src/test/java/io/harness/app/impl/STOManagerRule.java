@@ -24,7 +24,6 @@ import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.registrars.ExecutionAdvisers;
-import io.harness.ci.registrars.STOExecutionRegistrar;
 import io.harness.ci.serializer.CiExecutionRegistrars;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
@@ -45,6 +44,7 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.sto.beans.entities.STOServiceConfig;
+import io.harness.sto.registrars.STOExecutionRegistrar;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -171,12 +171,21 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
                                           .pvcDefaultStorageSize(25600)
                                           .build())
             .asyncDelegateResponseConsumption(ThreadPoolConfig.builder().corePoolSize(1).build())
-            .logServiceConfig(
-                LogServiceConfig.builder().baseUrl("http://localhost-inc:8079").globalToken("global-token").build())
-            .tiServiceConfig(
-                TIServiceConfig.builder().baseUrl("http://localhost-inc:8078").globalToken("global-token").build())
-            .stoServiceConfig(
-                STOServiceConfig.builder().baseUrl("http://localhost-inc:4000").globalToken("global-token").build())
+            .logServiceConfig(LogServiceConfig.builder()
+                                  .internalUrl("http://localhost-inc:8079")
+                                  .baseUrl("http://localhost-inc:8079")
+                                  .globalToken("global-token")
+                                  .build())
+            .tiServiceConfig(TIServiceConfig.builder()
+                                 .internalUrl("http://localhost-inc:8078")
+                                 .baseUrl("http://localhost-inc:8078")
+                                 .globalToken("global-token")
+                                 .build())
+            .stoServiceConfig(STOServiceConfig.builder()
+                                  .internalUrl("http://localhost-inc:4000")
+                                  .baseUrl("http://localhost-inc:4000")
+                                  .globalToken("global-token")
+                                  .build())
             .managerServiceSecret("IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM")
             .ngManagerClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build())
             .managerClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:3457/").build())

@@ -52,7 +52,7 @@ public class MigrateCloudProvidersToTimescaleDB implements TimeScaleEntityMigrat
       findOptions_cloud_providers.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<SettingAttribute> iterator =
-               new HIterator<>(wingsPersistence.createQuery(SettingAttribute.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(SettingAttribute.class, excludeAuthority)
                                    .filter(SettingAttributeKeys.category, CLOUD_PROVIDER)
                                    .field(SettingAttributeKeys.accountId)
                                    .equal(accountId)

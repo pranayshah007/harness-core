@@ -256,16 +256,15 @@ public class ConnectorMigrationService extends NgMigrationService {
                      .cgBasicInfo(settingAttribute.getCgBasicInfo())
                      .build();
       return files;
+    } catch (UnsupportedOperationException ex) {
+      log.warn(ex.getMessage());
+      return files;
     } finally {
       if (yamlFile != null) {
         files.add(yamlFile);
         migratedEntities.putIfAbsent(entityId, yamlFile);
       }
     }
-  }
-
-  private List<NGYamlFile> generateSSHConfigFiles() {
-    return Collections.emptyList();
   }
 
   @Override

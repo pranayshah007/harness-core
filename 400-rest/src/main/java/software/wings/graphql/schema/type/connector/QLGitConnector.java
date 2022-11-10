@@ -42,6 +42,7 @@ public class QLGitConnector implements QLConnector {
   private QLCustomCommitDetails customCommitDetails;
   private QLUsageScope usageScope;
   private List<String> delegateSelectors;
+  private Boolean disableUserGitConfig;
 
   public static class QLGitConnectorBuilder implements QLConnectorBuilder {}
 }

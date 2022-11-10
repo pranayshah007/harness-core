@@ -18,9 +18,11 @@ public class LicenseTestConstant {
   public static final ModuleType DEFAULT_MODULE_TYPE = ModuleType.CI;
   public static final int TOTAL_DEVELOPER = 10;
   public static final int MAX_DEVELOPER = 12;
+  public static final int HOSTING_CREDITS = 100;
   public static final ModuleLicenseDTO DEFAULT_CI_MODULE_LICENSE_DTO = CIModuleLicenseDTO.builder()
                                                                            .id("id")
                                                                            .numberOfCommitters(TOTAL_DEVELOPER)
+                                                                           .hostingCredits(HOSTING_CREDITS)
                                                                            .accountIdentifier(ACCOUNT_IDENTIFIER)
                                                                            .licenseType(LicenseType.TRIAL)
                                                                            .moduleType(DEFAULT_MODULE_TYPE)
@@ -33,7 +35,7 @@ public class LicenseTestConstant {
                                                                            .build();
 
   public static final CIModuleLicense DEFAULT_CI_MODULE_LICENSE =
-      CIModuleLicense.builder().numberOfCommitters(TOTAL_DEVELOPER).build();
+      CIModuleLicense.builder().numberOfCommitters(TOTAL_DEVELOPER).hostingCredits(HOSTING_CREDITS).build();
   static {
     DEFAULT_CI_MODULE_LICENSE.setId("id");
     DEFAULT_CI_MODULE_LICENSE.setAccountIdentifier(ACCOUNT_IDENTIFIER);

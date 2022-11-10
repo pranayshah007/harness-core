@@ -68,6 +68,8 @@ replace_key_value jwtIdentityServiceSecret $JWT_IDENTITY_SERVICE_SECRET
 replace_key_value timescaledb.timescaledbUrl "$TIMESCALEDB_URI"
 replace_key_value timescaledb.timescaledbUsername "$TIMESCALEDB_USERNAME"
 replace_key_value timescaledb.timescaledbPassword "$TIMESCALEDB_PASSWORD"
+replace_key_value timescaledb.sslMode "$TIMESCALEDB_SSL_MODE"
+replace_key_value timescaledb.sslRootCert "$TIMESCALEDB_SSL_ROOT_CERT"
 
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE

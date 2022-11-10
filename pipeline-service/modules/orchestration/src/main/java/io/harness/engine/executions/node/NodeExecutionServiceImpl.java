@@ -382,17 +382,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Override
   public NodeExecution save(NodeExecution nodeExecution) {
     if (nodeExecution.getVersion() == null) {
-      // Havnt added triggerPayload in the event as no one is consuming triggerPayload on NodeExecutionStart
-      Builder builder = OrchestrationEvent.newBuilder()
-                            .setAmbiance(nodeExecution.getAmbiance())
-                            .setStatus(nodeExecution.getStatus())
-                            .setEventType(OrchestrationEventType.NODE_EXECUTION_START)
-                            .setServiceName(nodeExecution.getModule());
-
-      if (nodeExecution.getResolvedStepParameters() != null) {
-        builder.setStepParameters(nodeExecution.getResolvedStepParametersBytes());
-      }
-      eventEmitter.emitEvent(builder.build());
       NodeExecution savedNodeExecution = transactionHelper.performTransaction(() -> {
         NodeExecution nodeExecution1 = mongoTemplate.insert(nodeExecution);
         if (orchestrationLogConfiguration.isReduceOrchestrationLog()) {
@@ -401,7 +390,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         return nodeExecution1;
       });
       if (savedNodeExecution != null) {
-        emitEvent(savedNodeExecution, OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE);
+        // Havnt added triggerPayload in the event as no one is consuming triggerPayload on NodeExecutionStart
+        Builder builder = OrchestrationEvent.newBuilder()
+                              .setAmbiance(nodeExecution.getAmbiance())
+                              .setStatus(nodeExecution.getStatus())
+                              .setEventType(OrchestrationEventType.NODE_EXECUTION_START)
+                              .setServiceName(nodeExecution.getModule());
+
+        if (nodeExecution.getResolvedStepParameters() != null) {
+          builder.setStepParameters(nodeExecution.getResolvedStepParametersBytes());
+        }
+        eventEmitter.emitEvent(builder.build());
       }
       nodeExecutionStartSubject.fireInform(
           NodeExecutionStartObserver::onNodeStart, NodeStartInfo.builder().nodeExecution(savedNodeExecution).build());

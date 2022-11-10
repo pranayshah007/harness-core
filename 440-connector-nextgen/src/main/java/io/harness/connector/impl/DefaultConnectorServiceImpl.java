@@ -719,13 +719,14 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public boolean delete(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
-    return delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ChangeType.DELETE);
+  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorIdentifier, boolean forceDelete) {
+    return delete(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ChangeType.DELETE, forceDelete);
   }
 
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorIdentifier, ChangeType changeType) {
+      String connectorIdentifier, ChangeType changeType, boolean forceDelete) {
     Optional<Connector> existingConnectorOptional =
         getInternal(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
     if (!existingConnectorOptional.isPresent()) {
@@ -734,9 +735,21 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
     Connector existingConnector = existingConnectorOptional.get();
     ConnectorResponseDTO connectorDTO = connectorMapper.writeDTO(existingConnector);
-    checkThatTheConnectorIsNotUsedByOthers(existingConnector);
-    connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
-        connectorDTO.getConnector(), accountIdentifier);
+    if (!forceDelete) {
+      checkThatTheConnectorIsNotUsedByOthers(existingConnector);
+    }
+    try {
+      connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
+          connectorDTO.getConnector(), accountIdentifier);
+    } catch (Exception e) {
+      if (forceDelete) {
+        log.warn(
+            "Exception occured while deleting references of connector {} with accountId {}, orgId {}, projectId {} - {} ",
+            connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier, e);
+      } else {
+        throw e;
+      }
+    }
     existingConnector.setDeleted(true);
     Supplier<OutboxEvent> supplier = null;
     if (!gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {

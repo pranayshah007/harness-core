@@ -7,21 +7,31 @@
 
 package io.harness.ng.core.artifacts.resources;
 
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.NgManagerTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
@@ -30,11 +40,17 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.rule.Owner;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -55,7 +71,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Mock TemplateResourceClient templateResourceClient;
   @Mock ServiceEntityService serviceEntityService;
   @Mock EnvironmentService environmentService;
-
+  @Mock GARResourceService garResourceService;
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
@@ -338,6 +354,135 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         "<+env.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("env1");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsV2GAR() throws IOException {
+    // spy for ArtifactResourceUtils
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    // Creating GoogleArtifactRegistryConfig for mock
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
+        GoogleArtifactRegistryConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("connectorref").build())
+            .project(ParameterField.<String>builder().value("project").build())
+            .pkg(ParameterField.<String>builder().value("pkg").build())
+            .repositoryName(ParameterField.<String>builder().value("reponame").build())
+            .region(ParameterField.<String>builder().value("region").build())
+            .version(ParameterField.<String>builder().value("version").build())
+            .build();
+
+    // Creating GARResponseDTO for mock
+    GARResponseDTO buildDetails = GARResponseDTO.builder().build();
+
+    // Creating IdentifierRef for mock
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef("connectorref", "accountId", "orgId", "projectId");
+
+    doReturn(googleArtifactRegistryConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(any(), any(), any(), any(), any());
+
+    doReturn(buildDetails)
+        .when(garResourceService)
+        .getBuildDetails(
+            identifierRef, "region", "reponame", "project", "pkg", "version", "versionRegex", "orgId", "projectId");
+
+    assertThat(spyartifactResourceUtils.getBuildDetailsV2GAR(null, null, null, null, null, "accountId", "orgId",
+                   "projectId", "pipeId", "version", "versionRegex", "", "", "serviceref", null))
+        .isEqualTo(buildDetails);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testLocateArtifactForSourcesFromTemplate() throws IOException {
+    String serviceYaml = readFile("artifacts/service-with-primary-artifact-source-templates.yaml");
+    YamlNode serviceNode = YamlNode.fromYamlPath(serviceYaml, "service");
+
+    String imageTagFqnWithinService =
+        "serviceDefinition.spec.artifacts.primary.sources.ft1.template.templateInputs.spec.tag";
+
+    YamlNode artifactSpecNode = YamlNodeUtils.goToPathUsingFqn(serviceNode, imageTagFqnWithinService);
+    when(serviceEntityService.getYamlNodeForFqn(anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(artifactSpecNode);
+
+    Call<ResponseDTO<TemplateResponseDTO>> callRequest = mock(Call.class);
+
+    String artifactSourceTemplate = readFile("artifacts/artifact-source-template-1.yaml");
+
+    doReturn(callRequest).when(templateResourceClient).get(any(), any(), any(), any(), any(), anyBoolean());
+    when(callRequest.execute())
+        .thenReturn(Response.success(
+            ResponseDTO.newResponse(TemplateResponseDTO.builder()
+                                        .templateEntityType(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE)
+                                        .yaml(artifactSourceTemplate)
+                                        .build())));
+
+    ArtifactConfig artifactConfig =
+        artifactResourceUtils.locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, "svc1", imageTagFqnWithinService);
+
+    assertThat(artifactConfig).isNotNull();
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef()).isNotNull();
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testLocateArtifactForNonTemplateSources() throws IOException {
+    String serviceYaml = readFile("artifacts/service-with-primary-artifact-source-templates.yaml");
+    YamlNode serviceNode = YamlNode.fromYamlPath(serviceYaml, "service");
+
+    // non template source
+    String imageTagFqnWithinService = "serviceDefinition.spec.artifacts.primary.sources.nontemp.spec.tag";
+
+    YamlNode artifactSpecNode = YamlNodeUtils.goToPathUsingFqn(serviceNode, imageTagFqnWithinService);
+    when(serviceEntityService.getYamlNodeForFqn(anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(artifactSpecNode);
+
+    ArtifactConfig artifactConfig =
+        artifactResourceUtils.locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, "svc1", imageTagFqnWithinService);
+
+    assertThat(artifactConfig).isNotNull();
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef()).isNotNull();
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testLocateArtifactForSourcesFromAccountLevelTemplateStableVersion() throws IOException {
+    String serviceYaml = readFile("artifacts/service-with-primary-artifact-source-templates.yaml");
+    YamlNode serviceNode = YamlNode.fromYamlPath(serviceYaml, "service");
+
+    String imageTagFqnWithinService =
+        "serviceDefinition.spec.artifacts.primary.sources.ft2.template.templateInputs.spec.tag";
+
+    YamlNode artifactSpecNode = YamlNodeUtils.goToPathUsingFqn(serviceNode, imageTagFqnWithinService);
+    when(serviceEntityService.getYamlNodeForFqn(anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(artifactSpecNode);
+
+    Call<ResponseDTO<TemplateResponseDTO>> callRequest = mock(Call.class);
+
+    String artifactSourceTemplate = readFile("artifacts/artifact-source-template-1.yaml");
+
+    // template service called with null params when account level template is used as stable version
+    doReturn(callRequest).when(templateResourceClient).get(any(), any(), eq(null), eq(null), eq(null), anyBoolean());
+    when(callRequest.execute())
+        .thenReturn(Response.success(
+            ResponseDTO.newResponse(TemplateResponseDTO.builder()
+                                        .templateEntityType(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE)
+                                        .yaml(artifactSourceTemplate)
+                                        .build())));
+
+    ArtifactConfig artifactConfig =
+        artifactResourceUtils.locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, "svc1", imageTagFqnWithinService);
+
+    assertThat(artifactConfig).isNotNull();
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef()).isNotNull();
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath()).isNotNull();
   }
 
   private void mockEnvironmentGetCall() {

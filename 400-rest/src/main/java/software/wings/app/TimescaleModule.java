@@ -9,13 +9,17 @@ package software.wings.app;
 
 import software.wings.search.entities.application.ApplicationTimeScaleEntity;
 import software.wings.search.entities.cloudprovider.CloudProviderTimeScaleEntity;
+import software.wings.search.entities.deployment.DeploymentExecutionEntity;
+import software.wings.search.entities.deployment.DeploymentStepExecutionEntity;
 import software.wings.search.entities.environment.EnvironmentTimeScaleEntity;
+import software.wings.search.entities.executionInterrupt.ExecutionInterruptEntity;
 import software.wings.search.entities.infradefinition.InfrastructureDefinitionTimeScaleEntity;
 import software.wings.search.entities.pipeline.PipelineTimeScaleEntity;
 import software.wings.search.entities.service.ServiceTimeScaleEntity;
 import software.wings.search.entities.tags.TagLinksTimeScaleEntity;
 import software.wings.search.entities.user.UserTimeScaleEntity;
 import software.wings.search.entities.workflow.WorkflowTimeScaleEntity;
+import software.wings.search.framework.ExecutionEntity;
 import software.wings.search.framework.TimeScaleEntity;
 
 import com.google.inject.AbstractModule;
@@ -28,6 +32,7 @@ public class TimescaleModule extends AbstractModule {
   @Override
   protected void configure() {
     bindTimeScaleEntities();
+    bindExecutionEntities();
   }
 
   private void bindTimeScaleEntities() {
@@ -42,5 +47,13 @@ public class TimescaleModule extends AbstractModule {
     timeScaleEntityMultibinder.addBinding().to(CloudProviderTimeScaleEntity.class);
     timeScaleEntityMultibinder.addBinding().to(InfrastructureDefinitionTimeScaleEntity.class);
     timeScaleEntityMultibinder.addBinding().to(UserTimeScaleEntity.class);
+  }
+
+  private void bindExecutionEntities() {
+    Multibinder<ExecutionEntity<?>> timeScaleEntityMultibinder =
+        Multibinder.newSetBinder(binder(), new TypeLiteral<ExecutionEntity<?>>() {});
+    timeScaleEntityMultibinder.addBinding().to(DeploymentExecutionEntity.class);
+    timeScaleEntityMultibinder.addBinding().to(DeploymentStepExecutionEntity.class);
+    timeScaleEntityMultibinder.addBinding().to(ExecutionInterruptEntity.class);
   }
 }

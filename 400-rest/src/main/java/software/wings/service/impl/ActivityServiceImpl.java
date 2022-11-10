@@ -129,7 +129,7 @@ public class ActivityServiceImpl implements ActivityService {
     // Activity doesn't have accountId in it's collection. So excluding authority for now. Use case is to get command
     // units for all activities for a set of executions in an account (may not be the same app). The account check is
     // done on workflow executions.
-    List<Activity> activities = wingsPersistence.createQuery(Activity.class, excludeAuthority)
+    List<Activity> activities = wingsPersistence.createAnalyticsQuery(Activity.class, excludeAuthority)
                                     .field(ActivityKeys.uuid)
                                     .in(activityIds)
                                     .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
@@ -146,7 +146,7 @@ public class ActivityServiceImpl implements ActivityService {
     return getCommandUnits(activity);
   }
 
-  private List<CommandUnitDetails> getCommandUnits(Activity activity) {
+  public List<CommandUnitDetails> getCommandUnits(Activity activity) {
     List<CommandUnitDetails> rv = new ArrayList<>();
     if (activity.getCommandUnitType() != null) {
       switch (activity.getCommandUnitType()) {

@@ -84,6 +84,8 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricRespons
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.beans.sidekick.CompositeSLORecordsCleanupSideKickData;
+import io.harness.cvng.core.beans.sidekick.CompositeSLORecordsCleanupSideKickData.CompositeSLORecordsCleanupSideKickDataBuilder;
 import io.harness.cvng.core.beans.sidekick.VerificationJobInstanceCleanupSideKickData;
 import io.harness.cvng.core.beans.sidekick.VerificationJobInstanceCleanupSideKickData.VerificationJobInstanceCleanupSideKickDataBuilder;
 import io.harness.cvng.core.entities.AnalysisInfo;
@@ -1423,6 +1425,12 @@ public class BuilderFactory {
         .projectIdentifier(context.getProjectIdentifier())
         .verificationJobInstanceIdentifier(verificationJobInstanceId)
         .sourceIdentifiers(sources);
+  }
+
+  public CompositeSLORecordsCleanupSideKickDataBuilder getCompositeSLORecordsCleanupSideKickDataBuilder(
+      String sloId, Instant afterStartTime) {
+    return CompositeSLORecordsCleanupSideKickData.builder().sloVersion(0).sloId(sloId).afterStartTime(
+        afterStartTime.getEpochSecond() / 60);
   }
 
   public TimeSeriesThreshold getMetricThresholdBuilder(String metricName, String metricGroupName) {

@@ -31,21 +31,21 @@ import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
-import io.harness.spec.server.pipeline.model.ExecutionSummary;
-import io.harness.spec.server.pipeline.model.ExecutorInfo;
-import io.harness.spec.server.pipeline.model.ExecutorInfo.TriggerTypeEnum;
-import io.harness.spec.server.pipeline.model.GitCreateDetails;
-import io.harness.spec.server.pipeline.model.GitDetails;
-import io.harness.spec.server.pipeline.model.GitUpdateDetails;
-import io.harness.spec.server.pipeline.model.NodeInfo;
-import io.harness.spec.server.pipeline.model.PipelineCreateRequestBody;
-import io.harness.spec.server.pipeline.model.PipelineGetResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineListResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineListResponseBody.StoreTypeEnum;
-import io.harness.spec.server.pipeline.model.PipelineUpdateRequestBody;
-import io.harness.spec.server.pipeline.model.RecentExecutionInfo;
-import io.harness.spec.server.pipeline.model.RecentExecutionInfo.ExecutionStatusEnum;
-import io.harness.spec.server.pipeline.model.YAMLSchemaErrorWrapper;
+import io.harness.spec.server.pipeline.v1.model.ExecutionSummary;
+import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
+import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
+import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
+import io.harness.spec.server.pipeline.v1.model.GitDetails;
+import io.harness.spec.server.pipeline.v1.model.GitUpdateDetails;
+import io.harness.spec.server.pipeline.v1.model.NodeInfo;
+import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody.StoreTypeEnum;
+import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo;
+import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo.ExecutionStatusEnum;
+import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -346,10 +346,10 @@ public class PipelinesApiUtils {
 
   public static List<String> getSorting(String field, String order) {
     if (field == null) {
+      if (order != null) {
+        throw new InvalidRequestException("Order of sorting provided without Sort field.");
+      }
       return null;
-    }
-    if (order == null || (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc"))) {
-      throw new InvalidRequestException("Order of sorting unidentified or null. Accepted values: ASC / DESC");
     }
     switch (field) {
       case "slug":
@@ -366,6 +366,12 @@ public class PipelinesApiUtils {
       default:
         throw new InvalidRequestException(
             "Field provided for sorting unidentified. Accepted values: slug / name / created / updated");
+    }
+    if (order == null) {
+      order = "DESC";
+    }
+    if (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc")) {
+      throw new InvalidRequestException("Order of sorting unidentified. Accepted values: ASC / DESC");
     }
     return new ArrayList<>(Collections.singleton(field + "," + order));
   }
@@ -397,6 +403,10 @@ public class PipelinesApiUtils {
         .baseBranch(gitDetails.getBaseBranch())
         .lastCommitId(gitDetails.getLastCommitId())
         .lastObjectId(gitDetails.getLastObjectId())
+        .repoName(gitDetails.getRepoName())
+        .storeType(StoreType.getFromStringOrNull(
+            (gitDetails.getStoreType() == null) ? null : gitDetails.getStoreType().value()))
+        .connectorRef(gitDetails.getConnectorRef())
         .build();
   }
 

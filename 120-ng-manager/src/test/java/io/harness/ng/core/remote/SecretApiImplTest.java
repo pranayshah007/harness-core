@@ -28,11 +28,11 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.SecretType;
-import io.harness.spec.server.ng.model.Secret;
-import io.harness.spec.server.ng.model.SecretRequest;
-import io.harness.spec.server.ng.model.SecretResponse;
-import io.harness.spec.server.ng.model.SecretSpec;
-import io.harness.spec.server.ng.model.SecretTextSpec;
+import io.harness.spec.server.ng.v1.model.Secret;
+import io.harness.spec.server.ng.v1.model.SecretRequest;
+import io.harness.spec.server.ng.v1.model.SecretResponse;
+import io.harness.spec.server.ng.v1.model.SecretSpec;
+import io.harness.spec.server.ng.v1.model.SecretTextSpec;
 
 import java.util.Collections;
 import java.util.List;

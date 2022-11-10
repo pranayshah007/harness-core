@@ -37,6 +37,7 @@ import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnect
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -172,6 +173,35 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
     assertThat(sampleData).isNotEmpty();
     assertThat(sampleData).hasSize(6);
     assertThat(sampleData.get(0).getMetricDetails()).hasSize(9);
+    assertThat(sampleData.get(0).getData()).hasSize(27);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testAwsPrometheus_getSampleData_withOlderDSL() throws IOException {
+    List<Map<String, Object>> sampleDataResponseList = JsonUtils.asList(
+        Resources.toString(
+            PrometheusServiceImplTest.class.getResource("/prometheus/sample-metric-data-old.json"), Charsets.UTF_8),
+        new TypeReference<List<Map<String, Object>>>() {
+
+        });
+    when(verificationManagerService.getDataCollectionResponse(
+             anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
+        .thenReturn(JsonUtils.asJson(sampleDataResponseList));
+    List<PrometheusSampleData> sampleData =
+        prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up", "",
+            PrometheusConnectionParams.builder()
+                .connectorIdentifier(connectorIdentifier)
+                .dataSourceType(DataSourceType.PROMETHEUS)
+                .build());
+    verify(verificationManagerService, times(0))
+        .getDataCollectionResponse(anyString(), anyString(), anyString(), any(AwsDataCollectionRequest.class));
+    verify(verificationManagerService, times(1))
+        .getDataCollectionResponse(anyString(), anyString(), anyString(), any(PrometheusFetchSampleDataRequest.class));
+    assertThat(sampleData).isNotEmpty();
+    assertThat(sampleData).hasSize(1);
+    assertThat(sampleData.get(0).getMetricDetails()).hasSize(19);
     assertThat(sampleData.get(0).getData()).hasSize(27);
   }
 

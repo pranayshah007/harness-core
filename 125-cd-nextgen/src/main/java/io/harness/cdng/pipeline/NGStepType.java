@@ -173,7 +173,10 @@ public enum NGStepType {
       StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO),
   @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_DEPLOY)
   ELASTIGROUP_DEPLOY("Elastigroup Deploy", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
-      StepSpecTypeConstants.ELASTIGROUP_DEPLOY);
+      StepSpecTypeConstants.ELASTIGROUP_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_ROLLBACK)
+  ELASTIGROUP_ROLLBACK("Elastigroup Rollback", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
+      StepSpecTypeConstants.ELASTIGROUP_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

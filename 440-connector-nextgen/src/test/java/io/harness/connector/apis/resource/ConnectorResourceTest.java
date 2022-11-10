@@ -166,10 +166,26 @@ public class ConnectorResourceTest extends CategoryTest {
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void delete() {
-    when(connectorService.delete(any(), any(), any(), any())).thenReturn(true);
+    when(connectorService.delete(
+             "accountIdentifier", "orgIdentifier", "projectIdentifier", "connectorIdentifier", false))
+        .thenReturn(true);
     ResponseDTO<Boolean> result = connectorResource.delete(
-        "accountIdentifier", "orgIdentifier", "projectIdentifier", "connectorIdentifier", null);
-    Mockito.verify(connectorService, times(1)).delete(any(), any(), any(), any());
+        "accountIdentifier", "orgIdentifier", "projectIdentifier", "connectorIdentifier", null, false);
+    Mockito.verify(connectorService, times(1))
+        .delete("accountIdentifier", "orgIdentifier", "projectIdentifier", "connectorIdentifier", false);
+    assertThat(result.getData()).isTrue();
+  }
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void deleteWithForceDeleteAsTrue() {
+    when(
+        connectorService.delete("accountIdentifier", "orgIdentifier", "projectIdentifier", "connectorIdentifier", true))
+        .thenReturn(true);
+    ResponseDTO<Boolean> result = connectorResource.delete(
+        "accountIdentifier", "orgIdentifier", "projectIdentifier", "connectorIdentifier", null, true);
+    Mockito.verify(connectorService, times(1))
+        .delete("accountIdentifier", "orgIdentifier", "projectIdentifier", "connectorIdentifier", true);
     assertThat(result.getData()).isTrue();
   }
 

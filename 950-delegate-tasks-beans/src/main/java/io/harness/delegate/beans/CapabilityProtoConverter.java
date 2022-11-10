@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.capability.AwsRegionParameters;
 import io.harness.capability.CapabilityParameters;
-import io.harness.capability.CapabilitySubjectPermission;
 import io.harness.capability.ChartMuseumParameters;
 import io.harness.capability.GitInstallationParameters;
 import io.harness.capability.HelmInstallationParameters;
@@ -30,7 +29,6 @@ import io.harness.capability.SocketConnectivityParameters;
 import io.harness.capability.SystemEnvParameters;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
-import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ChartMuseumCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
@@ -232,11 +230,5 @@ public class CapabilityProtoConverter {
       default:
         return null;
     }
-  }
-
-  public static boolean hasDivergingResults(
-      CapabilityResponse capabilityResponse, CapabilitySubjectPermission capabilitySubjectPermission) {
-    return capabilityResponse.isValidated()
-        ^ (capabilitySubjectPermission.getPermissionResult() == CapabilitySubjectPermission.PermissionResult.ALLOWED);
   }
 }

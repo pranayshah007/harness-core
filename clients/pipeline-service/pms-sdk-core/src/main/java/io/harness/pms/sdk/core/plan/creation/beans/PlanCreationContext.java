@@ -13,6 +13,7 @@ import io.harness.async.AsyncCreatorContext;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -30,6 +31,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Singular;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Data
@@ -119,6 +121,7 @@ public class PlanCreationContext implements AsyncCreatorContext {
   }
 
   public String getYamlVersion() {
-    return getMetadata().getMetadata().getHarnessVersion();
+    String harnessVersion = getMetadata().getMetadata().getHarnessVersion();
+    return StringUtils.isEmpty(harnessVersion) ? PipelineVersion.V0 : harnessVersion;
   }
 }

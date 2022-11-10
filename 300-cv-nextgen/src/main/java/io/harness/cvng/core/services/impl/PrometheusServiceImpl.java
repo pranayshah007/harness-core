@@ -26,7 +26,9 @@ import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.cvng.core.services.api.PrometheusService;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.datacollection.exception.DataCollectionException;
+import io.harness.serializer.JsonUtils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Duration;
@@ -200,25 +202,36 @@ public class PrometheusServiceImpl implements PrometheusService {
 
   private List<PrometheusSampleData> toListOfPrometheusSampleData(OnboardingResponseDTO onboardingResponseDTO) {
     try {
-      List<PrometheusSampleData> sampleData = new ArrayList<>();
-      List<Map<String, Object>> responseData =
-          (List<Map<String, Object>>) ((Map<String, Object>) (((Map<String, Object>) onboardingResponseDTO.getResult())
-                                                                  .get("data")))
-              .get("result");
-      sampleData.addAll(responseData.stream()
-                            .map(data
-                                -> PrometheusSampleData.builder()
-                                       .metricDetails((Map<String, String>) data.get("metric"))
-                                       .data(((List<List<Object>>) data.get("values"))
-                                                 .stream()
-                                                 .map(innerList
-                                                     -> innerList.stream()
-                                                            .map(value -> Double.valueOf(String.valueOf(value)))
-                                                            .collect(Collectors.toList()))
-                                                 .collect(Collectors.toList()))
-                                       .build())
-                            .collect(Collectors.toList()));
-      return sampleData;
+      if (onboardingResponseDTO.getResult() instanceof Map) {
+        List<PrometheusSampleData> sampleData = new ArrayList<>();
+        List<Map<String, Object>> responseData =
+            (List<Map<String, Object>>) ((Map<String, Object>) ((
+                                             (Map<String, Object>) onboardingResponseDTO.getResult())
+                                                                    .get("data")))
+                .get("result");
+        sampleData.addAll(responseData.stream()
+                              .map(data
+                                  -> PrometheusSampleData.builder()
+                                         .metricDetails((Map<String, String>) data.get("metric"))
+                                         .data(((List<List<Object>>) data.get("values"))
+                                                   .stream()
+                                                   .map(innerList
+                                                       -> innerList.stream()
+                                                              .map(value -> Double.valueOf(String.valueOf(value)))
+                                                              .collect(Collectors.toList()))
+                                                   .collect(Collectors.toList()))
+                                         .build())
+                              .collect(Collectors.toList()));
+        return sampleData;
+      } else if (onboardingResponseDTO.getResult() instanceof List) {
+        // to support backward compatibility, till delegate with new DSL changes are deployed
+        return JsonUtils.asList(
+            JsonUtils.asJson(onboardingResponseDTO.getResult()), new TypeReference<List<PrometheusSampleData>>() {});
+      } else {
+        throw new IllegalStateException(
+            "Data collection returned unexpected data type: " + onboardingResponseDTO.getResult().getClass());
+      }
+
     } catch (Exception ex) {
       throw new DataCollectionException(ex);
     }

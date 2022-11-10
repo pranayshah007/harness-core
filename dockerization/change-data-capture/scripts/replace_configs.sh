@@ -76,6 +76,14 @@ if [[ "" != "$TIMESCALEDB_VALIDATE_CONNECTIONS" ]]; then
   export TIMESCALEDB_VALIDATE_CONNECTIONS; yq -i '.timescaledb.isConnectionValidationNeeded=env(TIMESCALEDB_VALIDATE_CONNECTIONS)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TIMESCALEDB_SSL_MODE" ]]; then
+  export TIMESCALEDB_SSL_MODE; yq -i '.timescaledb.sslMode=env(TIMESCALEDB_SSL_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TIMESCALEDB_SSL_ROOT_CERT" ]]; then
+  export TIMESCALEDB_SSL_ROOT_CERT; yq -i '.timescaledb.sslRootCert=env(TIMESCALEDB_SSL_ROOT_CERT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$GCP_PROJECT_ID" ]]; then
   export GCP_PROJECT_ID; yq -i '.gcp-project-id=env(GCP_PROJECT_ID)' $CONFIG_FILE
 fi

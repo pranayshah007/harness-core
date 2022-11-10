@@ -25,7 +25,7 @@ public interface VerificationTaskService {
       String accountId, String cvConfigId, String verificationJobInstanceId, DataSourceType provider);
   String createLiveMonitoringVerificationTask(String accountId, String cvConfigId, Map<String, String> tags);
   String createSLIVerificationTask(String accountId, String sliId, Map<String, String> tags);
-  String createCompositeSLOVerificationTask(String accountId, String sliId, Map<String, String> tags);
+  String createCompositeSLOVerificationTask(String accountId, String sloId, Map<String, String> tags);
   String createDeploymentVerificationTask(
       String accountId, String cvConfigId, String verificationJobInstanceId, Map<String, String> tags);
   String getCVConfigId(String verificationTaskId);

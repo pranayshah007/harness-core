@@ -38,6 +38,7 @@ import io.harness.template.beans.TemplateFilterProperties;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -68,6 +69,33 @@ public class NGTemplateDtoMapper {
         .version(templateEntity.getVersion())
         .icon(templateEntity.getIcon())
         .gitDetails(getEntityGitDetails(templateEntity))
+        .lastUpdatedAt(templateEntity.getLastUpdatedAt())
+        .entityValidityDetails(templateEntity.isEntityInvalid()
+                ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
+                : EntityValidityDetails.builder().valid(true).build())
+        .storeType(templateEntity.getStoreType())
+        .connectorRef(templateEntity.getConnectorRef())
+        .build();
+  }
+
+  public TemplateResponseDTO writeTemplateResponseDto(TemplateEntityGetResponse templateEntityGetResponse) {
+    TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
+    return TemplateResponseDTO.builder()
+        .accountId(templateEntity.getAccountId())
+        .orgIdentifier(templateEntity.getOrgIdentifier())
+        .projectIdentifier(templateEntity.getProjectIdentifier())
+        .yaml(templateEntity.getYaml())
+        .identifier(templateEntity.getIdentifier())
+        .description(templateEntity.getDescription())
+        .name(templateEntity.getName())
+        .isStableTemplate(templateEntity.isStableTemplate())
+        .childType(templateEntity.getChildType())
+        .templateEntityType(templateEntity.getTemplateEntityType())
+        .templateScope(templateEntity.getTemplateScope())
+        .versionLabel(templateEntity.getVersionLabel())
+        .tags(TagMapper.convertToMap(templateEntity.getTags()))
+        .version(templateEntity.getVersion())
+        .gitDetails(templateEntityGetResponse.getEntityGitDetails())
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()

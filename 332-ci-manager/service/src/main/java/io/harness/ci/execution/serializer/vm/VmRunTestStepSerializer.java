@@ -41,6 +41,7 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 public class VmRunTestStepSerializer {
   @Inject ConnectorUtils connectorUtils;
+  String NULL_STR = "null";
 
   public VmRunTestStep serialize(RunTestsStepInfo runTestsStepInfo, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance) {
@@ -65,6 +66,10 @@ public class VmRunTestStepSerializer {
 
     String preCommand = RunTimeInputHandler.resolveStringParameter(
         "PreCommand", stepName, identifier, runTestsStepInfo.getPreCommand(), false);
+    if (preCommand == null || preCommand.equals(NULL_STR)) {
+      preCommand = "";
+    }
+
     String postCommand = RunTimeInputHandler.resolveStringParameter(
         "PostCommand", stepName, identifier, runTestsStepInfo.getPostCommand(), false);
     String args =
@@ -113,6 +118,12 @@ public class VmRunTestStepSerializer {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
       runTestStepBuilder.connector(connectorDetails);
+    }
+
+    runTestStepBuilder.parallelizeTests(resolveBooleanParameter(runTestsStepInfo.getEnableTestSplitting(), false));
+    String testSplitStrategy = RunTimeInputHandler.resolveSplitStrategy(runTestsStepInfo.getTestSplitStrategy());
+    if (StringUtils.isNotEmpty(testSplitStrategy)) {
+      runTestStepBuilder.testSplitStrategy(SerializerUtils.getTestSplitStrategy(testSplitStrategy));
     }
 
     if (runTestsStepInfo.getReports().getValue() != null) {

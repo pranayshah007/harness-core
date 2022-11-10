@@ -7,8 +7,10 @@
 
 package io.harness.notification.remote;
 
+import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.Team;
+import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.remote.dto.TemplateDTO;
 
@@ -29,4 +31,6 @@ public interface NotificationHTTPClient {
   @PUT("templates/insertOrUpdate")
   Call<ResponseDTO<TemplateDTO>> saveNotificationTemplate(@Part MultipartBody.Part file, @Query("team") Team team,
       @Query("identifier") String identifier, @Query("harnessManaged") Boolean harnessManaged);
+
+  @POST("channels/email") Call<ResponseDTO<NotificationTaskResponse>> sendEmail(@Body EmailDTO emailDTO);
 }

@@ -8,14 +8,18 @@
 package io.harness.pms.preflight.connector;
 
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.notIn;
 
 import io.harness.CategoryTest;
+import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.InfraDefReference;
 import io.harness.beans.NGTemplateReference;
 import io.harness.category.element.UnitTests;
 import io.harness.common.EntityReference;
@@ -259,5 +263,21 @@ public class ConnectorPreflightHandlerTest extends CategoryTest {
     assertThat(filteredResponse1.isEmpty());
     assertThat(filteredResponse2.isEmpty());
     assertThat(filteredResponse3.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetConnectorCheckResponseTemplate() {
+    List<EntityDetail> entityDetails =
+        Collections.singletonList(EntityDetail.builder()
+                                      .type(EntityType.CONNECTORS)
+                                      .entityRef(InfraDefReference.builder().identifier("infra").build())
+                                      .build());
+    List<ConnectorCheckResponse> connectorCheckResponses =
+        connectorPreflightHandler.getConnectorCheckResponseTemplate(entityDetails);
+    assertEquals(1, connectorCheckResponses.size());
+    assertEquals("infra", connectorCheckResponses.get(0).connectorIdentifier);
+    assertEquals(PreFlightStatus.UNKNOWN, connectorCheckResponses.get(0).status);
   }
 }

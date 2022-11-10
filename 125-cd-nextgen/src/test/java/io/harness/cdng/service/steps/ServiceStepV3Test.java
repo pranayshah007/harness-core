@@ -15,7 +15,11 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
@@ -32,6 +36,7 @@ import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
+import io.harness.freeze.beans.PermissionTypes;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.yaml.FreezeConfig;
 import io.harness.freeze.beans.yaml.FreezeInfoConfig;
@@ -93,6 +98,7 @@ public class ServiceStepV3Test {
   @Mock private ServiceStepOverrideHelper serviceStepOverrideHelper;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private FreezeEvaluateService freezeEvaluateService;
+  @Mock private AccessControlClient accessControlClient;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String PROJECT_ID = "projectId";
@@ -428,6 +434,9 @@ public class ServiceStepV3Test {
     doReturn(freezeSummaryResponseDTOList)
         .when(freezeEvaluateService)
         .anyGlobalFreezeActive(anyString(), anyString(), anyString());
+    when(accessControlClient.hasAccess(ResourceScope.of(anyString(), anyString(), anyString()),
+             Resource.of("DEPLOYMENTFREEZE", null), PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION))
+        .thenReturn(false);
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
 
     ChildrenExecutableResponse childrenExecutableResponse = step.executeFreezePart(buildAmbiance(), entityMap);
@@ -445,6 +454,22 @@ public class ServiceStepV3Test {
     assertThat(freezeOutcome.isFrozen()).isEqualTo(true);
     assertThat(freezeOutcome.getGlobalFreezeConfigs()).isEqualTo(freezeSummaryResponseDTOList);
     assertThat(childrenExecutableResponse.getChildrenCount()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testExecuteFreezePartIfOverrideFreezE() {
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
+    List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
+    doReturn(freezeSummaryResponseDTOList)
+        .when(freezeEvaluateService)
+        .anyGlobalFreezeActive(anyString(), anyString(), anyString());
+    when(accessControlClient.hasAccess(any(ResourceScope.class), any(Resource.class), anyString())).thenReturn(true);
+    Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
+
+    ChildrenExecutableResponse childrenExecutableResponse = step.executeFreezePart(buildAmbiance(), entityMap);
+    assertThat(childrenExecutableResponse).isEqualTo(null);
   }
 
   @Test

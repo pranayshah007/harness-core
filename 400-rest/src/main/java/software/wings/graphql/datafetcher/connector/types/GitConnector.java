@@ -65,6 +65,9 @@ public class GitConnector extends Connector {
     if (gitConnectorInput.getDelegateSelectors().isPresent()) {
       gitConnectorInput.getDelegateSelectors().getValue().ifPresent(gitConfig::setDelegateSelectors);
     }
+    if (gitConnectorInput.getDisableUserGitConfig().isPresent()) {
+      gitConnectorInput.getDisableUserGitConfig().getValue().ifPresent(gitConfig::setDisableUserGitConfig);
+    }
 
     SettingAttribute.Builder settingAttributeBuilder =
         SettingAttribute.Builder.aSettingAttribute().withValue(gitConfig).withAccountId(accountId).withCategory(
@@ -108,6 +111,9 @@ public class GitConnector extends Connector {
     }
     if (gitConnectorInput.getDelegateSelectors().isPresent()) {
       gitConnectorInput.getDelegateSelectors().getValue().ifPresent(gitConfig::setDelegateSelectors);
+    }
+    if (gitConnectorInput.getDisableUserGitConfig().isPresent()) {
+      gitConnectorInput.getDisableUserGitConfig().getValue().ifPresent(gitConfig::setDisableUserGitConfig);
     }
 
     settingAttribute.setValue(gitConfig);

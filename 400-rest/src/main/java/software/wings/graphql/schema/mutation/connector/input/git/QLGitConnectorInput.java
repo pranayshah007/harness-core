@@ -39,4 +39,5 @@ public class QLGitConnectorInput {
   private RequestField<QLCustomCommitDetailsInput> customCommitDetails;
   private RequestField<QLUsageScope> usageScope;
   private RequestField<List<String>> delegateSelectors;
+  private RequestField<Boolean> disableUserGitConfig;
 }

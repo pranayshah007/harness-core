@@ -69,9 +69,9 @@ public class CliHelper {
                                           .redirectError(new LogOutputStream() {
                                             @Override
                                             protected void processLine(String line) {
-                                              log.error(line);
                                               executionLogCallback.saveExecutionLog(line, LogLevel.ERROR);
                                               if (cliErrorPredicate.test(line)) {
+                                                log.error(line);
                                                 errorLogs.append(' ').append(line);
                                               }
                                             }
