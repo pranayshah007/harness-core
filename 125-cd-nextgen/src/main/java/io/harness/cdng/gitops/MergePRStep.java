@@ -14,6 +14,7 @@ import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
@@ -36,6 +37,7 @@ import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.ff.FeatureFlagService;
 import io.harness.impl.scm.ScmGitProviderHelper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -64,6 +66,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -77,6 +80,7 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
   @Inject private GitOpsStepHelper gitOpsStepHelper;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ScmGitProviderHelper scmGitProviderHelper;
+  @Inject private FeatureFlagService featureFlagService;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_MERGE_PR.getYamlType())
@@ -124,7 +128,6 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
     MergePRStepParams gitOpsSpecParams = (MergePRStepParams) stepParameters.getSpec();
 
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
-    Map<String, Object> variables = gitOpsSpecParams.getVariables().getValue();
 
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CREATE_PR_OUTCOME));
@@ -156,6 +159,11 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
         cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
+
+    Map<String, Object> apiParamOptions = null;
+
+    if (featureFlagService.isEnabled(FeatureName.GITOPS_API_PARAMS_MERGE_PR, accountId))
+      apiParamOptions = gitOpsSpecParams.getVariables().getValue();
 
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRefFromEntityIdentifiers(connectorInfoDTO.getIdentifier(), accountId,
@@ -196,7 +204,7 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
                 .sha(sha)
                 .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
                     MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
-                .apiParamOptions(emptyIfNull(variables))
+                .apiParamOptions(emptyIfNull(apiParamOptions))
                 .build();
         break;
       case GITLAB:
