@@ -7,22 +7,15 @@
 
 package io.harness.cvng.core.utils.monitoredService;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.RiskProfile;
-import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
-import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO.MetricThreshold;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CloudWatchMetricsHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CloudWatchMetricsHealthSourceSpec.CloudWatchMetricDefinition;
-import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.CloudWatchMetricCVConfig;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class CloudWatchMetricHealthSourceSpecTransformer
     implements CVConfigToHealthSourceTransformer<CloudWatchMetricCVConfig, CloudWatchMetricsHealthSourceSpec> {
@@ -71,29 +64,12 @@ public class CloudWatchMetricHealthSourceSpecTransformer
       cloudWatchMetricDefinitions.add(cloudWatchMetricDefinition);
     }));
 
-    Set<TimeSeriesMetricPackDTO> metricThresholds = new HashSet<>();
-    List<MetricThreshold> allMetricThresholds = new ArrayList<>();
-    cvConfigs.forEach(cloudWatchMetricCVConfig -> {
-      String identifier = cloudWatchMetricCVConfig.getMetricPack().getIdentifier();
-      List<MetricThreshold> metricThresholdDTOs = cloudWatchMetricCVConfig.getMetricThresholdDTOs();
-      if (isNotEmpty(metricThresholdDTOs)) {
-        metricThresholdDTOs.forEach(metricThresholdDTO -> metricThresholdDTO.setMetricType(identifier));
-        allMetricThresholds.addAll(metricThresholdDTOs);
-      }
-    });
-    if (allMetricThresholds.size() > 0) {
-      metricThresholds.add(TimeSeriesMetricPackDTO.builder()
-                               .metricThresholds(allMetricThresholds)
-                               .identifier(MonitoredServiceConstants.CUSTOM_METRIC_PACK)
-                               .build());
-    }
-
     return CloudWatchMetricsHealthSourceSpec.builder()
         .region(cvConfigs.get(0).getRegion())
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .feature(cvConfigs.get(0).getProductName())
         .metricDefinitions(cloudWatchMetricDefinitions)
-        .metricThresholds(metricThresholds)
+        .metricPacks(addCustomMetricPacks(cvConfigs))
         .build();
   }
 }

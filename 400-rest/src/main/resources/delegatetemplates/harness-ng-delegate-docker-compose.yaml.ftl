@@ -6,7 +6,7 @@ services:
       resources:
         limits:
           cpus: "${delegateCpu}"
-          memory: ${delegateXmx}M
+          memory: ${delegateRam}M
     image: ${delegateDockerImage}
     environment:
       - ACCOUNT_ID=${accountId}

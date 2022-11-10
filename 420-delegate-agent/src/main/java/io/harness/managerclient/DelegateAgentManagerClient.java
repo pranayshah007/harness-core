@@ -35,6 +35,8 @@ import io.harness.logging.AccessTokenBean;
 import io.harness.perpetualtask.HeartbeatRequest;
 import io.harness.perpetualtask.HeartbeatResponse;
 import io.harness.perpetualtask.PerpetualTaskContextResponse;
+import io.harness.perpetualtask.PerpetualTaskFailureRequest;
+import io.harness.perpetualtask.PerpetualTaskFailureResponse;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
@@ -42,7 +44,7 @@ import io.harness.rest.RestResponse;
 import io.harness.serializer.kryo.KryoRequest;
 import io.harness.serializer.kryo.KryoResponse;
 
-import software.wings.beans.ConfigFileDto;
+import software.wings.beans.configfile.ConfigFileDto;
 
 import java.util.List;
 import javax.ws.rs.Consumes;
@@ -210,6 +212,11 @@ public interface DelegateAgentManagerClient {
   @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/perpetual-task/heartbeat")
   Call<HeartbeatResponse> heartbeat(@Query("accountId") String accountId, @Body HeartbeatRequest heartbeatRequest);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/perpetual-task/failure")
+  Call<PerpetualTaskFailureResponse> recordPerpetualTaskFailure(
+      @Query("accountId") String accountId, @Body PerpetualTaskFailureRequest perpetualTaskFailureRequest);
 
   @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/task-progress/progress-update")

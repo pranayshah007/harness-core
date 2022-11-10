@@ -116,6 +116,10 @@ public class NexusUtils {
   public static NexusVersion getNexusVersion(NexusArtifactDelegateConfig nexusArtifactDelegateConfig) {
     NexusConnectorDTO nexusConnectorDTO =
         (NexusConnectorDTO) nexusArtifactDelegateConfig.getConnectorDTO().getConnectorConfig();
+    return getNexusVersion(nexusConnectorDTO);
+  }
+
+  public static NexusVersion getNexusVersion(NexusConnectorDTO nexusConnectorDTO) {
     String version = nexusConnectorDTO.getVersion();
 
     if (isEmpty(version)) {

@@ -25,6 +25,7 @@ while Var:index != Var:totalMetrics {
     Var relativeMetricListJsonPath = Env:relativeMetricListJsonPaths[Var:index]
     Var relativeMetricValueJsonPath = Env:relativeMetricValueJsonPaths[Var:index]
     Var relativeTimestampJsonPath = Env:relativeTimestampJsonPaths[Var:index]
+    Var timestampFormat = Env:timestampFormats[Var:index]
 
     Var requestBody = concat("",Var:body)
 
@@ -57,10 +58,8 @@ while Var:index != Var:totalMetrics {
     Request request = new Request(url=Var:dataCollectionURL, header=Env:commonHeaders, options=Env:commonOptions, body=Var:jsonBody)
     Var response = sync-call(Var:request)
 
-
     Var currentInstanceIndex = 0
     Var allServiceInstances = extract(Var:response,Var:serviceInstanceListJsonPath)
-    print Var:one
     Var totalInstances = Var:allServiceInstances.length()
     while Var:currentInstanceIndex != Var:totalInstances {
         Var currentInstance = Var:allServiceInstances[Var:currentInstanceIndex]
@@ -69,7 +68,6 @@ while Var:index != Var:totalMetrics {
         if Var:serviceInstanceJSONPath != Var:nullObj {
             Var:serviceInstanceValue = extract(Var:currentInstance,Var:relativeServiceInstanceValueJsonPath)
         }
-
         Var metricsIndex = 0
         Var totalInstanceMetrics = Var:metrics.length()
         while Var:metricsIndex != Var:totalInstanceMetrics {
@@ -78,10 +76,10 @@ while Var:index != Var:totalMetrics {
             Var timestamp = extract(Var:currentMetricObj,Var:relativeTimestampJsonPath)
             Var tsRecord
             if Var:serviceInstanceJSONPath != Var:nullObj {
-                Var:tsRecord= new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifierStr, metricName=Var:metricNameStr, metricValue=Var:metricVal, timestamp=Var:timestamp, host=Var:serviceInstanceValue)
+                Var:tsRecord= new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifierStr, metricName=Var:metricNameStr, metricValue=Var:metricVal, timestamp=Var:timestamp, timestampFormat=Var:timestampFormat, host=Var:serviceInstanceValue)
             }
             if Var:serviceInstanceJSONPath == Var:nullObj {
-                Var:tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifierStr, metricName=Var:metricNameStr, metricValue=Var:metricVal, timestamp=Var:timestamp)
+                Var:tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifierStr, metricName=Var:metricNameStr, metricValue=Var:metricVal, timestamp=Var:timestamp, timestampFormat=Var:timestampFormat)
             }
             Var:timeSeriesList.append(Var:tsRecord)
             metricsIndex = Var:metricsIndex + Var:one

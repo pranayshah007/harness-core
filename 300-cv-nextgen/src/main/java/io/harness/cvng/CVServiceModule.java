@@ -227,6 +227,7 @@ import io.harness.cvng.core.services.impl.monitoredService.HealthSourceServiceIm
 import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.RiskCategoryServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.ServiceDependencyServiceImpl;
+import io.harness.cvng.core.services.impl.sidekickexecutors.CompositeSLORecordsCleanupSideKickExecutor;
 import io.harness.cvng.core.services.impl.sidekickexecutors.DemoActivitySideKickExecutor;
 import io.harness.cvng.core.services.impl.sidekickexecutors.RetryChangeSourceHandleDeleteSideKickExecutor;
 import io.harness.cvng.core.services.impl.sidekickexecutors.VerificationJobInstanceCleanupSideKickExecutor;
@@ -308,6 +309,8 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.Serv
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator.ThresholdServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOResetRecalculationService;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIAnalyserService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
@@ -319,6 +322,8 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveS
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
 import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLORecordServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLOResetRecalculationServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLOServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.RatioAnalyserServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataProcessorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIRecordServiceImpl;
@@ -876,6 +881,8 @@ public class CVServiceModule extends AbstractModule {
     bind(ServiceLevelIndicatorService.class).to(ServiceLevelIndicatorServiceImpl.class).in(Singleton.class);
     bind(SLIDataProcessorService.class).to(SLIDataProcessorServiceImpl.class);
     bind(ServiceLevelIndicatorEntityAndDTOTransformer.class);
+    bind(CompositeSLOService.class).to(CompositeSLOServiceImpl.class);
+    bind(CompositeSLOResetRecalculationService.class).to(CompositeSLOResetRecalculationServiceImpl.class);
     bind(DebugService.class).to(DebugServiceImpl.class).in(Singleton.class);
     MapBinder<SLIMetricType, ServiceLevelIndicatorTransformer> serviceLevelIndicatorTransformerMapBinder =
         MapBinder.newMapBinder(binder(), SLIMetricType.class, ServiceLevelIndicatorTransformer.class);
@@ -924,6 +931,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     sideKickExecutorMapBinder.addBinding(SideKick.Type.VERIFICATION_JOB_INSTANCE_CLEANUP)
         .to(VerificationJobInstanceCleanupSideKickExecutor.class)
+        .in(Scopes.SINGLETON);
+    sideKickExecutorMapBinder.addBinding(SideKick.Type.COMPOSITE_SLO_RECORDS_CLEANUP)
+        .to(CompositeSLORecordsCleanupSideKickExecutor.class)
         .in(Scopes.SINGLETON);
     bind(NotificationRuleService.class).to(NotificationRuleServiceImpl.class);
     MapBinder<NotificationRuleType, NotificationRuleConditionTransformer>

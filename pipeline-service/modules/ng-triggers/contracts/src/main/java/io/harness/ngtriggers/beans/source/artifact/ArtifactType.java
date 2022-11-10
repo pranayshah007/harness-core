@@ -19,13 +19,17 @@ public enum ArtifactType {
   @JsonProperty("Ecr") ECR("Ecr"),
   @JsonProperty("DockerRegistry") DOCKER_REGISTRY("DockerRegistry"),
   @JsonProperty("Nexus3Registry") NEXUS3_REGISTRY("Nexus3Registry"),
+  @JsonProperty("Nexus2Registry") NEXUS2_REGISTRY("Nexus2Registry"),
   @JsonProperty("ArtifactoryRegistry") ARTIFACTORY_REGISTRY("ArtifactoryRegistry"),
   @JsonProperty("Acr") ACR("Acr"),
   @JsonProperty("AmazonS3") AMAZON_S3("AmazonS3"),
   @JsonProperty("Jenkins") JENKINS("Jenkins"),
   @JsonProperty("CustomArtifact") CUSTOM_ARTIFACT("CustomArtifact"),
   @JsonProperty("GoogleArtifactRegistry") GoogleArtifactRegistry("GoogleArtifactRegistry"),
-  @JsonProperty("GithubPackageRegistry") GITHUB_PACKAGES("GithubPackageRegistry");
+  @JsonProperty("GithubPackageRegistry") GITHUB_PACKAGES("GithubPackageRegistry"),
+  @JsonProperty("AzureArtifacts") AZURE_ARTIFACTS("AzureArtifacts"),
+  @JsonProperty("AmazonMachineImage") AMI("AmazonMachineImage");
+
   private String value;
 
   ArtifactType(String value) {

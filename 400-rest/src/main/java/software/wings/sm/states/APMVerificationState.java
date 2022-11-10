@@ -26,7 +26,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
-import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.WingsException;
 
@@ -41,12 +40,10 @@ import software.wings.metrics.TimeSeriesMetricDefinition;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.DataCollectionCallback;
-import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.analysis.TimeSeriesMetricGroup;
 import software.wings.service.impl.analysis.TimeSeriesMlAnalysisType;
 import software.wings.service.impl.apm.APMDataCollectionInfo;
 import software.wings.service.impl.apm.APMMetricInfo;
-import software.wings.service.impl.apm.CustomAPMDataCollectionInfo;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.StateType;
 import software.wings.stencils.DefaultValue;
@@ -150,46 +147,6 @@ public class APMVerificationState extends AbstractMetricAnalysisState {
   @Override
   public void setAnalysisServerConfigId(String analysisServerConfigId) {
     this.analysisServerConfigId = analysisServerConfigId;
-  }
-
-  @Override
-  protected Optional<FeatureName> getCVTaskFeatureName() {
-    return Optional.of(FeatureName.CUSTOM_APM_CV_TASK);
-  }
-
-  @Override
-  protected DataCollectionInfoV2 createDataCollectionInfo(
-      ExecutionContext context, Map<String, String> hostsToCollect) {
-    String envId = getEnvId(context);
-
-    List<APMMetricInfo> canaryMetricInfos = getCanaryMetricInfos(context);
-    Map<String, List<APMMetricInfo>> apmMetricInfos = isNotEmpty(canaryMetricInfos)
-        ? new HashMap<>()
-        : buildMetricInfoMap(metricCollectionInfos, Optional.of(context));
-
-    metricAnalysisService.saveMetricTemplates(context.getAppId(), StateType.APM_VERIFICATION,
-        context.getStateExecutionInstanceId(), null,
-        metricDefinitions(
-            isNotEmpty(canaryMetricInfos) ? Collections.singletonList(canaryMetricInfos) : apmMetricInfos.values()));
-    APMVerificationConfig apmConfig = getApmVerificationConfig(context);
-    return CustomAPMDataCollectionInfo.builder()
-        .connectorId(
-            getResolvedConnectorId(context, APMVerificationStateKeys.analysisServerConfigId, analysisServerConfigId))
-        .workflowExecutionId(context.getWorkflowExecutionId())
-        .stateExecutionId(context.getStateExecutionInstanceId())
-        .workflowId(context.getWorkflowId())
-        .accountId(context.getAccountId())
-        .envId(envId)
-        .applicationId(context.getAppId())
-        .hosts(hostsToCollect.keySet())
-        .apmConfig(apmConfig)
-        .headers(apmConfig.collectionHeaders())
-        .options(apmConfig.collectionParams())
-        .metricEndpoints(buildMetricInfoList(metricCollectionInfos, Optional.of(context)))
-        .canaryMetricInfos(canaryMetricInfos)
-        .hostsToGroupNameMap(hostsToCollect)
-        .serviceId(getPhaseServiceId(context))
-        .build();
   }
 
   @Override

@@ -84,8 +84,6 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
-import io.harness.capability.CapabilityRequirement;
-import io.harness.capability.service.CapabilityService;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.data.structure.EmptyPredicate;
@@ -125,7 +123,8 @@ import io.harness.delegate.beans.DuplicateDelegateException;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
 import io.harness.delegate.beans.K8sConfigDetails;
-import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.events.DelegateGroupDeleteEvent;
 import io.harness.delegate.events.DelegateGroupUpsertEvent;
 import io.harness.delegate.events.DelegateRegisterEvent;
@@ -394,7 +393,6 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private DelegateTaskSelectorMapService taskSelectorMapService;
   @Inject private SettingsService settingsService;
   @Inject private DelegateCache delegateCache;
-  @Inject private CapabilityService capabilityService;
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateTokenService delegateTokenService;
@@ -1211,6 +1209,7 @@ public class DelegateServiceImpl implements DelegateService {
       updatedDelegate = updateDelegate(delegate, updateOperations);
     }
 
+    subject.fireInform(DelegateObserver::onDelegateTagsUpdated, delegate.getAccountId());
     auditServiceHelper.reportForAuditingUsingAccountId(
         delegate.getAccountId(), delegate, updatedDelegate, Type.UPDATE_TAG);
     log.info("Auditing updation of Tags for delegate={} in account={}", delegate.getUuid(), delegate.getAccountId());
@@ -1246,6 +1245,7 @@ public class DelegateServiceImpl implements DelegateService {
       updatedDelegate = updateDelegate(delegate, updateOperations);
     }
 
+    subject.fireInform(DelegateObserver::onDelegateTagsUpdated, delegate.getAccountId());
     auditServiceHelper.reportForAuditingUsingAccountId(
         delegate.getAccountId(), delegate, updatedDelegate, Type.UPDATE_TAG);
     log.info("Auditing updation of Tags for delegate={} in account={}", delegate.getUuid(), delegate.getAccountId());
@@ -1323,7 +1323,6 @@ public class DelegateServiceImpl implements DelegateService {
             .managerHost(managerHost)
             .verificationHost(verificationHost)
             .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
-            .delegateXmx(getDelegateXmx(delegateType))
             .delegateTokenName(delegateTokenName.orElse(null))
             .build(),
         true);
@@ -1334,7 +1333,6 @@ public class DelegateServiceImpl implements DelegateService {
             .managerHost(managerHost)
             .verificationHost(verificationHost)
             .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
-            .delegateXmx(getDelegateXmx(delegateType))
             .delegateTokenName(delegateTokenName.orElse(null))
             .watcher(true)
             .build(),
@@ -1396,7 +1394,9 @@ public class DelegateServiceImpl implements DelegateService {
       if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES) {
         doUpgrade = true;
       } else {
-        doUpgrade = !(Version.valueOf(version).equals(Version.valueOf(upgradeToVersion)));
+        final String delegateVersion = substringBefore(version, "-").trim();
+        final String expectedVersion = substringBefore(upgradeToVersion, "-").trim();
+        doUpgrade = !(Version.valueOf(delegateVersion).equals(Version.valueOf(expectedVersion)));
       }
       delegateScripts.setDoUpgrade(doUpgrade);
       delegateScripts.setVersion(upgradeToVersion);
@@ -1569,15 +1569,7 @@ public class DelegateServiceImpl implements DelegateService {
       params.put("remoteWatcherUrlCdn", EMPTY);
     }
 
-    if (isNotBlank(templateParameters.getDelegateXmx())) {
-      params.put("delegateXmx", templateParameters.getDelegateXmx());
-    } else {
-      if (featureFlagService.isEnabled(REDUCE_DELEGATE_MEMORY_SIZE, templateParameters.getAccountId())) {
-        params.put("delegateXmx", "-Xmx1536m");
-      } else {
-        params.put("delegateXmx", "-Xmx4096m");
-      }
-    }
+    params.put("delegateXmx", getDelegateXmx(templateParameters.getDelegateType()));
 
     params.put(JRE_VERSION_KEY, jreVersionHelper.getTargetJreVersion());
 
@@ -3107,22 +3099,6 @@ public class DelegateServiceImpl implements DelegateService {
     }
   }
 
-  @VisibleForTesting
-  public List<CapabilityRequirement> createCapabilityRequirementInstances(
-      String accountId, List<ExecutionCapability> agentCapabilities) {
-    List<CapabilityRequirement> capabilityRequirements = new ArrayList<>();
-    for (ExecutionCapability agentCapability : agentCapabilities) {
-      CapabilityRequirement capabilityRequirement =
-          capabilityService.buildCapabilityRequirement(accountId, agentCapability);
-
-      if (capabilityRequirement != null) {
-        capabilityRequirements.add(capabilityRequirement);
-      }
-    }
-
-    return capabilityRequirements;
-  }
-
   @Override
   public List<DelegateInitializationDetails> obtainDelegateInitializationDetails(
       String accountId, List<String> delegateIds) {
@@ -4048,8 +4024,24 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
+  public String queueTaskV2(DelegateTask task) {
+    if (task.getUuid() == null) {
+      task.setUuid(generateUuid());
+    }
+    copyTaskDataToTaskDataV2(task);
+    log.debug("Task id [{}] has wait Id [{}], task Object: [{}]", task.getUuid(), task.getWaitId(), task);
+    return delegateTaskServiceClassic.queueTaskV2(task);
+  }
+
+  @Override
   public void scheduleSyncTask(DelegateTask task) {
     delegateTaskServiceClassic.scheduleSyncTask(task);
+  }
+
+  @Override
+  public void scheduleSyncTaskV2(DelegateTask task) {
+    copyTaskDataToTaskDataV2(task);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(task);
   }
 
   @Override
@@ -4058,6 +4050,37 @@ public class DelegateServiceImpl implements DelegateService {
       task.setUuid(generateUuid());
     }
     return delegateTaskServiceClassic.executeTask(task);
+  }
+
+  @Override
+  public <T extends DelegateResponseData> T executeTaskV2(DelegateTask task) throws InterruptedException {
+    if (task.getUuid() == null) {
+      task.setUuid(generateUuid());
+    }
+    copyTaskDataToTaskDataV2(task);
+    return delegateTaskServiceClassic.executeTaskV2(task);
+  }
+
+  private void copyTaskDataToTaskDataV2(DelegateTask delegateTask) {
+    if (delegateTask != null && delegateTask.getData() != null) {
+      TaskData taskData = delegateTask.getData();
+      if (taskData != null) {
+        TaskDataV2 taskDataV2 = TaskDataV2.builder()
+                                    .data(taskData.getData())
+                                    .taskType(taskData.getTaskType())
+                                    .async(taskData.isAsync())
+                                    .parked(taskData.isParked())
+                                    .parameters(taskData.getParameters())
+                                    .timeout(taskData.getTimeout())
+                                    .expressionFunctorToken(taskData.getExpressionFunctorToken())
+                                    .expressions(taskData.getExpressions())
+                                    .serializationFormat(io.harness.beans.SerializationFormat.valueOf(
+                                        taskData.getSerializationFormat().name()))
+                                    .build();
+        delegateTask.setTaskDataV2(taskDataV2);
+        delegateTask.setData(null);
+      }
+    }
   }
 
   @Override
@@ -4325,7 +4348,7 @@ public class DelegateServiceImpl implements DelegateService {
             .delegateNamespace(delegateSetupDetails != null && delegateSetupDetails.getK8sConfigDetails() != null
                     ? delegateSetupDetails.getK8sConfigDetails().getNamespace()
                     : EMPTY)
-            .delegateXmx(String.valueOf(sizeDetails.getRam()))
+            .delegateRam(sizeDetails.getRam())
             .delegateCpu(sizeDetails.getCpu())
             .accountId(accountId)
             .delegateType(DOCKER)
@@ -4371,6 +4394,7 @@ public class DelegateServiceImpl implements DelegateService {
     Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                         .filter(DelegateKeys.accountId, accountId)
                                         .filter(DelegateKeys.delegateName, delegateName)
+                                        .filter(DelegateGroupKeys.ng, isNg)
                                         .field(DelegateKeys.status)
                                         .notEqual(DelegateInstanceStatus.DELETED);
     if (delegateQuery.get() != null) {
@@ -4411,10 +4435,10 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   private String getDelegateXmx(String delegateType) {
-    // TODO: ARPIT remove this community and null check once new delegate and watcher goes in prod.
-    return (DeployVariant.isCommunity(deployVersion) || (delegateType != null && (delegateType.equals(DOCKER))))
-        ? "-Xmx512m"
-        : "-Xmx1536m";
+    if (SHELL_SCRIPT.equals(delegateType)) {
+      return "-Xmx1536m";
+    }
+    return "-XX:MaxRAMPercentage=70.0 -XX:MinRAMPercentage=40.0";
   }
 
   private boolean matchOwners(DelegateEntityOwner existingOwner, DelegateEntityOwner owner) {

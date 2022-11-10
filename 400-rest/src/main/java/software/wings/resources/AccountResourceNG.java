@@ -16,6 +16,7 @@ import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.rest.RestResponse;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.Account;
@@ -30,6 +31,7 @@ import software.wings.service.intfc.UserGroupService;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.Hidden;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -168,9 +170,20 @@ public class AccountResourceNG {
   }
 
   @GET
-  @Path("isAutoInviteAcceptanceEnabled")
+  @Hidden
+  @Path("is-auto-invite-acceptance-enabled")
+  @InternalApi
   public RestResponse<Boolean> isAutoInviteAcceptanceEnabled(@QueryParam("accountId") @NotEmpty String accountId) {
     return new RestResponse(accountService.isAutoInviteAcceptanceEnabled(accountId));
+  }
+
+  @GET
+  @Hidden
+  @Path("is-pl-no-email-invite-acceptance-enabled")
+  @InternalApi
+  public RestResponse<Boolean> isPLNoEmailForSamlAccountInvitesEnabled(
+      @QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse(accountService.isPLNoEmailForSamlAccountInvitesEnabled(accountId));
   }
 
   @GET

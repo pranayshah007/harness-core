@@ -7,6 +7,7 @@
 
 package io.harness.steps.matrix;
 
+import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
@@ -20,6 +21,7 @@ import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 public class ParallelismStrategyConfigService implements StrategyConfigService {
   @Override
@@ -40,10 +42,17 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
   }
 
   @Override
-  public StrategyInfo expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
+  public StrategyInfo expandJsonNode(
+      StrategyConfig strategyConfig, JsonNode jsonNode, Optional<Integer> maxExpansionLimit) {
     Integer parallelism = 0;
     if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
       parallelism = strategyConfig.getParallelism().getValue();
+      if (maxExpansionLimit.isPresent()) {
+        if (parallelism > maxExpansionLimit.get()) {
+          throw new InvalidYamlException(
+              "Parallelism count is beyond the supported limit of " + maxExpansionLimit.get());
+        }
+      }
     }
     List<JsonNode> jsonNodes = new ArrayList<>();
     for (int i = 0; i < parallelism; i++) {

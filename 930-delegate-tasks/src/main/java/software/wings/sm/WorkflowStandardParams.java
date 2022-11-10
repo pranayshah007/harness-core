@@ -40,7 +40,6 @@ import lombok.Setter;
 public class WorkflowStandardParams implements ContextElement {
   private static final String STANDARD_PARAMS = "STANDARD_PARAMS";
   public static final String DEPLOYMENT_TRIGGERED_BY = "deploymentTriggeredBy";
-
   private String appId;
   private String envId;
   private List<String> artifactIds;

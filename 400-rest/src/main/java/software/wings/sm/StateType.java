@@ -161,6 +161,7 @@ import software.wings.sm.states.EmailState;
 import software.wings.sm.states.EnvLoopResumeState;
 import software.wings.sm.states.EnvLoopState;
 import software.wings.sm.states.EnvResumeState;
+import software.wings.sm.states.EnvRollbackState;
 import software.wings.sm.states.EnvState;
 import software.wings.sm.states.ForkState;
 import software.wings.sm.states.GcbState;
@@ -903,7 +904,8 @@ public enum StateType implements StateTypeDescriptor {
       Lists.newArrayList(InfrastructureMappingType.CUSTOM), asList(PhaseStepType.CUSTOM_DEPLOYMENT_PHASE_STEP),
       ORCHESTRATION_STENCILS),
 
-  ARTIFACT_COLLECT_LOOP_STATE(ArtifactCollectLoopState.class, ENVIRONMENTS, asList(), NONE);
+  ARTIFACT_COLLECT_LOOP_STATE(ArtifactCollectLoopState.class, ENVIRONMENTS, asList(), NONE),
+  ENV_ROLLBACK_STATE(EnvRollbackState.class, ENVIRONMENTS, asList(), PIPELINE_STENCILS);
 
   private static final String PCF_MAP_ROUTE_NAME = "Map Route";
   private static final String PCF_UNMAP_ROUTE_NAME = "Unmap Route";

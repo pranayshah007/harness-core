@@ -30,10 +30,26 @@ public class LogStreamingSanitizer {
     for (String secret : secrets) {
       secretMasks.add(SECRET_MASK);
       secretValues.add(secret);
+
+      addSecretMasksWithQuotesRemoved(secret, secretMasks, secretValues);
     }
     String sanitizedLogMessage =
         replaceEach(logLine.getMessage(), secretValues.toArray(new String[] {}), secretMasks.toArray(new String[] {}));
 
     logLine.setMessage(sanitizedLogMessage);
+  }
+
+  private void addSecretMasksWithQuotesRemoved(
+      String secret, ArrayList<String> secretMasks, ArrayList<String> secretValues) {
+    String secretWithDoubleQuoteRemoved = secret.replaceAll("\"", "");
+    if (!secretWithDoubleQuoteRemoved.equals(secret)) {
+      secretMasks.add(SECRET_MASK);
+      secretValues.add(secretWithDoubleQuoteRemoved);
+    }
+    String secretWithSingleQuoteRemoved = secret.replaceAll("\'", "");
+    if (!secretWithSingleQuoteRemoved.equals(secret)) {
+      secretMasks.add(SECRET_MASK);
+      secretValues.add(secretWithSingleQuoteRemoved);
+    }
   }
 }

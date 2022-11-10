@@ -42,11 +42,11 @@ import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.spec.server.template.model.GitCreateDetails;
-import io.harness.spec.server.template.model.GitFindDetails;
-import io.harness.spec.server.template.model.GitUpdateDetails;
-import io.harness.spec.server.template.model.TemplateMetadataSummaryResponse;
-import io.harness.spec.server.template.model.TemplateUpdateStableResponse;
+import io.harness.spec.server.template.v1.model.GitCreateDetails;
+import io.harness.spec.server.template.v1.model.GitFindDetails;
+import io.harness.spec.server.template.v1.model.GitUpdateDetails;
+import io.harness.spec.server.template.v1.model.TemplateMetadataSummaryResponse;
+import io.harness.spec.server.template.v1.model.TemplateUpdateStableResponse;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
@@ -97,6 +97,10 @@ public class TemplateResourceApiUtils {
                                                  .parentEntityOrgIdentifier(parentOrgId)
                                                  .parentEntityProjectIdentifier(parentProjectId)
                                                  .build());
+    if (String.valueOf(getInputYaml).equals("null")) {
+      getInputYaml = false;
+    }
+
     if (getInputYaml == true) {
       // returns template along with templateInputs yaml
       log.info(String.format(
@@ -208,7 +212,7 @@ public class TemplateResourceApiUtils {
   public Response getTemplates(@AccountIdentifier String account, @OrgIdentifier String org,
       @ProjectIdentifier String project, int page, int limit, String sort, String order, String searchTerm,
       String listType, boolean recursive, List<String> names, List<String> identifiers, String description,
-      List<String> entityTypes, List<String> child_types) {
+      List<String> entityTypes, List<String> childTypes) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, org, project), Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     log.info(String.format("Get List of templates in project: %s, org: %s, account: %s", project, org, account));
@@ -219,10 +223,10 @@ public class TemplateResourceApiUtils {
     filterProperties.setTemplateNames(names);
     filterProperties.setDescription(description);
     filterProperties.setTemplateIdentifiers(identifiers);
-    filterProperties.setChildTypes(child_types);
+    filterProperties.setChildTypes(childTypes);
     TemplateFilterProperties templateFilterProperties =
         NGTemplateDtoMapper.toTemplateFilterProperties(filterProperties);
-    String type = toListtype(listType);
+    String type = toListType(listType);
     TemplateListType templateListType = TemplateListType.getTemplateType(type);
     FilterParamsDTO filterParamsDTO = NGTemplateDtoMapper.prepareFilterParamsDTO(
         searchTerm, "", templateListType, templateFilterProperties, recursive, false);
@@ -253,20 +257,6 @@ public class TemplateResourceApiUtils {
       return responseBuilderWithLinks.entity(templateList).build();
     }
   }
-  public TemplateFilterPropertiesDTO toFilterProperties(
-      io.harness.spec.server.template.model.TemplateFilterProperties templateFilterProperties) {
-    TemplateFilterPropertiesDTO filterProperties = new TemplateFilterPropertiesDTO();
-    filterProperties.setTemplateNames(templateFilterProperties.getNames());
-    filterProperties.setTemplateIdentifiers(templateFilterProperties.getIdentifiers());
-    filterProperties.setDescription(templateFilterProperties.getDescription());
-    filterProperties.setChildTypes(templateFilterProperties.getChildTypes());
-    List<TemplateEntityType> templateEntityTypes = templateFilterProperties.getEntityTypes()
-                                                       .stream()
-                                                       .map(x -> TemplateEntityType.getTemplateType(x.toString()))
-                                                       .collect(Collectors.toList());
-    filterProperties.setTemplateEntityTypes(templateEntityTypes);
-    return filterProperties;
-  }
 
   public ResponseBuilder addLinksHeader(
       ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
@@ -287,7 +277,7 @@ public class TemplateResourceApiUtils {
     }
     return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
-  public String toListtype(String listType) {
+  public String toListType(String listType) {
     String type;
     if (isEmpty(listType)) {
       listType = "ALL";
@@ -296,8 +286,12 @@ public class TemplateResourceApiUtils {
       type = LAST_UPDATES_TEMPLATE;
     } else if (listType.equals("STABLE_TEMPLATE")) {
       type = STABLE_TEMPLATE;
-    } else {
+    } else if (listType.equals("ALL")) {
       type = ALL;
+    } else {
+      throw new InvalidRequestException(String.format(
+          "Expected query param 'type' to be of value LAST_UPDATES_TEMPLATE, STABLE_TEMPLATE, ALL. [%s] value Not allowed",
+          listType));
     }
     return type;
   }

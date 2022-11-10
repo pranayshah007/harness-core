@@ -184,6 +184,9 @@
                 }
               ]
             },
+            "subscriptionId": {
+              "type": "string"
+            },
             "tags": {
               "oneOf": [
                 {
@@ -220,6 +223,45 @@
               "type": "string",
               "enum": [
                 "Abort"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ActionStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uses"
+          ],
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
               ]
             }
           }
@@ -1345,18 +1387,6 @@
         "size": {
           "type": "string",
           "pattern": "^(([0-9]*[.])?[0-9]+)([GM]i?)|<\\+input>$"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ExcludeConfig": {
-      "type": "object",
-      "properties": {
-        "exclude": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2632,51 +2662,8 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "MatrixConfig": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/MatrixConfigInterface"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "exclude": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldListExcludeConfig"
-                },
-                {
-                  "type": "array"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "maxConcurrency": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32",
-                  "minimum": 0
-                },
-                {
-                  "type": "string",
-                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
-                  "minLength": 1
-                }
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "MatrixConfigInterface": {
       "type": "object",
-      "discriminator": "type",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "NGVariable": {
@@ -2723,7 +2710,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -3135,45 +3122,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ParameterFieldListExcludeConfig": {
-      "type": "object",
-      "properties": {
-        "defaultValue": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ExcludeConfig"
-          }
-        },
-        "executionInput": {
-          "type": "boolean"
-        },
-        "expression": {
-          "type": "boolean"
-        },
-        "expressionValue": {
-          "type": "string"
-        },
-        "inputSetValidator": {
-          "$ref": "#/definitions/InputSetValidator"
-        },
-        "jsonResponseField": {
-          "type": "boolean"
-        },
-        "responseField": {
-          "type": "string"
-        },
-        "typeString": {
-          "type": "boolean"
-        },
-        "value": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ExcludeConfig"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "ParameterFieldListString": {
       "type": "object",
       "properties": {
@@ -3247,6 +3195,45 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/JsonNode"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldMapStringString": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
           }
         }
       },
@@ -4434,7 +4421,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -4701,6 +4688,22 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Action"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ActionStepInfo"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -5080,11 +5083,7 @@
       "type": "object",
       "properties": {
         "matrix": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/MatrixConfig"
-            }
-          ]
+          "$ref": "#/definitions/MatrixConfigInterface"
         },
         "parallelism": {
           "oneOf": [
@@ -5153,7 +5152,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",

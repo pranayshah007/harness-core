@@ -65,6 +65,7 @@ import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateImportRequestDTO;
+import io.harness.template.beans.TemplateListRepoResponse;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -90,7 +91,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import javax.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.PredicateUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -123,6 +127,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
 
+  private static final int MAX_LIST_SIZE = 1000;
+
+  private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
+
   @Override
   public TemplateEntity create(TemplateEntity templateEntity, boolean setStableTemplate, String comments) {
     enforcementClientService.checkAvailability(
@@ -135,7 +143,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
       TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(),
-          templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
+          templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity.getRepo(),
+          templateEntity.getConnectorRef());
     }
 
     if (!validateIdentifierIsUnique(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
@@ -287,14 +296,46 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments) {
     enforcementClientService.checkAvailability(
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
-
     TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
-        templateEntity.getProjectIdentifier());
-
+        templateEntity.getProjectIdentifier(), templateEntity.getRepo(), templateEntity.getConnectorRef());
     // apply templates to template yaml for validations and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
     // update template references
     templateReferenceHelper.populateTemplateReferences(templateEntity);
+    return transactionHelper.performTransaction(() -> {
+      makePreviousLastUpdatedTemplateFalse(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
+          templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
+      return updateTemplateHelper(templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
+          templateEntity, changeType, setDefaultTemplate, true, comments, null);
+    });
+  }
+
+  @Override
+  public TemplateEntity updateTemplateEntity(TemplateEntity templateEntity, ChangeType changeType,
+      boolean setDefaultTemplate, String comments, TemplateResponseDTO templateResponse) {
+    enforcementClientService.checkAvailability(
+        FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
+    // apply templates to template yaml for validations and populating module info
+    applyTemplatesToYamlAndValidateSchema(templateEntity);
+    // update template references
+    templateReferenceHelper.populateTemplateReferences(templateEntity);
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null) {
+      if (templateResponse.getGitDetails() != null) {
+        if (templateResponse.getGitDetails().getCommitId() != null) {
+          gitEntityInfo.setLastCommitId(templateResponse.getGitDetails().getCommitId());
+        }
+        if (templateResponse.getGitDetails().getObjectId() != null) {
+          gitEntityInfo.setLastObjectId(templateResponse.getGitDetails().getObjectId());
+        }
+        if (templateResponse.getGitDetails().getFilePath() != null) {
+          gitEntityInfo.setFilePath(templateResponse.getGitDetails().getFilePath());
+        }
+        if (templateResponse.getGitDetails().getBranch() != null) {
+          gitEntityInfo.setBranch(templateResponse.getGitDetails().getBranch());
+        }
+      }
+    }
     return transactionHelper.performTransaction(() -> {
       makePreviousLastUpdatedTemplateFalse(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
           templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
@@ -512,8 +553,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           templateIdentifier, versionLabel, projectIdentifier, orgIdentifier));
     }
     checkThatTheTemplateIsNotUsedByOthers(templateToDelete);
-    // delete template references
-    templateReferenceHelper.deleteTemplateReferences(templateToDelete);
     try {
       return templateServiceHelper.deleteTemplate(
           accountId, orgIdentifier, projectIdentifier, templateIdentifier, templateToDelete, versionLabel, comments);
@@ -817,6 +856,20 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
+  @Override
+  public TemplateListRepoResponse getListOfRepos(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, boolean includeAllTemplatesAccessibleAtScope) {
+    Criteria criteria = templateServiceHelper.formCriteriaForRepoListing(
+        accountIdentifier, orgIdentifier, projectIdentifier, includeAllTemplatesAccessibleAtScope);
+    List<String> uniqueRepos = templateRepository.getListOfRepos(criteria);
+    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
+    if (uniqueRepos.size() > MAX_LIST_SIZE) {
+      log.error(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+      throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+    }
+    return TemplateListRepoResponse.builder().repositories(new HashSet<>(uniqueRepos)).build();
+  }
+
   private void checkGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     if (!templateGitXService.isNewGitXEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
       if (projectIdentifier != null) {
@@ -1110,7 +1163,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   private TemplateEntity getAndValidateOldTemplateEntity(
       TemplateEntity templateEntity, String oldOrgIdentifier, String oldProjectIdentifier) {
     TemplateUtils.setupGitParentEntityDetails(
-        templateEntity.getAccountIdentifier(), oldOrgIdentifier, oldProjectIdentifier);
+        templateEntity.getAccountIdentifier(), oldOrgIdentifier, oldProjectIdentifier, null, null);
     Optional<TemplateEntity> optionalTemplate =
         templateServiceHelper.getTemplateWithVersionLabel(templateEntity.getAccountId(), oldOrgIdentifier,
             oldProjectIdentifier, templateEntity.getIdentifier(), templateEntity.getVersionLabel(), false, false);

@@ -47,7 +47,7 @@ public class PrimaryArtifactPlanCreator implements PartialPlanCreator<PrimaryArt
             ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME, ArtifactSourceConstants.AMAZON_S3_NAME,
             ArtifactSourceConstants.JENKINS_NAME, ArtifactSourceConstants.GITHUB_PACKAGES_NAME,
             ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME, ArtifactSourceConstants.NEXUS2_REGISTRY_NAME,
-            ArtifactSourceConstants.AZURE_ARTIFACTS_NAME)));
+            ArtifactSourceConstants.AZURE_ARTIFACTS_NAME, ArtifactSourceConstants.AMI_ARTIFACTS_NAME)));
   }
 
   @Override

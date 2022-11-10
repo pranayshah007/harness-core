@@ -33,6 +33,8 @@ import io.harness.gitsync.IsGitSimplificationEnabledRequest;
 import io.harness.gitsync.IsGitSyncEnabled;
 import io.harness.gitsync.IsOldGitSyncEnabledForModule;
 import io.harness.gitsync.IsOldGitSyncEnabledResponse;
+import io.harness.gitsync.ListFilesRequest;
+import io.harness.gitsync.ListFilesResponse;
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.PushResponse;
@@ -68,7 +70,8 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
   @Inject KryoSerializer kryoSerializer;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject ExceptionManager exceptionManager;
-  private String GIT_SERVICE = "Git Service";
+  private final String GIT_SERVICE = "Git Service";
+  private final String OPERATION_INFO_LOG_FORMAT = "%s %s ops response : %s";
 
   @Override
   public void pushFromHarness(PushInfo request, StreamObserver<PushResponse> responseObserver) {
@@ -280,7 +283,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       showBranchResponse = harnessToGitHelperService.getBranchHeadCommitDetails(request);
       log.info(String.format(
-          "%s %s ops response : %s", GIT_SERVICE, GitOperation.GET_BRANCH_HEAD_COMMIT, showBranchResponse));
+          OPERATION_INFO_LOG_FORMAT, GIT_SERVICE, GitOperation.GET_BRANCH_HEAD_COMMIT, showBranchResponse));
     } catch (Exception ex) {
       final String errorMessage = getErrorMessageForRuntimeExceptions(GitOperation.GET_BRANCH_HEAD_COMMIT);
       log.error(errorMessage, ex);
@@ -290,6 +293,26 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
                                .build();
     }
     responseObserver.onNext(showBranchResponse);
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void listFiles(ListFilesRequest request, StreamObserver<ListFilesResponse> responseObserver) {
+    Map<String, String> contextMap = null;
+    ListFilesResponse response;
+    try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
+         MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
+      response = harnessToGitHelperService.listFiles(request);
+      log.info(String.format(OPERATION_INFO_LOG_FORMAT, GIT_SERVICE, GitOperation.LIST_FILES, response));
+    } catch (Exception ex) {
+      final String errorMessage = getErrorMessageForRuntimeExceptions(GitOperation.LIST_FILES);
+      log.error(errorMessage, ex);
+      response = ListFilesResponse.newBuilder()
+                     .setStatusCode(HTTP_500)
+                     .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
+                     .build();
+    }
+    responseObserver.onNext(response);
     responseObserver.onCompleted();
   }
 

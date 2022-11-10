@@ -40,7 +40,8 @@ public interface CgInstanceSyncV2Handler {
 
   List<Instance> difference(List<Instance> list1, List<Instance> list2);
 
-  List<Instance> getDeployedInstances(List<InstanceInfo> instanceInfos, Instance lastDiscoveredInstance);
+  List<Instance> getDeployedInstances(
+      List<InstanceInfo> instanceInfos, List<Instance> instancesInDb, Instance lastDiscoveredInstance);
 
   List<Instance> instancesToUpdate(List<Instance> instances, List<Instance> instancesInDb);
 }

@@ -8,11 +8,13 @@
 package io.harness.pms.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.SATYAM;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -56,7 +58,7 @@ import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.variables.VariableCreatorMergeService;
-import io.harness.pms.yaml.YamlVersion;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
@@ -67,6 +69,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -143,7 +146,7 @@ public class PipelineResourceTest extends CategoryTest {
                            .name(PIPELINE_IDENTIFIER)
                            .yaml(simplifiedYaml)
                            .isDraft(false)
-                           .harnessVersion(YamlVersion.V1)
+                           .harnessVersion(PipelineVersion.V1)
                            .build();
 
     entityGitDetails = EntityGitDetails.builder()
@@ -174,7 +177,7 @@ public class PipelineResourceTest extends CategoryTest {
                                       .name(PIPELINE_IDENTIFIER)
                                       .yaml(simplifiedYaml)
                                       .isDraft(false)
-                                      .harnessVersion(YamlVersion.V1)
+                                      .harnessVersion(PipelineVersion.V1)
                                       .version(1L)
                                       .build();
 
@@ -661,7 +664,7 @@ public class PipelineResourceTest extends CategoryTest {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testCreateSimplifiedPipeline() {
-    doReturn(YamlVersion.V1).when(pmsPipelineService).pipelineVersion(ACCOUNT_ID, simplifiedYaml);
+    doReturn(PipelineVersion.V1).when(pmsPipelineService).pipelineVersion(ACCOUNT_ID, simplifiedYaml);
     doReturn(PipelineCRUDResult.builder()
                  .pipelineEntity(simplifiedEntityWithVersion)
                  .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
@@ -678,7 +681,7 @@ public class PipelineResourceTest extends CategoryTest {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testUpdateSimplifiedPipeline() {
-    doReturn(YamlVersion.V1).when(pmsPipelineService).pipelineVersion(ACCOUNT_ID, simplifiedYaml);
+    doReturn(PipelineVersion.V1).when(pmsPipelineService).pipelineVersion(ACCOUNT_ID, simplifiedYaml);
     GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
     PipelineCRUDResult pipelineCRUDResult = PipelineCRUDResult.builder()
                                                 .governanceMetadata(governanceMetadata)
@@ -688,5 +691,21 @@ public class PipelineResourceTest extends CategoryTest {
     ResponseDTO<PipelineSaveResponse> responseDTO = pipelineResource.updatePipelineV2(
         null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, simplifiedYaml);
     assertThat(responseDTO.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetListRepos() {
+    HashSet<String> repos = new HashSet<>();
+    repos.add("testRepo");
+    repos.add("testRepo2");
+
+    PMSPipelineListRepoResponse repoResponse = PMSPipelineListRepoResponse.builder().repositories(repos).build();
+    doReturn(repoResponse).when(pmsPipelineService).getListOfRepos(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+
+    PMSPipelineListRepoResponse pmsPipelineListRepoResponse =
+        pmsPipelineService.getListOfRepos(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    assertEquals(pmsPipelineListRepoResponse, repoResponse);
   }
 }

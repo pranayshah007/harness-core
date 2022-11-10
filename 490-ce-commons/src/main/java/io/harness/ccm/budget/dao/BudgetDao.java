@@ -7,6 +7,7 @@
 
 package io.harness.ccm.budget.dao;
 
+import io.harness.ccm.budget.BudgetMonthlyBreakdown.BudgetMonthlyBreakdownKeys;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.billing.Budget.BudgetKeys;
 import io.harness.persistence.HPersistence;
@@ -21,6 +22,8 @@ public class BudgetDao {
   @Inject private HPersistence persistence;
   private static final String SCOPE_VIEW_ID = "scope.viewId";
   private static final String SCOPE_VIEW_NAME = "scope.viewName";
+  private static final String BUDGET_MONTHLY_BREAKDOWN_BUDGET_MONTHLY_AMOUNT =
+      BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.budgetMonthlyAmount;
 
   public String save(Budget budget) {
     return persistence.save(budget);
@@ -100,6 +103,11 @@ public class BudgetDao {
     }
     if (null != budget.getUserGroupIds()) {
       updateOperations.set(BudgetKeys.userGroupIds, budget.getUserGroupIds());
+    }
+    if (null != budget.getBudgetMonthlyBreakdown()
+        && null != budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount()) {
+      updateOperations.set(
+          BUDGET_MONTHLY_BREAKDOWN_BUDGET_MONTHLY_AMOUNT, budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount());
     }
     persistence.update(query, updateOperations);
   }

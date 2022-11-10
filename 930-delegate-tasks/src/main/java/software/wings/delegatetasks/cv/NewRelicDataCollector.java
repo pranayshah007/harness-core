@@ -20,7 +20,7 @@ import static software.wings.service.impl.newrelic.NewRelicMetricValueDefinition
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.delegate.task.DataCollectionExecutorService;
+import io.harness.delegate.task.common.DataCollectionExecutorService;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;

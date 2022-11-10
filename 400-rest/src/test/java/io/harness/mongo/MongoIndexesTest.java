@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.GEORGE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.HPersistence;
@@ -29,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mongodb.morphia.Morphia;
@@ -43,6 +45,8 @@ public class MongoIndexesTest extends WingsBaseTest {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
+  @Ignore("CI-6025: TI team to follow up")
   public void testConfirmAllIndexesInManager() throws IOException {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setObjectFactory(objectFactory);

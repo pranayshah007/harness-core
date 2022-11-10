@@ -345,6 +345,19 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetStageLevelModuleInfo_RollbackDuration() {
+    Ambiance ambiance = buildAmbiance(
+        StepType.newBuilder().setType("ROLLBACK_OPTIONAL_CHILD_CHAIN").setStepCategory(StepCategory.STEP).build());
+
+    OrchestrationEvent event = OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build();
+    CDStageModuleInfo stageLevelModuleInfo = (CDStageModuleInfo) provider.getStageLevelModuleInfo(event);
+
+    assertThat(stageLevelModuleInfo.getRollbackDuration()).isPositive();
+  }
+
+  @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void testShouldRun_0() {
@@ -399,6 +412,22 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
         .isFalse();
   }
 
+  @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void testShouldRun_4() {
+    Ambiance ambiance = buildAmbiance(
+        StepType.newBuilder().setType("ROLLBACK_OPTIONAL_CHILD_CHAIN").setStepCategory(StepCategory.STEP).build());
+    assertThat(provider.shouldRun(OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build()))
+        .isTrue();
+
+    assertThat(provider.shouldRun(OrchestrationEvent.builder().ambiance(ambiance).status(Status.FAILED).build()))
+        .isTrue();
+
+    assertThat(provider.shouldRun(OrchestrationEvent.builder().ambiance(ambiance).status(Status.RUNNING).build()))
+        .isFalse();
+  }
+
   public Ambiance buildAmbiance(StepType stepType) {
     final String PHASE_RUNTIME_ID = generateUuid();
     final String PHASE_SETUP_ID = generateUuid();
@@ -411,6 +440,7 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
         .putAllSetupAbstractions(Map.of("accountId", ACCOUNT_ID, "appId", APP_ID))
         .addAllLevels(levels)
         .setExpressionFunctorToken(1234)
+        .setStartTs(0L)
         .build();
   }
 }

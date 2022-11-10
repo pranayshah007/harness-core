@@ -268,13 +268,13 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     if (!(infraMapping instanceof ContainerInfrastructureMapping)) {
       log.error("Unsupported infrastructure mapping being tracked here: [{}]. InfraMappingType found: [{}]",
           taskDetails, infraMapping.getClass().getName());
-      if (Objects.isNull(taskDetails.getReleaseIdentifiers())) {
-        return Collections.emptyList();
-      }
-    }
-    if (Objects.isNull(taskDetails.getReleaseIdentifiers())) {
       return Collections.emptyList();
     }
+
+    if (CollectionUtils.isEmpty(taskDetails.getReleaseIdentifiers())) {
+      return Collections.emptyList();
+    }
+
     ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infraMapping;
     K8sClusterConfig clusterConfig = containerDeploymentManagerHelper.getK8sClusterConfig(containerInfraMapping, null);
 
@@ -373,7 +373,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   }
 
   @Override
-  public List<Instance> getDeployedInstances(List<InstanceInfo> instanceInfos, Instance lastDiscoveredInstance) {
+  public List<Instance> getDeployedInstances(
+      List<InstanceInfo> instanceInfos, List<Instance> instancesInDb, Instance lastDiscoveredInstance) {
     if (CollectionUtils.isEmpty(instanceInfos) || Objects.isNull(lastDiscoveredInstance)) {
       return Collections.emptyList();
     }
@@ -390,8 +391,9 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
                                               .build());
       InfrastructureMapping infrastructureMapping =
           infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
-      return getInstancesForK8sPods(deploymentSummary, infrastructureMapping,
-          instanceInfos.parallelStream().map(K8sPodInfo.class ::cast).collect(Collectors.toList()));
+      List<Instance> instancesForK8sPods = getInstancesForK8sPods(deploymentSummary, infrastructureMapping,
+          instanceInfos.parallelStream().map(K8sPodInfo.class ::cast).collect(Collectors.toList()), instancesInDb);
+      return handleExistingInstances(instancesForK8sPods, instancesInDb);
     } else if (lastDiscoveredInstance.getInstanceInfo() instanceof KubernetesContainerInfo) {
       KubernetesContainerInfo containerInfo = (KubernetesContainerInfo) lastDiscoveredInstance.getInstanceInfo();
       deploymentSummary.setDeploymentInfo(ContainerDeploymentInfoWithLabels.builder()
@@ -401,13 +403,28 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
       InfrastructureMapping infrastructureMapping =
           infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
       ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
-      return getInstancesForContainerPods(deploymentSummary, containerInfraMapping,
+      List<Instance> instancesForContainerPods = getInstancesForContainerPods(deploymentSummary, containerInfraMapping,
           instanceInfos.parallelStream().map(ContainerInfo.class ::cast).collect(Collectors.toList()));
+      return handleExistingInstances(instancesForContainerPods, instancesInDb);
     }
 
     log.error("Unknown instance info type: [{}] found. Doing nothing.",
         lastDiscoveredInstance.getInstanceInfo().getClass().getName());
     return Collections.emptyList();
+  }
+
+  public List<Instance> handleExistingInstances(List<Instance> newInstances, List<Instance> instancesFromDb) {
+    Map<String, Instance> newInstancesKeyMap = getInstanceKeyMap(newInstances);
+    Map<String, Instance> dbInstancesKeyMap = getInstanceKeyMap(instancesFromDb);
+
+    Set<String> commonInstances = Sets.intersection(newInstancesKeyMap.keySet(), dbInstancesKeyMap.keySet());
+    commonInstances.forEach(instanceKey -> {
+      Instance instanceFromDb = dbInstancesKeyMap.get(instanceKey);
+      instanceFromDb.setInstanceInfo(newInstancesKeyMap.get(instanceKey).getInstanceInfo());
+      newInstancesKeyMap.put(instanceKey, instanceFromDb);
+    });
+
+    return new ArrayList<>(newInstancesKeyMap.values());
   }
 
   @Override
@@ -421,7 +438,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
       InfrastructureMapping infrastructureMapping =
           infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
       List<K8sPodInfo> pods = ((K8sDeploymentInfo) deploymentSummary.getDeploymentInfo()).getK8sPods();
-      return getInstancesForK8sPods(deploymentSummary, infrastructureMapping, pods);
+
+      return getInstancesForK8sPods(deploymentSummary, infrastructureMapping, pods, Collections.emptyList());
     } else if (deploymentSummary.getDeploymentInfo() instanceof ContainerDeploymentInfoWithLabels) {
       InfrastructureMapping infrastructureMapping =
           infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
@@ -486,8 +504,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     return instances;
   }
 
-  private List<Instance> getInstancesForK8sPods(
-      DeploymentSummary deploymentSummary, InfrastructureMapping infrastructureMapping, List<K8sPodInfo> pods) {
+  private List<Instance> getInstancesForK8sPods(DeploymentSummary deploymentSummary,
+      InfrastructureMapping infrastructureMapping, List<K8sPodInfo> pods, List<Instance> instancesFromDb) {
     if (CollectionUtils.isEmpty(pods)) {
       return Collections.emptyList();
     }
@@ -495,7 +513,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     List<Instance> instances = new ArrayList<>();
     for (K8sPodInfo pod : pods) {
       HelmChartInfo helmChartInfo =
-          getK8sPodHelmChartInfo((K8sDeploymentInfo) deploymentSummary.getDeploymentInfo(), pod);
+
+          getK8sPodHelmChartInfo((K8sDeploymentInfo) deploymentSummary.getDeploymentInfo(), pod, instancesFromDb);
       Instance instance = buildInstanceFromPodInfo(infrastructureMapping, pod, deploymentSummary);
       ContainerInfo containerInfo = (ContainerInfo) instance.getInstanceInfo();
       setHelmChartInfoToContainerInfo(helmChartInfo, containerInfo);
@@ -683,10 +702,21 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     return builder;
   }
 
-  private HelmChartInfo getK8sPodHelmChartInfo(K8sDeploymentInfo deploymentInfo, K8sPodInfo pod) {
+  private HelmChartInfo getK8sPodHelmChartInfo(
+      K8sDeploymentInfo deploymentInfo, K8sPodInfo pod, List<Instance> instancesFromDb) {
     if (deploymentInfo != null) {
       if (StringUtils.equals(pod.getBlueGreenColor(), deploymentInfo.getBlueGreenStageColor())) {
         return deploymentInfo.getHelmChartInfo();
+      } else if (CollectionUtils.isNotEmpty(instancesFromDb)) {
+        Optional<K8sPodInfo> podFromDbOptional =
+            instancesFromDb.parallelStream()
+                .filter(instance -> instance.getInstanceInfo() instanceof K8sPodInfo)
+                .map(K8sPodInfo.class ::cast)
+                .filter(instancePod -> StringUtils.equals(instancePod.getBlueGreenColor(), pod.getBlueGreenColor()))
+                .findAny();
+        if (podFromDbOptional.isPresent()) {
+          return podFromDbOptional.get().getHelmChartInfo();
+        }
       }
     }
 

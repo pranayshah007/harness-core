@@ -15,7 +15,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -26,7 +25,6 @@ import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
 import io.harness.account.AccountClient;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -233,7 +231,6 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
         .thenReturn(abstractInstanceSyncHandler);
     Call<RestResponse<Boolean>> request = mock(Call.class);
     when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
-    when(accountClient.isFeatureFlagEnabled(eq(FeatureName.FIX_CORRUPTED_INSTANCES.name()), any())).thenReturn(request);
 
     List<InstanceDTO> instanceDTOS = new ArrayList<>();
     instanceDTOS.add(
@@ -354,7 +351,6 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
         .thenReturn(abstractInstanceSyncHandler);
     Call<RestResponse<Boolean>> request = mock(Call.class);
     when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
-    when(accountClient.isFeatureFlagEnabled(eq(FeatureName.FIX_CORRUPTED_INSTANCES.name()), any())).thenReturn(request);
 
     List<InstanceDTO> instanceDTOS = new ArrayList<>();
     instanceDTOS.add(

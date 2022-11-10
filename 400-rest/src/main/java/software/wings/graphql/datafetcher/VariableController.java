@@ -18,9 +18,12 @@ import software.wings.beans.EntityType;
 import software.wings.beans.Variable;
 import software.wings.beans.VariableDisplayType;
 import software.wings.beans.VariableType;
+import software.wings.beans.WorkflowExecution;
+import software.wings.graphql.schema.type.QLInputVariable;
 import software.wings.graphql.schema.type.QLVariable;
 
 import java.util.List;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDC)
@@ -56,5 +59,19 @@ public class VariableController {
     }
 
     return VariableDisplayType.TEXT.getDisplayName();
+  }
+
+  public static void populateInputVariables(List<QLInputVariable> variables, WorkflowExecution workflowExecution) {
+    if (workflowExecution != null) {
+      Map<String, String> workflowVariables = workflowExecution.getExecutionArgs().getWorkflowVariables();
+      if (workflowVariables == null) {
+        return;
+      }
+      workflowVariables.entrySet()
+          .stream()
+          .filter(entry -> entry.getValue() != null)
+          .map(entry -> QLInputVariable.builder().name(entry.getKey()).value(entry.getValue()).build())
+          .forEach(variables::add);
+    }
   }
 }

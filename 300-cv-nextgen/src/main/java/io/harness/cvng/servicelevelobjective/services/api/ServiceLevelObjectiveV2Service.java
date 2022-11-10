@@ -57,7 +57,7 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
       ProjectParams projectParams, String identifier, SLILogsFilter sliLogsFilter, PageParams pageParams);
 
   PageResponse<AbstractServiceLevelObjective> getSLOForListView(
-      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName);
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
 
   SimpleServiceLevelObjective getFromSLIIdentifier(ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
 

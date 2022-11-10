@@ -57,7 +57,7 @@ public class HarnessImageUtils {
 
   private String getVmHarnessImageConnectorRef(StageInfraDetails stageInfraDetails) {
     StageInfraDetails.Type type = stageInfraDetails.getType();
-    if (type == StageInfraDetails.Type.VM || type == StageInfraDetails.Type.DOCKER) {
+    if (type == StageInfraDetails.Type.VM) {
       VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
       return vmStageInfraDetails.getHarnessImageConnectorRef();
     } else if (type == StageInfraDetails.Type.DLITE_VM) {

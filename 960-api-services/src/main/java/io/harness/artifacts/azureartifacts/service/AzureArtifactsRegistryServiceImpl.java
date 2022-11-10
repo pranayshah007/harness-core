@@ -14,10 +14,14 @@ import static io.harness.network.Http.getOkHttpClientBuilder;
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
+import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
@@ -27,6 +31,7 @@ import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
+import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersion;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersions;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackages;
@@ -36,11 +41,14 @@ import software.wings.helpers.ext.azure.devops.AzureDevopsProjects;
 import software.wings.helpers.ext.azure.devops.AzureDevopsRestClient;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +57,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -59,6 +69,8 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistryService {
   public static final int CONNECT_TIMEOUT = 5;
   public static final int READ_TIMEOUT = 10;
+
+  @Inject private AzureArtifactsDownloadHelper azureArtifactsDownloadHelper;
 
   @Override
   public boolean validateCredentials(AzureArtifactsInternalConfig azureArtifactsInternalConfig) {
@@ -339,7 +351,7 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
     Response<AzureArtifactsPackages> packagesResponse;
 
     try {
-      packagesResponse = azureArtifactsRegistryRestClient.listPackages(authHeader, feedId, packageType).execute();
+      packagesResponse = azureArtifactsRegistryRestClient.listPackages(authHeader, feed, packageType).execute();
     } catch (IOException e) {
       throw new HintException("Failed to get the Azure Packages list.");
     }
@@ -375,6 +387,103 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
     AzureArtifactsFeeds azureArtifactsFeeds = feedsResponse.body();
 
     return azureArtifactsFeeds.getValue();
+  }
+
+  @Override
+  public List<AzureArtifactsPackageFileInfo> listPackageFiles(AzureArtifactsInternalConfig azureArtifactsInternalConfig,
+      String project, String feed, String protocolType, String packageName, String version) {
+    if (AzureArtifactsProtocolType.maven.name().equals(protocolType)) {
+      String packageId = azureArtifactsDownloadHelper.getPackageId(
+          azureArtifactsInternalConfig, project, feed, protocolType, packageName);
+
+      if (isBlank(packageId)) {
+        throw new InvalidRequestException(format("Failed to retrieve packageId for packageName: %s", packageName));
+      }
+
+      String versionId = azureArtifactsDownloadHelper.getPackageVersionId(
+          azureArtifactsInternalConfig, protocolType, packageName, feed, project, version);
+      if (isBlank(versionId)) {
+        throw new InvalidRequestException(format("Failed to retrieve versionId for packageName: %s", packageName));
+      }
+
+      AzureArtifactsPackageVersion packageVersion =
+          azureArtifactsDownloadHelper.getPackageVersion(azureArtifactsInternalConfig, feed, packageId, versionId);
+
+      if (packageVersion == null || EmptyPredicate.isEmpty(packageVersion.getFiles())) {
+        return Collections.emptyList();
+      }
+
+      return packageVersion.getFiles()
+          .stream()
+          .filter(packageFile -> {
+            String artifactFileName = packageFile.getName();
+            if (!AzureArtifactsDownloadHelper.shouldDownloadFile(artifactFileName)) {
+              return false;
+            }
+            long artifactFileSize =
+                packageFile.getProtocolMetadata() == null || packageFile.getProtocolMetadata().getData() == null
+                ? 0
+                : packageFile.getProtocolMetadata().getData().getSize();
+            return artifactFileSize > 0;
+          })
+          .map(packageFile
+              -> new AzureArtifactsPackageFileInfo(
+                  packageFile.getName(), packageFile.getProtocolMetadata().getData().getSize()))
+          .collect(Collectors.toList());
+    } else if (AzureArtifactsProtocolType.nuget.name().equals(protocolType)) {
+      long size;
+      try {
+        InputStream inputStream = azureArtifactsDownloadHelper.downloadArtifactByUrl(
+            azureArtifactsDownloadHelper.getNuGetDownloadUrl(
+                azureArtifactsInternalConfig.getAzureArtifactsRegistryUrl(), project, feed, packageName, version),
+            AzureArtifactsRegistryServiceImpl.getAuthHeader(azureArtifactsInternalConfig));
+        size = AzureArtifactsDownloadHelper.getInputStreamSize(inputStream);
+        inputStream.close();
+      } catch (IOException e) {
+        throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), e);
+      }
+      return Collections.singletonList(new AzureArtifactsPackageFileInfo(packageName, size));
+    }
+
+    return Collections.emptyList();
+  }
+
+  @Override
+  public Pair<String, InputStream> downloadArtifact(AzureArtifactsInternalConfig azureArtifactsInternalConfig,
+      String project, String feed, String protocolType, String packageName, String version) {
+    String fileName;
+    String artifactUrl;
+    InputStream inputStream;
+
+    if (AzureArtifactsProtocolType.maven.name().equals(protocolType)) {
+      List<AzureArtifactsPackageFileInfo> files =
+          listPackageFiles(azureArtifactsInternalConfig, project, feed, protocolType, packageName, version);
+
+      fileName = files.stream()
+                     .map(AzureArtifactsPackageFileInfo::getName)
+                     .filter(AzureArtifactsDownloadHelper::shouldDownloadFile)
+                     .findFirst()
+                     .orElse(null);
+
+      if (isBlank(fileName)) {
+        throw new InvalidRequestException("No file available for downloading the package " + packageName);
+      }
+      artifactUrl = azureArtifactsDownloadHelper.getMavenDownloadUrl(
+          azureArtifactsInternalConfig.getAzureArtifactsRegistryUrl(), project, feed, packageName, version, fileName);
+    } else if (AzureArtifactsProtocolType.nuget.name().equals(protocolType)) {
+      fileName = packageName;
+      artifactUrl = azureArtifactsDownloadHelper.getNuGetDownloadUrl(
+          azureArtifactsInternalConfig.getAzureArtifactsRegistryUrl(), project, feed, packageName, version);
+    } else {
+      throw new InvalidRequestException("Invalid Protocol Type");
+    }
+    try {
+      String authHeader = getAuthHeader(azureArtifactsInternalConfig);
+      inputStream = azureArtifactsDownloadHelper.downloadArtifactByUrl(artifactUrl, authHeader);
+    } catch (Exception exception) {
+      throw new InvalidArtifactServerException("Failed to download azure artifact", exception);
+    }
+    return ImmutablePair.of(fileName, inputStream);
   }
 
   private void constructBuildDetails(

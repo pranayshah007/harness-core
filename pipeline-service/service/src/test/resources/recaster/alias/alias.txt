@@ -147,3 +147,4 @@ io.harness.plancreator.strategy.ExpressionAxisConfig
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
 io.harness.steps.wait.WaitStepDetailsInfo
+io.harness.steps.common.pipeline.PipelineStepParameterV1

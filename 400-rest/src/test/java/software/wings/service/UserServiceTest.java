@@ -96,7 +96,6 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.LogoutResponse;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
@@ -111,7 +110,6 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.exception.UserAlreadyPresentException;
 import io.harness.exception.UserRegistrationException;
 import io.harness.exception.WingsException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
@@ -279,7 +277,6 @@ public class UserServiceTest extends WingsBaseTest {
   @Mock private AuthenticationUtils authenticationUtils;
   @Mock private TOTPAuthHandler totpAuthHandler;
   @Mock private SSOSettingService ssoSettingService;
-  @Mock private FeatureFlagService featureFlagService;
 
   @Spy @InjectMocks private SignupServiceImpl signupService;
 
@@ -1787,7 +1784,6 @@ public class UserServiceTest extends WingsBaseTest {
     when(authenticationUtils.getDefaultAccount(any())).thenReturn(account);
     when(wingsPersistence.getWithAppId(UserInvite.class, GLOBAL_APP_ID, USER_INVITE_ID)).thenReturn(userInvite);
     when(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID)).thenReturn(true);
-    when(accountService.isSSOEnabled(account)).thenReturn(true);
     when(ssoSettingService.getSamlSettingsByAccountId(ACCOUNT_ID)).thenReturn(samlSettings);
 
     List<InviteOperationResponse> inviteOperationResponses = userService.inviteUsers(userInvite);
@@ -1823,8 +1819,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.saveAndGet(eq(User.class), any(User.class))).thenReturn(userBuilder.uuid(USER_ID).build());
     when(authenticationUtils.getDefaultAccount(any())).thenReturn(account);
     when(wingsPersistence.getWithAppId(UserInvite.class, GLOBAL_APP_ID, USER_INVITE_ID)).thenReturn(userInvite);
-    when(featureFlagService.isEnabled(any(FeatureName.class), anyString())).thenReturn(true);
-    when(accountService.isSSOEnabled(account)).thenReturn(true);
+    when(accountService.isPLNoEmailForSamlAccountInvitesEnabled(anyString())).thenReturn(true);
 
     List<InviteOperationResponse> inviteOperationResponses = userService.inviteUsers(userInvite);
 

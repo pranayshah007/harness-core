@@ -309,7 +309,7 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
       }
 
       if (buildResult != BuildResult.SUCCESS
-          && (buildResult != BuildResult.UNSTABLE || attributesRequest.isUnstableStatusAsSuccess())) {
+          && (buildResult != BuildResult.UNSTABLE || !attributesRequest.isUnstableStatusAsSuccess())) {
         executionStatus = ExecutionStatus.FAILED;
       }
     } catch (WingsException e) {
@@ -404,7 +404,7 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
     return jenkinsBuild;
   }
 
-  private BuildWithDetails waitForJobExecutionToFinish(Build jenkinsBuild, String unitName,
+  public BuildWithDetails waitForJobExecutionToFinish(Build jenkinsBuild, String unitName,
       JenkinsInternalConfig jenkinsInternalConfig, LogCallback logCallback) throws IOException {
     CustomBuildWithDetails jenkinsBuildWithDetails = null;
     AtomicInteger consoleLogsSent = new AtomicInteger();

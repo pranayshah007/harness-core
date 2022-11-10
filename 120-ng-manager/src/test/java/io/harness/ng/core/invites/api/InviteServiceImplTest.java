@@ -142,7 +142,7 @@ public class InviteServiceImplTest extends CategoryTest {
     when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(false);
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
     when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any())).thenReturn(ffCall);
-    when(accountClient.isSSOEnabled(any())).thenReturn(ffCall);
+    when(accountClient.checkPLNoEmailForSamlAccountInvitesEnabledForAccount(anyString())).thenReturn(ffCall);
     when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
   }
 
@@ -489,7 +489,6 @@ public class InviteServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty());
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
     when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any())).thenReturn(ffCall);
-    when(accountClient.isSSOEnabled(any())).thenReturn(ffCall);
     when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
     Call<RestResponse<Boolean>> userCall = mock(Call.class);
     when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean(), anyBoolean())).thenReturn(userCall);
@@ -516,9 +515,8 @@ public class InviteServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty());
     Call<RestResponse<Boolean>> call = mock(Call.class);
     when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean(), anyBoolean())).thenReturn(call);
-    when(accountClient.isSSOEnabled(any())).thenReturn(call);
+    when(accountClient.checkPLNoEmailForSamlAccountInvitesEnabledForAccount(anyString())).thenReturn(call);
     when(call.execute()).thenReturn(Response.success(new RestResponse<>(true)));
-    when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
 
     InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
 

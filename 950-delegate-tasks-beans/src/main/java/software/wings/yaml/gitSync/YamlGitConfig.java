@@ -76,6 +76,12 @@ public class YamlGitConfig implements EncryptableSetting, PersistentEntity, Uuid
                  .field(YamlGitConfigKeys.entityId)
                  .field(YamlGitConfigKeys.entityType)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("account_gitconnector_branch")
+                 .field(YamlGitConfigKeys.accountId)
+                 .field(YamlGitConfigKeys.gitConnectorId)
+                 .field(YamlGitConfigKeys.branchName)
+                 .build())
         .build();
   }
 

@@ -74,7 +74,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -82,7 +84,6 @@ import retrofit2.Response;
 public class InfraMigrationService extends NgMigrationService {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private MigratorExpressionUtils migratorExpressionUtils;
-  @Inject private InfraMapperFactory infraMapperFactory;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -140,6 +141,14 @@ public class InfraMigrationService extends NgMigrationService {
 
     Set<CgEntityId> children = new HashSet<>();
     children.add(CgEntityId.builder().id(infra.getInfrastructure().getCloudProviderId()).type(CONNECTOR).build());
+
+    List<String> connectorIds = InfraMapperFactory.getInfraDefMapper(infra).getConnectorIds(infra);
+    if (EmptyPredicate.isNotEmpty(connectorIds)) {
+      children.addAll(connectorIds.stream()
+                          .filter(StringUtils::isNotBlank)
+                          .map(connectorId -> CgEntityId.builder().id(connectorId).type(CONNECTOR).build())
+                          .collect(Collectors.toList()));
+    }
     return DiscoveryNode.builder().children(children).entityNode(infraNode).build();
   }
 
@@ -210,7 +219,7 @@ public class InfraMigrationService extends NgMigrationService {
     String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    InfraDefMapper infraDefMapper = infraMapperFactory.getInfraDefMapper(infra);
+    InfraDefMapper infraDefMapper = InfraMapperFactory.getInfraDefMapper(infra);
     NGYamlFile envNgYamlFile =
         migratedEntities.get(CgEntityId.builder().id(infra.getEnvId()).type(ENVIRONMENT).build());
     Infrastructure infraSpec = infraDefMapper.getSpec(infra, migratedEntities);

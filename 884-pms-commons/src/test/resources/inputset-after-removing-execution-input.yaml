@@ -10,6 +10,16 @@ pipeline:
         identifier: "qaStage2"
         type: "Deployment"
         spec:
+          service:
+            serviceRef: "manager"
+          environment:
+            envRef: "prod"
+            infrastructureDefinitions:
+            - identifier: "k8s_infra"
+    - stage:
+        identifier: "qaStage3"
+        type: "Deployment"
+        spec:
           execution:
             steps:
             - step:
@@ -18,7 +28,7 @@ pipeline:
                 spec:
                   method: "<+input>.executionInput()"
   - stage:
-      identifier: "qaStage4"
+      identifier: "qaStage5"
       type: "Deployment"
       spec:
         execution:
@@ -28,3 +38,66 @@ pipeline:
               type: "Http"
               spec:
                 url: "<+input>.executionInput()"
+  - stage:
+      identifier: "qaStage6"
+      type: "Deployment"
+      spec:
+        service:
+          serviceRef: "manager"
+        environment:
+          envRef: "prod"
+  - stage:
+      identifier: "qaStage7"
+      type: "Deployment"
+      spec:
+        service:
+          serviceRef: "manager"
+        environment:
+          envRef: "prod"
+          infrastructureDefinitions:
+          - identifier: "k8s_infra_1"
+            inputs:
+              foo: "bar"
+        execution:
+          steps:
+          - step:
+              identifier: "httpStep5"
+              type: "Http"
+              spec:
+                method: "<+input>.executionInput()"
+  - stage:
+      identifier: "qaStage8"
+      type: "Deployment"
+      spec:
+        spec:
+          services:
+            values:
+            - serviceRef: "svc1"
+              inputs:
+                foo: "bar"
+          environments:
+            values:
+            - envRef: "prod3"
+              infrastructureDefinition:
+                identifier: "infra_3"
+            - envRef: "prod4"
+              infrastructureDefinition:
+                identifier: "infra_4"
+                inputs:
+                  foo: "bar"
+            - envRef: "prod5"
+              infrastructureDefinitions:
+              - identifier: "infra_5"
+                inputs:
+                  foo: "bar"
+            - envRef: "prod6"
+              infrastructureDefinitions:
+              - identifier: "infra_6"
+              - identifier: "infra_6_1"
+        execution:
+          steps:
+          - step:
+              identifier: "httpStep9"
+              type: "Http"
+              spec:
+                url: "GET"

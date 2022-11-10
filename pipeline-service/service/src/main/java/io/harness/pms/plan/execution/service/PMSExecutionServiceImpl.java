@@ -44,6 +44,8 @@ import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.helpers.YamlExpressionResolveHelper;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplateDTO;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
+import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
+import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -64,13 +66,17 @@ import com.google.protobuf.ByteString;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.PredicateUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -90,6 +96,12 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject private ValidateAndMergeHelper validateAndMergeHelper;
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
+
+  private static final int MAX_LIST_SIZE = 1000;
+
+  private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
+
+  private static final String BRANCH_LIST_SIZE_EXCEPTION = "The size of unique branches list is greater than [%d]";
 
   @Override
   public Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
@@ -162,27 +174,23 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
           Criteria.where(PlanExecutionSummaryKeys.gitSyncBranchContext).is(gitSyncBranchContext);
 
       EntityGitDetails entityGitDetails = pmsGitSyncHelper.getEntityGitDetailsFromBytes(gitSyncBranchContext);
-      Criteria gitCriteriaNew = Criteria
-                                    .where(PlanExecutionSummaryKeys.entityGitDetails + "."
-                                        + "branch")
-                                    .is(entityGitDetails.getBranch());
+      Criteria gitCriteriaNew =
+          Criteria.where(PlanExecutionSummaryKeys.entityGitDetailsBranch).is(entityGitDetails.getBranch());
       if (entityGitDetails.getRepoIdentifier() != null
           && !entityGitDetails.getRepoIdentifier().equals(GitAwareEntityHelper.DEFAULT)) {
-        gitCriteriaNew
-            .and(PlanExecutionSummaryKeys.entityGitDetails + "."
-                + "repoIdentifier")
+        gitCriteriaNew.and(PlanExecutionSummaryKeys.entityGitDetailsRepoIdentifier)
             .is(entityGitDetails.getRepoIdentifier());
       } else if (entityGitDetails.getRepoName() != null
           && !entityGitDetails.getRepoName().equals(GitAwareEntityHelper.DEFAULT)) {
-        gitCriteriaNew
-            .and(PlanExecutionSummaryKeys.entityGitDetails + "."
-                + "repoName")
-            .is(entityGitDetails.getRepoName());
+        gitCriteriaNew.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is(entityGitDetails.getRepoName());
       }
       gitCriteria.orOperator(gitCriteriaDeprecated, gitCriteriaNew);
     }
 
     List<Criteria> criteriaList = new LinkedList<>();
+    if (!gitCriteria.equals(new Criteria())) {
+      criteriaList.add(gitCriteria);
+    }
     if (!filterCriteria.equals(new Criteria())) {
       criteriaList.add(filterCriteria);
     }
@@ -192,12 +200,66 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     if (!searchCriteria.equals(new Criteria())) {
       criteriaList.add(searchCriteria);
     }
-    if (!gitCriteria.equals(new Criteria())) {
-      criteriaList.add(gitCriteria);
-    }
 
     if (!criteriaList.isEmpty()) {
       criteria.andOperator(criteriaList.toArray(new Criteria[criteriaList.size()]));
+    }
+    return criteria;
+  }
+
+  @Override
+  public Criteria formCriteriaForRepoAndBranchListing(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String repoName) {
+    Criteria criteria = new Criteria();
+    criteria.and(PlanExecutionSummaryKeys.accountId).is(accountIdentifier);
+    criteria.and(PlanExecutionSummaryKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectIdentifier);
+
+    if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
+      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(repoName)) {
+      criteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is(repoName);
+    }
+    return criteria;
+  }
+
+  @Override
+  public PMSPipelineListRepoResponse getListOfRepo(Criteria criteria) {
+    List<String> uniqueRepos = pmsExecutionSummaryRespository.findListOfUniqueRepositories(criteria);
+    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
+    if (uniqueRepos.size() > MAX_LIST_SIZE) {
+      log.error(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+      throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+    }
+    return PMSPipelineListRepoResponse.builder().repositories(new HashSet<>(uniqueRepos)).build();
+  }
+
+  @Override
+  public PMSPipelineListBranchesResponse getListOfBranches(Criteria criteria) {
+    List<String> uniqueBranches = pmsExecutionSummaryRespository.findListOfUniqueBranches(criteria);
+    CollectionUtils.filter(uniqueBranches, PredicateUtils.notNullPredicate());
+    if (uniqueBranches.size() > MAX_LIST_SIZE) {
+      log.error(String.format(BRANCH_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+      throw new InternalServerErrorException(String.format(BRANCH_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+    }
+    return PMSPipelineListBranchesResponse.builder().branches(new HashSet<>(uniqueBranches)).build();
+  }
+
+  @Override
+  public Criteria formCriteriaV2(String accountId, String orgId, String projectId, List<String> pipelineIdentifier) {
+    Criteria criteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(accountId)) {
+      criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
+    }
+    if (EmptyPredicate.isNotEmpty(orgId)) {
+      criteria.and(PlanExecutionSummaryKeys.orgIdentifier).is(orgId);
+    }
+    if (EmptyPredicate.isNotEmpty(projectId)) {
+      criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectId);
+    }
+    if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
+      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
     }
     return criteria;
   }
@@ -213,19 +275,12 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
         criteria, (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties());
   }
 
-  private void populatePipelineFilter(Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO piplineFilter) {
-    if (EmptyPredicate.isNotEmpty(piplineFilter.getPipelineName())) {
-      criteria.orOperator(
-          where(PlanExecutionSummaryKeys.name)
-              .regex(piplineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-          where(PlanExecutionSummaryKeys.pipelineIdentifier)
-              .regex(piplineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
-    }
-    if (piplineFilter.getTimeRange() != null) {
-      TimeRange timeRange = piplineFilter.getTimeRange();
+  private void populatePipelineFilter(Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter) {
+    if (pipelineFilter.getTimeRange() != null) {
+      TimeRange timeRange = pipelineFilter.getTimeRange();
       // Apply filter to criteria if StartTime and EndTime both are not null.
       if (timeRange.getStartTime() != null && timeRange.getEndTime() != null) {
-        criteria.and(PlanExecutionSummaryKeys.createdAt).gte(timeRange.getStartTime()).lte(timeRange.getEndTime());
+        criteria.and(PlanExecutionSummaryKeys.startTs).gte(timeRange.getStartTime()).lte(timeRange.getEndTime());
 
       } else if ((timeRange.getStartTime() != null && timeRange.getEndTime() == null)
           || (timeRange.getStartTime() == null && timeRange.getEndTime() != null)) {
@@ -236,15 +291,25 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       // Ignore TimeRange filter if StartTime and EndTime both are null.
     }
 
-    if (EmptyPredicate.isNotEmpty(piplineFilter.getPipelineTags())) {
-      addPipelineTagsCriteria(criteria, piplineFilter.getPipelineTags());
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getStatus())) {
+      criteria.and(PlanExecutionSummaryKeys.status).in(pipelineFilter.getStatus());
     }
-    if (EmptyPredicate.isNotEmpty(piplineFilter.getStatus())) {
-      criteria.and(PlanExecutionSummaryKeys.status).in(piplineFilter.getStatus());
+
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineName())) {
+      criteria.orOperator(
+          where(PlanExecutionSummaryKeys.pipelineIdentifier)
+              .regex(pipelineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          where(PlanExecutionSummaryKeys.name)
+              .regex(pipelineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
-    if (piplineFilter.getModuleProperties() != null) {
+
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineTags())) {
+      addPipelineTagsCriteria(criteria, pipelineFilter.getPipelineTags());
+    }
+
+    if (pipelineFilter.getModuleProperties() != null) {
       ModuleInfoFilterUtils.processNode(
-          JsonUtils.readTree(piplineFilter.getModuleProperties().toJson()), "moduleInfo", criteria);
+          JsonUtils.readTree(pipelineFilter.getModuleProperties().toJson()), "moduleInfo", criteria);
     }
   }
 
@@ -255,12 +320,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       tags.add(o.getValue());
     });
     Criteria tagsCriteria = new Criteria();
-    tagsCriteria.orOperator(where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.tags + "."
-                                + "key")
-                                .in(tags),
-        where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.tags + "."
-            + "value")
-            .in(tags));
+    tagsCriteria.orOperator(
+        where(PlanExecutionSummaryKeys.tagsKey).in(tags), where(PlanExecutionSummaryKeys.tagsValue).in(tags));
     criteria.andOperator(tagsCriteria);
   }
 

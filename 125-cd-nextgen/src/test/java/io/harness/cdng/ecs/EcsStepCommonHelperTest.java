@@ -13,9 +13,11 @@ import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -27,6 +29,7 @@ import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
+import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestType;
@@ -255,6 +258,11 @@ public class EcsStepCommonHelperTest extends CategoryTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void startChainLinkLocalStoreEcsRollingDeployStepTest() {
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    doReturn(unitProgressData)
+        .when(ecsStepCommonHelper)
+        .getCommandUnitProgressData(EcsCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
+
     HarnessStore harnessStoreConfig =
         HarnessStore.builder()
             .files(ParameterField.<List<String>>builder().value(Arrays.asList("Ecs/sample/ecs.yaml")).build())
@@ -293,9 +301,12 @@ public class EcsStepCommonHelperTest extends CategoryTest {
         .getManifestOutcomesByType(manifestOutcomes, ManifestType.EcsScalingPolicyDefinition);
     Optional<FileStoreNodeDTO> manifestFile = Optional.of(FileNodeDTO.builder().content("content").build());
     doReturn(manifestFile).when(fileStoreService).getWithChildrenByPath(any(), any(), any(), any(), anyBoolean());
+    doReturn(content).when(engineExpressionService).renderExpression(any(), any());
 
     EcsInfraConfig ecsInfraConfig = EcsInfraConfig.builder().build();
     doReturn(ecsInfraConfig).when(ecsStepCommonHelper).getEcsInfraConfig(any(), any());
+
+    ecsStepCommonHelper.startChainLink(ecsRollingDeployStep, ambiance, stepElementParameters, ecsStepHelper);
 
     EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData =
         EcsPrepareRollbackDataPassThroughData.builder()
@@ -306,36 +317,20 @@ public class EcsStepCommonHelperTest extends CategoryTest {
             .ecsScalingPolicyManifestContentList(Arrays.asList(content))
             .build();
 
-    TaskRequest taskRequest = TaskRequest.newBuilder().build();
-    TaskChainResponse taskChainResponseMock = TaskChainResponse.builder()
-                                                  .chainEnd(false)
-                                                  .taskRequest(taskRequest)
-                                                  .passThroughData(ecsPrepareRollbackDataPassThroughData)
-                                                  .build();
-    doReturn(taskChainResponseMock)
-        .when(ecsRollingDeployStep)
-        .executeEcsPrepareRollbackTask(any(), any(), any(), any());
-    TaskChainResponse taskChainResponse =
-        ecsStepCommonHelper.startChainLink(ecsRollingDeployStep, ambiance, stepElementParameters, ecsStepHelper);
-
-    assertThat(((EcsPrepareRollbackDataPassThroughData) taskChainResponse.getPassThroughData())
-                   .getEcsTaskDefinitionManifestContent())
-        .isEqualTo(ecsPrepareRollbackDataPassThroughData.getEcsTaskDefinitionManifestContent());
-    assertThat(((EcsPrepareRollbackDataPassThroughData) taskChainResponse.getPassThroughData())
-                   .getEcsServiceDefinitionManifestContent())
-        .isEqualTo(ecsPrepareRollbackDataPassThroughData.getEcsServiceDefinitionManifestContent());
-    assertThat(((EcsPrepareRollbackDataPassThroughData) taskChainResponse.getPassThroughData())
-                   .getEcsScalableTargetManifestContentList())
-        .isEqualTo(ecsPrepareRollbackDataPassThroughData.getEcsScalableTargetManifestContentList());
-    assertThat(((EcsPrepareRollbackDataPassThroughData) taskChainResponse.getPassThroughData())
-                   .getEcsScalingPolicyManifestContentList())
-        .isEqualTo(ecsPrepareRollbackDataPassThroughData.getEcsScalingPolicyManifestContentList());
+    verify(ecsRollingDeployStep)
+        .executeEcsPrepareRollbackTask(
+            ambiance, stepElementParameters, ecsPrepareRollbackDataPassThroughData, unitProgressData);
   }
 
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void startChainLinkLocalStoreEcsBlueGreenCreateServiceStepTest() {
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    doReturn(unitProgressData)
+        .when(ecsStepCommonHelper)
+        .getCommandUnitProgressData(EcsCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
+
     HarnessStore harnessStoreConfig =
         HarnessStore.builder()
             .files(ParameterField.<List<String>>builder().value(Arrays.asList("Ecs/sample/ecs.yaml")).build())
@@ -378,39 +373,10 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     EcsInfraConfig ecsInfraConfig = EcsInfraConfig.builder().build();
     doReturn(ecsInfraConfig).when(ecsStepCommonHelper).getEcsInfraConfig(any(), any());
 
-    EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData =
-        EcsPrepareRollbackDataPassThroughData.builder()
-            .infrastructureOutcome(infrastructureOutcome)
-            .ecsTaskDefinitionManifestContent(content)
-            .ecsServiceDefinitionManifestContent(content)
-            .ecsScalableTargetManifestContentList(Arrays.asList(content))
-            .ecsScalingPolicyManifestContentList(Arrays.asList(content))
-            .build();
+    ecsStepCommonHelper.startChainLink(ecsBlueGreenCreateServiceStep, ambiance, stepElementParameters, ecsStepHelper);
 
-    TaskRequest taskRequest = TaskRequest.newBuilder().build();
-    TaskChainResponse taskChainResponseMock = TaskChainResponse.builder()
-                                                  .chainEnd(false)
-                                                  .taskRequest(taskRequest)
-                                                  .passThroughData(ecsPrepareRollbackDataPassThroughData)
-                                                  .build();
-    doReturn(taskChainResponseMock)
-        .when(ecsBlueGreenCreateServiceStep)
-        .executeEcsPrepareRollbackTask(any(), any(), any(), any());
-    TaskChainResponse taskChainResponse = ecsStepCommonHelper.startChainLink(
-        ecsBlueGreenCreateServiceStep, ambiance, stepElementParameters, ecsStepHelper);
-
-    assertThat(((EcsPrepareRollbackDataPassThroughData) taskChainResponse.getPassThroughData())
-                   .getEcsTaskDefinitionManifestContent())
-        .isEqualTo(ecsPrepareRollbackDataPassThroughData.getEcsTaskDefinitionManifestContent());
-    assertThat(((EcsPrepareRollbackDataPassThroughData) taskChainResponse.getPassThroughData())
-                   .getEcsServiceDefinitionManifestContent())
-        .isEqualTo(ecsPrepareRollbackDataPassThroughData.getEcsServiceDefinitionManifestContent());
-    assertThat(((EcsPrepareRollbackDataPassThroughData) taskChainResponse.getPassThroughData())
-                   .getEcsScalableTargetManifestContentList())
-        .isEqualTo(ecsPrepareRollbackDataPassThroughData.getEcsScalableTargetManifestContentList());
-    assertThat(((EcsPrepareRollbackDataPassThroughData) taskChainResponse.getPassThroughData())
-                   .getEcsScalingPolicyManifestContentList())
-        .isEqualTo(ecsPrepareRollbackDataPassThroughData.getEcsScalingPolicyManifestContentList());
+    verify(ecsBlueGreenCreateServiceStep)
+        .executeEcsPrepareRollbackTask(eq(ambiance), eq(stepElementParameters), any(), eq(unitProgressData));
   }
 
   @Test
@@ -453,43 +419,37 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     doReturn(Arrays.asList(scalingManifestOutcome))
         .when(ecsStepHelper)
         .getManifestOutcomesByType(manifestOutcomes, ManifestType.EcsScalingPolicyDefinition);
-    Optional<FileStoreNodeDTO> manifestFile = Optional.of(FileNodeDTO.builder().content("content").build());
+
+    Optional<FileStoreNodeDTO> manifestFile = Optional.of(FileNodeDTO.builder().content(content).build());
     doReturn(manifestFile).when(fileStoreService).getWithChildrenByPath(any(), any(), any(), any(), anyBoolean());
+    doReturn(content).when(engineExpressionService).renderExpression(any(), any());
 
     EcsInfraConfig ecsInfraConfig = EcsInfraConfig.builder().build();
     doReturn(ecsInfraConfig).when(ecsStepCommonHelper).getEcsInfraConfig(any(), any());
 
-    EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData =
-        EcsPrepareRollbackDataPassThroughData.builder()
-            .infrastructureOutcome(infrastructureOutcome)
-            .ecsTaskDefinitionManifestContent(content)
-            .ecsServiceDefinitionManifestContent(content)
-            .ecsScalableTargetManifestContentList(Arrays.asList(content))
-            .ecsScalingPolicyManifestContentList(Arrays.asList(content))
-            .build();
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    doReturn(unitProgressData)
+        .when(ecsStepCommonHelper)
+        .getCommandUnitProgressData(EcsCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
 
-    TaskRequest taskRequest = TaskRequest.newBuilder().build();
-    TaskChainResponse taskChainResponseMock = TaskChainResponse.builder()
-                                                  .chainEnd(false)
-                                                  .taskRequest(taskRequest)
-                                                  .passThroughData(ecsPrepareRollbackDataPassThroughData)
-                                                  .build();
-    doReturn(taskChainResponseMock).when(ecsCanaryDeployStep).executeEcsTask(any(), any(), any(), any(), any());
-    TaskChainResponse taskChainResponse =
-        ecsStepCommonHelper.startChainLink(ecsCanaryDeployStep, ambiance, stepElementParameters, ecsStepHelper);
+    ecsStepCommonHelper.startChainLink(ecsCanaryDeployStep, ambiance, stepElementParameters, ecsStepHelper);
 
-    assertThat(((EcsPrepareRollbackDataPassThroughData) taskChainResponse.getPassThroughData())
-                   .getEcsTaskDefinitionManifestContent())
-        .isEqualTo(ecsPrepareRollbackDataPassThroughData.getEcsTaskDefinitionManifestContent());
-    assertThat(((EcsPrepareRollbackDataPassThroughData) taskChainResponse.getPassThroughData())
-                   .getEcsServiceDefinitionManifestContent())
-        .isEqualTo(ecsPrepareRollbackDataPassThroughData.getEcsServiceDefinitionManifestContent());
-    assertThat(((EcsPrepareRollbackDataPassThroughData) taskChainResponse.getPassThroughData())
-                   .getEcsScalableTargetManifestContentList())
-        .isEqualTo(ecsPrepareRollbackDataPassThroughData.getEcsScalableTargetManifestContentList());
-    assertThat(((EcsPrepareRollbackDataPassThroughData) taskChainResponse.getPassThroughData())
-                   .getEcsScalingPolicyManifestContentList())
-        .isEqualTo(ecsPrepareRollbackDataPassThroughData.getEcsScalingPolicyManifestContentList());
+    EcsExecutionPassThroughData executionPassThroughData = EcsExecutionPassThroughData.builder()
+                                                               .infrastructure(infrastructureOutcome)
+                                                               .lastActiveUnitProgressData(unitProgressData)
+                                                               .build();
+
+    EcsStepExecutorParams ecsStepExecutorParams = EcsStepExecutorParams.builder()
+                                                      .shouldOpenFetchFilesLogStream(false)
+                                                      .ecsTaskDefinitionManifestContent(content)
+                                                      .ecsServiceDefinitionManifestContent(content)
+                                                      .ecsScalableTargetManifestContentList(Arrays.asList(content))
+                                                      .ecsScalingPolicyManifestContentList(Arrays.asList(content))
+                                                      .build();
+
+    verify(ecsCanaryDeployStep)
+        .executeEcsTask(
+            ambiance, stepElementParameters, executionPassThroughData, unitProgressData, ecsStepExecutorParams);
   }
 
   @Test

@@ -9,6 +9,7 @@ package io.harness.cdng.visitor.helpers.serviceconfig;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -145,5 +146,31 @@ public class CustomDeploymentServiceSpecVisitorHelperTest {
                                customDeploymentServiceSpec, accountId, orgId, projectId, contextMap))
         .hasMessage(
             "Object of class class io.harness.cdng.service.beans.KubernetesServiceSpec does not implement CustomDeploymentServiceSpec, and hence can't have CustomDeploymentServiceSpecVisitorHelper as its visitor helper");
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testCreateDummyElement() {
+    CustomDeploymentServiceSpecVisitorHelper customDeploymentServiceSpecVisitorHelper =
+        new CustomDeploymentServiceSpecVisitorHelper();
+    Object dummyVisitableElement = customDeploymentServiceSpecVisitorHelper.createDummyVisitableElement(new Object());
+    customDeploymentServiceSpecVisitorHelper.validate(null, null);
+    assertThat(dummyVisitableElement).isInstanceOf(CustomDeploymentServiceSpec.class);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testAddReferenceWithoutTemplateRef() {
+    CustomDeploymentServiceSpecVisitorHelper customDeploymentServiceSpecVisitorHelper =
+        new CustomDeploymentServiceSpecVisitorHelper();
+    CustomDeploymentServiceSpec customDeploymentServiceSpec = CustomDeploymentServiceSpec.builder().build();
+
+    Map<String, Object> contextMap = Collections.emptyMap();
+    Set<EntityDetailProtoDTO> entityDetailProtoDTOS = customDeploymentServiceSpecVisitorHelper.addReference(
+        customDeploymentServiceSpec, accountId, orgId, projectId, contextMap);
+    assertThat(entityDetailProtoDTOS).isNotNull();
+    assertThat(entityDetailProtoDTOS).hasSize(0);
   }
 }

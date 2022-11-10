@@ -65,7 +65,7 @@ import io.harness.beans.SearchFilter.Operator;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.cv.api.WorkflowVerificationResultService;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.task.DataCollectionExecutorService;
+import io.harness.delegate.task.common.DataCollectionExecutorService;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.VerificationOperationException;
 import io.harness.ff.FeatureFlagService;

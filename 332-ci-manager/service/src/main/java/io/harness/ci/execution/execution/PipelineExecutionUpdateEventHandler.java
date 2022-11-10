@@ -25,6 +25,8 @@ import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
+import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.encryption.Scope;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
@@ -185,13 +187,19 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
         log.warn(
             "Unable to locate delegate ID for stage ID: {}. Cleanup task may be routed to the wrong delegate", stageId);
       }
-    } else if (type == CICleanupTaskParams.Type.DOCKER) {
-      // TODO: Start using fetchDelegateId once we start emitting & processing the event for Docker as well
-      OptionalOutcome optionalOutput = outcomeService.resolveOptional(
-          ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
-      VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
-      if (vmDetailsOutcome != null && Strings.isNotBlank(vmDetailsOutcome.getDelegateId())) {
-        eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
+    }
+    // Since we use a same class to handle both VM and DOCKER cases due to they share a lot of similarities in
+    // processing logic, and we use a CICleanupTaskParams type name `VM` to represent them. Only docker scenario
+    // needs additional step to add matching docker delegate id into the eligible to execute delegate id list.
+    else if (type == CICleanupTaskParams.Type.VM) {
+      if (((CIVmCleanupTaskParams) ciCleanupTaskParams).getInfraInfo() == CIInitializeTaskParams.Type.DOCKER) {
+        // TODO: Start using fetchDelegateId once we start emitting & processing the event for Docker as well
+        OptionalOutcome optionalOutput = outcomeService.resolveOptional(
+            ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
+        VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
+        if (vmDetailsOutcome != null && Strings.isNotBlank(vmDetailsOutcome.getDelegateId())) {
+          eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
+        }
       }
     }
 

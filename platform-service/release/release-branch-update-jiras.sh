@@ -1,9 +1,24 @@
 #!/bin/bash
+# Copyright 2021 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-set -ex
+function check_file_present(){
+     local_file=$1
+     if [ ! -f "$local_file" ]; then
+        echo "ERROR: $LINENO: File $local_file not found. Exiting"
+        exit 1
+     fi
+}
+
+SHDIR=$(dirname "$0")
+PROJFILE="$SHDIR/jira-projects.txt"
+check_file_present $PROJFILE
+PROJECTS=$(<$PROJFILE)
 KEYS=$(git log --pretty=oneline --abbrev-commit |\
       awk "/${PREVIOUS_CUT_COMMIT_MESSAGE}/ {exit} {print}" |\
-      grep -o -iE '('PL')-[0-9]+' | sort | uniq)
+      grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
 
 echo $KEYS
 
@@ -13,31 +28,15 @@ FIX_PLS_VERSION="PlatformService_""$VERSION"00
 for KEY in ${KEYS}
   do
     echo "$KEY"
-    PARAMS="11198,10366" # notifications,audit-trail
-    IFS="," read -ra EXP_COMPONENTS <<< "$PARAMS"
-    COMPONENT_IDS=$(curl -X GET -H "Content-Type: application/json" \
-      https://harness.atlassian.net/rest/api/2/issue/$KEY?fields=components \
-      --user $JIRA_USERNAME:$JIRA_PASSWORD \
-      | jq -c '.fields.components[].id' | tr -d '"')
-      # shellcheck disable=SC2068
-    for comp in ${COMPONENT_IDS[@]}
-    do
-      for exp_comp in ${EXP_COMPONENTS[@]}
-      do
-        if [[ $comp == $exp_comp ]]; then
-          response=$(curl -q -X PUT https://harness.atlassian.net/rest/api/2/issue/${KEY} --write-out '%{http_code}' --user ${JIRA_USERNAME}:${JIRA_PASSWORD} -H "Content-Type: application/json" -d '{
-          "update": {
-          "fixVersions": [
-            {"add":
-              {"name": "'"$FIX_PLS_VERSION"'" }
-            }]}}')
-          if [[ "$response" -eq 204 ]] ; then
-            echo "$KEY fixVersion set to $FIX_PLS_VERSION"
-          elif [[ "$response" -eq 400 ]] ; then
-            echo "Could not set fixVersion on $KEY - field hidden for the issue type"
-          fi
-          break 2
-        fi
-      done
-    done
+    response=$(curl -q -X PUT https://harness.atlassian.net/rest/api/2/issue/${KEY} --write-out '%{http_code}' --user ${JIRA_USERNAME}:${JIRA_PASSWORD} -H "Content-Type: application/json" -d '{
+    "update": {
+    "fixVersions": [
+      {"add":
+        {"name": "'"$FIX_PLS_VERSION"'" }
+      }]}}')
+    if [[ "$response" -eq 204 ]] ; then
+      echo "$KEY fixVersion set to $FIX_PLS_VERSION"
+    elif [[ "$response" -eq 400 ]] ; then
+      echo "Could not set fixVersion on $KEY - field hidden for the issue type"
+    fi
   done

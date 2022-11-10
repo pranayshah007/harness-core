@@ -313,6 +313,9 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
 
     // validate
     ChangeContextErrorMap validationResponseMap = validate(changeList);
+
+    // sorting it again
+    sortByProcessingOrder(validationResponseMap);
     // process in the given order
     Map<String, ChangeWithErrorMsg> processingErrorMap =
         process(validationResponseMap.changeContextList, isGitSyncPath);
@@ -515,6 +518,12 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
   @Override
   public void sortByProcessingOrder(List<Change> changeList) {
     changeList.sort(new FilePathComparator());
+  }
+
+  @VisibleForTesting
+  void sortByProcessingOrder(ChangeContextErrorMap validationResponseMap) {
+    List<ChangeContext> changeContextList = validationResponseMap.changeContextList;
+    changeContextList.sort(new ChangeContextComparator());
   }
 
   private ChangeContext validateManifestFile(String yamlFilePath, Change change) {
@@ -1008,6 +1017,16 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
       int rCoffecient = rhs.getChangeType() == ChangeType.DELETE ? -1 : 1;
       return (lCoffecient * findOrdinal(lhs.getFilePath(), lhs.getAccountId()))
           - (rCoffecient * findOrdinal(rhs.getFilePath(), rhs.getAccountId()));
+    }
+  }
+
+  private final class ChangeContextComparator implements Comparator<ChangeContext> {
+    @Override
+    public int compare(ChangeContext lhs, ChangeContext rhs) {
+      int lCoffecient = lhs.getChange().getChangeType() == ChangeType.DELETE ? -1 : 1;
+      int rCoffecient = rhs.getChange().getChangeType() == ChangeType.DELETE ? -1 : 1;
+      return (lCoffecient * findOrdinal(lhs.getChange().getFilePath(), lhs.getChange().getAccountId()))
+          - (rCoffecient * findOrdinal(rhs.getChange().getFilePath(), rhs.getChange().getAccountId()));
     }
   }
 

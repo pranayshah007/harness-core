@@ -19,10 +19,10 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
-import io.harness.spec.server.ng.model.CreateProjectRequest;
-import io.harness.spec.server.ng.model.ModuleType;
-import io.harness.spec.server.ng.model.ProjectResponse;
-import io.harness.spec.server.ng.model.UpdateProjectRequest;
+import io.harness.spec.server.ng.v1.model.CreateProjectRequest;
+import io.harness.spec.server.ng.v1.model.ModuleType;
+import io.harness.spec.server.ng.v1.model.ProjectResponse;
+import io.harness.spec.server.ng.v1.model.UpdateProjectRequest;
 import io.harness.utils.PageUtils;
 
 import com.google.common.collect.ImmutableList;
@@ -104,7 +104,7 @@ public class ProjectApiUtils {
 
   public ProjectResponse getProjectResponse(Project project) {
     ProjectResponse projectResponse = new ProjectResponse();
-    io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
+    io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
     proj.setOrg(project.getOrgIdentifier());
     proj.setSlug(project.getIdentifier());
     proj.setName(project.getName());

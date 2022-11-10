@@ -8,6 +8,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//440-connector-nextgen/contracts/openapi/public/v1:connector-server-spec-module",
         "//878-ng-common-utilities:module",
         "//890-sm-core:module",
         "//900-git-sync-sdk:module",
@@ -44,7 +45,6 @@ java_library(
         "//clients/audit:module",
         "//clients/ngsettings:module",
         "//platform-service/modules/audit-service/contracts:module",
-        "@maven//:io_harness_ng_manager_server_spec",
     ],
 )
 
@@ -60,6 +60,7 @@ java_library(
     deps = [
         "module",
         "//:lombok",
+        "//440-connector-nextgen/contracts/openapi/public/v1:connector-server-spec-module",
         "//878-ng-common-utilities:module",
         "//890-sm-core:module",
         "//900-git-sync-sdk:module",

@@ -45,6 +45,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @OwnedBy(CDC)
 @Slf4j
 public class JiraClient {
+  private static final int MAX_FIELD_RESULTS = 200;
   private static final int CONNECT_TIMEOUT = 60;
   private static final int READ_TIMEOUT = 60;
 
@@ -74,7 +75,9 @@ public class JiraClient {
   }
 
   public JiraInstanceData getInstanceData() {
-    return executeCall(restClient.getInstanceData(), "fetching jira instance data");
+    JiraInstanceData instanceData = executeCall(restClient.getInstanceData(), "fetching jira instance data");
+    log.info("Jira instance of type: {} - Version: {}", instanceData.getDeploymentType(), instanceData.getVersion());
+    return instanceData;
   }
   public JiraUserData getUser(String userKey) {
     return executeCall(restClient.getUser(userKey), "getting user");
@@ -202,10 +205,10 @@ public class JiraClient {
         originalMetadataFromNewIssueTypeMetadata(projectKey, createMetadata, createMetadataNGIssueTypes);
       } else {
         JiraIssueTypeNG issueTypeNG = getIssueTypeFromName(issueType, projectKey);
-        JiraIssueCreateMetadataNGFields createMetadataNGFields =
-            executeCall(restClient.getIssueCreateMetadataFields(EmptyPredicate.isEmpty(projectKey) ? null : projectKey,
-                            EmptyPredicate.isEmpty(issueTypeNG.getId()) ? null : issueTypeNG.getId()),
-                "fetching create metadata");
+        JiraIssueCreateMetadataNGFields createMetadataNGFields = executeCall(
+            restClient.getIssueCreateMetadataFields(EmptyPredicate.isEmpty(projectKey) ? null : projectKey,
+                EmptyPredicate.isEmpty(issueTypeNG.getId()) ? null : issueTypeNG.getId(), MAX_FIELD_RESULTS),
+            "fetching create metadata");
         if (!ignoreComment) {
           createMetadataNGFields.addField(COMMENT_FIELD);
         }

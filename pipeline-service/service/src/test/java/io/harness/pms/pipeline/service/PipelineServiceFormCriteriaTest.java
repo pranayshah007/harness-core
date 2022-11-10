@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.PipelineServiceTestBase;
 import io.harness.PipelineSettingsService;
@@ -28,7 +29,7 @@ import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
-import io.harness.pms.yaml.YamlVersion;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
@@ -88,7 +89,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
                          .identifier(PIPELINE_IDENTIFIER)
                          .name(PIPELINE_IDENTIFIER)
                          .yaml(yaml)
-                         .harnessVersion(YamlVersion.V0)
+                         .harnessVersion(PipelineVersion.V0)
                          .stageCount(1)
                          .stageName("qaStage")
                          .version(null)
@@ -110,10 +111,11 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(outboxEvent).when(outboxService).save(any());
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelperMocked)
-        .updatePipelineInfo(pipelineEntity, YamlVersion.V0);
+        .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelperMocked)
         .validatePipelineYaml(any());
+    when(pipelineSettingsService.getMaxPipelineCreationCount(any())).thenReturn(Long.MAX_VALUE);
 
     pmsPipelineService.create(pipelineEntity);
 

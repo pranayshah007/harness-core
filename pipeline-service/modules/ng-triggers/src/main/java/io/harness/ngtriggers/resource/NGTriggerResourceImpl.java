@@ -190,14 +190,8 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       TriggerDetails triggerDetails =
           ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier,
               triggerEntity.getIdentifier(), triggerEntity.getYaml(), triggerEntity.getWithServiceV2());
-
-      Map<String, Map<String, String>> errorMap = ngTriggerService.validatePipelineRef(triggerDetails);
-      boolean isPipelineInputOutdated = false;
-      if (!CollectionUtils.isEmpty(errorMap)) {
-        isPipelineInputOutdated = true;
-      }
       NGTriggerDetailsResponseDTO responseDTO =
-          ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(triggerEntity, true, false, isPipelineInputOutdated);
+          ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(triggerEntity, true, false, false);
       return responseDTO;
     })));
   }
@@ -218,15 +212,8 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
         projectIdentifier, targetIdentifier, ngTriggerEntity.get().getIdentifier(), ngTriggerEntity.get().getYaml(),
         ngTriggerEntity.get().getWithServiceV2());
 
-    Map<String, Map<String, String>> errorMap = ngTriggerService.validatePipelineRef(triggerDetails);
-    boolean isPipelineInputOutdated = false;
-    if (!CollectionUtils.isEmpty(errorMap)) {
-      isPipelineInputOutdated = true;
-    }
-
     return ResponseDTO.newResponse(ngTriggerEntity.get().getVersion().toString(),
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(
-            ngTriggerEntity.get(), true, true, isPipelineInputOutdated));
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity.get(), true, true, false));
   }
 
   @Timed

@@ -48,6 +48,7 @@ import io.harness.ng.core.events.ServiceUpsertEvent;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -545,7 +546,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public String mergeServiceInputs(
+  public ServiceInputsMergedResponseDto mergeServiceInputs(
       String accountId, String orgId, String projectId, String serviceId, String oldServiceInputsYaml) {
     Optional<ServiceEntity> serviceEntity = get(accountId, orgId, projectId, serviceId, false);
     if (!serviceEntity.isPresent()) {
@@ -555,8 +556,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
     String serviceYaml = serviceEntity.get().getYaml();
     if (isEmpty(serviceYaml)) {
-      throw new InvalidRequestException(
-          format("Service %s is not configured with a Service definition. Service Yaml is empty", serviceId));
+      return ServiceInputsMergedResponseDto.builder().mergedServiceInputsYaml("").serviceYaml("").build();
     }
     try {
       YamlNode primaryArtifactRefNode = null;
@@ -568,7 +568,10 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
       String newServiceInputsYaml = createServiceInputsYamlGivenPrimaryArtifactRef(
           serviceYaml, serviceId, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
-      return mergeServiceInputs(oldServiceInputsYaml, newServiceInputsYaml);
+      return ServiceInputsMergedResponseDto.builder()
+          .mergedServiceInputsYaml(mergeServiceInputs(oldServiceInputsYaml, newServiceInputsYaml))
+          .serviceYaml(serviceYaml)
+          .build();
     } catch (IOException ex) {
       throw new InvalidRequestException("Error occurred while merging old and new service inputs", ex);
     }

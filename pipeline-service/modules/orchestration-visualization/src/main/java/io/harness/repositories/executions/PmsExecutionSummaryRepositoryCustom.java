@@ -28,4 +28,7 @@ public interface PmsExecutionSummaryRepositoryCustom {
   long getCountOfExecutionSummary(Criteria criteria);
   String fetchRootRetryExecutionId(String planExecutionId);
   List<PipelineExecutionSummaryEntity> fetchPipelineSummaryEntityFromRootParentId(String rootParentId);
+
+  List<String> findListOfUniqueBranches(Criteria criteria);
+  List<String> findListOfUniqueRepositories(Criteria criteria);
 }

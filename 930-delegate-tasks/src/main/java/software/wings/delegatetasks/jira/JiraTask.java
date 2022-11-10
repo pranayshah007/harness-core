@@ -18,8 +18,8 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.JiraClientException;
@@ -639,7 +639,11 @@ public class JiraTask extends AbstractDelegateRunnableTask {
           throw new InvalidRequestException(
               "Found " + userDataList.size() + " jira users with this query. Should be exactly 1.");
         }
-        userTypeFields.put(userField.getKey(), userDataList.get(0).getAccountId());
+        if (userDataList.get(0).getAccountId().startsWith("JIRAUSER")) {
+          userTypeFields.put(userField.getKey(), userDataList.get(0).getName());
+        } else {
+          userTypeFields.put(userField.getKey(), userDataList.get(0).getAccountId());
+        }
       }
     }
   }

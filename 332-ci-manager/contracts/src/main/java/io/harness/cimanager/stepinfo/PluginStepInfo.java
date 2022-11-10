@@ -46,7 +46,6 @@ import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -77,8 +76,10 @@ public class PluginStepInfo implements CIStepInfo, WithConnectorRef {
   @VariableExpression(skipVariableExpression = true)
   @YamlSchemaTypes(value = {string})
   private ParameterField<Map<String, JsonNode>> settings;
-  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
-  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
+
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> uses;
   private ContainerResource resources;
 
   @YamlSchemaTypes(value = {string})
@@ -103,13 +104,13 @@ public class PluginStepInfo implements CIStepInfo, WithConnectorRef {
   private ParameterField<ImagePullPolicy> imagePullPolicy;
 
   @Builder
-  @ConstructorProperties({"identifier", "name", "retry", "settings", "image", "connectorRef", "resources", "reports",
-      "entrypoint", "envVariables", "harnessInternalImage", "privileged", "runAsUser", "imagePullPolicy"})
+  @ConstructorProperties({"identifier", "name", "retry", "settings", "image", "connectorRef", "uses", "resources",
+      "reports", "entrypoint", "envVariables", "harnessInternalImage", "privileged", "runAsUser", "imagePullPolicy"})
   public PluginStepInfo(String identifier, String name, Integer retry, ParameterField<Map<String, JsonNode>> settings,
-      ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
-      ParameterField<UnitTestReport> reports, ParameterField<List<String>> entrypoint, Map<String, String> envVariables,
-      boolean harnessManagedImage, ParameterField<Boolean> privileged, ParameterField<Integer> runAsUser,
-      ParameterField<ImagePullPolicy> imagePullPolicy) {
+      ParameterField<String> image, ParameterField<String> connectorRef, ParameterField<String> uses,
+      ContainerResource resources, ParameterField<UnitTestReport> reports, ParameterField<List<String>> entrypoint,
+      Map<String, String> envVariables, boolean harnessManagedImage, ParameterField<Boolean> privileged,
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
@@ -117,6 +118,7 @@ public class PluginStepInfo implements CIStepInfo, WithConnectorRef {
     this.settings = settings;
     this.image = image;
     this.connectorRef = connectorRef;
+    this.uses = uses;
     this.entrypoint = entrypoint;
     this.envVariables = envVariables;
     this.resources = resources;

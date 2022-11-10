@@ -7,6 +7,7 @@
 
 package io.harness.cdng.custom.deployment.ng;
 
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +25,7 @@ import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentSecretNGVariable;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
+import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorInfoOutcomeDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -40,12 +42,19 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.service.impl.FileStoreServiceImpl;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.plancreator.customDeployment.StepTemplateRef;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.steps.OutputExpressionConstants;
+import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -53,6 +62,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -71,7 +81,10 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 @PrepareForTest({NGVariablesUtils.class})
 public class CustomDeploymentInfrastructureHelperTest extends CategoryTest {
   @Mock ConnectorService connectorService;
+  @Mock InfrastructureEntityService infrastructureEntityService;
+  @Mock ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock FileStoreServiceImpl fileStoreService;
+
   @Mock TemplateResourceClient templateResourceClient;
   @Spy @InjectMocks private CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   private static final String ACCOUNT = "accIdentifier";
@@ -82,6 +95,10 @@ public class CustomDeploymentInfrastructureHelperTest extends CategoryTest {
   private static final String RESOURCE_PATH_PREFIX = "customdeployment/";
   private static final String INFRA_RESOURCE_PATH_PREFIX = "infrastructure/";
   private static final String TEMPLATE_RESOURCE_PATH_PREFIX = "template/";
+  private static final String EXECUTION_ID = "executionId";
+  private static final String ENVIRONMENT_IDENTIFIER = "envId";
+  private static final String INFRA_NAME = "OpenStackInfra";
+  private static final String CUSTOM_DEPLOYMENT_INFRA_ID = "customDeploymentInfraId";
 
   @Before
   public void setUp() throws Exception {
@@ -225,6 +242,48 @@ public class CustomDeploymentInfrastructureHelperTest extends CategoryTest {
     assertThat((String) variables.get("org." + SECRET)).isEqualTo(SECRET);
     assertThat((String) variables.get("account." + SECRET)).isEqualTo(SECRET);
     assertThat((String) variables.get("exp" + SECRET)).isEqualTo(EXPRESSION);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ANIL)
+  @Category(UnitTests.class)
+  public void testConvertListVariablesToMapForNonExistingConnectors() {
+    MockedStatic<NGVariablesUtils> utilities = Mockito.mockStatic(NGVariablesUtils.class);
+    utilities.when(() -> NGVariablesUtils.fetchSecretExpression(anyString())).thenReturn(SECRET);
+
+    KubernetesClusterDetailsDTO kubernetesClusterDetailsDTO =
+        KubernetesClusterDetailsDTO.builder()
+            .masterUrl("URL")
+            .auth(KubernetesAuthDTO.builder()
+                      .credentials(KubernetesUserNamePasswordDTO.builder()
+                                       .passwordRef(SecretRefData.builder().identifier("pass").build())
+                                       .build())
+                      .build())
+            .build();
+    KubernetesClusterConfigDTO kubernetesClusterConfigDTO =
+        KubernetesClusterConfigDTO.builder()
+            .credential(KubernetesCredentialDTO.builder().config(kubernetesClusterDetailsDTO).build())
+            .build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorConfig(kubernetesClusterConfigDTO).build();
+    ConnectorResponseDTO connectorResponseDTO = ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
+
+    CustomDeploymentConnectorNGVariable connector1 =
+        CustomDeploymentConnectorNGVariable.builder()
+            .name("connector1")
+            .value(ParameterField.<String>builder().value("connector").build())
+            .connector(ParameterField.<ConnectorInfoDTO>builder().value(connectorInfoDTO).build())
+            .build();
+
+    List<CustomDeploymentNGVariable> variableList = Collections.singletonList(connector1);
+
+    doReturn(Optional.empty()).when(connectorService).get(any(), any(), any(), any());
+
+    String errorMessage = "Connector not found for given connector ref :[connector]";
+
+    assertThatThrownBy(
+        () -> customDeploymentInfrastructureHelper.convertListVariablesToMap(variableList, ACCOUNT, ORG, PROJECT))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(errorMessage);
   }
 
   @Test
@@ -586,5 +645,168 @@ public class CustomDeploymentInfrastructureHelperTest extends CategoryTest {
         .when(customDeploymentInfrastructureHelper)
         .getTemplateYaml(ACCOUNT, ORG, PROJECT, "account.OpenStack", "V1");
     customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity);
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testInValidateInfrastructureYaml() {
+    String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    doReturn(templateYaml)
+        .when(customDeploymentInfrastructureHelper)
+        .getTemplateYaml(ACCOUNT, ORG, PROJECT, "account.OpenStack", "V1");
+    assertThat(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(null, templateYaml, "accountId")).isFalse();
+
+    String infraYamlWithoutDefinition = readFile("infraWithoutDefinition.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThat(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(
+                   infraYamlWithoutDefinition, templateYaml, "accountId"))
+        .isFalse();
+
+    String infrastructureWithoutSpec = readFile("infrastructureWithoutSpec.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThat(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(
+                   infrastructureWithoutSpec, templateYaml, "accountId"))
+        .isFalse();
+
+    String infrastructureWithEmptyVariableName =
+        readFile("infrastructureWithEmptyVariableName.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    assertThat(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(
+                   infrastructureWithEmptyVariableName, templateYaml, "accountId"))
+        .isFalse();
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testInValidateDeploymentTemplateYaml() {
+    String infrastructureYaml = readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .projectIdentifier(PROJECT)
+                                                    .yaml(infrastructureYaml)
+                                                    .build();
+
+    String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    doReturn(templateYaml)
+        .when(customDeploymentInfrastructureHelper)
+        .getTemplateYaml(ACCOUNT, ORG, PROJECT, "account.OpenStack", "V1");
+    assertThat(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(infrastructureYaml, null, "accountId"))
+        .isFalse();
+
+    String templateWithoutDefinitionYaml = readFile("templateWithoutDefinition.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    assertThat(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(
+                   infrastructureYaml, templateWithoutDefinitionYaml, "accountId"))
+        .isFalse();
+
+    String templateWithoutSpecYaml = readFile("templateWithNoSpec.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    assertThat(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(
+                   infrastructureYaml, templateWithoutSpecYaml, "accountId"))
+        .isFalse();
+
+    String templateWithNoInfra = readFile("templateWithNoInfra.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    assertThat(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(
+                   infrastructureYaml, templateWithNoInfra, "accountId"))
+        .isFalse();
+
+    String templateWithEmptyVariableName =
+        readFile("templateWithEmptyVariableName.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    assertThat(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(
+                   infrastructureYaml, templateWithEmptyVariableName, "accountId"))
+        .isFalse();
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testValidInfrastructureEntity() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT)
+                            .setStageExecutionId(EXECUTION_ID)
+                            .build();
+
+    EnvironmentOutcome environmentOutcome = EnvironmentOutcome.builder().identifier(ENVIRONMENT_IDENTIFIER).build();
+
+    CustomDeploymentInfrastructure customDeploymentInfrastructure = CustomDeploymentInfrastructure.builder().build();
+    customDeploymentInfrastructure.setInfraName(INFRA_NAME);
+    customDeploymentInfrastructure.setInfraIdentifier(CUSTOM_DEPLOYMENT_INFRA_ID);
+
+    doReturn(environmentOutcome)
+        .when(executionSweepingOutputService)
+        .resolve(eq(ambiance), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT)));
+
+    InfrastructureEntity entity = InfrastructureEntity.builder().build();
+
+    doReturn(Optional.of(entity))
+        .when(infrastructureEntityService)
+        .get(eq(ACCOUNT), eq(ORG), eq(PROJECT), eq(ENVIRONMENT_IDENTIFIER), eq(CUSTOM_DEPLOYMENT_INFRA_ID));
+
+    customDeploymentInfrastructureHelper.validateInfra(ambiance, customDeploymentInfrastructure);
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testInfrastructureEntityNotPresent() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT)
+                            .setStageExecutionId(EXECUTION_ID)
+                            .build();
+
+    EnvironmentOutcome environmentOutcome = EnvironmentOutcome.builder().identifier(ENVIRONMENT_IDENTIFIER).build();
+
+    CustomDeploymentInfrastructure customDeploymentInfrastructure = CustomDeploymentInfrastructure.builder().build();
+    customDeploymentInfrastructure.setInfraName(INFRA_NAME);
+    customDeploymentInfrastructure.setInfraIdentifier(CUSTOM_DEPLOYMENT_INFRA_ID);
+
+    doReturn(environmentOutcome)
+        .when(executionSweepingOutputService)
+        .resolve(eq(ambiance), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT)));
+
+    doReturn(Optional.empty())
+        .when(infrastructureEntityService)
+        .get(eq(ACCOUNT), eq(ORG), eq(PROJECT), eq(ENVIRONMENT_IDENTIFIER), eq(CUSTOM_DEPLOYMENT_INFRA_ID));
+
+    assertThatThrownBy(
+        () -> customDeploymentInfrastructureHelper.validateInfra(ambiance, customDeploymentInfrastructure))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Infra does not exist for this infra id - [customDeploymentInfraId], and env id - [envId], infra - [OpenStackInfra]");
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testInfrastructureEntityObsolete() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT)
+                            .setStageExecutionId(EXECUTION_ID)
+                            .build();
+
+    EnvironmentOutcome environmentOutcome = EnvironmentOutcome.builder().identifier(ENVIRONMENT_IDENTIFIER).build();
+
+    CustomDeploymentInfrastructure customDeploymentInfrastructure = CustomDeploymentInfrastructure.builder().build();
+    customDeploymentInfrastructure.setInfraName(INFRA_NAME);
+    customDeploymentInfrastructure.setInfraIdentifier(CUSTOM_DEPLOYMENT_INFRA_ID);
+
+    doReturn(environmentOutcome)
+        .when(executionSweepingOutputService)
+        .resolve(eq(ambiance), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT)));
+
+    InfrastructureEntity entity = InfrastructureEntity.builder().obsolete(true).build();
+
+    doReturn(Optional.of(entity))
+        .when(infrastructureEntityService)
+        .get(eq(ACCOUNT), eq(ORG), eq(PROJECT), eq(ENVIRONMENT_IDENTIFIER), eq(CUSTOM_DEPLOYMENT_INFRA_ID));
+
+    assertThatThrownBy(
+        () -> customDeploymentInfrastructureHelper.validateInfra(ambiance, customDeploymentInfrastructure))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Infrastructure - [OpenStackInfra] is obsolete, please update the infrastructure");
   }
 }

@@ -87,7 +87,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
       Query<WorkflowExecution> query, FindOptions findOptions, boolean includeGraph);
 
   PageResponse<WorkflowExecution> listExecutions(PageRequest<WorkflowExecution> pageRequest, boolean includeGraph,
-      boolean runningOnly, boolean withBreakdownAndSummary, boolean includeStatus, boolean withFailureDetails);
+      boolean runningOnly, boolean withBreakdownAndSummary, boolean includeStatus, boolean withFailureDetails,
+      boolean fromUi);
 
   WorkflowExecution triggerPipelineExecution(
       @NotNull String appId, @NotNull String pipelineId, ExecutionArgs executionArgs, Trigger trigger);
@@ -128,7 +129,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<WorkflowExecution> getResumeHistory(String appId, WorkflowExecution workflowExecution);
 
-  WorkflowExecution triggerRollbackExecutionWorkflow(String appId, WorkflowExecution workflowExecution);
+  WorkflowExecution triggerRollbackExecutionWorkflow(
+      String appId, WorkflowExecution workflowExecution, boolean fromPipe);
 
   RollbackConfirmation getOnDemandRollbackConfirmation(String appId, WorkflowExecution workflowExecution);
 
@@ -300,7 +302,7 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<WorkflowExecution> fetchWorkflowExecutionsForResourceConstraint(List<String> entityIds);
 
-  boolean getOnDemandRollbackAvailable(String appId, WorkflowExecution lastSuccessfulWE);
+  boolean getOnDemandRollbackAvailable(String appId, WorkflowExecution lastSuccessfulWE, boolean fromPipe);
 
   boolean checkIfOnDemand(String appId, String workflowExecutionId);
 

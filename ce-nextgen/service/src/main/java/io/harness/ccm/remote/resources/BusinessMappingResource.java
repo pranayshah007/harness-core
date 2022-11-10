@@ -71,6 +71,9 @@ public class BusinessMappingResource {
     if (!businessMappingService.isNamePresent(businessMapping.getName(), businessMapping.getAccountId())) {
       throw new InvalidRequestException("Cost category name already exists.");
     }
+    if (businessMappingService.isInvalidBusinessMappingUnallocatedCostLabel(businessMapping)) {
+      throw new InvalidRequestException("Unallocated cost bucket label does not allow Others or Unallocated");
+    }
     BusinessMapping costCategory = businessMappingService.save(businessMapping);
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(new CostCategoryCreateEvent(accountId, costCategory.toDTO()));
@@ -111,6 +114,9 @@ public class BusinessMappingResource {
       if (!businessMappingService.isNamePresent(businessMapping.getName(), businessMapping.getAccountId())) {
         throw new InvalidRequestException("Cost category name already exists.");
       }
+    }
+    if (businessMappingService.isInvalidBusinessMappingUnallocatedCostLabel(businessMapping)) {
+      throw new InvalidRequestException("Unallocated cost bucket label does not allow Others or Unallocated");
     }
     BusinessMapping newCostCategory = businessMappingService.update(businessMapping);
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {

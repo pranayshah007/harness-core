@@ -98,6 +98,7 @@ public class GitServiceImpl implements GitService {
                                                       .authRequest(authRequest)
                                                       .accountId(gitConfig.getAccountId())
                                                       .connectorId(gitOperationContext.getGitConnectorId())
+                                                      .disableUserGitConfig(gitConfig.getDisableUserGitConfig())
                                                       .build());
   }
 
@@ -313,6 +314,7 @@ public class GitServiceImpl implements GitService {
         .authRequest(getAuthRequest(gitConfig))
         .repoType(gitConfig.getGitRepoType())
         .branch(gitConfig.getBranch())
+        .disableUserGitConfig(gitConfig.getDisableUserGitConfig())
         .connectorId(connectorId)
         .commitId(commitId);
   }

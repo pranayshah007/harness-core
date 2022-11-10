@@ -8,7 +8,6 @@
 package io.harness.cdng.pipeline.executions;
 
 import io.harness.account.services.AccountService;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.pipeline.helpers.CDPipelineInstrumentationHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
@@ -46,9 +45,7 @@ public class CDPipelineEndEventHandler implements OrchestrationEventHandler {
     String identity = ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getExtraInfoMap().get("email");
 
     try {
-      if (featureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.EXPORT_TF_PLAN_JSON_NG)) {
-        helper.cleanupTfPlanJson(ambiance);
-      }
+      helper.cleanupTfPlanJson(ambiance);
     } catch (Exception e) {
       log.error("Failure in cleaning up the TF plan Json files from the GCS Bucket: {}", e.getMessage());
     }

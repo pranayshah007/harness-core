@@ -475,6 +475,12 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     return savedTemplateEntity;
   }
 
+  @Override
+  public List<String> getListOfRepos(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findDistinct(query, TemplateEntityKeys.repo, TemplateEntity.class, String.class);
+  }
+
   private Long countTemplates(Criteria criteria) {
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.count(query, TemplateEntity.class);

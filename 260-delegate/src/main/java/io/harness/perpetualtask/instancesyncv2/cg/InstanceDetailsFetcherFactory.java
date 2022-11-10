@@ -12,9 +12,11 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.UnexpectedException;
 
+import software.wings.beans.InfrastructureMappingType;
 import software.wings.utils.Utils;
 
 import com.google.inject.Inject;
+import java.util.concurrent.ConcurrentHashMap;
 
 @OwnedBy(CDP)
 public class InstanceDetailsFetcherFactory {
@@ -29,11 +31,14 @@ public class InstanceDetailsFetcherFactory {
   }
 
   public InstanceDetailsFetcher getFetcher(String infraMapping) {
-    /*    InfrastructureMappingType infraMappingType = Utils.getEnumFromString(InfrastructureMappingType.class,
-       infraMapping); switch (infraMappingType) { case DIRECT_KUBERNETES: return k8sInstancesDetailsFetcher; case
-       AWS_SSH: return awsSshInstancesDetailsFetcher; default: throw new UnexpectedException("No handler defined for
-       infra mapping type: " + infraMappingType);
-        }*/
-    return awsSshInstancesDetailsFetcher;
+    InfrastructureMappingType infraMappingType = Utils.getEnumFromString(InfrastructureMappingType.class, infraMapping);
+    switch (infraMappingType) {
+      case DIRECT_KUBERNETES:
+        return k8sInstancesDetailsFetcher;
+      case AWS_SSH:
+        return awsSshInstancesDetailsFetcher;
+      default:
+        throw new UnexpectedException("No handler defined for infra mapping type: " + infraMappingType);
+    }
   }
 }
