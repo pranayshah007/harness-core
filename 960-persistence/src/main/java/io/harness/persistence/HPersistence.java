@@ -160,6 +160,24 @@ public interface HPersistence extends HealthMonitor {
   <T extends PersistentEntity> Query<T> createQuery(Class<T> cls);
 
   /**
+   * Creates the query for analytics.
+   *
+   * @param <T> the generic type
+   * @param cls the cls
+   * @return the query
+   */
+  <T extends PersistentEntity> Query<T> createAnalyticsQuery(Class<T> cls);
+
+  /**
+   * Creates the query for analytics.
+   *
+   * @param <T> the generic type
+   * @param cls the cls
+   * @return the query
+   */
+  <T extends PersistentEntity> Query<T> createAnalyticsQuery(Class<T> cls, Set<QueryChecks> queryChecks);
+
+  /**
    * Creates the query.
    *
    * @param <T>          the generic type

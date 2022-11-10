@@ -41,7 +41,9 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
@@ -227,6 +229,39 @@ public class ArtifactResourceUtils {
 
     YamlNode artifactSpecNode = artifactTagLeafNode.getParentNode().getParentNode();
 
+    if (artifactSpecNode.getParentNode() != null
+        && "template".equals(artifactSpecNode.getParentNode().getFieldName())) {
+      YamlNode templateNode = artifactSpecNode.getParentNode();
+      String templateRef = templateNode.getField("templateRef").getNode().getCurrJsonNode().asText();
+      String versionLabel = templateNode.getField("versionLabel") != null
+          ? templateNode.getField("versionLabel").getNode().getCurrJsonNode().asText()
+          : null;
+
+      if (isNotEmpty(templateRef)) {
+        IdentifierRef templateIdentifier =
+            IdentifierRefHelper.getIdentifierRef(templateRef, accountId, orgId, projectId);
+        TemplateResponseDTO response = NGRestUtils.getResponse(
+            templateResourceClient.get(templateIdentifier.getIdentifier(), templateIdentifier.getAccountIdentifier(),
+                templateIdentifier.getOrgIdentifier(), templateIdentifier.getProjectIdentifier(), versionLabel, false));
+        if (!response.getTemplateEntityType().equals(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE)) {
+          throw new InvalidRequestException(
+              String.format("Provided template ref: [%s], version: [%s] is not an artifact source template",
+                  templateRef, versionLabel));
+        }
+        if (isEmpty(response.getYaml())) {
+          throw new InvalidRequestException(
+              String.format("Received empty artifact source template yaml for template ref: %s, version label: %s",
+                  templateRef, versionLabel));
+        }
+        YamlNode artifactTemplateSpecNode;
+        try {
+          artifactTemplateSpecNode = YamlNode.fromYamlPath(response.getYaml(), "template/spec");
+          artifactSpecNode = artifactTemplateSpecNode;
+        } catch (IOException e) {
+          throw new InvalidRequestException("Cannot read spec from the artifact source template");
+        }
+      }
+    }
     final ArtifactInternalDTO artifactDTO;
     try {
       artifactDTO = YamlUtils.read(artifactSpecNode.toString(), ArtifactInternalDTO.class);

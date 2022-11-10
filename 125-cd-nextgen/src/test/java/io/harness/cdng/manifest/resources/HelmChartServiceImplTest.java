@@ -17,6 +17,10 @@ import io.harness.cdng.manifest.resources.dtos.HelmChartResponseDTO;
 import io.harness.cdng.manifest.resources.dtos.HelmManifestInternalDTO;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
@@ -31,6 +35,7 @@ import io.harness.service.DelegateGrpcClientWrapper;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,6 +53,7 @@ public class HelmChartServiceImplTest extends CategoryTest {
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock private ServiceEntityService serviceEntityService;
+  @Mock private ConnectorService connectorService;
   @InjectMocks @Spy HelmChartServiceImpl helmChartServiceImpl;
 
   @Before
@@ -114,13 +120,34 @@ public class HelmChartServiceImplTest extends CategoryTest {
     doReturn(HelmVersion.V3).when(helmChartServiceImpl).getHelmVersionBasedOnFF(any(), eq(accountId));
     doReturn(storeDelegateConfig)
         .when(helmChartServiceImpl)
-        .getStoreDelegateConfig(any(), eq(accountId), eq(orgId), eq(projId));
+        .getStoreDelegateConfig(any(), eq(accountId), eq(orgId), eq(projId), eq(""), eq(""), eq(""), eq(""));
     doReturn(new HashSet<>()).when(helmChartServiceImpl).getDelegateSelectors(any());
     doReturn(helmFetchChartVersionResponse).when(delegateGrpcClientWrapper).executeSyncTask(any());
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(eq(accountId), any());
 
-    HelmChartResponseDTO helmChartResponseDTO =
-        helmChartServiceImpl.getHelmChartVersionDetails(accountId, orgId, projId, serviceRef, manifestPath);
+    HelmChartResponseDTO helmChartResponseDTO = helmChartServiceImpl.getHelmChartVersionDetails(
+        accountId, orgId, projId, serviceRef, manifestPath, "", "", "", "", "");
     assertThat(helmChartResponseDTO.getHelmChartVersions()).contains("0.1.0", "0.1.1");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testGetConnector() {
+    doReturn(
+        Optional.of(ConnectorResponseDTO.builder()
+                        .connector(ConnectorInfoDTO.builder()
+                                       .connectorConfig(
+                                           HttpHelmConnectorDTO.builder().helmRepoUrl("https://bitnami.com").build())
+                                       .connectorType(ConnectorType.HTTP_HELM_REPO)
+                                       .build())
+                        .build()))
+        .when(connectorService)
+        .get(accountId, orgId, projId, "connectorId");
+
+    ConnectorInfoDTO connectorInfoDTO = helmChartServiceImpl.getConnector(accountId, orgId, projId, "connectorId");
+
+    assertThat(((HttpHelmConnectorDTO) connectorInfoDTO.getConnectorConfig()).getHelmRepoUrl())
+        .isEqualTo("https://bitnami.com");
   }
 }

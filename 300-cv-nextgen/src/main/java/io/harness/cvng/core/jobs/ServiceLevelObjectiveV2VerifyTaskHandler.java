@@ -16,6 +16,7 @@ import io.harness.mongo.iterator.MongoPersistenceIterator;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,7 +49,8 @@ public class ServiceLevelObjectiveV2VerifyTaskHandler
       AbstractServiceLevelObjective serviceLevelObjectiveV2, ServiceLevelObjective serviceLevelObjective) {
     SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjectiveV2;
     if (simpleServiceLevelObjective.isEnabled() != serviceLevelObjective.isEnabled()
-        || simpleServiceLevelObjective.getTags() != serviceLevelObjective.getTags()
+        || simpleServiceLevelObjective.getTags()
+            != (serviceLevelObjective.getTags() == null ? Collections.emptyList() : serviceLevelObjective.getTags())
         || simpleServiceLevelObjective.getNotificationRuleRefs() != serviceLevelObjective.getNotificationRuleRefs()
         || simpleServiceLevelObjective.getServiceLevelIndicatorType() != serviceLevelObjective.getType()
         || !simpleServiceLevelObjective.getSloTarget().equals(serviceLevelObjective.getSloTarget())

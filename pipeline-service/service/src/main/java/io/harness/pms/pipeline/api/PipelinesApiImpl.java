@@ -110,8 +110,10 @@ public class PipelinesApiImpl implements PipelinesApi {
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response getPipeline(@OrgIdentifier String org, @ProjectIdentifier String project,
-      @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branch, Boolean templatesApplied) {
-    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder().branch(branch).build());
+      @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branch, Boolean templatesApplied,
+      String connectorRef, String repoName) {
+    GitAwareContextHelper.populateGitDetails(
+        GitEntityInfo.builder().branch(branch).connectorRef(connectorRef).repoName(repoName).build());
     log.info(String.format(
         "Retrieving Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     Optional<PipelineEntity> pipelineEntity;
@@ -219,6 +221,6 @@ public class PipelinesApiImpl implements PipelinesApi {
     }
     PipelineCreateResponseBody responseBody = new PipelineCreateResponseBody();
     responseBody.setSlug(updatedEntity.getIdentifier());
-    return Response.status(201).entity(responseBody).build();
+    return Response.ok().entity(responseBody).build();
   }
 }

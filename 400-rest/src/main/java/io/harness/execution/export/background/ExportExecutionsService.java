@@ -306,7 +306,7 @@ public class ExportExecutionsService {
   @VisibleForTesting
   List<WorkflowExecution> processExportExecutionsRequestBatch(
       @NotNull ExportExecutionsRequest request, int pageOffset) {
-    Query<WorkflowExecution> query = wingsPersistence.createQuery(WorkflowExecution.class, excludeAuthority);
+    Query<WorkflowExecution> query = wingsPersistence.createAnalyticsQuery(WorkflowExecution.class, excludeAuthority);
     ExportExecutionsRequestQuery.updateQuery(query, request.getQuery());
     query = query.order(Sort.descending(CreatedAtAware.CREATED_AT_KEY));
     List<WorkflowExecution> workflowExecutions = workflowExecutionService.listExecutionsUsingQuery(query,
@@ -322,7 +322,7 @@ public class ExportExecutionsService {
     Set<String> newWorkflowExecutionIds = collectSubWorkflowExecutionIds(workflowExecutions);
     if (isNotEmpty(newWorkflowExecutionIds)) {
       List<WorkflowExecution> subWorkflowExecutions = workflowExecutionService.listExecutionsUsingQuery(
-          wingsPersistence.createQuery(WorkflowExecution.class)
+          wingsPersistence.createAnalyticsQuery(WorkflowExecution.class)
               .filter(WorkflowExecutionKeys.accountId, request.getAccountId())
               .field(WorkflowExecutionKeys.uuid)
               .in(newWorkflowExecutionIds),

@@ -10,6 +10,7 @@ package software.wings.service.impl.yaml;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.yaml.GitCommand.GitCommandType.COMMIT_AND_PUSH;
@@ -423,8 +424,8 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
 
   @Override
   public void notify(Map<String, Supplier<ResponseData>> response) {
-    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-         AutoLogContext ignore2 = new GitCommandCallbackLogContext(getContext(), OVERRIDE_ERROR)) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_NESTS);
+         AutoLogContext ignore2 = new GitCommandCallbackLogContext(getContext(), OVERRIDE_NESTS)) {
       Supplier<ResponseData> responseDataSupplier = response.values().iterator().next();
       try {
         ResponseData responseData = responseDataSupplier.get();
@@ -432,7 +433,6 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
       } catch (NoAvailableDelegatesException | NoInstalledDelegatesException e) {
         log.error("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
             changeSetId, accountId, response);
-        log.error("Delegate not available or installed, retrying.", e);
         log.error("Delegate not available or installed, retrying.", e);
         yamlGitService.raiseAlertForGitFailure(accountId, GLOBAL_APP_ID,
             GitSyncFailureAlertDetails.builder()

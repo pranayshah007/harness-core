@@ -115,6 +115,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   @Builder.Default Map<String, org.bson.Document> moduleInfo = new HashMap<>();
   @Setter @NonFinal @Builder.Default Map<String, GraphLayoutNodeDTO> layoutNodeMap = new HashMap<>();
+  String firstRollbackStageGraphId;
   List<String> modules;
   Set<String> executedModules;
   String startingNodeId;
