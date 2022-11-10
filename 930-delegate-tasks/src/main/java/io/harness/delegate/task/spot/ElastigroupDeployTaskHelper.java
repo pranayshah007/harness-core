@@ -99,24 +99,24 @@ public class ElastigroupDeployTaskHelper {
         spotInstHelperServiceDelegate.getElastiGroupById(spotInstToken, spotInstAccountId, elastiGroup.getId());
 
     if (!elastigroupInitialOptional.isPresent()) {
-      String message = format("Did not find Elastigroup with id: [%s]", elastiGroup.getId());
+      String message = format("Did not find Elastigroup: [%s], Id: [%s]", elastiGroup.getName(), elastiGroup.getId());
       log.error(message);
       logCallback.saveExecutionLog(message, ERROR, CommandExecutionStatus.FAILURE);
       throw new InvalidRequestException(message);
     }
 
     ElastiGroup elastigroupInitial = elastigroupInitialOptional.get();
-    logCallback.saveExecutionLog(format(
-        "Current state of Elastigroup: [%s], min: [%d], max: [%d], desired: [%d], Id: [%s]", elastigroupInitial.getId(),
-        elastigroupInitial.getCapacity().getMinimum(), elastigroupInitial.getCapacity().getMaximum(),
-        elastigroupInitial.getCapacity().getTarget(), elastigroupInitial.getId()));
+    logCallback.saveExecutionLog(
+        format("Current state of Elastigroup: [%s], Id: [%s], min: [%d], max: [%d], desired: [%d]",
+            elastigroupInitial.getName(), elastigroupInitial.getId(), elastigroupInitial.getCapacity().getMinimum(),
+            elastigroupInitial.getCapacity().getMaximum(), elastigroupInitial.getCapacity().getTarget()));
 
     checkAndUpdateElastigroup(elastiGroup, logCallback);
 
-    logCallback.saveExecutionLog(
-        format("Sending request to Spotinst to update Elastigroup: [%s] with min: [%d], max: [%d] and target: [%d]",
-            elastiGroup.getId(), elastiGroup.getCapacity().getMinimum(), elastiGroup.getCapacity().getMaximum(),
-            elastiGroup.getCapacity().getTarget()));
+    logCallback.saveExecutionLog(format(
+        "Sending request to Spotinst to update Elastigroup: [%s], Id: [%s] with min: [%d], max: [%d] and target: [%d]",
+        elastiGroup.getName(), elastiGroup.getId(), elastiGroup.getCapacity().getMinimum(),
+        elastiGroup.getCapacity().getMaximum(), elastiGroup.getCapacity().getTarget()));
 
     spotInstHelperServiceDelegate.updateElastiGroupCapacity(
         spotInstToken, spotInstAccountId, elastiGroup.getId(), elastiGroup);
@@ -126,12 +126,13 @@ public class ElastigroupDeployTaskHelper {
 
   private void waitForSteadyState(ElastiGroup elastiGroup, String spotInstAccountId, String spotInstToken,
       int steadyStateTimeOut, LogCallback lLogCallback) {
-    lLogCallback.saveExecutionLog(format("Waiting for Elastigroup: [%s] to reach steady state", elastiGroup.getId()));
+    lLogCallback.saveExecutionLog(format(
+        "Waiting for Elastigroup: [%s], Id: [%s] to reach steady state", elastiGroup.getName(), elastiGroup.getId()));
     try {
       HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(steadyStateTimeOut), () -> {
         while (true) {
-          if (allInstancesHealthy(spotInstToken, spotInstAccountId, elastiGroup.getId(), lLogCallback,
-                  elastiGroup.getCapacity().getTarget())) {
+          if (allInstancesHealthy(
+                  spotInstToken, spotInstAccountId, elastiGroup, lLogCallback, elastiGroup.getCapacity().getTarget())) {
             return true;
           }
           sleep(ofSeconds(20));
@@ -139,47 +140,51 @@ public class ElastigroupDeployTaskHelper {
       });
     } catch (ExecutionException | UncheckedExecutionException | ExecutionError e) {
       String errorMessage =
-          format("Exception while waiting for steady state for Elastigroup: [%s]. Error message: [%s]",
-              elastiGroup.getId(), e.getMessage());
+          format("Exception while waiting for steady state for Elastigroup: [%s], Id: [%s]. Error message: [%s]",
+              elastiGroup.getName(), elastiGroup.getId(), e.getMessage());
       lLogCallback.saveExecutionLog(errorMessage, ERROR);
       throw new InvalidRequestException(errorMessage, e.getCause());
     } catch (TimeoutException | InterruptedException e) {
-      String errorMessage =
-          format("Timed out while waiting for steady state for Elastigroup: [%s]", elastiGroup.getId());
+      String errorMessage = format("Timed out while waiting for steady state for Elastigroup: [%s], Id: [%s]",
+          elastiGroup.getName(), elastiGroup.getId());
       lLogCallback.saveExecutionLog(errorMessage, ERROR);
       throw new InvalidRequestException(errorMessage, e);
     } catch (Exception e) {
       String errorMessage =
-          format("Exception while waiting for steady state for Elastigroup: [%s]. Error message: [%s]",
-              elastiGroup.getId(), e.getMessage());
+          format("Exception while waiting for steady state for Elastigroup: [%s], Id: [%s]. Error message: [%s]",
+              elastiGroup.getName(), elastiGroup.getId(), e.getMessage());
       lLogCallback.saveExecutionLog(errorMessage, ERROR);
       throw new InvalidRequestException(errorMessage, e);
     }
   }
 
-  boolean allInstancesHealthy(String spotInstToken, String spotInstAccountId, String elastigroupId,
+  boolean allInstancesHealthy(String spotInstToken, String spotInstAccountId, ElastiGroup elastigroup,
       LogCallback logCallback, int targetInstances) throws Exception {
-    List<ElastiGroupInstanceHealth> instanceHealths =
-        spotInstHelperServiceDelegate.listElastiGroupInstancesHealth(spotInstToken, spotInstAccountId, elastigroupId);
+    List<ElastiGroupInstanceHealth> instanceHealths = spotInstHelperServiceDelegate.listElastiGroupInstancesHealth(
+        spotInstToken, spotInstAccountId, elastigroup.getId());
     int currentTotalCount = isEmpty(instanceHealths) ? 0 : instanceHealths.size();
     int currentHealthyCount = isEmpty(instanceHealths)
         ? 0
         : (int) instanceHealths.stream().filter(health -> "HEALTHY".equals(health.getHealthStatus())).count();
     if (targetInstances == 0) {
       if (currentTotalCount == 0) {
-        logCallback.saveExecutionLog(
-            format("Elastigroup: [%s] does not have any instances.", elastigroupId), INFO, SUCCESS);
+        logCallback.saveExecutionLog(format("Elastigroup: [%s], Id: [%s] does not have any instances.",
+                                         elastigroup.getName(), elastigroup.getId()),
+            INFO, SUCCESS);
         return true;
       } else {
-        logCallback.saveExecutionLog(format("Elastigroup: [%s] still has [%d] total and [%d] healthy instances",
-            elastigroupId, currentTotalCount, currentHealthyCount));
+        logCallback.saveExecutionLog(
+            format("Elastigroup: [%s], Id: [%s] still has [%d] total and [%d] healthy instances", elastigroup.getName(),
+                elastigroup.getId(), currentTotalCount, currentHealthyCount));
       }
     } else {
-      logCallback.saveExecutionLog(
-          format("Desired instances: [%d], Total instances: [%d], Healthy instances: [%d] for Elastigroup: [%s]",
-              targetInstances, currentTotalCount, currentHealthyCount, elastigroupId));
+      logCallback.saveExecutionLog(format(
+          "Desired instances: [%d], Total instances: [%d], Healthy instances: [%d] for Elastigroup: [%s], Id: [%s]",
+          targetInstances, currentTotalCount, currentHealthyCount, elastigroup.getName(), elastigroup.getId()));
       if (targetInstances == currentHealthyCount && targetInstances == currentTotalCount) {
-        logCallback.saveExecutionLog(format("Elastigroup: [%s] reached steady state", elastigroupId), INFO, SUCCESS);
+        logCallback.saveExecutionLog(
+            format("Elastigroup: [%s], Id: [%s] reached steady state", elastigroup.getName(), elastigroup.getId()),
+            INFO, SUCCESS);
         return true;
       }
     }
@@ -187,12 +192,8 @@ public class ElastigroupDeployTaskHelper {
   }
 
   /**
-   * Checks if condition 0 <= min <= target <= max is followed.
-   * If it fails:
-   *  if target < 0, we update with default values
-   *  else update min and/or max to target individually.
-   * @param elastigroup
-   * @param logCallback
+   * Checks if condition 0 <= min <= target <= max is followed. If it fails: if target < 0, we
+   * update with default values else update min and/or max to target individually.
    */
   private void checkAndUpdateElastigroup(ElastiGroup elastigroup, LogCallback logCallback) {
     ElastiGroupCapacity capacity = elastigroup.getCapacity();
@@ -213,9 +214,10 @@ public class ElastigroupDeployTaskHelper {
           capacity.setMaximum(target);
         }
       }
-      logCallback.saveExecutionLog(format("Modifying invalid request to Spotinst to update Elastigroup:[%s] "
+      logCallback.saveExecutionLog(format("Modifying invalid request to Spotinst to update Elastigroup: [%s], Id: [%s] "
               + "Original min: [%d], max: [%d] and target: [%d], Modified min: [%d], max: [%d] and target: [%d] ",
-          elastigroup.getId(), min, max, target, capacity.getMinimum(), capacity.getMaximum(), capacity.getTarget()));
+          elastigroup.getName(), elastigroup.getId(), min, max, target, capacity.getMinimum(), capacity.getMaximum(),
+          capacity.getTarget()));
     }
   }
 }
