@@ -99,7 +99,7 @@ public class AzureRepoApiClient implements GitApiClient {
         mergePRResponse = azureRepoService.mergePR(azureRepoConfig, token, sha, gitApiTaskParams.getOwner(), project,
             repo, prNumber, gitApiTaskParams.isDeleteSourceBranch(), gitApiTaskParams.getCompletionOptions());
 
-        if (mergePRResponse != null && (boolean) mergePRResponse.get("merged") == true) {
+        if (mergePRResponse != null && (boolean) mergePRResponse.get("merged")) {
           responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
               .gitApiResult(GitApiMergePRTaskResponse.builder().sha(mergePRResponse.get("sha").toString()).build());
         } else {
