@@ -16,7 +16,6 @@ import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.common.NGTimeConversionHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskParameters;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskResponse;
@@ -70,8 +69,7 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Ela
     validateStepParameters(elastigroupDeployStepParameters);
 
     ElastigroupDeployTaskParameters taskParameters =
-        stepHelper.getElastigroupDeployTaskParameters(elastigroupDeployStepParameters, ambiance,
-            NGTimeConversionHelper.convertTimeStringToMinutes(stepParameters.getTimeout().getValue()));
+        stepHelper.getElastigroupDeployTaskParameters(elastigroupDeployStepParameters, ambiance, stepParameters);
 
     TaskData taskData =
         TaskData.builder()

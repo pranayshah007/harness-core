@@ -66,7 +66,7 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   public ElastigroupDeployTaskParameters getElastigroupDeployTaskParameters(
-      ElastigroupDeployStepParameters stepParameters, Ambiance ambiance, int timeoutInMinutes) {
+      ElastigroupDeployStepParameters stepParameters, Ambiance ambiance, StepElementParameters stepElementParameters) {
     InfrastructureOutcome infrastructureOutcome = getInfrastructureOutcome(ambiance);
 
     ElastigroupSetupDataOutcome elastigroupSetupOutcome = getElastigroupSetupOutcome(ambiance);
@@ -83,7 +83,7 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
         .encryptionDetails(getEncryptionDetails(ambiance, infrastructureOutcome))
         .newElastigroup(newElastigroup)
         .oldElastigroup(oldElastigroup)
-        .timeout(timeoutInMinutes)
+        .timeout(getTimeoutInMin(stepElementParameters))
         .build();
   }
 
