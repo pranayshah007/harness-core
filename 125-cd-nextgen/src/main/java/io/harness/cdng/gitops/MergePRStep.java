@@ -161,8 +161,9 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
 
     Map<String, Object> apiParamOptions = null;
 
-    if (featureFlagService.isEnabled(FeatureName.GITOPS_API_PARAMS_MERGE_PR, accountId))
+    if (featureFlagService.isEnabled(FeatureName.GITOPS_API_PARAMS_MERGE_PR, accountId)) {
       apiParamOptions = gitOpsSpecParams.getVariables().getValue();
+    }
 
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRefFromEntityIdentifiers(connectorInfoDTO.getIdentifier(), accountId,
