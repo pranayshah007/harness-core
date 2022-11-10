@@ -9325,9 +9325,7 @@
     "SidecarArtifact": {
       "type": "object",
       "required": [
-        "identifier",
-        "spec",
-        "type"
+        "identifier"
       ],
       "properties": {
         "identifier": {
@@ -9585,6 +9583,20 @@
               }
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "template"
+              ]
+            },
+            {
+              "required": [
+                "spec"
+              ]
+            }
+          ]
         }
       ]
     },

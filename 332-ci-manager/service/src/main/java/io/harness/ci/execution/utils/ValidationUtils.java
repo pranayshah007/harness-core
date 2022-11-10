@@ -7,6 +7,8 @@
 
 package io.harness.ci.utils;
 
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.HOSTED_VM;
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -16,9 +18,12 @@ import io.harness.beans.dependencies.CIServiceInfo;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeStepUtils;
+import io.harness.ci.integrationstage.K8InitializeTaskUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -36,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class ValidationUtils {
   @Inject K8InitializeStepUtils k8InitializeStepUtils;
+  @Inject K8InitializeTaskUtils k8InitializeTaskUtils;
 
   private static String serviceRegex = "^[a-zA-Z][a-zA-Z0-9_]*$";
   public final String TEMPLATE = "template";
@@ -61,40 +67,49 @@ public class ValidationUtils {
     }
   }
 
-  public void validateWindowsK8Stage(ExecutionElementConfig executionElementConfig) {
+  public void validateStage(ExecutionElementConfig executionElementConfig, Infrastructure infrastructure) {
     List<ExecutionWrapperConfig> steps = executionElementConfig.getSteps();
     if (steps == null) {
       return;
     }
 
     for (ExecutionWrapperConfig executionWrapper : steps) {
-      validateWindowsK8StageUtil(executionWrapper);
+      validateStageUtil(executionWrapper, infrastructure);
     }
   }
 
-  public void validateWindowsK8StageUtil(ExecutionWrapperConfig executionWrapper) {
+  public void validateStageUtil(ExecutionWrapperConfig executionWrapper, Infrastructure infrastructure) {
     if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
       if (executionWrapper.getStep().has(TEMPLATE)) {
         return;
       }
       CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
-      validateWindowsK8Step(stepNode);
+      validateStepUtil(stepNode, infrastructure);
     } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
       ParallelStepElementConfig parallelStepElementConfig =
           IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
       if (isNotEmpty(parallelStepElementConfig.getSections())) {
         for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
-          validateWindowsK8StageUtil(executionWrapperInParallel);
+          validateStageUtil(executionWrapperInParallel, infrastructure);
         }
       }
     } else {
       StepGroupElementConfig stepGroupElementConfig = IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
       if (isNotEmpty(stepGroupElementConfig.getSteps())) {
         for (ExecutionWrapperConfig executionWrapperInStepGroup : stepGroupElementConfig.getSteps()) {
-          validateWindowsK8StageUtil(executionWrapperInStepGroup);
+          validateStageUtil(executionWrapperInStepGroup, infrastructure);
         }
       }
     }
+  }
+
+  private void validateStepUtil(CIAbstractStepNode stepElement, Infrastructure infrastructure) {
+    if (infrastructure.getType() == KUBERNETES_DIRECT
+        && k8InitializeTaskUtils.getOS(infrastructure) == OSType.Windows) {
+      validateWindowsK8Step(stepElement);
+    }
+
+    validateActionStep(stepElement, infrastructure.getType());
   }
 
   private void validateWindowsK8Step(CIAbstractStepNode stepElement) {
@@ -104,5 +119,18 @@ public class ValidationUtils {
 
     CIStepInfo ciStepInfo = (CIStepInfo) stepElement.getStepSpecType();
     k8InitializeStepUtils.validateStepType(ciStepInfo.getNonYamlInfo().getStepInfoType(), OSType.Windows);
+  }
+
+  private void validateActionStep(CIAbstractStepNode stepElement, Infrastructure.Type infraType) {
+    if (!(stepElement.getStepSpecType() instanceof CIStepInfo)) {
+      return;
+    }
+
+    CIStepInfo stepInfo = (CIStepInfo) stepElement.getStepSpecType();
+    if (stepInfo.getNonYamlInfo().getStepInfoType() == CIStepInfoType.ACTION) {
+      if (infraType != HOSTED_VM) {
+        throw new CIStageExecutionException("Action step is only applicable for builds on cloud infrastructure");
+      }
+    }
   }
 }

@@ -22,7 +22,9 @@ import io.harness.ccm.budget.BudgetScope;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.exception.InvalidRequestException;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -371,6 +373,25 @@ public class BudgetUtils {
     }
   }
 
+  public static Double[] getUpdatedBudgetAmountMonthlyCost(Budget budget) {
+    try {
+      if (budget.getType() == SPECIFIED_AMOUNT) {
+        double growthMultiplier = 1 + (budget.getGrowthRate() / 100);
+        Double[] budgetMonthlyCost = budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount();
+        for (int month = 0; month < budgetMonthlyCost.length; month++) {
+          budgetMonthlyCost[month] *= growthMultiplier;
+        }
+        return budgetMonthlyCost;
+      } else {
+        return budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost();
+      }
+    } catch (Exception e) {
+      log.error(
+          "Exception while calculating updated budget amount for budget : {}. Exception: {}", budget.getUuid(), e);
+      return budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount();
+    }
+  }
+
   public static BudgetPeriod getBudgetPeriod(Budget budget) {
     if (budget.getPeriod() != null) {
       return budget.getPeriod();
@@ -407,7 +428,16 @@ public class BudgetUtils {
     return alerts.toArray(new AlertThreshold[0]);
   }
 
-  public static boolean isAlertSentInCurrentPeriod(long crossedAt, long startOfBudgetPeriod) {
+  public static boolean isAlertSentInCurrentPeriod(Budget budget, long crossedAt, long startOfBudgetPeriod) {
+    if (budget.getBudgetMonthlyBreakdown() != null
+        && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+      int lastAlertMonth =
+          LocalDateTime.ofInstant(Instant.ofEpochMilli(crossedAt), ZoneId.of(DEFAULT_TIMEZONE)).getMonthValue();
+      int currentMonth =
+          LocalDateTime.ofInstant(Instant.ofEpochMilli(getStartOfCurrentDay()), ZoneId.of(DEFAULT_TIMEZONE))
+              .getMonthValue();
+      return lastAlertMonth == currentMonth;
+    }
     return startOfBudgetPeriod <= crossedAt;
   }
 }

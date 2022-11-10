@@ -978,7 +978,7 @@ public class UserGroupServiceImpl implements UserGroupService {
       return emptyList();
     }
 
-    return wingsPersistence.createQuery(UserGroup.class, excludeAuthority)
+    return wingsPersistence.createAnalyticsQuery(UserGroup.class, excludeAuthority)
         .field(UserGroup.ID_KEY2)
         .in(userGroupIds)
         .project(UserGroupKeys.name, true)

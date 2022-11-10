@@ -73,7 +73,7 @@ public class MigrateWorkflowsToTimeScaleDB implements TimeScaleDBDataMigration {
       findOptions.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<WorkflowExecution> iterator =
-               new HIterator<>(wingsPersistence.createQuery(WorkflowExecution.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(WorkflowExecution.class, excludeAuthority)
                                    .field(WorkflowExecutionKeys.createdAt)
                                    .greaterThanOrEq(System.currentTimeMillis() - (30 * 24 * 3600 * 1000L))
                                    .field(WorkflowExecutionKeys.pipelineExecutionId)

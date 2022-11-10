@@ -201,7 +201,7 @@ public class StatusUtils {
   public EnumSet<Status> planAllowedStartSet(Status status) {
     switch (status) {
       case INTERVENTION_WAITING:
-        return EnumSet.of(RUNNING, PAUSING, PAUSED);
+        return EnumSet.of(RUNNING, PAUSING, PAUSED, WAIT_STEP_RUNNING);
       case PAUSED:
         return EnumSet.of(QUEUED, RUNNING, PAUSING, INTERVENTION_WAITING);
       case SUCCEEDED:
@@ -263,14 +263,14 @@ public class StatusUtils {
       return INPUT_WAITING;
     } else if (statuses.stream().anyMatch(status -> status == RESOURCE_WAITING)) {
       return RESOURCE_WAITING;
+    } else if (statuses.stream().anyMatch(status -> status == WAIT_STEP_RUNNING)) {
+      return WAIT_STEP_RUNNING;
     } else if (statuses.stream().anyMatch(status -> status == QUEUED)) {
       return QUEUED;
     } else if (!Collections.disjoint(statuses, FLOWING_STATUSES)) {
       return RUNNING;
     } else if (statuses.stream().anyMatch(status -> status == PAUSED)) {
       return PAUSED;
-    } else if (statuses.stream().anyMatch(status -> status == WAIT_STEP_RUNNING)) {
-      return WAIT_STEP_RUNNING;
     } else {
       return UNRECOGNIZED;
     }

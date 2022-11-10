@@ -77,9 +77,11 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     }
     String searchTerm = URLDecoderUtility.getDecodedString(encodedSearchTerm);
     Criteria criteria = new Criteria();
+    List<Criteria> criteriaListForAndOperator = new ArrayList<>();
     criteria.and(ConnectorKeys.accountIdentifier).is(accountIdentifier);
     if (includeAllConnectorsAccessibleAtScope != null && includeAllConnectorsAccessibleAtScope) {
-      addCriteriaToReturnAllConnectorsAccessible(criteria, orgIdentifier, projectIdentifier);
+      addCriteriaToReturnAllConnectorsAccessible(
+          criteria, orgIdentifier, projectIdentifier, criteriaListForAndOperator);
     } else {
       criteria.and(ConnectorKeys.orgIdentifier).is(orgIdentifier);
       criteria.and(ConnectorKeys.projectIdentifier).is(projectIdentifier);
@@ -90,65 +92,74 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     criteria.orOperator(where(ConnectorKeys.deleted).exists(false), where(ConnectorKeys.deleted).is(false));
 
     if (isEmpty(filterIdentifier) && filterProperties == null) {
-      applySearchFilter(criteria, searchTerm);
+      applySearchFilter(criteria, searchTerm, criteriaListForAndOperator);
+      if (!criteriaListForAndOperator.isEmpty()) {
+        criteria.andOperator(criteriaListForAndOperator.toArray(new Criteria[0]));
+      }
       return criteria;
     }
 
     if (isNotBlank(filterIdentifier)) {
-      populateSavedConnectorFilter(
-          criteria, filterIdentifier, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm);
+      populateSavedConnectorFilter(criteria, filterIdentifier, accountIdentifier, orgIdentifier, projectIdentifier,
+          searchTerm, criteriaListForAndOperator);
     } else {
-      populateConnectorFiltersInTheCriteria(criteria, (ConnectorFilterPropertiesDTO) filterProperties, searchTerm);
+      populateConnectorFiltersInTheCriteria(
+          criteria, (ConnectorFilterPropertiesDTO) filterProperties, searchTerm, criteriaListForAndOperator);
+    }
+    if (!criteriaListForAndOperator.isEmpty()) {
+      criteria.andOperator(criteriaListForAndOperator.toArray(new Criteria[0]));
     }
     return criteria;
   }
 
-  private void applySearchFilter(Criteria criteria, String searchTerm) {
+  private void applySearchFilter(Criteria criteria, String searchTerm, List<Criteria> criteriaListForAndOperator) {
     if (isNotBlank(searchTerm)) {
       Criteria criteriaWithSearchTerm = getSearchTermFilter(criteria, searchTerm);
-      criteria.andOperator(criteriaWithSearchTerm);
+      criteriaListForAndOperator.add(criteriaWithSearchTerm);
     }
   }
 
   private void addCriteriaToReturnAllConnectorsAccessible(
-      Criteria criteria, String orgIdentifier, String projectIdentifier) {
+      Criteria criteria, String orgIdentifier, String projectIdentifier, List<Criteria> criteriaListForAndOperator) {
+    Criteria orCriteria;
     if (isNotBlank(projectIdentifier)) {
-      Criteria orCriteria = new Criteria().orOperator(
+      orCriteria = new Criteria().orOperator(
           Criteria.where(ConnectorKeys.scope).is(PROJECT).and(ConnectorKeys.projectIdentifier).is(projectIdentifier),
           Criteria.where(ConnectorKeys.scope).is(ORG).and(ConnectorKeys.orgIdentifier).is(orgIdentifier),
           Criteria.where(ConnectorKeys.scope).is(ACCOUNT));
-      criteria.andOperator(orCriteria);
     } else if (isNotBlank(orgIdentifier)) {
-      Criteria orCriteria = new Criteria().orOperator(
+      orCriteria = new Criteria().orOperator(
           Criteria.where(ConnectorKeys.scope).is(ORG).and(ConnectorKeys.orgIdentifier).is(orgIdentifier),
           Criteria.where(ConnectorKeys.scope).is(ACCOUNT));
-      criteria.andOperator(orCriteria);
     } else {
-      criteria.and(ConnectorKeys.scope).is(ACCOUNT);
+      orCriteria = Criteria.where(ConnectorKeys.scope).is(ACCOUNT);
     }
+    criteriaListForAndOperator.add(orCriteria);
   }
 
   private void populateSavedConnectorFilter(Criteria criteria, String filterIdentifier, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String searchTerm) {
+      String orgIdentifier, String projectIdentifier, String searchTerm, List<Criteria> criteriaListForAndOperator) {
     FilterDTO connectorFilterDTO =
         filterService.get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, CONNECTOR);
     if (connectorFilterDTO == null) {
       throw new InvalidRequestException(String.format("Could not find a connector filter with the identifier %s, in %s",
           ScopeHelper.getScopeMessageForLogs(accountIdentifier, orgIdentifier, projectIdentifier)));
     }
-    populateConnectorFiltersInTheCriteria(
-        criteria, (ConnectorFilterPropertiesDTO) connectorFilterDTO.getFilterProperties(), searchTerm);
+    populateConnectorFiltersInTheCriteria(criteria,
+        (ConnectorFilterPropertiesDTO) connectorFilterDTO.getFilterProperties(), searchTerm,
+        criteriaListForAndOperator);
   }
 
-  private void populateConnectorFiltersInTheCriteria(
-      Criteria criteria, ConnectorFilterPropertiesDTO connectorFilter, String searchTerm) {
+  private void populateConnectorFiltersInTheCriteria(Criteria criteria, ConnectorFilterPropertiesDTO connectorFilter,
+      String searchTerm, List<Criteria> criteriaListForAndOperator) {
     if (connectorFilter == null) {
       return;
     }
     populateInFilter(criteria, ConnectorKeys.categories, connectorFilter.getCategories());
     populateInFilter(criteria, ConnectorKeys.type, connectorFilter.getTypes());
     populateNameDesciptionAndSearchTermFilter(criteria, connectorFilter.getConnectorNames(),
-        connectorFilter.getDescription(), searchTerm, connectorFilter.getInheritingCredentialsFromDelegate());
+        connectorFilter.getDescription(), searchTerm, connectorFilter.getInheritingCredentialsFromDelegate(),
+        criteriaListForAndOperator);
     populateInFilter(criteria, ConnectorKeys.identifier, connectorFilter.getConnectorIdentifiers());
     populateInFilter(criteria, ConnectorKeys.connectionStatus, connectorFilter.getConnectivityStatuses());
     List<Boolean> isExecuteOnDelegate = null;
@@ -167,7 +178,8 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
   }
 
   private void populateNameDesciptionAndSearchTermFilter(Criteria criteria, List<String> connectorNames,
-      String description, String searchTerm, Boolean inheritingCredentialsFromDelegate) {
+      String description, String searchTerm, Boolean inheritingCredentialsFromDelegate,
+      List<Criteria> criteriaListForAndOperator) {
     List<Criteria> criteriaList = new ArrayList<>();
     Criteria nameCriteria = getNameFilter(criteria, connectorNames);
     if (nameCriteria != null) {
@@ -187,7 +199,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
       criteriaList.add(searchCriteria);
     }
     if (criteriaList.size() != 0) {
-      criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+      criteriaListForAndOperator.addAll(criteriaList);
     }
   }
 

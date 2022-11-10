@@ -44,10 +44,10 @@ template:
 
                   # Creating runtime, backup and staging folders:
 
-                  mkdir -p $DestinationDirectory/runtime
-                  mkdir -p $DestinationDirectory/backup
-                  mkdir -p $DestinationDirectory/staging
-                  mkdir -p $WorkingDirectory
+                  mkdir -p "$DestinationDirectory/runtime"
+                  mkdir -p "$DestinationDirectory/backup"
+                  mkdir -p "$DestinationDirectory/staging"
+                  mkdir -p "$WorkingDirectory"
         - identifier: Stop_Service
           name: Stop Service
           type: Script

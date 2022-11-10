@@ -163,7 +163,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = pagerdutyService.send(notificationRequest);
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
@@ -216,7 +216,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = pagerdutyService.send(notificationRequest);
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
@@ -273,7 +273,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = pagerdutyService.send(notificationRequest);
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);

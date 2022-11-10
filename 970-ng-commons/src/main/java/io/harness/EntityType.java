@@ -418,7 +418,9 @@ public enum EntityType {
       EntityYamlRootNames.ELASTIGROUP_DEPLOY_STEP),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_ROLLBACK_STEP)
   ELASTIGROUP_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_ROLLBACK_STEP, IdentifierRef.class,
-      EntityYamlRootNames.ELASTIGROUP_ROLLBACK_STEP);
+      EntityYamlRootNames.ELASTIGROUP_ROLLBACK_STEP),
+  @JsonProperty(EntityTypeConstants.ACTION_STEP)
+  ACTION_STEP(ModuleType.CI, EntityTypeConstants.ACTION_STEP, IdentifierRef.class, EntityYamlRootNames.ACTION_STEP);
 
   private final ModuleType moduleType;
   String yamlName;

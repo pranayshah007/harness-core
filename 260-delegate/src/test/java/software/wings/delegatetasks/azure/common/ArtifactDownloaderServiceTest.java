@@ -32,6 +32,7 @@ import java.io.OutputStream;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import org.apache.commons.io.IOUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -54,6 +55,7 @@ public class ArtifactDownloaderServiceTest {
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
+  @Ignore("CI-6025: TI team to follow up")
   public void testDownloadArtifactFile() throws IOException, ExecutionException {
     InputStream mockArtifactFileStream = mock(InputStream.class);
     ArtifactDownloaderContext downloaderContext = getArtifactDownloaderContext();
@@ -79,6 +81,7 @@ public class ArtifactDownloaderServiceTest {
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
+  @Ignore("CI-6025: TI team to follow up")
   public void testDownloadArtifactFileFromManager() throws IOException, ExecutionException {
     InputStream mockArtifactFileStream = mock(InputStream.class);
     ArtifactDownloaderContext downloaderContext = getArtifactDownloaderContext();

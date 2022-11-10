@@ -49,6 +49,8 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOResetRecalculationService;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -71,11 +73,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -101,6 +101,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private CVNGLogService cvngLogService;
+  @Inject private CompositeSLOService compositeSLOService;
+  @Inject private CompositeSLOResetRecalculationService compositeSLOResetRecalculationService;
   @Inject
   private Map<ServiceLevelObjectiveType, AbstractServiceLevelObjectiveUpdatableEntity>
       serviceLevelObjectiveTypeUpdatableEntityTransformerMap;
@@ -165,7 +167,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       TimePeriod timePeriod = sloTarget.getCurrentTimeRange(currentLocalDate);
       TimePeriod currentTimePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
 
-      List<String> referencedCompositeSLOIdentifiers = getReferencedCompositeSLOs(simpleServiceLevelObjective)
+      List<String> referencedCompositeSLOIdentifiers = compositeSLOService.getReferencedCompositeSLOs(projectParams, simpleServiceLevelObjective.getIdentifier())
                                                            .stream()
                                                            .map(CompositeServiceLevelObjective::getIdentifier)
                                                            .collect(Collectors.toList());
@@ -185,6 +187,16 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           simpleServiceLevelObjectiveSpec.getHealthSourceRef(), timePeriod, currentTimePeriod);
     } else {
       validateCompositeSLO(serviceLevelObjectiveDTO);
+      CompositeServiceLevelObjective compositeServiceLevelObjective =
+          (CompositeServiceLevelObjective) serviceLevelObjective;
+      AbstractServiceLevelObjective newCompositeServiceLevelObjective =
+          serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.COMPOSITE)
+              .getSLOV2(projectParams, serviceLevelObjectiveDTO, true);
+      if (compositeServiceLevelObjective.shouldReset(newCompositeServiceLevelObjective)) {
+        compositeSLOResetRecalculationService.reset(compositeServiceLevelObjective);
+      } else if (compositeServiceLevelObjective.shouldRecalculate(newCompositeServiceLevelObjective)) {
+        compositeSLOResetRecalculationService.recalculate(compositeServiceLevelObjective);
+      }
     }
     serviceLevelObjective =
         updateSLOV2Entity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO, serviceLevelIndicators);
@@ -262,7 +274,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
 
     if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       List<String> referencedCompositeSLOIdentifiers =
-          getReferencedCompositeSLOs((SimpleServiceLevelObjective) serviceLevelObjectiveV2)
+              compositeSLOService.getReferencedCompositeSLOs(projectParams, identifier)
               .stream()
               .map(CompositeServiceLevelObjective::getIdentifier)
               .collect(Collectors.toList());
@@ -359,12 +371,12 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .build());
     List<SLOHealthIndicator> sloHealthIndicators = sloHealthIndicatorService.getBySLOIdentifiers(projectParams,
         serviceLevelObjectiveList.stream()
-            .map(serviceLevelObjective -> serviceLevelObjective.getIdentifier())
+            .map(AbstractServiceLevelObjective::getIdentifier)
             .collect(Collectors.toList()));
 
     Map<ErrorBudgetRisk, Long> riskToCountMap =
         sloHealthIndicators.stream()
-            .map(sloHealthIndicator -> sloHealthIndicator.getErrorBudgetRisk())
+            .map(SLOHealthIndicator::getErrorBudgetRisk)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
     return SLORiskCountResponse.builder()
@@ -488,41 +500,15 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     Preconditions.checkArgument(isEmpty(serviceLevelObjectives),
         "Deleting notification rule is used in SLOs, "
             + "Please delete the notification rule inside SLOs before deleting notification rule. SLOs : "
-            + String.join(
-                ", ", serviceLevelObjectives.stream().map(slo -> slo.getName()).collect(Collectors.toList())));
+            + serviceLevelObjectives.stream()
+                  .map(AbstractServiceLevelObjective::getName)
+                  .collect(Collectors.joining(", ")));
   }
 
   @Nullable
   @Override
   public AbstractServiceLevelObjective get(String sloId) {
     return hPersistence.get(AbstractServiceLevelObjective.class, sloId);
-  }
-
-  @Override
-  public List<CompositeServiceLevelObjective> getReferencedCompositeSLOs(
-      SimpleServiceLevelObjective simpleServiceLevelObjective) {
-    List<AbstractServiceLevelObjective> compositeServiceLevelObjectives =
-        hPersistence.createQuery(AbstractServiceLevelObjective.class)
-            .filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.COMPOSITE)
-            .filter(ServiceLevelObjectiveV2Keys.accountId, simpleServiceLevelObjective.getAccountId())
-            .asList();
-    Set<CompositeServiceLevelObjective> referencedCompositeSLOs = new HashSet<>();
-    for (AbstractServiceLevelObjective serviceLevelObjective : compositeServiceLevelObjectives) {
-      CompositeServiceLevelObjective compositeServiceLevelObjective =
-          (CompositeServiceLevelObjective) serviceLevelObjective;
-      for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail :
-          compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
-        if (serviceLevelObjectivesDetail.getServiceLevelObjectiveRef().equals(
-                simpleServiceLevelObjective.getIdentifier())
-            && serviceLevelObjectivesDetail.getOrgIdentifier().equals(simpleServiceLevelObjective.getOrgIdentifier())
-            && serviceLevelObjectivesDetail.getProjectIdentifier().equals(
-                simpleServiceLevelObjective.getProjectIdentifier())) {
-          referencedCompositeSLOs.add(compositeServiceLevelObjective);
-          break;
-        }
-      }
-    }
-    return referencedCompositeSLOs.stream().collect(Collectors.toList());
   }
 
   private AbstractServiceLevelObjective updateSLOV2Entity(ProjectParams projectParams,
@@ -608,7 +594,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
     double sum = compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
                      .stream()
-                     .peek(serviceLevelObjectiveDetailsDTO -> checkIfSLOPresent(serviceLevelObjectiveDetailsDTO))
+                     .peek(this::checkIfSLOPresent)
                      .mapToDouble(ServiceLevelObjectiveDetailsDTO::getWeightagePercentage)
                      .sum();
 
@@ -714,12 +700,12 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       serviceLevelObjectiveList =
           serviceLevelObjectiveList.stream()
               .filter(slo
-                  -> !slo.getNotificationRuleRefs()
+                  -> slo.getNotificationRuleRefs()
                           .stream()
                           .filter(notificationRuleRef
                               -> notificationRuleRef.getNotificationRuleRef().equals(filter.getNotificationRuleRef()))
-                          .collect(Collectors.toList())
-                          .isEmpty())
+                          .count()
+                      != 0)
               .collect(Collectors.toList());
     }
     if (isNotEmpty(filter.getErrorBudgetRisks())) {

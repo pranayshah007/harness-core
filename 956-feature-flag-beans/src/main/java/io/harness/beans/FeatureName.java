@@ -446,6 +446,8 @@ public enum FeatureName {
   SPG_USE_NEW_METADATA("To use new metadata endpoint for jira server version greater than 9.0", HarnessTeam.SPG),
   SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING(
       "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
+  SPG_OPTIMIZE_CONCILIATION_QUERY(
+      "Change the conciliation query from using notExists to use equal null", HarnessTeam.SPG),
   CD_SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   SRM_HOST_SAMPLING_ENABLE("Enables Host Sampling feature for Learning Engine.", HarnessTeam.CV),
@@ -483,6 +485,7 @@ public enum FeatureName {
   USE_GET_FILE_V2_GIT_CALL(
       "FF for customers on updated delegate to use GetFileV2 call which is more performance efficient",
       HarnessTeam.PIPELINE),
+  GITOPS_ONPREM_ENABLED("Enable the gitops tab in the UI in case of ONPREM/SMP", HarnessTeam.GITOPS),
   ;
 
   @Deprecated

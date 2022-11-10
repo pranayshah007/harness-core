@@ -89,7 +89,7 @@ fi
 
 export SONAR_JAVAC_FILES=$(cat $PR_MODULES_JAVAC_FILE | tr '\r\n' ',' | rev | cut -c2- | rev)
 export SONAR_LIBS_FILES=$(cat $PR_MODULES_LIB_FILE | tr '\r\n' ',' | rev | cut -c2- | rev)
-export SONAR_SRCS=$(cat $PR_SRCS_FILE | tr '\r\n' ',' | rev | cut -c2- | rev)
+export SONAR_SRCS=$(cat $PR_SRCS_FILE | sort -u | tr '\r\n' ',' | rev | cut -c2- | rev)
 export SONAR_TEST_INCLUSIONS=$(cat $PR_TEST_INCLUSION_FILE | tr '\r\n' ',' | rev | cut -c2- | rev)
 
 echo "sonar.sources=$SONAR_SRCS" >> ${SONAR_CONFIG_FILE}

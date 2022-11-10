@@ -10,14 +10,20 @@ package io.harness.steps.wait;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationStepsTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.execution.PlanExecution;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.repositories.WaitStepRepository;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -37,6 +43,7 @@ public class WaitStepServiceImplTest extends OrchestrationStepsTestBase {
   @Mock WaitNotifyEngine waitNotifyEngine;
   @Mock WaitStepRepository waitStepRepository;
   @Spy @InjectMocks WaitStepServiceImpl waitStepServiceImpl;
+  @Mock PlanExecutionService planExecutionService;
   String nodeExecutionId;
   String correlationId;
   WaitStepInstance waitStepInstance;
@@ -70,7 +77,9 @@ public class WaitStepServiceImplTest extends OrchestrationStepsTestBase {
   @Category(UnitTests.class)
   public void testMarkAsFailOrSuccess() {
     doReturn(Optional.of(waitStepInstance)).when(waitStepRepository).findByNodeExecutionId(nodeExecutionId);
-    waitStepServiceImpl.markAsFailOrSuccess(nodeExecutionId, WaitStepAction.MARK_AS_FAIL);
+    when(planExecutionService.calculateStatusExcluding("", nodeExecutionId)).thenReturn(Status.FAILED);
+    when(planExecutionService.updateStatus("", Status.FAILED)).thenReturn(PlanExecution.builder().build());
+    waitStepServiceImpl.markAsFailOrSuccess("", nodeExecutionId, WaitStepAction.MARK_AS_FAIL);
     verify(waitNotifyEngine, times(1))
         .doneWith(correlationId, WaitStepResponseData.builder().action(WaitStepAction.MARK_AS_FAIL).build());
   }
@@ -82,5 +91,18 @@ public class WaitStepServiceImplTest extends OrchestrationStepsTestBase {
     doReturn(Optional.of(waitStepInstance)).when(waitStepRepository).findByNodeExecutionId(nodeExecutionId);
     WaitStepInstance waitStepInstance1 = waitStepServiceImpl.getWaitStepExecutionDetails(nodeExecutionId);
     assertEquals(waitStepInstance1, waitStepInstance);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHALINI)
+  @Category(UnitTests.class)
+  public void testUpdatePlanStatus() {
+    when(planExecutionService.calculateStatusExcluding("plan", nodeExecutionId)).thenReturn(Status.RUNNING);
+    waitStepServiceImpl.updatePlanStatus("plan", "node");
+    verify(planExecutionService, times(1)).updateStatus(anyString(), any());
+    when(planExecutionService.calculateStatusExcluding("plan", nodeExecutionId)).thenReturn(Status.FAILED);
+    when(planExecutionService.updateStatus("plan", Status.FAILED)).thenReturn(PlanExecution.builder().build());
+    verify(planExecutionService, times(0)).updateStatus("plan", Status.FAILED);
+    waitStepServiceImpl.updatePlanStatus("plan", "node");
   }
 }
