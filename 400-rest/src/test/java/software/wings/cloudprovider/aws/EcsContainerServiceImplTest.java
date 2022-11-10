@@ -372,18 +372,18 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
     verify(awsHelperService, times(1)).describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean());
     verify(awsHelperService, times(2)).updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
 
-    // logic to check desired == running == 5 and deployment.size() = 1, shouldn't retry
+    // logic to check desired == running == 5 and deployment.size() = 1, still should retry
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenReturn(null);
     service.withDeployments(new Deployment()).setRunningCount(5);
     ecsContainerService.provisionTasks(
         region, connectorConfig, encryptionDetails, CLUSTER_NAME, SERVICE_NAME, 5, 5, 10 * 1000, logCallback, true);
-    verify(awsHelperService, times(2)).updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
+    verify(awsHelperService, times(3)).updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
 
     // logic to check desired == running == 5 and deployment.size() = 0, should retry
     service.setDeployments(null);
     ecsContainerService.provisionTasks(
         region, connectorConfig, encryptionDetails, CLUSTER_NAME, SERVICE_NAME, 5, 5, 10 * 1000, logCallback, true);
-    verify(awsHelperService, times(3)).updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
+    verify(awsHelperService, times(4)).updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
   }
 
   @Test

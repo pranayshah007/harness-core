@@ -1073,35 +1073,28 @@ public class EcsContainerServiceImpl implements EcsContainerService {
 
       Service service = services.get(0);
 
-      // Even if service task count is already equal to desired count, try to resize
-      // This should help retry step in case of timeouts or ECS provisioning issue
-      if (service.getDesiredCount() != desiredCount
-          || (timeoutErrorSupported && !isServiceStable(desiredCount, service))) {
-        List<ServiceEvent> serviceEvents = new ArrayList<>();
-        if (isNotEmpty(service.getEvents())) {
-          serviceEvents.addAll(service.getEvents());
-        }
-
-        UpdateServiceCountRequestData serviceCountRequestData =
-            UpdateServiceCountRequestData.builder()
-                .region(region)
-                .encryptedDataDetails(encryptedDataDetails)
-                .cluster(clusterName)
-                .serviceName(serviceName)
-                .desiredCount(desiredCount)
-                .executionLogCallback(executionLogCallback)
-                .awsConfig(awsConfig)
-                .serviceEvents(serviceEvents)
-                .timeOut(serviceSteadyStateTimeout < 10 ? 10 : serviceSteadyStateTimeout)
-                .build();
-
-        updateServiceCount(serviceCountRequestData);
-        executionLogCallback.saveExecutionLog("Service update request successfully submitted.", LogLevel.INFO);
-        waitForTasksToBeInRunningStateWithHandledExceptions(serviceCountRequestData);
-        if (desiredCount > service.getDesiredCount()) { // don't do it for downsize.
-          waitForServiceToReachSteadyState(serviceSteadyStateTimeout, serviceCountRequestData);
-        }
+      List<ServiceEvent> serviceEvents = new ArrayList<>();
+      if (isNotEmpty(service.getEvents())) {
+        serviceEvents.addAll(service.getEvents());
       }
+
+      UpdateServiceCountRequestData serviceCountRequestData =
+          UpdateServiceCountRequestData.builder()
+              .region(region)
+              .encryptedDataDetails(encryptedDataDetails)
+              .cluster(clusterName)
+              .serviceName(serviceName)
+              .desiredCount(desiredCount)
+              .executionLogCallback(executionLogCallback)
+              .awsConfig(awsConfig)
+              .serviceEvents(serviceEvents)
+              .timeOut(serviceSteadyStateTimeout < 10 ? 10 : serviceSteadyStateTimeout)
+              .build();
+
+      updateServiceCount(serviceCountRequestData);
+      executionLogCallback.saveExecutionLog("Service update request successfully submitted.", LogLevel.INFO);
+      waitForTasksToBeInRunningStateWithHandledExceptions(serviceCountRequestData);
+      waitForServiceToReachSteadyState(serviceSteadyStateTimeout, serviceCountRequestData);
 
       return getContainerInfosAfterEcsWait(
           region, awsConfig, encryptedDataDetails, clusterName, serviceName, originalTaskArns, executionLogCallback);
