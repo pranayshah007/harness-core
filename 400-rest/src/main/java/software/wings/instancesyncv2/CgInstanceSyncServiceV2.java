@@ -22,10 +22,12 @@ import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.api.DeploymentEvent;
 import software.wings.api.DeploymentSummary;
+import software.wings.beans.AwsConfig;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.infrastructure.instance.Instance;
@@ -36,6 +38,7 @@ import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
 import software.wings.service.intfc.InfrastructureMappingService;
+import software.wings.service.intfc.aws.manager.AwsAsgHelperServiceManager;
 import software.wings.service.intfc.instance.InstanceService;
 
 import com.google.inject.Inject;
