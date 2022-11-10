@@ -231,7 +231,7 @@ public class PerspectiveResource {
     Double[] response = null;
     if (period == BudgetPeriod.YEARLY && type == BudgetType.PREVIOUS_PERIOD_SPEND
         && breakdown == BudgetBreakdown.MONTHLY) {
-      response = budgetCostService.getLastYearMonthlyCost(accountId, perspectiveId, startTime, period, type);
+      response = budgetCostService.getLastYearMonthlyCost(accountId, perspectiveId, startTime, period);
     }
     return ResponseDTO.newResponse(response);
   }

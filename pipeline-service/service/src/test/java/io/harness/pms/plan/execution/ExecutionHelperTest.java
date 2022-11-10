@@ -12,6 +12,7 @@ import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -69,9 +70,12 @@ import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Resources;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -598,6 +602,21 @@ public class ExecutionHelperTest extends CategoryTest {
                                 .build();
     executionHelper.getPipelineYamlAndValidate("", remote);
   }
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetPipelineYamlAndValidateParallelAndIndependentStages() {
+    String pipelineYaml = readFile("pipelineTest.yaml");
+    String inputSetYaml = readFile("inputSetTest.yaml");
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .yaml(pipelineYaml)
+                                        .build();
+    assertThatThrownBy(() -> executionHelper.getPipelineYamlAndValidate(inputSetYaml, pipelineEntity))
+        .isInstanceOf(InvalidRequestException.class);
+  }
 
   @Test
   @Owner(developers = UTKARSH_CHOUBEY)
@@ -695,5 +714,14 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(pipelineRbacServiceImpl, times(0))
         .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYaml);
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
+  }
+
+  private String readFile(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
   }
 }

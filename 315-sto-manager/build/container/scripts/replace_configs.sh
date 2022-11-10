@@ -188,6 +188,10 @@ if [[ "" != "$LOG_SERVICE_ENDPOINT" ]]; then
   export LOG_SERVICE_ENDPOINT; yq -i '.logServiceConfig.baseUrl=env(LOG_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$LOG_SERVICE_INTERNAL_ENDPOINT" ]]; then
+  export LOG_SERVICE_INTERNAL_ENDPOINT; yq -i '.logServiceConfig.internalUrl=env(LOG_SERVICE_INTERNAL_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$LOG_SERVICE_GLOBAL_TOKEN" ]]; then
   export LOG_SERVICE_GLOBAL_TOKEN; yq -i '.logServiceConfig.globalToken=env(LOG_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
 fi
@@ -220,8 +224,24 @@ if [[ "" != "$GRPC_SERVER_PORT" ]]; then
   export GRPC_SERVER_PORT; yq -i '.pmsSdkGrpcServerConfig.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TI_SERVICE_ENDPOINT" ]]; then
+  export TI_SERVICE_ENDPOINT; yq -i '.tiServiceConfig.baseUrl=env(TI_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TI_SERVICE_INTERNAL_ENDPOINT" ]]; then
+  export TI_SERVICE_INTERNAL_ENDPOINT; yq -i '.tiServiceConfig.internalUrl=env(TI_SERVICE_INTERNAL_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$TI_SERVICE_GLOBAL_TOKEN" ]]; then
   export TI_SERVICE_GLOBAL_TOKEN; yq -i '.tiServiceConfig.globalToken=env(TI_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+fi
+
+if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then
+  export STO_SERVICE_ENDPOINT; yq -i '.stoServiceConfig.baseUrl=env(STO_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$STO_SERVICE_INTERNAL_ENDPOINT" ]]; then
+  export STO_SERVICE_INTERNAL_ENDPOINT; yq -i '.stoServiceConfig.internalUrl=env(STO_SERVICE_INTERNAL_ENDPOINT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$STO_SERVICE_GLOBAL_TOKEN" ]]; then

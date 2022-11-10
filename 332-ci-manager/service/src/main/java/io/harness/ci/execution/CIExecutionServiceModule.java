@@ -11,6 +11,7 @@ import io.harness.CIBeansModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
+import io.harness.beans.steps.nodes.ActionStepNode;
 import io.harness.beans.steps.nodes.ArtifactoryUploadNode;
 import io.harness.beans.steps.nodes.BackgroundStepNode;
 import io.harness.beans.steps.nodes.BuildAndPushACRNode;
@@ -80,6 +81,7 @@ public class CIExecutionServiceModule extends AbstractModule {
       add(ArtifactoryUploadNode.class);
       add(GitCloneStepNode.class);
       add(InitializeStepNode.class);
+      add(ActionStepNode.class);
     }
   };
   @Inject

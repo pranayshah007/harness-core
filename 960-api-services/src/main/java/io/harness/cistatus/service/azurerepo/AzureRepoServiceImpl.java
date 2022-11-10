@@ -7,6 +7,8 @@
 
 package io.harness.cistatus.service.azurerepo;
 
+import static io.harness.threading.Morpheus.sleep;
+
 import static java.lang.String.format;
 
 import io.harness.cistatus.StatusCreationResponse;
@@ -17,6 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Singleton;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -35,6 +38,9 @@ public class AzureRepoServiceImpl implements AzureRepoService {
   private static final String STATE = "state";
   private static final String MergeCommitMessage = "Harness: Updating config overrides";
   private static final String MergeStatus = "completed";
+
+  private static final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
+  private static final int MAX_ATTEMPTS = 10;
 
   @Override
   public boolean sendStatus(AzureRepoConfig azureRepoConfig, String userName, String token, String sha, String org,
@@ -76,11 +82,26 @@ public class AzureRepoServiceImpl implements AzureRepoService {
     bodyObjectMap.put("LastMergeSourceCommit", lastMergeSourceCommit.toString());
 
     try {
-      Response<Object> response = getAzureRepoRestClient(azureRepoConfig)
-                                      .mergePR(getAuthToken(token), org, project, repo, prNumber,
-                                          RequestBody.create(MediaType.parse("application/json; charset=utf-8"),
-                                              lastMergeSourceCommit.toString()))
-                                      .execute();
+      Response<Object> response = null;
+
+      int i = MAX_ATTEMPTS;
+      while (i > 0) {
+        response = getAzureRepoRestClient(azureRepoConfig)
+                       .mergePR(getAuthToken(token), org, project, repo, prNumber,
+                           RequestBody.create(
+                               MediaType.parse("application/json; charset=utf-8"), lastMergeSourceCommit.toString()))
+                       .execute();
+        i--;
+        // This error code denotes that the base branch has been modified. This can happen if two merge requests
+        // are sent for the same branch but the first one has not yet complete and second request reached the provider.
+        if (response.code() != 405) {
+          break;
+        }
+        log.info(format("Received code {}, retrying attempt {} after sleeping for {}", response.code()), i,
+            RETRY_SLEEP_DURATION);
+        sleep(RETRY_SLEEP_DURATION);
+      }
+
       if (response.isSuccessful()) {
         log.info("Response from Azure Repo Merge {}", response.body().toString());
         JSONObject json = new JSONObject();

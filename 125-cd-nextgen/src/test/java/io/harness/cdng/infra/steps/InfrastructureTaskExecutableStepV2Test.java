@@ -187,7 +187,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     doReturn("bytes".getBytes()).when(kryoSerializer).asDeflatedBytes(any());
 
-    doReturn(logCallback).when(infrastructureStepHelper).getInfrastructureLogCallback(any(Ambiance.class));
+    doReturn(logCallback)
+        .when(infrastructureStepHelper)
+        .getInfrastructureLogCallback(any(Ambiance.class), eq(true), eq("Execute"));
 
     // return all the hosts passed as is
     when(stageExecutionHelper.saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(

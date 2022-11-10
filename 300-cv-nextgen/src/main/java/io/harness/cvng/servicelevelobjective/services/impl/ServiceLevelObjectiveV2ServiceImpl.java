@@ -47,6 +47,8 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOResetRecalculationService;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -97,9 +99,11 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private CVNGLogService cvngLogService;
+  @Inject private CompositeSLOResetRecalculationService compositeSLOResetRecalculationService;
   @Inject
   private Map<ServiceLevelObjectiveType, AbstractServiceLevelObjectiveUpdatableEntity>
       serviceLevelObjectiveTypeUpdatableEntityTransformerMap;
+  @Inject private CompositeSLOService compositeSLOService;
 
   @Override
   public ServiceLevelObjectiveV2Response create(
@@ -168,6 +172,16 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           simpleServiceLevelObjectiveSpec.getHealthSourceRef(), timePeriod, currentTimePeriod);
     } else {
       validateCompositeSLO(serviceLevelObjectiveDTO);
+      CompositeServiceLevelObjective compositeServiceLevelObjective =
+          (CompositeServiceLevelObjective) serviceLevelObjective;
+      AbstractServiceLevelObjective newCompositeServiceLevelObjective =
+          serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.COMPOSITE)
+              .getSLOV2(projectParams, serviceLevelObjectiveDTO, true);
+      if (compositeServiceLevelObjective.shouldReset(newCompositeServiceLevelObjective)) {
+        compositeSLOResetRecalculationService.reset(compositeServiceLevelObjective);
+      } else if (compositeServiceLevelObjective.shouldRecalculate(newCompositeServiceLevelObjective)) {
+        compositeSLOResetRecalculationService.recalculate(compositeServiceLevelObjective);
+      }
     }
     serviceLevelObjective =
         updateSLOV2Entity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO, serviceLevelIndicators);
@@ -244,7 +258,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     AbstractServiceLevelObjective serviceLevelObjectiveV2 = checkIfSLOPresent(projectParams, identifier);
 
     if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
-      if (isReferencedInCompositeSLO((SimpleServiceLevelObjective) serviceLevelObjectiveV2)) {
+      if (compositeSLOService.isReferencedInCompositeSLO(projectParams, identifier)) {
         return false;
       }
       serviceLevelIndicatorService.deleteByIdentifier(
@@ -255,7 +269,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     notificationRuleService.delete(projectParams,
         serviceLevelObjectiveV2.getNotificationRuleRefs()
             .stream()
-            .map(ref -> ref.getNotificationRuleRef())
+            .map(NotificationRuleRef::getNotificationRuleRef)
             .collect(Collectors.toList()));
     return hPersistence.delete(serviceLevelObjectiveV2);
   }
@@ -332,12 +346,12 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .build());
     List<SLOHealthIndicator> sloHealthIndicators = sloHealthIndicatorService.getBySLOIdentifiers(projectParams,
         serviceLevelObjectiveList.stream()
-            .map(serviceLevelObjective -> serviceLevelObjective.getIdentifier())
+            .map(AbstractServiceLevelObjective::getIdentifier)
             .collect(Collectors.toList()));
 
     Map<ErrorBudgetRisk, Long> riskToCountMap =
         sloHealthIndicators.stream()
-            .map(sloHealthIndicator -> sloHealthIndicator.getErrorBudgetRisk())
+            .map(SLOHealthIndicator::getErrorBudgetRisk)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
     return SLORiskCountResponse.builder()
@@ -460,37 +474,15 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     Preconditions.checkArgument(isEmpty(serviceLevelObjectives),
         "Deleting notification rule is used in SLOs, "
             + "Please delete the notification rule inside SLOs before deleting notification rule. SLOs : "
-            + String.join(
-                ", ", serviceLevelObjectives.stream().map(slo -> slo.getName()).collect(Collectors.toList())));
+            + serviceLevelObjectives.stream()
+                  .map(AbstractServiceLevelObjective::getName)
+                  .collect(Collectors.joining(", ")));
   }
 
   @Nullable
   @Override
   public AbstractServiceLevelObjective get(String sloId) {
     return hPersistence.get(AbstractServiceLevelObjective.class, sloId);
-  }
-
-  private boolean isReferencedInCompositeSLO(SimpleServiceLevelObjective simpleServiceLevelObjective) {
-    List<AbstractServiceLevelObjective> compositeServiceLevelObjectives =
-        hPersistence.createQuery(AbstractServiceLevelObjective.class)
-            .filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.COMPOSITE)
-            .filter(ServiceLevelObjectiveV2Keys.accountId, simpleServiceLevelObjective.getAccountId())
-            .asList();
-    for (AbstractServiceLevelObjective serviceLevelObjective : compositeServiceLevelObjectives) {
-      CompositeServiceLevelObjective compositeServiceLevelObjective =
-          (CompositeServiceLevelObjective) serviceLevelObjective;
-      for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail :
-          compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
-        if (serviceLevelObjectivesDetail.getServiceLevelObjectiveRef().equals(
-                simpleServiceLevelObjective.getIdentifier())
-            && serviceLevelObjectivesDetail.getOrgIdentifier().equals(simpleServiceLevelObjective.getOrgIdentifier())
-            && serviceLevelObjectivesDetail.getProjectIdentifier().equals(
-                simpleServiceLevelObjective.getProjectIdentifier())) {
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
   private AbstractServiceLevelObjective updateSLOV2Entity(ProjectParams projectParams,
@@ -576,7 +568,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
     double sum = compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
                      .stream()
-                     .peek(serviceLevelObjectiveDetailsDTO -> checkIfSLOPresent(serviceLevelObjectiveDetailsDTO))
+                     .peek(this::checkIfSLOPresent)
                      .mapToDouble(ServiceLevelObjectiveDetailsDTO::getWeightagePercentage)
                      .sum();
 
@@ -689,12 +681,12 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       serviceLevelObjectiveList =
           serviceLevelObjectiveList.stream()
               .filter(slo
-                  -> !slo.getNotificationRuleRefs()
+                  -> slo.getNotificationRuleRefs()
                           .stream()
                           .filter(notificationRuleRef
                               -> notificationRuleRef.getNotificationRuleRef().equals(filter.getNotificationRuleRef()))
-                          .collect(Collectors.toList())
-                          .isEmpty())
+                          .count()
+                      != 0)
               .collect(Collectors.toList());
     }
     if (isNotEmpty(filter.getErrorBudgetRisks())) {

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class SerializerUtils {
   public static List<String> getEntrypoint(ParameterField<CIShellType> parametrizedShellType) {
@@ -75,6 +76,15 @@ public class SerializerUtils {
       }
     } catch (Exception ex) {
       throw new CIStageExecutionException(String.format("Invalid setting attribute %s value", key));
+    }
+  }
+
+  public static String convertMapToJsonString(Map<String, String> m) {
+    try {
+      ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+      return ow.writeValueAsString(m);
+    } catch (Exception ex) {
+      throw new CIStageExecutionException(String.format("Invalid setting %s", m));
     }
   }
 

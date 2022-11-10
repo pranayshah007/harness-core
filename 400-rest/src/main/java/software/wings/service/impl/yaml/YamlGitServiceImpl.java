@@ -18,6 +18,7 @@ import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.microservice.NotifyEngineTarget.GENERAL;
 import static io.harness.validation.Validator.notNullCheck;
 
@@ -631,7 +632,7 @@ public class YamlGitServiceImpl implements YamlGitService {
     String appId = yamlChangeSet.getAppId();
     String yamlChangeSetId = yamlChangeSet.getUuid();
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-         AppLogContext ignore2 = new AppLogContext(appId, OVERRIDE_ERROR);
+         AppLogContext ignore2 = new AppLogContext(appId, OVERRIDE_NESTS);
          YamlProcessingLogContext ignore3 =
              YamlProcessingLogContext.builder().changeSetId(yamlChangeSetId).build(OVERRIDE_ERROR)) {
       log.info(GIT_YAML_LOG_PREFIX + "Started handling harness -> git change set");
@@ -1039,7 +1040,7 @@ public class YamlGitServiceImpl implements YamlGitService {
                                             .putIfNotNull(WEBHOOK_TOKEN, webhookToken)
                                             .putIfNotNull(CHANGESET_ID, yamlChangeSetId)
                                             .build(),
-        OVERRIDE_ERROR);
+        OVERRIDE_NESTS);
   }
 
   @Override

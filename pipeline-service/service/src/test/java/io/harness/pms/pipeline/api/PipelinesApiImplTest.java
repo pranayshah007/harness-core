@@ -202,7 +202,7 @@ public class PipelinesApiImplTest extends CategoryTest {
   public void testPipelineGetNoTemplates() {
     Optional<PipelineEntity> optional = Optional.ofNullable(entity);
     doReturn(optional).when(pmsPipelineService).get(account, org, project, slug, false);
-    Response response = pipelinesApiImpl.getPipeline(org, project, slug, account, null, false);
+    Response response = pipelinesApiImpl.getPipeline(org, project, slug, account, null, false, null, null);
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(yaml, responseBody.getPipelineYaml());
     assertEquals(slug, responseBody.getSlug());
@@ -221,7 +221,7 @@ public class PipelinesApiImplTest extends CategoryTest {
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(extraYaml).build();
     doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(entity);
-    Response response = pipelinesApiImpl.getPipeline(org, project, slug, account, null, true);
+    Response response = pipelinesApiImpl.getPipeline(org, project, slug, account, null, true, null, null);
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(extraYaml, responseBody.getTemplateAppliedPipelineYaml());
     assertEquals(slug, responseBody.getSlug());
@@ -236,7 +236,8 @@ public class PipelinesApiImplTest extends CategoryTest {
   public void testPipelineGetFailPolicyEvaluation() {
     doThrow(PolicyEvaluationFailureException.class).when(pmsPipelineService).get(account, org, project, slug, false);
     PipelineGetResponseBody response =
-        (PipelineGetResponseBody) pipelinesApiImpl.getPipeline(org, project, slug, account, null, false).getEntity();
+        (PipelineGetResponseBody) pipelinesApiImpl.getPipeline(org, project, slug, account, null, false, null, null)
+            .getEntity();
     assertEquals(false, response.isValid().booleanValue());
   }
 
@@ -246,7 +247,8 @@ public class PipelinesApiImplTest extends CategoryTest {
   public void testPipelineGetFailInvalidYaml() {
     doThrow(InvalidYamlException.class).when(pmsPipelineService).get(account, org, project, slug, false);
     PipelineGetResponseBody response =
-        (PipelineGetResponseBody) pipelinesApiImpl.getPipeline(org, project, slug, account, null, false).getEntity();
+        (PipelineGetResponseBody) pipelinesApiImpl.getPipeline(org, project, slug, account, null, false, null, null)
+            .getEntity();
     assertEquals(false, response.isValid().booleanValue());
   }
 

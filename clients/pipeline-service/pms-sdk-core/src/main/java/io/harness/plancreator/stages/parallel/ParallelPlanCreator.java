@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -103,6 +104,8 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
     possibleSiblings.add(YAMLFieldNameConstants.PARALLEL);
     YamlField nextSibling =
         ctx.getCurrentField().getNode().nextSiblingFromParentArray(YAMLFieldNameConstants.PARALLEL, possibleSiblings);
+    YamlField previousSibling = ctx.getCurrentField().getNode().previousSiblingFromParentArray(
+        YAMLFieldNameConstants.PARALLEL, possibleSiblings);
 
     List<YamlField> children = PlanCreatorUtils.getStageChildFields(ctx.getCurrentField());
     if (children.isEmpty()) {
@@ -110,10 +113,21 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
     }
     List<String> childrenUuids =
         children.stream().map(YamlField::getNode).map(YamlNode::getUuid).collect(Collectors.toList());
+    List<String> rollbackChildrenUuids = childrenUuids.stream()
+                                             .map(s -> s + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
+                                             .collect(Collectors.toList());
+
     EdgeLayoutList.Builder stagesEdgesBuilder = EdgeLayoutList.newBuilder().addAllCurrentNodeChildren(childrenUuids);
     if (nextSibling != null) {
       stagesEdgesBuilder.addNextIds(nextSibling.getNode().getUuid());
     }
+    EdgeLayoutList.Builder rollbackStagesEdgesBuilder =
+        EdgeLayoutList.newBuilder().addAllCurrentNodeChildren(rollbackChildrenUuids);
+    if (previousSibling != null) {
+      rollbackStagesEdgesBuilder.addNextIds(
+          previousSibling.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX);
+    }
+
     Map<String, GraphLayoutNode> layoutNodeMap = children.stream().collect(Collectors.toMap(stageField
         -> stageField.getNode().getUuid(),
         stageField
@@ -125,6 +139,22 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
                .setNodeIdentifier(stageField.getNode().getIdentifier())
                .setEdgeLayoutList(EdgeLayoutList.newBuilder().build())
                .build()));
+    Map<String, GraphLayoutNode> rollbackLayoutNodeMap = children.stream().collect(Collectors.toMap(stageField
+        -> stageField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX,
+        stageField
+        -> GraphLayoutNode.newBuilder()
+               .setNodeUUID(
+                   stageField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
+               .setNodeGroup(StepOutcomeGroup.STAGE.name())
+               .setName(
+                   stageField.getNode().getName() + " " + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
+               .setNodeType(stageField.getNode().getType())
+               .setNodeIdentifier(
+                   stageField.getNode().getIdentifier() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
+               .setEdgeLayoutList(EdgeLayoutList.newBuilder().build())
+               .setIsRollbackStageNode(true)
+               .build()));
+
     GraphLayoutNode parallelNode = GraphLayoutNode.newBuilder()
                                        .setNodeUUID(config.getNode().getUuid())
                                        .setNodeType(YAMLFieldNameConstants.PARALLEL)
@@ -132,7 +162,19 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
                                        .setNodeIdentifier(YAMLFieldNameConstants.PARALLEL + config.getNode().getUuid())
                                        .setEdgeLayoutList(stagesEdgesBuilder.build())
                                        .build();
+    GraphLayoutNode parallelRollbackNode =
+        GraphLayoutNode.newBuilder()
+            .setNodeUUID(config.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
+            .setNodeType(YAMLFieldNameConstants.PARALLEL)
+            .setNodeGroup(StepOutcomeGroup.STAGE.name())
+            .setNodeIdentifier(YAMLFieldNameConstants.PARALLEL + config.getNode().getUuid()
+                + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
+            .setEdgeLayoutList(rollbackStagesEdgesBuilder.build())
+            .setIsRollbackStageNode(true)
+            .build();
     layoutNodeMap.put(config.getNode().getUuid(), parallelNode);
+    layoutNodeMap.put(parallelRollbackNode.getNodeUUID(), parallelRollbackNode);
+    layoutNodeMap.putAll(rollbackLayoutNodeMap);
     return GraphLayoutResponse.builder().layoutNodes(layoutNodeMap).build();
   }
 

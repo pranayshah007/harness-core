@@ -38,7 +38,7 @@ public class WaitStepResourceImpl implements WaitStepResource {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, orgId, projectId), Resource.of(PIPELINE, pipelineIdentifier), PIPELINE_EXECUTE);
     waitStepService.markAsFailOrSuccess(
-        nodeExecutionId, WaitStepActionMapper.mapWaitStepAction(waitStepRequestDto.getAction()));
+        planExecutionId, nodeExecutionId, WaitStepActionMapper.mapWaitStepAction(waitStepRequestDto.getAction()));
     return ResponseDTO.newResponse(WaitStepResponseDto.builder().status(true).build());
   }
 

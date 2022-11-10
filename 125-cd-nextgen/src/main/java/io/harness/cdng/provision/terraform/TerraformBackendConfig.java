@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,4 +38,11 @@ public class TerraformBackendConfig {
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   TerraformBackendConfigSpec terraformBackendConfigSpec;
+
+  @Builder
+  public TerraformBackendConfig(String uuid, String type, TerraformBackendConfigSpec spec) {
+    this.uuid = uuid;
+    this.type = type;
+    this.terraformBackendConfigSpec = spec;
+  }
 }

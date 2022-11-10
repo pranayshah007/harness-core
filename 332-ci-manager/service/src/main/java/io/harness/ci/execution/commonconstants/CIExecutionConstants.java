@@ -86,6 +86,8 @@ public class CIExecutionConstants {
   public static final Integer DEFAULT_CONTAINER_MEM_POV = 3000;
   public static final Integer LITE_ENGINE_CONTAINER_CPU = 100;
   public static final Integer DEFAULT_CONTAINER_CPU_POV = 1000;
+  public static final Integer MAXIMUM_EXPANSION_LIMIT = 5000;
+  public static final Integer MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT = 100;
 
   // entry point constants
   public static final String PORT_PREFIX = "--port";
