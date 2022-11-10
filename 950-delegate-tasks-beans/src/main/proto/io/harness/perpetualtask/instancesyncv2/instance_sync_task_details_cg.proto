@@ -31,3 +31,10 @@ message DirectK8sInstanceSyncTaskDetails {
   bool is_helm = 4;
   string container_service_name = 5;
 }
+
+message AwsSshInstanceSyncTaskDetails {
+  string region = 1;
+  bytes filter = 2;
+  bytes aws_config = 3;
+  bytes encrypted_data = 4;
+}

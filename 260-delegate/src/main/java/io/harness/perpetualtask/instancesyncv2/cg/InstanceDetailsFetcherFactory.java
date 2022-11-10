@@ -10,28 +10,30 @@ package io.harness.perpetualtask.instancesyncv2.cg;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.UnexpectedException;
+
+import software.wings.utils.Utils;
 
 import com.google.inject.Inject;
-import java.util.concurrent.ConcurrentHashMap;
 
 @OwnedBy(CDP)
 public class InstanceDetailsFetcherFactory {
   private final CgK8sInstancesDetailsFetcher k8sInstancesDetailsFetcher;
-  private final ConcurrentHashMap<String, InstanceDetailsFetcher> holder;
+  private final CgAwsSshInstancesDetailsFetcher awsSshInstancesDetailsFetcher;
 
   @Inject
-  public InstanceDetailsFetcherFactory(CgK8sInstancesDetailsFetcher instanceDetailsFetcher) {
-    this.holder = new ConcurrentHashMap<>();
+  public InstanceDetailsFetcherFactory(CgK8sInstancesDetailsFetcher instanceDetailsFetcher,
+      CgAwsSshInstancesDetailsFetcher awsSshInstancesDetailsFetcher) {
+    this.awsSshInstancesDetailsFetcher = awsSshInstancesDetailsFetcher;
     this.k8sInstancesDetailsFetcher = instanceDetailsFetcher;
-
-    initFetchers();
   }
 
-  private void initFetchers() {
-    this.holder.put("DIRECT_KUBERNETES", k8sInstancesDetailsFetcher);
-  }
-
-  public InstanceDetailsFetcher getFetcher(String infraMappingType) {
-    return this.holder.getOrDefault(infraMappingType, null);
+  public InstanceDetailsFetcher getFetcher(String infraMapping) {
+    /*    InfrastructureMappingType infraMappingType = Utils.getEnumFromString(InfrastructureMappingType.class,
+       infraMapping); switch (infraMappingType) { case DIRECT_KUBERNETES: return k8sInstancesDetailsFetcher; case
+       AWS_SSH: return awsSshInstancesDetailsFetcher; default: throw new UnexpectedException("No handler defined for
+       infra mapping type: " + infraMappingType);
+        }*/
+    return awsSshInstancesDetailsFetcher;
   }
 }
