@@ -65,7 +65,7 @@ public class AzureRepoServiceImpl implements AzureRepoService {
 
   @Override
   public JSONObject mergePR(AzureRepoConfig azureRepoConfig, String token, String sha, String org, String project,
-      String repo, String prNumber, boolean deleteSourceBranch, Map<String, Object> completionOptions) {
+      String repo, String prNumber, boolean deleteSourceBranch, Map<String, Object> apiParamOptions) {
     log.info("Merging PR for sha {}", sha);
 
     JSONObject commitId = new JSONObject();
@@ -76,12 +76,12 @@ public class AzureRepoServiceImpl implements AzureRepoService {
     mergeStrategy.put("mergeCommitMessage", MERGE_COMMIT_MESSAGE);
     mergeStrategy.put("deleteSourceBranch", deleteSourceBranch);
 
-    if (completionOptions.get(BYPASS_POLICY) != null) {
-      mergeStrategy.put(BYPASS_POLICY,
-          Boolean.valueOf((String) (((ParameterField) completionOptions.get(BYPASS_POLICY)).getValue())));
+    if (apiParamOptions.get(BYPASS_POLICY) != null) {
+      mergeStrategy.put(
+          BYPASS_POLICY, Boolean.valueOf((String) (((ParameterField) apiParamOptions.get(BYPASS_POLICY)).getValue())));
     }
-    if (completionOptions.get(BYPASS_REASON) != null) {
-      mergeStrategy.put(BYPASS_REASON, (String) (((ParameterField) completionOptions.get(BYPASS_REASON)).getValue()));
+    if (apiParamOptions.get(BYPASS_REASON) != null) {
+      mergeStrategy.put(BYPASS_REASON, (String) (((ParameterField) apiParamOptions.get(BYPASS_REASON)).getValue()));
     }
 
     JSONObject lastMergeSourceCommit = new JSONObject();
@@ -105,8 +105,8 @@ public class AzureRepoServiceImpl implements AzureRepoService {
         if (response.code() != 405) {
           break;
         }
-        log.info(format("Received code {}, retrying attempt {} after sleeping for {}", response.code()), i,
-            RETRY_SLEEP_DURATION);
+        log.info(format(
+            "Received code %s, retrying attempt %s after sleeping for %s", response.code(), i, RETRY_SLEEP_DURATION));
         sleep(RETRY_SLEEP_DURATION);
       }
 

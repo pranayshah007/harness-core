@@ -196,7 +196,7 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
                 .sha(sha)
                 .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
                     MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
-                .completionOptions(emptyIfNull(variables))
+                .apiParamOptions(emptyIfNull(variables))
                 .build();
         break;
       case GITLAB:
