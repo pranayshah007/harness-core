@@ -153,7 +153,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
         Environment.builder().identifier(TEST_ENV_ID).type(EnvironmentType.PreProduction).name(TEST_ENV_NAME).build();
     when(environmentService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(environment));
-    doNothing().when(instanceSyncMonitoringService).recordMetrics(any(), anyBoolean(), anyLong());
+    doNothing().when(instanceSyncMonitoringService).recordMetrics(any(), eq(true), anyBoolean(), anyLong());
     Call<RestResponse<Boolean>> request = mock(Call.class);
     when(request.execute()).thenReturn(Response.success(new RestResponse<>(true)));
   }

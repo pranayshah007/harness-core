@@ -7,6 +7,7 @@
 
 package io.harness.service.instancesynchandler;
 
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,11 +19,13 @@ import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
 import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.deploymentinfo.CustomDeploymentNGDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.CustomDeploymentInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.EcsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
@@ -52,6 +55,33 @@ public class CustomDeploymentInstanceSyncHandlerTest extends InstancesTestBase {
         (CustomDeploymentInfrastructureDetails) customDeploymentInstanceSyncHandler.getInfrastructureDetails(
             instanceInfoDTO);
     assertThat(infrastructureDetails.getInstanceName()).isEqualTo(INSTANCE_NAME);
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testGetInfrastructureDetailsError() {
+    InstanceInfoDTO instanceInfoDTO = EcsInstanceInfoDTO.builder().build();
+    assertThatThrownBy(() -> customDeploymentInstanceSyncHandler.getInfrastructureDetails(instanceInfoDTO))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("INVALID_ARGUMENT");
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testGetDeploymentInfoError() {
+    CustomDeploymentInfrastructureOutcome infrastructureOutcome =
+        CustomDeploymentInfrastructureOutcome.builder().infrastructureKey("key").build();
+    EcsServerInstanceInfo customDeploymentServerInstanceInfo = EcsServerInstanceInfo.builder().region("east").build();
+
+    List<ServerInstanceInfo> serverInstanceInfos = new ArrayList<>();
+    serverInstanceInfos.add(customDeploymentServerInstanceInfo);
+
+    assertThatThrownBy(
+        () -> customDeploymentInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, serverInstanceInfos))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("INVALID_ARGUMENT");
   }
 
   @Test

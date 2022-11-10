@@ -154,8 +154,8 @@ import io.harness.security.encryption.DelegateDecryptionService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
-import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.json.JsonUtils;
 import io.harness.taskprogress.TaskProgressClient;
 import io.harness.threading.Schedulable;
 import io.harness.utils.ProcessControl;
@@ -1321,6 +1321,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                       -> executeRestCall(delegateAgentManagerClient.getDelegateScripts(
                           accountId, version, DEFAULT_PATCH_VERSION, DELEGATE_NAME)));
           DelegateScripts delegateScripts = restResponse.getResource();
+          if (delegateScripts == null) {
+            log.warn("Unable to fetch scripts from manager");
+            return;
+          }
           if (delegateScripts.isDoUpgrade()) {
             upgradePending.set(true);
 
@@ -1649,14 +1653,16 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private String findExpectedWatcherVersion() {
-    try {
-      RestResponse<String> restResponse =
-          executeRestCall(delegateAgentManagerClient.getWatcherVersion(delegateConfiguration.getAccountId()));
-      if (restResponse != null) {
-        return restResponse.getResource();
+    if (multiVersion) {
+      try {
+        RestResponse<String> restResponse =
+            executeRestCall(delegateAgentManagerClient.getWatcherVersion(delegateConfiguration.getAccountId()));
+        if (restResponse != null) {
+          return restResponse.getResource();
+        }
+      } catch (Exception e) {
+        log.warn("Encountered error while fetching watcher version from manager ", e);
       }
-    } catch (Exception e) {
-      log.warn("Encountered error while fetching watcher version from manager ", e);
     }
     try {
       // Try fetching watcher version from gcp

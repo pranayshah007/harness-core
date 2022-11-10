@@ -254,6 +254,8 @@ timescaledb:
   deploymentDataMigrationRowLimit: 1000
   deploymentDataMigrationQueryBatchSize: 100
   isHealthCheckNeeded: false
+  sslMode: disable
+  sslRootCert: ""
 
 grpcServerConfig:
   connectors:
@@ -331,7 +333,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: c644a110
+scmVersion: 14bbb1d2
 
 ngAuthUIEnabled: false
 
@@ -381,6 +383,8 @@ cfClientConfig:
   configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
   eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
   analyticsEnabled: true
+  streamEnabled: true
+  sseReadTimeout: 5
   connectionTimeout: 10000
   readTimeout: 45000
   bufferSize: 10240
@@ -654,6 +658,8 @@ eventListenersCountConfig:
   deploymentEventListenerCount: ${DEPLOYMENT_EVENT_LISTENER_COUNT:-2}
   instanceEventListenerCount: ${INSTANCE_EVENT_LISTENER_COUNT:-2}
   deploymentTimeSeriesEventListenerCount: ${DEPLOYMENT_TIME_SERIES_EVENT_LISTENER_COUNT:-2}
+  deploymentStepTimeSeriesEventListenerCount: ${DEPLOYMENT_STEP_TIME_SERIES_EVENT_LISTENER_COUNT:-2}
+  executionInterruptTimeSeriesEventListenerCount: ${EXECUTION_INTERRUPT_TIME_SERIES_EVENT_LISTENER_COUNT:-2}
   executionEventListenerCount: ${EXECUTION_EVENT_LISTENER_COUNT:-3}
   generalNotifyEventListenerCount: ${GENERAL_NOTIFY_EVENT_LISTENER_COUNT:-5}
   orchestrationNotifyEventListenerCount: ${ORCHESTRATION_NOTIFY_EVENT_LISTENER_COUNT:-5}

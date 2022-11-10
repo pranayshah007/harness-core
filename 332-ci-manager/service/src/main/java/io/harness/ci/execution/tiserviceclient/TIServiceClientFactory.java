@@ -7,6 +7,8 @@
 
 package io.harness.ci.tiserviceclient;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.beans.entities.TIServiceConfig;
@@ -33,9 +35,16 @@ public class TIServiceClientFactory implements Provider<TIServiceClient> {
     Gson gson = new GsonBuilder().setLenient().create();
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(tiConfig.getBaseUrl())
-                            .client(Http.getUnsafeOkHttpClient(tiConfig.getBaseUrl()))
+                            .client(Http.getUnsafeOkHttpClient(this.getInternalUrl()))
                             .addConverterFactory(GsonConverterFactory.create(gson))
                             .build();
     return retrofit.create(TIServiceClient.class);
+  }
+
+  private String getInternalUrl() {
+    if (!isEmpty(this.tiConfig.getInternalUrl())) {
+      return this.tiConfig.getInternalUrl();
+    }
+    return this.tiConfig.getBaseUrl();
   }
 }

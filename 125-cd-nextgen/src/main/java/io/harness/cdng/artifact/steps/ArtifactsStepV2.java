@@ -107,7 +107,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  private static final long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
+  private static final long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
   static final String ARTIFACTS_STEP_V_2 = "artifacts_step_v2";
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private ServiceStepsHelper serviceStepsHelper;

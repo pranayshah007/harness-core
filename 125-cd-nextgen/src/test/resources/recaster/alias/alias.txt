@@ -132,6 +132,7 @@ io.harness.cdng.manifest.yaml.GitStore
 io.harness.plancreator.steps.common.StepElementParameters
 io.harness.cdng.service.steps.ServiceStepOutcome
 io.harness.cdng.provision.terraform.InlineTerraformBackendConfigSpec
+io.harness.cdng.provision.terraform.RemoteTerraformBackendConfigSpec
 io.harness.cdng.service.steps.ServiceConfigStepParameters
 io.harness.cdng.service.steps.ServiceSectionStepParameters
 io.harness.ngpipeline.artifact.bean.ArtifactsOutcome
@@ -542,3 +543,6 @@ io.harness.cdng.common.capacity.CountCapacitySpec
 io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo
 io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepNode
 io.harness.cdng.common.capacity.Capacity
+io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepNode
+io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepParameters
+io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo

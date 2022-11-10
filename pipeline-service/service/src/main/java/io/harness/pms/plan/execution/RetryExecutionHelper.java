@@ -112,8 +112,8 @@ public class RetryExecutionHelper {
 
   public RetryInfo validateRetry(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId) {
-    Optional<PipelineEntity> updatedPipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> updatedPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
 
     if (!updatedPipelineEntity.isPresent()) {
       return RetryInfo.builder()

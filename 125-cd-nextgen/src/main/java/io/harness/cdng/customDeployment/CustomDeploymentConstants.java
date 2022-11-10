@@ -16,4 +16,5 @@ public class CustomDeploymentConstants {
   public static final String VALUE = "value";
   public static final String VARIABLES = "variables";
   public static final String INFRASTRUCTURE_DEFINITION = "infrastructureDefinition";
+  public static final String FETCH_INSTANCE_SCRIPT = "Fetch Instance Script";
 }

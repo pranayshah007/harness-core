@@ -6,6 +6,7 @@
 package utils
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -34,6 +35,15 @@ const (
 	JAVA_SRC_PATH      = "src/main/java/"
 	JAVA_TEST_PATH     = "src/test/java/"
 	JAVA_RESOURCE_PATH = "src/test/resources/"
+	SCALA_TEST_PATH    = "src/test/scala/"
+	KOTLIN_TEST_PATH   = "src/test/kotlin/"
+)
+
+var (
+	javaSourceRegex = fmt.Sprintf("^.*%s", JAVA_SRC_PATH)
+	javaTestRegex   = fmt.Sprintf("^.*%s", JAVA_TEST_PATH)
+	scalaTestRegex  = fmt.Sprintf("^.*%s", SCALA_TEST_PATH)
+	kotlinTestRegex = fmt.Sprintf("^.*%s", KOTLIN_TEST_PATH)
 )
 
 //Node holds data about a source code
@@ -107,9 +117,9 @@ func ParseJavaNode(filename string) (*Node, error) {
 
 	var r *regexp.Regexp
 	if strings.Contains(filename, JAVA_SRC_PATH) && strings.HasSuffix(filename, ".java") {
-		r = regexp.MustCompile(`^.*src/main/java/`)
+		r = regexp.MustCompile(javaSourceRegex)
 		node.Type = NodeType_SOURCE
-		rr := r.ReplaceAllString(filename, "${1}") //extract the 2nd part after matching the src/main/java prefix
+		rr := r.ReplaceAllString(filename, "${1}") // extract the 2nd part after matching the src/main/java prefix
 		rr = strings.TrimSuffix(rr, ".java")
 
 		parts := strings.Split(rr, "/")
@@ -118,9 +128,9 @@ func ParseJavaNode(filename string) (*Node, error) {
 		node.Lang = LangType_JAVA
 		node.Pkg = strings.Join(p, ".")
 	} else if strings.Contains(filename, JAVA_TEST_PATH) && strings.HasSuffix(filename, ".java") {
-		r = regexp.MustCompile(`^.*src/test/java/`)
+		r = regexp.MustCompile(javaTestRegex)
 		node.Type = NodeType_TEST
-		rr := r.ReplaceAllString(filename, "${1}") //extract the 2nd part after matching the src/test/java prefix
+		rr := r.ReplaceAllString(filename, "${1}") // extract the 2nd part after matching the src/test/java prefix
 		rr = strings.TrimSuffix(rr, ".java")
 
 		parts := strings.Split(rr, "/")
@@ -134,19 +144,56 @@ func ParseJavaNode(filename string) (*Node, error) {
 		node.File = parts[len(parts)-1]
 		node.Lang = LangType_JAVA
 	} else if strings.HasSuffix(filename, ".scala") {
-		// Cannot make any assumption from scala/kotlin file path, return generic source node for now
-		node.Lang = LangType_JAVA
+		// If the scala filepath does not match any of the test paths below, return generic source node
 		node.Type = NodeType_SOURCE
+		node.Lang = LangType_JAVA
 		f := strings.TrimSuffix(filename, ".scala")
 		parts := strings.Split(f, "/")
 		node.Class = parts[len(parts)-1]
+		// Check for Test Node
+		if strings.Contains(filename, SCALA_TEST_PATH) {
+			r = regexp.MustCompile(scalaTestRegex)
+			node.Type = NodeType_TEST
+			rr := r.ReplaceAllString(f, "${1}")
+
+			parts = strings.Split(rr, "/")
+			p := parts[:len(parts)-1]
+			node.Pkg = strings.Join(p, ".")
+		} else if strings.Contains(filename, JAVA_TEST_PATH) {
+			r = regexp.MustCompile(javaTestRegex)
+			node.Type = NodeType_TEST
+			rr := r.ReplaceAllString(f, "${1}")
+
+			parts = strings.Split(rr, "/")
+			p := parts[:len(parts)-1]
+			node.Pkg = strings.Join(p, ".")
+		}
 	} else if strings.HasSuffix(filename, ".kt") {
-		node.Lang = LangType_JAVA
+		// If the kotlin filepath does not match any of the test paths below, return generic source node
 		node.Type = NodeType_SOURCE
+		node.Lang = LangType_JAVA
 		f := strings.TrimSuffix(filename, ".kt")
 		parts := strings.Split(f, "/")
 		node.Class = parts[len(parts)-1]
-	}else {
+		// Check for Test Node
+		if strings.Contains(filename, KOTLIN_TEST_PATH) {
+			r = regexp.MustCompile(kotlinTestRegex)
+			node.Type = NodeType_TEST
+			rr := r.ReplaceAllString(f, "${1}")
+
+			parts = strings.Split(rr, "/")
+			p := parts[:len(parts)-1]
+			node.Pkg = strings.Join(p, ".")
+		} else if strings.Contains(filename, JAVA_TEST_PATH) {
+			r = regexp.MustCompile(javaTestRegex)
+			node.Type = NodeType_TEST
+			rr := r.ReplaceAllString(f, "${1}")
+
+			parts = strings.Split(rr, "/")
+			p := parts[:len(parts)-1]
+			node.Pkg = strings.Join(p, ".")
+		}
+	} else {
 		return &node, nil
 	}
 

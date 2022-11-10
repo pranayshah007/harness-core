@@ -17,6 +17,8 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
@@ -35,6 +37,7 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.TemplatesResolvedPipelineResponseDTO;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.polling.contracts.AMIPayload;
 import io.harness.polling.contracts.AcrPayload;
 import io.harness.polling.contracts.AmazonS3Payload;
 import io.harness.polling.contracts.ArtifactoryRegistryPayload;
@@ -47,6 +50,8 @@ import io.harness.polling.contracts.GARPayload;
 import io.harness.polling.contracts.GcrPayload;
 import io.harness.polling.contracts.GithubPackagesPollingPayload;
 import io.harness.polling.contracts.JenkinsPayload;
+import io.harness.polling.contracts.Nexus2RegistryPayload;
+import io.harness.polling.contracts.Nexus3RegistryPayload;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.contracts.PollingResponse;
@@ -277,8 +282,14 @@ public class BuildTriggerHelper {
       validatePollingItemForGoogleArtifactRegistry(pollingItem);
     } else if (pollingPayloadData.hasGithubPackagesPollingPayload()) {
       validatePollingItemForGithubPackages(pollingItem);
+    } else if (pollingPayloadData.hasNexus2RegistryPayload()) {
+      validatePollingItemForNexus2Registry(pollingItem);
+    } else if (pollingPayloadData.hasNexus3RegistryPayload()) {
+      validatePollingItemForNexus3Registry(pollingItem);
     } else if (pollingPayloadData.hasAzureArtifactsPayload()) {
       validatePollingItemForAzureArtifacts(pollingItem);
+    } else if (pollingPayloadData.hasAmiPayload()) {
+      validatePollingItemForAMI(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
     }
@@ -306,6 +317,16 @@ public class BuildTriggerHelper {
     }
   }
 
+  private void validatePollingItemForAMI(PollingItem pollingItem) {
+    AMIPayload amiPayload = pollingItem.getPollingPayloadData().getAmiPayload();
+
+    String error = checkFiledValueError("region", amiPayload.getRegion());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
   private void validatePollingItemForS3(PollingItem pollingItem) {
     AmazonS3Payload amazonS3Payload = pollingItem.getPollingPayloadData().getAmazonS3Payload();
     String error = checkFiledValueError("bucketName", amazonS3Payload.getBucketName());
@@ -326,6 +347,22 @@ public class BuildTriggerHelper {
     GithubPackagesPollingPayload githubPackagesPollingPayload =
         pollingItem.getPollingPayloadData().getGithubPackagesPollingPayload();
     String error = checkFiledValueError("package Name", githubPackagesPollingPayload.getPackageName());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForNexus3Registry(PollingItem pollingItem) {
+    Nexus3RegistryPayload nexus3RegistryPayload = pollingItem.getPollingPayloadData().getNexus3RegistryPayload();
+    String error = checkFiledValueError("Repository", nexus3RegistryPayload.getRepository());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForNexus2Registry(PollingItem pollingItem) {
+    Nexus2RegistryPayload nexus2RegistryPayload = pollingItem.getPollingPayloadData().getNexus2RegistryPayload();
+    String error = checkFiledValueError("Repository", nexus2RegistryPayload.getRepository());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -537,6 +574,50 @@ public class BuildTriggerHelper {
       inputs = JsonUtils.asList(evaluateExpression.toString(), new TypeReference<List<NGVariableTrigger>>() {});
     }
     return inputs;
+  }
+
+  public List<AMITag> validateAndFetchTagsListFromJsonNode(BuildTriggerOpsData buildTriggerOpsData, String key) {
+    List<AMITag> tags = buildTriggerOpsData.getPipelineBuildSpecMap().containsKey(key)
+        ? JsonUtils.asList(((JsonNode) buildTriggerOpsData.getPipelineBuildSpecMap().get(key)).asText(),
+            new TypeReference<List<AMITag>>() {})
+        : Collections.emptyList();
+
+    if (isEmpty(tags)) {
+      EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
+
+      Object evaluateExpression =
+          engineExpressionEvaluator.evaluateExpression(key, buildTriggerOpsData.getTriggerSpecMap());
+
+      if (evaluateExpression == null) {
+        return Collections.emptyList();
+      }
+
+      tags = JsonUtils.asList(evaluateExpression.toString(), new TypeReference<List<AMITag>>() {});
+    }
+
+    return tags;
+  }
+
+  public List<AMIFilter> validateAndFetchFiltersListFromJsonNode(BuildTriggerOpsData buildTriggerOpsData, String key) {
+    List<AMIFilter> filters = buildTriggerOpsData.getPipelineBuildSpecMap().containsKey(key)
+        ? JsonUtils.asList(((JsonNode) buildTriggerOpsData.getPipelineBuildSpecMap().get(key)).asText(),
+            new TypeReference<List<AMIFilter>>() {})
+        : Collections.emptyList();
+
+    if (isEmpty(filters)) {
+      EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
+
+      Object evaluateExpression =
+          engineExpressionEvaluator.evaluateExpression(key, buildTriggerOpsData.getTriggerSpecMap());
+
+      if (evaluateExpression == null) {
+        return Collections.emptyList();
+      }
+
+      filters = JsonUtils.asList(evaluateExpression.toString(), new TypeReference<List<AMIFilter>>() {});
+    }
+
+    return filters;
   }
 
   public void verifyStageAndBuildRef(TriggerDetails triggerDetails, String fieldName) {

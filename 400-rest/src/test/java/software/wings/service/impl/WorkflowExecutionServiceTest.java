@@ -374,7 +374,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     PageResponse<WorkflowExecution> pageResponse = aPageResponse().build();
     when(wingsPersistence.query(WorkflowExecution.class, pageRequest)).thenReturn(pageResponse);
     PageResponse<WorkflowExecution> pageResponse2 =
-        workflowExecutionService.listExecutions(pageRequest, false, true, false, true, false);
+        workflowExecutionService.listExecutions(pageRequest, false, true, false, true, false, false);
     assertThat(pageResponse2).isNotNull().isEqualTo(pageResponse);
     verify(wingsPersistence).query(WorkflowExecution.class, pageRequest);
   }

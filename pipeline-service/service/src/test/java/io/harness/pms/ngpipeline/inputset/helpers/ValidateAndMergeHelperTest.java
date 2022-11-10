@@ -66,7 +66,9 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     String pipelineYaml = pipelineStart + stage1 + stage2;
 
     PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).build();
-    doReturn(Optional.of(pipelineEntity)).when(pmsPipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.of(pipelineEntity))
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     String pipelineTemplate = validateAndMergeHelper.getPipelineTemplate(accountId, orgId, projectId, pipelineId, null);
     assertThat(pipelineTemplate).isEqualTo(pipelineYaml);
 
@@ -74,7 +76,9 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         accountId, orgId, projectId, pipelineId, Collections.singletonList("s1"));
     assertThat(s1Template).isEqualTo(pipelineStart + stage1);
 
-    doReturn(Optional.empty()).when(pmsPipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.empty())
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     assertThatThrownBy(() -> validateAndMergeHelper.getPipelineTemplate(accountId, orgId, projectId, pipelineId, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(format("Pipeline [%s] under Project[%s], Organization [%s] doesn't exist or has been deleted.",
@@ -101,7 +105,9 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "        identifier: s1\n"
         + "        description: desc\n";
     PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).build();
-    doReturn(Optional.of(pipelineEntity)).when(pmsPipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.of(pipelineEntity))
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
 
     String invalidIdentifier = "invalidIdentifier";
     InputSetEntity invalidEntity = InputSetEntity.builder()
@@ -135,7 +141,9 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetInputSetTemplateResponseDTOWithNoRuntime() {
-    doReturn(Optional.empty()).when(pmsPipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.empty())
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     assertThatThrownBy(
         () -> validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, pipelineId, null))
         .isInstanceOf(InvalidRequestException.class);
@@ -144,7 +152,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         PipelineEntity.builder().yaml(pipelineYamlWithNoRuntime).filters(Collections.singletonMap("pms", null)).build();
     doReturn(Optional.of(pipelineEntityWithNoRuntime))
         .when(pmsPipelineService)
-        .get(accountId, orgId, projectId, "no_runtime", false);
+        .getAndValidatePipeline(accountId, orgId, projectId, "no_runtime", false);
     doReturn(false).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "no_runtime");
     InputSetTemplateResponseDTOPMS responseWithNoRuntime =
         validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, "no_runtime", null);
@@ -163,7 +171,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         PipelineEntity.builder().yaml(pipelineYamlWithRuntime).filters(Collections.singletonMap("pms", null)).build();
     doReturn(Optional.of(pipelineEntityWithRuntime))
         .when(pmsPipelineService)
-        .get(accountId, orgId, projectId, "has_runtime", false);
+        .getAndValidatePipeline(accountId, orgId, projectId, "has_runtime", false);
     doReturn(true).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "has_runtime");
     InputSetTemplateResponseDTOPMS responseWithNoRuntime =
         validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, "has_runtime", null);
@@ -188,7 +196,9 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "      key2: <+input>\n"
         + "      key3: <+input>";
     PipelineEntity pipeline = PipelineEntity.builder().yaml(pipelineYaml).build();
-    doReturn(Optional.of(pipeline)).when(pmsPipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.of(pipeline))
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
 
     String yamlForS1 = "inputSet:\n"
         + "  pipeline:\n"

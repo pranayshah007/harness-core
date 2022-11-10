@@ -72,6 +72,7 @@ import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
 import com.google.protobuf.util.Timestamps;
@@ -117,6 +118,8 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private DelegateAsyncService delegateAsyncService;
   @Inject private KryoSerializer kryoSerializer;
+
+  @Inject @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer;
   private DelegateSyncService delegateSyncService;
   private DelegateTaskService delegateTaskService;
 
@@ -136,8 +139,8 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
 
     DelegateServiceGrpc.DelegateServiceBlockingStub delegateServiceBlockingStub =
         DelegateServiceGrpc.newBlockingStub(channel);
-    delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
+    delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub, delegateAsyncService,
+        kryoSerializer, referenceFalseKryoSerializer, delegateSyncService, () -> false);
     delegateServiceAgentClient = mock(DelegateServiceAgentClient.class);
     delegateSyncService = mock(DelegateSyncService.class);
 
@@ -147,7 +150,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     delegateTaskServiceClassic = mock(DelegateTaskServiceClassic.class);
     delegateTaskService = mock(DelegateTaskService.class);
     delegateServiceGrpcImpl = new DelegateServiceGrpcImpl(delegateCallbackRegistry, perpetualTaskService,
-        delegateService, delegateTaskService, kryoSerializer, delegateTaskServiceClassic);
+        delegateService, delegateTaskService, kryoSerializer, referenceFalseKryoSerializer, delegateTaskServiceClassic);
 
     server =
         InProcessServerBuilder.forName(serverName).directExecutor().addService(delegateServiceGrpcImpl).build().start();

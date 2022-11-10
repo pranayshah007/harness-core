@@ -8,11 +8,10 @@
 package software.wings.service.impl.instance;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
-import static io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl.FAILED_STATUS;
-import static io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl.SUCCESS_STATUS;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.InfrastructureMappingType.AWS_SSH;
@@ -38,7 +37,6 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.WingsException;
 import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.instancesyncmonitoring.model.InstanceSyncMetricDetails;
 import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -76,6 +74,8 @@ import software.wings.beans.infrastructure.instance.info.Ec2InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.PhysicalHostInstanceInfo;
 import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
+import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
+import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.HostService;
@@ -109,6 +109,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -148,6 +149,7 @@ public class InstanceHelper {
   @Inject private InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject private InstanceSyncMonitoringService instanceSyncMonitoringService;
+  @Inject private CgInstanceSyncTaskDetailsService taskDetailsService;
 
   /**
    * The phaseExecutionData is used to process the instance information that is used by the service and infra
@@ -524,8 +526,6 @@ public class InstanceHelper {
     }
 
     long startTime = System.currentTimeMillis();
-    String status = "";
-    String deploymentType = "";
     String accountId = deploymentSummaries.iterator().next().getAccountId();
     String infraMappingId = deploymentSummaries.iterator().next().getInfraMappingId();
     String appId = deploymentSummaries.iterator().next().getAppId();
@@ -535,7 +535,6 @@ public class InstanceHelper {
       log.info("Handling deployment event for infraMappingId [{}] of appId [{}]", infraMappingId, appId);
 
       InfrastructureMapping infraMapping = infraMappingService.get(appId, infraMappingId);
-      deploymentType = infraMapping.getDeploymentType();
       notNullCheck("Infra mapping is null for the given id: " + infraMappingId, infraMapping);
 
       InfrastructureMappingType infrastructureMappingType =
@@ -545,18 +544,15 @@ public class InstanceHelper {
       InstanceHandler instanceHandler = instanceHandlerFactory.getInstanceHandler(infraMapping);
       instanceHandler.handleNewDeployment(deploymentSummaries, isRollback, onDemandRollbackInfo);
       createPerpetualTaskForNewDeploymentIfEnabled(infraMapping, deploymentSummaries);
-      status = SUCCESS_STATUS;
       log.info("Handled deployment event for infraMappingId [{}] successfully", infraMappingId);
 
     } catch (Exception ex) {
-      status = FAILED_STATUS;
       // We have to catch all kinds of runtime exceptions, log it and move on, otherwise the queue impl keeps retrying
       // forever in case of exception
       log.warn("Exception while handling deployment event for executionId [{}], infraMappingId [{}]",
           workflowExecutionId, infraMappingId, ex);
     } finally {
-      InstanceSyncMetricDetails metricDetails = buildMetricDetails(accountId, appId, deploymentType, status);
-      instanceSyncMonitoringService.recordMetrics(metricDetails, true, System.currentTimeMillis() - startTime);
+      instanceSyncMonitoringService.recordMetrics(accountId, false, true, System.currentTimeMillis() - startTime);
     }
   }
 
@@ -732,6 +728,24 @@ public class InstanceHelper {
       return;
     }
 
+    if (featureFlagService.isEnabled(INSTANCE_SYNC_V2_CG, infrastructureMapping.getAccountId())) {
+      InstanceSyncTaskDetails instanceSyncV2TaskDetails =
+          taskDetailsService.getForInfraMapping(infrastructureMapping.getAccountId(), infrastructureMapping.getUuid());
+      if (Objects.nonNull(instanceSyncV2TaskDetails) && instanceSyncV2TaskDetails.getLastSuccessfulRun() > 0) {
+        log.info(
+            "[INSTANCE_SYNC_V2_CG] Instance Sync for infra mapping: [{}] is moved to new Instance Sync V2 framework, and is handled via Perpetual Task Id: [{}], and instance sync task details id: [{}]. Skipping consuming response for this.",
+            infrastructureMapping.getUuid(), instanceSyncV2TaskDetails.getPerpetualTaskId(),
+            instanceSyncV2TaskDetails.getUuid());
+
+        perpetualTaskService.deleteTask(accountId, perpetualTaskId);
+        log.info(
+            "[INSTANCE_SYNC_V2_CG] Perpetual task with Id: [{}] deleted for infra mapping Id: [{}]. This is now migrated to new perpetual task: [{}], and instance sync task details: [{}]",
+            perpetualTaskId, infrastructureMappingId, instanceSyncV2TaskDetails.getPerpetualTaskId(),
+            instanceSyncV2TaskDetails.getUuid());
+        return;
+      }
+    }
+
     log.debug("Handling Instance sync response. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());
 
     try (AcquiredLock<?> lock = persistentLocker.tryToAcquireLock(
@@ -785,10 +799,8 @@ public class InstanceHelper {
         instanceSyncPerpetualTaskService.resetPerpetualTask(
             infrastructureMapping.getAccountId(), perpetualTaskRecord.getUuid());
       }
-      InstanceSyncMetricDetails metricDetails =
-          buildMetricDetails(infrastructureMapping.getAccountId(), infrastructureMapping.getAppId(),
-              infrastructureMapping.getDeploymentType(), status.isSuccess() ? SUCCESS_STATUS : FAILED_STATUS);
-      instanceSyncMonitoringService.recordMetrics(metricDetails, false, System.currentTimeMillis() - startTime);
+      instanceSyncMonitoringService.recordMetrics(
+          infrastructureMapping.getAccountId(), false, false, System.currentTimeMillis() - startTime);
     }
   }
 
@@ -815,16 +827,5 @@ public class InstanceHelper {
       errorMsg = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
     }
     return errorMsg;
-  }
-
-  private InstanceSyncMetricDetails buildMetricDetails(
-      String accountId, String appId, String deploymentType, String status) {
-    return InstanceSyncMetricDetails.builder()
-        .accountId(accountId)
-        .appId(appId)
-        .isNg(false)
-        .deploymentType(deploymentType)
-        .status(status)
-        .build();
   }
 }

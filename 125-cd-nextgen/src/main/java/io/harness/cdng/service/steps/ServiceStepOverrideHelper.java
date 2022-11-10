@@ -67,9 +67,15 @@ public class ServiceStepOverrideHelper {
       throw new InvalidRequestException("No service configuration found in the service");
     }
 
-    final Map<String, List<ManifestConfigWrapper>> finalLocationManifestsMap =
-        getManifestsFromAllLocations(ngServiceV2InfoConfig, serviceOverrideConfig,
-            ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
+    Map<String, List<ManifestConfigWrapper>> finalLocationManifestsMap = new HashMap<>();
+    // Processing envGroups. EnvironmentConfig and serviceOverrideConfig is null for envGroup. GitOps Flow
+    if (serviceOverrideConfig == null && ngEnvironmentConfig == null) {
+      final List<ManifestConfigWrapper> svcManifests = getSvcManifests(serviceV2Config.getNgServiceV2InfoConfig());
+      finalLocationManifestsMap.put(SERVICE, svcManifests);
+    } else {
+      finalLocationManifestsMap = getManifestsFromAllLocations(ngServiceV2InfoConfig, serviceOverrideConfig,
+          ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
+    }
 
     final NgManifestsMetadataSweepingOutput manifestSweepingOutput =
         NgManifestsMetadataSweepingOutput.builder()
@@ -205,8 +211,18 @@ public class ServiceStepOverrideHelper {
     if (ngServiceV2InfoConfig == null) {
       throw new InvalidRequestException("No service configuration found in the service");
     }
-    final List<ConfigFileWrapper> finalConfigFiles = prepareFinalConfigFiles(ngServiceV2InfoConfig,
-        serviceOverrideConfig, ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
+    List<ConfigFileWrapper> finalConfigFiles;
+    // Processing envGroups. EnvironmentConfig and serviceOverrideConfig is null for envGroup. GitOps Flow
+    if (serviceOverrideConfig == null && ngEnvironmentConfig == null) {
+      final Map<String, ConfigFileWrapper> svcConfigFiles =
+          getSvcConfigFiles(serviceV2Config.getNgServiceV2InfoConfig());
+      Map<String, ConfigFileWrapper> finalConfigFilesMap = new HashMap<>();
+      finalConfigFilesMap.putAll(svcConfigFiles);
+      finalConfigFiles = new ArrayList<>(finalConfigFilesMap.values());
+    } else {
+      finalConfigFiles = prepareFinalConfigFiles(ngServiceV2InfoConfig, serviceOverrideConfig,
+          ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
+    }
 
     final NgConfigFilesMetadataSweepingOutput configFileSweepingOutput =
         NgConfigFilesMetadataSweepingOutput.builder()

@@ -51,7 +51,7 @@ public class StateInspectionServiceImpl implements StateInspectionService {
       return new ArrayList<>();
     }
 
-    return persistence.createQuery(StateInspection.class, excludeAuthority)
+    return persistence.createAnalyticsQuery(StateInspection.class, excludeAuthority)
         .field(StateInspectionKeys.stateExecutionInstanceId)
         .in(stateExecutionInstanceIds)
         .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));

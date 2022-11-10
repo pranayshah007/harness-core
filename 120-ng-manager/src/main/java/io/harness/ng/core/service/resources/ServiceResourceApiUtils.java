@@ -30,9 +30,9 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacPermissions;
-import io.harness.spec.server.ng.model.Service;
-import io.harness.spec.server.ng.model.ServiceRequest;
-import io.harness.spec.server.ng.model.ServiceResponse;
+import io.harness.spec.server.ng.v1.model.Service;
+import io.harness.spec.server.ng.v1.model.ServiceRequest;
+import io.harness.spec.server.ng.v1.model.ServiceResponse;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;

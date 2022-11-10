@@ -423,8 +423,8 @@ public class ConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public boolean delete(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
+  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorIdentifier, boolean forceDelete) {
     try (AutoLogContext ignore1 =
              new NgAutoLogContext(projectIdentifier, orgIdentifier, accountIdentifier, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new ConnectorLogContext(connectorIdentifier, OVERRIDE_ERROR)) {
@@ -448,7 +448,7 @@ public class ConnectorServiceImpl implements ConnectorService {
         if (isConnectorHeartbeatDeleted || connector.getHeartbeatPerpetualTaskId() == null) {
           boolean isConnectorDeleted =
               getConnectorService(connector.getType())
-                  .delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+                  .delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, forceDelete);
           if (!isDefaultBranchConnector) {
             instrumentationHelper.sendConnectorDeleteEvent(
                 orgIdentifier, projectIdentifier, connectorIdentifier, accountIdentifier);
@@ -488,8 +488,8 @@ public class ConnectorServiceImpl implements ConnectorService {
 
   @Override
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorIdentifier, ChangeType changeType) {
-    return delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+      String connectorIdentifier, ChangeType changeType, boolean forceDelete) {
+    return delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, forceDelete);
   }
 
   private void deleteConnectorActivities(String accountIdentifier, String connectorFQN) {

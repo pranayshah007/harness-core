@@ -65,7 +65,7 @@ import org.reflections.Reflections;
 @Singleton
 public class TemplateServiceConfiguration extends Configuration {
   public static final String RESOURCE_PACKAGE = "io.harness.template";
-  public static final String SERVER_STUB = "io.harness.spec.server.template";
+  public static final String SERVER_STUB = "io.harness.spec.server.template.v1";
   public static final String FILTER_PACKAGE = "io.harness.filter";
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;

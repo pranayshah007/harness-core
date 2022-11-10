@@ -815,6 +815,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -1354,6 +1355,10 @@ public class WingsModule extends AbstractModule implements ServersModule {
         .annotatedWith(Names.named("DeploymentReconTaskExecutor"))
         .toInstance(ThreadPool.create(1, 5, 10, TimeUnit.SECONDS,
             new ThreadFactoryBuilder().setNameFormat("DeploymentReconTaskExecutor-%d").build()));
+
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("CustomDashboardAPIExecutor"))
+        .toInstance(Executors.newFixedThreadPool(2));
 
     bind(ExecutorService.class)
         .annotatedWith(Names.named("LookerEntityReconTaskExecutor"))

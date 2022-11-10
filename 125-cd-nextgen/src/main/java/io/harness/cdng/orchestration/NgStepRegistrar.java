@@ -91,6 +91,7 @@ import io.harness.cdng.service.steps.ServiceStep;
 import io.harness.cdng.service.steps.ServiceStepV2;
 import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStep;
+import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStep;
 import io.harness.cdng.ssh.CommandStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
@@ -196,6 +197,7 @@ public class NgStepRegistrar {
     engineSteps.put(ChaosStep.STEP_TYPE, ChaosStep.class);
 
     engineSteps.put(ElastigroupDeployStep.STEP_TYPE, ElastigroupDeployStep.class);
+    engineSteps.put(ElastigroupRollbackStep.STEP_TYPE, ElastigroupRollbackStep.class);
 
     return engineSteps;
   }

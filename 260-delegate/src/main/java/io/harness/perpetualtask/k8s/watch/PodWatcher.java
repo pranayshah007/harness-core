@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -90,7 +91,7 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
   public PodWatcher(@Assisted ApiClient apiClient, @Assisted ClusterDetails params,
       @Assisted K8sControllerFetcher controllerFetcher, @Assisted SharedInformerFactory sharedInformerFactory,
       @Assisted PVCFetcher pvcFetcher, @Assisted NamespaceFetcher namespaceFetcher, EventPublisher eventPublisher,
-      @Assisted String accountId) {
+      @Assisted @Nullable String accountId) {
     this.controllerFetcher = controllerFetcher;
     this.pvcFetcher = pvcFetcher;
     this.namespaceFetcher = namespaceFetcher;

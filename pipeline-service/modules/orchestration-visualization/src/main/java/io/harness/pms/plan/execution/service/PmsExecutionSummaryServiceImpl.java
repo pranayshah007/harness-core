@@ -15,6 +15,7 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.NodeType;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -253,6 +254,10 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     update.set(baseKey + GraphLayoutNodeDTOKeys.nodeIdentifier, nodeExecution.getIdentifier());
     update.set(baseKey + GraphLayoutNodeDTOKeys.name, nodeExecution.getName());
     update.set(baseKey + GraphLayoutNodeDTOKeys.nodeUuid, nodeExecution.getNodeId());
+
+    boolean isRollbackStageNode =
+        nodeExecution.getNodeId().endsWith(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX);
+    update.set(baseKey + GraphLayoutNodeDTOKeys.isRollbackStageNode, isRollbackStageNode);
   }
 
   private String getStageSetupId(List<NodeExecution> childrenNodeExecution,

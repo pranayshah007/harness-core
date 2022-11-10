@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
@@ -36,6 +37,7 @@ import io.harness.yaml.infra.HostConnectionTypeKind;
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -157,6 +159,8 @@ public class InstanceOutcomeHelper {
                                         .host(HostOutcome.builder().hostName(hostName).build())
                                         .build())
                              .collect(Collectors.toList());
+    } else if (infrastructureOutcome instanceof CustomDeploymentInfrastructureOutcome) {
+      instanceOutcomes = Collections.emptyList();
     } else {
       throw new InvalidArgumentsException(
           format("Unsupported instance outcome kind for building instances outcome, infrastructureOutcomeKind: %s",

@@ -18,6 +18,7 @@ import io.harness.ng.core.template.refresh.v2.NodeErrorSummary;
 import io.harness.ng.core.template.refresh.v2.TemplateNodeErrorSummary;
 import io.harness.ng.core.template.refresh.v2.ValidateInputsResponseDTO;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.entity.TemplateEntityGetResponse;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -31,9 +32,9 @@ public class TemplateInputsValidator {
   @Inject private InputsValidator inputsValidator;
 
   public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForTemplates(
-      String accountId, String orgId, String projectId, TemplateEntity templateEntity) {
+      String accountId, String orgId, String projectId, TemplateEntityGetResponse templateEntityGetResponse) {
     ValidateInputsResponseDTO validateInputsResponseDTO =
-        inputsValidator.validateInputsForTemplate(accountId, orgId, projectId, templateEntity);
+        inputsValidator.validateInputsForTemplate(accountId, orgId, projectId, templateEntityGetResponse);
     return toValidateTemplateInputsResponseDTO(validateInputsResponseDTO);
   }
 

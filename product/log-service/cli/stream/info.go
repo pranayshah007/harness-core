@@ -20,7 +20,7 @@ type infoCommand struct {
 }
 
 func (c *infoCommand) run(*kingpin.ParseContext) error {
-	client := client.NewHTTPClient(c.server, "test", c.token, false)
+	client := client.NewHTTPClient(c.server, "test", c.token, false, "")
 	info, err := client.Info(nocontext)
 	if err != nil {
 		return err

@@ -77,11 +77,14 @@ public class StencilPostProcessor {
    * @return the list
    */
   public <T extends Stencil> List<Stencil> postProcess(List<T> stencils, String appId, Map<String, String> args) {
-    return stencils.stream().flatMap(t -> processStencil(t, appId, args)).collect(toList());
+    long startTime = -System.currentTimeMillis();
+    final List<Stencil> result = stencils.stream().flatMap(t -> processStencil(t, appId, args)).collect(toList());
+    log.info(
+        "postProcess stencil take {} ms over {} elements", startTime + System.currentTimeMillis(), stencils.size());
+    return result;
   }
 
   public <T extends Stencil> Stream<Stencil> processStencil(T t, String appId, Map<String, String> args) {
-    long startTime = -System.currentTimeMillis();
     Stencil stencil = t.getOverridingStencil();
 
     stencil = processStencilFields(t, appId, args, stencil);
@@ -131,7 +134,6 @@ public class StencilPostProcessor {
       returnValue = stencils.stream();
     }
 
-    log.info("processStencil take {} ms", startTime + System.currentTimeMillis());
     return returnValue;
   }
 

@@ -7,6 +7,8 @@
 
 package io.harness.cistatus.service;
 
+import static io.harness.threading.Morpheus.sleep;
+
 import static java.lang.String.format;
 
 import io.harness.cistatus.GithubAppTokenCreationResponse;
@@ -29,6 +31,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,6 +59,9 @@ public class GithubServiceImpl implements GithubService {
   private static final int EXP_TIME = 5 * 60 * 1000;
   private static final String MERGED = "merged";
   private static final String MESSAGE = "message";
+
+  private static final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
+  private static final int MAX_ATTEMPTS = 10;
 
   @Override
   public String getToken(GithubAppConfig githubAppConfig) {
@@ -125,9 +131,25 @@ public class GithubServiceImpl implements GithubService {
   @Override
   public JSONObject mergePR(String apiUrl, String token, String owner, String repo, String prNumber) {
     try {
-      Response<Object> response = getGithubClient(GithubAppConfig.builder().githubUrl(apiUrl).build())
-                                      .mergePR(getAuthToken(token), owner, repo, prNumber)
-                                      .execute();
+      Response<Object> response = null;
+
+      int i = MAX_ATTEMPTS;
+      while (i > 0) {
+        response = getGithubClient(GithubAppConfig.builder().githubUrl(apiUrl).build())
+                       .mergePR(getAuthToken(token), owner, repo, prNumber)
+                       .execute();
+        i--;
+        // This error code denotes that the base branch has been modified. This can happen if two merge requests
+        // are sent for the same branch but the first one has not yet complete and second request reached github.
+        // https://github.com/orgs/community/discussions/24462
+        if (response.code() != 405) {
+          break;
+        }
+        log.info(format("Received code {}, retrying attempt {} after sleeping for {}", response.code()), i,
+            RETRY_SLEEP_DURATION);
+        sleep(RETRY_SLEEP_DURATION);
+      }
+
       JSONObject json = new JSONObject();
       if (response.isSuccessful()) {
         json.put("sha", ((LinkedHashMap) response.body()).get("sha"));

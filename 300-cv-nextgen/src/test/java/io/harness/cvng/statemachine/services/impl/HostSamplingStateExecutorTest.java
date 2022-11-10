@@ -34,6 +34,7 @@ import io.harness.rule.Owner;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -123,6 +124,42 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
   @Test
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
+  public void testExecuteSuccess_CanaryNoNodes() {
+    VerificationJobInstance verificationJobInstance =
+        VerificationJobInstance.builder()
+            .deploymentStartTime(Instant.now())
+            .startTime(Instant.now().plus(Duration.ofMinutes(2)))
+            .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
+            .build();
+    hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+    when(verificationJobInstanceService.getVerificationJobInstance(hostSamplingState.getVerificationJobInstanceId()))
+        .thenReturn(verificationJobInstance);
+
+    Optional<TimeRange> preDeploymentTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
+        verificationJobInstance.getDeploymentStartTime());
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(new ArrayList<>()));
+
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(hostSamplingState.getInputs().getVerificationTaskId(),
+             hostSamplingState.getInputs().getStartTime(), hostSamplingState.getInputs().getEndTime()))
+        .thenReturn(getTimeSeriesRecordDTO(new ArrayList<>()));
+
+    hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+    AnalysisStatus analysisStatus = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
+
+    assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
+    assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
+    assertThat(hostSamplingState.getControlHosts()).isEmpty();
+    assertThat(hostSamplingState.getTestHosts()).isEmpty();
+    assertThat(hostSamplingState.getInputs().getLearningEngineTaskType())
+        .isEqualTo(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
   public void testExecuteSuccess_CanaryFewNewNodes() {
     VerificationJobInstance verificationJobInstance =
         VerificationJobInstance.builder()
@@ -145,6 +182,9 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2", "host3")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+    AnalysisStatus analysisStatus = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
+
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -178,7 +218,9 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host3", "host4")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+    AnalysisStatus analysisStatus = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getTestHosts()).isEmpty();
@@ -212,7 +254,9 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+    AnalysisStatus analysisStatus = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -246,7 +290,9 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2", "host3")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+    AnalysisStatus analysisStatus = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -280,7 +326,9 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host3", "host4")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+    AnalysisStatus analysisStatus = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -314,7 +362,9 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+    AnalysisStatus analysisStatus = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -348,7 +398,9 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host1", "host2", "host3")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+    AnalysisStatus analysisStatus = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -382,7 +434,9 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
         .thenReturn(getTimeSeriesRecordDTO(Arrays.asList("host3", "host4")));
 
     hostSamplingState = (HostSamplingState) hostSamplingStateExecutor.execute(hostSamplingState);
+    AnalysisStatus analysisStatus = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -407,7 +461,7 @@ public class HostSamplingStateExecutorTest extends CategoryTest {
     Map<String, ExecutionStatus> taskStatusMap = new HashMap<>();
     taskStatusMap.put(taskId, ExecutionStatus.SUCCESS);
     AnalysisStatus status = hostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
-    assertThat(status.name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(status.name()).isEqualTo(AnalysisStatus.TRANSITION.name());
   }
 
   @Test

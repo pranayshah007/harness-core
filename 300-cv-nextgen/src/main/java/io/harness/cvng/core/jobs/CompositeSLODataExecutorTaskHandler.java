@@ -39,8 +39,8 @@ public class CompositeSLODataExecutorTaskHandler
         LocalDateTime.ofInstant(clock.instant(), compositeServiceLevelObjective.getZoneOffset());
     Instant startTimeForCurrentRange = compositeServiceLevelObjective.getCurrentTimeRange(currentLocalDate)
                                            .getStartTime(compositeServiceLevelObjective.getZoneOffset());
-    Instant createdAtTime = Instant.ofEpochMilli(compositeServiceLevelObjective.getCreatedAt());
-    Instant startTime = (startTimeForCurrentRange.isAfter(createdAtTime)) ? startTimeForCurrentRange : createdAtTime;
+    Instant startedAtTime = Instant.ofEpochMilli(compositeServiceLevelObjective.getStartedAt());
+    Instant startTime = (startTimeForCurrentRange.isAfter(startedAtTime)) ? startTimeForCurrentRange : startedAtTime;
     if (lastSLORecord != null) {
       startTime = Instant.ofEpochMilli(lastSLORecord.getEpochMinute());
     }

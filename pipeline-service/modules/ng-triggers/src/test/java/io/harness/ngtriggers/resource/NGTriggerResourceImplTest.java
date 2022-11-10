@@ -452,7 +452,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
                                              .build())
             .webhookDetails(WebhookDetails.builder().webhookSourceRepo("Github").build())
             .enabled(true)
-            .isPipelineInputOutdated(true)
+            .isPipelineInputOutdated(false)
             .build();
 
     doReturn(Optional.of(ngTriggerEntity))
@@ -462,7 +462,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
-    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, true))
+    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false))
         .thenReturn(ngTriggerDetailsResponse);
 
     TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
@@ -484,7 +484,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
             .getTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, IDENTIFIER, PIPELINE_IDENTIFIER)
             .getData();
     assertThat(responseDTO).isEqualTo(ngTriggerDetailsResponse);
-    assertThat(responseDTO.isPipelineInputOutdated()).isEqualTo(true);
+    assertThat(responseDTO.isPipelineInputOutdated()).isEqualTo(false);
   }
 
   @Test
@@ -841,7 +841,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetTriggerCatalogScheduled() {
     Set<TriggerCatalogType> catalogTypes = new HashSet<>();
-    catalogTypes.add(TriggerCatalogType.SCHEDULED);
+    catalogTypes.add(TriggerCatalogType.CRON);
     List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
         TriggerCatalogItem.builder().category(TriggerCategory.SCHEDULED).triggerCatalogType(catalogTypes).build());
     when(ngTriggerService.getTriggerCatalog(ACCOUNT_ID)).thenReturn(triggerCatalogItems);

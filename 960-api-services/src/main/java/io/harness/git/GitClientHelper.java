@@ -533,6 +533,8 @@ public class GitClientHelper {
   public static void validateURL(@NotNull String url) {
     Matcher m = GIT_URL_NO_OWNER.matcher(url);
     log.info("url==" + url);
+
+    checkInvalidCharacters(url.trim());
     if (!(m.find())) {
       throw new InvalidRequestException(
           format("Invalid repo url  %s,should start with either http:// , https:// , ssh:// or git@", url));
@@ -543,6 +545,24 @@ public class GitClientHelper {
                   + "ssh://provider.com/username/repo, "
                   + "ssh://git@provider.com/username/repo",
               url));
+    }
+  }
+
+  private static void checkInvalidCharacters(String url) {
+    // Currently adding % as invalid, these characters are making url hang.
+    // We will add more as we find out in the future.
+    String invalidUrlCharacters = "%";
+
+    if (url.isEmpty()) {
+      throw new InvalidRequestException(format("Url cannot be left blank"));
+    }
+    if (url.trim().contains(" ")) {
+      throw new InvalidRequestException(format("Invalid repo url  %s, It should not contain spaces in between", url));
+    }
+    for (char ch : url.toCharArray()) {
+      if (invalidUrlCharacters.contains(String.valueOf(ch))) {
+        throw new InvalidRequestException(format("Invalid repo url  %s, It should not contain %s in between", url, ch));
+      }
     }
   }
 

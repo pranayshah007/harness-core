@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -53,6 +54,17 @@ public class CgCdLicenseUsageServiceImpl implements CgCdLicenseUsageService {
   @Override
   public CgServiceInstancesUsageInfo getServiceInstancesUsage(String accountId) {
     return new CgServiceInstancesUsageInfo(cgCdLicenseUsageQueryHelper.fetchServiceInstancesOver30Days(accountId));
+  }
+
+  @Override
+  public int getActiveServiceInTimePeriod(String accountId, int timePeriodInDays) {
+    if (timePeriodInDays <= 0) {
+      return 0;
+    }
+
+    List<String> activeServices =
+        cgCdLicenseUsageQueryHelper.fetchDistinctSvcIdUsedInDeployments(accountId, timePeriodInDays);
+    return CollectionUtils.isEmpty(activeServices) ? 0 : activeServices.size();
   }
 
   private CgActiveServicesUsageInfo buildCgActiveServicesUsageInfo(@NonNull List<String> serviceIdsFromDeployments,

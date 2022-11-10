@@ -38,6 +38,8 @@ import io.harness.perpetualtask.PerpetualTaskContextResponse;
 import io.harness.perpetualtask.PerpetualTaskFailureRequest;
 import io.harness.perpetualtask.PerpetualTaskFailureResponse;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
+import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
+import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.rest.RestResponse;
 import io.harness.serializer.kryo.KryoRequest;
 import io.harness.serializer.kryo.KryoResponse;
@@ -131,6 +133,15 @@ public interface DelegateAgentManagerClient {
   @POST("instancesync/instance-sync/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishInstanceSyncResult(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body DelegateResponseData responseData);
+
+  @POST("instancesync/instance-sync-v2/{perpetualTaskId}")
+  Call<RestResponse<Boolean>> publishInstanceSyncV2Result(@Path("perpetualTaskId") String perpetualTaskId,
+      @Query("accountId") String accountId, @Body CgInstanceSyncResponse responseData);
+
+  @GET("instancesync/instance-sync-v2/task-details/{perpetualTaskId}")
+  @Consumes({"application/x-protobuf"})
+  Call<InstanceSyncTrackedDeploymentDetails> fetchTrackedReleaseDetails(
+      @Path("perpetualTaskId") String perpetualTaskId, @Query("accountId") String accountId);
 
   @POST("instancesync/instance-sync-ng/{perpetualTaskId}")
   Call<RestResponse<Boolean>> processInstanceSyncNGResult(@Path("perpetualTaskId") String perpetualTaskId,

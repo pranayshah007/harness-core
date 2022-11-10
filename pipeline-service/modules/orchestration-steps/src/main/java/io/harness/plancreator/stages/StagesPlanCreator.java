@@ -40,7 +40,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(onConstructor = @__({ @Inject }))
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
   @Inject KryoSerializer kryoSerializer;
 
@@ -88,6 +92,26 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
               .setNodeIdentifier(stageYamlField.getNode().getIdentifier())
               .setEdgeLayoutList(
                   i + 1 < edgeLayoutLists.size() ? edgeLayoutLists.get(i + 1) : EdgeLayoutList.newBuilder().build())
+              .build());
+
+      // create node for corresponding rollback Stage
+      stageYamlFieldMap.put(
+          stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX,
+          GraphLayoutNode.newBuilder()
+              .setNodeUUID(
+                  stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
+              .setNodeType(stageYamlField.getNode().getType())
+              .setName(
+                  stageYamlField.getNode().getName() + " " + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
+              .setNodeGroup(StepOutcomeGroup.STAGE.name())
+              .setNodeIdentifier(
+                  stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
+              .setEdgeLayoutList(i == 0 ? EdgeLayoutList.newBuilder().build()
+                                        : EdgeLayoutList.newBuilder()
+                                              .addNextIds(stagesYamlField.get(i - 1).getNode().getUuid()
+                                                  + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
+                                              .build())
+              .setIsRollbackStageNode(true)
               .build());
     }
     return GraphLayoutResponse.builder()

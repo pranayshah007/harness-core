@@ -14,4 +14,6 @@ public interface CgCdLicenseUsageService {
   CgActiveServicesUsageInfo getActiveServiceLicenseUsage(String accountId);
 
   CgServiceInstancesUsageInfo getServiceInstancesUsage(String accountId);
+
+  int getActiveServiceInTimePeriod(String accountId, int timePeriodInDays);
 }

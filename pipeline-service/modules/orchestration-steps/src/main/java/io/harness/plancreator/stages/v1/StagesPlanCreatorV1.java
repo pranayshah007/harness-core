@@ -83,6 +83,11 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext ctx, YamlField config) {
+    // Create graphLayout only if stages node is child of parent.(Return empty if its child of parallel.spec)
+    if (EmptyPredicate.isEmpty(config.getNode().getParentNode().getType())
+        || !config.getNode().getParentNode().getType().equals(YAMLFieldNameConstants.PIPELINE)) {
+      return GraphLayoutResponse.builder().build();
+    }
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     List<YamlField> stagesYamlField = getStageYamlFields(config);
     List<EdgeLayoutList> edgeLayoutLists = new ArrayList<>();

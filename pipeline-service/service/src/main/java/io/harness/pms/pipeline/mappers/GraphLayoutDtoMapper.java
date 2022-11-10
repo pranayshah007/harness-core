@@ -26,6 +26,7 @@ public class GraphLayoutDtoMapper {
         .name(graphLayoutNode.getName())
         .nodeGroup(graphLayoutNode.getNodeGroup())
         .edgeLayoutList(toDto(graphLayoutNode.getEdgeLayoutList()))
+        .isRollbackStageNode(graphLayoutNode.getIsRollbackStageNode())
         .build();
   }
 

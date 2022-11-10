@@ -9,6 +9,7 @@ package io.harness.batch.processing.budgets.service.impl;
 
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.shard.AccountShardService;
+import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
@@ -52,6 +53,11 @@ public class BudgetCostUpdateService {
         budget.setStartTime(budget.getEndTime());
         budget.setEndTime(BudgetUtils.getEndTimeForBudget(budget.getStartTime(), budget.getPeriod()));
         budget.setBudgetAmount(BudgetUtils.getUpdatedBudgetAmount(budget));
+        if (budget.getBudgetMonthlyBreakdown() != null
+            && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+          budget.getBudgetMonthlyBreakdown().setBudgetMonthlyAmount(
+              BudgetUtils.getUpdatedBudgetAmountMonthlyCost(budget));
+        }
         budgetDao.update(budget.getUuid(), budget);
         // Todo: Insert update entry in budget history table
       }

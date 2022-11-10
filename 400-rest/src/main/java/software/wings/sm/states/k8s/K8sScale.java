@@ -9,6 +9,7 @@ package software.wings.sm.states.k8s;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 
 import static software.wings.sm.StateType.K8S_SCALE;
@@ -177,6 +178,9 @@ public class K8sScale extends AbstractK8sState {
 
       stateExecutionData.setNewInstanceStatusSummaries(
           fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
+      if (featureFlagService.isEnabled(INSTANCE_SYNC_V2_CG, context.getAccountId())) {
+        stateExecutionData.setPodsList(newPods);
+      }
 
       return ExecutionResponse.builder()
           .executionStatus(executionStatus)

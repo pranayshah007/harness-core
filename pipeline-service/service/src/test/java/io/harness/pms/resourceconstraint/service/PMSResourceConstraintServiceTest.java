@@ -317,7 +317,7 @@ public class PMSResourceConstraintServiceTest extends PipelineServiceTestBase {
             .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipeline-id").build())
             .build();
 
-    when(pipelineService.get("A", "B", "C", "pipeline-id", false))
+    when(pipelineService.getAndValidatePipeline("A", "B", "C", "pipeline-id", false))
         .thenReturn(Optional.of(PipelineEntity.builder().name("pipeline-name").build()));
 
     Map<String, PipelineEntity> cache = new HashMap<>();
@@ -325,7 +325,7 @@ public class PMSResourceConstraintServiceTest extends PipelineServiceTestBase {
     assertThat(pmsResourceConstraintService.getPipelineName(cache, planExecution)).isEqualTo("pipeline-name");
     assertThat(pmsResourceConstraintService.getPipelineName(cache, planExecution)).isEqualTo("pipeline-name");
 
-    verify(pipelineService, Mockito.times(1)).get("A", "B", "C", "pipeline-id", false);
+    verify(pipelineService, Mockito.times(1)).getAndValidatePipeline("A", "B", "C", "pipeline-id", false);
   }
 
   @Test
@@ -433,7 +433,7 @@ public class PMSResourceConstraintServiceTest extends PipelineServiceTestBase {
             .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipeline-id").build())
             .build();
 
-    when(pipelineService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(pipelineService.getAndValidatePipeline(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenThrow(new EntityNotFoundException("anyContent"));
 
     Map<String, PipelineEntity> cache = new HashMap<>();

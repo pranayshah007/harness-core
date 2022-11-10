@@ -48,6 +48,16 @@ public class DelegateTaskBroadcastHelper {
     });
   }
 
+  public void broadcastNewDelegateTaskAsyncV2(DelegateTask task) {
+    executorService.submit(() -> {
+      try {
+        rebroadcastDelegateTaskV2(task);
+      } catch (Exception e) {
+        log.error("Failed to broadcast task {} for account {}", task.getUuid(), task.getAccountId(), e);
+      }
+    });
+  }
+
   public void rebroadcastDelegateTask(DelegateTask delegateTask) {
     if (delegateTask == null) {
       return;
@@ -58,6 +68,23 @@ public class DelegateTaskBroadcastHelper {
                                                       .accountId(delegateTask.getAccountId())
                                                       .taskId(delegateTask.getUuid())
                                                       .async(delegateTask.getData().isAsync())
+                                                      .broadcastToDelegatesIds(delegateTask.getBroadcastToDelegateIds())
+                                                      .build();
+
+    Broadcaster broadcaster = broadcasterFactory.lookup(STREAM_DELEGATE_PATH + delegateTask.getAccountId(), true);
+    broadcaster.broadcast(delegateTaskBroadcast);
+  }
+
+  public void rebroadcastDelegateTaskV2(DelegateTask delegateTask) {
+    if (delegateTask == null) {
+      return;
+    }
+
+    DelegateTaskBroadcast delegateTaskBroadcast = DelegateTaskBroadcast.builder()
+                                                      .version(delegateTask.getVersion())
+                                                      .accountId(delegateTask.getAccountId())
+                                                      .taskId(delegateTask.getUuid())
+                                                      .async(delegateTask.getTaskDataV2().isAsync())
                                                       .broadcastToDelegatesIds(delegateTask.getBroadcastToDelegateIds())
                                                       .build();
 

@@ -30,7 +30,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.EnvironmentType;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.ff.FeatureFlagService;
@@ -69,6 +68,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
@@ -121,7 +121,6 @@ public class APMVerificationStateTest extends APMStateVerificationTestBase {
     FieldUtils.writeField(apmVerificationState, "settingsService", settingsService, true);
     FieldUtils.writeField(
         apmVerificationState, "workflowStandardParamsExtensionService", workflowStandardParamsExtensionService, true);
-    when(featureFlagService.isEnabled(FeatureName.CUSTOM_APM_CV_TASK, accountId)).thenReturn(true);
     setupCvActivityLogService(apmVerificationState);
   }
 
@@ -423,23 +422,7 @@ public class APMVerificationStateTest extends APMStateVerificationTestBase {
   @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
-  public void testIfIsHistoricalAnalysis() throws Exception {
-    when(featureFlagService.isEnabled(FeatureName.CUSTOM_APM_CV_TASK, accountId)).thenReturn(true);
-    YamlUtils yamlUtils = new YamlUtils();
-    String yamlStr =
-        Resources.toString(APMVerificationStateTest.class.getResource("/apm/apm_config.yml"), Charsets.UTF_8);
-    List<ApmMetricCollectionInfo> mcInfo =
-        yamlUtils.read(yamlStr, new TypeReference<List<ApmMetricCollectionInfo>>() {});
-    apmVerificationState.setMetricCollectionInfos(mcInfo);
-
-    assertThat(apmVerificationState.isHistoricalAnalysis(accountId)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = PRAVEEN)
-  @Category(UnitTests.class)
   public void testIfIsHistoricalAnalysis_NotTrue() throws Exception {
-    when(featureFlagService.isEnabled(FeatureName.CUSTOM_APM_CV_TASK, accountId)).thenReturn(true);
     YamlUtils yamlUtils = new YamlUtils();
     String yamlStr = Resources.toString(
         APMVerificationStateTest.class.getResource("/apm/apm_collection_info_not_historical.yml"), Charsets.UTF_8);
@@ -454,7 +437,6 @@ public class APMVerificationStateTest extends APMStateVerificationTestBase {
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
   public void testIfIsHistoricalAnalysis_NotTrueWithUrl() throws Exception {
-    when(featureFlagService.isEnabled(FeatureName.CUSTOM_APM_CV_TASK, accountId)).thenReturn(true);
     YamlUtils yamlUtils = new YamlUtils();
     String yamlStr = Resources.toString(
         APMVerificationStateTest.class.getResource("/apm/apm_collection_info_not_historical.yml"), Charsets.UTF_8);
@@ -469,25 +451,7 @@ public class APMVerificationStateTest extends APMStateVerificationTestBase {
   @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
-  public void testIfIsHistoricalAnalysis_TrueWithNullBody() throws Exception {
-    when(featureFlagService.isEnabled(FeatureName.CUSTOM_APM_CV_TASK, accountId)).thenReturn(true);
-    YamlUtils yamlUtils = new YamlUtils();
-    String yamlStr = Resources.toString(
-        APMVerificationStateTest.class.getResource("/apm/apm_collection_info_not_historical.yml"), Charsets.UTF_8);
-    List<ApmMetricCollectionInfo> mcInfo =
-        yamlUtils.read(yamlStr, new TypeReference<List<ApmMetricCollectionInfo>>() {});
-    mcInfo.forEach(info -> info.setCollectionBody(null));
-    mcInfo.forEach(info -> info.setCollectionUrl("dummyURLwithoutHost"));
-    apmVerificationState.setMetricCollectionInfos(mcInfo);
-
-    assertThat(apmVerificationState.isHistoricalAnalysis(accountId)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = PRAVEEN)
-  @Category(UnitTests.class)
   public void testIfIsHistoricalAnalysis_NotTrueWithNullUrl() throws Exception {
-    when(featureFlagService.isEnabled(FeatureName.CUSTOM_APM_CV_TASK, accountId)).thenReturn(true);
     YamlUtils yamlUtils = new YamlUtils();
     String yamlStr = Resources.toString(
         APMVerificationStateTest.class.getResource("/apm/apm_collection_info_not_historical.yml"), Charsets.UTF_8);
@@ -503,7 +467,6 @@ public class APMVerificationStateTest extends APMStateVerificationTestBase {
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
   public void testIfIsHistoricalAnalysis_FFDisabled() throws Exception {
-    when(featureFlagService.isEnabled(FeatureName.CUSTOM_APM_CV_TASK, accountId)).thenReturn(false);
     FieldUtils.writeField(apmVerificationState, "featureFlagService", featureFlagService, true);
     YamlUtils yamlUtils = new YamlUtils();
     String yamlStr = Resources.toString(
@@ -519,6 +482,7 @@ public class APMVerificationStateTest extends APMStateVerificationTestBase {
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
+  @Ignore("CI-6025: TI team to follow up")
   public void testCreateDataCollectionInfo_withoutExpressions() throws Exception {
     Map<String, String> hosts = new HashMap<>();
     ExecutionContextImpl executionContext = mock(ExecutionContextImpl.class);
@@ -556,6 +520,7 @@ public class APMVerificationStateTest extends APMStateVerificationTestBase {
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
+  @Ignore("CI-6025: TI team to follow up")
   public void testCreateDataCollectionInfo_withoutResolvedExpression() throws Exception {
     Map<String, String> hosts = new HashMap<>();
     ExecutionContextImpl executionContext = mock(ExecutionContextImpl.class);
