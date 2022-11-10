@@ -9,7 +9,6 @@ package software.wings.helpers.ext.jenkins;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
-import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -92,6 +91,7 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
   private String rootUrl;
   private JenkinsInternalConfig jenkinsInternalConfig;
   @Inject private JenkinsRegistryUtils jenkinsRegistryUtils;
+  private Jenkins jenkins;
 
   @Before
   public void setup() throws URISyntaxException {
@@ -109,11 +109,13 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
   /**
    * Should get job from jenkins.
    *
+   * @throws URISyntaxException the URI syntax exception
+   * @throws IOException        Signals that an I/O exception has occurred.
    */
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void shouldGetJobFromJenkins() {
+  public void shouldGetJobFromJenkins() throws IOException {
     assertThat(jenkinsRegistryUtils.getJobWithDetails(jenkinsInternalConfig, "scheduler")).isNotNull();
   }
 
@@ -497,23 +499,5 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
         .isInstanceOf(HintException.class)
         .extracting("message")
         .isEqualTo("Failure in fetching environment variables for job ");
-  }
-
-  @Test
-  @Owner(developers = RAFAEL)
-  @Category(UnitTests.class)
-  public void constructJobPathDetails() throws URISyntaxException {
-    // default case
-    JenkinsRegistryUtils.JobPathDetails jobPathDetails =
-        jenkinsRegistryUtils.constructJobPathDetails("project/release/new%2Ftest");
-    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
-    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
-    assertThat(jobPathDetails.getChildJobName()).isEqualTo("new%2Ftest");
-
-    // more than three paths
-    jobPathDetails = jenkinsRegistryUtils.constructJobPathDetails("project/release/master");
-    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
-    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
-    assertThat(jobPathDetails.getChildJobName()).isEqualTo("master");
   }
 }

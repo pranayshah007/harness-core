@@ -12,8 +12,6 @@ import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.SERVICE_CONFIG_KE
 import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.STAGE_KEY;
 import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.USE_FROM_STAGE_KEY;
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
-import static io.harness.cvng.governance.beans.ExpansionKeysConstants.ENVIRONMENT_REF;
-import static io.harness.cvng.governance.beans.ExpansionKeysConstants.INFRASTRUCTURE;
 
 import io.harness.cvng.cdng.services.impl.CVNGStepUtils;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
@@ -55,14 +53,18 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
     String projectId = metadata.getProjectId();
     ProjectParams projectParams =
         ProjectParams.builder().accountIdentifier(accountId).projectIdentifier(projectId).orgIdentifier(orgId).build();
-    String serviceRef = fetchServiceIdentifier(fieldValue, metadata);
-    if (Objects.isNull(serviceRef)) {
+    String serviceRef;
+    String environmentRef;
+    try {
+      serviceRef = fetchServiceIdentifier(fieldValue, metadata);
+      environmentRef = CVNGStepUtils.getEnvRefNode(new YamlNode(fieldValue)).asText();
+    } catch (Exception ex) {
+      log.error("Invalid pipeline:  " + metadata.getYaml() + ex);
       return ExpansionResponse.builder()
           .success(false)
-          .errorMessage("Invalid yaml. Service config or service config reference from other stage not found.")
+          .errorMessage("Invalid yaml. Service config or Environment config from other stage not found.")
           .build();
     }
-    String environmentRef = fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT_REF).asText();
     ServiceEnvironmentParams serviceEnvironmentParams = builderWithProjectParams(projectParams)
                                                             .serviceIdentifier(serviceRef)
                                                             .environmentIdentifier(environmentRef)
@@ -123,7 +125,8 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
             CVNGStepUtils.findStageByIdentifier(propagateFromPipeline, useFromStageIdentifier);
         return CVNGStepUtils.getServiceRefNode(propagateFromStage).asText();
       } catch (IOException e) {
-        throw new IllegalStateException(e);
+        log.error(e + "pipeline: " + metadata.getYaml());
+        throw new IllegalArgumentException(e);
       }
     }
   }

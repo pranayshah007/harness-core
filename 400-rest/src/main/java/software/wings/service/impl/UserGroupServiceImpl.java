@@ -212,7 +212,10 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   private AccountPermissions addDefaultCePermissions(AccountPermissions accountPermissions) {
     Set<PermissionType> accountPermissionsSet =
-        Optional.ofNullable(accountPermissions.getPermissions()).orElse(new HashSet<>());
+        accountPermissions == null || CollectionUtils.isEmpty(accountPermissions.getPermissions())
+        ? new HashSet<>()
+        : accountPermissions.getPermissions();
+
     accountPermissionsSet.add(PermissionType.CE_VIEWER);
     if (accountPermissionsSet.contains(PermissionType.ACCOUNT_MANAGEMENT)) {
       accountPermissionsSet.add(PermissionType.CE_ADMIN);

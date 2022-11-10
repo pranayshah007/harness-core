@@ -1,0 +1,19 @@
+{
+  "deploymentType": "Kubernetes",
+  "service": {
+    "serviceRef": "service"
+  },
+  "environment": {
+    "environmentRef": "env",
+    "deployToAll": false,
+    "infrastructureDefinitions": [
+      {
+        "identifier": "infra"
+      }
+    ]
+  },
+  "execution": {
+    "steps": [],
+    "rollbackSteps": []
+  }
+}

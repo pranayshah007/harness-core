@@ -65,7 +65,7 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImpl
       return result;
     }
     String serviceIdentifier = parseServiceIdentifier(stageLevelYamlNode);
-    String envIdentifier = CVNGStepUtils.getEnvRefNode(stageLevelYamlNode).asText();
+    String envIdentifier = CVNGStepUtils.getEnvRefNodeAtStageLevel(stageLevelYamlNode).asText();
 
     ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
                                                             .accountIdentifier(projectParams.getAccountIdentifier())

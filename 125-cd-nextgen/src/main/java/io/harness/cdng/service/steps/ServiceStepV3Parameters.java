@@ -11,7 +11,6 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.SkipAutoEvaluation;
 
 import java.util.List;
 import java.util.Map;
@@ -22,10 +21,13 @@ import lombok.Data;
 @Builder
 public class ServiceStepV3Parameters implements StepParameters {
   private ParameterField<String> serviceRef;
-  @SkipAutoEvaluation private ParameterField<Map<String, Object>> inputs;
+  private ParameterField<Map<String, Object>> inputs;
   private ParameterField<String> envRef;
-  @SkipAutoEvaluation private ParameterField<Map<String, Object>> envInputs;
-  @SkipAutoEvaluation private ParameterField<Map<String, Object>> serviceOverrideInputs;
+  private ParameterField<String> envGroupRef;
+  private List<ParameterField<String>> envRefs;
+  private ParameterField<Boolean> gitOpsMultiSvcEnvEnabled;
+  private ParameterField<Map<String, Object>> envInputs;
+  private ParameterField<Map<String, Object>> serviceOverrideInputs;
   private List<String> childrenNodeIds;
   private ServiceDefinitionType deploymentType;
   @Override
