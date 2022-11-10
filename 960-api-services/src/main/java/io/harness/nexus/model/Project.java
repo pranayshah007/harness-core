@@ -13,13 +13,12 @@ import io.harness.annotations.dev.OwnedBy;
 import java.io.Serializable;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlType;
-
+import javax.xml.bind.annotation.XmlRootElement;
 /**
  * Created by srinivas on 4/6/17.
  */
 
-@XmlType(name = "project")
+@XmlRootElement(name = "project")
 @XmlAccessorType(XmlAccessType.FIELD)
 @lombok.Data
 @OwnedBy(HarnessTeam.CDC)

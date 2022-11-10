@@ -23,6 +23,7 @@ import lombok.Value;
 @Builder
 public class MailTaskParams implements TaskParameters, ExecutionCapabilityDemander {
   List<String> emailIds;
+  List<String> ccEmailIds;
   String subject;
   String body;
   String notificationId;

@@ -8,7 +8,9 @@
 package io.harness.pms.sdk.core.pipeline.variables;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.SHALINI;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
@@ -101,5 +103,12 @@ public class PipelineVariableCreatorTest extends CategoryTest {
   public void getSupportedTypes() {
     assertThat(pipelineVariableCreator.getSupportedTypes())
         .containsEntry(YAMLFieldNameConstants.PIPELINE, Collections.singleton("__any__"));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetFieldClass() {
+    assertEquals(pipelineVariableCreator.getFieldClass(), PipelineInfoConfig.class);
   }
 }

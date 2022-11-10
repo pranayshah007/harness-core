@@ -62,10 +62,14 @@ spec:
       - image: harness/delegate:latest
         imagePullPolicy: Always
         name: delegate
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
         resources:
           limits:
-            cpu: "1.0"
             memory: "8Gi"
+          requests:
+            cpu: "1.0"
         livenessProbe:
           httpGet:
             path: /api/health

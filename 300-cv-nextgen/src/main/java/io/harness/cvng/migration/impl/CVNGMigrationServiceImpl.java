@@ -11,6 +11,7 @@ import static io.harness.concurrent.HTimeLimiter.callInterruptible21;
 import static io.harness.cvng.migration.beans.CVNGSchema.CVNGMigrationStatus.PENDING;
 import static io.harness.cvng.migration.beans.CVNGSchema.SCHEMA_ID;
 
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.migration.CVNGBackgroundMigrationList;
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.CVNGSchema;
@@ -37,6 +38,7 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
   @Inject private Injector injector;
   @Inject private ExecutorService executorService;
   @Inject private TimeLimiter timeLimiter;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public void runMigrations() {

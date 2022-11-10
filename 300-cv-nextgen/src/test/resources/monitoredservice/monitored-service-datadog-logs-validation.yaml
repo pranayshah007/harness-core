@@ -1,0 +1,36 @@
+---
+monitoredService:
+  type: "Application"
+  serviceRef: "testing_service"
+  environmentRef: "datadog"
+  sources:
+    changeSources:
+      - identifier: "harness_cd_next_gen"
+        type: "HarnessCDNextGen"
+        name: "Harness CD Next Gen"
+        enabled: true
+        category: "Deployment"
+        spec: {}
+    healthSources:
+      - identifier: "ddl"
+        type: "DatadogLog"
+        name: "ddl"
+        spec:
+          connectorRef: "dd"
+          feature: "Datadog Cloud Logs"
+          queries:
+            - identifier: "Datadog_Logs_Query"
+              query: "service:todolist*"
+              name: "Datadog Logs Query"
+              serviceInstanceIdentifier: "pod_name"
+              indexes:
+                - "main"
+  template:
+    templateRef: "datadog_Metrics"
+    versionLabel: "version1"
+    templateInputs:
+      type: "Application"
+      serviceRef: "testing_service"
+      environmentRef: "datadog"
+  identifier: "testing_service_datadog"
+  name: "testing_service_datadog"

@@ -15,6 +15,7 @@ import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.models.VerificationType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Preconditions;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -49,6 +50,7 @@ public abstract class LogCVConfig extends CVConfig {
     return true;
   }
 
+  @JsonIgnore
   @Override
   public TimeRange getFirstTimeDataCollectionTimeRange() {
     TimeRange baseline = getBaseline();
@@ -58,6 +60,7 @@ public abstract class LogCVConfig extends CVConfig {
         .build();
   }
 
+  @JsonIgnore
   public TimeRange getBaseline() {
     Preconditions.checkState(this.getCreatedAt() != 0, "CreatedAt needs to be set to get the baseline");
     Instant endTime = DateTimeUtils.roundDownTo5MinBoundary(getFirstTimeDataCollectionStartTime());

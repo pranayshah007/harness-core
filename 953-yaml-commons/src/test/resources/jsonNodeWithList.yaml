@@ -1,0 +1,172 @@
+{
+  "step": {
+    "identifier": "Rollback",
+    "type": "Command",
+    "name": "Rollback",
+    "timeout": "10m",
+    "spec": {
+      "onDelegate": false,
+      "environmentVariables": [],
+      "outputVariables": [],
+      "commandUnits": [
+        {
+          "identifier": "Stop_Service_Rollback",
+          "type": "Script",
+          "name": "Stop Service Rollback",
+          "spec": {
+            "workingDirectory": "$HOME/<+service.name>/<+env.name>/tomcat/bin",
+            "shell": "Bash",
+            "source": {
+              "type": "Inline",
+              "spec": {
+                "script": "# [ -f ./shutdown.sh ] && ./shutdown.sh  || true",
+                "__uuid": "3RxYcED8T3S-Ynb2ejP1Yw"
+              },
+              "__uuid": "YgtjtQd-RyKUqVISm145mA"
+            },
+            "__uuid": "NK3nCwToRS-LgDuWLKhYbw"
+          },
+          "__uuid": "7sGURxM3SnaJVNignEIonQ"
+        },
+        {
+          "identifier": "Process_Stopped_Rollback",
+          "type": "Script",
+          "name": "Process Stopped Rollback",
+          "spec": {
+            "workingDirectory": "$HOME/<+service.name>/<+env.name>/tomcat/bin",
+            "shell": "Bash",
+            "source": {
+              "type": "Inline",
+              "spec": {
+                "script": "# i=0\n# while [ \"$i\" -lt 30 ]\n# do\n#   pgrep -f \"\\-Dcatalina.home=$HOME/<+service.name>/<+env.name>/tomcat\"\n#   rc=$?\n#   if [ \"$rc\" -eq 0 ]\n#   then\n#     sleep 1\n#     i=$((i+1))\n#   else\n#     exit 0\n#   fi\n# done\n# exit 1",
+                "__uuid": "iw1bFOM0TAmrcyaPis96yQ"
+              },
+              "__uuid": "UL_9aYcsQtGtYKoUT8QWlg"
+            },
+            "__uuid": "ddEWInEXS9W6tfqNxL3Jpw"
+          },
+          "__uuid": "GgwmFm0ET06kqxOdkhTlIA"
+        },
+        {
+          "identifier": "Port_Cleared_Rollback",
+          "type": "Script",
+          "name": "Port Cleared Rollback",
+          "spec": {
+            "workingDirectory": "$HOME/<+service.name>/<+env.name>/tomcat/bin",
+            "shell": "Bash",
+            "source": {
+              "type": "Inline",
+              "spec": {
+                "script": "# server_xml=\"$HOME/<+service.name>/<+env.name>/tomcat/conf/server.xml\"\n# if [ -f \"$server_xml\" ]\n# then\n#   port=$(grep \"<Connector[ ]*port=\\\"[0-9]*\\\"[ ]*protocol=\\\"HTTP/1.1\\\"\" \"$server_xml\" |cut -d '\"' -f2)\n# nc -v -z -w 5 localhost $port\n# else\n#   echo \"Tomcat config file(\"$server_xml\") does not exist.. port check failed.\"\n# exit 1\n# fi",
+                "__uuid": "S4ZCvsd2TPG75cQCV3Nghg"
+              },
+              "__uuid": "-PmZA4kmSVaE2Qh78GQgLg"
+            },
+            "__uuid": "gg8hTSsbRke3zpUp_l2U7g"
+          },
+          "__uuid": "xvrclLHmQ5WoPqKsOM88dw"
+        },
+        {
+          "identifier": "Setup_Runtime_Paths_Rollback",
+          "type": "Script",
+          "name": "Setup Runtime Paths Rollback",
+          "spec": {
+            "shell": "Bash",
+            "source": {
+              "type": "Inline",
+              "spec": {
+                "script": "# Execute as root and pass environment variables\n# su -p -\n\n# Execute as root via user credentials (with root privileges)\n# sudo -E su -p -\n\n# Creating runtime, backup and staging directories:\n\nmkdir -p $HOME/<+service.name>/<+env.name>/runtime\nmkdir -p $HOME/<+service.name>/<+env.name>/backup\nmkdir -p $HOME/<+service.name>/<+env.name>/staging\nmkdir -p $HOME/<+service.name>/<+env.name>/tomcat/bin",
+                "__uuid": "Ji1Ldb6LQ2-WP5LbA67wTg"
+              },
+              "__uuid": "DAv4_l6rSqSow6wq71fVqg"
+            },
+            "__uuid": "QKhtaHBxQ3KTk3K-l9m4Ug"
+          },
+          "__uuid": "LJ6DMHdeTv-aeZ8Xp5Pm4A"
+        },
+        {
+          "identifier": "Copy_Artifact_Rollback",
+          "type": "Copy",
+          "name": "Copy Artifact Rollback",
+          "spec": {
+            "sourceType": "Artifact",
+            "destinationPath": "$HOME/<+service.name>/<+env.name>",
+            "__uuid": "qrTFLHbcQeS7n1434fQhvw"
+          },
+          "__uuid": "Z7t4f5jBRDKU7CG6Xd17wA"
+        },
+        {
+          "identifier": "Copy_Config_Rollback",
+          "type": "Copy",
+          "name": "Copy Config Rollback",
+          "spec": {
+            "sourceType": "Config",
+            "destinationPath": "$HOME/<+service.name>/<+env.name>",
+            "__uuid": "k11aNxbFRXujsqNreUMWQg"
+          },
+          "__uuid": "j4lsPwPgQU-uT7I-0zdxgg"
+        },
+        {
+          "identifier": "Start_Service_Rollback",
+          "type": "Script",
+          "name": "Start Service Rollback",
+          "spec": {
+            "workingDirectory": "$HOME/<+service.name>/<+env.name>/tomcat/bin",
+            "shell": "Bash",
+            "source": {
+              "type": "Inline",
+              "spec": {
+                "script": "# ./startup.sh",
+                "__uuid": "_DYRGrfmROO8ImCJmkHfpw"
+              },
+              "__uuid": "507nSIuDSByIxRP97kvJnA"
+            },
+            "__uuid": "5nZ0YLVcSzyF3sGCRIkDyw"
+          },
+          "__uuid": "Jz2VKPlATbq5i7cWuJ2wiQ"
+        },
+        {
+          "identifier": "Process_Running_Rollback",
+          "type": "Script",
+          "name": "Process Running Rollback",
+          "spec": {
+            "workingDirectory": "$HOME/<+service.name>/<+env.name>/tomcat/bin",
+            "shell": "Bash",
+            "source": {
+              "type": "Inline",
+              "spec": {
+                "script": "# i=0\n# while [ \"$i\" -lt 30 ]\n# do\n#     pgrep -f \"\\-Dcatalina.home=$HOME/<+service.name>/<+env.name>/tomcat\"\n#     rc=$?\n#     if [ \"$rc\" -eq 0 ]\n#     then\n#         exit 0\n#         sleep 1\n#         i=$((i+1))\n#     else\n#         sleep 1\n#         i=$((i+1))\n#     fi\n# done\n# exit 1",
+                "__uuid": "brXkJznuQvyy-G0o2VBbLA"
+              },
+              "__uuid": "oyVFXKgPRbilx2afN331Jw"
+            },
+            "__uuid": "H2yvwupbQ22CY4Fn8Myqdg"
+          },
+          "__uuid": "P0w8vASRRwaN-aEQlyd-Dg"
+        },
+        {
+          "identifier": "Port_Listening_Rollback",
+          "type": "Script",
+          "name": "Port Listening Rollback",
+          "spec": {
+            "workingDirectory": "$HOME/<+service.name>/<+env.name>/tomcat/bin",
+            "shell": "Bash",
+            "source": {
+              "type": "Inline",
+              "spec": {
+                "script": "# if [ -f \"$server_xml\" ]\n# then\n#   port=$(grep \"<Connector[ ]*port=\\\"[0-9]*\\\"[ ]*protocol=\\\"HTTP/1.1\\\"\" \"$server_xml\" |cut -d '\"' -f2)\n#   nc -v -z -w 5 localhost $port\n#   rc=$?\n#   if [ \"$rc\" -eq 0 ]\n#   then\n#     exit 1\n#   fi\n# else\n#   echo \"Tomcat config file(\"$server_xml\") does not exist.. skipping port check.\"\n# fi",
+                "__uuid": "WabWE0JgQHiaLOB9WNM14A"
+              },
+              "__uuid": "IgJOVmscS1KsyvTpstLcSw"
+            },
+            "__uuid": "OBtFh8v1Tdm2V1AguhJQrw"
+          },
+          "__uuid": "C6ETH0ZSRyqELEMRjve6gg"
+        }
+      ],
+      "__uuid": "4l5lZjUTSFuevOtRqBCA1Q"
+    },
+    "__uuid": "VZrR1lyaRtiuC5mEIkhzIw"
+  },
+  "__uuid": "Ul5SU2KBTomqV20knHRtZw"
+}

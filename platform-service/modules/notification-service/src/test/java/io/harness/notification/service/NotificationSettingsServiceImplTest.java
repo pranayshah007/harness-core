@@ -9,6 +9,8 @@ package io.harness.notification.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 
 import static junit.framework.TestCase.assertEquals;
@@ -82,6 +84,10 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
       String.format("${ngSecretManager.obtain(\"account.SlackWebhookUrlSecret\", %d)}", EXPRESSION_FUNCTOR_TOKEN_1);
   private static final String RESOLVED_SLACK_SECRET_WITH_FUNCTOR_ZERO =
       "${ngSecretManager.obtain(\"SlackWebhookUrlSecret1\", 0)}";
+  private static final String RESOLVED_SLACK_SWEEPING_OUTPUT_SECRET_1 =
+      "${sweepingOutputSecrets.obtain(\"ovar3\",\"BASE_64\")}";
+  private static final String RESOLVED_SLACK_SWEEPING_OUTPUT_SECRET_2 =
+      "${sweepingOutputSecrets.obtain(\"output1\",\"sa32zupgqijF2be+H2lEAw7yfMwGDFtC5zciKbzQGEtm5Vq+cjo7RclAhPVLTig7\")}";
   private static final String EMAIL_ID_1 = "user1@gmail.com";
   private static final String EMAIL_ID_2 = "user2@gmail.com";
   private static final String EMAIL_ID_3 = "user3@gmail.com";
@@ -243,6 +249,54 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testEmailNotificationWhenSendAllBooleanIsTrue() {
+    List<String> userIds = Arrays.asList(USER_ID_1);
+    List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build());
+    when(CGRestUtils.getResponse(any())).thenReturn(userInfoList);
+    List<UserGroupDTO> userGroupDTOList = new ArrayList<>();
+    EmailConfigDTO emailConfigDTO = EmailConfigDTO.builder().groupEmail(EMAIL_ID_2).sendEmailToAllUsers(true).build();
+    userGroupDTOList.add(
+        UserGroupDTO.builder().notificationConfigs(Arrays.asList(emailConfigDTO)).users(userIds).build());
+    List<String> emails = notificationSettingsService.getNotificationSettings(
+        NotificationChannelType.EMAIL, userGroupDTOList, ACCOUNT_ID);
+    assertEquals(Arrays.asList(EMAIL_ID_1, EMAIL_ID_2), emails);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testEmailNotificationWhenSendAllBooleanIsEmpty() {
+    List<String> userIds = Arrays.asList(USER_ID_1);
+    List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build());
+    when(CGRestUtils.getResponse(any())).thenReturn(userInfoList);
+    List<UserGroupDTO> userGroupDTOList = new ArrayList<>();
+    EmailConfigDTO emailConfigDTO = EmailConfigDTO.builder().groupEmail(EMAIL_ID_2).build();
+    userGroupDTOList.add(
+        UserGroupDTO.builder().notificationConfigs(Arrays.asList(emailConfigDTO)).users(userIds).build());
+    List<String> emails = notificationSettingsService.getNotificationSettings(
+        NotificationChannelType.EMAIL, userGroupDTOList, ACCOUNT_ID);
+    assertEquals(Arrays.asList(EMAIL_ID_1, EMAIL_ID_2), emails);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testEmailNotificationWhenSendAllBooleanIsFalse() {
+    List<String> userIds = Arrays.asList(USER_ID_1);
+    List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build());
+    when(CGRestUtils.getResponse(any())).thenReturn(userInfoList);
+    List<UserGroupDTO> userGroupDTOList = new ArrayList<>();
+    EmailConfigDTO emailConfigDTO = EmailConfigDTO.builder().sendEmailToAllUsers(false).groupEmail(EMAIL_ID_2).build();
+    userGroupDTOList.add(
+        UserGroupDTO.builder().notificationConfigs(Arrays.asList(emailConfigDTO)).users(userIds).build());
+    List<String> emails = notificationSettingsService.getNotificationSettings(
+        NotificationChannelType.EMAIL, userGroupDTOList, ACCOUNT_ID);
+    assertEquals(Arrays.asList(EMAIL_ID_2), emails);
+  }
+
+  @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testGetNotificationSettingsWithDifferentChannelTypes() {
@@ -299,5 +353,23 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     assertEquals(ACCOUNT_ID, abstractionMap.get(ACCOUNT_IDENTIFIER));
     assertEquals(ORG_ID, abstractionMap.get(ORG_IDENTIFIER));
     assertEquals(PROJECT_ID, abstractionMap.get(PROJECT_IDENTIFIER));
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testSlackWebhookSweepingOutputSecret() {
+    List<String> notificationSettings = Arrays.asList(RESOLVED_SLACK_SWEEPING_OUTPUT_SECRET_1);
+    boolean isSecret = notificationSettingsService.checkIfWebhookIsSecret(notificationSettings);
+    assertTrue(isSecret);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testSlackWebhookSweepingOutputSecret2() {
+    List<String> notificationSettings = Arrays.asList(RESOLVED_SLACK_SWEEPING_OUTPUT_SECRET_2);
+    boolean isSecret = notificationSettingsService.checkIfWebhookIsSecret(notificationSettings);
+    assertTrue(isSecret);
   }
 }

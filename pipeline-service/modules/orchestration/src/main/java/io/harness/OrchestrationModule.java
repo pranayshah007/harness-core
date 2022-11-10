@@ -61,19 +61,18 @@ import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.govern.ServersModule;
 import io.harness.graph.stepDetail.PmsGraphStepDetailsServiceImpl;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.pms.NoopFeatureFlagServiceImpl;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.expression.EngineExpressionService;
-import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.queue.TimerScheduledExecutorService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.testing.TestExecution;
 import io.harness.threading.ThreadPool;
+import io.harness.utils.PmsFeatureFlagHelper;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.version.VersionInfoManager;
-import io.harness.wait.WaitStepService;
-import io.harness.wait.WaitStepServiceImpl;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.AsyncWaitEngineImpl;
 import io.harness.waiter.WaitNotifyEngine;
@@ -134,19 +133,25 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
     install(OrchestrationBeansModule.getInstance());
     if (!config.isUseFeatureFlagService()) {
       bind(PmsFeatureFlagService.class).to(NoopFeatureFlagServiceImpl.class);
+      bind(PipelineSettingsService.class).to(NoopPipelineSettingServiceImpl.class).in(Singleton.class);
+
     } else {
       install(new AccountClientModule(
           config.getAccountServiceHttpClientConfig(), config.getAccountServiceSecret(), config.getAccountClientId()));
+      // ng-license dependencies
+      install(NgLicenseHttpClientModule.getInstance(
+          config.getLicenseClientConfig(), config.getLicenseClientServiceSecret(), config.getAccountClientId()));
       bind(PmsFeatureFlagService.class).to(PmsFeatureFlagHelper.class);
+      bind(PipelineSettingsService.class).to(PipelineSettingsServiceImpl.class).in(Singleton.class);
     }
     bind(NodeExecutionService.class).to(NodeExecutionServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionService.class).to(PlanExecutionServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionMonitorService.class).to(PlanExecutionMonitorServiceImpl.class).in(Singleton.class);
     bind(PmsGraphStepDetailsService.class).to(PmsGraphStepDetailsServiceImpl.class);
     bind(ExecutionInputService.class).to(ExecutionInputServiceImpl.class);
-    bind(WaitStepService.class).to(WaitStepServiceImpl.class);
 
     bind(PlanService.class).to(PlanServiceImpl.class).in(Singleton.class);
+
     bind(InterruptService.class).to(InterruptServiceImpl.class).in(Singleton.class);
     bind(OrchestrationService.class).to(OrchestrationServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionMetadataService.class).to(PlanExecutionMetadataServiceImpl.class).in(Singleton.class);
@@ -244,5 +249,11 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
   @Singleton
   public OrchestrationLogConfiguration orchestrationLogConfiguration() {
     return config.getOrchestrationLogConfiguration();
+  }
+
+  @Provides
+  @Singleton
+  public OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration() {
+    return config.getOrchestrationRestrictionConfiguration();
   }
 }

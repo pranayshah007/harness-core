@@ -21,7 +21,9 @@ import io.harness.cvng.migration.list.AddMonitoredServiceToChangeSourceMigration
 import io.harness.cvng.migration.list.AddMonitoredServiceToHeatMapMigration;
 import io.harness.cvng.migration.list.AddMonitoredServiceToWebhookMigration;
 import io.harness.cvng.migration.list.AddMonitoringSourcesToVerificationJobMigration;
+import io.harness.cvng.migration.list.AddStartedAtToServiceLevelObjectiveV2;
 import io.harness.cvng.migration.list.AddTaskInfoToVerificationTask;
+import io.harness.cvng.migration.list.AddTypeToServiceLevelObjectivesV2;
 import io.harness.cvng.migration.list.AppDCVConfigCompleteMetricPathMigration;
 import io.harness.cvng.migration.list.AppDCustomMetricForExistingProjects;
 import io.harness.cvng.migration.list.CVNGBaseMigration;
@@ -46,6 +48,7 @@ import io.harness.cvng.migration.list.UpdateActivityStatusMigration;
 import io.harness.cvng.migration.list.UpdateApdexMetricCriteria;
 import io.harness.cvng.migration.list.UpdateCvConfigPerpetualTasksMigration;
 import io.harness.cvng.migration.list.UpdateRiskIntToRiskEnum;
+import io.harness.cvng.migration.list.WriteServiceLevelObjectivesToV2;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -114,6 +117,9 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(49, PrometheusConnectorAuthenticationPerpetualTaskMigration.class))
         .add(Pair.of(50, AddEnabledFlagToSLISLOMigration.class))
         .add(Pair.of(51, AddLastDisabledAtToMonitoredServiceMigration.class))
+        .add(Pair.of(52, WriteServiceLevelObjectivesToV2.class))
+        .add(Pair.of(53, AddTypeToServiceLevelObjectivesV2.class))
+        .add(Pair.of(54, AddStartedAtToServiceLevelObjectiveV2.class))
         .build();
   }
 }

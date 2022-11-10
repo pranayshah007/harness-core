@@ -26,6 +26,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
+import io.harness.utils.TimeoutUtils;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
@@ -74,12 +75,15 @@ public class WaitStepInfo implements PMSStepInfo, Visitable {
   @Override
   @JsonIgnore
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.ASYNC;
+    return OrchestrationFacilitatorType.WAIT_STEP;
   }
 
   @Override
   public SpecParameters getSpecParameters() {
-    return WaitStepParameters.infoBuilder().duration(getDuration()).uuid(getUuid()).build();
+    return WaitStepParameters.infoBuilder()
+        .duration(ParameterField.createValueField(TimeoutUtils.getTimeoutString(getDuration())))
+        .uuid(getUuid())
+        .build();
   }
 
   public StepParameters getStepParameters(

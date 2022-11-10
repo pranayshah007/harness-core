@@ -30,3 +30,4 @@ pipelineStages:
     expression: 10 == 10
     type: CONDITIONAL_SKIP
   stageName: STAGE 1
+rollbackPreviousStages: false

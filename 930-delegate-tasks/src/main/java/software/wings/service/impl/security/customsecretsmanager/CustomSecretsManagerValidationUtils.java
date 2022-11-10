@@ -10,6 +10,7 @@ package software.wings.service.impl.security.customsecretsmanager;
 import static io.harness.annotations.dev.HarnessModule._440_SECRET_MANAGEMENT_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -19,7 +20,6 @@ import static software.wings.settings.SettingVariableTypes.HOST_CONNECTION_ATTRI
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.exception.InvalidArgumentsException;
@@ -104,7 +104,7 @@ public class CustomSecretsManagerValidationUtils {
             .executeOnDelegate(customSecretsManagerConfig.isExecuteOnDelegate())
             .keyEncryptedDataDetails(new ArrayList<>())
             .winrmConnectionEncryptedDataDetails(new ArrayList<>())
-            .activityId(UUIDGenerator.generateUuid())
+            .activityId(generateUuid())
             .appId(GLOBAL_APP_ID)
             .outputVars(OUTPUT_VARIABLE)
             .saveExecutionLogs(false);
@@ -138,14 +138,19 @@ public class CustomSecretsManagerValidationUtils {
     ScriptType scriptType = ScriptType.BASH;
     ShellScriptTaskParametersNGBuilder taskParametersNGBuilder = ShellScriptTaskParametersNG.builder();
     Map<String, String> envVars = new HashMap<>();
+    boolean executeOnDelegate = Boolean.TRUE.equals(customSecretNGManagerConfig.isOnDelegate());
+    String executionId = generateUuid();
     return taskParametersNGBuilder.accountId(accountId)
-        .executeOnDelegate(customSecretNGManagerConfig.isOnDelegate())
+        .executeOnDelegate(executeOnDelegate)
         .environmentVariables(envVars)
         .outputVars(Collections.singletonList(OUTPUT_VARIABLE))
         .script(script)
         .scriptType(scriptType)
         .workingDirectory(customSecretNGManagerConfig.getWorkingDirectory())
         .host(customSecretNGManagerConfig.getHost())
+        .sshKeySpecDTO(customSecretNGManagerConfig.getSshKeySpecDTO())
+        .encryptionDetails(customSecretNGManagerConfig.getSshKeyEncryptionDetails())
+        .executionId(executionId)
         .build();
   }
 }

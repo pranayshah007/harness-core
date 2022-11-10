@@ -1,8 +1,15 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cvng.automation.resources;
 
 import io.harness.annotations.ExposeInternalException;
-import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
+import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -24,7 +31,7 @@ import javax.ws.rs.Produces;
 @ExposeInternalException
 @NextGenManagerAuth
 public class AutomationResource {
-  @Inject private CVNGStepTaskService stepTaskService;
+  @Inject private VerificationJobInstanceService verificationJobInstanceService;
 
   @GET
   @Path("/verification-job-instance/{verifyStepExecutionId}")
@@ -33,6 +40,6 @@ public class AutomationResource {
   @ApiOperation(value = "get verification job instance", nickname = "getVerificationJobInstance", hidden = true)
   public RestResponse<VerificationJobInstance> getVerificationJobInstance(
       @NotBlank @NotNull @PathParam("verifyStepExecutionId") String verificationJobInstanceId) {
-    return new RestResponse(stepTaskService.getByVerificationJobInstanceId(verificationJobInstanceId));
+    return new RestResponse(verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId));
   }
 }

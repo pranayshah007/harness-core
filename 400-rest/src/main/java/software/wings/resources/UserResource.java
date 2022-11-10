@@ -37,6 +37,7 @@ import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
+import io.harness.data.parser.Parser;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
@@ -175,6 +176,7 @@ public class UserResource {
   private FeatureFlagService featureFlagService;
 
   private static final String BASIC = "Basic";
+  private static final String LARGE_PAGE_SIZE_LIMIT = "3000";
   private static final List<BugsnagTab> tab =
       Collections.singletonList(BugsnagTab.builder().tabName(CLUSTER_TYPE).key(FREEMIUM).value(ONBOARDING).build());
 
@@ -217,6 +219,13 @@ public class UserResource {
       @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("searchTerm") String searchTerm,
       @QueryParam("details") @DefaultValue("true") boolean loadUserGroups) {
     Integer offset = Integer.valueOf(pageRequest.getOffset());
+    if (featureFlagService.isEnabled(FeatureName.EXTRA_LARGE_PAGE_SIZE, accountId)) {
+      String baseLimit = LARGE_PAGE_SIZE_LIMIT;
+      String limit = PageRequest.UNLIMITED.equals(pageRequest.getLimit())
+          ? baseLimit
+          : Integer.toString(Parser.asInt(pageRequest.getLimit(), Integer.parseInt(baseLimit)));
+      pageRequest.setLimit(limit);
+    }
     Integer pageSize = pageRequest.getPageSize();
 
     List<User> userList = userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, true, true);

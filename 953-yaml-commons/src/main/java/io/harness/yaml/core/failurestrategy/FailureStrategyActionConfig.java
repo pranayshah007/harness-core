@@ -38,7 +38,7 @@ import javax.validation.constraints.NotNull;
       @Type(value = StepGroupFailureActionConfig.class, name = NGFailureActionTypeConstants.STEP_GROUP_ROLLBACK),
       @Type(value = PipelineRollbackFailureActionConfig.class, name = NGFailureActionTypeConstants.PIPELINE_ROLLBACK),
       @Type(value = ProceedWithDefaultValuesFailureActionConfig.class,
-          name = NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUE)
+          name = NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES)
 })
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface FailureStrategyActionConfig {

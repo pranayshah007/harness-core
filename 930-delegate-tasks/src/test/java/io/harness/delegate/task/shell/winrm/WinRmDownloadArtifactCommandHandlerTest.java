@@ -24,9 +24,9 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
+import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
-import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
@@ -73,7 +73,8 @@ public class WinRmDownloadArtifactCommandHandlerTest {
 
   @Before
   public void setup() {
-    when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), any(), any())).thenReturn(defaultWinRmExecutor);
+    when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), anyBoolean(), any(), any()))
+        .thenReturn(defaultWinRmExecutor);
     when(artifactHandlers.get(ARTIFACTORY)).thenReturn(artifactoryArtifactDownloadHandler);
     when(artifactoryArtifactDownloadHandler.getCommandString(any(), any(), any())).thenReturn(COMMAND_STRING);
     when(defaultWinRmExecutor.getLogCallback()).thenReturn(new NoopExecutionCallback());
@@ -100,7 +101,7 @@ public class WinRmDownloadArtifactCommandHandlerTest {
   public void testShouldHandleInvalidRequestException_InvalidCommandUnit() {
     assertThatThrownBy(()
                            -> winRmDownloadArtifactCommandHandler.handle(WinrmTaskParameters.builder().build(),
-                               ScriptCommandUnit.builder().build(), iLogStreamingTaskClient,
+                               CopyCommandUnit.builder().build(), iLogStreamingTaskClient,
                                CommandUnitsProgress.builder().build(), taskContext))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid command unit specified for command task.");

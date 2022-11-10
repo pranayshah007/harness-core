@@ -1,13 +1,18 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.manifests;
 
 import io.harness.FileStoreConstants;
-import io.harness.beans.FeatureName;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.ng.core.filestore.dto.FileDTO;
-import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -17,18 +22,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Locale;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
 public class SampleManifestFileService {
-  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private FileStoreService fileStoreService;
 
   @Data
-  @AllArgsConstructor
+  @Builder
   public static class SampleManifestFileCreateResponse {
     boolean created;
     String errorMessage;
@@ -39,15 +43,6 @@ public class SampleManifestFileService {
    * Creates sample k8s manifests at the account level file store for the given account.
    */
   public SampleManifestFileCreateResponse createDefaultFilesInFileStore(String accountIdentifier) {
-    final boolean shouldCreate =
-        ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_DEFAULT_K8S_MANIFESTS)
-        && ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_FILE_STORE);
-    if (!shouldCreate) {
-      return new SampleManifestFileCreateResponse(false,
-          String.format("Please enable following feature flags %s %s", FeatureName.NG_DEFAULT_K8S_MANIFESTS.name(),
-              FeatureName.NG_FILE_STORE.name()));
-    }
-
     final String topLevelFolderName = "Sample K8s Manifests";
     final String templatesFolderName = "templates";
     final FileDTO topLevelFolder =
@@ -83,7 +78,7 @@ public class SampleManifestFileService {
       }
     }
 
-    return new SampleManifestFileCreateResponse(true, null);
+    return SampleManifestFileCreateResponse.builder().created(true).build();
   }
 
   private SampleManifestFileCreateResponse createFiles(

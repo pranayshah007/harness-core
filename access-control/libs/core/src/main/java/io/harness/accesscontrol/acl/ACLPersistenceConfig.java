@@ -68,7 +68,7 @@ public class ACLPersistenceConfig extends AbstractMongoConfiguration {
 
   @Bean
   public MongoTemplate mongoTemplate() throws Exception {
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter());
+    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter(), mongoBackendConfiguration);
   }
 
   @Override

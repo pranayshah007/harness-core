@@ -17,6 +17,7 @@ import io.harness.cdng.k8s.resources.azure.dtos.AzureClusterDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureImageGalleriesDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureLocationsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureManagementGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureResourceGroupDTO;
@@ -26,6 +27,7 @@ import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureWebAppNamesDTO;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
+import io.harness.delegate.beans.azure.response.AzureImageGalleriesResponse;
 import io.harness.delegate.beans.azure.response.AzureLocationsResponse;
 import io.harness.delegate.beans.azure.response.AzureMngGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
@@ -275,5 +277,32 @@ public class AzureResourceServiceImpl implements AzureResourceService {
     AzureLocationsResponse response = (AzureLocationsResponse) azureHelperService.executeSyncTask(
         azureTaskParamsTaskParams, baseNGAccess, "Azure list locations task failure due to error");
     return AzureLocationsDTO.builder().locations(response.getLocations()).build();
+  }
+
+  @Override
+  public AzureImageGalleriesDTO getImageGallery(IdentifierRef connectorRef, String orgIdentifier,
+      String projectIdentifier, String subscriptionId, String resourceGroup) {
+    AzureConnectorDTO connector = azureHelperService.getConnector(connectorRef);
+    BaseNGAccess baseNGAccess =
+        azureHelperService.getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+    List<EncryptedDataDetail> encryptionDetails = azureHelperService.getEncryptionDetails(connector, baseNGAccess);
+
+    Map<AzureAdditionalParams, String> additionalParams = new HashMap<>();
+    additionalParams.put(AzureAdditionalParams.SUBSCRIPTION_ID, subscriptionId);
+    additionalParams.put(AzureAdditionalParams.RESOURCE_GROUP, resourceGroup);
+    AzureTaskParams azureTaskParamsTaskParams = AzureTaskParams.builder()
+                                                    .azureTaskType(AzureTaskType.LIST_IMAGE_GALLERIES)
+                                                    .azureConnector(connector)
+                                                    .encryptionDetails(encryptionDetails)
+                                                    .delegateSelectors(connector.getDelegateSelectors())
+                                                    .additionalParams(additionalParams)
+                                                    .build();
+
+    AzureImageGalleriesResponse imageGalleriesResponse =
+        (AzureImageGalleriesResponse) azureHelperService.executeSyncTask(
+            azureTaskParamsTaskParams, baseNGAccess, "Azure list image galleries task failure due to error");
+    return AzureImageGalleriesDTO.builder()
+        .azureImageGalleries(imageGalleriesResponse.getAzureImageGalleries())
+        .build();
   }
 }

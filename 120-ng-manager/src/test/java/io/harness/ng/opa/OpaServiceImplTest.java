@@ -23,6 +23,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.network.SafeHttpCall;
+import io.harness.ng.NextGenConfiguration;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.opa.entities.connector.ConnectorOpaEvaluationContext;
 import io.harness.ng.opa.entities.secret.SecretOpaEvaluationContext;
@@ -47,16 +48,18 @@ import retrofit2.Call;
 @Slf4j
 @PrepareForTest({SafeHttpCall.class})
 public class OpaServiceImplTest extends NgManagerTestBase {
-  @Mock OpaServiceClient opaServiceClient;
+  @Mock private OpaServiceClient opaServiceClient;
+  @Mock private NextGenConfiguration nextGenConfiguration;
+
   private OpaServiceImpl opaService;
-  Call<OpaEvaluationResponseHolder> request;
+  private Call<OpaEvaluationResponseHolder> request;
 
   @Before
   public void setup() throws IllegalAccessException {
     PowerMockito.mockStatic(SafeHttpCall.class);
-
-    opaService = new OpaServiceImpl(opaServiceClient);
+    opaService = new OpaServiceImpl(opaServiceClient, nextGenConfiguration);
     request = mock(Call.class);
+    when(nextGenConfiguration.isOpaConnectivityEnabled()).thenReturn(true);
   }
 
   @Test

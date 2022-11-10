@@ -31,6 +31,7 @@ public class CustomSecretManagerConnectorTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     defaultFieldNamesToValue = new HashMap<>();
     defaultFieldNamesToValue.put("isDefault", false);
+    defaultFieldNamesToValue.put("onDelegate", false);
   }
 
   @Test

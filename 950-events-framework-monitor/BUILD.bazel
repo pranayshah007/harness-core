@@ -9,7 +9,6 @@ java_binary(
     srcs = glob(["src/main/java/**/*.java"]),
     data = ["//:resource"],
     main_class = "io.harness.eventsframework.monitor.EventsFrameworkMonitorApplication",
-    resource_jars = [],
     resources = [
         "//950-events-framework-monitor/src/main/resources:resource",
     ],

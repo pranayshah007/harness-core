@@ -20,8 +20,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
-import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.yaml.Infrastructure;
+import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
 import io.harness.connector.ConnectorConnectivityDetails;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -40,7 +40,9 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
@@ -64,6 +66,12 @@ public class InfrastructureStepHelper {
   public NGLogCallback getInfrastructureLogCallback(Ambiance ambiance, boolean shouldOpenStream, String logSuffix) {
     return new NGLogCallback(logStreamingStepClientFactory, ambiance, logSuffix, shouldOpenStream);
   }
+  public List<ConnectorInfoDTO> validateAndGetConnectors(
+      List<ParameterField<String>> connectorRefs, Ambiance ambiance, NGLogCallback logCallback) {
+    return connectorRefs.stream()
+        .map(connectorRef -> validateAndGetConnector(connectorRef, ambiance, logCallback))
+        .collect(Collectors.toList());
+  }
 
   public ConnectorInfoDTO validateAndGetConnector(
       ParameterField<String> connectorRef, Ambiance ambiance, NGLogCallback logCallback) {
@@ -80,7 +88,7 @@ public class InfrastructureStepHelper {
         connectorService.get(connectorIdentifierRef.getAccountIdentifier(), connectorIdentifierRef.getOrgIdentifier(),
             connectorIdentifierRef.getProjectIdentifier(), connectorIdentifierRef.getIdentifier());
     ConnectorInfoDTO connectorInfoDTO;
-    if (!connectorDTO.isPresent()) {
+    if (connectorDTO.isEmpty()) {
       throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorRefValue));
     } else {
       saveExecutionLogSafely(logCallback, color("Connector fetched", Green));

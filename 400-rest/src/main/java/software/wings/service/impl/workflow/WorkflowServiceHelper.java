@@ -966,10 +966,6 @@ public class WorkflowServiceHelper {
   }
 
   private void validateVMSSWorkflowCreation(String accountId, OrchestrationWorkflowType orchestrationWorkflowType) {
-    if (!featureFlagService.isEnabled(FeatureName.AZURE_VMSS, accountId)) {
-      throw new InvalidRequestException(
-          format("Azure VMSS is disabled by feature flag for account id : %s", accountId), USER);
-    }
     if (!isAzureVMSSSupportedWorkflowType(orchestrationWorkflowType)) {
       throw new InvalidRequestException(format("Unsupported Azure VMSS deployment type, orchestrationWorkflowType: %s",
                                             orchestrationWorkflowType != null ? orchestrationWorkflowType.name() : ""),

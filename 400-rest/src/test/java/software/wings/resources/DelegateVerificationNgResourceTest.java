@@ -22,6 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateHeartbeatDetails;
 import io.harness.delegate.beans.DelegateInitializationDetails;
 import io.harness.rest.RestResponse;
@@ -75,11 +76,12 @@ public class DelegateVerificationNgResourceTest extends CategoryTest {
   @Owner(developers = ARPIT)
   @Category(UnitTests.class)
   public void testGetDelegatesHeartbeatDetails_noConnectedDelegates() {
-    List<String> registeredDelegateIds = Collections.singletonList(TEST_DELEGATE_ID);
+    List<Delegate> registeredDelegates =
+        Collections.singletonList(Delegate.builder().uuid(TEST_DELEGATE_ID).immutable(false).build());
 
-    when(delegateService.obtainDelegateIdsUsingName(any(String.class), any(String.class)))
-        .thenReturn(registeredDelegateIds);
-    when(delegateService.getConnectedDelegates(TEST_ACCOUNT_ID, registeredDelegateIds))
+    when(delegateService.obtainDelegatesUsingName(any(String.class), any(String.class)))
+        .thenReturn(registeredDelegates);
+    when(delegateService.getConnectedDelegates(TEST_ACCOUNT_ID, registeredDelegates))
         .thenReturn(Collections.emptyList());
 
     RestResponse<DelegateHeartbeatDetails> delegatesHeartbeatDetails =
@@ -94,12 +96,13 @@ public class DelegateVerificationNgResourceTest extends CategoryTest {
   @Owner(developers = ARPIT)
   @Category(UnitTests.class)
   public void testGetDelegatesHeartbeatDetails_connectedDelegates() {
-    List<String> registeredDelegateIds = Collections.singletonList(TEST_DELEGATE_ID);
+    List<Delegate> registeredDelegates =
+        Collections.singletonList(Delegate.builder().uuid(TEST_DELEGATE_ID).immutable(false).build());
 
-    when(delegateService.obtainDelegateIdsUsingName(any(String.class), any(String.class)))
-        .thenReturn(registeredDelegateIds);
-    when(delegateService.getConnectedDelegates(TEST_ACCOUNT_ID, registeredDelegateIds))
-        .thenReturn(Collections.singletonList(TEST_DELEGATE_ID));
+    when(delegateService.obtainDelegatesUsingName(any(String.class), any(String.class)))
+        .thenReturn(registeredDelegates);
+    when(delegateService.getConnectedDelegates(TEST_ACCOUNT_ID, registeredDelegates))
+        .thenReturn(Collections.singletonList(Delegate.builder().uuid(TEST_DELEGATE_ID).immutable(false).build()));
 
     RestResponse<DelegateHeartbeatDetails> delegatesHeartbeatDetails =
         resource.getDelegatesHeartbeatDetailsV2(TEST_ACCOUNT_ID, TEST_ORG_ID, TEST_PROJECT_ID, TEST_DELEGATE_NAME);

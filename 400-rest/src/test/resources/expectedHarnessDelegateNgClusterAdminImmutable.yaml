@@ -61,9 +61,11 @@ spec:
       - image: harness/delegate:latest
         imagePullPolicy: Always
         name: delegate
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
         resources:
           limits:
-            cpu: "0.5"
             memory: "2048Mi"
           requests:
             cpu: "0.5"

@@ -1,0 +1,76 @@
+{
+  "pipeline" : {
+    "name" : "testssh",
+    "identifier" : "testssh",
+    "projectIdentifier" : "test",
+    "orgIdentifier" : "default",
+    "tags" : {"__uuid" : "Hg9Ia4dEQOm6_dzirs-Mcw"},
+    "stages" : [ {
+      "stage" : {
+        "name" : "test",
+        "identifier" : "test",
+        "description" : "",
+        "type" : "Deployment",
+        "spec" : {
+          "deploymentType" : "Kubernetes",
+          "service" :
+              {"serviceRef" : "k8s", "__uuid" : "Zi2RdWJJQP6RtT_VEKf3hw"},
+          "environment" : {
+            "environmentRef" : "kube",
+            "deployToAll" : false,
+            "infrastructureDefinitions" : [
+              {"identifier" : "kube", "__uuid" : "0V6yZquJSTutyPXKZANRcA"}
+            ],
+            "__uuid" : "oAXKhZMaS7G3RtQ7y2Ym5Q"
+          },
+          "execution" : {
+            "steps" : [ {
+              "step" : {
+                "type" : "ShellScriptProvision",
+                "name" : "shell2",
+                "identifier" : "shell2",
+                "spec" : {
+                  "source" : {
+                    "type" : "Harness",
+                    "spec" : {
+                      "file" : "/provision",
+                      "__uuid" : "NxcxouAjQLW_XqDcbovO5w"
+                    },
+                    "__uuid" : "W8SY48omQ52bjfednz4qTw"
+                  },
+                  "environmentVariables" : [ {
+                    "name" : "testvariable",
+                    "type" : "String",
+                    "value" : "test",
+                    "__uuid" : "baso6h4bRhOsGFaZomkhjQ"
+                  } ],
+                  "__uuid" : "F8ugubt-QN-DjxSN09nhpw"
+                },
+                "timeout" : "10m",
+                "__uuid" : "HvyI8suwQnO0oJUftSrHdw"
+              },
+              "__uuid" : "d4UD53c6SuiI_mTQ3slrdQ"
+            } ],
+            "rollbackSteps" : [],
+            "__uuid" : "0PHYCAn8T6e0kpZdmHA4QA"
+          },
+          "__uuid" : "fDCnD9MhRb-9WcUfdA3kHQ"
+        },
+        "tags" : {"__uuid" : "rT6EFBWqRyGS-66v-skpUg"},
+        "failureStrategies" : [ {
+          "onFailure" : {
+            "errors" : ["AllErrors"],
+            "action" :
+                {"type" : "StageRollback", "__uuid" : "tHsQ_77VRHahGPQ39nkjww"},
+            "__uuid" : "R8UOxTlTTxeMuqYP45n50g"
+          },
+          "__uuid" : "oQH8JrABQaSmt6i5hKckHw"
+        } ],
+        "__uuid" : "9FZR5d6iSWG3hnSzJgH6eg"
+      },
+      "__uuid" : "CI6NMozRRoe2m6q9C_qtcg"
+    } ],
+    "__uuid" : "AEerSBc4RFa1ZVT-xeJZDQ"
+  },
+               "__uuid" : "LMB534-ATGGEh2eJPXEdYQ"
+}

@@ -51,8 +51,8 @@ public class AddAccountNameInAccountTable implements TimeScaleDBDataMigration {
     try {
       FindOptions findOptions = new FindOptions();
       findOptions.readPreference(ReadPreference.secondaryPreferred());
-      try (HIterator<Account> iterator =
-               new HIterator<>(wingsPersistence.createQuery(Account.class, excludeAuthority).fetch(findOptions))) {
+      try (HIterator<Account> iterator = new HIterator<>(
+               wingsPersistence.createAnalyticsQuery(Account.class, excludeAuthority).fetch(findOptions))) {
         while (iterator.hasNext()) {
           Account account = iterator.next();
           updateAccount(account);

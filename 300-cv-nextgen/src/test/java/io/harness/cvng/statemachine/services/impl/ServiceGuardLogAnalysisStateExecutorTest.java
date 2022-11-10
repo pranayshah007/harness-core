@@ -64,6 +64,7 @@ public class ServiceGuardLogAnalysisStateExecutorTest extends CategoryTest {
 
     when(logAnalysisService.scheduleServiceGuardLogAnalysisTask(any())).thenReturn(generateUuid());
   }
+
   @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)

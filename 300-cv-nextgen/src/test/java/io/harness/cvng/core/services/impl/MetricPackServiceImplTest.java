@@ -332,7 +332,7 @@ public class MetricPackServiceImplTest extends CvNextGenTestBase {
         performancePacks.get(0).getIdentifier(), DataSourceType.STACKDRIVER);
 
     assertThat(metricPackThresholds).isNotEmpty();
-    assertThat(metricPackThresholds).size().isEqualTo(4);
+    assertThat(metricPackThresholds).size().isEqualTo(6);
 
     List<MetricPack> errorPacks = metricPacks.stream()
                                       .filter(metricPack -> metricPack.getIdentifier().equals(ERRORS_PACK_IDENTIFIER))
@@ -364,6 +364,6 @@ public class MetricPackServiceImplTest extends CvNextGenTestBase {
         accountId, orgIdentifier, projectIdentifier, performancePacks.get(0).getIdentifier(), DataSourceType.NEW_RELIC);
 
     assertThat(metricPackThresholds).isNotEmpty();
-    assertThat(metricPackThresholds).size().isEqualTo(6);
+    assertThat(metricPackThresholds).size().isEqualTo(8);
   }
 }

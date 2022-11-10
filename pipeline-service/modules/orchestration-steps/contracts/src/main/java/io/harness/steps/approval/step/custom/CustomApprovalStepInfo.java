@@ -17,6 +17,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -113,5 +114,10 @@ public class CustomApprovalStepInfo implements PMSStepInfo, WithDelegateSelector
   @Override
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();
+  }
+
+  @Override
+  public ExpressionMode getExpressionMode() {
+    return ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED;
   }
 }

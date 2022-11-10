@@ -11,17 +11,17 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.platform.PlatformConfiguration.NOTIFICATION_SERVICE_RESOURCES;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.health.HealthService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.notification.SeedDataConfiguration;
 import io.harness.notification.eventbackbone.MongoMessageConsumer;
 import io.harness.notification.service.api.SeedDataPopulaterService;
 import io.harness.persistence.HPersistence;
+import io.harness.platform.remote.VersionInfoResource;
 import io.harness.queue.QueueListenerController;
 import io.harness.remote.CharsetResponseFilter;
-import io.harness.resource.VersionInfoResource;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 
 import com.google.inject.Injector;
@@ -30,6 +30,7 @@ import com.google.inject.name.Names;
 import io.dropwizard.setup.Environment;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.glassfish.jersey.server.model.Resource;
 
 @Slf4j
@@ -53,6 +54,10 @@ public class NotificationServiceSetup {
     registerQueueListeners(injector);
     registerHealthCheck(environment, injector);
     populateSeedData(injector, appConfig.getSeedDataConfiguration());
+
+    if (BooleanUtils.isTrue(appConfig.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {
@@ -92,6 +97,10 @@ public class NotificationServiceSetup {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
   }
 
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
+  }
+
   private void registerQueueListeners(Injector injector) {
     log.info("Initializing queue listeners...");
     QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
@@ -100,7 +109,6 @@ public class NotificationServiceSetup {
 
   private void registerScheduleJobs(Injector injector) {
     log.info("Initializing scheduled jobs...");
-    injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     injector.getInstance(Key.get(ManagedScheduledExecutorService.class, Names.named("delegate-response")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);
   }

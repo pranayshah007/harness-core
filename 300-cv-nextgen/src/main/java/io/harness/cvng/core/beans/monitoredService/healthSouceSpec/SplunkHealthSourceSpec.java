@@ -17,6 +17,7 @@ import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(
+    name = "SplunkHealthSource", description = "This is the Splunk Log Health Source spec entity defined in Harness")
 public class SplunkHealthSourceSpec extends HealthSourceSpec {
   @NotNull String feature;
   @NotNull @NotEmpty @Valid List<QueryDTO> queries;

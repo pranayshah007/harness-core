@@ -58,7 +58,12 @@ public class AzureContainerRegistrySettingsProvider extends AbstractAzureRegistr
     } else {
       String accessToken;
       if (AzureAuthenticationType.SERVICE_PRINCIPAL_CERT == azureConfig.getAzureAuthenticationType()) {
-        accessToken = azureAuthorizationClient.getUserAccessToken(azureConfig, AzureUtils.AUTH_SCOPE).getAccessToken();
+        accessToken =
+            azureAuthorizationClient
+                .getUserAccessToken(azureConfig,
+                    AzureUtils.convertToScope(
+                        AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint()))
+                .getAccessToken();
       } else {
         // only MSI connection will/should reach here
         accessToken = azureAuthorizationClient.getUserAccessToken(azureConfig, null).getAccessToken();

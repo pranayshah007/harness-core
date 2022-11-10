@@ -1,0 +1,27 @@
+service:
+  name: k8s
+  identifier: k8s
+  tags: {}
+  serviceDefinition:
+    spec:
+      manifests:
+        - manifest:
+            identifier: manifest.yml
+            type: K8sManifest
+            spec:
+              store:
+                type: Harness
+                spec:
+                  files:
+                    - account:/
+              valuesPaths:
+                - null
+              skipResourceVersioning: false
+      artifacts:
+        primary:
+          spec:
+            connectorRef: account.Docker
+            imagePath: library/nginx
+            tag: <+input>
+          type: DockerRegistry
+    type: Kubernetes

@@ -7,6 +7,9 @@
 
 package io.harness.ng.core.variable;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(allowableValues = {"FIXED"}, type = "String")
 public enum VariableValueType {
   FIXED,
   FIXED_SET,

@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
@@ -37,7 +38,6 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.contracts.governance.ExpansionResponseBatch;
 import io.harness.pms.contracts.governance.ExpansionResponseProto;
@@ -50,9 +50,12 @@ import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
+import io.harness.pms.pipeline.PipelineImportRequestDTO;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.protobuf.ByteString;
@@ -66,6 +69,7 @@ import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Assertions;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -92,6 +96,8 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
   String orgIdentifier = "org";
   String projectIdentifier = "project";
   String pipelineIdentifier = "pipeline";
+
+  String repoName = "testRepo";
 
   @Before
   public void setUp() {
@@ -138,7 +144,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
             .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
     PipelineEntity entity = PipelineEntity.builder().build();
-    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity);
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity, PipelineVersion.V0);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
@@ -151,7 +157,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
                    .stageNames(Collections.singletonList("stage-1"))
                    .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
-    updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(updatedEntity);
+    updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(updatedEntity, PipelineVersion.V0);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
@@ -169,7 +175,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
                                                      .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
     PipelineEntity entity = PipelineEntity.builder().build();
-    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity);
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity, PipelineVersion.V0);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
@@ -189,7 +195,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
                                                      .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
     PipelineEntity entity = PipelineEntity.builder().build();
-    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity);
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity, PipelineVersion.V0);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
@@ -346,6 +352,17 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFormCriteriaRepoFilter() {
+    PipelineFilterPropertiesDto filterProperties = PipelineFilterPropertiesDto.builder().repoName(repoName).build();
+    Criteria criteria = pmsPipelineServiceHelper.formCriteria(
+        accountIdentifier, orgIdentifier, projectIdentifier, null, filterProperties, false, null, null);
+
+    assertThat(criteria.getCriteriaObject().get(PipelineEntityKeys.repo).toString()).isEqualTo(repoName);
+  }
+
+  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testBuildInvalidYamlException() {
@@ -376,5 +393,53 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     assertThat(pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
                    accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, true))
         .isEqualTo(repoUrl);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testImportPipelineValidationChecks() {
+    String importedPipeline = "pipeline:\n"
+        + "  name: abcPipelineImport\n"
+        + "  identifier: abcPipelineImport\n"
+        + "  projectIdentifier: GitX_Remote\n"
+        + "  orgIdentifier: default\n"
+        + "  tags: {}\n"
+        + "  stages:\n"
+        + "    - stage:\n"
+        + "        name: zd\n"
+        + "        identifier: zd\n"
+        + "        description: \"\"\n"
+        + "        type: Approval\n"
+        + "        spec:\n"
+        + "          execution:\n"
+        + "            steps:\n"
+        + "              - step:\n"
+        + "                  name: dsf\n"
+        + "                  identifier: dsf\n"
+        + "                  type: HarnessApproval\n"
+        + "                  timeout: 1d\n"
+        + "                  spec:\n"
+        + "                    approvalMessage: |-\n"
+        + "                      Please review the following information\n"
+        + "                      and approve the pipeline progression\n"
+        + "                    includePipelineExecutionHistory: true\n"
+        + "                    approvers:\n"
+        + "                      minimumCount: 1\n"
+        + "                      disallowPipelineExecutor: false\n"
+        + "                      userGroups: <+input>\n"
+        + "                    approverInputs: []\n"
+        + "        tags: {}";
+    String orgIdentifier = "default";
+    String projectIdentifier = "GitX_Remote";
+    String pipelineIdentifier = "abcPipelineImport";
+    PipelineImportRequestDTO pipelineImportRequest = PipelineImportRequestDTO.builder()
+                                                         .pipelineName("abcPipelineImport")
+                                                         .pipelineDescription("junk pipeline description")
+                                                         .build();
+    Assertions.assertDoesNotThrow(
+        ()
+            -> PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadataInternal(
+                orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineImportRequest, importedPipeline));
   }
 }

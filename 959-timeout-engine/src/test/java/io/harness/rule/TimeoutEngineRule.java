@@ -12,6 +12,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
@@ -66,6 +67,12 @@ public class TimeoutEngineRule implements MethodRule, InjectorRuleMixin, MongoRu
         return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
             .addAll(TimeoutEngineRegistrars.kryoRegistrars)
             .build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

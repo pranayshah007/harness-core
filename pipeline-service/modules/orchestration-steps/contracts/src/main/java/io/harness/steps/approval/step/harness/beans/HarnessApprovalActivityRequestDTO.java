@@ -30,7 +30,15 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("HarnessApprovalActivityRequest")
 @Schema(name = "HarnessApprovalActivityRequest", description = "Details of approval activity requested")
 public class HarnessApprovalActivityRequestDTO {
-  @Parameter(description = "Approval activity action") @NotNull HarnessApprovalAction action;
-  @Parameter(description = "Custom data to capture at the time of approval") List<ApproverInput> approverInputs;
-  @Parameter(description = "Approval activity with the comment") String comments;
+  @Parameter(description = "Approval activity action")
+  @Schema(description = "Approval activity action")
+  @NotNull
+  HarnessApprovalAction action;
+
+  @Parameter(description = "Custom data to capture at the time of approval")
+  @Schema(description = "Custom data to capture at the time of approval")
+  List<ApproverInput> approverInputs;
+  @Parameter(description = "Approval activity with the comment")
+  @Schema(description = "Approval activity with the comment")
+  String comments;
 }

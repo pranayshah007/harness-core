@@ -31,7 +31,7 @@ import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGResponse;
 import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGResponse;
 import io.harness.delegate.task.azure.common.AzureConnectorMapper;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
-import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.runtime.azure.AzureBPDeploymentException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
@@ -140,9 +140,9 @@ public class AzureCreateBlueprintTaskHandlerTest extends CategoryTest {
       azureBlueprintCreateTaskHandler.executeTaskInternal(
           blueprintDeploymentParameters, "delegateId", "taskId", mockLogStreamingTaskClient);
 
-    } catch (InvalidArgumentsException ex) {
+    } catch (AzureBPDeploymentException ex) {
       assertThat(ex).isNotNull();
-      assertThat(ex).isInstanceOf(InvalidArgumentsException.class);
+      assertThat(ex).isInstanceOf(AzureBPDeploymentException.class);
       assertThat(ex.getMessage())
           .isEqualTo("Not valid value of properties.blueprintId property. "
               + "Required format /{resourceScope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/versions/{versionId}, "
@@ -162,7 +162,7 @@ public class AzureCreateBlueprintTaskHandlerTest extends CategoryTest {
     assertThatThrownBy(()
                            -> azureBlueprintCreateTaskHandler.executeTaskInternal(
                                blueprintDeploymentParameters, "delegateId", "taskId", mockLogStreamingTaskClient))
-        .isInstanceOf(InvalidArgumentsException.class);
+        .isInstanceOf(AzureBPDeploymentException.class);
   }
 
   @Test
@@ -178,7 +178,7 @@ public class AzureCreateBlueprintTaskHandlerTest extends CategoryTest {
     assertThatThrownBy(()
                            -> azureBlueprintCreateTaskHandler.executeTaskInternal(
                                blueprintDeploymentParameters, "delegateId", "taskId", mockLogStreamingTaskClient))
-        .isInstanceOf(InvalidArgumentsException.class);
+        .isInstanceOf(AzureBPDeploymentException.class);
   }
 
   @Test
@@ -206,7 +206,7 @@ public class AzureCreateBlueprintTaskHandlerTest extends CategoryTest {
     assertThatThrownBy(()
                            -> azureBlueprintCreateTaskHandler.executeTaskInternal(
                                blueprintDeploymentParameters, "delegateId", "taskId", mockLogStreamingTaskClient))
-        .isInstanceOf(InvalidArgumentsException.class);
+        .isInstanceOf(AzureBPDeploymentException.class);
   }
 
   private AzureConfig buildAzureConfig() {

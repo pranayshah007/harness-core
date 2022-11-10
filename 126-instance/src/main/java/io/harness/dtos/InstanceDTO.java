@@ -47,7 +47,7 @@ public class InstanceDTO {
   @NonFinal @Setter long lastDeployedAt;
   @NonFinal @Setter String lastPipelineExecutionId;
   @NonFinal @Setter String lastPipelineExecutionName;
-  InstanceInfoDTO instanceInfoDTO;
+  @NonFinal @Setter InstanceInfoDTO instanceInfoDTO;
   boolean isDeleted;
   long deletedAt;
   long createdAt;

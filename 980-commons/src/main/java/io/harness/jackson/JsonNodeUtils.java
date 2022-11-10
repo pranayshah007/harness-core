@@ -26,8 +26,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,7 +86,7 @@ public class JsonNodeUtils {
   }
 
   public static void removeDuplicatesFromArrayNode(ArrayNode arrayNode) {
-    Set<JsonNode> set = new HashSet<>();
+    Set<JsonNode> set = new LinkedHashSet<>();
     for (int i = 0; i < arrayNode.size(); i++) {
       set.add(arrayNode.get(i));
     }

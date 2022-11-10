@@ -20,10 +20,12 @@ import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import lombok.AllArgsConstructor;
+import org.redisson.api.RedissonClient;
 
 @AllArgsConstructor
 public class EventsFrameworkModule extends AbstractModule {
@@ -55,35 +57,39 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
     } else {
+      RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(AbstractProducer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
-          .toInstance(RedisProducer.of(EventsFrameworkConstants.ENTITY_CRUD, redisConfig,
-              EventsFrameworkConstants.ENTITY_CRUD_MAX_TOPIC_SIZE, CV_NEXT_GEN.getServiceId()));
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.ENTITY_CRUD, redissonClient,
+              EventsFrameworkConstants.ENTITY_CRUD_MAX_TOPIC_SIZE, CV_NEXT_GEN.getServiceId(),
+              redisConfig.getEnvNamespace()));
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
-          .toInstance(RedisConsumer.of(EventsFrameworkConstants.ENTITY_CRUD, CV_NEXT_GEN.getServiceId(), redisConfig,
+          .toInstance(RedisConsumer.of(EventsFrameworkConstants.ENTITY_CRUD, CV_NEXT_GEN.getServiceId(), redissonClient,
               EventsFrameworkConstants.ENTITY_CRUD_MAX_PROCESSING_TIME,
-              EventsFrameworkConstants.ENTITY_CRUD_READ_BATCH_SIZE));
+              EventsFrameworkConstants.ENTITY_CRUD_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.CD_DEPLOYMENT_EVENT))
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.CD_DEPLOYMENT_EVENT, CV_NEXT_GEN.getServiceId(),
-              redisConfig, EventsFrameworkConstants.CD_DEPLOYMENT_EVENT_MAX_PROCESSING_TIME,
-              EventsFrameworkConstants.CD_DEPLOYMENT_EVENT_BATCH_SIZE));
+              redissonClient, EventsFrameworkConstants.CD_DEPLOYMENT_EVENT_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.CD_DEPLOYMENT_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
       bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
-          .toInstance(RedisProducer.of(EventsFrameworkConstants.SETUP_USAGE, redisConfig,
-              EventsFrameworkConstants.ENTITY_CRUD_MAX_TOPIC_SIZE, CV_NEXT_GEN.getServiceId()));
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.SETUP_USAGE, redissonClient,
+              EventsFrameworkConstants.ENTITY_CRUD_MAX_TOPIC_SIZE, CV_NEXT_GEN.getServiceId(),
+              redisConfig.getEnvNamespace()));
 
       bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.SRM_STATEMACHINE_EVENT))
-          .toInstance(RedisProducer.of(EventsFrameworkConstants.SRM_STATEMACHINE_EVENT, redisConfig,
-              EventsFrameworkConstants.SRM_STATEMACHINE_EVENT_MAX_TOPIC_SIZE, STATEMACHINE_PUBLISHER));
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.SRM_STATEMACHINE_EVENT, redissonClient,
+              EventsFrameworkConstants.SRM_STATEMACHINE_EVENT_MAX_TOPIC_SIZE, STATEMACHINE_PUBLISHER,
+              redisConfig.getEnvNamespace()));
 
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.SRM_STATEMACHINE_EVENT))
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.SRM_STATEMACHINE_EVENT, CV_NEXT_GEN.getServiceId(),
-              redisConfig, EventsFrameworkConstants.CD_DEPLOYMENT_EVENT_MAX_PROCESSING_TIME,
-              EventsFrameworkConstants.SRM_STATEMACHINE_EVENT_BATCH_SIZE));
+              redissonClient, EventsFrameworkConstants.CD_DEPLOYMENT_EVENT_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.SRM_STATEMACHINE_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
     }
   }
 }

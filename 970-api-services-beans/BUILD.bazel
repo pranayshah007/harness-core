@@ -5,9 +5,6 @@ load("//:tools/bazel/harness.bzl", "java_library")
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
-    resource_jars = [
-        "//970-api-services-beans/src/main/proto:970_api_services_beans_java_proto",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",

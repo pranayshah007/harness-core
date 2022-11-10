@@ -15,6 +15,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.exception.InvalidRequestException;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.commons.RepairActionCode;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -32,6 +33,15 @@ public class GenericPlanCreatorUtils {
       return null;
     }
     return stageNode.getUuid();
+  }
+
+  public String getStageOrParallelNodeId(YamlField currentField) {
+    YamlNode stageNode = YamlUtils.findParentNode(currentField.getNode(), STAGE);
+    if (stageNode == null) {
+      return null;
+    }
+    YamlNode parallelNode = YamlUtils.findParentNode(stageNode, PARALLEL);
+    return parallelNode == null ? stageNode.getUuid() : parallelNode.getUuid();
   }
 
   public String getStepGroupRollbackStepsNodeId(YamlField currentField) {
@@ -69,6 +79,10 @@ public class GenericPlanCreatorUtils {
         currentField.getName(), Arrays.asList(STEP, PARALLEL, STEP_GROUP));
   }
 
+  public YamlField obtainNextSiblingFieldAtStageLevel(YamlField currentField) {
+    return currentField.getNode().nextSiblingFromParentArray(currentField.getName(), Arrays.asList(STAGE, PARALLEL));
+  }
+
   public RepairActionCode toRepairAction(FailureStrategyActionConfig action) {
     switch (action.getType()) {
       case IGNORE:
@@ -88,5 +102,10 @@ public class GenericPlanCreatorUtils {
 
             action.toString() + " Failure action doesn't have corresponding RepairAction Code.");
     }
+  }
+
+  public static String getRollbackStageNodeId(YamlField currentField) {
+    String stageNodeId = getStageOrParallelNodeId(currentField);
+    return stageNodeId + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX;
   }
 }

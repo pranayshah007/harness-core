@@ -24,6 +24,8 @@ import io.harness.cache.HarnessCacheManager;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.cistatus.service.GithubService;
+import io.harness.cistatus.service.GithubServiceImpl;
 import io.harness.client.DelegateSelectionLogHttpClientModule;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.datastructures.DistributedBackend;
@@ -33,8 +35,8 @@ import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
-import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.filter.FilterType;
 import io.harness.filter.FiltersModule;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -54,6 +56,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.ngtriggers.outbox.TriggerOutboxEventHandler;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.organization.OrganizationClientModule;
@@ -99,6 +102,7 @@ import io.harness.pms.outbox.PMSOutboxEventHandler;
 import io.harness.pms.outbox.PipelineOutboxEventHandler;
 import io.harness.pms.pipeline.PipelineResource;
 import io.harness.pms.pipeline.PipelineResourceImpl;
+import io.harness.pms.pipeline.api.PipelinesApiImpl;
 import io.harness.pms.pipeline.mappers.PipelineFilterPropertiesMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceImpl;
@@ -118,6 +122,8 @@ import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSch
 import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSchemaServiceImpl;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlService;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlServiceImpl;
+import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaService;
+import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaServiceImpl;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
 import io.harness.pms.plan.creation.NodeTypeLookupServiceImpl;
 import io.harness.pms.plan.execution.PlanExecutionResource;
@@ -145,9 +151,12 @@ import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionService;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionServiceV2;
 import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookExecutionServiceImpl;
 import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookExecutionServiceImplV2;
+import io.harness.pms.wait.WaitStepResource;
+import io.harness.pms.wait.WaitStepResourceImpl;
 import io.harness.polling.client.PollResourceClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ClientMode;
 import io.harness.secrets.SecretNGManagerClientModule;
@@ -156,6 +165,7 @@ import io.harness.serializer.NGTriggerRegistrars;
 import io.harness.serializer.OrchestrationStepsModuleRegistrars;
 import io.harness.serializer.PipelineServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
@@ -164,6 +174,8 @@ import io.harness.steps.jira.JiraStepHelperService;
 import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.shellscript.ShellScriptHelperService;
 import io.harness.steps.shellscript.ShellScriptHelperServiceImpl;
+import io.harness.steps.wait.WaitStepService;
+import io.harness.steps.wait.WaitStepServiceImpl;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.TemplateResourceClientModule;
@@ -248,8 +260,8 @@ public class PipelineServiceModule extends AbstractModule {
     });
     install(new AbstractPersistenceTracerModule() {
       @Override
-      protected RedisConfig redisConfigProvider() {
-        return configuration.getEventsFrameworkConfiguration().getRedisConfig();
+      protected EventsFrameworkConfiguration eventsFrameworkConfiguration() {
+        return configuration.getEventsFrameworkConfiguration();
       }
 
       @Override
@@ -276,6 +288,10 @@ public class PipelineServiceModule extends AbstractModule {
             .useFeatureFlagService(true)
             .orchestrationRedisEventsConfig(configuration.getOrchestrationRedisEventsConfig())
             .orchestrationLogConfiguration(configuration.getOrchestrationLogConfiguration())
+            .orchestrationRestrictionConfiguration(configuration.getOrchestrationRestrictionConfiguration())
+            .licenseClientServiceSecret(configuration.getNgManagerServiceSecret())
+            .licenseClientConfig(configuration.getNgManagerServiceHttpClientConfig())
+            .licenseClientId(PIPELINE_SERVICE.getServiceId())
             .build()));
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),
@@ -311,6 +327,8 @@ public class PipelineServiceModule extends AbstractModule {
     install(new UserClientModule(configuration.getManagerClientConfig(), configuration.getManagerServiceSecret(),
         PIPELINE_SERVICE.getServiceId()));
     install(new UserGroupClientModule(configuration.getNgManagerServiceHttpClientConfig(),
+        configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
+    install(new NGSettingsClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     install(new DelegateSelectionLogHttpClientModule(configuration.getManagerClientConfig(),
         configuration.getManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
@@ -355,6 +373,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(ShellScriptHelperService.class).to(ShellScriptHelperServiceImpl.class);
     bind(ApprovalYamlSchemaService.class).to(ApprovalYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CustomStageYamlSchemaService.class).to(CustomStageYamlSchemaServiceImpl.class).in(Singleton.class);
+    bind(PipelineStageYamlSchemaService.class).to(PipelineStageYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(FeatureFlagYamlService.class).to(FeatureFlagYamlServiceImpl.class).in(Singleton.class);
     bind(PipelineEnforcementService.class).to(PipelineEnforcementServiceImpl.class).in(Singleton.class);
 
@@ -386,6 +405,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PMSBarrierService.class).to(PMSBarrierServiceImpl.class);
     bind(ApprovalResourceService.class).to(ApprovalResourceServiceImpl.class);
     bind(PipelineResource.class).to(PipelineResourceImpl.class);
+    bind(PipelinesApi.class).to(PipelinesApiImpl.class);
     bind(PipelineDashboardOverviewResource.class).to(PipelineDashboardOverviewResourceImpl.class);
     bind(PipelineDashboardOverviewResourceV2.class).to(PipelineDashboardOverviewResourceV2Impl.class);
     bind(PMSLandingDashboardResource.class).to(PMSLandingDashboardResourceImpl.class);
@@ -399,6 +419,8 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PMSLandingDashboardService.class).to(PMSLandingDashboardServiceImpl.class);
     bind(InputSetResourcePMS.class).to(InputSetResourcePMSImpl.class);
     bind(PlanExecutionResource.class).to(PlanExecutionResourceImpl.class);
+    bind(WaitStepResource.class).to(WaitStepResourceImpl.class);
+    bind(WaitStepService.class).to(WaitStepServiceImpl.class);
     bind(PmsYamlSchemaResource.class).to(PmsYamlSchemaResourceImpl.class);
     bind(PMSResourceConstraintResource.class).to(PMSResourceConstraintResourceImpl.class);
     bind(LogStreamingServiceRestClient.class)
@@ -409,6 +431,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PipelineDashboardService.class).to(PipelineDashboardServiceImpl.class);
     bind(ServiceNowApprovalHelperService.class).to(ServiceNowApprovalHelperServiceImpl.class);
     bind(ServiceNowStepHelperService.class).to(ServiceNowStepHelperServiceImpl.class);
+    bind(GithubService.class).to(GithubServiceImpl.class);
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
@@ -503,7 +526,7 @@ public class PipelineServiceModule extends AbstractModule {
   @Singleton
   @Named("cacheRedissonClient")
   RedissonClient cacheRedissonClient() {
-    return RedisUtils.getClient(configuration.getRedisLockConfig());
+    return RedissonClientFactory.getClient(configuration.getRedisLockConfig());
   }
 
   @Provides

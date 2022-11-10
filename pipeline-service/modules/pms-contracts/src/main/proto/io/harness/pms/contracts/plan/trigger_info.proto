@@ -28,6 +28,8 @@ enum TriggerType {
   WEBHOOK = 2;
   WEBHOOK_CUSTOM = 3;
   SCHEDULER_CRON = 4;
+  ARTIFACT = 5;
+  MANIFEST = 6;
 }
 
 message RerunInfo {

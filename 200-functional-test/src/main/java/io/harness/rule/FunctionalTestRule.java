@@ -17,7 +17,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.GraphQLModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheModule;
-import io.harness.capability.CapabilityModule;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
@@ -277,8 +276,15 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
       @Singleton
       AdvancedDatastore datastore(Morphia morphia) {
         AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, dbName);
-        datastore.setQueryFactory(new QueryFactory());
+        datastore.setQueryFactory(new QueryFactory(MongoConfig.builder().build()));
         return datastore;
+      }
+
+      @Provides
+      @Named("primaryMongoClient")
+      @Singleton
+      MongoClient mongoClient() {
+        return mongoClient;
       }
 
       @Provides
@@ -307,7 +313,6 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
     });
     modules.add(new ValidationModule(validatorFactory));
     modules.add(new DelegateServiceModule());
-    modules.add(new CapabilityModule());
     modules.add(new WingsModule((MainConfiguration) configuration, StartupMode.MANAGER));
     modules.add(new TestTotpModule());
     modules.add(new IndexMigratorModule());

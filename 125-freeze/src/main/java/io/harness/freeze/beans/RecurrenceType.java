@@ -7,13 +7,11 @@
 
 package io.harness.freeze.beans;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public enum RecurrenceType {
-  DAILY,
-  WEEKLY,
-  MONTHLY,
-  YEARLY,
-  DAYS_OF_THE_WEEK,
-  DAYS_OF_THE_MONTH,
-  DAYS_OF_THE_YEAR,
-  CUSTOM
+  @JsonProperty("Daily") DAILY,
+  @JsonProperty("Weekly") WEEKLY,
+  @JsonProperty("Monthly") MONTHLY,
+  @JsonProperty("Yearly") YEARLY
 }

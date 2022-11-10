@@ -9,8 +9,12 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
+
 	"github.com/cenkalti/backoff"
 
 	"fmt"
@@ -42,7 +46,7 @@ var defaultClient = &http.Client{
 }
 
 // NewHTTPClient returns a new HTTPClient.
-func NewHTTPClient(endpoint, accountID, token string, skipverify bool) *HTTPClient {
+func NewHTTPClient(endpoint, accountID, token string, skipverify bool, additionalCertsDir string) *HTTPClient {
 	client := &HTTPClient{
 		Endpoint:   endpoint,
 		AccountID:  accountID,
@@ -61,8 +65,64 @@ func NewHTTPClient(endpoint, accountID, token string, skipverify bool) *HTTPClie
 				},
 			},
 		}
+	} else if additionalCertsDir != "" {
+		// If additional certs are specified, we append them to the existing cert chain
+
+		// Use the system certs if possible
+		rootCAs, _ := x509.SystemCertPool()
+		if rootCAs == nil {
+			rootCAs = x509.NewCertPool()
+		}
+
+		fmt.Printf("additional certs dir to allow: %s\n", additionalCertsDir)
+
+		files, err := os.ReadDir(additionalCertsDir)
+		if err != nil {
+			fmt.Errorf("could not read directory %s, error: %s", additionalCertsDir, err)
+			client.Client = clientWithRootCAs(skipverify, rootCAs)
+			return client
+		}
+
+		// Go through all certs in this directory and add them to the global certs
+		for _, f := range files {
+			path := filepath.Join(additionalCertsDir, f.Name())
+			fmt.Printf("trying to add certs at: %s to root certs\n", path)
+			// Create TLS config using cert PEM
+			rootPem, err := os.ReadFile(path)
+			if err != nil {
+				fmt.Errorf("could not read certificate file (%s), error: %s", path, err.Error())
+				continue
+			}
+			// Append certs to the global certs
+			ok := rootCAs.AppendCertsFromPEM(rootPem)
+			if !ok {
+				fmt.Errorf("error adding cert (%s) to pool, error: %s", path, err.Error())
+				continue
+			}
+			fmt.Printf("successfully added cert at: %s to root certs", path)
+		}
+		client.Client = clientWithRootCAs(skipverify, rootCAs)
 	}
 	return client
+}
+
+func clientWithRootCAs(skipverify bool, rootCAs *x509.CertPool) *http.Client {
+	// Create the HTTP Client with certs
+	config := &tls.Config{
+		InsecureSkipVerify: skipverify,
+	}
+	if rootCAs != nil {
+		config.RootCAs = rootCAs
+	}
+	return &http.Client{
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+		Transport: &http.Transport{
+			Proxy:           http.ProxyFromEnvironment,
+			TLSClientConfig: config,
+		},
+	}
 }
 
 // HTTPClient provides an http service client.

@@ -19,13 +19,16 @@ import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCH
 import static java.util.Collections.singletonList;
 
 import io.harness.AuthorizationServiceHeader;
+import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.migration.CIManagerMigrationProvider;
 import io.harness.cache.CacheModule;
 import io.harness.ci.app.InspectCommand;
 import io.harness.ci.enforcement.BuildRestrictionUsageImpl;
+import io.harness.ci.enforcement.BuildsPerDayRestrictionUsageImpl;
 import io.harness.ci.enforcement.BuildsPerMonthRestrictionUsageImpl;
 import io.harness.ci.enforcement.TotalBuildsRestrictionUsageImpl;
 import io.harness.ci.execution.ObserverEventConsumer;
@@ -51,10 +54,15 @@ import io.harness.govern.ProviderModule;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.migration.MigrationProvider;
+import io.harness.migration.NGMigrationSdkInitHelper;
+import io.harness.migration.NGMigrationSdkModule;
+import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.Store;
@@ -145,6 +153,7 @@ import javax.validation.ValidatorFactory;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.LogManager;
 import org.glassfish.jersey.server.model.Resource;
@@ -188,6 +197,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     log.info("Leaving startup maintenance mode");
     List<Module> modules = new ArrayList<>();
     modules.add(KryoModule.getInstance());
+    modules.add(NGMigrationSdkModule.getInstance());
     modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));
     modules.add(new ProviderModule() {
       @Provides
@@ -278,6 +288,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     Injector injector = Guice.createInjector(modules);
     registerPMSSDK(configuration, injector);
+    registerMigrations(injector);
     registerResources(environment, injector);
     registerWaitEnginePublishers(injector);
     registerManagedBeans(environment, injector);
@@ -291,6 +302,11 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     registerPmsSdkEvents(injector);
     initializeEnforcementFramework(injector);
     registerEventConsumers(injector);
+
+    if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
+
     log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
     initializeCiManagerMonitoring(injector);
     registerOasResource(configuration, environment, injector);
@@ -489,6 +505,10 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
   }
 
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
+  }
+
   private void registerYamlSdk(Injector injector) {
     YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
                                                     .requireSchemaInit(true)
@@ -496,6 +516,20 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
                                                     .requireValidatorInit(false)
                                                     .build();
     YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
+  }
+
+  private void registerMigrations(Injector injector) {
+    NGMigrationConfiguration config = getMigrationSdkConfiguration();
+    NGMigrationSdkInitHelper.initialize(injector, config);
+  }
+
+  private NGMigrationConfiguration getMigrationSdkConfiguration() {
+    return NGMigrationConfiguration.builder()
+        .microservice(Microservice.CI)
+        .migrationProviderList(new ArrayList<Class<? extends MigrationProvider>>() {
+          { add(CIManagerMigrationProvider.class); }
+        })
+        .build();
   }
 
   private void initializeEnforcementFramework(Injector injector) {
@@ -515,6 +549,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
                     .put(FeatureRestrictionName.ACTIVE_COMMITTERS, CIActiveCommitterUsageImpl.class)
                     .put(FeatureRestrictionName.MAX_TOTAL_BUILDS, TotalBuildsRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MAX_BUILDS_PER_MONTH, BuildsPerMonthRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MAX_BUILDS_PER_DAY, BuildsPerDayRestrictionUsageImpl.class)
                     .build())
             .build();
     injector.getInstance(EnforcementSdkRegisterService.class)

@@ -147,7 +147,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
     serviceOverrideService.upsert(serviceOverridesEntity);
 
     String serviceOverrideInputs = serviceOverrideService.createServiceOverrideInputsYaml(
-        ACCOUNT_ID, PROJECT_IDENTIFIER, ORG_IDENTIFIER, ENV_REF, SERVICE_REF);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_REF, SERVICE_REF);
 
     String resFile = "serviceOverrides-with-runtime-inputs-res.yaml";
     String resInputs = readFile(resFile);
@@ -172,7 +172,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
     serviceOverrideService.upsert(serviceOverridesEntity);
 
     String serviceOverrideInputs = serviceOverrideService.createServiceOverrideInputsYaml(
-        ACCOUNT_ID, PROJECT_IDENTIFIER, ORG_IDENTIFIER, ENV_REF, SERVICE_REF);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_REF, SERVICE_REF);
 
     assertThat(serviceOverrideInputs).isNull();
   }

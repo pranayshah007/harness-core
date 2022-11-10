@@ -38,12 +38,14 @@ public enum ExecutionStatus {
   @JsonProperty("ResourceWaiting") RESOURCEWAITING(Status.RESOURCE_WAITING, "ResourceWaiting"),
   @JsonProperty("InterventionWaiting") INTERVENTIONWAITING(Status.INTERVENTION_WAITING, "InterventionWaiting"),
   @JsonProperty("ApprovalWaiting") APPROVALWAITING(Status.APPROVAL_WAITING, "ApprovalWaiting"),
+  @JsonProperty("WaitStepRunning") WAITSTEPRUNNING(Status.WAIT_STEP_RUNNING, "WaitStepRunning"),
   @JsonProperty("Success") SUCCESS(Status.SUCCEEDED, "Success"),
   @JsonProperty("Suspended") SUSPENDED(Status.SUSPENDED, "Suspended"),
   @JsonProperty("Skipped") SKIPPED(Status.SKIPPED, "Skipped"),
   @JsonProperty("Pausing") PAUSING(Status.PAUSING, "Pausing"),
   @JsonProperty("ApprovalRejected") APPROVALREJECTED(Status.APPROVAL_REJECTED, "ApprovalRejected"),
   @JsonProperty("InputWaiting") INPUTWAITING(Status.INPUT_WAITING, "InputWaiting"),
+  @JsonProperty("AbortedByFreeze") ABORTEDBYFREEZE(Status.FREEZE_FAILED, "AbortedByFreeze"),
 
   //@JsonIgnore added to not show older enums till migration is written to change their instances to new enums in DB.
   @JsonIgnore NOT_STARTED(null, true),

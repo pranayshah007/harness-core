@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 public interface EntityTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
+  String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String PROJECTS = "Projects";
   String PIPELINES = "Pipelines";
   String PIPELINE_STEPS = "PipelineSteps";
@@ -34,6 +35,7 @@ public interface EntityTypeConstants {
   String DEPLOYMENT_STEPS = "DeploymentSteps";
   String DEPLOYMENT_STAGE = "DeploymentStage";
   String APPROVAL_STAGE = "ApprovalStage";
+  String PIPELINE_STAGE = "PipelineStage";
   String CUSTOM_STAGE = "CustomStage";
   String FEATURE_FLAG_STAGE = "FeatureFlagStage";
   String TRIGGERS = "Triggers";
@@ -41,6 +43,7 @@ public interface EntityTypeConstants {
   String TEMPLATE = "Template";
   String TEMPLATE_STAGE = "TemplateStage";
   String TEMPLATE_CUSTOM_DEPLOYMENT = "CustomDeployment";
+  String FETCH_INSTANCE_SCRIPT = "FetchInstanceScript";
   String GIT_REPOSITORIES = "GitRepositories";
   String FEATURE_FLAGS = "FeatureFlags";
   String HTTP = "Http";
@@ -66,6 +69,40 @@ public interface EntityTypeConstants {
   String SAVE_CACHE_GCS = "SaveCacheGCS";
   String SAVE_CACHE_S3 = "SaveCacheS3";
   String SECURITY = "Security";
+  String AQUA_TRIVY = "AquaTrivy";
+  String AWS_ECR = "AWSECR";
+  String BANDIT = "Bandit";
+  String BLACKDUCK = "BlackDuck";
+  String BRAKEMAN = "Brakeman";
+  String BURP = "Burp";
+  String CHECKMARX = "Checkmarx";
+  String CLAIR = "Clair";
+  String DATA_THEOREM = "DataTheorem";
+  String DOCKER_CONTENT_TRUST = "DockerContentTrust";
+  String EXTERNAL = "External";
+  String FORTIFY_ON_DEMAND = "FortifyOnDemand";
+  String GRYPE = "Grype";
+  String JFROG_XRAY = "JfrogXray";
+  String MEND = "Mend";
+  String METASPLOIT = "Metasploit";
+  String NESSUS = "Nessus";
+  String NEXUS_IQ = "NexusIQ";
+  String NIKTO = "Nikto";
+  String NMAP = "Nmap";
+  String OPENVAS = "Openvas";
+  String OWASP = "Owasp";
+  String PRISMA_CLOUD = "PrismaCloud";
+  String PROWLER = "Prowler";
+  String QUALYS = "Qualys";
+  String REAPSAW = "Reapsaw";
+  String SHIFT_LEFT = "ShiftLeft";
+  String SNIPER = "Sniper";
+  String SNYK = "Snyk";
+  String SONARQUBE = "Sonarqube";
+  String SYSDIG = "Sysdig";
+  String TENABLE = "Tenable";
+  String VERACODE = "Veracode";
+  String ZAP = "Zap";
   String SECURITY_STAGE = "SecurityStage";
   String SECURITY_STEPS = "SecuritySteps";
   String GIT_CLONE = "GitClone";
@@ -77,6 +114,8 @@ public interface EntityTypeConstants {
   String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   String BUILD_AND_PUSH_ACR = "BuildAndPushACR";
   String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
+  String ACTION_STEP = "Action";
+
   String TERRAFORM_APPLY = "TerraformApply";
   String TERRAFORM_PLAN = "TerraformPlan";
   String TERRAFORM_DESTROY = "TerraformDestroy";
@@ -94,6 +133,7 @@ public interface EntityTypeConstants {
   String POLICY_STEP = "Policy";
   String SERVICENOW_CREATE = "ServiceNowCreate";
   String SERVICENOW_UPDATE = "ServiceNowUpdate";
+  String SERVICENOW_IMPORT_SET = "ServiceNowImportSet";
   String ENVIRONMENT_GROUP = "EnvironmentGroup";
   String NG_FILE = "NgFile";
   String CLOUDFORMATION_CREATE_STACK_STEP = "CreateStack";
@@ -117,6 +157,15 @@ public interface EntityTypeConstants {
   String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
   String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
   String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
+  String ECS_RUN_TASK = "EcsRunTask";
+  String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
+  String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
+  String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
   String WAIT_STEP = "Wait";
   String ARTIFACT_SOURCE_TEMPLATE = "ArtifactSource";
+  String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
+  String FREEZE = "Freeze";
+  String CHAOS_STEP = "Chaos";
+  String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
+  String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
 }

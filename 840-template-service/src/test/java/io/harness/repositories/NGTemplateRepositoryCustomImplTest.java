@@ -166,7 +166,7 @@ public class NGTemplateRepositoryCustomImplTest {
     TemplateEntity templateToSaveWithStoreTypeWithExtraFields =
         templateToSave.withStoreType(StoreType.INLINE).withVersion(0L);
     doReturn(templateToSaveWithStoreTypeWithExtraFields).when(mongoTemplate).save(templateToSaveWithStoreType);
-    when(templateGitXService.isNewGitXEnabled(any(), any())).thenReturn(true);
+    when(templateGitXService.isNewGitXEnabledAndIsRemoteEntity(any(), any())).thenReturn(true);
     TemplateEntity savedTemplateEntity = ngTemplateRepositoryCustom.save(templateToSave, templateComment);
     assertThat(savedTemplateEntity).isEqualTo(templateToSaveWithStoreTypeWithExtraFields);
     // to check if the supplier is actually called
@@ -228,7 +228,7 @@ public class NGTemplateRepositoryCustomImplTest {
                                    .filePath(filePath)
                                    .build();
 
-    boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabled(templateToSave, branchInfo);
+    boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, branchInfo);
     assertFalse(isNewGitXEnabled);
   }
 
@@ -245,6 +245,16 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .yaml(pipelineYaml)
                                         .storeType(StoreType.REMOTE)
                                         .build();
+
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+
+    setupGitContext(branchInfo);
 
     doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
     doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
@@ -296,6 +306,16 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .storeType(StoreType.REMOTE)
                                         .build();
 
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+
+    setupGitContext(branchInfo);
+
     doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
     doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
     Optional<TemplateEntity> optionalPipelineEntity =
@@ -345,6 +365,16 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .yaml(pipelineYaml)
                                         .storeType(StoreType.REMOTE)
                                         .build();
+
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+
+    setupGitContext(branchInfo);
 
     doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
     doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
@@ -456,7 +486,7 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .build();
 
     doReturn(templateToUpdate).when(mongoTemplate).save(any());
-    when(templateGitXService.isNewGitXEnabled(any(), any())).thenReturn(true);
+    when(templateGitXService.isNewGitXEnabledAndIsRemoteEntity(any(), any())).thenReturn(true);
     TemplateEntity updatedEntity = ngTemplateRepositoryCustom.updateTemplateYaml(templateToUpdate, templateEntity,
         ChangeType.MODIFY, "", TemplateUpdateEventType.TEMPLATE_STABLE_TRUE_WITH_YAML_CHANGE_EVENT, true);
     assertThat(updatedEntity.getYaml()).isEqualTo(newYaml);

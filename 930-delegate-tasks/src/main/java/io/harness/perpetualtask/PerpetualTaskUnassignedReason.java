@@ -10,7 +10,10 @@ package io.harness.perpetualtask;
 public enum PerpetualTaskUnassignedReason {
   NO_DELEGATE_INSTALLED,
   NO_DELEGATE_AVAILABLE,
-  NO_ELIGIBLE_DELEGATES,
-  MULTIPLE_FAILED_PERPETUAL_TASK,
-  VALIDATION_TASK_FAILED,
+  NO_ELIGIBLE_DELEGATES, // No eligible delegates to process delegate sync task
+  MULTIPLE_FAILED_PERPETUAL_TASK, // task failure at delegate
+  VALIDATION_TASK_FAILED, // deprecated
+  TASK_EXPIRED, // sync task expired
+  TASK_VALIDATION_FAILED, // sync task validation failed
+  PT_TASK_FAILED, // PT task failed due unexpected reasons
 }

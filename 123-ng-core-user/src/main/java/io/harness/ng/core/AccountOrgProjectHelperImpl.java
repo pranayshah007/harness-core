@@ -23,6 +23,7 @@ import io.harness.remote.client.CGRestUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Optional;
+import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +47,7 @@ public class AccountOrgProjectHelperImpl implements AccountOrgProjectHelper {
   public String getAccountName(String accountIdentifier) {
     AccountDTO account = CGRestUtils.getResponse(accountClient.getAccountDTO(accountIdentifier));
     if (account == null) {
-      throw new IllegalStateException(String.format("Account with identifier [%s] doesn't exists", accountIdentifier));
+      throw new NotFoundException(String.format("Account with identifier [%s] doesn't exist", accountIdentifier));
     }
     return account.getName();
   }
@@ -63,7 +64,7 @@ public class AccountOrgProjectHelperImpl implements AccountOrgProjectHelper {
   public String getProjectName(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Optional<Project> projectOpt = projectService.get(accountIdentifier, orgIdentifier, projectIdentifier);
     if (!projectOpt.isPresent()) {
-      throw new IllegalStateException(String.format("Project with identifier [%s] doesn't exists", projectIdentifier));
+      throw new NotFoundException(String.format("Project with identifier [%s] doesn't exist", projectIdentifier));
     }
     return projectOpt.get().getName();
   }
@@ -71,7 +72,7 @@ public class AccountOrgProjectHelperImpl implements AccountOrgProjectHelper {
   public String getOrgName(String accountIdentifier, String orgIdentifier) {
     Optional<Organization> organizationOpt = organizationService.get(accountIdentifier, orgIdentifier);
     if (!organizationOpt.isPresent()) {
-      throw new IllegalStateException(String.format("Organization with identifier [%s] doesn't exists", orgIdentifier));
+      throw new NotFoundException(String.format("Organization with identifier [%s] doesn't exist", orgIdentifier));
     }
     return organizationOpt.get().getName();
   }

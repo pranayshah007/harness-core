@@ -7,7 +7,9 @@
 
 package io.harness.freeze.beans;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public enum FreezeStatus {
-  ACTIVE,
-  IN_ACTIVE;
+  @JsonProperty("Enabled") ENABLED,
+  @JsonProperty("Disabled") DISABLED;
 }

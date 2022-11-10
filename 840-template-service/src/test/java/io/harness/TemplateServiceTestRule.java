@@ -31,6 +31,7 @@ import io.harness.gitsync.persistance.testing.NoOpGitAwarePersistenceImpl;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.oas.OASModule;
@@ -137,6 +138,12 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
       @Singleton
       TransactionTemplate getTransactionTemplate(MongoTransactionManager mongoTransactionManager) {
         return new HTransactionTemplate(mongoTransactionManager, false);
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

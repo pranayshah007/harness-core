@@ -10,6 +10,7 @@ package software.wings.service.impl.yaml;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.yaml.GitCommand.GitCommandType.COMMIT_AND_PUSH;
@@ -28,6 +29,7 @@ import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
@@ -422,8 +424,8 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
 
   @Override
   public void notify(Map<String, Supplier<ResponseData>> response) {
-    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-         AutoLogContext ignore2 = new GitCommandCallbackLogContext(getContext(), OVERRIDE_ERROR)) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_NESTS);
+         AutoLogContext ignore2 = new GitCommandCallbackLogContext(getContext(), OVERRIDE_NESTS)) {
       Supplier<ResponseData> responseDataSupplier = response.values().iterator().next();
       try {
         ResponseData responseData = responseDataSupplier.get();
@@ -432,14 +434,22 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
         log.error("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
             changeSetId, accountId, response);
         log.error("Delegate not available or installed, retrying.", e);
-        yamlChangeSetService.updateStatusAndIncrementRetryCountForYamlChangeSets(accountId, Status.QUEUED,
-            Collections.singletonList(Status.RUNNING), Collections.singletonList(changeSetId));
+        yamlGitService.raiseAlertForGitFailure(accountId, GLOBAL_APP_ID,
+            GitSyncFailureAlertDetails.builder()
+                .branchName(branchName)
+                .repositoryName(repositoryName)
+                .errorMessage(ExceptionUtils.getMessage(e))
+                .gitConnectorId(gitConnectorId)
+                .errorCode(e.getCode())
+                .build());
+        updateChangeSetFailureStatusSafely();
+        updateGitCommitFailureSafely();
       } catch (Exception e) {
         log.error("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
             changeSetId, accountId, response);
         log.error("Failure in git command execution", e);
-        updateChangeSetFailureStatusSafely();
-        updateGitCommitFailureSafely();
+        yamlChangeSetService.updateStatusAndIncrementRetryCountForYamlChangeSets(accountId, Status.QUEUED,
+            Collections.singletonList(Status.RUNNING), Collections.singletonList(changeSetId));
       }
     }
   }

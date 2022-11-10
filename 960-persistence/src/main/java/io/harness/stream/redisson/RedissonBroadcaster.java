@@ -23,6 +23,7 @@ import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.REDIS_SUBSCR
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.metrics.impl.PersistenceMetricsServiceImpl;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -75,7 +76,7 @@ public class RedissonBroadcaster extends AbstractBroadcasterProxy {
 
   private synchronized void setUp() {
     if (redissonClient == null) {
-      redissonClient = RedissonFactory.getRedissonClient(redisAtmosphereConfig);
+      redissonClient = RedissonClientFactory.getClient(redisAtmosphereConfig);
     }
     String broadcasterNamespace = isEmpty(redisAtmosphereConfig.getEnvNamespace())
         ? BROADCASTER_PREFIX

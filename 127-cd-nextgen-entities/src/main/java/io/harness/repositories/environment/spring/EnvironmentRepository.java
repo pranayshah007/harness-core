@@ -22,4 +22,7 @@ public interface EnvironmentRepository
 
   void deleteByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
+
+  Optional<Environment> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+      String accountId, String orgIdentifier, String projectIdentifier, String envId);
 }

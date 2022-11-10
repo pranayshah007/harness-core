@@ -42,6 +42,7 @@ import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -56,7 +57,6 @@ import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
 
 import software.wings.beans.TaskType;
 
@@ -152,6 +152,13 @@ public class AzureCommonHelper {
   public TaskChainResponse getGitFetchFileTaskChainResponse(Ambiance ambiance,
       List<GitFetchFilesConfig> gitFetchFilesConfigs, StepElementParameters stepElementParameters,
       PassThroughData passThroughData, List<String> commandUnits, CommandUnitsProgress commandUnitsProgress) {
+    ParameterField<List<TaskSelectorYaml>> delegateSelector;
+    if (stepElementParameters.getSpec() instanceof AzureCreateBPStepParameters) {
+      delegateSelector = ((AzureCreateBPStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    } else {
+      delegateSelector =
+          ((AzureCreateARMResourceStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    }
     GitFetchRequest gitFetchRequest = GitFetchRequest.builder()
                                           .gitFetchFilesConfigs(gitFetchFilesConfigs)
                                           .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -167,8 +174,7 @@ public class AzureCommonHelper {
                                   .build();
 
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits,
-        TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
-        StepUtils.getTaskSelectors(stepElementParameters.getDelegateSelectors()),
+        TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(), TaskSelectorYaml.toTaskSelector(delegateSelector),
         stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()

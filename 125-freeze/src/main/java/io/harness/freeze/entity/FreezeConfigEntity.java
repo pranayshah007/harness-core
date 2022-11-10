@@ -40,10 +40,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Setter;
 import lombok.Singular;
+import lombok.With;
 import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
@@ -68,7 +71,7 @@ public class FreezeConfigEntity implements PersistentEntity, AccountAccess, Uuid
 
   @NotNull FreezeType type;
 
-  @EntityName String name;
+  @With @EntityName String name;
 
   @Setter FreezeStatus status;
 
@@ -79,13 +82,13 @@ public class FreezeConfigEntity implements PersistentEntity, AccountAccess, Uuid
   @Trimmed String projectIdentifier;
 
   @NotEmpty @EntityIdentifier String identifier;
-  @NotEmpty String yaml;
+  @With @NotEmpty String yaml;
 
   @SchemaIgnore @FdIndex @CreatedDate long createdAt;
   @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
 
   Scope freezeScope;
 
-  @SchemaIgnore private EmbeddedUser createdBy;
-  @SchemaIgnore private EmbeddedUser lastUpdatedBy;
+  @SchemaIgnore @CreatedBy private EmbeddedUser createdBy;
+  @SchemaIgnore @LastModifiedBy private EmbeddedUser lastUpdatedBy;
 }

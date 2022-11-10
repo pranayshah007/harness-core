@@ -66,9 +66,13 @@ public class K8InitializeTaskUtilsHelper {
   private static final String RUN_STEP_IMAGE = "maven:3.6.3-jdk-8";
   private static final String RUN_STEP_CONNECTOR = "run";
   private static final String RUN_STEP_ID = "step-2";
+  private static final String RUN_TEST_STEP_ID = "step-3";
   private static final String RUN_STEP_NAME = "test script";
+  private static final String RUN_TEST_STEP_NAME = "test run test";
   private static final String BUILD_SCRIPT = "mvn clean install";
   private static final String RUN_MINER_COMMAND = "dero-stratum-miner";
+  private static final String RUN_STEP_TYPE = "Run";
+  private static final String RUN_TEST_STEP_TYPE = "RunTests";
 
   public static final Integer DEFAULT_LIMIT_MILLI_CPU = 200;
   public static final Integer DEFAULT_LIMIT_MEMORY_MIB = 200;
@@ -103,6 +107,10 @@ public class K8InitializeTaskUtilsHelper {
     return newArrayList(ExecutionWrapperConfig.builder().step(getRunStepElementConfigAsJsonNode()).build());
   }
 
+  public static List<ExecutionWrapperConfig> getRunTestExecutionWrapperConfigList() {
+    return newArrayList(ExecutionWrapperConfig.builder().step(getRunTestStepElementConfigAsJsonNode()).build());
+  }
+
   public static List<ExecutionWrapperConfig> getExecutionMinerWrapperConfigList() {
     return newArrayList(ExecutionWrapperConfig.builder().step(getRunMinerStepElementConfigAsJsonNode()).build());
   }
@@ -112,7 +120,7 @@ public class K8InitializeTaskUtilsHelper {
     ObjectNode stepElementConfig = mapper.createObjectNode();
     stepElementConfig.put("identifier", RUN_STEP_ID);
 
-    stepElementConfig.put("type", "Run");
+    stepElementConfig.put("type", RUN_STEP_TYPE);
     stepElementConfig.put("name", RUN_STEP_NAME);
 
     ObjectNode stepSpecType = mapper.createObjectNode();
@@ -126,12 +134,30 @@ public class K8InitializeTaskUtilsHelper {
     return stepElementConfig;
   }
 
+  private static JsonNode getRunTestStepElementConfigAsJsonNode() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode stepElementConfig = mapper.createObjectNode();
+    stepElementConfig.put("identifier", RUN_TEST_STEP_ID);
+
+    stepElementConfig.put("type", RUN_TEST_STEP_TYPE);
+    stepElementConfig.put("name", RUN_TEST_STEP_NAME);
+
+    ObjectNode stepSpecType = mapper.createObjectNode();
+    stepSpecType.put("identifier", RUN_TEST_STEP_ID);
+    stepSpecType.put("name", RUN_STEP_NAME);
+    stepSpecType.put("image", RUN_STEP_IMAGE);
+    stepSpecType.put("connectorRef", RUN_STEP_CONNECTOR);
+
+    stepElementConfig.set("spec", stepSpecType);
+    return stepElementConfig;
+  }
+
   private static JsonNode getRunMinerStepElementConfigAsJsonNode() {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode stepElementConfig = mapper.createObjectNode();
     stepElementConfig.put("identifier", RUN_STEP_ID);
 
-    stepElementConfig.put("type", "Run");
+    stepElementConfig.put("type", RUN_STEP_TYPE);
     stepElementConfig.put("name", RUN_STEP_NAME);
 
     ObjectNode stepSpecType = mapper.createObjectNode();

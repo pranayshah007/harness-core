@@ -62,6 +62,7 @@ public class InfrastructureFilterHelper {
     update.set(InfrastructureEntityKeys.yaml, infrastructureEntity.getYaml());
     update.set(InfrastructureEntityKeys.envIdentifier, infrastructureEntity.getEnvIdentifier());
     update.set(InfrastructureEntityKeys.deploymentType, infrastructureEntity.getDeploymentType());
+    update.set(InfrastructureEntityKeys.obsolete, infrastructureEntity.getObsolete());
     return update;
   }
 }

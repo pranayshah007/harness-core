@@ -170,18 +170,32 @@ public class ConnectorUtils {
   }
 
   public ConnectorDetails getConnectorDetails(NGAccess ngAccess, String connectorIdentifier) {
+    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(connectorIdentifier,
+        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    return getConnectorDetailsInternalWithRetries(ngAccess, connectorRef);
+  }
+
+  public ConnectorDetails getConnectorDetailsWithIdentifier(NGAccess ngAccess, IdentifierRef identifierRef) {
+    return getConnectorDetailsInternalWithRetries(ngAccess, identifierRef);
+  }
+
+  public ConnectorDetails getConnectorDetailsInternalWithRetries(NGAccess ngAccess, IdentifierRef connectorRef) {
     Instant startTime = Instant.now();
     RetryPolicy<Object> retryPolicy =
-        getRetryPolicy(format("[Retrying failed call to fetch connector: [%s], attempt: {}", connectorIdentifier),
-            format("Failed to fetch connector: [%s] after retrying {} times", connectorIdentifier));
+        getRetryPolicy(format("[Retrying failed call to fetch connector: [%s], scope: [%s], attempt: {}",
+                           connectorRef.getIdentifier(), connectorRef.getScope()),
+            format("Failed to fetch connector: [%s] scope: [%s] after retrying {} times", connectorRef.getIdentifier(),
+                connectorRef.getScope()));
 
     ConnectorDetails connectorDetails =
-        Failsafe.with(retryPolicy).get(() -> { return getConnectorDetailsInternal(ngAccess, connectorIdentifier); });
+        Failsafe.with(retryPolicy).get(() -> { return getConnectorDetailsInternal(ngAccess, connectorRef); });
 
     long elapsedTimeInSecs = Duration.between(startTime, Instant.now()).toMillis() / 1000;
 
-    log.info("Fetched connector details for connector ref successfully {} in {} seconds accountId {}, projectId {}",
-        connectorIdentifier, elapsedTimeInSecs, ngAccess.getAccountIdentifier(), ngAccess.getProjectIdentifier());
+    log.info(
+        "Fetched connector details for connector ref successfully {} with scope {} in {} seconds accountId {}, projectId {}",
+        connectorRef.getIdentifier(), connectorRef.getScope(), elapsedTimeInSecs, ngAccess.getAccountIdentifier(),
+        ngAccess.getProjectIdentifier());
 
     return connectorDetails;
   }
@@ -244,11 +258,10 @@ public class ConnectorUtils {
     return taskSelectors;
   }
 
-  private ConnectorDetails getConnectorDetailsInternal(NGAccess ngAccess, String connectorIdentifier)
+  private ConnectorDetails getConnectorDetailsInternal(NGAccess ngAccess, IdentifierRef connectorRef)
       throws IOException {
-    log.info("Getting connector details for connector ref [{}]", connectorIdentifier);
-    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(connectorIdentifier,
-        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    log.info("Getting connector details for connector ref with scope: [{}] and identifier: [{}]",
+        connectorRef.getScope(), connectorRef.getIdentifier());
 
     ConnectorDTO connectorDTO = getConnector(connectorRef);
     ConnectorType connectorType = connectorDTO.getConnectorInfo().getConnectorType();
@@ -261,8 +274,8 @@ public class ConnectorUtils {
             .orgIdentifier(connectorDTO.getConnectorInfo().getOrgIdentifier())
             .projectIdentifier(connectorDTO.getConnectorInfo().getProjectIdentifier());
 
-    log.info("Fetching encryption details for connector details for connector id:[{}] type:[{}]", connectorIdentifier,
-        connectorType);
+    log.info("Fetching encryption details for connector details for connector id:[{}] type:[{}] scope: [{}]",
+        connectorRef.getIdentifier(), connectorType, connectorRef.getScope());
     ConnectorDetails connectorDetails;
 
     switch (connectorType) {
@@ -295,8 +308,8 @@ public class ConnectorUtils {
       default:
         throw new InvalidArgumentsException(format("Unexpected connector type:[%s]", connectorType));
     }
-    log.info(
-        "Successfully fetched encryption details for  connector id:[{}] type:[{}]", connectorIdentifier, connectorType);
+    log.info("Successfully fetched encryption details for  connector id:[{}] type:[{}] scope:[{}]",
+        connectorRef.getIdentifier(), connectorType, connectorRef.getScope());
     return connectorDetails;
   }
 
@@ -403,7 +416,9 @@ public class ConnectorUtils {
       ArtifactoryUsernamePasswordAuthDTO auth =
           (ArtifactoryUsernamePasswordAuthDTO) artifactoryConnectorDTO.getAuth().getCredentials();
       encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, auth);
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.executeOnDelegate(artifactoryConnectorDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
     }
     throw new InvalidArgumentsException(format("Unsupported artifactory auth type:[%s] on connector:[%s]",
         artifactoryConnectorDTO.getAuth().getAuthType(), artifactoryConnectorDTO));
@@ -417,11 +432,13 @@ public class ConnectorUtils {
     if (awsCredentialDTO.getAwsCredentialType() == AwsCredentialType.MANUAL_CREDENTIALS) {
       AwsManualConfigSpecDTO awsManualConfigSpecDTO = (AwsManualConfigSpecDTO) awsCredentialDTO.getConfig();
       encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, awsManualConfigSpecDTO);
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.executeOnDelegate(awsConnectorDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
     } else if (awsCredentialDTO.getAwsCredentialType() == AwsCredentialType.INHERIT_FROM_DELEGATE) {
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(awsConnectorDTO.getExecuteOnDelegate()).build();
     } else if (awsCredentialDTO.getAwsCredentialType() == AwsCredentialType.IRSA) {
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(awsConnectorDTO.getExecuteOnDelegate()).build();
     }
     throw new InvalidArgumentsException(format("Unsupported aws credential type:[%s] on connector:[%s]",
         awsCredentialDTO.getAwsCredentialType(), awsConnectorDTO));
@@ -436,9 +453,11 @@ public class ConnectorUtils {
       AzureManualDetailsDTO config = (AzureManualDetailsDTO) credentialDTO.getConfig();
       encryptedDataDetails =
           secretManagerClientService.getEncryptionDetails(ngAccess, config.getAuthDTO().getCredentials());
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.executeOnDelegate(azureConnectorDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
     } else {
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(azureConnectorDTO.getExecuteOnDelegate()).build();
     }
   }
 
@@ -450,9 +469,11 @@ public class ConnectorUtils {
     if (credential.getGcpCredentialType() == GcpCredentialType.MANUAL_CREDENTIALS) {
       GcpManualDetailsDTO credentialConfig = (GcpManualDetailsDTO) credential.getConfig();
       encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, credentialConfig);
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.executeOnDelegate(gcpConnectorDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
     } else if (credential.getGcpCredentialType() == GcpCredentialType.INHERIT_FROM_DELEGATE) {
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(gcpConnectorDTO.getExecuteOnDelegate()).build();
     }
     throw new InvalidArgumentsException(format("Unsupported gcp credential type:[%s] on connector:[%s]",
         gcpConnectorDTO.getCredential().getGcpCredentialType(), gcpConnectorDTO));
@@ -645,7 +666,9 @@ public class ConnectorUtils {
     GitAuthenticationDTO gitAuth = gitConfigDTO.getGitAuth();
     if (gitConfigDTO.getGitAuthType() == GitAuthType.HTTP) {
       encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, gitAuth);
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
     } else if (gitConfigDTO.getGitAuthType() == GitAuthType.SSH) {
       GitSSHAuthenticationDTO gitSSHAuthenticationDTO = (GitSSHAuthenticationDTO) gitAuth;
       SSHKeyDetails sshKey = secretUtils.getSshKey(ngAccess, gitSSHAuthenticationDTO.getEncryptedSshKey());
@@ -654,7 +677,7 @@ public class ConnectorUtils {
         throw new CIStageExecutionException(
             "Unsupported ssh key format, passphrase is unsupported in git connector: " + gitConfigDTO.getGitAuthType());
       }
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException("Unsupported git connector auth" + gitConfigDTO.getGitAuthType());
     }
@@ -668,9 +691,11 @@ public class ConnectorUtils {
     if (dockerAuthType == DockerAuthType.USER_PASSWORD) {
       encryptedDataDetails =
           secretManagerClientService.getEncryptionDetails(ngAccess, dockerConnectorDTO.getAuth().getCredentials());
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.executeOnDelegate(dockerConnectorDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
     } else if (dockerAuthType == DockerAuthType.ANONYMOUS) {
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(dockerConnectorDTO.getExecuteOnDelegate()).build();
     } else {
       throw new InvalidArgumentsException(
           format("Unsupported docker credential type:[%s] on connector:[%s]", dockerAuthType, dockerConnectorDTO));

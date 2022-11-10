@@ -87,6 +87,11 @@ public class AppPermissionSummary {
    */
   private Set<String> rollbackWorkflowExecutePermissionsForEnvs;
 
+  /**
+   * The environments that the user can abort workflows
+   */
+  private Set<String> abortWorkflowExecutePermissionsForEnvs;
+
   // Key - action, Value - set of entity ids
   private Map<Action, Set<String>> servicePermissions;
   private Map<Action, Set<String>> provisionerPermissions;

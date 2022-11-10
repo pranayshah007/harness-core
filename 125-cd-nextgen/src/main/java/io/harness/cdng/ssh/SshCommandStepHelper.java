@@ -40,6 +40,8 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.service.steps.ServiceOutcomeHelper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
+import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.ssh.rollback.CommandStepRollbackHelper;
 import io.harness.cdng.ssh.rollback.SshWinRmRollbackData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -87,8 +89,6 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.shellscript.HarnessFileStoreSource;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
-import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -131,7 +131,9 @@ public class SshCommandStepHelper extends CDStepHelper {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
     InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
     Map<String, String> mergedEnvVariables = getMergedEnvVariablesMap(ambiance, commandStepParameters, infrastructure);
-    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))
+        || ServiceSpecType.CUSTOM_DEPLOYMENT.toLowerCase(Locale.ROOT)
+               .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
       return buildSshCommandTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
     } else if (ServiceSpecType.WINRM.toLowerCase(Locale.ROOT)
                    .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
@@ -342,8 +344,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .host(onDelegate ? null : getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
-        .disableWinRMCommandEncodingFFSet(
-            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING))
+        .disableWinRMCommandEncodingFFSet(true)
+        .winrmScriptCommandSplit(true)
         .build();
   }
 
@@ -369,8 +371,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .host(onDelegate ? null : getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
-        .disableWinRMCommandEncodingFFSet(
-            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING))
+        .disableWinRMCommandEncodingFFSet(true)
+        .winrmScriptCommandSplit(true)
         .build();
   }
 
@@ -518,7 +520,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .collect(Collectors.toList());
   }
 
-  private String getShellScript(Ambiance ambiance, @Nonnull ShellScriptSourceWrapper shellScriptSourceWrapper) {
+  public String getShellScript(Ambiance ambiance, @Nonnull ShellScriptSourceWrapper shellScriptSourceWrapper) {
     if (INLINE.equals(shellScriptSourceWrapper.getType())) {
       ShellScriptInlineSource shellScriptInlineSource = (ShellScriptInlineSource) shellScriptSourceWrapper.getSpec();
       return (String) shellScriptInlineSource.getScript().fetchFinalValue();

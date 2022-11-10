@@ -9,8 +9,6 @@ package software.wings.scheduler;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.MongoUtils.setUnset;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -20,14 +18,11 @@ import static software.wings.common.Constants.ACCOUNT_ID_KEY;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -39,15 +34,12 @@ import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapSettingsMapper;
-import software.wings.beans.sso.LdapTestResponse;
-import software.wings.beans.sso.LdapTestResponse.Status;
 import software.wings.beans.sso.LdapUserResponse;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.dl.WingsPersistence;
 import software.wings.features.LdapFeature;
 import software.wings.features.api.PremiumFeature;
 import software.wings.helpers.ext.ldap.LdapConstants;
-import software.wings.logcontext.LdapGroupSyncJobLogContext;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SSOService;
 import software.wings.service.intfc.SSOSettingService;
@@ -374,54 +366,6 @@ public class LdapGroupSyncJob implements Job {
   }
 
   private void executeInternal(String accountId, String ssoId) {
-    if (!ldapFeature.isAvailableForAccount(accountId)) {
-      log.info("Skipping LDAP sync. ssoId {} accountId {}", ssoId, accountId);
-      return;
-    }
-
-    if (featureFlagService.isEnabled(FeatureName.LDAP_GROUP_SYNC_JOB_ITERATOR, accountId)) {
-      log.info("LDAP_GROUP_SYNC_JOB_ITERATOR LDAP sync not for ssoId {} accountId {}", ssoId, accountId);
-      return;
-    }
-
-    LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByUuid(ssoId);
-    if (ldapSettings == null) {
-      jobScheduler.deleteJob(ssoId, GROUP);
-      ssoSettingService.closeSyncFailureAlertIfOpen(accountId, ssoId);
-      return;
-    }
-
-    try (AutoLogContext ignore = new LdapGroupSyncJobLogContext(accountId, ssoId, OVERRIDE_ERROR)) {
-      log.info("Executing ldap group sync job for ssoId: {} and accountId: {}", ssoId, accountId);
-
-      LdapTestResponse ldapTestResponse = ssoService.validateLdapConnectionSettings(ldapSettings, accountId);
-      if (ldapTestResponse.getStatus() == Status.FAILURE) {
-        if (ssoSettingService.isDefault(accountId, ssoId)) {
-          ssoSettingService.sendSSONotReachableNotification(accountId, ldapSettings);
-        } else {
-          ssoSettingService.raiseSyncFailureAlert(
-              accountId, ssoId, String.format(LdapConstants.SSO_PROVIDER_NOT_REACHABLE, ldapSettings.getDisplayName()));
-        }
-        return;
-      }
-
-      List<UserGroup> userGroupsToSync = userGroupService.getUserGroupsBySsoId(accountId, ssoId);
-      syncUserGroups(accountId, ldapSettings, userGroupsToSync, ssoId);
-
-      log.info("Ldap group sync job done for ssoId {} accountId {}", ssoId, accountId);
-    } catch (WingsException exception) {
-      if (exception.getCode() == ErrorCode.USER_GROUP_SYNC_FAILURE) {
-        ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, exception.getMessage());
-      } else {
-        ssoSettingService.raiseSyncFailureAlert(accountId, ssoId,
-            String.format(LdapConstants.USER_GROUP_SYNC_FAILED, ldapSettings.getDisplayName())
-                + exception.getMessage());
-      }
-      ExceptionLogger.logProcessedMessages(exception, MANAGER, log);
-    } catch (Exception ex) {
-      ssoSettingService.raiseSyncFailureAlert(accountId, ssoId,
-          String.format(LdapConstants.USER_GROUP_SYNC_FAILED, ldapSettings.getDisplayName()) + ex.getMessage());
-      log.error("Error while syncing ssoId {} in accountId {}", ssoId, accountId, ex);
-    }
+    log.info("Decommissioned this job so no action for ssoId {} accountId {}", ssoId, accountId);
   }
 }

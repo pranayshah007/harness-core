@@ -100,6 +100,7 @@ replace_key_value awsGovCloudConfig.secretKey "$AWS_GOV_CLOUD_SECRET_KEY"
 replace_key_value awsGovCloudConfig.harnessAwsAccountId "$AWS_GOV_CLOUD_ACCOUNT_ID"
 replace_key_value awsGovCloudConfig.awsConnectorTemplate "$AWS_GOV_CLOUD_TEMPLATE_LINK"
 replace_key_value awsGovCloudConfig.awsRegionName "$AWS_GOV_CLOUD_REGION_NAME"
+replace_key_value awsGovCloudCftUrl "$AWS_GOV_CLOUD_CFT_URL"
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
 replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
 replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
@@ -169,3 +170,5 @@ replace_key_value exportMetricsToStackDriver "$EXPORT_METRICS_TO_STACK_DRIVER"
 
 replace_key_value lightwingAutoCUDClientConfig.baseUrl "$LIGHTWING_AUTOCUD_CLIENT_CONFIG_BASEURL"
 replace_key_value enableLightwingAutoCUDDC "$ENABLE_LIGHTWING_AUTOCUD_DC"
+
+replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"

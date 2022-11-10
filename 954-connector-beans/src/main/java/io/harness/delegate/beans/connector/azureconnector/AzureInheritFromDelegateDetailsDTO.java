@@ -9,6 +9,8 @@ package io.harness.delegate.beans.connector.azureconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialSpecOutcomeDTO;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureInheritFromDelegateDetailsOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -29,4 +31,9 @@ import lombok.Value;
 @JsonDeserialize(using = AzureInheritFromDelegateDetailsDTODeserializer.class)
 public class AzureInheritFromDelegateDetailsDTO implements AzureCredentialSpecDTO {
   @NotNull @JsonProperty("auth") @Schema(description = "The auth azure details ") AzureMSIAuthDTO authDTO;
+
+  @Override
+  public AzureCredentialSpecOutcomeDTO toOutcome() {
+    return AzureInheritFromDelegateDetailsOutcomeDTO.builder().auth(this.authDTO.toOutcome()).build();
+  }
 }

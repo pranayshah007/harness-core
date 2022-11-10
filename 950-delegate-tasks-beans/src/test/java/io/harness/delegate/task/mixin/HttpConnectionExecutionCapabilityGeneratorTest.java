@@ -21,6 +21,7 @@ import io.harness.CategoryTest;
 import io.harness.beans.KeyValuePair;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
+import io.harness.expression.MaskingExpressionEvaluator;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
@@ -153,5 +154,28 @@ public class HttpConnectionExecutionCapabilityGeneratorTest extends CategoryTest
     assertThat(capability.getQuery()).isEqualTo("q1=1&q2=2");
     assertThat(capability.getHeaders().get(0).getKey()).isEqualTo("x-api-key");
     assertThat(capability.getHeaders().get(0).getValue()).isEqualTo("1234");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testBuildHttpConnectionExecutionCapability_withMaskingEvaluatorNGSecret() {
+    HttpConnectionExecutionCapability capability = buildHttpConnectionExecutionCapability(
+        "http://google.com/${ngSecretManager.obtain(\"secretRef\",-12345)}", PATH, new MaskingExpressionEvaluator());
+    assertThat(capability.getHost()).isNull();
+    assertThat(capability.getQuery()).isNull();
+    assertThat(capability.getUrl()).isEqualTo("http://google.com/<<<secretRef>>>");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testBuildHttpConnectionExecutionCapability_withMaskingEvaluatorSweepingOPSecret() {
+    HttpConnectionExecutionCapability capability = buildHttpConnectionExecutionCapability(
+        "https://google.com/${sweepingOutputSecrets.obtain(\"output1\",\"sa32zupgqijF2be+H2lEAw7yfMwGDFtC5zciKbzQGEtm5Vq+cjo7RclAhPVLTig7\")}",
+        PATH, new MaskingExpressionEvaluator());
+    assertThat(capability.getHost()).isNull();
+    assertThat(capability.getQuery()).isNull();
+    assertThat(capability.getUrl()).isEqualTo("https://google.com/<<<output1>>>");
   }
 }

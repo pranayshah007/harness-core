@@ -10,7 +10,7 @@ package io.harness.ng.core.template.exception;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ngexception.NGTemplateException;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 
 import java.util.EnumSet;
 import lombok.Getter;
@@ -19,10 +19,12 @@ import lombok.Getter;
 @Getter
 public class NGTemplateResolveExceptionV2 extends NGTemplateException {
   ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO;
+  private String referredByYaml;
 
   public NGTemplateResolveExceptionV2(String message, EnumSet<ReportTarget> reportTarget,
-      ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO) {
+      ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO, String yaml) {
     super(message, reportTarget, validateTemplateInputsResponseDTO);
     this.validateTemplateInputsResponseDTO = validateTemplateInputsResponseDTO;
+    this.referredByYaml = yaml;
   }
 }

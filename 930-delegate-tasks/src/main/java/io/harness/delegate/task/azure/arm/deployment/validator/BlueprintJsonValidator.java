@@ -12,8 +12,7 @@ import static io.harness.azure.model.AzureConstants.BLUEPRINT_JSON_FILE_BLANK_VA
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.delegate.task.azure.common.validator.Validator;
-import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.WingsException;
+import io.harness.exception.runtime.azure.AzureBPDeploymentException;
 import io.harness.serializer.JsonUtils;
 
 public class BlueprintJsonValidator implements Validator<String> {
@@ -24,13 +23,13 @@ public class BlueprintJsonValidator implements Validator<String> {
 
   private void isValidJson(final String blueprintJson) {
     if (isBlank(blueprintJson)) {
-      throw new InvalidArgumentsException(BLUEPRINT_JSON_FILE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_JSON_FILE_BLANK_VALIDATION_MSG);
     }
 
     try {
       JsonUtils.readTree(blueprintJson);
     } catch (Exception e) {
-      throw new InvalidArgumentsException("Invalid Blueprint JSON file", e, WingsException.USER);
+      throw new AzureBPDeploymentException("Invalid Blueprint JSON file", e);
     }
   }
 }

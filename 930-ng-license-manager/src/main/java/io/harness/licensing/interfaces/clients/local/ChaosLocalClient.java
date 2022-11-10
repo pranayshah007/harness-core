@@ -22,11 +22,11 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 public class ChaosLocalClient implements ChaosModuleLicenseClient {
-  private static final int ENTERPRISE_TRIAL_CHAOS_SCENARIO_RUN = 200;
-  private static final int TEAM_TRIAL_CHAOS_SCENARIO_RUN = 100;
-  private static final int FREE_TRIAL_CHAOS_SCENARIO_RUN = 60;
+  private static final int ENTERPRISE_TRIAL_CHAOS_EXPERIMENT_RUNS = 10000;
+  private static final int TEAM_TRIAL_CHAOS_EXPERIMENT_RUNS = 10000;
+  private static final int FREE_TRIAL_CHAOS_EXPERIMENT_RUNS = 10000;
 
-  private static final int FREE_TRIAL_CHAOS_DELEGATES = 10;
+  private static final int FREE_TRIAL_CHAOS_INFRASTRUCTURES = 1000;
 
   @Override
   public ChaosModuleLicenseDTO createTrialLicense(Edition edition, String accountId) {
@@ -38,18 +38,18 @@ public class ChaosLocalClient implements ChaosModuleLicenseClient {
 
     switch (edition) {
       case ENTERPRISE:
-        return builder.totalChaosScenarioRun(ENTERPRISE_TRIAL_CHAOS_SCENARIO_RUN)
-            .totalChaosDelegates(Integer.valueOf(UNLIMITED))
+        return builder.totalChaosExperimentRuns(ENTERPRISE_TRIAL_CHAOS_EXPERIMENT_RUNS)
+            .totalChaosInfrastructures(Integer.valueOf(UNLIMITED))
             .licenseType(LicenseType.TRIAL)
             .build();
       case TEAM:
-        return builder.totalChaosScenarioRun(TEAM_TRIAL_CHAOS_SCENARIO_RUN)
-            .totalChaosDelegates(Integer.valueOf(UNLIMITED))
+        return builder.totalChaosExperimentRuns(TEAM_TRIAL_CHAOS_EXPERIMENT_RUNS)
+            .totalChaosInfrastructures(Integer.valueOf(UNLIMITED))
             .licenseType(LicenseType.TRIAL)
             .build();
       case FREE:
-        return builder.totalChaosScenarioRun(FREE_TRIAL_CHAOS_SCENARIO_RUN)
-            .totalChaosDelegates(FREE_TRIAL_CHAOS_DELEGATES)
+        return builder.totalChaosExperimentRuns(FREE_TRIAL_CHAOS_EXPERIMENT_RUNS)
+            .totalChaosInfrastructures(FREE_TRIAL_CHAOS_INFRASTRUCTURES)
             .expiryTime(Long.MAX_VALUE)
             .build();
       default:

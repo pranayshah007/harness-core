@@ -6,9 +6,6 @@
  */
 
 package io.harness.cdng.provision.terraform;
-
-import static java.util.Arrays.asList;
-
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
@@ -204,7 +201,6 @@ public class TerraformStepDataGenerator {
     varFilesMap.put("var-file-02",
         TerraformVarFile.builder().identifier("var-file-02").type("Remote").spec(remoteTerraformVarFileSpec).build());
     return TerraformApplyStepParameters.infoBuilder()
-        .planStepsFqn(asList("plan1", "plan2"))
         .provisionerIdentifier(ParameterField.createValueField("provId_$"))
         .configuration(TerraformStepConfigurationParameters.builder()
                            .type(TerraformStepConfigurationType.INLINE)
@@ -280,6 +276,27 @@ public class TerraformStepDataGenerator {
         .build();
   }
 
+  public static TerraformPlanStepParameters generateStepPlanWithRemoteBackendConfig(StoreConfigType storeTypeForConfig,
+      StoreConfigType storeType, Object storeConfigFilesParam, Object backendConfigStoreConfigFilesParam) {
+    TerraformConfigFilesWrapper configFilesWrapper = new TerraformConfigFilesWrapper();
+
+    generateConfigFileStore(configFilesWrapper, storeTypeForConfig, storeConfigFilesParam);
+    RemoteTerraformBackendConfigSpec remoteBackendConfigSpec =
+        generateRemoteBackendConfigFileSpec(storeType, backendConfigStoreConfigFilesParam);
+    TerraformBackendConfig backendConfig = generateBackendConfigFile(remoteBackendConfigSpec, false);
+    return TerraformPlanStepParameters.infoBuilder()
+        .provisionerIdentifier(ParameterField.createValueField("provId"))
+        .configuration(TerraformPlanExecutionDataParameters.builder()
+                           .configFiles(configFilesWrapper)
+                           .backendConfig(backendConfig)
+                           .command(TerraformPlanCommand.APPLY)
+                           .secretManagerRef(ParameterField.createValueField("secret"))
+                           .environmentVariables(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
+                           .backendConfig(backendConfig)
+                           .build())
+        .build();
+  }
+
   public static TerraformPlanStepParameters generateStepPlanFile(
       StoreConfigType storeType, Object storeConfigFilesParam, Object varStoreConfigFilesParam) {
     StoreConfig storeConfigFiles;
@@ -337,6 +354,7 @@ public class TerraformStepDataGenerator {
     InlineTerraformBackendConfigSpec inlineTerraformBackendConfigSpec = new InlineTerraformBackendConfigSpec();
     inlineTerraformBackendConfigSpec.setContent(ParameterField.createValueField("back-content"));
     TerraformBackendConfig terraformBackendConfig = new TerraformBackendConfig();
+    terraformBackendConfig.setType("Inline");
     terraformBackendConfig.setTerraformBackendConfigSpec(inlineTerraformBackendConfigSpec);
     LinkedHashMap<String, TerraformVarFile> varFilesMap = new LinkedHashMap<>();
     varFilesMap.put("var-file-01",
@@ -379,13 +397,39 @@ public class TerraformStepDataGenerator {
     return varFilesMap;
   }
 
+  public static TerraformBackendConfig generateBackendConfigFile(
+      RemoteTerraformBackendConfigSpec remoteTerraformBackendConfigSpec, boolean generateInlineSpec) {
+    if (generateInlineSpec) {
+      InlineTerraformBackendConfigSpec inlineTerraformBackendConfigSpec = new InlineTerraformBackendConfigSpec();
+      inlineTerraformBackendConfigSpec.setContent(ParameterField.createValueField("bc-content"));
+      return TerraformBackendConfig.builder().type("Inline").spec(inlineTerraformBackendConfigSpec).build();
+    }
+    return TerraformBackendConfig.builder().type("Remote").spec(remoteTerraformBackendConfigSpec).build();
+  }
+
   public static RemoteTerraformVarFileSpec generateRemoteVarFileSpec(
       StoreConfigType storeType, Object varStoreConfigFilesParam) {
     if (storeType == null) {
       return null;
     }
-    StoreConfig storeVarFiles;
     RemoteTerraformVarFileSpec remoteTerraformVarFileSpec = new RemoteTerraformVarFileSpec();
+    remoteTerraformVarFileSpec.setStore(getStoreConfigWrapper(storeType, varStoreConfigFilesParam));
+    return remoteTerraformVarFileSpec;
+  }
+
+  public static RemoteTerraformBackendConfigSpec generateRemoteBackendConfigFileSpec(
+      StoreConfigType storeType, Object configStoreConfigFilesParam) {
+    if (storeType == null) {
+      return null;
+    }
+    RemoteTerraformBackendConfigSpec remoteTerraformBackendConfigFileSpec = new RemoteTerraformBackendConfigSpec();
+    remoteTerraformBackendConfigFileSpec.setStore(getStoreConfigWrapper(storeType, configStoreConfigFilesParam));
+    return remoteTerraformBackendConfigFileSpec;
+  }
+
+  private static StoreConfigWrapper getStoreConfigWrapper(StoreConfigType storeType, Object varStoreConfigFilesParam) {
+    StoreConfig storeVarFiles;
+    StoreConfigWrapper storeConfigWrapper;
     switch (storeType) {
       case GITLAB:
         GitStoreConfig gitlabStoreVarFiles = (GitStoreConfig) varStoreConfigFilesParam;
@@ -396,7 +440,7 @@ public class TerraformStepDataGenerator {
                             .folderPath(ParameterField.createValueField(gitlabStoreVarFiles.folderPath.getValue()))
                             .connectorRef(ParameterField.createValueField(gitlabStoreVarFiles.connectoref.getValue()))
                             .build();
-        remoteTerraformVarFileSpec.setStore(StoreConfigWrapper.builder().spec(storeVarFiles).type(storeType).build());
+        storeConfigWrapper = StoreConfigWrapper.builder().spec(storeVarFiles).type(storeType).build();
         break;
       case GIT:
         GitStoreConfig gitStoreVarFiles = (GitStoreConfig) varStoreConfigFilesParam;
@@ -407,20 +451,22 @@ public class TerraformStepDataGenerator {
                             .folderPath(ParameterField.createValueField(gitStoreVarFiles.folderPath.getValue()))
                             .connectorRef(ParameterField.createValueField(gitStoreVarFiles.connectoref.getValue()))
                             .build();
-        remoteTerraformVarFileSpec.setStore(StoreConfigWrapper.builder().spec(storeVarFiles).type(storeType).build());
+        storeConfigWrapper = StoreConfigWrapper.builder().spec(storeVarFiles).type(storeType).build();
         break;
       case GITHUB:
       case BITBUCKET:
         // Create the store file for the terraform variables
         GitStoreConfig githubStoreVarFiles = (GitStoreConfig) varStoreConfigFilesParam;
-        storeVarFiles = GithubStore.builder()
-                            .branch(ParameterField.createValueField(githubStoreVarFiles.branch))
-                            .gitFetchType(githubStoreVarFiles.fetchType)
-                            .paths(ParameterField.createValueField(githubStoreVarFiles.varFolderPath.getValue()))
-                            .folderPath(ParameterField.createValueField(githubStoreVarFiles.folderPath.getValue()))
-                            .connectorRef(ParameterField.createValueField(githubStoreVarFiles.connectoref.getValue()))
-                            .build();
-        remoteTerraformVarFileSpec.setStore(StoreConfigWrapper.builder().spec(storeVarFiles).type(storeType).build());
+        storeVarFiles =
+            GithubStore.builder()
+                .branch(ParameterField.createValueField(githubStoreVarFiles.branch))
+                .gitFetchType(githubStoreVarFiles.fetchType)
+                .paths(ParameterField.createValueField(
+                    githubStoreVarFiles.varFolderPath == null ? null : githubStoreVarFiles.varFolderPath.getValue()))
+                .folderPath(ParameterField.createValueField(githubStoreVarFiles.folderPath.getValue()))
+                .connectorRef(ParameterField.createValueField(githubStoreVarFiles.connectoref.getValue()))
+                .build();
+        storeConfigWrapper = StoreConfigWrapper.builder().spec(storeVarFiles).type(storeType).build();
         break;
       case ARTIFACTORY:
         // Create the store file for the terraform variables
@@ -430,12 +476,12 @@ public class TerraformStepDataGenerator {
                             .connectorRef(ParameterField.createValueField(artifactoryStoreVarFiles.connectorRef))
                             .artifactPaths(ParameterField.createValueField(artifactoryStoreVarFiles.artifacts))
                             .build();
-        remoteTerraformVarFileSpec.setStore(StoreConfigWrapper.builder().spec(storeVarFiles).type(storeType).build());
+        storeConfigWrapper = StoreConfigWrapper.builder().spec(storeVarFiles).type(storeType).build();
         break;
       default:
         return null;
     }
-    return remoteTerraformVarFileSpec;
+    return storeConfigWrapper;
   }
 
   public static void generateConfigFileStore(

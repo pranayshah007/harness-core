@@ -17,9 +17,12 @@ import io.harness.delegate.beans.DelegateTaskRank;
 import io.harness.delegate.beans.NgSetupFields;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskData.TaskDataKeys;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.HDelegateTask;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -39,7 +42,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
@@ -60,8 +62,8 @@ import org.mongodb.morphia.annotations.Transient;
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "DelegateTaskKeys")
 @TargetModule(HarnessModule._920_DELEGATE_SERVICE_BEANS)
-public class DelegateTask
-    implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess, HDelegateTask {
+public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
+                                     HDelegateTask, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -95,7 +97,10 @@ public class DelegateTask
   private static final Long DEFAULT_FORCE_EXECUTE_TIMEOUT = Duration.ofSeconds(5).toMillis();
   public static final Long DELEGATE_QUEUE_TIMEOUT = Duration.ofSeconds(6).toMillis();
 
-  @NotNull private TaskData data;
+  private TaskData data;
+
+  private TaskDataV2 taskDataV2;
+
   private List<ExecutionCapability> executionCapabilities;
 
   @Id private String uuid;
@@ -149,7 +154,7 @@ public class DelegateTask
   // This extra field is pointless, we should use the task uuid.
   @Deprecated private String waitId;
 
-  private long createdAt;
+  @FdIndex private long createdAt;
   private long lastUpdatedAt;
 
   private Status status;
@@ -169,7 +174,7 @@ public class DelegateTask
   private boolean forceExecute;
   private int broadcastRound;
 
-  private long expiry;
+  @FdIndex private long expiry;
 
   private LinkedList<String> eligibleToExecuteDelegateIds;
 
@@ -187,6 +192,23 @@ public class DelegateTask
   @Transient Map<String, List<String>> nonAssignableDelegates;
 
   @FdTtlIndex @Default private Date validUntil = Date.from(OffsetDateTime.now().plusDays(2).toInstant());
+  @FdIndex private long delegateTaskFailIteration;
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (DelegateTaskKeys.delegateTaskFailIteration.equals(fieldName)) {
+      this.delegateTaskFailIteration = nextIteration;
+      return;
+    }
+  }
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    if (DelegateTaskKeys.delegateTaskFailIteration.equals(fieldName)) {
+      return this.delegateTaskFailIteration;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
 
   public Long fetchExtraTimeoutForForceExecution() {
     if (forceExecute) {
@@ -242,5 +264,6 @@ public class DelegateTask
     public static final String data_taskType = data + "." + TaskDataKeys.taskType;
     public static final String data_timeout = data + "." + TaskDataKeys.timeout;
     public static final String data_async = data + "." + TaskDataKeys.async;
+    public static final String delegateTaskFailIteration = "delegateTaskFailIteration";
   }
 }

@@ -476,19 +476,17 @@ public class SamlBasedAuthHandler implements AuthHandler {
             }
           }
         } else {
-          if (featureFlagService.isEnabled(FeatureName.AZURE_SAML_150_GROUPS_SUPPORT, accountId)) {
-            log.info("SAML: attribute from Azure is {}, for accountId {}", attribute, accountId);
-            if (attribute.getName().endsWith("groups.link")
-                && attribute.getName().contains(
-                    azureMicrosoftString)) { // occurs for Azure SAML case when no of groups > 150
-              hasAzureSAMLGroupsLink = true;
-            }
+          log.info("SAML: attribute from Azure is {}, for accountId {}", attribute, accountId);
+          if (attribute.getName().endsWith("groups.link")
+              && attribute.getName().contains(
+                  azureMicrosoftString)) { // occurs for Azure SAML case when no of groups > 150
+            hasAzureSAMLGroupsLink = true;
+          }
 
-            if (attribute.getName().endsWith("objectidentifier")
-                && attribute.getName().contains(
-                    azureMicrosoftString)) { // occurs for Azure SAML case when no of groups > 150
-              azureUserId = getAttributeValue(attribute.getAttributeValues().get(0));
-            }
+          if (attribute.getName().endsWith("objectidentifier")
+              && attribute.getName().contains(
+                  azureMicrosoftString)) { // occurs for Azure SAML case when no of groups > 150
+            azureUserId = getAttributeValue(attribute.getAttributeValues().get(0));
           }
         }
       }
@@ -540,19 +538,17 @@ public class SamlBasedAuthHandler implements AuthHandler {
             }
           }
         } else {
-          if (featureFlagService.isEnabled(FeatureName.AZURE_SAML_150_GROUPS_SUPPORT, accountId)) {
-            log.info("SAML: attribute from Azure is {}, for accountId {}", attribute, accountId);
-            if (attribute.getName().endsWith("groups.link")
-                && attribute.getName().contains(
-                    azureMicrosoftString)) { // occurs for Azure SAML case when no of groups > 150
-              hasAzureSAMLGroupsLink = true;
-            }
+          log.info("SAML: attribute from Azure is {}, for accountId {}", attribute, accountId);
+          if (attribute.getName().endsWith("groups.link")
+              && attribute.getName().contains(
+                  azureMicrosoftString)) { // occurs for Azure SAML case when no of groups > 150
+            hasAzureSAMLGroupsLink = true;
+          }
 
-            if (attribute.getName().endsWith("objectidentifier")
-                && attribute.getName().contains(
-                    azureMicrosoftString)) { // occurs for Azure SAML case when no of groups > 150
-              azureUserId = getAttributeValue(attribute.getAttributeValues().get(0));
-            }
+          if (attribute.getName().endsWith("objectidentifier")
+              && attribute.getName().contains(
+                  azureMicrosoftString)) { // occurs for Azure SAML case when no of groups > 150
+            azureUserId = getAttributeValue(attribute.getAttributeValues().get(0));
           }
         }
       }

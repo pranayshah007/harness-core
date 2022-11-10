@@ -7,7 +7,7 @@
 
 package io.harness.yaml.core.failurestrategy;
 
-import static io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUE;
+import static io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +22,6 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.PIPELINE)
 @RecasterAlias("io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig")
 public class ProceedWithDefaultValuesFailureActionConfig implements FailureStrategyActionConfig {
-  @ApiModelProperty(allowableValues = PROCEED_WITH_DEFAULT_VALUE)
-  NGFailureActionType type = NGFailureActionType.PROCEED_WITH_DEFAULT_VALUE;
+  @ApiModelProperty(allowableValues = PROCEED_WITH_DEFAULT_VALUES)
+  NGFailureActionType type = NGFailureActionType.PROCEED_WITH_DEFAULT_VALUES;
 }

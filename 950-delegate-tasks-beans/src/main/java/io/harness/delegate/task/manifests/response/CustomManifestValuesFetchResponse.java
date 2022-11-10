@@ -33,5 +33,5 @@ public class CustomManifestValuesFetchResponse implements DelegateTaskNotifyResp
   @Nullable String errorMessage;
   @NonFinal @Setter String zippedManifestFileId;
   @NonFinal @Setter DelegateMetaInfo delegateMetaInfo;
-  @Setter private UnitProgressData unitProgressData;
+  @NonFinal @Setter private UnitProgressData unitProgressData;
 }

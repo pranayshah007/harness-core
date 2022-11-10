@@ -158,7 +158,7 @@ public class EmailNotificationServiceTest extends WingsBaseTest {
   @Before
   public void setupMocks() {
     when(settingsService.getGlobalSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.SMTP.name()))
-        .thenReturn(newArrayList(aSettingAttribute().withValue(smtpConfig).build()));
+        .thenReturn(newArrayList(aSettingAttribute().withName("name").withValue(smtpConfig).build()));
     when(accountService.get(any())).thenReturn(dummyAccount);
     SmtpConfig mock = mock(SmtpConfig.class);
     when(mock.valid()).thenReturn(true);

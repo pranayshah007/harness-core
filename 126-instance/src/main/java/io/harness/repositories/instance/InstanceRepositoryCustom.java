@@ -26,7 +26,8 @@ public interface InstanceRepositoryCustom {
 
   Instance findAndModify(Criteria criteria, Update update);
 
-  List<Instance> getActiveInstancesByAccount(String accountIdentifier, long timestamp);
+  List<Instance> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, long timestamp);
 
   List<Instance> getInstancesDeployedInInterval(String accountIdentifier, long startTimestamp, long endTimeStamp);
 
@@ -55,6 +56,9 @@ public interface InstanceRepositoryCustom {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
   AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
+  AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
   AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,

@@ -33,4 +33,5 @@ public class TimeScaleDBConfig {
   int deploymentDataMigrationRowLimit;
   int deploymentDataMigrationQueryBatchSize;
   boolean isHealthCheckNeeded;
+  boolean isConnectionValidationNeeded;
 }

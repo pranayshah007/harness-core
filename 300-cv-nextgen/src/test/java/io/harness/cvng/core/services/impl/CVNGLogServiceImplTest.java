@@ -91,8 +91,18 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
     cvngLogService.save(cvngLogRecordsDTO);
     List<CVNGLog> cvngLogs = hPersistence.createQuery(CVNGLog.class).filter(CVNGLogKeys.accountId, accountId).asList();
     assertThat(cvngLogs).hasSize(2);
-    assertThat(cvngLogs.get(0).getLogRecords()).hasSize(7);
-    assertThat(cvngLogs.get(1).getLogRecords()).hasSize(3);
+    assertThat(cvngLogs.stream()
+                   .filter(cvngLog -> !cvngLog.getTraceableId().equals(traceableId))
+                   .findAny()
+                   .get()
+                   .getLogRecords())
+        .hasSize(7);
+    assertThat(cvngLogs.stream()
+                   .filter(cvngLog -> cvngLog.getTraceableId().equals(traceableId))
+                   .findAny()
+                   .get()
+                   .getLogRecords())
+        .hasSize(3);
     cvngLogs.forEach(logRecord -> {
       assertThat(logRecord.getAccountId()).isEqualTo(accountId);
       assertThat(logRecord.getStartTime()).isEqualTo(startTime);

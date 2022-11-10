@@ -22,6 +22,10 @@ import io.harness.beans.gitsync.GitFileDetails.GitFileDetailsBuilder;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
+import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.ListFilesInCommitRequest;
+import io.harness.beans.response.GitFileResponse;
+import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.impl.ConnectorErrorMessagesHelper;
@@ -105,6 +109,7 @@ import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -823,6 +828,70 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
       log.error(errorMsg, e);
       throw new UnexpectedException(errorMsg);
     }
+  }
+
+  @Override
+  public GitFileResponse getFile(Scope scope, ScmConnector scmConnector, GitFileRequest gitFileContentRequest) {
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+    final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(
+        gitFileContentRequest.getFilepath(), gitFileContentRequest.getBranch(), gitFileContentRequest.getCommitId());
+    final ScmGitFileTaskParams scmGitFileTaskParams =
+        getScmGitFileTaskParams(scmConnector, encryptionDetails, gitFilePathDetails, GitFileTaskType.GET_FILE,
+            gitFileContentRequest.getCommitId(), gitFileContentRequest.getBranch(), null);
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitFileTaskParams, TaskType.SCM_GIT_FILE_TASK);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    GitFileTaskResponseData gitFileTaskResponseData = (GitFileTaskResponseData) delegateResponseData;
+    return gitFileTaskResponseData.getGitFileResponse();
+  }
+
+  @Override
+  public GetLatestCommitResponse getBranchHeadCommitDetails(Scope scope, ScmConnector scmConnector, String branch) {
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+
+    final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
+                                                        .gitRefType(GitRefType.LATEST_COMMIT_V2)
+                                                        .scmConnector(scmConnector)
+                                                        .encryptedDataDetails(encryptionDetails)
+                                                        .branch(branch)
+                                                        .build();
+
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+
+    ScmGitRefTaskResponseData scmGitRefTaskResponseData = (ScmGitRefTaskResponseData) delegateResponseData;
+    try {
+      return GetLatestCommitResponse.parseFrom(scmGitRefTaskResponseData.getGetLatestCommitResponse());
+    } catch (InvalidProtocolBufferException e) {
+      String errorMsg = String.format(errorFormat, "show-branch", scope.getAccountIdentifier(),
+          scope.getOrgIdentifier(), scope.getProjectIdentifier());
+      log.error(errorMsg, e);
+      throw new UnexpectedException(errorMsg);
+    }
+  }
+
+  @Override
+  public ListFilesInCommitResponse listFiles(Scope scope, ScmConnector scmConnector, ListFilesInCommitRequest request) {
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+
+    final ScmGitFileTaskParams scmGitFileTaskParams =
+        ScmGitFileTaskParams.builder()
+            .gitFileTaskType(GitFileTaskType.GET_FILE_GIT_DETAILS_LIST_IN_COMMIT)
+            .ref(request.getRef())
+            .scmConnector(scmConnector)
+            .encryptedDataDetails(encryptionDetails)
+            .filePathsList(Collections.singletonList(request.getFileDirectoryPath()))
+            .build();
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitFileTaskParams, TaskType.SCM_GIT_FILE_TASK);
+
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    GitFileTaskResponseData gitFileTaskResponseData = (GitFileTaskResponseData) delegateResponseData;
+    return gitFileTaskResponseData.getListFilesInCommitResponse();
   }
 
   // ------------------------------- PRIVATE METHODS -------------------------------

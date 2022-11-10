@@ -29,6 +29,7 @@ public class PMSPipelineFilterHelper {
     update.set(PipelineEntityKeys.stageCount, pipelineEntity.getStageCount());
     update.set(PipelineEntityKeys.stageNames, pipelineEntity.getStageNames());
     update.set(PipelineEntityKeys.allowStageExecutions, pipelineEntity.getAllowStageExecutions());
+    update.set(PipelineEntityKeys.harnessVersion, pipelineEntity.getHarnessVersion());
     return update;
   }
 

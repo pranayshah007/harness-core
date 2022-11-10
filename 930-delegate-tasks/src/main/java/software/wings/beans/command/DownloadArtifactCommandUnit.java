@@ -23,6 +23,7 @@ import static software.wings.beans.Log.Builder.aLog;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.SystemWrapper;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -93,6 +94,7 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
   private static final String ISO_8601_BASIC_FORMAT = "yyyyMMdd'T'HHmmss'Z'";
   private static final String EMPTY_BODY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
   private static final String PERIOD_DELIMITER = ".";
+  static final String POWERSHELL_USE_ENV_PROXY = "POWERSHELL_USE_ENV_PROXY";
 
   @Inject private EncryptionService encryptionService;
   @Inject @Transient private transient DelegateLogService delegateLogService;
@@ -177,7 +179,7 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
             context, INFO, "Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
         return context.executeCommandString(command, false);
       case ARTIFACTORY:
-        command = constructCommandStringForArtifactory(artifactStreamAttributes, encryptionDetails, metadata);
+        command = constructCommandStringForArtifactory(artifactStreamAttributes, encryptionDetails, metadata, context);
         log.info("Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
         saveExecutionLog(
             context, INFO, "Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
@@ -497,7 +499,7 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
   }
 
   private String constructCommandStringForArtifactory(ArtifactStreamAttributes artifactStreamAttributes,
-      List<EncryptedDataDetail> encryptionDetails, Map<String, String> metadata) {
+      List<EncryptedDataDetail> encryptionDetails, Map<String, String> metadata, ShellCommandExecutionContext context) {
     String artifactFileName = metadata.get(ArtifactMetadataKeys.artifactFileName);
     int lastIndexOfSlash = artifactFileName.lastIndexOf('/');
     if (lastIndexOfSlash > 0) {
@@ -525,12 +527,17 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
         }
         break;
       case POWERSHELL:
+        String proxy = "";
+        if (isPowerShellUseEnvironmentProxy()) {
+          saveExecutionLog(context, INFO, "Using HTTP_PROXY environment variable");
+          proxy = " -Proxy \"$env:HTTP_PROXY\"";
+        }
         if (!artifactoryConfig.hasCredentials()) {
           command = "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n "
               + "$ProgressPreference = 'SilentlyContinue'\n"
               + "Invoke-WebRequest -Uri \""
               + getArtifactoryUrl(artifactoryConfig, metadata.get(ArtifactMetadataKeys.artifactPath)) + "\" -OutFile \""
-              + getCommandPath() + "\\" + artifactFileName + "\"";
+              + getCommandPath() + "\\" + artifactFileName + "\"" + proxy;
         } else {
           command = "$Headers = @{\n"
               + "    Authorization = \"" + authHeader + "\"\n"
@@ -538,13 +545,18 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
               + "\n $ProgressPreference = 'SilentlyContinue'"
               + "\n Invoke-WebRequest -Uri \""
               + getArtifactoryUrl(artifactoryConfig, metadata.get(ArtifactMetadataKeys.artifactPath))
-              + "\" -Headers $Headers -OutFile \"" + getCommandPath() + "\\" + artifactFileName + "\"";
+              + "\" -Headers $Headers -OutFile \"" + getCommandPath() + "\\" + artifactFileName + "\"" + proxy;
         }
         break;
       default:
         throw new InvalidRequestException("Invalid Script type", USER);
     }
     return command;
+  }
+
+  private boolean isPowerShellUseEnvironmentProxy() {
+    final String value = SystemWrapper.getenv(POWERSHELL_USE_ENV_PROXY);
+    return Boolean.parseBoolean(value);
   }
 
   private String constructCommandStringForNexus(ShellCommandExecutionContext context,

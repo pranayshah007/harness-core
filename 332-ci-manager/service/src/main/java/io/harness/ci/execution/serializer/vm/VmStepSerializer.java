@@ -9,6 +9,7 @@ package io.harness.ci.serializer.vm;
 
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.stepinfo.ActionStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -32,6 +33,7 @@ public class VmStepSerializer {
   @Inject VmRunStepSerializer vmRunStepSerializer;
   @Inject VmRunTestStepSerializer vmRunTestStepSerializer;
   @Inject VmBackgroundStepSerializer vmBackgroundStepSerializer;
+  @Inject VmActionStepSerializer vmActionStepSerializer;
 
   public Set<String> getStepSecrets(VmStepInfo vmStepInfo, Ambiance ambiance) {
     CIVmSecretEvaluator ciVmSecretEvaluator = CIVmSecretEvaluator.builder().build();
@@ -69,6 +71,8 @@ public class VmStepSerializer {
       case GIT_CLONE:
         return vmPluginCompatibleStepSerializer.serialize(
             ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName);
+      case ACTION:
+        return vmActionStepSerializer.serialize((ActionStepInfo) stepInfo, identifier, stageInfraDetails);
       case CLEANUP:
       case TEST:
       case BUILD:

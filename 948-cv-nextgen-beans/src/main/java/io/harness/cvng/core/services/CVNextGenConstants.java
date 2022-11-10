@@ -13,6 +13,8 @@ public interface CVNextGenConstants {
   String CV_NEXTGEN_RESOURCE_PREFIX = "cv-nextgen";
   String DELEGATE_DATA_COLLECTION = "delegate-data-collection";
   String CVNG_LOG_RESOURCE_PATH = "cvng-log";
+
+  String CVNG_RISK_CATEGORY_PATH = "risk-category";
   String LOG_RECORD_RESOURCE_PATH = "log-record";
   String HOST_RECORD_RESOURCE_PATH = "host-record";
   String DELEGATE_DATA_COLLECTION_TASK = "delegate-data-collection-task";

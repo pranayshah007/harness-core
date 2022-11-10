@@ -27,8 +27,8 @@ import io.harness.delegate.task.azure.arm.deployment.validator.DeploymentBluepri
 import io.harness.delegate.task.azure.common.AzureConnectorMapper;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.delegate.task.azure.common.validator.Validators;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.TimeoutException;
+import io.harness.exception.runtime.azure.AzureBPDeploymentException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.serializer.JsonUtils;
 
@@ -109,7 +109,7 @@ public class AzureCreateBlueprintTaskHandler extends AzureResourceCreationAbstra
     Optional<String> blueprintNameFromBlueprintJson =
         AzureResourceUtility.getBlueprintNameFromBlueprintJson(blueprintJson);
     if (blueprintNameFromBlueprintJson.isPresent() && blueprintName.equals(blueprintNameFromBlueprintJson.get())) {
-      throw new InvalidArgumentsException(format(
+      throw new AzureBPDeploymentException(format(
           "Not match blueprint name found in blueprint json file with properties.blueprintId property in assign json file. "
               + "Found name in blueprint json: %s, and properties.blueprintId: %s",
           blueprintNameFromBlueprintJson.get(), blueprintName));

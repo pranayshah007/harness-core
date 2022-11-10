@@ -40,6 +40,10 @@ if [[ "" != "$EVEMTS_MONGO_INDEX_MANAGER_MODE" ]]; then
   export EVEMTS_MONGO_INDEX_MANAGER_MODE; yq -i '.events-mongo.indexManagerMode=env(EVEMTS_MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.events-mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
   export EVENTS_MONGO_URI; yq -i '.events-mongo.uri=env(EVENTS_MONGO_URI)' $CONFIG_FILE
 fi

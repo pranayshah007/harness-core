@@ -74,6 +74,7 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.mongodb.morphia.UpdateOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -94,10 +95,14 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
 
   @Override
   public boolean save(List<TimeSeriesDataCollectionRecord> dataRecords) {
-    log.info("Saving {} data records", dataRecords.size());
+    List<TimeSeriesDataCollectionRecord> validDataRecords = filterValidDataRecords(dataRecords);
+    if (CollectionUtils.isEmpty(validDataRecords)) {
+      return true;
+    }
+    log.info("Saving {} data records", validDataRecords.size());
     UpdateOptions options = new UpdateOptions();
     options.upsert(true);
-    Map<TimeSeriesRecordBucketKey, TimeSeriesRecord> timeSeriesRecordMap = bucketTimeSeriesRecords(dataRecords);
+    Map<TimeSeriesRecordBucketKey, TimeSeriesRecord> timeSeriesRecordMap = bucketTimeSeriesRecords(validDataRecords);
     timeSeriesRecordMap.forEach((timeSeriesRecordBucketKey, timeSeriesRecord) -> {
       List<TimeSeriesMetricDefinition> metricTemplates =
           timeSeriesAnalysisService.getMetricTemplate(timeSeriesRecord.getVerificationTaskId());
@@ -134,9 +139,35 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       }
       hPersistence.getDatastore(TimeSeriesRecord.class).update(query, updateOperations, options);
     });
-
-    saveHosts(dataRecords);
+    saveHosts(validDataRecords);
     return true;
+  }
+
+  private List<TimeSeriesDataCollectionRecord> filterValidDataRecords(
+      List<TimeSeriesDataCollectionRecord> dataRecords) {
+    return CollectionUtils.emptyIfNull(dataRecords)
+        .stream()
+        .map(dataRecord
+            -> dataRecord.toBuilder()
+                   .metricValues(
+                       dataRecord.getMetricValues()
+                           .stream()
+                           .map(metricValue
+                               -> metricValue.toBuilder()
+                                      .timeSeriesValues(
+                                          metricValue.getTimeSeriesValues()
+                                              .stream()
+                                              .filter(groupValue -> Double.isFinite(groupValue.getValue()))
+                                              .filter(groupValue
+                                                  -> groupValue.getPercent() == null
+                                                      || Double.isFinite(groupValue.getPercent()))
+                                              .collect(Collectors.toSet()))
+                                      .build())
+                           .filter(metricValue -> CollectionUtils.isNotEmpty(metricValue.getTimeSeriesValues()))
+                           .collect(Collectors.toSet()))
+                   .build())
+        .filter(dataRecord -> CollectionUtils.isNotEmpty(dataRecord.getMetricValues()))
+        .collect(Collectors.toList());
   }
 
   @Value
@@ -440,7 +471,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
   @Override
   public TimeSeriesTestDataDTO getTxnMetricDataForRange(
       String verificationTaskId, Instant startTime, Instant endTime, String metricName, String txnName) {
-    List<TimeSeriesRecord> records = getTimeSeriesRecords(verificationTaskId, startTime, endTime, metricName);
+    List<TimeSeriesRecord> records = getTimeSeriesRecords(verificationTaskId, startTime, endTime, metricName, null);
 
     Map<String, List<TimeSeriesGroupValue>> metricValueList = new HashMap<>();
     records.forEach(record -> {
@@ -476,12 +507,13 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
     return getSortedListOfTimeSeriesRecords(verificationTaskId, metricValueList);
   }
   // TODO: use accountId
-  private List<TimeSeriesRecord> getTimeSeriesRecords(String verificationTaskId, Instant startTime, Instant endTime) {
-    return getTimeSeriesRecords(verificationTaskId, startTime, endTime, null);
+  private List<TimeSeriesRecord> getTimeSeriesRecords(
+      String verificationTaskId, Instant startTime, Instant endTime, Set<String> hosts) {
+    return getTimeSeriesRecords(verificationTaskId, startTime, endTime, null, hosts);
   }
 
   private List<TimeSeriesRecord> getTimeSeriesRecords(
-      String verificationTaskId, Instant startTime, Instant endTime, String metricName) {
+      String verificationTaskId, Instant startTime, Instant endTime, String metricName, Set<String> hosts) {
     startTime = DateTimeUtils.roundDownToMinBoundary(startTime, (int) CV_ANALYSIS_WINDOW_MINUTES);
     Instant queryStartTime = startTime.truncatedTo(ChronoUnit.SECONDS);
     Instant queryEndTime = endTime.truncatedTo(ChronoUnit.SECONDS);
@@ -492,6 +524,9 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
             .greaterThanOrEq(queryStartTime)
             .field(TimeSeriesRecordKeys.bucketStartTime)
             .lessThan(queryEndTime);
+    if (isNotEmpty(hosts)) {
+      timeSeriesRecordsQuery.field(TimeSeriesRecordKeys.host).hasAnyOf(hosts);
+    }
     if (isNotEmpty(metricName)) {
       timeSeriesRecordsQuery = timeSeriesRecordsQuery.filter(TimeSeriesRecordKeys.metricName, metricName);
     }
@@ -502,7 +537,32 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
   @Override
   public List<TimeSeriesRecordDTO> getTimeSeriesRecordDTOs(
       String verificationTaskId, Instant startTime, Instant endTime) {
-    List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime);
+    List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime, null);
+    List<TimeSeriesRecordDTO> timeSeriesRecordDTOS = new ArrayList<>();
+    timeSeriesRecords.forEach(timeSeriesRecord -> {
+      for (TimeSeriesRecord.TimeSeriesGroupValue record : timeSeriesRecord.getTimeSeriesGroupValues()) {
+        if (record.getTimeStamp().compareTo(startTime) >= 0 && record.getTimeStamp().compareTo(endTime) < 0) {
+          TimeSeriesRecordDTO timeSeriesRecordDTO =
+              TimeSeriesRecordDTO.builder()
+                  .groupName(record.getGroupName())
+                  .host(timeSeriesRecord.getHost())
+                  .metricName(timeSeriesRecord.getMetricName())
+                  .metricIdentifier(timeSeriesRecord.getMetricIdentifier())
+                  .epochMinute(TimeUnit.MILLISECONDS.toMinutes(record.getTimeStamp().toEpochMilli()))
+                  .verificationTaskId(timeSeriesRecord.getVerificationTaskId())
+                  .metricValue(record.getMetricValue())
+                  .build();
+          timeSeriesRecordDTOS.add(timeSeriesRecordDTO);
+        }
+      }
+    });
+    return timeSeriesRecordDTOS;
+  }
+
+  @Override
+  public List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
+      String verificationTaskId, Instant startTime, Instant endTime, Set<String> hosts) {
+    List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime, hosts);
     List<TimeSeriesRecordDTO> timeSeriesRecordDTOS = new ArrayList<>();
     timeSeriesRecords.forEach(timeSeriesRecord -> {
       for (TimeSeriesRecord.TimeSeriesGroupValue record : timeSeriesRecord.getTimeSeriesGroupValues()) {

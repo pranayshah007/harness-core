@@ -27,10 +27,12 @@ import lombok.NoArgsConstructor;
 @OwnedBy(HarnessTeam.PL)
 public class EmailConfig extends NotificationSettingConfig {
   String groupEmail;
+  Boolean sendEmailToAllUsers = Boolean.TRUE;
 
   @Builder
-  public EmailConfig(String groupEmail) {
+  public EmailConfig(String groupEmail, Boolean sendEmailToAllUsers) {
     this.groupEmail = groupEmail;
     this.type = EMAIL;
+    this.sendEmailToAllUsers = sendEmailToAllUsers == null ? Boolean.TRUE : sendEmailToAllUsers;
   }
 }

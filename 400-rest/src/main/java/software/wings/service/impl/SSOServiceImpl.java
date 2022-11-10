@@ -36,6 +36,7 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
+import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -196,47 +197,52 @@ public class SSOServiceImpl implements SSOService {
     return ssoConfig;
   }
 
-  private void auditSSOActivity(
-      String accountId, AuthenticationMechanism mechanism, AuthenticationMechanism currentAuthMechanism) {
-    boolean createAudit = false;
-    boolean enableFlag = false;
+  private void cgAuditLoginSettings(
+      String accountIdentifier, AuthenticationMechanism oldAuthMechanism, AuthenticationMechanism newAuthMechanism) {
     SSOSettings ssoSettings = null;
-    if (mechanism == SAML && currentAuthMechanism == USER_PASSWORD) {
-      createAudit = true;
-      enableFlag = true;
-      ssoSettings = ssoSettingService.getSamlSettingsByAccountId(accountId);
-    } else if (currentAuthMechanism == SAML && mechanism == USER_PASSWORD) {
-      createAudit = true;
-      ssoSettings = ssoSettingService.getSamlSettingsByAccountId(accountId);
-    } else if (currentAuthMechanism == USER_PASSWORD && mechanism == LDAP) {
-      createAudit = true;
-      ssoSettings = ssoSettingService.getLdapSettingsByAccountId(accountId);
-      enableFlag = true;
-    } else if (currentAuthMechanism == LDAP && mechanism == USER_PASSWORD) {
-      createAudit = true;
-      ssoSettings = ssoSettingService.getLdapSettingsByAccountId(accountId);
-    }
-    if (createAudit) {
-      if (enableFlag) {
-        auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, ssoSettings, Event.Type.ENABLE);
-      } else {
-        auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, ssoSettings, Event.Type.DISABLE);
+
+    if (newAuthMechanism == USER_PASSWORD) {
+      if (oldAuthMechanism == SAML) {
+        ssoSettings = ssoSettingService.getSamlSettingsByAccountId(accountIdentifier);
+      } else if (oldAuthMechanism == LDAP) {
+        ssoSettings = ssoSettingService.getLdapSettingsByAccountId(accountIdentifier);
       }
-      ngAuditLoginSettings(accountId, currentAuthMechanism, mechanism);
+      auditServiceHelper.reportForAuditingUsingAccountId(accountIdentifier, null, ssoSettings, Event.Type.DISABLE);
+    } else {
+      switch (newAuthMechanism) {
+        case SAML:
+          ssoSettings = ssoSettingService.getSamlSettingsByAccountId(accountIdentifier);
+          break;
+        case LDAP:
+          ssoSettings = ssoSettingService.getLdapSettingsByAccountId(accountIdentifier);
+          break;
+        case OAUTH:
+          ssoSettings = ssoSettingService.getOauthSettingsByAccountId(accountIdentifier);
+          break;
+        default:
+          throw new InvalidRequestException("Unexpected authentication mechanism type: " + newAuthMechanism.name());
+      }
+      auditServiceHelper.reportForAuditingUsingAccountId(accountIdentifier, null, ssoSettings, Event.Type.ENABLE);
     }
+    log.info("CG Auth Audits: for account {} succesfully audited the change of authentication machanism from {} to {}",
+        accountIdentifier, oldAuthMechanism.name(), newAuthMechanism.name());
   }
 
   private void ngAuditLoginSettings(
       String accountIdentifier, AuthenticationMechanism oldAuthMechanism, AuthenticationMechanism newAuthMechanism) {
     try {
-      outboxService.save(
+      OutboxEvent outboxEvent = outboxService.save(
           LoginSettingsAuthMechanismUpdateEvent.builder()
               .accountIdentifier(accountIdentifier)
               .oldAuthMechanismYamlDTO(AuthMechanismYamlDTO.builder().authenticationMechanism(oldAuthMechanism).build())
               .newAuthMechanismYamlDTO(AuthMechanismYamlDTO.builder().authenticationMechanism(newAuthMechanism).build())
               .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsAuthMechanismUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for Authentication Mechanism Update event failed with exception: ",
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsAuthMechanismUpdateEvent to outbox failed with exception: ",
           accountIdentifier, ex);
     }
   }
@@ -268,10 +274,9 @@ public class SSOServiceImpl implements SSOService {
           String.format("Cannot enable OAuth for accountId %s because OAuthSetting does not exist", accountId));
     }
     account.setOauthEnabled(shouldEnableOauth);
-    if (shouldUpdateAuthMechanism) {
-      if (featureFlagService.isEnabled(FeatureName.AUDIT_TRAIL_ENHANCEMENT, accountId)) {
-        auditSSOActivity(accountId, mechanism, currentAuthMechanism);
-      }
+    if (shouldUpdateAuthMechanism && currentAuthMechanism != mechanism) {
+      cgAuditLoginSettings(accountId, currentAuthMechanism, mechanism);
+      ngAuditLoginSettings(accountId, currentAuthMechanism, mechanism);
       account.setAuthenticationMechanism(mechanism);
     }
     accountService.update(account);

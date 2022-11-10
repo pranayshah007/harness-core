@@ -29,8 +29,10 @@ import software.wings.utils.RepositoryFormat;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.xml.stream.XMLStreamException;
@@ -124,6 +126,31 @@ public class NexusClientImpl {
     }
   }
 
+  public List<BuildDetailsInternal> getArtifactsVersions(NexusRequest nexusConfig, String repositoryName,
+      String groupId, String artifactId, String extension, String classifier) {
+    if (isNexusVersion2(nexusConfig)) {
+      return nexusTwoService.getVersions(nexusConfig, repositoryName, groupId, artifactId, extension, classifier);
+    } else {
+      return nexusThreeService.getVersions(nexusConfig, repositoryName, groupId, artifactId, extension, classifier);
+    }
+  }
+
+  public List<BuildDetailsInternal> getArtifactsVersions(
+      NexusRequest nexusConfig, String repositoryFormat, String repositoryName, String packageName) {
+    try {
+      if (isNexusVersion2(nexusConfig)) {
+        return nexusTwoService.getVersions(
+            repositoryFormat, nexusConfig, repositoryName, packageName, Collections.emptySet());
+      } else {
+        return nexusThreeService.getPackageVersions(nexusConfig, repositoryName, packageName);
+      }
+    } catch (IOException | NexusRegistryException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check Nexus artifact configuration and verify that repository is valid.",
+          String.format("Failed to retrieve artifact '%s'", packageName), new NexusRegistryException(e.getMessage()));
+    }
+  }
+
   public List<BuildDetailsInternal> getBuildDetails(NexusRequest nexusConfig, String repository, String port,
       String artifactName, String repositoryFormat, String tag) {
     if (isNexusVersion2(nexusConfig)) {
@@ -134,6 +161,25 @@ public class NexusClientImpl {
               String.format("Currently Nexus connector version [%s] is not allowed.", nexusConfig.getVersion())));
     } else {
       return nexusThreeService.getBuildDetails(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
+    }
+  }
+
+  public List<BuildDetailsInternal> getPackageNames(NexusRequest nexusConfig, String repository, String groupName) {
+    if (isNexusVersion2(nexusConfig)) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check your Nexus connector and/or artifact configuration. Please use the 3.x connector version.",
+          "Nexus 2.x connector does not support raw artifact type.",
+          new NexusRegistryException(
+              String.format("Currently Nexus connector version [%s] is not allowed.", nexusConfig.getVersion())));
+    } else {
+      try {
+        return nexusThreeService.getPackageNamesBuildDetails(nexusConfig, repository, groupName);
+      } catch (IOException | NexusRegistryException e) {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Please check Nexus artifact configuration and verify that repository is valid.",
+            String.format("Failed to retrieve repository '%s'", repository),
+            new NexusRegistryException(e.getMessage()));
+      }
     }
   }
 }

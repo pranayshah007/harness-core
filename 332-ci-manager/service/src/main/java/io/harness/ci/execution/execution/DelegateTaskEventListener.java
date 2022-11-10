@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DelegateTaskEventListener implements MessageListener {
   private KryoSerializer kryoSerializer;
   private static final String OBSERVER_CLASS_NAME_KEY = "observer_class_name";
-  private static final String OBSERVER_CLASS_NAME_VALUE = "software.wings.service.impl.DelegateTaskObserver";
+  private static final String OBSERVER_CLASS_NAME_VALUE = "software.wings.service.impl.CIDelegateTaskObserver";
   @Inject CITaskDetailsRepository ciTaskDetailsRepository;
   @Inject
   public DelegateTaskEventListener(KryoSerializer kryoSerializer) {

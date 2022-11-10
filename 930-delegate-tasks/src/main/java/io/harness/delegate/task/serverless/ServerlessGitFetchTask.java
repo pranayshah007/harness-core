@@ -36,11 +36,13 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.request.ServerlessGitFetchRequest;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.serverless.ServerlessCommandExecutionException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -71,7 +73,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
-  @Inject private ServerlessGitFetchTaskHelper serverlessGitFetchTaskHelper;
+  @Inject private GitFetchTaskHelper gitFetchTaskHelper;
   public ServerlessGitFetchTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
@@ -85,13 +87,13 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    ServerlessGitFetchRequest serverlessGitFetchRequest = (ServerlessGitFetchRequest) parameters;
+    LogCallback executionLogCallback =
+        new NGDelegateLogCallback(getLogStreamingTaskClient(), ServerlessCommandUnitConstants.fetchFiles.toString(),
+            serverlessGitFetchRequest.isShouldOpenLogStream(), commandUnitsProgress);
     try {
-      ServerlessGitFetchRequest serverlessGitFetchRequest = (ServerlessGitFetchRequest) parameters;
       log.info("Running Serverless GitFetchFilesTask for activityId {}", serverlessGitFetchRequest.getActivityId());
 
-      LogCallback executionLogCallback =
-          new NGDelegateLogCallback(getLogStreamingTaskClient(), ServerlessCommandUnitConstants.fetchFiles.toString(),
-              serverlessGitFetchRequest.isShouldOpenLogStream(), commandUnitsProgress);
       ServerlessGitFetchFileConfig serverlessGitFetchFileConfig =
           serverlessGitFetchRequest.getServerlessGitFetchFileConfig();
       executionLogCallback.saveExecutionLog(
@@ -114,6 +116,10 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in Git Fetch Files Task", sanitizedException);
+      executionLogCallback.saveExecutionLog(
+          color(format("%n File fetch failed with error: %s", ExceptionUtils.getMessage(sanitizedException)),
+              LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     }
@@ -133,7 +139,7 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
     executionLogCallback.saveExecutionLog(fetchTypeInfo);
     if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
       executionLogCallback.saveExecutionLog("Using optimized file fetch ");
-      serverlessGitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
+      gitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
     } else {
       gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
       gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
@@ -162,7 +168,6 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
                 Red),
             ERROR);
       }
-      executionLogCallback.saveExecutionLog(msg, ERROR, CommandExecutionStatus.FAILURE);
       throw sanitizedException;
     }
     return filesResult;
@@ -209,10 +214,10 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
   private FetchFilesResult fetchManifestFileFromRepo(GitStoreDelegateConfig gitStoreDelegateConfig, String folderPath,
       String filePath, String accountId, GitConfigDTO gitConfigDTO, LogCallback executionLogCallback)
       throws IOException {
-    filePath = ServerlessGitFetchTaskHelper.getCompleteFilePath(folderPath, filePath);
+    filePath = GitFetchTaskHelper.getCompleteFilePath(folderPath, filePath);
     List<String> filePaths = Collections.singletonList(filePath);
-    serverlessGitFetchTaskHelper.printFileNames(executionLogCallback, filePaths);
-    return serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+    gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths);
+    return gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
   }
 
   @Override

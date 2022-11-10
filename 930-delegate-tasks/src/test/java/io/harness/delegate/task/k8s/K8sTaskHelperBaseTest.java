@@ -2931,7 +2931,10 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn("/helm-working-dir/repoName")
         .when(helmTaskHelperBase)
         .getHelmLocalRepositoryCompletePath(any(), any(), any());
-    doReturn(true).when(helmTaskHelperBase).doesChartExistInLocalRepo(any(), any(), any());
+    doNothing()
+        .when(helmTaskHelperBase)
+        .populateChartToLocalHelmRepo(eq(manifestDelegateConfig), anyLong(), any(), any());
+    doNothing().when(helmTaskHelperBase).createAndWaitForDir(any());
     doNothing().when(spyTaskHelperBase).copyHelmChartFolderToWorkingDir(any(), any());
     doReturn("list of files").when(spyTaskHelperBase).getManifestFileNamesInLogFormat("manifest");
 

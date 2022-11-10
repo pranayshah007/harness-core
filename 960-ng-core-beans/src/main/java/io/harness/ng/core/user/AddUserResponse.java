@@ -19,6 +19,7 @@ public enum AddUserResponse {
   USER_ADDED_SUCCESSFULLY("USER_ADDED_SUCCESSFULLY"),
   USER_ALREADY_ADDED("USER_ALREADY_ADDED"),
   USER_ALREADY_INVITED("USER_ALREADY_INVITED"),
+  USER_INVITE_NOT_REQUIRED("USER_INVITE_NOT_REQUIRED"),
   FAIL("FAIL");
 
   private final String type;
@@ -38,6 +39,8 @@ public enum AddUserResponse {
         return USER_ALREADY_ADDED;
       case USER_ALREADY_INVITED:
         return USER_ALREADY_INVITED;
+      case USER_INVITE_NOT_REQUIRED:
+        return USER_INVITE_NOT_REQUIRED;
       case FAIL:
         return FAIL;
       default:

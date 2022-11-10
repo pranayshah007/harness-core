@@ -20,4 +20,6 @@ import lombok.Value;
 @Builder
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.steps.email.EmailOutcome")
-public class EmailOutcome implements Outcome {}
+public class EmailOutcome implements Outcome {
+  String notificationId;
+}

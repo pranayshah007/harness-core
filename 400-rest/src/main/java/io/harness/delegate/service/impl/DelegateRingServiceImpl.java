@@ -7,6 +7,12 @@
 
 package io.harness.delegate.service.impl;
 
+import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_1;
+import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_2;
+import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_3;
+
+import static java.util.Collections.singletonList;
+
 import io.harness.delegate.beans.DelegateRing;
 import io.harness.delegate.beans.DelegateRing.DelegateRingKeys;
 import io.harness.delegate.service.intfc.DelegateRingService;
@@ -17,7 +23,12 @@ import software.wings.service.intfc.AccountService;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)
@@ -25,7 +36,7 @@ public class DelegateRingServiceImpl implements DelegateRingService {
   private final HPersistence persistence;
   private final AccountService accountService;
   private final Cache<String, DelegateRing> delegateRingCache =
-      Caffeine.newBuilder().maximumSize(10).expireAfterWrite(5, java.util.concurrent.TimeUnit.MINUTES).build();
+      Caffeine.newBuilder().maximumSize(10).expireAfterWrite(5, TimeUnit.MINUTES).build();
 
   @Override
   public String getDelegateImageTag(final String accountId) {
@@ -40,6 +51,15 @@ public class DelegateRingServiceImpl implements DelegateRingService {
   @Override
   public List<String> getDelegateVersions(final String accountId) {
     return getDelegateRing(accountId).getDelegateVersions();
+  }
+
+  @Override
+  public Map<String, List<String>> getDelegateVersionsForAllRings(boolean skipCache) {
+    return Arrays.asList(RING_NAME_1, RING_NAME_2, RING_NAME_3)
+        .stream()
+        .collect(Collectors.toMap(ringName
+            -> ringName,
+            ringName -> Optional.ofNullable(getDelegateVersionsForRing(ringName, false)).orElse(singletonList("N/A"))));
   }
 
   @Override
@@ -62,6 +82,15 @@ public class DelegateRingServiceImpl implements DelegateRingService {
   @Override
   public String getWatcherVersions(final String accountId) {
     return getDelegateRing(accountId).getWatcherVersions();
+  }
+
+  @Override
+  public Map<String, String> getWatcherVersionsAllRings(boolean skipCache) {
+    return Arrays.asList(RING_NAME_1, RING_NAME_2, RING_NAME_3)
+        .stream()
+        .collect(Collectors.toMap(ringName
+            -> ringName,
+            ringName -> Optional.ofNullable(getWatcherVersionsForRing(ringName, false)).orElse("N/A")));
   }
 
   @Override

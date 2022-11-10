@@ -1,4 +1,5 @@
 io.harness.steps.jira.update.JiraUpdateSpecParameters
+io.harness.plancreator.customDeployment.StepTemplateRef
 io.harness.steps.approval.step.jira.JiraApprovalSpecParameters
 io.harness.yaml.core.properties.NGProperties
 io.harness.steps.approval.step.jira.JiraApprovalOutcome
@@ -7,9 +8,6 @@ io.harness.plancreator.steps.internal.FlagConfigurationStepInfo
 io.harness.steps.jira.update.beans.TransitionTo
 barrierSpecParameters
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
-io.harness.steps.shellscript.SshInfraDelegateConfigOutput
-io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput
-io.harness.steps.shellscript.HostsOutput
 io.harness.steps.common.pipeline.PipelineSetupStepParameters
 io.harness.when.beans.StepWhenCondition
 io.harness.plancreator.steps.common.StepElementParameters
@@ -18,6 +16,7 @@ io.harness.steps.approval.step.jira.beans.KeyValuesCriteriaSpec
 io.harness.plancreator.steps.common.StageElementParameters
 io.harness.when.beans.StageWhenCondition
 io.harness.pms.expressions.PMSExpressionEvaluatorTest$TestStepParameters
+io.harness.pms.pipelinestage.output.PipelineStageOutput
 io.harness.cf.pipeline.FeatureFlagStageStepParameters
 io.harness.steps.shellscript.ShellScriptOutcome
 io.harness.plancreator.steps.barrier.BarrierStepInfo
@@ -41,6 +40,7 @@ io.harness.steps.approval.step.harness.HarnessApprovalStepInfo
 io.harness.steps.http.HttpOutcome
 io.harness.advisers.rollback.OnFailRollbackParameters
 io.harness.steps.shellscript.ExecutionTarget
+io.harness.pms.pipelinestage.PipelineStageStepParameters
 io.harness.pms.sdk.core.plan.MapStepParameters
 io.harness.steps.shellscript.ShellScriptStepParameters
 io.harness.steps.jira.update.JiraUpdateStepInfo
@@ -85,6 +85,7 @@ io.harness.steps.approval.step.servicenow.ServiceNowApprovalSpecParameters
 io.harness.steps.servicenow.approval.ServiceNowApprovalStepNode
 io.harness.steps.approval.step.servicenow.ServiceNowApprovalOutcome
 io.harness.steps.approval.stage.ApprovalStageNode
+io.harness.pms.pipeline.stage.PipelineStageNode
 io.harness.cf.pipeline.FeatureFlagStageNode
 io.harness.plancreator.steps.internal.FlagConfigurationStepNode
 io.harness.steps.policy.PolicyStepInfo
@@ -145,3 +146,5 @@ io.harness.steps.approval.step.harness.beans.HarnessApprovalAction
 io.harness.plancreator.strategy.ExpressionAxisConfig
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
+io.harness.steps.wait.WaitStepDetailsInfo
+io.harness.steps.common.pipeline.PipelineStepParameterV1

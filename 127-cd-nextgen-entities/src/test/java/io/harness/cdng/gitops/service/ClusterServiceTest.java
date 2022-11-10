@@ -7,6 +7,8 @@
 
 package io.harness.cdng.gitops.service;
 
+import static io.harness.rule.OwnerRule.MANAVJOT;
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.util.Arrays.asList;
@@ -26,6 +28,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.data.domain.Page;
 
 public class ClusterServiceTest extends CDNGEntitiesTestBase {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -60,6 +63,7 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
         // value should be 1
         .isEqualTo(4);
   }
+
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
@@ -71,6 +75,7 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
 
     assertThat(clusterService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, ENV_ID, uuid)).isNotPresent();
   }
+
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
@@ -128,6 +133,7 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
                    .collect(Collectors.toSet()))
         .containsExactlyInAnyOrder("account.a4");
   }
+
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
@@ -144,6 +150,7 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
     assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env2")).getTotalElements())
         .isEqualTo(0);
   }
+
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
@@ -161,6 +168,20 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
   }
 
   @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testBulkDelete() {
+    List<Cluster> clusterList =
+        asList(getClusterForEnv("env1", "y1"), getClusterForEnv("env1", "y2"), getClusterForEnv("env1", "y3"));
+    clusterService.bulkCreate(clusterList);
+
+    clusterService.bulkDelete(clusterList, ACCOUNT_ID, ORG_ID, PROJECT_ID, "env1");
+
+    assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env1")).getTotalElements())
+        .isEqualTo(0);
+  }
+
+  @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testList() {
@@ -173,6 +194,31 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
         clusterService.list(0, 10, ACCOUNT_ID, ORG_ID, PROJECT_ID, "env1", "t1", new ArrayList<>(), new ArrayList<>())
             .getContent())
         .hasSize(2);
+  }
+
+  @Test
+  @Owner(developers = MANAVJOT)
+  @Category(UnitTests.class)
+  public void testDeleteAllFromEnvAndReturnCount() {
+    clusterService.bulkCreate(
+        asList(getClusterForEnv("env1", "t1"), getClusterForEnv("env1", "t2"), getClusterForEnv("env1", "t13")));
+
+    long deleteCount = clusterService.deleteAllFromEnvAndReturnCount(ACCOUNT_ID, ORG_ID, PROJECT_ID, "env1");
+    assertThat(deleteCount).isEqualTo(3L);
+  }
+
+  @Test
+  @Owner(developers = MANAVJOT)
+  @Category(UnitTests.class)
+  public void testList_withSameNameClusters() {
+    clusterService.bulkCreate(
+        asList(getClusterForEnv("env1", "t1"), getClusterForEnv("env2", "t1"), getClusterForEnv("env3", "t1")));
+    clusterService.bulkCreate(
+        asList(getClusterForEnv("env1", "t1"), getClusterForEnv("env1", "t1"), getClusterForEnv("env1", "t1")));
+
+    Page<Cluster> page =
+        clusterService.list(0, 10, ACCOUNT_ID, ORG_ID, PROJECT_ID, "env1", "t1", new ArrayList<>(), new ArrayList<>());
+    assertThat(page.getContent().size()).isEqualTo(4L);
   }
 
   private Cluster getCluster(String uuid) {

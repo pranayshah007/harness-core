@@ -9,7 +9,7 @@ package io.harness.iterator;
 
 import static io.harness.persistence.HQuery.excludeAuthority;
 
-import static software.wings.delegatetasks.validation.DelegateConnectionResult.DelegateConnectionResultKeys;
+import static software.wings.delegatetasks.validation.core.DelegateConnectionResult.DelegateConnectionResultKeys;
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.TASK_VALIDATION_FAILED;
 
 import static java.lang.String.format;
@@ -21,7 +21,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.persistence.HPersistence;
 
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

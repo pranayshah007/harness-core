@@ -18,14 +18,15 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.YamlDiffResponseDTO;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.template.service.PipelineRefreshService;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
-import io.harness.template.beans.refresh.YamlDiffResponseDTO;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -97,7 +98,7 @@ public class PipelineRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @BeanParam GitEntityUpdateInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     return ResponseDTO.newResponse(
@@ -149,10 +150,10 @@ public class PipelineRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @BeanParam GitEntityUpdateInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     return ResponseDTO.newResponse(pipelineRefreshService.recursivelyRefreshAllTemplateInputsInPipeline(
-        accountId, orgId, projectId, pipelineIdentifier));
+        accountId, orgId, projectId, pipelineIdentifier, gitEntityBasicInfo));
   }
 }

@@ -88,10 +88,6 @@ aeriform("//323-sto-utilities:module")
 
 aeriform("//323-sto-utilities:tests")
 
-aeriform("//325-sto-beans:module")
-
-aeriform("//325-sto-beans:tests")
-
 aeriform("//332-ci-manager/app:module")
 
 aeriform("//332-ci-manager/app:tests")
@@ -104,9 +100,9 @@ aeriform("//332-ci-manager/contracts:module")
 
 aeriform("//332-ci-manager/contracts:tests")
 
-aeriform("//340-ce-nextgen:module")
+aeriform("//ce-nextgen:module")
 
-aeriform("//340-ce-nextgen:tests")
+aeriform("//ce-nextgen:tests")
 
 aeriform("//350-event-server:module")
 
@@ -169,10 +165,6 @@ aeriform("//445-gitops:tests")
 aeriform("//450-ce-views:module")
 
 aeriform("//450-ce-views:tests")
-
-aeriform("//460-capability:module")
-
-aeriform("//460-capability:tests")
 
 aeriform("//470-alert:module")
 

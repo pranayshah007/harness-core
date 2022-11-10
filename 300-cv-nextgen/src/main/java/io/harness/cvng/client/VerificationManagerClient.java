@@ -14,6 +14,7 @@ import static io.harness.cvng.core.services.CVNextGenConstants.SPLUNK_RESOURCE_P
 import static io.harness.cvng.core.services.CVNextGenConstants.SPLUNK_SAVED_SEARCH_PATH;
 import static io.harness.cvng.core.services.CVNextGenConstants.SPLUNK_VALIDATION_RESPONSE_PATH;
 
+import io.harness.beans.FeatureFlag;
 import io.harness.cvng.beans.CVNGPerpetualTaskDTO;
 import io.harness.cvng.beans.DataCollectionConnectorBundle;
 import io.harness.cvng.beans.DataCollectionRequest;
@@ -29,12 +30,16 @@ import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface VerificationManagerClient {
   @GET("account/feature-flag-enabled")
   Call<RestResponse<Boolean>> isFeatureEnabled(
       @Query("featureName") String featureName, @Query("accountId") String accountId);
+
+  @GET("feature-flag/{featureFlagName}")
+  Call<RestResponse<FeatureFlag>> getFeatureFlag(@Path("featureFlagName") String featureFlagName);
 
   @POST(CV_DATA_COLLECTION_PATH + "/create-task")
   Call<RestResponse<String>> createDataCollectionPerpetualTask(@Query("accountId") String accountId,

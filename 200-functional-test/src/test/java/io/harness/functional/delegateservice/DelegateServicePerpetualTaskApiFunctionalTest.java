@@ -34,6 +34,7 @@ import io.harness.threading.Poller;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.util.Durations;
 import java.time.Duration;
@@ -49,6 +50,8 @@ public class DelegateServicePerpetualTaskApiFunctionalTest extends AbstractFunct
   @Inject private DelegateServiceBlockingStub delegateServiceBlockingStub;
   @Inject private DelegateAsyncService delegateAsyncService;
   @Inject private KryoSerializer kryoSerializer;
+
+  @Inject @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private DelegateSyncService delegateSyncService;
 
@@ -57,8 +60,8 @@ public class DelegateServicePerpetualTaskApiFunctionalTest extends AbstractFunct
   @Category(FunctionalTests.class)
   @Ignore("We need to find better way to register if the task is executed")
   public void testPerpetualTaskExecution() throws InterruptedException {
-    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
+    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub,
+        delegateAsyncService, kryoSerializer, referenceFalseKryoSerializer, delegateSyncService, () -> false);
 
     Map<String, String> clientParamMap = new HashMap<>();
     clientParamMap.put("countryName", "testCountry");
@@ -96,8 +99,8 @@ public class DelegateServicePerpetualTaskApiFunctionalTest extends AbstractFunct
   public void testPerpetualTaskExecutionWithCachedParams() throws InterruptedException {
     String countryName = "testCountry2";
 
-    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
+    DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub,
+        delegateAsyncService, kryoSerializer, referenceFalseKryoSerializer, delegateSyncService, () -> false);
 
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder()
                                          .setInterval(Durations.fromSeconds(30))

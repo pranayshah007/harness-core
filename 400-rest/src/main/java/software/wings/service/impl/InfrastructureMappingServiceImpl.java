@@ -699,6 +699,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
       }
 
       keyValuePairs.put("usePublicDns", azureInfrastructureMapping.isUsePublicDns());
+      keyValuePairs.put("usePrivateIp", azureInfrastructureMapping.isUsePrivateIp());
 
       if (DeploymentType.SSH.name().equals(infrastructureMapping.getDeploymentType())) {
         keyValuePairs.put("hostConnectionAttrs", azureInfrastructureMapping.getHostConnectionAttrs());
@@ -1141,6 +1142,11 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
 
     if (isEmpty(infraMapping.getInfraMappingType())) {
       throw new InvalidRequestException("Infra mapping type must not be empty for Azure Infra mapping.", USER);
+    }
+
+    if (infraMapping.isUsePublicDns() && infraMapping.isUsePrivateIp()) {
+      throw new InvalidRequestException(
+          "Use public DNS and Use private IP selected. It could be selected only one option.", USER);
     }
   }
 

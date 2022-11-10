@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
@@ -33,5 +34,10 @@ public interface StepSpecType extends StepParameters {
   @JsonIgnore
   default boolean skipUnresolvedExpressionsCheck() {
     return true;
+  }
+
+  @JsonIgnore
+  default ExpressionMode getExpressionMode() {
+    return ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
   }
 }

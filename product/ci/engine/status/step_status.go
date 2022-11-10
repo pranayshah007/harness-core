@@ -7,6 +7,7 @@ package status
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -21,7 +22,10 @@ import (
 	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/harness-core/product/ci/engine/output"
 	enginepb "github.com/harness/harness-core/product/ci/engine/proto"
+	"github.com/harness/harness-core/product/ci/engine/status/payloads"
 	"github.com/pkg/errors"
+	delegateClient "github.com/wings-software/dlite/client"
+	delegate "github.com/wings-software/dlite/delegate"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -30,12 +34,17 @@ import (
 
 const (
 	delegateSvcEndpointEnv = "DELEGATE_SERVICE_ENDPOINT"
+	restEnabledEnv         = "HARNESS_LE_STATUS_REST_ENABLED"
 	delegateSvcTokenEnv    = "DELEGATE_SERVICE_TOKEN"
 	delegateSvcIDEnv       = "DELEGATE_SERVICE_ID"
 	delegateTokenKey       = "token"
 	delegateSvcIDKey       = "serviceId"
 	timeoutSecs            = 300 // timeout for delegate send task status rpc calls
 	statusRetries          = 5
+	accountSecretEnv       = "ACCOUNT_SECRET"
+	managerSvcEndpointEnv  = "MANAGER_HOST_AND_PORT"
+	delegateID             = "DELEGATE_ID"
+	LEStatusType           = "CI_LE_STATUS"
 )
 
 var (
@@ -43,11 +52,26 @@ var (
 )
 
 // SendStepStatus sends the step status to delegate task service.
-func SendStepStatus(ctx context.Context, stepID, endpoint, accountID, callbackToken, taskID string, numRetries int32, timeTaken time.Duration,
+func SendStepStatus(ctx context.Context, stepID, endpoint, managerSvcEndpoint, delegateID, accountKey, accountID, callbackToken, taskID string, numRetries int32, timeTaken time.Duration,
 	status pb.StepExecutionStatus, errMsg string, stepOutput *output.StepOutput, artifact *enginepb.Artifact, log *zap.SugaredLogger) error {
 	start := time.Now()
-	arg := getRequestArg(stepID, accountID, callbackToken, taskID, numRetries, timeTaken, status, errMsg, stepOutput, artifact, log)
-	err := sendStatusWithRetries(ctx, endpoint, arg, log)
+	restEnabled, ok := os.LookupEnv(restEnabledEnv)
+	if ok {
+		log.Info(fmt.Sprintf("%s env is set with value: %s ", restEnabledEnv, restEnabled))
+	}
+
+	var err error
+	if restEnabled == "true" {
+		log.Info("Sending step status via REST", "stepID: ", stepID, "taskID: ", taskID)
+		err = sendStatusHTTP(ctx, stepID, delegateID, accountKey, accountID, taskID, status.String(), endpoint, managerSvcEndpoint, numRetries, timeTaken, errMsg, stepOutput, artifact, log)
+		if err != nil {
+			log.Warn("Error sending status with http, Sending step status via GRPC as fallback. err:", err, "stepID: ", stepID, "taskID: ", taskID)
+			err = sendStatusGrpc(ctx, endpoint, stepID, accountID, callbackToken, taskID, numRetries, timeTaken, status, errMsg, stepOutput, artifact, log)
+		}
+	} else {
+		log.Info("Sending step status via GRPC", "stepID: ", stepID, "taskID: ", taskID)
+		err = sendStatusGrpc(ctx, endpoint, stepID, accountID, callbackToken, taskID, numRetries, timeTaken, status, errMsg, stepOutput, artifact, log)
+	}
 	if err != nil {
 		log.Errorw(
 			"Failed to send/execute delegate task status",
@@ -57,12 +81,23 @@ func SendStepStatus(ctx context.Context, stepID, endpoint, accountID, callbackTo
 			"step_error", errMsg,
 			"elapsed_time_ms", utils.TimeSince(start),
 			"step_id", stepID,
+			"task_id", taskID,
 			zap.Error(err),
 		)
 		return err
 	}
-	log.Infow("Successfully sent the step status", "step_id", stepID, "step_status", status.String(), "elapsed_time_ms", utils.TimeSince(start))
+	log.Infow("Successfully sent the step status", "step_id", stepID, "step_status", status.String(), "task_id", taskID, "elapsed_time_ms", utils.TimeSince(start))
 	return nil
+}
+
+func sendStatusGrpc(ctx context.Context, endpoint, stepID, accountID, callbackToken, taskID string, numRetries int32, timeTaken time.Duration,
+	status pb.StepExecutionStatus, errMsg string, stepOutput *output.StepOutput, artifact *enginepb.Artifact, log *zap.SugaredLogger) error {
+	arg := getRequestArg(stepID, accountID, callbackToken, taskID, numRetries, timeTaken, status, errMsg, stepOutput, artifact, log)
+	err := sendStatusWithRetries(ctx, endpoint, arg, log)
+	if err == nil {
+		log.Warn("Successfully sent the step status via GRPC", "stepID: ", stepID, "taskID: ", taskID)
+	}
+	return err
 }
 
 // getRequestArg returns arguments for send status rpc
@@ -184,4 +219,109 @@ func msgToStr(msg *pb.SendTaskStatusRequest, log *zap.SugaredLogger) string {
 		return msg.String()
 	}
 	return jsonMsg
+}
+
+func sendStatusHTTP(ctx context.Context, stepID, delegateID, accountKey, accountID, taskID, status, delegateSvcEndpoint, managerSvcEndpoint string, numRetries int32, timeTaken time.Duration,
+	errMsg string, stepOutput *output.StepOutput, artifact *enginepb.Artifact, log *zap.SugaredLogger) error {
+
+	// If managerURL is passed is empty, use from environment variable
+	if managerSvcEndpoint == "" {
+		var ok bool
+		managerSvcEndpoint, ok = os.LookupEnv(managerSvcEndpointEnv)
+		if !ok {
+			return fmt.Errorf("%s environment variable is not set: ", managerSvcEndpointEnv)
+		}
+	}
+	//check if delegate svc endpoint is empty use from environment variable
+	if delegateSvcEndpoint == "" {
+		var ok bool
+		delegateSvcEndpoint, ok = os.LookupEnv(delegateSvcEndpointEnv)
+		if !ok {
+			return fmt.Errorf("%s environment variable is not set: ", delegateSvcEndpointEnv)
+		}
+	}
+
+	httpClient := delegate.New(managerSvcEndpoint, accountID, accountKey, false)
+
+	stepStatusTaskResponseData := getStepStatusPayload(ctx, stepID, accountID, delegateID, delegateSvcEndpoint, taskID, status, numRetries, timeTaken, errMsg, stepOutput, artifact)
+
+	statusData, err := json.Marshal(stepStatusTaskResponseData)
+	if err != nil {
+		return fmt.Errorf("error Marshalling stepstatus data: ", err)
+	}
+	taskResponse := &delegateClient.TaskResponse{
+		ID:   taskID,
+		Data: statusData,
+		Code: "OK",
+		Type: LEStatusType, //the task type will be fixed
+	}
+
+	err = httpClient.SendStatus(ctx, delegateID, taskID, taskResponse)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getStepStatusPayload(ctx context.Context, stepID, accountID, delegateID, delegateSvcEndpoint, taskID, status string, numRetries int32, timeTaken time.Duration,
+	errMsg string, stepOutput *output.StepOutput, artifact *enginepb.Artifact) payloads.StepStatusTaskResponseData {
+
+	// Add Artifact metadata specs
+	var artifactMetadata payloads.ArtifactMetadataConf
+	if artifact.GetDockerArtifact() != nil {
+		//build docker artifacts
+		imagesdata := artifact.GetDockerArtifact().DockerImages
+		var dockerArtifactDescriptors []payloads.DockerArtifactDescriptor
+		for _, data := range imagesdata {
+			dockerArtifact := payloads.DockerArtifactDescriptor{
+				ImageName: data.Image,
+				Digest:    data.Digest,
+			}
+			dockerArtifactDescriptors = append(dockerArtifactDescriptors, dockerArtifact)
+		}
+		dockerArtifactMetadata := payloads.DockerArtifactMetadata{
+			RegistryType:              artifact.GetDockerArtifact().RegistryType,
+			RegistryUrl:               artifact.GetDockerArtifact().RegistryUrl,
+			Type:                      "DockerArtifactMetadata",
+			DockerArtifactDescriptors: dockerArtifactDescriptors,
+		}
+		artifactMetadata.Type = payloads.ArtifactMetadataType(payloads.DockerArtifact)
+		artifactMetadata.Spec = dockerArtifactMetadata
+	} else if artifact.GetFileArtifact() != nil {
+		filedata := artifact.GetFileArtifact().FileArtifacts
+		var fileArtifactDescriptors []payloads.FileArtifactDescriptor
+		for _, data := range filedata {
+			fileArtifact := payloads.FileArtifactDescriptor{
+				Name: data.Name,
+				URL:  data.Url,
+			}
+			fileArtifactDescriptors = append(fileArtifactDescriptors, fileArtifact)
+		}
+		fileArtifactmetadata := payloads.FileArtifactMetadata{
+			Type:                    "FileArtifactMetadata",
+			FileArtifactDescriptors: fileArtifactDescriptors,
+		}
+		artifactMetadata.Type = payloads.ArtifactMetadataType(payloads.FileArtifact)
+		artifactMetadata.Spec = fileArtifactmetadata
+	}
+
+	var stepOutputData = &payloads.Output{}
+	if stepOutput != nil {
+		stepOutputData.Output = stepOutput.Output.Variables
+	}
+	stepStatusTaskResponseData := payloads.StepStatusTaskResponseData{
+		DelegateMetaInfo: payloads.DelegateMetaInfo{
+			ID:       delegateID,
+			HostName: delegateSvcEndpoint,
+		},
+		StepStatus: payloads.StepStatusConf{
+			NumberOfRetries:        numRetries,
+			TotalTimeTakenInMillis: timeTaken.Milliseconds(),
+			StepExecutionStatus:    payloads.StepStatus(status),
+			StepOutput:             stepOutputData,
+			Error:                  errMsg,
+			ArtifactMetadata:       &artifactMetadata,
+		},
+	}
+	return stepStatusTaskResponseData
 }

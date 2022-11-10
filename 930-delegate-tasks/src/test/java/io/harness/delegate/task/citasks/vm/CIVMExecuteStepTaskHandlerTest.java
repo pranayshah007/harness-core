@@ -18,6 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
@@ -49,6 +50,8 @@ public class CIVMExecuteStepTaskHandlerTest extends CategoryTest {
   @Mock private StepExecutionHelper stepExecutionHelper;
   @Mock private VmExecuteStepUtils vmExecuteStepUtils;
   @InjectMocks private io.harness.delegate.task.citasks.vm.CIVMExecuteStepTaskHandler CIVMExecuteStepTaskHandler;
+  // private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").stageRuntimeId("stage").build();
+  private static final CIInitializeTaskParams.Type vmInfraInfo = CIInitializeTaskParams.Type.VM;
 
   @Before
   public void setUp() {
@@ -63,6 +66,8 @@ public class CIVMExecuteStepTaskHandlerTest extends CategoryTest {
                                            .stageRuntimeId("stage")
                                            .stepRuntimeId("step")
                                            .stepInfo(VmRunStep.builder().build())
+                                           .poolId("test")
+                                           .infraInfo(vmInfraInfo)
                                            .build();
     ExecuteStepRequestBuilder builder = ExecuteStepRequest.builder();
     when(vmExecuteStepUtils.convertStep(any())).thenReturn(builder);
@@ -81,6 +86,7 @@ public class CIVMExecuteStepTaskHandlerTest extends CategoryTest {
                                            .stageRuntimeId("stage")
                                            .stepRuntimeId("test")
                                            .stepInfo(VmRunStep.builder().build())
+                                           .infraInfo(vmInfraInfo)
                                            .build();
     ExecuteStepRequestBuilder builder = ExecuteStepRequest.builder();
     when(vmExecuteStepUtils.convertStep(any())).thenReturn(builder);
@@ -116,6 +122,7 @@ public class CIVMExecuteStepTaskHandlerTest extends CategoryTest {
                                            .stageRuntimeId("stage")
                                            .stepRuntimeId("step")
                                            .stepInfo(vmBackgroundStep)
+                                           .infraInfo(vmInfraInfo)
                                            .build();
 
     when(vmExecuteStepUtils.convertStep(any())).thenCallRealMethod();

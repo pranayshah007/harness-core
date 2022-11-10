@@ -8,6 +8,7 @@
 package io.harness.pms;
 
 import io.harness.beans.FeatureName;
+import io.harness.utils.PmsFeatureFlagService;
 
 public class NoopFeatureFlagServiceImpl implements PmsFeatureFlagService {
   @Override

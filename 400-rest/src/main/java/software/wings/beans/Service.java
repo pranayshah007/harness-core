@@ -10,6 +10,8 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessModule._957_CG_BEANS;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
+
 import static java.util.Arrays.asList;
 
 import io.harness.annotation.HarnessEntity;
@@ -35,6 +37,7 @@ import software.wings.beans.artifact.ArtifactStreamBinding;
 import software.wings.beans.command.ServiceCommand;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.entityinterface.TagAware;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeAware;
 import software.wings.utils.ArtifactType;
@@ -223,6 +226,18 @@ public class Service extends Base
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(SERVICE)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   @Data

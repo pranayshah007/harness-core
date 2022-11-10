@@ -12,11 +12,13 @@ import static io.harness.rule.TestUserProvider.testUserProvider;
 
 import io.harness.factory.ClosingFactory;
 import io.harness.mongo.HObjectFactory;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.ObjectFactoryModule;
 import io.harness.mongo.QueryFactory;
 import io.harness.mongo.index.migrator.Migrator;
 import io.harness.morphia.MorphiaModule;
 import io.harness.persistence.UserProvider;
+import io.harness.serializer.KryoModule;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
@@ -102,7 +104,7 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
     }
 
     AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, databaseName);
-    datastore.setQueryFactory(new QueryFactory());
+    datastore.setQueryFactory(new QueryFactory(MongoConfig.builder().build()));
     ((HObjectFactory) objectFactory).setDatastore(datastore);
     return datastore;
   }
@@ -125,9 +127,8 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
   protected void configure() {
     install(ObjectFactoryModule.getInstance());
     install(MorphiaModule.getInstance());
-
+    install(KryoModule.getInstance());
     bind(UserProvider.class).toInstance(testUserProvider);
-
     MapBinder.newMapBinder(binder(), String.class, Migrator.class);
   }
 }

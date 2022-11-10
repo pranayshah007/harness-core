@@ -17,6 +17,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class NGTemplateConstants {
   public static final String TEMPLATE = TemplateRefHelper.TEMPLATE;
+  public static final String CUSTOM_DEPLOYMENT_TEMPLATE = TemplateRefHelper.CUSTOM_DEPLOYMENT_TEMPLATE;
   public static final String TEMPLATE_REF = TemplateRefHelper.TEMPLATE_REF;
   public static final String TEMPLATE_VERSION_LABEL = "versionLabel";
   public static final String TEMPLATE_INPUTS = "templateInputs";

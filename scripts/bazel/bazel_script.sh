@@ -61,11 +61,9 @@ BAZEL_MODULES="\
   //295-cdng-contracts:module \
   //300-cv-nextgen:module \
   //323-sto-utilities:module \
-  //325-sto-beans:module \
   //332-ci-manager/app:module \
   //332-ci-manager/contracts:module \
   //332-ci-manager/service:module \
-  //340-ce-nextgen:module \
   //350-event-server:module \
   //360-cg-manager:module \
   //380-cg-graphql:module \
@@ -81,7 +79,6 @@ BAZEL_MODULES="\
   //441-cg-instance-sync:module \
   //445-cg-connectors:module \
   //450-ce-views:module \
-  //460-capability:module \
   //490-ce-commons:module \
   //pipeline-service/service:module \
   //pipeline-service/modules/ng-triggers:module \
@@ -204,6 +201,7 @@ BAZEL_MODULES="\
   //990-commons-test:module \
   //999-annotations:module \
   //access-control/service:module \
+  //ce-nextgen/service:module \
   //access-control/contracts:module \
   //product/ci/engine/proto:all \
   //product/ci/scm/proto:all \
@@ -298,7 +296,6 @@ build_protocol_info(){
 
 build_bazel_module 100-migrator
 build_bazel_module 323-sto-utilities
-build_bazel_module 325-sto-beans
 build_bazel_module 380-cg-graphql
 build_bazel_module 400-rest
 build_bazel_module 410-cg-rest
@@ -310,7 +307,6 @@ build_bazel_module 440-connector-nextgen
 build_bazel_module 440-secret-management-service
 build_bazel_module 445-cg-connectors
 build_bazel_module 450-ce-views
-build_bazel_module 460-capability
 build_bazel_module 490-ce-commons
 build_bazel_module 815-cg-triggers
 build_bazel_module 865-cg-events

@@ -7,6 +7,8 @@
 
 package io.harness.artifactory;
 
+import static io.harness.artifactory.ArtifactoryClientImpl.getArtifactoryClient;
+
 import static java.util.stream.Collectors.toList;
 import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.docker;
 import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.maven;
@@ -26,6 +28,7 @@ import com.google.inject.Singleton;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -105,6 +108,15 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
         return artifactoryClient.getRepositories(artifactoryConfig,
             Arrays.stream(PackageTypeImpl.values()).filter(type -> docker != type).collect(toList()));
     }
+  }
+
+  @Override
+  public List<ArtifactoryImagePath> getImagePaths(ArtifactoryConfigRequest artifactoryConfig, String repoKey) {
+    List<String> repos = artifactoryClient.listDockerImages(getArtifactoryClient(artifactoryConfig), repoKey);
+    if (EmptyPredicate.isEmpty(repos)) {
+      return Collections.emptyList();
+    }
+    return repos.stream().map(repo -> ArtifactoryImagePath.builder().imagePath(repo).build()).collect(toList());
   }
 
   @Override

@@ -42,7 +42,23 @@ func (g *gradleRunner) AutoDetectPackages() ([]string, error) {
 }
 
 func (g *gradleRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
-	return []types.RunnableTest{}, nil
+	tests := make([]types.RunnableTest, 0)
+	javaTests, err := GetJavaTests()
+	if err != nil {
+		return tests, err
+	}
+	scalaTests, err := GetScalaTests()
+	if err != nil {
+		return tests, err
+	}
+	kotlinTests, err := GetKotlinTests()
+	if err != nil {
+		return tests, err
+	}
+	tests = append(tests, javaTests...)
+	tests = append(tests, scalaTests...)
+	tests = append(tests, kotlinTests...)
+	return tests, nil
 }
 
 /*

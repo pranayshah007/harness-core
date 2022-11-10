@@ -189,7 +189,6 @@ public class K8sCanaryDeployTest extends CategoryTest {
     k8sCanaryDeploy.setInheritManifests(true);
     List<KubernetesResource> kubernetesResources = new ArrayList<>();
     kubernetesResources.add(KubernetesResource.builder().build());
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
     when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());
@@ -232,7 +231,6 @@ public class K8sCanaryDeployTest extends CategoryTest {
   public void testExecuteInheritManifestsNoResourcesFound() {
     k8sCanaryDeploy.setInheritManifests(true);
     List<KubernetesResource> kubernetesResources = new ArrayList<>();
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
     when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());
@@ -258,7 +256,6 @@ public class K8sCanaryDeployTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteWhenInheritManifests() {
     k8sCanaryDeploy.setInheritManifests(true);
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     doReturn(Activity.builder().build()).when(k8sCanaryDeploy).createK8sActivity(any(), any(), any(), any(), any());
     doReturn(ExecutionResponse.builder().build()).when(k8sCanaryDeploy).executeK8sTask(any(), any());
     k8sCanaryDeploy.execute(context);
@@ -348,7 +345,6 @@ public class K8sCanaryDeployTest extends CategoryTest {
             .commandExecutionStatus(SUCCESS)
             .k8sTaskResponse(K8sCanaryDeployResponse.builder().resources(resources).build())
             .build();
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     ExecutionResponse executionResponse =
         k8sCanaryDeploy.handleAsyncResponseForK8sTask(context, ImmutableMap.of(ACTIVITY_ID, taskExecutionResponse));
 
@@ -454,7 +450,6 @@ public class K8sCanaryDeployTest extends CategoryTest {
     k8sCanaryDeploy.setInheritManifests(true);
     List<KubernetesResource> kubernetesResources = new ArrayList<>();
     kubernetesResources.add(KubernetesResource.builder().build());
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
     when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());

@@ -32,3 +32,4 @@ pipelineStages:
   skipCondition:
     type: ALWAYS_SKIP
   stageName: STAGE 1
+rollbackPreviousStages: false

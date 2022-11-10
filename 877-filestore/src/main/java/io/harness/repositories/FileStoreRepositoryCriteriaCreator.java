@@ -55,11 +55,16 @@ public class FileStoreRepositoryCriteriaCreator {
 
     if (filterParams != null && filterParams.getFileUsage() != null) {
       Criteria fileUsageCriteria = new Criteria();
-      fileUsageCriteria.orOperator(
-          Criteria.where(NGFiles.type).is(NGFileType.FILE).and(NGFiles.fileUsage).is(filterParams.getFileUsage()),
-          Criteria.where(NGFiles.type).is(NGFileType.FOLDER));
+      fileUsageCriteria.orOperator(Criteria.where(NGFiles.fileUsage).is(filterParams.getFileUsage()),
+          Criteria.where(NGFiles.fileUsage).exists(false), Criteria.where(NGFiles.fileUsage).is(null));
 
-      criteriaByScopeAndParentIdentifier.andOperator(fileUsageCriteria);
+      Criteria folderTypeCriteria = Criteria.where(NGFiles.type).is(NGFileType.FOLDER);
+      Criteria fileTypeCriteria =
+          new Criteria().andOperator(Criteria.where(NGFiles.type).is(NGFileType.FILE), fileUsageCriteria);
+
+      Criteria criteria = new Criteria();
+      criteria.orOperator(fileTypeCriteria, folderTypeCriteria);
+      criteriaByScopeAndParentIdentifier.andOperator(criteria);
     }
 
     return criteriaByScopeAndParentIdentifier;

@@ -8,6 +8,7 @@
 package software.wings.service.impl.trigger;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.PageRequest.LIMIT_2K_PAGE_SIZE;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.WorkflowType.ORCHESTRATION;
@@ -133,6 +134,12 @@ public class TriggerServiceHelper {
   }
 
   public List<Trigger> getTriggersByApp(String appId) {
+    final String accountId = appService.getAccountIdByAppId(appId);
+    if (featureFlagService.isEnabled(FeatureName.SPG_2K_DEFAULT_PAGE_SIZE, accountId)) {
+      return wingsPersistence
+          .query(Trigger.class, aPageRequest().addFilter("appId", EQ, appId).withLimit(LIMIT_2K_PAGE_SIZE).build())
+          .getResponse();
+    }
     return wingsPersistence.query(Trigger.class, aPageRequest().addFilter("appId", EQ, appId).build()).getResponse();
   }
 

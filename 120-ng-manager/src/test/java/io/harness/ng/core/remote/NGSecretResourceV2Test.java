@@ -8,6 +8,7 @@
 package io.harness.ng.core.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PIYUSH;
 
@@ -17,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -78,10 +80,71 @@ public class NGSecretResourceV2Test extends CategoryTest {
     Page<Object> page = new PageImpl<>(mockResponse);
 
     doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
-    doReturn(page).when(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null);
+    doReturn(page)
+        .when(ngSecretService)
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
     ResponseDTO<PageResponse<SecretResponseWrapper>> list = ngSecretResourceV2.listSecrets(
         "Test", "TestOrg", "TestProj", SecretResourceFilterDTO.builder().identifiers(null).build(), 1, 10);
     assertThat(list.getData().getContent().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListSecretsAvailableAllScopeForTrue() {
+    List<Object> mockResponse = Collections.singletonList(getMockResponse());
+    Page<Object> page = new PageImpl<>(mockResponse);
+    doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
+    doReturn(page)
+        .when(ngSecretService)
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, true);
+    ResponseDTO<PageResponse<SecretResponseWrapper>> list = ngSecretResourceV2.listSecrets("Test", "TestOrg",
+        "TestProj",
+        SecretResourceFilterDTO.builder().identifiers(null).includeAllSecretsAccessibleAtScope(true).build(), 1, 10);
+    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, true);
+  }
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListSecretsAvailableAllScopeIfNotInFilterShouldBeFalse() {
+    List<Object> mockResponse = Collections.singletonList(getMockResponse());
+    Page<Object> page = new PageImpl<>(mockResponse);
+    doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
+    doReturn(page)
+        .when(ngSecretService)
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+    ResponseDTO<PageResponse<SecretResponseWrapper>> list = ngSecretResourceV2.listSecrets(
+        "Test", "TestOrg", "TestProj", SecretResourceFilterDTO.builder().identifiers(null).build(), 1, 10);
+    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+  }
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListV2ForSecretsAvailableAllScopeAsTrue() {
+    List<Object> mockResponse = Collections.singletonList(getMockResponse());
+    Page<Object> page = new PageImpl<>(mockResponse);
+    doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
+    doReturn(page)
+        .when(ngSecretService)
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, true);
+    ResponseDTO<PageResponse<SecretResponseWrapper>> list =
+        ngSecretResourceV2.list("Test", "TestOrg", "TestProj", null, null, null, null, null, false, true, 1, 10);
+    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, true);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListV2ForSecretsAvailableAllScopeIfNotInQueryParamShouldBeFalse() {
+    List<Object> mockResponse = Collections.singletonList(getMockResponse());
+    Page<Object> page = new PageImpl<>(mockResponse);
+    doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
+    doReturn(page)
+        .when(ngSecretService)
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+    ResponseDTO<PageResponse<SecretResponseWrapper>> list =
+        ngSecretResourceV2.list("Test", "TestOrg", "TestProj", null, null, null, null, null, false, false, 1, 10);
+    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
   }
 
   @NotNull

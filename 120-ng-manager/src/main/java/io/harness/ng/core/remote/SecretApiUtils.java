@@ -1,17 +1,24 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.remote;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.spec.server.ng.model.SecretSpec.TypeEnum.SECRETFILE;
-import static io.harness.spec.server.ng.model.SecretSpec.TypeEnum.SECRETTEXT;
-import static io.harness.spec.server.ng.model.SecretSpec.TypeEnum.SSHKERBEROSTGTKEYTABFILE;
-import static io.harness.spec.server.ng.model.SecretSpec.TypeEnum.SSHKERBEROSTGTPASSWORD;
-import static io.harness.spec.server.ng.model.SecretSpec.TypeEnum.SSHKEYPATH;
-import static io.harness.spec.server.ng.model.SecretSpec.TypeEnum.SSHKEYREFERENCE;
-import static io.harness.spec.server.ng.model.SecretSpec.TypeEnum.SSHPASSWORD;
-import static io.harness.spec.server.ng.model.SecretSpec.TypeEnum.WINRMNTLM;
-import static io.harness.spec.server.ng.model.SecretSpec.TypeEnum.WINRMTGTKEYTABFILE;
-import static io.harness.spec.server.ng.model.SecretSpec.TypeEnum.WINRMTGTPASSWORD;
-import static io.harness.spec.server.ng.model.SecretTextSpec.ValueTypeEnum.fromValue;
+import static io.harness.spec.server.ng.v1.model.SecretSpec.TypeEnum.SECRETFILE;
+import static io.harness.spec.server.ng.v1.model.SecretSpec.TypeEnum.SECRETTEXT;
+import static io.harness.spec.server.ng.v1.model.SecretSpec.TypeEnum.SSHKERBEROSTGTKEYTABFILE;
+import static io.harness.spec.server.ng.v1.model.SecretSpec.TypeEnum.SSHKERBEROSTGTPASSWORD;
+import static io.harness.spec.server.ng.v1.model.SecretSpec.TypeEnum.SSHKEYPATH;
+import static io.harness.spec.server.ng.v1.model.SecretSpec.TypeEnum.SSHKEYREFERENCE;
+import static io.harness.spec.server.ng.v1.model.SecretSpec.TypeEnum.SSHPASSWORD;
+import static io.harness.spec.server.ng.v1.model.SecretSpec.TypeEnum.WINRMNTLM;
+import static io.harness.spec.server.ng.v1.model.SecretSpec.TypeEnum.WINRMTGTKEYTABFILE;
+import static io.harness.spec.server.ng.v1.model.SecretSpec.TypeEnum.WINRMTGTPASSWORD;
+import static io.harness.spec.server.ng.v1.model.SecretTextSpec.ValueTypeEnum.fromValue;
 
 import static javax.ws.rs.core.UriBuilder.fromPath;
 
@@ -44,18 +51,18 @@ import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.WinRmAuthScheme;
-import io.harness.spec.server.ng.model.SSHKerberosTGTKeyTabFileSpec;
-import io.harness.spec.server.ng.model.SSHKerberosTGTPasswordSpec;
-import io.harness.spec.server.ng.model.SSHKeyPathSpec;
-import io.harness.spec.server.ng.model.SSHKeyReferenceSpec;
-import io.harness.spec.server.ng.model.SSHPasswordSpec;
-import io.harness.spec.server.ng.model.Secret;
-import io.harness.spec.server.ng.model.SecretFileSpec;
-import io.harness.spec.server.ng.model.SecretResponse;
-import io.harness.spec.server.ng.model.SecretTextSpec;
-import io.harness.spec.server.ng.model.WinRmNTLMSpec;
-import io.harness.spec.server.ng.model.WinRmTGTKeyTabFileSpec;
-import io.harness.spec.server.ng.model.WinRmTGTPasswordSpec;
+import io.harness.spec.server.ng.v1.model.SSHKerberosTGTKeyTabFileSpec;
+import io.harness.spec.server.ng.v1.model.SSHKerberosTGTPasswordSpec;
+import io.harness.spec.server.ng.v1.model.SSHKeyPathSpec;
+import io.harness.spec.server.ng.v1.model.SSHKeyReferenceSpec;
+import io.harness.spec.server.ng.v1.model.SSHPasswordSpec;
+import io.harness.spec.server.ng.v1.model.Secret;
+import io.harness.spec.server.ng.v1.model.SecretFileSpec;
+import io.harness.spec.server.ng.v1.model.SecretResponse;
+import io.harness.spec.server.ng.v1.model.SecretTextSpec;
+import io.harness.spec.server.ng.v1.model.WinRmNTLMSpec;
+import io.harness.spec.server.ng.v1.model.WinRmTGTKeyTabFileSpec;
+import io.harness.spec.server.ng.v1.model.WinRmTGTPasswordSpec;
 
 import com.google.inject.Inject;
 import io.dropwizard.jersey.validation.JerseyViolationException;

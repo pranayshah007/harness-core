@@ -30,6 +30,7 @@ public class ELKDataCollectionInfo extends LogDataCollectionInfo<ELKConnectorDTO
 
   @Override
   public Map<String, Object> getDslEnvVariables(ELKConnectorDTO connectorConfigDTO) {
+    String[] parts = timeStampIdentifier.split("[.]");
     Map<String, Object> dslEnvVariables = new HashMap<>();
     dslEnvVariables.put("query", query);
     dslEnvVariables.put("index", index);
@@ -37,6 +38,7 @@ public class ELKDataCollectionInfo extends LogDataCollectionInfo<ELKConnectorDTO
     dslEnvVariables.put("timeStampIdentifier", timeStampIdentifier);
     dslEnvVariables.put("timeStampFormat", timeStampFormat);
     dslEnvVariables.put("messageIdentifier", messageIdentifier);
+    dslEnvVariables.put("timeStampField", parts[parts.length - 1]);
     dslEnvVariables.put("limit", LOG_MAX_LIMIT);
     return dslEnvVariables;
   }

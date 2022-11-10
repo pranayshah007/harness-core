@@ -159,7 +159,6 @@ public class AzureWebAppSwapSlotStepTest extends CDNGTestBase {
             .commandUnitsProgress(unitProgressData)
             .requestResponse(AzureWebAppSwapSlotsResponseNG.builder().deploymentProgressMarker(SLOT_SWAP).build())
             .build();
-    doReturn(true).when(stepHelper).isPackageArtifactType(any());
     doReturn(AzureAppServicePreDeploymentData.builder().appName("webAppName").slotName("slotName").build())
         .when(stepHelper)
         .getPreDeploymentData(any(), any());
@@ -170,8 +169,6 @@ public class AzureWebAppSwapSlotStepTest extends CDNGTestBase {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
 
-    verify(stepHelper, times(1)).getPrimaryArtifactOutcome(eq(ambiance));
-    verify(stepHelper, times(1)).isPackageArtifactType(any());
     verify(stageExecutionInfoService, times(1)).update(any(), any(), any());
     verify(executionSweepingOutputService, times(1)).consume(eq(ambiance), eq(OUTPUT_NAME), any(), any());
   }

@@ -221,7 +221,7 @@ public class PipelineServiceImpl implements PipelineService {
                 .build();
         try {
           List<WorkflowExecution> workflowExecutions =
-              workflowExecutionService.listExecutions(innerPageRequest, false, false, false, false, false)
+              workflowExecutionService.listExecutions(innerPageRequest, false, false, false, false, false, true)
                   .getResponse();
           pipeline.setWorkflowExecutions(workflowExecutions);
         } catch (Exception e) {
@@ -269,6 +269,7 @@ public class PipelineServiceImpl implements PipelineService {
     setUnset(ops, "pipelineStages", pipeline.getPipelineStages());
     setUnset(ops, "failureStrategies", pipeline.getFailureStrategies());
     setUnset(ops, "keywords", trimmedLowercaseSet(keywords));
+    setUnset(ops, "rollbackPreviousStages", pipeline.rollbackPreviousStages);
 
     wingsPersistence.update(wingsPersistence.createQuery(Pipeline.class)
                                 .filter("appId", pipeline.getAppId())
@@ -1235,7 +1236,11 @@ public class PipelineServiceImpl implements PipelineService {
 
   private void overWriteDefaultValue(Variable existingVar, String value) {
     if (value != null && !value.equals("")) {
-      existingVar.setValue(value);
+      if (existingVar.getAllowedList() == null) {
+        existingVar.setValue(value);
+      } else if (existingVar.getAllowedList().contains(value)) {
+        existingVar.setValue(value);
+      }
     }
   }
 
@@ -1254,6 +1259,9 @@ public class PipelineServiceImpl implements PipelineService {
       if (existingVar.getAllowedList() != null && existingVar.getAllowedList().size() == 0) {
         throw new InvalidRequestException(String.format(
             "Variable %s does not have any common allowed values between all stages", existingVar.getName()));
+      }
+      if (existingVar.getValue() != null && (!existingVar.getAllowedList().contains(existingVar.getValue()))) {
+        existingVar.setValue(null);
       }
     }
   }

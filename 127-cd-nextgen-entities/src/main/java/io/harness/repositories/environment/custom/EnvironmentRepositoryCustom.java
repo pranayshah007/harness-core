@@ -9,7 +9,6 @@ package io.harness.repositories.environment.custom;
 
 import io.harness.ng.core.environment.beans.Environment;
 
-import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,11 +25,11 @@ public interface EnvironmentRepositoryCustom {
 
   boolean delete(Criteria criteria);
 
-  UpdateResult deleteMany(Criteria criteria);
-
   List<Environment> findAllRunTimeAccess(Criteria criteria);
 
   List<String> fetchesNonDeletedEnvIdentifiersFromList(Criteria criteria);
 
   List<Environment> fetchesNonDeletedEnvironmentFromListOfIdentifiers(Criteria criteria);
+
+  List<Environment> findAll(Criteria criteria);
 }

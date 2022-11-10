@@ -21,6 +21,7 @@ import org.springframework.data.annotation.TypeAlias;
       @JsonSubTypes.Type(value = VmInfraYaml.class, name = "VM"),
       @JsonSubTypes.Type(value = K8sHostedInfraYaml.class, name = "KubernetesHosted"),
       @JsonSubTypes.Type(value = HostedVmInfraYaml.class, name = "HostedVm"),
+      @JsonSubTypes.Type(value = DockerInfraYaml.class, name = "DOCKER")
 })
 
 public interface Infrastructure {
@@ -30,7 +31,8 @@ public interface Infrastructure {
     @JsonProperty("UseFromStage") USE_FROM_STAGE("UseFromStage"),
     @JsonProperty("VM") VM("VM"),
     @JsonProperty("KubernetesHosted") KUBERNETES_HOSTED("KubernetesHosted"),
-    @JsonProperty("HostedVm") HOSTED_VM("HostedVm");
+    @JsonProperty("HostedVm") HOSTED_VM("HostedVm"),
+    @JsonProperty("DOCKER") DOCKER("DOCKER");
 
     private final String yamlName;
 

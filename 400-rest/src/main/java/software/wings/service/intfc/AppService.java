@@ -144,4 +144,6 @@ public interface AppService extends OwnedByAccount, Exterminator {
   void delete(String appId, boolean syncFromGit);
 
   List<Application> getAppsByIds(@NotNull Set<String> appIds);
+
+  Boolean getDisableTriggersByAppId(String appId);
 }

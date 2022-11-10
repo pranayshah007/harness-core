@@ -20,6 +20,8 @@ import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.Report;
@@ -40,6 +42,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(CI)
 public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<RunTestsStepInfo> {
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+  @Inject private CIFeatureFlagService featureFlagService;
 
   public UnitStep serializeStepWithStepParameters(RunTestsStepInfo runTestsStepInfo, Integer port, String callbackId,
       String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout, String accountId,
@@ -53,15 +56,16 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     }
 
     RunTestsStep.Builder runTestsStepBuilder = RunTestsStep.newBuilder();
-    String gitSafeCMD =
-        SerializerUtils.getSafeGitDirectoryCmd(RunTimeInputHandler.resolveShellType(runTestsStepInfo.getShell()));
-
-    String preTestCommand = gitSafeCMD
-        + RunTimeInputHandler.resolveStringParameter(
-            "Command", "RunTests", identifier, runTestsStepInfo.getPreCommand(), false);
-    if (StringUtils.isNotEmpty(preTestCommand)) {
-      runTestsStepBuilder.setPreTestCommand(preTestCommand);
+    String gitSafeCMD = SerializerUtils.getSafeGitDirectoryCmd(
+        RunTimeInputHandler.resolveShellType(runTestsStepInfo.getShell()), accountId, featureFlagService);
+    String preTestCommand = RunTimeInputHandler.resolveStringParameter(
+        "Command", "RunTests", identifier, runTestsStepInfo.getPreCommand(), false);
+    if (EmptyPredicate.isNotEmpty(preTestCommand) && !preTestCommand.equals("null")) {
+      preTestCommand = gitSafeCMD + preTestCommand;
+    } else {
+      preTestCommand = gitSafeCMD;
     }
+    runTestsStepBuilder.setPreTestCommand(preTestCommand);
     String postTestCommand = RunTimeInputHandler.resolveStringParameter(
         "Command", "RunTests", identifier, runTestsStepInfo.getPostCommand(), false);
     if (StringUtils.isNotEmpty(postTestCommand)) {
@@ -140,6 +144,11 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     }
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runTestsStepInfo.getDefaultTimeout());
 
+    runTestsStepBuilder.setParallelizeTests(resolveBooleanParameter(runTestsStepInfo.getEnableTestSplitting(), false));
+    String testSplitStrategy = RunTimeInputHandler.resolveSplitStrategy(runTestsStepInfo.getTestSplitStrategy());
+    if (StringUtils.isNotEmpty(testSplitStrategy)) {
+      runTestsStepBuilder.setTestSplitStrategy(SerializerUtils.getTestSplitStrategy(testSplitStrategy));
+    }
     runTestsStepBuilder.setContext(StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build());
 
     return UnitStep.newBuilder()

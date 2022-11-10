@@ -8,12 +8,16 @@
 package io.harness.helpers.ext.azure;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eraro.ErrorCode.INVALID_AZURE_VAULT_CONFIGURATION;
+import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.SecretManagementDelegateException;
 import io.harness.exception.UnexpectedException;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.microsoft.aad.adal4j.AuthenticationContext;
+import com.microsoft.aad.adal4j.AuthenticationException;
 import com.microsoft.aad.adal4j.AuthenticationResult;
 import com.microsoft.aad.adal4j.ClientCredential;
 import com.microsoft.azure.keyvault.KeyVaultClient;
@@ -46,9 +50,13 @@ public class KeyVaultADALAuthenticator {
           authResult = getAccessToken(clientId, clientKey, authorization, resource);
           return authResult.getAccessToken();
         } catch (Exception e) {
-          log.error("Failed to get access token for clientId {}", clientId, e);
+          if (e.getCause() != null && e.getCause() instanceof AuthenticationException) {
+            throw(AuthenticationException) e.getCause();
+          } else {
+            String message = "Failed to get access token for clientId {}" + clientId;
+            throw new SecretManagementDelegateException(INVALID_AZURE_VAULT_CONFIGURATION, message, e, USER);
+          }
         }
-        return "";
       }
     };
   }

@@ -1,0 +1,15 @@
+infrastructureDefinition:
+  name: sampleInfra
+  identifier: sampleInfra
+  description: "sampleInfra"
+  tags: {}
+  orgIdentifier: default
+  projectIdentifier: Custom_Deployment
+  environmentRef: sampleEnv
+  deploymentType: CustomDeployment
+  type: CustomDeployment
+  spec:
+    customDeploymentRef:
+      templateRef: account.OpenStack
+      versionLabel: "V1"
+  allowSimultaneousDeployments: false

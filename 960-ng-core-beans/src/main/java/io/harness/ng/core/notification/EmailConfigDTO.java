@@ -23,11 +23,13 @@ import lombok.NoArgsConstructor;
 @JsonTypeName("EMAIL")
 public class EmailConfigDTO extends NotificationSettingConfigDTO {
   @NotNull String groupEmail;
+  @NotNull Boolean sendEmailToAllUsers = Boolean.TRUE;
 
   @Builder
-  public EmailConfigDTO(String groupEmail) {
+  public EmailConfigDTO(String groupEmail, Boolean sendEmailToAllUsers) {
     this.groupEmail = groupEmail;
     this.type = NotificationChannelType.EMAIL;
+    this.sendEmailToAllUsers = sendEmailToAllUsers == null ? Boolean.TRUE : sendEmailToAllUsers;
   }
 
   @Override

@@ -123,6 +123,14 @@ if [[ "" != "$VM_SECURITY_IMAGE" ]]; then
   export VM_SECURITY_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.security=env(VM_SECURITY_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$CACHE_BUCKET" ]]; then
+  export CACHE_BUCKET; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.bucket=env(CACHE_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CACHE_SERVICE_KEY" ]]; then
+  export CACHE_SERVICE_KEY; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.serviceKey=env(CACHE_SERVICE_KEY)' $CONFIG_FILE
+fi
+
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
   export VM_ARTIFACTORY_UPLOAD_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.artifactoryUpload=env(VM_ARTIFACTORY_UPLOAD_IMAGE)' $CONFIG_FILE
 fi
@@ -184,12 +192,20 @@ if [[ "" != "$LOG_SERVICE_ENDPOINT" ]]; then
   export LOG_SERVICE_ENDPOINT; yq -i '.logServiceConfig.baseUrl=env(LOG_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$LOG_SERVICE_INTERNAL_URL" ]]; then
+  export LOG_SERVICE_INTERNAL_URL; yq -i '.logServiceConfig.internalUrl=env(LOG_SERVICE_INTERNAL_URL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$LOG_SERVICE_GLOBAL_TOKEN" ]]; then
   export LOG_SERVICE_GLOBAL_TOKEN; yq -i '.logServiceConfig.globalToken=env(LOG_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TI_SERVICE_ENDPOINT" ]]; then
   export TI_SERVICE_ENDPOINT; yq -i '.tiServiceConfig.baseUrl=env(TI_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TI_SERVICE_INTERNAL_URL" ]]; then
+  export TI_SERVICE_INTERNAL_URL; yq -i '.tiServiceConfig.internalUrl=env(TI_SERVICE_INTERNAL_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then
@@ -324,6 +340,22 @@ fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_CONNECTION_POOL_SIZE" ]]; then
+  export REDIS_CONNECTION_POOL_SIZE; yq -i '.singleServerConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_RETRY_INTERVAL" ]]; then
+  export REDIS_RETRY_INTERVAL; yq -i '.singleServerConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_RETRY_ATTEMPTS" ]]; then
+  export REDIS_RETRY_ATTEMPTS; yq -i '.singleServerConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_TIMEOUT" ]]; then
+  export REDIS_TIMEOUT; yq -i '.singleServerConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
 fi
 
 yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE

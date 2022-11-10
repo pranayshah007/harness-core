@@ -9,6 +9,7 @@ package io.harness.steps.matrix;
 
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.HarnessForConfig;
 import io.harness.plancreator.strategy.RepeatUnit;
 import io.harness.plancreator.strategy.StrategyConfig;
@@ -23,8 +24,11 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.utils.Lists;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 public class ForLoopStrategyConfigService implements StrategyConfigService {
   @Override
@@ -86,6 +90,11 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
 
   private List<List<String>> partitionItemsByPercentage(HarnessForConfig harnessForConfig) {
     List<String> items = harnessForConfig.getItems().getValue();
+
+    if (items.isEmpty()) {
+      return Collections.emptyList();
+    }
+
     int itemsSize = items.size();
     ParameterField<Integer> partitionSizeInPercentage = harnessForConfig.getPartitionSize();
     float partitionSizeInPercentageValue = partitionSizeInPercentage.getValue().floatValue();
@@ -106,6 +115,11 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
 
   private List<List<String>> partitionItemsByCount(HarnessForConfig harnessForConfig) {
     List<String> items = harnessForConfig.getItems().getValue();
+
+    if (items.isEmpty()) {
+      return Collections.emptyList();
+    }
+
     int itemsSize = items.size();
     int partitionSize = harnessForConfig.getPartitionSize().getValue();
 
@@ -128,6 +142,9 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     int start = 0;
     List<String> params = harnessForConfig.getItems().getValue();
     validateItems(params);
+    if (params.isEmpty()) {
+      return params;
+    }
     int itemsSize = params.size();
     int end = itemsSize - 1;
     if (!ParameterField.isBlank(harnessForConfig.getStart())) {
@@ -143,28 +160,42 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     }
 
     validateStartEnd(start, end, itemsSize);
-    return params.subList(start, end);
+    return boundedSubList(params, start, end);
   }
 
   private List<String> handleSplitByCount(HarnessForConfig harnessForConfig) {
     List<String> params = harnessForConfig.getItems().getValue();
     validateItems(params);
+    if (params.isEmpty()) {
+      return params;
+    }
     if (!ParameterField.isBlank(harnessForConfig.getStart())) {
       int start = harnessForConfig.getStart().getValue();
       if (!ParameterField.isBlank(harnessForConfig.getEnd())) {
         int end = harnessForConfig.getEnd().getValue();
         validateStartEnd(start, end, params.size());
-        params = params.subList(start, end);
+        params = boundedSubList(params, start, end);
       } else {
         validateStartEnd(start, params.size() - 1, params.size());
-        params = params.subList(start, params.size() - 1);
+        params = boundedSubList(params, start, params.size() - 1);
       }
     } else if (!ParameterField.isBlank(harnessForConfig.getEnd())) {
       int end = harnessForConfig.getEnd().getValue();
       validateStartEnd(0, end, params.size());
-      params = params.subList(0, end);
+      params = boundedSubList(params, 0, end);
     }
     return params;
+  }
+
+  @NotNull
+  private List<String> boundedSubList(List<String> params, int start, int end) {
+    int boundedEnd = limitIndex(end, params.size());
+    int boundedStart = limitIndex(start, boundedEnd);
+    return params.subList(boundedStart, boundedEnd);
+  }
+
+  private int limitIndex(int index, int size) {
+    return Math.min(index, size);
   }
 
   private void validateItems(List<String> params) {
@@ -177,12 +208,6 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     if (start < 0 || end < 0) {
       throw new InvalidRequestException("start or end cannot be less that 0");
     }
-    if (start >= size || end > size) {
-      throw new InvalidRequestException("start or end cannot be greater than the size of list");
-    }
-    if (start > end) {
-      throw new InvalidRequestException("start cannot be greater than end");
-    }
   }
 
   private void validatePartition(int partitionSize, int itemsSize) {
@@ -194,10 +219,17 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     }
   }
   @Override
-  public StrategyInfo expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
+  public StrategyInfo expandJsonNode(
+      StrategyConfig strategyConfig, JsonNode jsonNode, Optional<Integer> maxExpansionLimit) {
     HarnessForConfig harnessForConfig = strategyConfig.getRepeat();
     List<JsonNode> jsonNodes = new ArrayList<>();
     if (!ParameterField.isBlank(harnessForConfig.getTimes())) {
+      if (maxExpansionLimit.isPresent()) {
+        Integer iterationCount = harnessForConfig.getTimes().getValue();
+        if (iterationCount > maxExpansionLimit.get()) {
+          throw new InvalidYamlException("Iteration count is beyond the supported limit of " + maxExpansionLimit.get());
+        }
+      }
       for (int i = 0; i < harnessForConfig.getTimes().getValue(); i++) {
         JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StrategyUtils.replaceExpressions(
             jsonNode.deepCopy().toString(), new HashMap<>(), i, harnessForConfig.getTimes().getValue(), null)));

@@ -15,9 +15,12 @@ import java.util.List;
 public interface BusinessMappingService {
   BusinessMapping save(BusinessMapping businessMapping);
   BusinessMapping get(String uuid, String accountId);
+  boolean isNamePresent(String name, String accountId);
+  boolean isInvalidBusinessMappingUnallocatedCostLabel(BusinessMapping businessMapping);
   BusinessMapping get(String uuid);
   BusinessMapping update(BusinessMapping businessMapping);
   boolean delete(String uuid, String accountIdentifier);
   List<BusinessMapping> list(String accountId);
   List<ViewField> getBusinessMappingViewFields(String accountId);
+  List<String> getCostTargetNames(String businessMappingId, String accountId, String searchString);
 }

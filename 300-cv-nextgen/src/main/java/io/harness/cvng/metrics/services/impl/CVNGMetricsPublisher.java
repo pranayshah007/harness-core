@@ -8,6 +8,7 @@
 package io.harness.cvng.metrics.services.impl;
 
 import static io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus.QUEUED;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
 import static org.mongodb.morphia.aggregation.Group.grouping;
@@ -21,13 +22,14 @@ import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskKeys;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.DataCollectionTask.DataCollectionTaskKeys;
-import io.harness.cvng.metrics.beans.AccountMetricContext;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine.AnalysisStateMachineKeys;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceKeys;
 import io.harness.metrics.AutoMetricContext;
+import io.harness.metrics.HarnessMetricRegistry;
+import io.harness.metrics.beans.AccountMetricContext;
 import io.harness.metrics.beans.MetricConfiguration;
 import io.harness.metrics.service.api.MetricDefinitionInitializer;
 import io.harness.metrics.service.api.MetricService;
@@ -37,12 +39,15 @@ import io.harness.persistence.PersistentEntity;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.mongodb.AggregationOptions;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -56,6 +61,8 @@ import org.mongodb.morphia.query.Sort;
 @Slf4j
 public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionInitializer {
   private static final Map<Class<? extends PersistentEntity>, QueryParams> TASKS_INFO = new HashMap<>();
+  private static final String ENV = isEmpty(System.getenv("ENV")) ? "localhost" : System.getenv("ENV");
+  @Inject private HarnessMetricRegistry metricRegistry;
   static {
     TASKS_INFO.put(CVNGStepTask.class,
         QueryParams.builder()
@@ -107,7 +114,8 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
           .createAggregation(clazz)
           .match(query)
           .group(id(grouping("accountId", "accountId")), grouping("count", accumulator("$sum", 1)))
-          .aggregate(InstanceCount.class)
+          .aggregate(InstanceCount.class,
+              AggregationOptions.builder().maxTime(hPersistence.getMaxTimeMs(clazz), TimeUnit.MILLISECONDS).build())
           .forEachRemaining(instanceCount -> {
             try (AccountMetricContext accountMetricContext = new AccountMetricContext(instanceCount.id.accountId)) {
               metricService.recordMetric(getNonFinalStatusMetricName(queryParams.getName()), instanceCount.count);
@@ -118,7 +126,8 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
             .createAggregation(clazz)
             .match(hPersistence.createQuery(clazz).field(queryParams.getStatusField()).equal(status))
             .group(id(grouping("accountId", "accountId")), grouping("count", accumulator("$sum", 1)))
-            .aggregate(InstanceCount.class)
+            .aggregate(InstanceCount.class,
+                AggregationOptions.builder().maxTime(hPersistence.getMaxTimeMs(clazz), TimeUnit.MILLISECONDS).build())
             .forEachRemaining(instanceCount -> {
               try (AutoMetricContext accountMetricContext = new AccountMetricContext(instanceCount.id.accountId)) {
                 metricService.recordMetric(getStatusMetricName(queryParams, status.toString()), instanceCount.count);
@@ -137,7 +146,8 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
                                           .order(Sort.ascending(LearningEngineTaskKeys.lastUpdatedAt))
                                           .get();
     long timeSinceTask = earliestTask == null ? 0l : now - earliestTask.getLastUpdatedAt();
-    metricService.recordMetric("learning_engine_max_queued_time", timeSinceTask);
+    Duration maxTime = null;
+    metricService.recordMetric("learning_engine_max_queued_time_" + ENV, timeSinceTask);
 
     LearningEngineTask earliestDeploymentTask = hPersistence.createQuery(LearningEngineTask.class)
                                                     .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
@@ -147,8 +157,11 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
                                                     .get();
 
     timeSinceTask = earliestDeploymentTask == null ? 0l : now - earliestDeploymentTask.getLastUpdatedAt();
-    metricService.recordMetric("learning_engine_deployment_max_queued_time", timeSinceTask);
-
+    maxTime = Duration.ofMillis(timeSinceTask);
+    metricService.recordMetric("learning_engine_deployment_max_queued_time_" + ENV, timeSinceTask);
+    metricRegistry.recordGaugeValue(ENV + "_"
+            + "ng_le_deployment_max_queued_time_sec",
+        null, maxTime.getSeconds());
     LearningEngineTask earliestLiveHealthTask = hPersistence.createQuery(LearningEngineTask.class)
                                                     .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
                                                     .field(LearningEngineTaskKeys.analysisType)
@@ -157,8 +170,13 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
                                                     .get();
 
     timeSinceTask = earliestLiveHealthTask == null ? 0l : now - earliestLiveHealthTask.getLastUpdatedAt();
-    metricService.recordMetric("learning_engine_service_health_max_queued_time", timeSinceTask);
+    maxTime = Duration.ofMillis(timeSinceTask);
+    metricService.recordMetric("learning_engine_service_health_max_queued_time_" + ENV, timeSinceTask);
+    metricRegistry.recordGaugeValue(ENV + "_"
+            + "ng_le_service_health_max_queued_time_sec",
+        null, maxTime.getSeconds());
   }
+
   @Override
   public List<MetricConfiguration> getMetricConfiguration() {
     List<MetricConfiguration.Metric> metrics = new ArrayList<>();

@@ -45,9 +45,9 @@ import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
 import java.nio.charset.Charset;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
@@ -75,10 +75,10 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   private final ExecutorService expressionEvaluatorExecutor;
   private final boolean evaluateSync;
 
-  @Default private Map<String, String> evaluatedSecrets = new HashMap<>();
-  @Default private Map<String, String> evaluatedDelegateSecrets = new HashMap<>();
-  @Default private Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
-  @Default private Map<String, SecretDetail> secretDetails = new HashMap<>();
+  @Default private Map<String, String> evaluatedSecrets = new ConcurrentHashMap<>();
+  @Default private Map<String, String> evaluatedDelegateSecrets = new ConcurrentHashMap<>();
+  @Default private Map<String, EncryptionConfig> encryptionConfigs = new ConcurrentHashMap<>();
+  @Default private Map<String, SecretDetail> secretDetails = new ConcurrentHashMap<>();
 
   DelegateMetricsService delegateMetricsService;
 
@@ -154,6 +154,7 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   }
 
   private Object obtainInternal(String secretName) {
+    boolean updateSecretUsage = !SecretManagerMode.DRY_RUN.equals(mode);
     if (evaluatedSecrets.containsKey(secretName)) {
       return returnSecretValue(secretName, evaluatedSecrets.get(secretName));
     }
@@ -193,7 +194,8 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
 
     if (isEmpty(encryptedDataDetails)) {
       // Cache miss.
-      encryptedDataDetails = secretManager.getEncryptionDetails(serviceVariable, appId, workflowExecutionId);
+      encryptedDataDetails =
+          secretManager.getEncryptionDetails(serviceVariable, appId, workflowExecutionId, updateSecretUsage);
 
       if (EmptyPredicate.isEmpty(encryptedDataDetails)) {
         throw new InvalidRequestException("No secret found with identifier + [" + secretName + "]", USER);

@@ -7,6 +7,8 @@
 
 package io.harness.artifacts.docker.service;
 
+import static io.harness.delegate.beans.connector.docker.DockerRegistryProviderType.HARBOR;
+import static io.harness.delegate.beans.connector.docker.DockerRegistryProviderType.OTHER;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.rule.OwnerRule.ANSHUL;
@@ -41,7 +43,6 @@ import io.harness.artifacts.docker.service.DockerRegistryServiceImpl.DockerImage
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl.DockerRegistryToken;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
-import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
@@ -103,7 +104,7 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
                        .dockerRegistryUrl(url)
                        .username("username")
                        .password("password")
-                       .providerType(DockerRegistryProviderType.HARBOR)
+                       .providerType(HARBOR)
                        .build();
     dockerRegistryRestClient = new DockerRestClientFactoryImpl().getDockerRegistryRestClient(dockerConfig);
 
@@ -562,5 +563,27 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
         DockerInternalConfig.builder().dockerRegistryUrl(url2).username("username").password("password").build();
     doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig2);
     assertThat(dockerRegistryService.validateCredentials(dockerConfig));
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_PUTHRAYA)
+  @Category(UnitTests.class)
+  public void testHarborConnectivity() {
+    // Test for https://harness.atlassian.net/browse/CDS-44746
+    wireMockRule.stubFor(get(urlEqualTo("/v2")).willReturn(aResponse().withStatus(400)));
+    wireMockRule.stubFor(get(urlEqualTo("/v2/")).willReturn(aResponse().withStatus(400)));
+    wireMockRule.stubFor(get(urlEqualTo("/api/v2.0/ping")).willReturn(aResponse().withStatus(200)));
+    assertThat(dockerRegistryService.validateCredentials(
+                   DockerInternalConfig.builder().providerType(HARBOR).dockerRegistryUrl(url).build()))
+        .isTrue();
+    verify(dockerRestClientFactory, never()).getDockerRegistryRestClient(any());
+    assertThatThrownBy(()
+                           -> dockerRegistryService.validateCredentials(
+                               DockerInternalConfig.builder().providerType(OTHER).dockerRegistryUrl(url).build()))
+        .isInstanceOf(HintException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .extracting("message")
+        .isEqualTo("The given Docker Registry URL may be incorrect or not reachable from your delegate(s)");
   }
 }

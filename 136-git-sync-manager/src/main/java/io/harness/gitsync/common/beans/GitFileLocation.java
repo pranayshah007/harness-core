@@ -15,6 +15,8 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.common.EntityReference;
 import io.harness.data.validator.Trimmed;
 import io.harness.encryption.Scope;
+import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.ProjectAccess;
 import io.harness.persistence.AccountAccess;
@@ -26,6 +28,8 @@ import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.google.common.collect.ImmutableList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -77,4 +81,15 @@ public class GitFileLocation implements PersistentEntity, UuidAware, CreatedAtAw
   @CreatedDate private long createdAt;
   @LastModifiedBy private EmbeddedUser lastUpdatedBy;
   @LastModifiedDate private long lastUpdatedAt;
+
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("account_org_project__idx")
+                 .field(GitFileLocationKeys.accountId)
+                 .field(GitFileLocationKeys.organizationId)
+                 .field(GitFileLocationKeys.projectId)
+                 .build())
+        .build();
+  }
 }

@@ -65,9 +65,9 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
     PlanNode node = nodeExecution.getNode();
     FailureInfo failureInfo = FailureInfo.newBuilder()
                                   .setErrorMessage("ExecutionInputExpired")
-                                  .addFailureTypes(FailureType.EXECUTION_INPUT_TIMEOUT_FAILURE)
+                                  .addFailureTypes(FailureType.INPUT_TIMEOUT_FAILURE)
                                   .addFailureData(FailureData.newBuilder()
-                                                      .addFailureTypes(FailureType.EXECUTION_INPUT_TIMEOUT_FAILURE)
+                                                      .addFailureTypes(FailureType.INPUT_TIMEOUT_FAILURE)
                                                       .setLevel(Level.ERROR.name())
                                                       .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
                                                       .setMessage("ExecutionInputExpired")

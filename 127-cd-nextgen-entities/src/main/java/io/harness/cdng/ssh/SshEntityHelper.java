@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.CUSTOM_DEPLOYMENT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.PDC;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.SSH_WINRM_AWS;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.SSH_WINRM_AZURE;
@@ -45,6 +46,7 @@ import io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig;
+import io.harness.delegate.task.ssh.EmptyHostDelegateConfig;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
@@ -71,6 +73,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -146,6 +149,9 @@ public class SshEntityHelper {
             .region(awsInfrastructureOutcome.getRegion())
             .tags(filterInfraTags(awsInfrastructureOutcome.getTags()))
             .build();
+
+      case CUSTOM_DEPLOYMENT:
+        return EmptyHostDelegateConfig.builder().hosts(Collections.emptySet()).build();
 
       default:
         throw new UnsupportedOperationException(

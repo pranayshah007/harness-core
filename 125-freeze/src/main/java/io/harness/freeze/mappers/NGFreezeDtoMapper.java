@@ -10,27 +10,49 @@ package io.harness.freeze.mappers;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
-import io.harness.freeze.beans.FreezeResponseDTO;
+import io.harness.freeze.beans.FilterType;
+import io.harness.freeze.beans.FreezeEntityRule;
+import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.FreezeType;
+import io.harness.freeze.beans.FreezeWindow;
+import io.harness.freeze.beans.response.FreezeBannerDetails;
+import io.harness.freeze.beans.response.FreezeDetailedResponseDTO;
+import io.harness.freeze.beans.response.FreezeResponseDTO;
+import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.yaml.FreezeConfig;
 import io.harness.freeze.beans.yaml.FreezeInfoConfig;
 import io.harness.freeze.entity.FreezeConfigEntity;
+import io.harness.freeze.helpers.FreezeTimeUtils;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.google.common.collect.Sets;
 import java.io.IOException;
+import java.text.ParseException;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class NGFreezeDtoMapper {
+  private static final long MIN_FREEZE_WINDOW_TIME = 1800000L;
+  private static final long MAX_FREEZE_WINDOW_TIME = 31536000000L;
+  DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a");
   public FreezeConfigEntity toFreezeConfigEntity(
+      String accountId, String orgId, String projectId, String freezeConfigYaml, FreezeType type) {
+    FreezeConfig freezeConfig = toFreezeConfig(freezeConfigYaml);
+    return toFreezeConfigEntityResponse(accountId, freezeConfig, freezeConfigYaml, type, orgId, projectId);
+  }
+
+  public FreezeConfigEntity toFreezeConfigEntityGlobal(
       String accountId, String orgId, String projectId, String freezeConfigYaml) {
-    try {
-      FreezeConfig templateConfig = YamlPipelineUtils.read(freezeConfigYaml, FreezeConfig.class);
-      return toFreezeConfigEntityResponse(accountId, templateConfig, freezeConfigYaml);
-    } catch (IOException e) {
-      throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
-    }
+    return toFreezeConfigEntity(accountId, orgId, projectId, freezeConfigYaml, FreezeType.GLOBAL);
+  }
+
+  public FreezeConfigEntity toFreezeConfigEntityManual(
+      String accountId, String orgId, String projectId, String freezeConfigYaml) {
+    return toFreezeConfigEntity(accountId, orgId, projectId, freezeConfigYaml, FreezeType.MANUAL);
   }
 
   public FreezeConfig toFreezeConfig(String freezeConfigYaml) {
@@ -39,6 +61,20 @@ public class NGFreezeDtoMapper {
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
     }
+  }
+
+  public static FreezeConfigEntity updateOldFreezeConfig(
+      FreezeConfigEntity newFreezeConfigEntity, FreezeConfigEntity oldFreezeConfigEntity) {
+    oldFreezeConfigEntity.setOrgIdentifier(newFreezeConfigEntity.getOrgIdentifier());
+    oldFreezeConfigEntity.setProjectIdentifier(newFreezeConfigEntity.getProjectIdentifier());
+    oldFreezeConfigEntity.setIdentifier(newFreezeConfigEntity.getIdentifier());
+    oldFreezeConfigEntity.setFreezeScope(newFreezeConfigEntity.getFreezeScope());
+    oldFreezeConfigEntity.setDescription(newFreezeConfigEntity.getDescription());
+    oldFreezeConfigEntity.setName(newFreezeConfigEntity.getName());
+    oldFreezeConfigEntity.setStatus(newFreezeConfigEntity.getStatus());
+    oldFreezeConfigEntity.setTags(newFreezeConfigEntity.getTags());
+    oldFreezeConfigEntity.setYaml(newFreezeConfigEntity.getYaml());
+    return oldFreezeConfigEntity;
   }
 
   public FreezeResponseDTO prepareFreezeResponseDto(FreezeConfigEntity freezeConfigEntity) {
@@ -56,9 +92,93 @@ public class NGFreezeDtoMapper {
         .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
         .createdAt(freezeConfigEntity.getCreatedAt())
         .type(freezeConfigEntity.getType())
-        .createdBy(freezeConfigEntity.getCreatedBy())
         .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
-        .lastUpdatedBy(freezeConfigEntity.getLastUpdatedBy())
+        .build();
+  }
+
+  public FreezeSummaryResponseDTO prepareFreezeResponseSummaryDto(FreezeConfigEntity freezeConfigEntity) {
+    FreezeConfig freezeConfig = toFreezeConfig(freezeConfigEntity.getYaml());
+    return FreezeSummaryResponseDTO.builder()
+        .accountId(freezeConfigEntity.getAccountId())
+        .orgIdentifier(freezeConfigEntity.getOrgIdentifier())
+        .projectIdentifier(freezeConfigEntity.getProjectIdentifier())
+        .windows(freezeConfig.getFreezeInfoConfig().getWindows())
+        .rules(freezeConfig.getFreezeInfoConfig().getRules())
+        .identifier(freezeConfigEntity.getIdentifier())
+        .description(freezeConfigEntity.getDescription())
+        .name(freezeConfigEntity.getName())
+        .status(freezeConfigEntity.getStatus())
+        .freezeScope(freezeConfigEntity.getFreezeScope())
+        .tags(TagMapper.convertToMap(freezeConfigEntity.getTags()))
+        .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
+        .createdAt(freezeConfigEntity.getCreatedAt())
+        .type(freezeConfigEntity.getType())
+        .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
+        .currentOrUpcomingWindow(
+            FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
+        .yaml(freezeConfigEntity.getYaml())
+        .build();
+  }
+
+  public FreezeSummaryResponseDTO prepareFreezeResponseSummaryDto(FreezeResponseDTO freezeResponseDTO) {
+    FreezeConfig freezeConfig = toFreezeConfig(freezeResponseDTO.getYaml());
+    return FreezeSummaryResponseDTO.builder()
+        .accountId(freezeResponseDTO.getAccountId())
+        .orgIdentifier(freezeResponseDTO.getOrgIdentifier())
+        .projectIdentifier(freezeResponseDTO.getProjectIdentifier())
+        .windows(freezeConfig.getFreezeInfoConfig().getWindows())
+        .rules(freezeConfig.getFreezeInfoConfig().getRules())
+        .identifier(freezeResponseDTO.getIdentifier())
+        .description(freezeResponseDTO.getDescription())
+        .name(freezeResponseDTO.getName())
+        .status(freezeResponseDTO.getStatus())
+        .freezeScope(freezeResponseDTO.getFreezeScope())
+        .tags(freezeResponseDTO.getTags())
+        .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
+        .createdAt(freezeResponseDTO.getCreatedAt())
+        .type(freezeResponseDTO.getType())
+        .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
+        .currentOrUpcomingWindow(
+            FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
+        .yaml(freezeResponseDTO.getYaml())
+        .build();
+  }
+
+  public FreezeBannerDetails prepareBanner(FreezeResponseDTO freezeResponseDTO) {
+    FreezeConfig freezeConfig = toFreezeConfig(freezeResponseDTO.getYaml());
+    return FreezeBannerDetails.builder()
+        .accountId(freezeResponseDTO.getAccountId())
+        .orgIdentifier(freezeResponseDTO.getOrgIdentifier())
+        .projectIdentifier(freezeResponseDTO.getProjectIdentifier())
+        .windows(freezeConfig.getFreezeInfoConfig().getWindows())
+        .identifier(freezeResponseDTO.getIdentifier())
+        .name(freezeResponseDTO.getName())
+        .freezeScope(freezeResponseDTO.getFreezeScope())
+        .window(FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
+        .build();
+  }
+
+  public FreezeDetailedResponseDTO prepareDetailedFreezeResponseDto(FreezeResponseDTO freezeResponseDTO) {
+    FreezeConfig freezeConfig = toFreezeConfig(freezeResponseDTO.getYaml());
+    return FreezeDetailedResponseDTO.builder()
+        .accountId(freezeResponseDTO.getAccountId())
+        .orgIdentifier(freezeResponseDTO.getOrgIdentifier())
+        .projectIdentifier(freezeResponseDTO.getProjectIdentifier())
+        .windows(freezeConfig.getFreezeInfoConfig().getWindows())
+        .rules(freezeConfig.getFreezeInfoConfig().getRules())
+        .identifier(freezeResponseDTO.getIdentifier())
+        .description(freezeResponseDTO.getDescription())
+        .name(freezeResponseDTO.getName())
+        .status(freezeResponseDTO.getStatus())
+        .freezeScope(freezeResponseDTO.getFreezeScope())
+        .tags(freezeResponseDTO.getTags())
+        .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
+        .createdAt(freezeResponseDTO.getCreatedAt())
+        .type(freezeResponseDTO.getType())
+        .lastUpdatedAt(freezeResponseDTO.getLastUpdatedAt())
+        .currentOrUpcomingWindow(
+            FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(freezeConfig.getFreezeInfoConfig().getWindows()))
+        .yaml(freezeResponseDTO.getYaml())
         .build();
   }
 
@@ -66,33 +186,95 @@ public class NGFreezeDtoMapper {
     return YamlPipelineUtils.writeYamlString(freezeConfig);
   }
 
-  private FreezeConfigEntity toFreezeConfigEntityResponse(
-      String accountId, FreezeConfig freezeConfig, String freezeConfigYaml) {
-    //    validateFreezeYaml(freezeConfig, orgId, projectId);
-    String description = (String) freezeConfig.getFreezeInfoConfig().getDescription().fetchFinalValue();
-    description = description == null ? "" : description;
+  private FreezeConfigEntity toFreezeConfigEntityResponse(String accountId, FreezeConfig freezeConfig,
+      String freezeConfigYaml, FreezeType type, String orgId, String projectId) {
+    validateFreezeYaml(freezeConfig, orgId, projectId, type);
+    String description = null;
+    if (freezeConfig.getFreezeInfoConfig().getDescription() != null) {
+      description = (String) freezeConfig.getFreezeInfoConfig().getDescription().fetchFinalValue();
+      description = description == null ? "" : description;
+    }
     return FreezeConfigEntity.builder()
         .yaml(freezeConfigYaml)
         .identifier(freezeConfig.getFreezeInfoConfig().getIdentifier())
         .accountId(accountId)
-        .orgIdentifier(freezeConfig.getFreezeInfoConfig().getOrgIdentifier())
-        .projectIdentifier(freezeConfig.getFreezeInfoConfig().getProjectIdentifier())
+        .orgIdentifier(orgId)
+        .projectIdentifier(projectId)
         .name(freezeConfig.getFreezeInfoConfig().getName())
-        .status(freezeConfig.getFreezeInfoConfig().getActive())
+        .status(freezeConfig.getFreezeInfoConfig().getStatus())
         .description(description)
         .tags(TagMapper.convertToList(freezeConfig.getFreezeInfoConfig().getTags()))
-        .type(FreezeType.MANUAL)
-        .freezeScope(getScopeFromTemplateDto(freezeConfig.getFreezeInfoConfig()))
+        .type(type)
+        .freezeScope(getScopeFromFreezeDto(orgId, projectId))
         .build();
   }
 
-  private Scope getScopeFromTemplateDto(FreezeInfoConfig freezeInfoConfig) {
-    if (EmptyPredicate.isNotEmpty(freezeInfoConfig.getProjectIdentifier())) {
+  public Scope getScopeFromFreezeDto(String orgId, String projId) {
+    if (EmptyPredicate.isNotEmpty(projId)) {
       return Scope.PROJECT;
     }
-    if (EmptyPredicate.isNotEmpty(freezeInfoConfig.getOrgIdentifier())) {
+    if (EmptyPredicate.isNotEmpty(orgId)) {
       return Scope.ORG;
     }
     return Scope.ACCOUNT;
+  }
+
+  public String getFreezeRef(Scope freezeScope, String identifier) {
+    switch (freezeScope) {
+      case ACCOUNT:
+        return "account." + identifier;
+      case ORG:
+        return "org." + identifier;
+      case PROJECT:
+      default:
+        return identifier;
+    }
+  }
+
+  public static void validateFreezeYaml(FreezeConfig freezeConfig, String orgId, String projectId, FreezeType type) {
+    if (freezeConfig.getFreezeInfoConfig() == null) {
+      throw new InvalidRequestException("FreezeInfoConfig cannot be empty");
+    }
+    FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
+
+    List<FreezeEntityRule> rules = freezeInfoConfig.getRules();
+    List<FreezeWindow> windows = freezeInfoConfig.getWindows();
+    if (FreezeType.MANUAL.equals(type) && (EmptyPredicate.isEmpty(rules) || EmptyPredicate.isEmpty(windows))) {
+      throw new InvalidRequestException("Freeze Windows and Rules are required.");
+    }
+
+    // Currently we support only 1 window, Remove this validation after multiple windows are supported.
+    if (windows != null && windows.size() > 1) {
+      throw new InvalidRequestException("Multiple windows are not supported as of now.");
+    }
+
+    if (rules != null) {
+      rules.stream().forEach(freezeEntityRule -> {
+        freezeEntityRule.getEntityConfigList().stream().forEach(entityConfig -> {
+          if (!FilterType.ALL.equals(entityConfig.getFilterType())) {
+            if (EmptyPredicate.isEmpty(entityConfig.getEntityReference())) {
+              throw new InvalidRequestException("Entity references are empty");
+            }
+            if (FreezeEntityType.ENV_TYPE.equals(entityConfig.getFreezeEntityType())) {
+              Set<String> supportedEnvs = Sets.newHashSet("Production", "PreProduction");
+              if (!entityConfig.getEntityReference().stream().allMatch(
+                      entityReference -> supportedEnvs.contains(entityReference))) {
+                throw new InvalidRequestException("Supported EnvTypes are Production and PreProduction");
+              }
+            }
+          }
+        });
+      });
+    }
+
+    if (windows != null) {
+      windows.stream().forEach(freezeWindow -> {
+        try {
+          FreezeTimeUtils.validateTimeRange(freezeWindow);
+        } catch (ParseException e) {
+          throw new InvalidRequestException("Invalid time format provided.", e);
+        }
+      });
+    }
   }
 }

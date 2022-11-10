@@ -12,7 +12,9 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -73,6 +75,12 @@ public class InfrastructurePlanCreatorHelper {
         k8SDirectInfrastructure.setInfraName(infraName);
         return;
 
+      case InfrastructureKind.CUSTOM_DEPLOYMENT:
+        CustomDeploymentInfrastructure customDeploymentInfrastructure = (CustomDeploymentInfrastructure) infrastructure;
+        customDeploymentInfrastructure.setInfraIdentifier(infraIdentifier);
+        customDeploymentInfrastructure.setInfraName(infraName);
+        return;
+
       case InfrastructureKind.KUBERNETES_GCP:
         K8sGcpInfrastructure k8sGcpInfrastructure = (K8sGcpInfrastructure) infrastructure;
         k8sGcpInfrastructure.setInfraIdentifier(infraIdentifier);
@@ -123,6 +131,12 @@ public class InfrastructurePlanCreatorHelper {
         EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
         ecsInfrastructure.setInfraName(infraName);
         ecsInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.ELASTIGROUP:
+        ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
+        elastigroupInfrastructure.setInfraName(infraName);
+        elastigroupInfrastructure.setInfraIdentifier(infraIdentifier);
         return;
 
       default:

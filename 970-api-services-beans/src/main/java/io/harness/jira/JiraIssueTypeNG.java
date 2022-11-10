@@ -54,6 +54,11 @@ public class JiraIssueTypeNG {
     addFields(node.get("fields"));
   }
 
+  public JiraIssueTypeNG(JiraIssueCreateMetadataNGFields jiraIssueCreateMetadataNGFields) {
+    this.statuses.addAll(jiraIssueCreateMetadataNGFields.getStatuses());
+    jiraIssueCreateMetadataNGFields.getFields().values().forEach(field -> this.fields.put(field.getName(), field));
+  }
+
   private void updateStatuses(JsonNode node) {
     if (node == null || !node.isArray()) {
       return;

@@ -24,6 +24,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
+import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
@@ -42,6 +43,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -60,6 +62,8 @@ import org.mongodb.morphia.query.Sort;
 public class WorkflowExecutionZombieHandlerTest {
   private static final String WORKFLOW_ID = "workflowId";
   private static final String EXECUTION_UUID = "executionUuid";
+  private static final String PARENT_UUID = "parentUuid";
+  private static final String APP_ID = "APP_ID";
 
   @InjectMocks private WorkflowExecutionZombieHandler monitorHandler;
 
@@ -80,22 +84,10 @@ public class WorkflowExecutionZombieHandlerTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
-  public void shouldIgnoreExecutionWhenFeatureFlagDisable() {
-    when(featureFlagService.isNotEnabled(eq(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR), any())).thenReturn(true);
-
-    monitorHandler.handle(createValidWorkflowExecution());
-
-    verify(wingsPersistence, never()).createQuery(any());
-    verify(workflowExecutionService, never()).triggerExecutionInterrupt(any());
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
   public void shouldHandleWorkflowExecutionWhenNotFoundStateExecutionInstances() {
     WorkflowExecution wfExecution = createValidWorkflowExecution();
 
-    prepareWingsPersistence(Collections.emptyList());
+    prepareWingsPersistence(Collections.emptyList(), 0);
 
     monitorHandler.handle(wfExecution);
 
@@ -106,7 +98,7 @@ public class WorkflowExecutionZombieHandlerTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
-  public void shouldHandleWorkflowExecutionWhenNotNotZombieState() {
+  public void shouldHandleWorkflowExecutionWhenNotZombieState() {
     WorkflowExecution wfExecution = createValidWorkflowExecution();
     StateExecutionInstance seInstance = aStateExecutionInstance().stateType(StateType.SHELL_SCRIPT.name()).build();
 
@@ -124,7 +116,7 @@ public class WorkflowExecutionZombieHandlerTest {
   public void shouldHandleWorkflowExecutionWhenIsZombieStateButCreatedOutOfThreshold() {
     WorkflowExecution wfExecution = createValidWorkflowExecution();
     StateExecutionInstance seInstance = aStateExecutionInstance()
-                                            .appId("APP_ID")
+                                            .appId(APP_ID)
                                             .executionUuid(EXECUTION_UUID)
                                             .stateType(StateType.PHASE.name())
                                             .createdAt(System.currentTimeMillis())
@@ -144,9 +136,10 @@ public class WorkflowExecutionZombieHandlerTest {
   public void shouldHandleWorkflowExecutionAndTriggerInterruptWhenZombieState() {
     WorkflowExecution wfExecution = createValidWorkflowExecution();
     StateExecutionInstance seInstance = aStateExecutionInstance()
-                                            .appId("APP_ID")
+                                            .appId(APP_ID)
                                             .executionUuid(EXECUTION_UUID)
                                             .stateType(StateType.PHASE.name())
+                                            .createdAt(createThreshold(46))
                                             .build();
 
     prepareWingsPersistence(seInstance);
@@ -158,7 +151,7 @@ public class WorkflowExecutionZombieHandlerTest {
     assertSortAndLimit();
 
     ExecutionInterrupt value = captor.getValue();
-    assertThat(value.getAppId()).isEqualTo("APP_ID");
+    assertThat(value.getAppId()).isEqualTo(APP_ID);
     assertThat(value.getExecutionUuid()).isEqualTo(EXECUTION_UUID);
     assertThat(value.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.ABORT_ALL);
   }
@@ -166,8 +159,193 @@ public class WorkflowExecutionZombieHandlerTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
+  public void shouldHandleWorkflowExecutionWhenSuccessZombieEndedOutOfThreshold() {
+    WorkflowExecution wfExecution = createValidWorkflowExecution();
+    StateExecutionInstance seInstance = aStateExecutionInstance()
+                                            .appId(APP_ID)
+                                            .executionUuid(EXECUTION_UUID)
+                                            .stateType(StateType.ENV_STATE.name())
+                                            .status(ExecutionStatus.SUCCESS)
+                                            .endTs(System.currentTimeMillis())
+                                            .build();
+
+    prepareWingsPersistence(seInstance);
+
+    monitorHandler.handle(wfExecution);
+
+    verify(workflowExecutionService, never()).triggerExecutionInterrupt(any());
+    assertSortAndLimit();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldHandleWorkflowExecutionWhenStateExecutionIsRunning() {
+    WorkflowExecution wfExecution = createValidWorkflowExecution();
+    StateExecutionInstance seInstance = aStateExecutionInstance()
+                                            .appId(APP_ID)
+                                            .executionUuid(EXECUTION_UUID)
+                                            .stateType(StateType.ENV_STATE.name())
+                                            .status(ExecutionStatus.RUNNING)
+                                            .createdAt(createThreshold(50))
+                                            .build();
+
+    prepareWingsPersistence(seInstance);
+
+    monitorHandler.handle(wfExecution);
+
+    verify(workflowExecutionService, never()).triggerExecutionInterrupt(any());
+    assertSortAndLimit();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldHandleWorkflowExecutionWhenSuccessZombie() {
+    WorkflowExecution wfExecution = createValidWorkflowExecution();
+    StateExecutionInstance seInstance = aStateExecutionInstance()
+                                            .appId(APP_ID)
+                                            .executionUuid(EXECUTION_UUID)
+                                            .parentInstanceId(PARENT_UUID)
+                                            .stateType(StateType.ENV_STATE.name())
+                                            .status(ExecutionStatus.SUCCESS)
+                                            .endTs(createThreshold(46))
+                                            .build();
+
+    prepareWingsPersistence(seInstance);
+
+    monitorHandler.handle(wfExecution);
+
+    ArgumentCaptor<ExecutionInterrupt> captor = ArgumentCaptor.forClass(ExecutionInterrupt.class);
+    verify(workflowExecutionService).triggerExecutionInterrupt(captor.capture());
+    assertSortAndLimit();
+
+    ExecutionInterrupt value = captor.getValue();
+    assertThat(value.getAppId()).isEqualTo(APP_ID);
+    assertThat(value.getExecutionUuid()).isEqualTo(EXECUTION_UUID);
+    assertThat(value.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.ABORT_ALL);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldHandleWorkflowExecutionWhenSuccessZombieAndParentIsFork() {
+    WorkflowExecution wfExecution = createValidWorkflowExecution();
+    StateExecutionInstance seInstance = aStateExecutionInstance()
+                                            .appId(APP_ID)
+                                            .executionUuid(EXECUTION_UUID)
+                                            .parentInstanceId(PARENT_UUID)
+                                            .stateType(StateType.ENV_STATE.name())
+                                            .status(ExecutionStatus.SUCCESS)
+                                            .endTs(createThreshold(46))
+                                            .build();
+
+    prepareWingsPersistence(Collections.singletonList(seInstance), 1);
+
+    monitorHandler.handle(wfExecution);
+
+    ArgumentCaptor<ExecutionInterrupt> captor = ArgumentCaptor.forClass(ExecutionInterrupt.class);
+    verify(workflowExecutionService, never()).triggerExecutionInterrupt(captor.capture());
+    assertSortAndLimit();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldHandleWorkflowExecutionWhenSuccessZombieHasStatusSkipped() {
+    WorkflowExecution wfExecution = createValidWorkflowExecution();
+    StateExecutionInstance seInstance = aStateExecutionInstance()
+                                            .appId(APP_ID)
+                                            .executionUuid(EXECUTION_UUID)
+                                            .parentInstanceId(PARENT_UUID)
+                                            .stateType(StateType.ENV_STATE.name())
+                                            .status(ExecutionStatus.SKIPPED)
+                                            .endTs(createThreshold(46))
+                                            .build();
+
+    prepareWingsPersistence(seInstance);
+
+    monitorHandler.handle(wfExecution);
+
+    ArgumentCaptor<ExecutionInterrupt> captor = ArgumentCaptor.forClass(ExecutionInterrupt.class);
+    verify(workflowExecutionService, never()).triggerExecutionInterrupt(captor.capture());
+    assertSortAndLimit();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldHandleWorkflowExecutionWhenSuccessZombieEndedRecently() {
+    WorkflowExecution wfExecution = createValidWorkflowExecution();
+    StateExecutionInstance seInstance = aStateExecutionInstance()
+                                            .appId(APP_ID)
+                                            .executionUuid(EXECUTION_UUID)
+                                            .stateType(StateType.ENV_STATE.name())
+                                            .status(ExecutionStatus.SKIPPED)
+                                            .endTs(createThreshold(2))
+                                            .build();
+
+    prepareWingsPersistence(seInstance);
+
+    monitorHandler.handle(wfExecution);
+
+    ArgumentCaptor<ExecutionInterrupt> captor = ArgumentCaptor.forClass(ExecutionInterrupt.class);
+    verify(workflowExecutionService, never()).triggerExecutionInterrupt(captor.capture());
+    assertSortAndLimit();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldHandleWorkflowExecutionWhenSuccessZombieEndedRecentlyAndParentIsFork() {
+    WorkflowExecution wfExecution = createValidWorkflowExecution();
+    StateExecutionInstance seInstance = aStateExecutionInstance()
+                                            .appId(APP_ID)
+                                            .executionUuid(EXECUTION_UUID)
+                                            .stateType(StateType.ENV_STATE.name())
+                                            .status(ExecutionStatus.SKIPPED)
+                                            .endTs(createThreshold(2))
+                                            .build();
+
+    prepareWingsPersistence(Collections.singletonList(seInstance), 1);
+
+    monitorHandler.handle(wfExecution);
+
+    ArgumentCaptor<ExecutionInterrupt> captor = ArgumentCaptor.forClass(ExecutionInterrupt.class);
+    verify(workflowExecutionService, never()).triggerExecutionInterrupt(captor.capture());
+    assertSortAndLimit();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldHandleWorkflowExecutionWhenSuccessZombieAndFFDisabled() {
+    when(featureFlagService.isNotEnabled(eq(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR), any())).thenReturn(true);
+
+    WorkflowExecution wfExecution = createValidWorkflowExecution();
+    StateExecutionInstance seInstance = aStateExecutionInstance()
+                                            .appId(APP_ID)
+                                            .executionUuid(EXECUTION_UUID)
+                                            .parentInstanceId(PARENT_UUID)
+                                            .stateType(StateType.ENV_STATE.name())
+                                            .status(ExecutionStatus.SUCCESS)
+                                            .endTs(createThreshold(46))
+                                            .build();
+
+    prepareWingsPersistence(seInstance);
+
+    monitorHandler.handle(wfExecution);
+
+    ArgumentCaptor<ExecutionInterrupt> captor = ArgumentCaptor.forClass(ExecutionInterrupt.class);
+    verify(workflowExecutionService, never()).triggerExecutionInterrupt(captor.capture());
+    assertSortAndLimit();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
   public void shouldVerifyNotZombieStateType() {
-    Set<StateType> types = new HashSet(Arrays.asList(StateType.values()));
+    Set<StateType> types = new HashSet<>(Arrays.asList(StateType.values()));
 
     // REMOVE VALID TYPES
     types.remove(StateType.REPEAT);
@@ -186,15 +364,22 @@ public class WorkflowExecutionZombieHandlerTest {
   }
 
   private void prepareWingsPersistence(StateExecutionInstance seInstance) {
-    prepareWingsPersistence(Collections.singletonList(seInstance));
+    prepareWingsPersistence(Collections.singletonList(seInstance), 0);
   }
 
-  private void prepareWingsPersistence(List<StateExecutionInstance> instances) {
+  @SuppressWarnings("unchecked")
+  private void prepareWingsPersistence(List<StateExecutionInstance> instances, long count) {
     Query<StateExecutionInstance> query = mock(Query.class);
     when(wingsPersistence.createQuery(StateExecutionInstance.class)).thenReturn(query);
-    when(query.filter(any(), any())).thenReturn(query);
+    when(query.filter(eq(StateExecutionInstanceKeys.appId), any())).thenReturn(query);
+    when(query.filter(eq(StateExecutionInstanceKeys.workflowId), any())).thenReturn(query);
+    when(query.filter(eq(StateExecutionInstanceKeys.executionUuid), any())).thenReturn(query);
     when(query.order(argSort.capture())).thenReturn(query);
     when(query.asList(argFindOptions.capture())).thenReturn(instances);
+    //
+    when(query.filter(eq(StateExecutionInstanceKeys.uuid), any())).thenReturn(query);
+    when(query.filter(eq(StateExecutionInstanceKeys.stateType), any())).thenReturn(query);
+    when(query.count()).thenReturn(count);
   }
 
   private void assertSortAndLimit() {
@@ -204,5 +389,9 @@ public class WorkflowExecutionZombieHandlerTest {
 
     FindOptions fo = argFindOptions.getValue();
     assertThat(fo.getLimit()).isEqualTo(1);
+  }
+
+  private long createThreshold(int minutes) {
+    return System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(minutes);
   }
 }

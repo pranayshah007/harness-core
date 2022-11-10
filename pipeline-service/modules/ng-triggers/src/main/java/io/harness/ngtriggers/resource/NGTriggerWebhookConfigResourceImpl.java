@@ -186,17 +186,13 @@ public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfi
       @NotNull String eventId, @NotNull String accountIdentifier) {
     WebhookEventProcessingDetails webhookProcessingDetails =
         ngTriggerService.fetchTriggerEventHistory(accountIdentifier, eventId);
-    if (!webhookProcessingDetails.isEventFound()) {
-      throw new InvalidRequestException(String.format("Trigger event history %s does not exist", eventId));
-    }
     Object executionDetails = null;
     try {
       executionDetails =
           ngTriggerService.fetchExecutionSummaryV2(webhookProcessingDetails.getPipelineExecutionId(), accountIdentifier,
               webhookProcessingDetails.getOrgIdentifier(), webhookProcessingDetails.getProjectIdentifier());
-    } catch (InvalidRequestException e) {
-      log.error(
-          String.format("Unable to find execution details for custom trigger with eventCorrelationId %s", eventId), e);
+    } catch (Exception e) {
+      log.error(String.format("Unable to find execution details for trigger with eventCorrelationId %s", eventId), e);
     }
     return ResponseDTO.newResponse(WebhookExecutionDetails.builder()
                                        .webhookProcessingDetails(webhookProcessingDetails)

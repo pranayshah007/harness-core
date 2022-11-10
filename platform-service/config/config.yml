@@ -106,6 +106,8 @@ notificationServiceConfig:
     target: localhost:9880
     authority: localhost
 
+  enableOpentelemetry: false
+
 auditServiceConfig:
   mongo:
     uri: mongodb://localhost:27017/ng-audits
@@ -125,6 +127,8 @@ auditServiceConfig:
   enableAuditService: true
   hostname: ${HOSTNAME:-localhost}
   basePathPrefix: ${BASE_PATH_PREFIX:-""}
+
+  enableOpentelemetry: false
 
 resourceGroupServiceConfig:
   enableResourceGroup: true
@@ -210,6 +214,8 @@ resourceGroupServiceConfig:
   hostname: ${HOSTNAME:-localhost}
   basePathPrefix: ${BASE_PATH_PREFIX:-""}
 
+  enableOpentelemetry: false
+
 hostname: ${HOSTNAME:-localhost}
 
 basePathPrefix: ${BASE_PATH_PREFIX:-""}
@@ -220,3 +226,5 @@ secretsConfiguration:
 
 enforcementClientConfiguration:
   enforcementCheckEnabled: false
+
+enableOpentelemetry: false

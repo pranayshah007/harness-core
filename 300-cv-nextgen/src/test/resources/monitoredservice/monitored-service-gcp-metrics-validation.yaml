@@ -1,0 +1,74 @@
+---
+monitoredService:
+  type: "Application"
+  serviceRef: "template"
+  environmentRef: "gcpm"
+  tags: {}
+  sources:
+    changeSources:
+      - identifier: "harness_cd_next_gen"
+        type: "HarnessCDNextGen"
+        name: "Harness CD Next Gen"
+        enabled: true
+        category: "Deployment"
+        spec: {}
+    healthSources:
+      - identifier: "gcp"
+        type: "Stackdriver"
+        name: "gcp"
+        spec:
+          connectorRef: "account.Google_Cloud_Provider"
+          feature: "Cloud Metrics"
+          metricDefinitions:
+            - identifier: "m1"
+              dashboardName: ""
+              dashboardPath: ""
+              metricName: "m1"
+              metricTags:
+                - "m"
+              isManualQuery: true
+              jsonMetricDefinition: "<+monitoredService.variables.query>"
+              riskProfile:
+                metricType: "RESP_TIME"
+                category: "Performance"
+                thresholdTypes:
+                  - "ACT_WHEN_HIGHER"
+              sli:
+                enabled: true
+              serviceInstanceField: "hello"
+              analysis:
+                riskProfile:
+                  category: "Performance"
+                  metricType: "RESP_TIME"
+                  thresholdTypes:
+                    - "ACT_WHEN_HIGHER"
+                liveMonitoring:
+                  enabled: true
+                deploymentVerification:
+                  enabled: true
+  variables:
+    - name: "query"
+      type: "String"
+      value: "{   \"dataSets\": [     {       \"timeSeriesQuery\": {         \"unitOverride\"\
+      : \"1\",         \"timeSeriesFilter\": {           \"filter\": \"metric.type=\\\
+      \"custom.googleapis.com/user/x_mongo_prod_workflow_executions_count\\\" resource.type=\\\
+      \"global\\\"\",           \"aggregation\": {             \"perSeriesAligner\"\
+      : \"ALIGN_MEAN\",             \"alignmentPeriod\": \"60s\"           }     \
+      \    }       }     }   ] }"
+  template:
+    templateRef: "GCPMetrics"
+    versionLabel: "version3"
+    templateInputs:
+      type: "Application"
+      serviceRef: "template"
+      environmentRef: "gcpm"
+      sources:
+        healthSources:
+          - identifier: "gcp"
+            type: "Stackdriver"
+            spec:
+              metricDefinitions:
+                - identifier: "m1"
+                  serviceInstanceField: "hello"
+  identifier: "<+monitoredService.serviceRef>_<+monitoredService.environmentRef>"
+  name: "<+monitoredService.serviceRef>_<+monitoredService.environmentRef>"

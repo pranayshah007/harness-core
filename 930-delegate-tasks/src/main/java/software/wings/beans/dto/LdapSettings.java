@@ -40,6 +40,8 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
 
   @Valid @Deprecated LdapGroupSettings groupSettings;
 
+  boolean disabled;
+
   public void decryptFields(
       @NotNull EncryptedDataDetail encryptedDataDetail, @NotNull EncryptionService encryptionService) {
     if (connectionSettings.getBindPassword().equals(LdapConstants.MASKED_STRING)) {

@@ -1,6 +1,6 @@
 name: Task duration metrics
 identifier: task_duration_metrics
-metricGroup: health_source_configuration
+metricGroup: verify_step_metric_group
 metrics:
   - metricName: verification_job_instance_extra_time
     metricDefinition: Time taken to finish from the time when it becomes elligible to finish.

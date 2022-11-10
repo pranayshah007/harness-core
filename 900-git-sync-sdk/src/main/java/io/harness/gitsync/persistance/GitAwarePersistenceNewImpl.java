@@ -298,7 +298,7 @@ public class GitAwarePersistenceNewImpl implements GitAwarePersistence {
     if (isFindDefaultFromOtherBranches != null && isFindDefaultFromOtherBranches) {
       return new Criteria().orOperator(criteria,
           Criteria.where(gitSdkEntityHandlerInterface.getIsFromDefaultBranchKey())
-              .is(true)
+              .in(true, null)
               .and(gitSdkEntityHandlerInterface.getYamlGitConfigRefKey())
               .ne(repo));
     }

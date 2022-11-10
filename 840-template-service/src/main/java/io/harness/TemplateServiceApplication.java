@@ -45,6 +45,7 @@ import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.request.RequestContextFilter;
 import io.harness.resource.VersionInfoResource;
@@ -222,6 +223,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
     registerRequestContextFilter(environment);
     registerAuthFilters(templateServiceConfiguration, environment, injector);
     registerCorrelationFilter(environment, injector);
+    registerApiResponseFilter(environment, injector);
 
     if (templateServiceConfiguration.isShouldDeployWithGitSync()) {
       registerGitSyncSdk(templateServiceConfiguration, injector, environment);
@@ -311,6 +313,10 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
   }
 
+  private void registerApiResponseFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(ApiResponseFilter.class));
+  }
+
   private void registerMigrations(Injector injector) {
     NGMigrationConfiguration config = getMigrationSdkConfiguration();
     NGMigrationSdkInitHelper.initialize(injector, config);
@@ -344,7 +350,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
         .deployMode(DeployMode.REMOTE)
         .microservice(Microservice.TEMPLATESERVICE)
         .scmConnectionConfig(gitSdkConfiguration.getScmConnectionConfig())
-        .eventsRedisConfig(config.getEventsFrameworkConfiguration().getRedisConfig())
+        .eventsFrameworkConfiguration(config.getEventsFrameworkConfiguration())
         .serviceHeader(TEMPLATE_SERVICE)
         .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
         .gitSyncEntitySortComparator(TemplateGitEntityOrderComparator.class)

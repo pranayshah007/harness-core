@@ -97,9 +97,9 @@ import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.GitlabSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabMRCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerEvent;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.webhook.WebhookConfigProvider;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -1040,7 +1040,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testToResponseDTO() {
-    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.GIT_WEBHOOK_POLLING))).thenReturn(Boolean.FALSE);
+    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.CD_GIT_WEBHOOK_POLLING))).thenReturn(Boolean.FALSE);
     NGTriggerEntity ngTriggerEntity =
         ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitlab_pr, false)
             .getNgTriggerEntity();
@@ -1061,7 +1061,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testToResponseDTOGitPolling() {
-    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.GIT_WEBHOOK_POLLING))).thenReturn(Boolean.TRUE);
+    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.CD_GIT_WEBHOOK_POLLING))).thenReturn(Boolean.TRUE);
     NGTriggerEntity ngTriggerEntity =
         ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitpolling, false)
             .getNgTriggerEntity();
@@ -1089,7 +1089,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
         ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitlab_pr, false)
             .getNgTriggerEntity();
     NGTriggerDetailsResponseDTO ngTriggerDetailsResponseDTO =
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true);
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, false);
     // baseUrl: "https://app.harness.io/pipeline/api"
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
         .isEqualTo("https://app.harness.io/ng/api/webhook?accountIdentifier=accId");
@@ -1098,25 +1098,29 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     ngTriggerEntity =
         ngTriggerElementMapper.toTriggerDetails("accId", "orgId", "projId", ngTriggerYaml_gitlab_pr, false)
             .getNgTriggerEntity();
-    ngTriggerDetailsResponseDTO = ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true);
+    ngTriggerDetailsResponseDTO =
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, true);
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
         .isEqualTo("https://app.harness.io/ng/api/webhook?accountIdentifier=accId");
 
     // baseUrl: "https://app.harness.io/pipeline/api/#"
-    ngTriggerDetailsResponseDTO = ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true);
+    ngTriggerDetailsResponseDTO =
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, false);
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
         .isEqualTo("https://app.harness.io/ng/api/webhook?accountIdentifier=accId");
 
     ngTriggerEntity = ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_custom, false)
                           .getNgTriggerEntity();
-    ngTriggerDetailsResponseDTO = ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true);
+    ngTriggerDetailsResponseDTO =
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, true);
     // baseUrl: "https://app.harness.io/pipeline/api"
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
         .isEqualTo(
             "https://app.harness.io/pipeline/api/webhook/custom/v2?accountIdentifier=accId&orgIdentifier=org&projectIdentifier=proj&pipelineIdentifier=pipeline&triggerIdentifier=first_trigger");
 
     ngTriggerEntity.setType(SCHEDULED);
-    ngTriggerDetailsResponseDTO = ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true);
+    ngTriggerDetailsResponseDTO =
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, true);
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl()).isEmpty();
   }
 

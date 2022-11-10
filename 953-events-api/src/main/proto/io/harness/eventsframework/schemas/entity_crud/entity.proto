@@ -16,4 +16,5 @@ message EntityChangeDTO {
   google.protobuf.StringValue accountIdentifier = 2;
   google.protobuf.StringValue orgIdentifier = 3;
   google.protobuf.StringValue projectIdentifier = 4;
+  map<string, string> metadata = 5;
 }

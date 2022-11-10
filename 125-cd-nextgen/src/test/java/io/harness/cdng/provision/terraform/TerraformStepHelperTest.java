@@ -10,6 +10,7 @@ package io.harness.cdng.provision.terraform;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
@@ -26,9 +27,7 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,6 +54,9 @@ import io.harness.cdng.manifest.yaml.GithubStoreDTO;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.moduleSource.ModuleSource;
+import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
@@ -71,7 +73,9 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.task.terraform.InlineTerraformVarFileInfo;
+import io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.RemoteTerraformVarFileInfo;
+import io.harness.delegate.task.terraform.TerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
 import io.harness.encryption.SecretRefData;
@@ -83,6 +87,7 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -105,6 +110,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -127,6 +133,8 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Mock private K8sStepHelper mockK8sStepHelper;
   @Mock private ExecutionSweepingOutputService mockExecutionSweepingOutputService;
   @Mock private GitConfigAuthenticationInfoHelper mockGitConfigAuthenticationInfoHelper;
+
+  @Mock TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
   @Mock private FileServiceClientFactory mockFileServiceFactory;
   @Mock private FileServiceClient mockFileService;
   @Mock private SecretManagerClientService mockSecretManagerClientService;
@@ -198,6 +206,57 @@ public class TerraformStepHelperTest extends CategoryTest {
     assertThat(output.getEnvironmentVariables()).isNotNull();
     assertThat(output.getEnvironmentVariables().size()).isEqualTo(1);
     assertThat(output.getEnvironmentVariables().get("KEY")).isEqualTo("VAL");
+  }
+
+  @Test
+  @Owner(developers = JELENA)
+  @Category(UnitTests.class)
+  public void testSaveTerraformInheritOutputWithRemoteBackendConfig() {
+    Ambiance ambiance = getAmbiance();
+    TerraformStepDataGenerator.GitStoreConfig gitStoreConfigFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("Config/"))
+            .connectoref(ParameterField.createValueField("terraform"))
+            .build();
+    TerraformStepDataGenerator.GitStoreConfig gitStoreConfigFilesBackendConfig =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("Config/state"))
+            .connectoref(ParameterField.createValueField("terraform"))
+            .build();
+    TerraformPlanStepParameters planStepParameters = TerraformStepDataGenerator.generateStepPlanWithRemoteBackendConfig(
+        StoreConfigType.GITHUB, StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreConfigFilesBackendConfig);
+    TerraformTaskNGResponse response =
+        TerraformTaskNGResponse.builder()
+            .commitIdForConfigFilesMap(ImmutableMap.of(TerraformStepHelper.TF_CONFIG_FILES, "commit-1"))
+            .build();
+    doReturn(LocalConfigDTO.builder().encryptionType(EncryptionType.LOCAL).build())
+        .when(mockSecretManagerClientService)
+        .getSecretManager(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+    helper.saveTerraformInheritOutput(planStepParameters, response, ambiance);
+    ArgumentCaptor<TerraformInheritOutput> captor = ArgumentCaptor.forClass(TerraformInheritOutput.class);
+    verify(mockExecutionSweepingOutputService).consume(any(), anyString(), captor.capture(), anyString());
+    TerraformInheritOutput output = captor.getValue();
+    assertThat(output).isNotNull();
+    io.harness.cdng.manifest.yaml.GitStoreConfig configFiles = output.getConfigFiles();
+    assertThat(configFiles).isNotNull();
+    assertThat(configFiles.getGitFetchType()).isEqualTo(FetchType.COMMIT);
+    assertThat(ParameterFieldHelper.getParameterFieldValue(configFiles.getBranch())).isNull();
+    String commitId = ParameterFieldHelper.getParameterFieldValue(configFiles.getCommitId());
+    assertThat(commitId).isEqualTo("commit-1");
+    TerraformBackendConfigFileConfig backendConfigFile = output.getBackendConfigurationFileConfig();
+    assertThat(backendConfigFile).isNotNull();
+    assertThat(backendConfigFile instanceof TerraformRemoteFileConfig).isTrue();
+    assertThat(((TerraformRemoteFileConfig) backendConfigFile).getGitStoreConfigDTO() instanceof GithubStoreDTO)
+        .isTrue();
+    GithubStoreDTO gitStoreDTO =
+        (GithubStoreDTO) ((TerraformRemoteFileConfig) backendConfigFile).getGitStoreConfigDTO();
+    assertThat(gitStoreDTO).isNotNull();
+    assertThat(gitStoreDTO.getGitFetchType()).isEqualTo(FetchType.BRANCH);
+    assertThat(gitStoreDTO.getBranch()).isEqualTo("master");
   }
 
   @Test
@@ -662,6 +721,65 @@ public class TerraformStepHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = JELENA)
+  @Category(UnitTests.class)
+  public void testPrepareTerraformRemoteBackendConfigFileInfoWithGitStore() {
+    Ambiance ambiance = getAmbiance();
+    ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder()
+                                         .name("terraform")
+                                         .identifier("terraform")
+                                         .connectorType(GITHUB)
+                                         .connectorConfig(GitConfigDTO.builder()
+                                                              .gitAuthType(GitAuthType.HTTP)
+                                                              .gitConnectionType(GitConnectionType.ACCOUNT)
+                                                              .delegateSelectors(Collections.singleton("delegateName"))
+                                                              .url("https://github.com/wings-software")
+                                                              .branchName("master")
+                                                              .build())
+                                         .build();
+
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
+    doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
+    doReturn(SSHKeySpecDTO.builder().build())
+        .when(mockGitConfigAuthenticationInfoHelper)
+        .getSSHKey(any(), anyString(), anyString(), anyString());
+    doReturn(Collections.emptyList())
+        .when(mockGitConfigAuthenticationInfoHelper)
+        .getEncryptedDataDetails(any(), any(), any());
+    doNothing().when(cdStepHelper).validateGitStoreConfig(any());
+
+    GitStoreConfigDTO configFiles1 = GithubStoreDTO.builder()
+                                         .branch("master")
+                                         .repoName("terraform")
+                                         .folderPath("test-path")
+                                         .connectorRef("terraform")
+                                         .gitFetchType(FetchType.COMMIT)
+                                         .commitId("commit")
+                                         .build();
+
+    TerraformBackendConfigFileConfig remoteBackendConfig =
+        TerraformRemoteBackendConfigFileConfig.builder().gitStoreConfigDTO(configFiles1).build();
+
+    TerraformBackendConfigFileInfo fileInfo =
+        helper.prepareTerraformBackendConfigFileInfo(remoteBackendConfig, ambiance);
+    verify(cdStepHelper, times(1)).validateGitStoreConfig(any());
+    assertThat(fileInfo).isNotNull();
+    assertThat(fileInfo).isInstanceOf(RemoteTerraformBackendConfigFileInfo.class);
+    RemoteTerraformBackendConfigFileInfo remoteTerraformFileInfo = (RemoteTerraformBackendConfigFileInfo) fileInfo;
+    assertThat(remoteTerraformFileInfo.getGitFetchFilesConfig().getIdentifier()).isEqualTo("TF_BACKEND_CONFIG_FILE");
+    assertThat(remoteTerraformFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().getBranch())
+        .isEqualTo("master");
+    assertThat(remoteTerraformFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().getPaths().size())
+        .isEqualTo(1);
+    assertThat(remoteTerraformFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().getPaths().get(0))
+        .isEqualTo("test-path");
+    assertThat(remoteTerraformFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().getConnectorName())
+        .isEqualTo("terraform");
+    assertThat(remoteTerraformFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO().getUrl())
+        .isEqualTo("https://github.com/wings-software/terraform");
+  }
+
+  @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testgetFileStoreFetchFilesConfigExceptionThrown() {
@@ -802,6 +920,40 @@ public class TerraformStepHelperTest extends CategoryTest {
     assertThat(entityDetail.getEntityRef().getOrgIdentifier()).isEqualTo("test-org");
     assertThat(entityDetail.getEntityRef().getProjectIdentifier()).isEqualTo("test-project");
     assertThat(entityDetail.getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
+  }
+
+  @Test
+  @Owner(developers = JELENA)
+  @Category(UnitTests.class)
+  public void testPrepareEntityDetailForBackendConfigFileInline() {
+    TerraformBackendConfig inlineConfig = TerraformStepDataGenerator.generateBackendConfigFile(null, true);
+    Optional<EntityDetail> entityDetail = TerraformStepHelper.prepareEntityDetailForBackendConfigFiles(
+        "test-account", "test-org", "test-project", inlineConfig);
+    assertThat(entityDetail.isPresent()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = JELENA)
+  @Category(UnitTests.class)
+  public void testPrepareEntityDetailForBackendConfigFileRemote() {
+    TerraformStepDataGenerator.GitStoreConfig gitStoreVarFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("VarFiles/"))
+            .varFolderPath(ParameterField.createValueField(Collections.singletonList("VarFiles/")))
+            .connectoref(ParameterField.createValueField("ConnectorRef"))
+            .build();
+    RemoteTerraformBackendConfigSpec remoteFile =
+        TerraformStepDataGenerator.generateRemoteBackendConfigFileSpec(StoreConfigType.GITLAB, gitStoreVarFiles);
+    TerraformBackendConfig remoteConfig = TerraformStepDataGenerator.generateBackendConfigFile(remoteFile, false);
+    Optional<EntityDetail> entityDetail = TerraformStepHelper.prepareEntityDetailForBackendConfigFiles(
+        "test-account", "test-org", "test-project", remoteConfig);
+    assertThat(entityDetail.isPresent()).isTrue();
+    assertThat(entityDetail.get().getEntityRef().getIdentifier()).isEqualTo("ConnectorRef");
+    assertThat(entityDetail.get().getEntityRef().getOrgIdentifier()).isEqualTo("test-org");
+    assertThat(entityDetail.get().getEntityRef().getProjectIdentifier()).isEqualTo("test-project");
+    assertThat(entityDetail.get().getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
   }
 
   @Test
@@ -1211,78 +1363,69 @@ public class TerraformStepHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = ABOSII)
+  @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void testSaveTerraformPlanJsonOutputNullPlanFileId() {
+  public void testSaveTerraformPlanExecutionDetails() {
     final Ambiance ambiance = getAmbiance();
-    final TerraformTaskNGResponse response = TerraformTaskNGResponse.builder().tfPlanJsonFileId(null).build();
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+    TerraformPlanExecutionDetails terraformPlanExecutionDetails =
+        TerraformPlanExecutionDetails.builder()
+            .accountIdentifier(accountId)
+            .orgIdentifier(orgId)
+            .projectIdentifier(projectId)
+            .pipelineExecutionId(planExecutionId)
+            .stageExecutionId(stageExecutionId)
+            .provisionerId("provisioner1")
+            .tfPlanJsonFieldId("testId")
+            .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .build();
 
-    String outputName = helper.saveTerraformPlanJsonOutput(ambiance, response, "provisioner1");
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder().tfPlanJsonFileId("testId").build();
 
-    verify(mockExecutionSweepingOutputService, never())
-        .consume(eq(ambiance), anyString(), any(ExecutionSweepingOutput.class), anyString());
+    helper.saveTerraformPlanExecutionDetails(ambiance, response, "provisioner1");
 
-    assertThat(outputName).isNull();
+    ArgumentCaptor<TerraformPlanExecutionDetails> outputCaptor =
+        ArgumentCaptor.forClass(TerraformPlanExecutionDetails.class);
+    verify(terraformPlanExectionDetailsService).save(outputCaptor.capture());
+    TerraformPlanExecutionDetails output = outputCaptor.getValue();
+    assertThat(output).isEqualTo(terraformPlanExecutionDetails);
   }
 
   @Test
-  @Owner(developers = ABOSII)
+  @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void testCleanupTfPlanJsonForProvisioner() {
-    Ambiance ambiance = getAmbiance();
-    List<String> planStepsFqn =
-        asList("plan1_provisioner1", "plan2_provisioner1", "plan3_provisioner1_different_bucket",
-            "plan4_provisioner1_delete_exception", "plan5_provisioner2", "plan5_no_output");
+  public void testCleanupTfPlanJson() {
+    final Ambiance ambiance = getAmbiance();
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+    TerraformPlanExecutionDetails terraformPlanExecutionDetails =
+        TerraformPlanExecutionDetails.builder()
+            .accountIdentifier(accountId)
+            .orgIdentifier(orgId)
+            .projectIdentifier(projectId)
+            .pipelineExecutionId(planExecutionId)
+            .stageExecutionId(stageExecutionId)
+            .provisionerId("provisioner1")
+            .tfPlanJsonFieldId("testId")
+            .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .build();
 
-    doReturn(OptionalSweepingOutput.builder()
-                 .output(TerraformPlanJsonOutput.builder()
-                             .tfPlanFileId("plan1_file1")
-                             .provisionerIdentifier("provisioner1")
-                             .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
-                             .build())
-                 .build())
-        .when(mockExecutionSweepingOutputService)
-        .resolveOptional(ambiance,
-            RefObjectUtils.getSweepingOutputRefObject(
-                TerraformPlanJsonOutput.getOutputName("plan1_provisioner1", "provisioner1")));
+    doReturn(Collections.singletonList(terraformPlanExecutionDetails))
+        .when(terraformPlanExectionDetailsService)
+        .listAllPipelineTFPlanExecutionDetails(any(TFPlanExecutionDetailsKey.class));
+    helper.cleanupTfPlanJson(ambiance);
 
-    setupPlanJsonOutput(ambiance, "plan1_provisioner1", "plan1_file", "provisioner1", FileBucket.TERRAFORM_PLAN_JSON);
-    setupPlanJsonOutput(ambiance, "plan2_provisioner1", "plan2_file", "provisioner1", FileBucket.TERRAFORM_PLAN_JSON);
-    setupPlanJsonOutput(
-        ambiance, "plan3_provisioner1_different_bucket", "plan3_file", "provisioner1", FileBucket.TERRAFORM_PLAN);
-    setupPlanJsonOutput(
-        ambiance, "plan4_provisioner1_delete_exception", "plan4_file", "provisioner1", FileBucket.TERRAFORM_PLAN_JSON);
-    setupPlanJsonOutput(ambiance, "plan5_provisioner2", "plan5_file", "provisioner2", FileBucket.TERRAFORM_PLAN_JSON);
-    doReturn(OptionalSweepingOutput.builder().found(false).build())
-        .when(mockExecutionSweepingOutputService)
-        .resolveOptional(ambiance,
-            RefObjectUtils.getSweepingOutputRefObject(
-                TerraformPlanJsonOutput.getOutputName("plan5_no_output", "provisioner1")));
-
-    doThrow(new RuntimeException("Something went wrong"))
-        .when(mockFileService)
-        .deleteFile("plan4_file", FileBucket.TERRAFORM_PLAN_JSON);
-
-    helper.cleanupTfPlanJsonForProvisioner(getAmbiance(), planStepsFqn, "provisioner1");
-
-    verify(mockFileService).deleteFile("plan1_file", FileBucket.TERRAFORM_PLAN_JSON);
-    verify(mockFileService).deleteFile("plan2_file", FileBucket.TERRAFORM_PLAN_JSON);
-    verify(mockFileService).deleteFile("plan3_file", FileBucket.TERRAFORM_PLAN);
-    verify(mockFileService).deleteFile("plan4_file", FileBucket.TERRAFORM_PLAN_JSON);
-    verify(mockFileService, never()).deleteFile("plan5_file", FileBucket.TERRAFORM_PLAN_JSON);
-  }
-
-  private void setupPlanJsonOutput(Ambiance ambiance, String fqn, String file, String provisioner, FileBucket bucket) {
-    doReturn(OptionalSweepingOutput.builder()
-                 .found(true)
-                 .output(TerraformPlanJsonOutput.builder()
-                             .tfPlanFileId(file)
-                             .provisionerIdentifier(provisioner)
-                             .tfPlanFileBucket(bucket.name())
-                             .build())
-                 .build())
-        .when(mockExecutionSweepingOutputService)
-        .resolveOptional(ambiance,
-            RefObjectUtils.getSweepingOutputRefObject(TerraformPlanJsonOutput.getOutputName(fqn, provisioner)));
+    ArgumentCaptor<String> outputCaptor = ArgumentCaptor.forClass(String.class);
+    doReturn(mockFileService).when(mockFileServiceFactory).get();
+    verify(mockFileService).deleteFile(outputCaptor.capture(), any(FileBucket.class));
+    String output = outputCaptor.getValue();
+    assertThat(output).isEqualTo("testId");
   }
 }

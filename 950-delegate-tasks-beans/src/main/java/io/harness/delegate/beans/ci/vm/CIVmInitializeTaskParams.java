@@ -26,6 +26,7 @@ import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
 @Data
@@ -64,6 +65,8 @@ public class CIVmInitializeTaskParams
   private String stageRuntimeId;
   @Expression(ALLOW_SECRETS) private List<VmServiceDependency> serviceDependencies;
   @Builder.Default private static final Type type = Type.VM;
+  //@Getter private InfraInfo infraInfo;
+  @Getter private CIInitializeTaskParams.Type infraInfo;
 
   @Override
   public Type getType() {
@@ -72,6 +75,6 @@ public class CIVmInitializeTaskParams
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return Collections.singletonList(CIVmConnectionCapability.builder().poolId(poolID).build());
+    return Collections.singletonList(CIVmConnectionCapability.builder().poolId(poolID).infraInfo(infraInfo).build());
   }
 }

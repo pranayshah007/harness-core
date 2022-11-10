@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
+import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.settings.SettingVariableTypes.AMAZON_S3;
 import static software.wings.settings.SettingVariableTypes.AMAZON_S3_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.APM_VERIFICATION;
@@ -95,6 +96,7 @@ import io.harness.yaml.BaseYaml;
 
 import software.wings.beans.artifact.ArtifactStreamSummary;
 import software.wings.beans.entityinterface.ApplicationAccess;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.security.UsageRestrictions;
 import software.wings.settings.SettingValue;
@@ -268,6 +270,12 @@ public class SettingAttribute
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder().id(getUuid()).name(getName()).type(CONNECTOR).accountId(getAccountId()).build();
   }
 
   public enum SettingCategory {

@@ -16,7 +16,6 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
-import io.harness.aggregates.AggregateNgServiceInstanceStats;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -24,6 +23,7 @@ import io.harness.cd.CDLicenseType;
 import io.harness.cd.NgServiceInfraInfoUtils;
 import io.harness.cd.TimeScaleDAL;
 import io.harness.licensing.usage.beans.ReferenceDTO;
+import io.harness.licensing.usage.beans.cd.ServiceInstanceUsageDTO;
 import io.harness.licensing.usage.beans.cd.ServiceUsageDTO;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.rule.Owner;
@@ -46,6 +46,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.CDP)
 public class CDLicenseUsageImplTest extends CategoryTest {
   @Mock private TimeScaleDAL timeScaleDAL;
+  @Mock private CdLicenseUsageUtils utils;
   @InjectMocks @Inject private CDLicenseUsageImpl cdLicenseUsage;
 
   private static final String accountIdentifier = "ACCOUNT_ID";
@@ -65,6 +66,45 @@ public class CDLicenseUsageImplTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.SHUBHAM_MAHESHWARI)
   @Category(UnitTests.class)
+  public void testGetServiceInstancesBasedLicenseUsage() {
+    long timeInMillis = 1234123412345L;
+    when(utils.fetchServiceInstancesOver30Days(accountIdentifier)).thenReturn(10L);
+    List<AggregateServiceUsageInfo> activeServiceWithInstanceCountList = new ArrayList<>();
+    activeServiceWithInstanceCountList.add(
+        new AggregateServiceUsageInfo(orgIdentifier, projectIdentifier, serviceIdentifier, 10));
+    when(utils.fetchInstancesPerServiceOver30Days(accountIdentifier)).thenReturn(activeServiceWithInstanceCountList);
+    List<Services> servicesList = new ArrayList<>();
+    servicesList.add(new Services(
+        null, accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, serviceName, false, null, null));
+    when(timeScaleDAL.getNamesForServiceIds(
+             accountIdentifier, NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceWithInstanceCountList)))
+        .thenReturn(servicesList);
+
+    ServiceInstanceUsageDTO licenseUsage =
+        (ServiceInstanceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier, ModuleType.CD, timeInMillis,
+            CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICE_INSTANCES).build());
+
+    assertThat(licenseUsage.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getCdLicenseType()).isEqualTo(CDLicenseType.SERVICE_INSTANCES);
+
+    assertThat(licenseUsage.getActiveServiceInstances().getCount()).isEqualTo(10L);
+    assertThat(licenseUsage.getActiveServiceInstances().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getIdentifier())
+        .isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getOrgIdentifier())
+        .isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getCount()).isEqualTo(10);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
   public void testGetLicenseUsageOneServiceWithZeroInstances() {
     long timeInMillis = 1234123412345L;
     List<ServiceInfraInfo> activeServiceList = new ArrayList<>();
@@ -74,13 +114,10 @@ public class CDLicenseUsageImplTest extends CategoryTest {
              accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
         .thenReturn(activeServiceList);
 
-    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList = new ArrayList<>();
+    List<AggregateServiceUsageInfo> activeServiceWithInstanceCountList = new ArrayList<>();
     activeServiceWithInstanceCountList.add(
-        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier, 0));
-    when(timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(accountIdentifier, 0.95,
-             timeInMillis - DAYS_30_IN_MILLIS, timeInMillis,
-             NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
-        .thenReturn(activeServiceWithInstanceCountList);
+        new AggregateServiceUsageInfo(orgIdentifier, projectIdentifier, serviceIdentifier, 0));
+    when(utils.fetchInstancesPerServiceOver30Days(accountIdentifier)).thenReturn(activeServiceWithInstanceCountList);
 
     List<Services> servicesList = new ArrayList<>();
     servicesList.add(new Services(
@@ -145,13 +182,10 @@ public class CDLicenseUsageImplTest extends CategoryTest {
              accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
         .thenReturn(activeServiceList);
 
-    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList = new ArrayList<>();
+    List<AggregateServiceUsageInfo> activeServiceWithInstanceCountList = new ArrayList<>();
     activeServiceWithInstanceCountList.add(
-        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier, 18));
-    when(timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(accountIdentifier, 0.95,
-             timeInMillis - DAYS_30_IN_MILLIS, timeInMillis,
-             NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
-        .thenReturn(activeServiceWithInstanceCountList);
+        new AggregateServiceUsageInfo(orgIdentifier, projectIdentifier, serviceIdentifier, 18));
+    when(utils.fetchInstancesPerServiceOver30Days(accountIdentifier)).thenReturn(activeServiceWithInstanceCountList);
 
     List<Services> servicesList = new ArrayList<>();
     servicesList.add(new Services(
@@ -216,13 +250,10 @@ public class CDLicenseUsageImplTest extends CategoryTest {
              accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
         .thenReturn(activeServiceList);
 
-    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList = new ArrayList<>();
+    List<AggregateServiceUsageInfo> activeServiceWithInstanceCountList = new ArrayList<>();
     activeServiceWithInstanceCountList.add(
-        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier, 41));
-    when(timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(accountIdentifier, 0.95,
-             timeInMillis - DAYS_30_IN_MILLIS, timeInMillis,
-             NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
-        .thenReturn(activeServiceWithInstanceCountList);
+        new AggregateServiceUsageInfo(orgIdentifier, projectIdentifier, serviceIdentifier, 41));
+    when(utils.fetchInstancesPerServiceOver30Days(accountIdentifier)).thenReturn(activeServiceWithInstanceCountList);
 
     List<Services> servicesList = new ArrayList<>();
     servicesList.add(new Services(
@@ -287,13 +318,10 @@ public class CDLicenseUsageImplTest extends CategoryTest {
              accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
         .thenReturn(activeServiceList);
 
-    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList = new ArrayList<>();
+    List<AggregateServiceUsageInfo> activeServiceWithInstanceCountList = new ArrayList<>();
     activeServiceWithInstanceCountList.add(
-        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier, 20));
-    when(timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(accountIdentifier, 0.95,
-             timeInMillis - DAYS_30_IN_MILLIS, timeInMillis,
-             NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
-        .thenReturn(activeServiceWithInstanceCountList);
+        new AggregateServiceUsageInfo(orgIdentifier, projectIdentifier, serviceIdentifier, 20));
+    when(utils.fetchInstancesPerServiceOver30Days(accountIdentifier)).thenReturn(activeServiceWithInstanceCountList);
 
     List<Services> servicesList = new ArrayList<>();
     servicesList.add(new Services(
@@ -360,13 +388,10 @@ public class CDLicenseUsageImplTest extends CategoryTest {
              accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
         .thenReturn(activeServiceList);
 
-    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList = new ArrayList<>();
+    List<AggregateServiceUsageInfo> activeServiceWithInstanceCountList = new ArrayList<>();
     activeServiceWithInstanceCountList.add(
-        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier, 9));
-    when(timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(accountIdentifier, 0.95,
-             timeInMillis - DAYS_30_IN_MILLIS, timeInMillis,
-             NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
-        .thenReturn(activeServiceWithInstanceCountList);
+        new AggregateServiceUsageInfo(orgIdentifier, projectIdentifier, serviceIdentifier, 9));
+    when(utils.fetchInstancesPerServiceOver30Days(accountIdentifier)).thenReturn(activeServiceWithInstanceCountList);
 
     List<Services> servicesList = new ArrayList<>();
     servicesList.add(new Services(
@@ -459,15 +484,12 @@ public class CDLicenseUsageImplTest extends CategoryTest {
              accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
         .thenReturn(activeServiceList);
 
-    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList = new ArrayList<>();
+    List<AggregateServiceUsageInfo> activeServiceWithInstanceCountList = new ArrayList<>();
     activeServiceWithInstanceCountList.add(
-        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier, 9));
+        new AggregateServiceUsageInfo(orgIdentifier, projectIdentifier, serviceIdentifier, 9));
     activeServiceWithInstanceCountList.add(
-        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier2, 11));
-    when(timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(accountIdentifier, 0.95,
-             timeInMillis - DAYS_30_IN_MILLIS, timeInMillis,
-             NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
-        .thenReturn(activeServiceWithInstanceCountList);
+        new AggregateServiceUsageInfo(orgIdentifier, projectIdentifier, serviceIdentifier2, 11));
+    when(utils.fetchInstancesPerServiceOver30Days(accountIdentifier)).thenReturn(activeServiceWithInstanceCountList);
 
     List<Services> servicesList = new ArrayList<>();
     servicesList.add(new Services(

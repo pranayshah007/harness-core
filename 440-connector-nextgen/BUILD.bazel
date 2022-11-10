@@ -8,6 +8,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//440-connector-nextgen/contracts/openapi/public/v1:connector-server-spec-module",
         "//878-ng-common-utilities:module",
         "//890-sm-core:module",
         "//900-git-sync-sdk:module",
@@ -42,6 +43,7 @@ java_library(
         "//999-annotations:module",
         "//clients/access-control/sdk:module",
         "//clients/audit:module",
+        "//clients/ngsettings:module",
         "//platform-service/modules/audit-service/contracts:module",
     ],
 )
@@ -58,6 +60,7 @@ java_library(
     deps = [
         "module",
         "//:lombok",
+        "//440-connector-nextgen/contracts/openapi/public/v1:connector-server-spec-module",
         "//878-ng-common-utilities:module",
         "//890-sm-core:module",
         "//900-git-sync-sdk:module",
@@ -108,7 +111,7 @@ java_library(
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_hibernate_validator_hibernate_validator",
-        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mockito_mockito_inline",
         "@maven//:org_modelmapper_modelmapper",
         "@maven//:org_mongodb_mongo_java_driver",
         "@maven//:org_mongodb_morphia_morphia",

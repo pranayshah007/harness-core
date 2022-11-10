@@ -640,4 +640,23 @@ public class UserResource {
     Optional<UserInfo> optionalUserInfo = ngUserService.getUserById(userId);
     return optionalUserInfo.map(UserInfo::isExternallyManaged).orElse(false);
   }
+
+  @GET
+  @Hidden
+  @Path("is-email-in-account")
+  @ApiOperation(value = "Check if email in account", nickname = "checkEmailAccount", hidden = true)
+  @InternalApi
+  public ResponseDTO<Boolean> checkIfEmailInAccount(
+      @Parameter(description = "This is the Email Identifier.", required = true) @QueryParam(
+          NGCommonEntityConstants.EMAIL_KEY) String emailIdentifier,
+      @Parameter(
+          description =
+              "This is the Account Identifier. The membership details within the scope of this Account will be checked.",
+          required = true) @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    Optional<UserMetadataDTO> optionalUser = ngUserService.getUserByEmail(emailIdentifier, false);
+    boolean found = optionalUser.isPresent()
+        && ngUserService.isUserAtScope(
+            optionalUser.get().getUuid(), Scope.builder().accountIdentifier(accountIdentifier).build());
+    return ResponseDTO.newResponse(found);
+  }
 }

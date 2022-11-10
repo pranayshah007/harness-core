@@ -52,9 +52,9 @@ public class K8sRollingRollbackStepInfo extends K8sRollingRollbackBaseStepInfo i
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public K8sRollingRollbackStepInfo(ParameterField<Boolean> skipDryRun,
+  public K8sRollingRollbackStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String rollingStepFqn) {
-    super(skipDryRun, delegateSelectors, rollingStepFqn);
+    super(skipDryRun, pruningEnabled, delegateSelectors, rollingStepFqn);
   }
 
   @Override
@@ -71,6 +71,7 @@ public class K8sRollingRollbackStepInfo extends K8sRollingRollbackBaseStepInfo i
   public SpecParameters getSpecParameters() {
     return K8sRollingRollbackStepParameters.infoBuilder()
         .skipDryRun(skipDryRun)
+        .pruningEnabled(pruningEnabled)
         .delegateSelectors(delegateSelectors)
         .rollingStepFqn(rollingStepFqn)
         .build();

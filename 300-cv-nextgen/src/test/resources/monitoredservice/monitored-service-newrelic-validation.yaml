@@ -1,0 +1,68 @@
+---
+monitoredService:
+  type: "Application"
+  serviceRef: "template1"
+  environmentRef: "testing_env1234"
+  tags: {}
+  sources:
+    changeSources:
+      - identifier: "harness_cd_next_gen"
+        type: "HarnessCDNextGen"
+        name: "Harness CD Next Gen"
+        enabled: true
+        category: "Deployment"
+        spec: {}
+    healthSources:
+      - identifier: "newrelic"
+        type: "NewRelic"
+        name: "newrelic"
+        spec:
+          applicationName: "My Application"
+          applicationId: 107019083
+          metricData:
+            Performance: true
+          newRelicMetricDefinitions:
+            - identifier: "New_Relic_Metric"
+              metricName: "New Relic Metric"
+              groupName: "g1"
+              nrql: "SELECT average(`apm.service.transaction.duration`) FROM Metric WHERE\
+            \ appName = 'My Application' TIMESERIES"
+              responseMapping:
+                metricValueJsonPath: "<+monitoredService.variables.MetricJsonPath>"
+                timestampJsonPath: "$.timeSeries.[*].beginTimeSeconds"
+              sli:
+                enabled: true
+              analysis:
+                riskProfile:
+                  category: "Performance"
+                  metricType: "RESP_TIME"
+                  thresholdTypes:
+                    - "ACT_WHEN_HIGHER"
+                liveMonitoring:
+                  enabled: true
+                deploymentVerification:
+                  enabled: true
+          feature: "apm"
+          connectorRef: "NewRelic"
+          metricPacks:
+            - identifier: "Performance"
+  variables:
+    - name: "connector"
+      type: "String"
+      value: "NewRelic"
+    - name: "query"
+      type: "String"
+      value: "SELECT count(apm.service.instance.count) FROM Metric WHERE appName LIKE\
+      \ 'My Application' TIMESERIES"
+    - name: "MetricJsonPath"
+      type: "String"
+      value: "$.timeSeries.[*].results.[*].count"
+  template:
+    templateRef: "NewRelic"
+    versionLabel: "version6"
+    templateInputs:
+      type: "Application"
+      serviceRef: "template"
+      environmentRef: "testing_env"
+  identifier: "<+monitoredService.serviceRef>_<+monitoredService.environmentRef>"
+  name: "<+monitoredService.serviceRef>_<+monitoredService.environmentRef>"

@@ -28,11 +28,10 @@ public class CfInstanceSyncRequest extends CfCommandRequest {
   public CfInstanceSyncRequest(String accountId, String appId, String commandName, String activityId,
       PcfCommandType pcfCommandType, String organization, String space, CfInternalConfig pcfConfig,
       String workflowExecutionId, Integer timeoutIntervalInMin, String pcfApplicationName,
-      boolean useCLIForPcfAppCreation, boolean limitPcfThreads, boolean ignorePcfConnectionContextCache,
-      CfCliVersion cfCliVersion) {
+      boolean useCLIForPcfAppCreation, boolean limitPcfThreads, CfCliVersion cfCliVersion) {
     super(accountId, appId, commandName, activityId, pcfCommandType, organization, space, pcfConfig,
         workflowExecutionId, timeoutIntervalInMin, useCLIForPcfAppCreation, false, false, limitPcfThreads,
-        ignorePcfConnectionContextCache, cfCliVersion);
+        cfCliVersion);
     this.pcfApplicationName = pcfApplicationName;
   }
 }

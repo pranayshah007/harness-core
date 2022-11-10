@@ -84,6 +84,7 @@ import software.wings.yaml.gitSync.YamlGitConfig.YamlGitConfigKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.AggregationOptions;
 import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -93,6 +94,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -246,7 +248,10 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
         .sort(Sort.descending(GitToHarnessErrorCommitStatsKeys.commitTime))
         .skip(offset)
         .limit(limit)
-        .aggregate(GitToHarnessErrorCommitStats.class)
+        .aggregate(GitToHarnessErrorCommitStats.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(GitSyncError.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(commitWiseErrorDetails::add);
 
     List<GitToHarnessErrorCommitStats> gitDetailsAfterRemovingNewAppCommits =
@@ -282,7 +287,10 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
                 grouping("$push", projection(GitSyncErrorKeys.yamlFilePath, GitSyncErrorKeys.yamlFilePath),
                     projection(APP_ID_KEY, APP_ID_KEY))))
         .project(projection("gitCommitId", "_id"), projection(GitToHarnessErrorCommitStatsKeys.errorsForSummaryView))
-        .aggregate(GitToHarnessErrorCommitStats.class)
+        .aggregate(GitToHarnessErrorCommitStats.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(GitSyncError.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(commit -> commitsDetails.add(commit));
     List<GitToHarnessErrorCommitStats> actualCommitsForThatApp =
         removeNewAppCommitsInCaseOfSetupFilter(commitsDetails, appId);

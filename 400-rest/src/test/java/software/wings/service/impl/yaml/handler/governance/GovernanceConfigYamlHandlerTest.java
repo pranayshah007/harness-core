@@ -9,6 +9,7 @@ package software.wings.service.impl.yaml.handler.governance;
 
 import static io.harness.rule.OwnerRule.ATHARVA;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.Environment.Builder.anEnvironment;
@@ -169,6 +170,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     private final String GovernanceConfig19 = "governance_config19.yaml";
     // Missing Service
     private final String GovernanceConfig20 = "governance_config20.yaml";
+    // Exclusion filter
+    private final String GovernanceConfig21 = "governance_config21.yaml";
   }
 
   private ArgumentCaptor<GovernanceConfig> captor = ArgumentCaptor.forClass(GovernanceConfig.class);
@@ -243,6 +246,81 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
     testCRUDGovernanceConfig(
         validGovernanceConfigFiles.GovernanceConfig1, applicationFilter, environmentFilter, serviceFilter);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCRUDGovernanceConfig_ExclusionFilter() throws IOException, HarnessException {
+    List<Environment> testEnvs = new ArrayList<>();
+    Environment prodEnv = anEnvironment().name("prod").uuid("prod-id").build();
+    Environment qaEnv = anEnvironment().name("qa").uuid("qa-id").build();
+    testEnvs.add(prodEnv);
+    testEnvs.add(qaEnv);
+
+    Application testApp = Application.Builder.anApplication().name("test").uuid(APP_ID).environments(testEnvs).build();
+    CustomEnvFilter environmentFilter =
+        new CustomEnvFilter(EnvironmentFilterType.CUSTOM, Collections.singletonList("prod-id"));
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
+    CustomAppFilter applicationFilter = new CustomAppFilter(BlackoutWindowFilterType.CUSTOM, environmentFilter,
+        Collections.singletonList(testApp.getUuid()), serviceFilter);
+
+    doReturn(testApp).when(appService).getAppByName(anyString(), anyString());
+    doReturn(prodEnv).when(environmentService).getEnvironmentByName(eq(APP_ID), eq("prod"));
+    doReturn(qaEnv).when(environmentService).getEnvironmentByName(eq(APP_ID), eq("qa"));
+
+    doReturn(Collections.singletonList(testApp)).when(appService).getAppsByIds(any());
+    doReturn(testEnvs).when(environmentService).getEnvironmentsFromIds(eq(ACCOUNT_ID), any());
+
+    GovernanceConfig oldGovernanceConfig = GovernanceConfig.builder()
+                                               .accountId(ACCOUNT_ID)
+                                               .deploymentFreeze(false)
+                                               .timeRangeBasedFreezeConfigs(null)
+                                               .build();
+
+    doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
+
+    File yamlFile = new File(resourcePath + PATH_DELIMITER + validGovernanceConfigFiles.GovernanceConfig21);
+    assertThat(yamlFile).isNotNull();
+    String yamlString = FileUtils.readFileToString(yamlFile, "UTF-8");
+    ChangeContext<GovernanceConfig.Yaml> changeContext = getChangeContext(yamlString);
+    GovernanceConfig.Yaml yaml = (GovernanceConfig.Yaml) getYaml(yamlString, GovernanceConfig.Yaml.class);
+    changeContext.setYaml(yaml);
+
+    handler.upsertFromYaml(changeContext, Collections.singletonList(changeContext));
+    verify(governanceConfigService).upsert(eq(ACCOUNT_ID), captor.capture());
+    GovernanceConfig savedGovernanceConfig = captor.getValue();
+    doReturn(savedGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
+
+    assertThat(savedGovernanceConfig).isNotNull();
+    assertThat(applicationFilter)
+        .isEqualTo(savedGovernanceConfig.getTimeRangeBasedFreezeConfigs().get(0).getExcludeAppSelections().get(0));
+    assertThat(environmentFilter)
+        .isEqualTo(savedGovernanceConfig.getTimeRangeBasedFreezeConfigs()
+                       .get(0)
+                       .getExcludeAppSelections()
+                       .get(0)
+                       .getEnvSelection());
+    assertThat(serviceFilter)
+        .isEqualTo(savedGovernanceConfig.getTimeRangeBasedFreezeConfigs()
+                       .get(0)
+                       .getExcludeAppSelections()
+                       .get(0)
+                       .getServiceSelection());
+
+    yaml = handler.toYaml(savedGovernanceConfig, APP_ID);
+
+    assertThat(yaml).isNotNull();
+    String yamlContent = getYamlContent(yaml);
+    assertThat(yamlContent).isNotNull();
+    yamlContent = yamlContent.substring(0, yamlContent.length() - 1);
+
+    assertThat(yamlContent).isEqualTo(yamlString);
+
+    GovernanceConfig retrievedGovernanceConfig = handler.get(ACCOUNT_ID, yamlFilePath);
+
+    assertThat(retrievedGovernanceConfig).isNotNull();
+    assertThat(retrievedGovernanceConfig.getUuid()).isEqualTo(savedGovernanceConfig.getUuid());
   }
 
   @Test

@@ -18,6 +18,7 @@ import static io.harness.delegate.message.MessageConstants.DELEGATE_ID;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_IS_NEW;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_JRE_VERSION;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_MIGRATE;
+import static io.harness.delegate.message.MessageConstants.DELEGATE_READY;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_RESTART_NEEDED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_RESUME;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_SELF_DESTRUCT;
@@ -64,6 +65,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.synchronizedList;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.io.filefilter.FileFilterUtils.falseFileFilter;
@@ -87,7 +90,6 @@ import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.delegate.beans.DelegateScripts;
 import io.harness.delegate.message.Message;
 import io.harness.delegate.message.MessageService;
-import io.harness.event.client.impl.tailer.ChronicleEventTailer;
 import io.harness.exception.VersionInfoException;
 import io.harness.filesystem.FileIo;
 import io.harness.grpc.utils.DelegateGrpcConfigExtractor;
@@ -150,10 +152,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -172,12 +174,13 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class WatcherServiceImpl implements WatcherService {
-  private static final long DELEGATE_HEARTBEAT_TIMEOUT = TimeUnit.MINUTES.toMillis(5);
-  private static final long DELEGATE_STARTUP_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
-  private static final long DELEGATE_UPGRADE_TIMEOUT = TimeUnit.MINUTES.toMillis(10);
+  private static final long DELEGATE_HEARTBEAT_TIMEOUT = MINUTES.toMillis(5);
+  private static final long DELEGATE_STARTUP_TIMEOUT = MINUTES.toMillis(1);
+  private static final long DELEGATE_UPGRADE_TIMEOUT = MINUTES.toMillis(10);
   private static final long DELEGATE_SHUTDOWN_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long DELEGATE_VERSION_MATCH_TIMEOUT = TimeUnit.HOURS.toMillis(2);
-  private static final long DELEGATE_RESTART_TO_UPGRADE_JRE_TIMEOUT = TimeUnit.MINUTES.toMillis(5);
+  private static final long DELEGATE_RESTART_TO_UPGRADE_JRE_TIMEOUT = MINUTES.toMillis(5);
+  private static final int DELEGATE_VERSION_CHECK_FREQ_MINS = 25;
   private static final Pattern VERSION_PATTERN = Pattern.compile("^[1-9]\\.[0-9]\\.[0-9]*-\\d{3}$");
   private static final String DELEGATE_SEQUENCE_CONFIG_FILE = "./delegate_sequence_config";
   private static final String USER_DIR = "user.dir";
@@ -216,8 +219,6 @@ public class WatcherServiceImpl implements WatcherService {
   @Inject private MessageService messageService;
   @Inject private ManagerClientV2 managerClient;
 
-  @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
-
   private final Object waiter = new Object();
   private final AtomicBoolean working = new AtomicBoolean(false);
   private final List<String> runningDelegates = synchronizedList(new ArrayList<>());
@@ -228,6 +229,7 @@ public class WatcherServiceImpl implements WatcherService {
   private final AtomicInteger minMinorVersion = new AtomicInteger(0);
   private final Set<Integer> illegalVersions = new HashSet<>();
   private final Map<String, Long> delegateVersionMatchedAt = new HashMap<>();
+  private final AtomicReference<List<String>> cachedDelegateVersion = new AtomicReference<>();
 
   @Override
   public void run(boolean upgrade) {
@@ -250,23 +252,11 @@ public class WatcherServiceImpl implements WatcherService {
 
       generateEcsDelegateSequenceConfigFile();
       if (upgrade) {
-        Message message = messageService.waitForMessage(WATCHER_GO_AHEAD, TimeUnit.MINUTES.toMillis(5));
+        Message message = messageService.waitForMessage(WATCHER_GO_AHEAD, MINUTES.toMillis(5));
         log.info(message != null ? "[New] Got go-ahead. Proceeding"
                                  : "[New] Timed out waiting for go-ahead. Proceeding anyway");
       }
 
-      watchExecutor.submit(() -> {
-        if (chronicleEventTailer != null) {
-          chronicleEventTailer.startAsync().awaitRunning();
-          Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // needed to satisfy infer since chronicleEventTailer is not final and it's nullable so it could be null
-            // technically when the hook is executed.
-            if (chronicleEventTailer != null) {
-              chronicleEventTailer.stopAsync().awaitTerminated();
-            }
-          }));
-        }
-      });
       messageService.removeData(WATCHER_DATA, NEXT_WATCHER);
 
       log.info(upgrade ? "[New] Watcher upgraded" : "Watcher started");
@@ -319,7 +309,7 @@ public class WatcherServiceImpl implements WatcherService {
     log.info("Scheduling logging of file handles...");
     watchExecutor.scheduleWithFixedDelay(
         new Schedulable("Unexpected exception occurred while logging file handles", this::logFileHandles), 0,
-        watcherConfiguration.getFileHandlesMonitoringIntervalInMinutes(), TimeUnit.MINUTES);
+        watcherConfiguration.getFileHandlesMonitoringIntervalInMinutes(), MINUTES);
   }
 
   private boolean isLsofCommandPresent() {
@@ -374,7 +364,7 @@ public class WatcherServiceImpl implements WatcherService {
   }
 
   private boolean deleteOldFiles(File logsFolder) {
-    long retentionPeriod = TimeUnit.MINUTES.toMillis(watcherConfiguration.getFileHandlesLogsRetentionInMinutes());
+    long retentionPeriod = MINUTES.toMillis(watcherConfiguration.getFileHandlesLogsRetentionInMinutes());
     long cutoff = System.currentTimeMillis() - retentionPeriod;
     File[] filesToBeDeleted = logsFolder.listFiles((FileFilter) new AgeFileFilter(cutoff));
     if (filesToBeDeleted != null) {
@@ -465,12 +455,17 @@ public class WatcherServiceImpl implements WatcherService {
     runningDelegates.addAll(
         Optional.ofNullable(messageService.getData(WATCHER_DATA, RUNNING_DELEGATES, List.class)).orElse(emptyList()));
 
+    inputExecutor.scheduleWithFixedDelay(
+        new Schedulable("Error fetching delegate version from manager", this::watchDelegateVersions), 0,
+        DELEGATE_VERSION_CHECK_FREQ_MINS, MINUTES);
     heartbeatExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while heart-beating", this::heartbeat), 0, 10, TimeUnit.SECONDS);
     heartbeatExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while logging-performance", this::logPerformance), 0, 60, TimeUnit.SECONDS);
     watchExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while watching delegate", this::syncWatchDelegate), 0, 10, TimeUnit.SECONDS);
+    upgradeExecutor.scheduleWithFixedDelay(
+        new Schedulable("Error while cleaning up garbage", this::cleanupOlderVersions), 1, 5, DAYS);
   }
 
   private void logPerformance() {
@@ -573,6 +568,7 @@ public class WatcherServiceImpl implements WatcherService {
       }
       Multimap<String, String> runningVersions = LinkedHashMultimap.create();
       List<String> shutdownPendingList = new ArrayList<>();
+      List<String> drainingNeededList = emptyList();
 
       if (isEmpty(runningDelegates)) {
         if (!multiVersion) {
@@ -588,7 +584,7 @@ public class WatcherServiceImpl implements WatcherService {
         List<String> drainingRestartNeededList = new ArrayList<>();
         List<String> upgradeNeededList = new ArrayList<>();
         List<String> shutdownNeededList = new ArrayList<>();
-        List<String> drainingNeededList = new ArrayList<>();
+        drainingNeededList = new ArrayList<>();
         List<String> stopGrpcServerList = new ArrayList<>();
         List<String> startGrpcServerList = new ArrayList<>();
 
@@ -745,14 +741,6 @@ public class WatcherServiceImpl implements WatcherService {
           }
         }
 
-        if (isNotEmpty(drainingNeededList)) {
-          log.info("Delegate processes {} to be drained.", drainingNeededList);
-          drainingNeededList.forEach(this::drainDelegateProcess);
-          Set<String> allVersions = new HashSet<>(expectedVersions);
-          allVersions.addAll(runningVersions.keySet());
-          removeDelegateVersionsFromCapsule(allVersions);
-          cleanupOldDelegateVersions(allVersions);
-        }
         if (isNotEmpty(shutdownNeededList)) {
           log.warn("Delegate processes {} exceeded grace period. Forcing shutdown", shutdownNeededList);
           shutdownNeededList.forEach(this::shutdownDelegate);
@@ -820,7 +808,7 @@ public class WatcherServiceImpl implements WatcherService {
             log.info("New delegate process for version {} will be started", version);
             downloadRunScripts(version, version, false);
             downloadDelegateJar(version);
-            startDelegateProcess(version, version, emptyList(), "DelegateStartScriptVersioned", getProcessId());
+            startDelegateProcess(version, version, drainingNeededList, "DelegateStartScriptVersioned", getProcessId());
             break;
           } catch (IOException ioe) {
             if (ioe.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE_ERROR)) {
@@ -995,13 +983,23 @@ public class WatcherServiceImpl implements WatcherService {
 
   @VisibleForTesting
   public List<String> findExpectedDelegateVersions() {
+    List<String> delegateVersion = cachedDelegateVersion.get();
+    if (isEmpty(delegateVersion)) {
+      log.info("No cached delegate version found, trying to fetch latest delegate version");
+      watchDelegateVersions();
+      delegateVersion = cachedDelegateVersion.get();
+    }
+    return delegateVersion;
+  }
+
+  private void watchDelegateVersions() {
     try {
       if (multiVersion) {
         RestResponse<DelegateConfiguration> restResponse = callInterruptible21(timeLimiter, ofSeconds(30),
             () -> SafeHttpCall.execute(managerClient.getDelegateConfiguration(watcherConfiguration.getAccountId())));
 
         if (restResponse == null) {
-          return null;
+          return;
         }
 
         DelegateConfiguration config = restResponse.getResource();
@@ -1010,19 +1008,19 @@ public class WatcherServiceImpl implements WatcherService {
           selfDestruct();
         }
 
-        return config != null ? config.getDelegateVersions() : null;
+        if (config != null) {
+          cachedDelegateVersion.set(config.getDelegateVersions());
+        }
       } else {
         String delegateMetadata =
             Http.getResponseStringFromUrl(watcherConfiguration.getDelegateCheckLocation(), 10, 10);
-
-        return singletonList(substringBefore(delegateMetadata, " ").trim());
+        cachedDelegateVersion.set(singletonList(substringBefore(delegateMetadata, " ").trim()));
       }
     } catch (UncheckedTimeoutException e) {
       log.warn("Timed out fetching delegate version information", e);
     } catch (Exception e) {
       log.warn("Unable to fetch delegate version information", e);
     }
-    return null;
   }
 
   private int getMinorVersion(String delegateVersion) {
@@ -1191,8 +1189,7 @@ public class WatcherServiceImpl implements WatcherService {
         String newDelegateProcess = null;
 
         if (newDelegate.getProcess().isAlive()) {
-          Message message =
-              messageService.waitForMessage(NEW_DELEGATE, TimeUnit.MINUTES.toMillis(version == null ? 15 : 4));
+          Message message = messageService.waitForMessage(NEW_DELEGATE, MINUTES.toMillis(version == null ? 15 : 4));
           if (message != null) {
             newDelegateProcess = message.getParams().get(0);
             log.info("Got process ID from new delegate: {}", newDelegateProcess);
@@ -1207,15 +1204,28 @@ public class WatcherServiceImpl implements WatcherService {
               runningDelegates.add(newDelegateProcess);
               messageService.putData(WATCHER_DATA, RUNNING_DELEGATES, runningDelegates);
             }
-            message = messageService.readMessageFromChannel(DELEGATE, newDelegateProcess, TimeUnit.MINUTES.toMillis(2));
+            message = messageService.readMessageFromChannel(DELEGATE, newDelegateProcess, MINUTES.toMillis(2));
             if (message != null && message.getMessage().equals(DELEGATE_STARTED)) {
               log.info("Retrieved delegate-started message from new delegate {}", newDelegateProcess);
-              oldDelegateProcesses.forEach(oldDelegateProcess -> {
-                log.info("Sending old delegate process {} stop-acquiring message", oldDelegateProcess);
-                messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_STOP_ACQUIRING);
-              });
               log.info("Sending new delegate process {} go-ahead message", newDelegateProcess);
               messageService.writeMessageToChannel(DELEGATE, newDelegateProcess, DELEGATE_GO_AHEAD);
+
+              log.info("Waiting for delegate process {} to be ready", newDelegateProcess);
+              message = messageService.readMessageFromChannel(DELEGATE, newDelegateProcess, MINUTES.toMillis(5));
+              if (message != null && message.getMessage().equals(DELEGATE_READY)) {
+                oldDelegateProcesses.forEach(oldDelegateProcess -> {
+                  log.info(
+                      "New delegate process ready to acquire task, sending old delegate process {} stop-acquiring message",
+                      oldDelegateProcess);
+                  messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_STOP_ACQUIRING);
+                });
+              } else {
+                log.info("Timed out waiting delegate to come up, proceeding anyway {}", oldDelegateProcesses);
+                oldDelegateProcesses.forEach(oldDelegateProcess -> {
+                  log.info("Sending old delegate process {} stop-acquiring message", oldDelegateProcess);
+                  messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_STOP_ACQUIRING);
+                });
+              }
               success = true;
               log.info("Adding new delegate process {} to process map", newDelegateProcess);
               delegateProcessMap.put(newDelegateProcess, newDelegate.getProcess());
@@ -1424,20 +1434,15 @@ public class WatcherServiceImpl implements WatcherService {
       boolean success = false;
 
       if (process.getProcess().isAlive()) {
-        Message message = messageService.waitForMessage(NEW_WATCHER, TimeUnit.MINUTES.toMillis(3));
+        Message message = messageService.waitForMessage(NEW_WATCHER, MINUTES.toMillis(3));
         if (message != null) {
           String newWatcherProcess = message.getParams().get(0);
           log.info("[Old] Got process ID from new watcher: " + newWatcherProcess);
           messageService.putData(WATCHER_DATA, NEXT_WATCHER, newWatcherProcess);
-          message = messageService.readMessageFromChannel(WATCHER, newWatcherProcess, TimeUnit.MINUTES.toMillis(2));
+          message = messageService.readMessageFromChannel(WATCHER, newWatcherProcess, MINUTES.toMillis(2));
           if (message != null && message.getMessage().equals(WATCHER_STARTED)) {
             log.info(
                 "[Old] Retrieved watcher-started message from new watcher {}. Sending go-ahead", newWatcherProcess);
-            watchExecutor.submit(() -> {
-              if (chronicleEventTailer != null) {
-                chronicleEventTailer.stopAsync().awaitTerminated();
-              }
-            });
             messageService.writeMessageToChannel(WATCHER, newWatcherProcess, WATCHER_GO_AHEAD);
             log.info("[Old] Watcher upgraded. Stopping");
             removeWatcherVersionFromCapsule(version, newVersion);
@@ -1476,6 +1481,16 @@ public class WatcherServiceImpl implements WatcherService {
       }
     } finally {
       working.set(false);
+    }
+  }
+
+  private void cleanupOlderVersions() {
+    synchronized (this) {
+      log.info("Removing older delegate version if any");
+      Set<String> allVersions = new HashSet<>(findExpectedDelegateVersions());
+      allVersions.addAll(runningDelegates);
+      removeDelegateVersionsFromCapsule(allVersions);
+      cleanupOldDelegateVersions(allVersions);
     }
   }
 

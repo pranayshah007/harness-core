@@ -38,6 +38,7 @@ import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.servicenow.ServiceNowFieldNG;
 import io.harness.servicenow.ServiceNowFieldSchemaNG;
 import io.harness.servicenow.ServiceNowFieldTypeNG;
+import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 
 import com.google.common.collect.Lists;
@@ -212,5 +213,23 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
         (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
     assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TEMPLATE);
     assertThat(parameters.getTicketType()).isEqualTo("CHANGE_TASK");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetStagingTableList() {
+    List<ServiceNowStagingTable> serviceNowStagingTableList =
+        Arrays.asList(ServiceNowStagingTable.builder().name("name1").label("label1").build(),
+            ServiceNowStagingTable.builder().name("name2").label("label2").build());
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowStagingTableList(serviceNowStagingTableList).build());
+    assertThat(serviceNowResourceService.getStagingTableList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isEqualTo(serviceNowStagingTableList);
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper).executeSyncTask(requestArgumentCaptor.capture());
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES);
   }
 }

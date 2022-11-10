@@ -15,6 +15,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.cdlicense.bean.CgActiveServicesUsageInfo;
+import io.harness.cdlicense.bean.CgServiceInstancesUsageInfo;
 import io.harness.cdlicense.bean.CgServiceUsage;
 import io.harness.cdlicense.bean.CgServiceUsage.CgServiceUsageBuilder;
 
@@ -22,8 +23,13 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @Singleton
@@ -37,21 +43,41 @@ public class CgCdLicenseUsageServiceImpl implements CgCdLicenseUsageService {
     Map<String, CgServiceUsage> percentileInstanceServicesUsageMap =
         cgCdLicenseUsageQueryHelper.getPercentileInstanceForServices(
             accountId, serviceIdsFromDeployments, 30, INSTANCE_COUNT_PERCENTILE_DISC);
-    Map<String, String> servicesNames =
+    Map<String, Pair<String, String>> servicesDetails =
         cgCdLicenseUsageQueryHelper.fetchServicesNames(accountId, serviceIdsFromDeployments);
-    return buildCgActiveServicesUsageInfo(serviceIdsFromDeployments, percentileInstanceServicesUsageMap, servicesNames);
+    Set<String> appIds = servicesDetails.values().parallelStream().map(Pair::getRight).collect(Collectors.toSet());
+    Map<String, String> appNames = cgCdLicenseUsageQueryHelper.fetchAppNames(accountId, appIds);
+    return buildCgActiveServicesUsageInfo(
+        serviceIdsFromDeployments, percentileInstanceServicesUsageMap, servicesDetails, appNames);
+  }
+
+  @Override
+  public CgServiceInstancesUsageInfo getServiceInstancesUsage(String accountId) {
+    return new CgServiceInstancesUsageInfo(cgCdLicenseUsageQueryHelper.fetchServiceInstancesOver30Days(accountId));
+  }
+
+  @Override
+  public int getActiveServiceInTimePeriod(String accountId, int timePeriodInDays) {
+    if (timePeriodInDays <= 0) {
+      return 0;
+    }
+
+    List<String> activeServices =
+        cgCdLicenseUsageQueryHelper.fetchDistinctSvcIdUsedInDeployments(accountId, timePeriodInDays);
+    return CollectionUtils.isEmpty(activeServices) ? 0 : activeServices.size();
   }
 
   private CgActiveServicesUsageInfo buildCgActiveServicesUsageInfo(@NonNull List<String> serviceIdsFromDeployments,
       @NonNull Map<String, CgServiceUsage> percentileInstanceServicesUsageMap,
-      @NonNull Map<String, String> servicesNames) {
+      Map<String, Pair<String, String>> servicesNames, Map<String, String> appNames) {
     if (isEmpty(serviceIdsFromDeployments)) {
       return new CgActiveServicesUsageInfo();
     }
 
     List<CgServiceUsage> activeServiceUsageList =
         serviceIdsFromDeployments.stream()
-            .map(serviceId -> buildActiveServiceUsageList(serviceId, percentileInstanceServicesUsageMap, servicesNames))
+            .map(serviceId
+                -> buildActiveServiceUsageList(serviceId, percentileInstanceServicesUsageMap, servicesNames, appNames))
             .collect(toList());
     Long cumulativeServiceLicenseConsumed =
         activeServiceUsageList.stream().map(CgServiceUsage::getLicensesUsed).reduce(0L, Long::sum);
@@ -64,10 +90,12 @@ public class CgCdLicenseUsageServiceImpl implements CgCdLicenseUsageService {
 
   private CgServiceUsage buildActiveServiceUsageList(@NonNull String serviceId,
       @NonNull Map<String, CgServiceUsage> percentileInstanceServicesUsageMap,
-      @NonNull Map<String, String> servicesNames) {
+      Map<String, Pair<String, String>> servicesNames, Map<String, String> appNames) {
     CgServiceUsageBuilder cgServiceUsageBuilder = CgServiceUsage.builder().serviceId(serviceId);
     if (servicesNames.containsKey(serviceId)) {
-      cgServiceUsageBuilder.name(servicesNames.get(serviceId));
+      cgServiceUsageBuilder.name(servicesNames.get(serviceId).getLeft());
+      cgServiceUsageBuilder.appId(servicesNames.get(serviceId).getRight());
+      cgServiceUsageBuilder.appName(appNames.getOrDefault(servicesNames.get(serviceId).getRight(), StringUtils.EMPTY));
     }
     if (percentileInstanceServicesUsageMap.containsKey(serviceId)) {
       cgServiceUsageBuilder.instanceCount(percentileInstanceServicesUsageMap.get(serviceId).getInstanceCount());

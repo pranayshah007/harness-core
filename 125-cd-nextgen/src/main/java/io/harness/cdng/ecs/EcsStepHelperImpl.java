@@ -10,6 +10,8 @@ package io.harness.cdng.ecs;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestType;
@@ -34,7 +36,7 @@ public class EcsStepHelperImpl implements EcsStepHelper {
 
     // Check if ECS Manifests are empty
     if (isEmpty(ecsManifests)) {
-      throw new InvalidRequestException("Manifests are mandatory for Ecs step", USER);
+      throw new InvalidRequestException("ECS Task Definition, Service Definition Manifests are mandatory.", USER);
     }
 
     // Get ECS Task definition manifests and validate
@@ -44,9 +46,10 @@ public class EcsStepHelperImpl implements EcsStepHelper {
             .collect(Collectors.toList());
 
     if (isEmpty(ecsTaskDefinitions)) {
-      throw new InvalidRequestException("Ecs Task Definition manifest is mandatory for Ecs Step", USER);
+      throw new InvalidRequestException("ECS Task Definition manifest is mandatory, but not found.", USER);
     } else if (ecsTaskDefinitions.size() > 1) {
-      throw new InvalidRequestException("Only one Ecs Task Definition is expected. Found more.", USER);
+      throw new InvalidRequestException(
+          format("Only one ECS Task Definition manifest is expected. Found %s.", ecsTaskDefinitions.size()), USER);
     }
 
     // Get ECS Service definition manifests and validate
@@ -56,9 +59,11 @@ public class EcsStepHelperImpl implements EcsStepHelper {
             .collect(Collectors.toList());
 
     if (isEmpty(ecsServiceDefinitions)) {
-      throw new InvalidRequestException("Ecs Service Definition manifest is mandatory for Ecs Step", USER);
+      throw new InvalidRequestException("ECS Service Definition manifest is mandatory, but not found.", USER);
     } else if (ecsServiceDefinitions.size() > 1) {
-      throw new InvalidRequestException("Only one Ecs Service Definition is expected. Found more.", USER);
+      throw new InvalidRequestException(
+          format("Only one ECS Service Definition manifest is expected. Found %s.", ecsServiceDefinitions.size()),
+          USER);
     }
 
     return ecsManifests;

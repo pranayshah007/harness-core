@@ -24,7 +24,7 @@ public interface CVConfigService extends DeleteEntityByHandler<CVConfig> {
   void update(List<CVConfig> cvConfigs);
   @Nullable CVConfig get(String cvConfigId);
   void delete(String cvConfigId);
-
+  void deleteImmediately(String cvConfigId);
   void deleteByIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String monitoringSourceIdentifier);
   List<CVConfig> findByConnectorIdentifier(String accountId, @Nullable String orgIdentifier,

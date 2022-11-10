@@ -48,12 +48,14 @@ import io.harness.ng.core.events.ServiceUpsertEvent;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
+import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
@@ -88,6 +90,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -435,6 +438,12 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
+  public boolean isServiceField(String fieldName, JsonNode serviceValue) {
+    return YamlTypes.SERVICE_ENTITY.equals(fieldName) && serviceValue.isObject()
+        && serviceValue.get(YamlTypes.SERVICE_REF) != null;
+  }
+
+  @Override
   public Integer findActiveServicesCountAtGivenTimestamp(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs) {
     if (timestampInMs <= 0) {
@@ -447,16 +456,27 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public String createServiceInputsYaml(String yaml, String serviceIdentifier) {
+    return createServiceInputsYamlInternal(yaml, serviceIdentifier, null);
+  }
+
+  @Override
+  public String createServiceInputsYamlGivenPrimaryArtifactRef(
+      String serviceYaml, String serviceIdentifier, String primaryArtifactRef) {
+    return createServiceInputsYamlInternal(serviceYaml, serviceIdentifier, primaryArtifactRef);
+  }
+
+  private String createServiceInputsYamlInternal(
+      String serviceYaml, String serviceIdentifier, String primaryArtifactRef) {
     Map<String, Object> serviceInputs = new HashMap<>();
 
     try {
-      YamlField serviceYamlField = YamlUtils.readTree(yaml).getNode().getField(YamlTypes.SERVICE_ENTITY);
+      YamlField serviceYamlField = YamlUtils.readTree(serviceYaml).getNode().getField(YamlTypes.SERVICE_ENTITY);
       if (serviceYamlField == null) {
         throw new YamlException(
             String.format("Yaml provided for service %s does not have service root field.", serviceIdentifier));
       }
 
-      modifyServiceDefinitionNodeBeforeCreatingServiceInputs(serviceYamlField, serviceIdentifier);
+      modifyServiceDefinitionNodeBeforeCreatingServiceInputs(serviceYamlField, serviceIdentifier, primaryArtifactRef);
       ObjectNode serviceNode = (ObjectNode) serviceYamlField.getNode().getCurrJsonNode();
       ObjectNode serviceDefinitionNode = serviceNode.retain(YamlTypes.SERVICE_DEFINITION);
       if (EmptyPredicate.isEmpty(serviceDefinitionNode)) {
@@ -525,8 +545,51 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     }
   }
 
+  @Override
+  public ServiceInputsMergedResponseDto mergeServiceInputs(
+      String accountId, String orgId, String projectId, String serviceId, String oldServiceInputsYaml) {
+    Optional<ServiceEntity> serviceEntity = get(accountId, orgId, projectId, serviceId, false);
+    if (!serviceEntity.isPresent()) {
+      throw new NotFoundException(
+          format("Service with identifier [%s] in project [%s], org [%s] not found", serviceId, projectId, orgId));
+    }
+
+    String serviceYaml = serviceEntity.get().getYaml();
+    if (isEmpty(serviceYaml)) {
+      return ServiceInputsMergedResponseDto.builder().mergedServiceInputsYaml("").serviceYaml("").build();
+    }
+    try {
+      YamlNode primaryArtifactRefNode = null;
+      if (isNotEmpty(oldServiceInputsYaml)) {
+        YamlNode oldServiceInputsNode = YamlUtils.readTree(oldServiceInputsYaml).getNode();
+        primaryArtifactRefNode = YamlNodeUtils.goToPathUsingFqn(
+            oldServiceInputsNode, "serviceInputs.serviceDefinition.spec.artifacts.primary.primaryArtifactRef");
+      }
+
+      String newServiceInputsYaml = createServiceInputsYamlGivenPrimaryArtifactRef(
+          serviceYaml, serviceId, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
+      return ServiceInputsMergedResponseDto.builder()
+          .mergedServiceInputsYaml(mergeServiceInputs(oldServiceInputsYaml, newServiceInputsYaml))
+          .serviceYaml(serviceYaml)
+          .build();
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Error occurred while merging old and new service inputs", ex);
+    }
+  }
+
+  private String mergeServiceInputs(String oldServiceInputsYaml, String newServiceInputsYaml) {
+    if (isEmpty(newServiceInputsYaml)) {
+      return newServiceInputsYaml;
+    }
+    if (isEmpty(oldServiceInputsYaml)) {
+      return newServiceInputsYaml;
+    }
+    return YamlPipelineUtils.writeYamlString(
+        YamlRefreshHelper.refreshYamlFromSourceYaml(oldServiceInputsYaml, newServiceInputsYaml));
+  }
+
   private void modifyServiceDefinitionNodeBeforeCreatingServiceInputs(
-      YamlField serviceYamlField, String serviceIdentifier) {
+      YamlField serviceYamlField, String serviceIdentifier, String primaryArtifactRef) {
     YamlField primaryArtifactField = ServiceFilterHelper.getPrimaryArtifactNodeFromServiceYaml(serviceYamlField);
     if (primaryArtifactField == null) {
       return;
@@ -537,13 +600,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
               primaryArtifactField.getNode().getCurrJsonNode().getNodeType()));
     }
 
-    YamlField primaryArtifactRef = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
+    YamlField primaryArtifactRefField = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
     YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
-    if (primaryArtifactRef == null || artifactSourcesField == null) {
+    if (primaryArtifactRefField == null || artifactSourcesField == null) {
       return;
     }
-
-    String primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
 
     if (!artifactSourcesField.getNode().isArray()) {
       throw new InvalidRequestException(
@@ -551,11 +612,18 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
               artifactSourcesField.getNode().getCurrJsonNode().getNodeType()));
     }
 
+    String primaryArtifactRefValue = primaryArtifactRefField.getNode().asText();
+
     ObjectNode primaryArtifactObjectNode = (ObjectNode) primaryArtifactField.getNode().getCurrJsonNode();
     if (NGExpressionUtils.matchesInputSetPattern(primaryArtifactRefValue)) {
-      primaryArtifactObjectNode.remove(YamlTypes.ARTIFACT_SOURCES);
-      primaryArtifactObjectNode.put(YamlTypes.ARTIFACT_SOURCES, "<+input>");
-      return;
+      if (EmptyPredicate.isNotEmpty(primaryArtifactRef)
+          && !NGExpressionUtils.matchesInputSetPattern(primaryArtifactRef)) {
+        primaryArtifactRefValue = primaryArtifactRef;
+      } else {
+        primaryArtifactObjectNode.remove(YamlTypes.ARTIFACT_SOURCES);
+        primaryArtifactObjectNode.put(YamlTypes.ARTIFACT_SOURCES, "<+input>");
+        return;
+      }
     }
 
     if (EngineExpressionEvaluator.hasExpressions(primaryArtifactRefValue)) {
@@ -742,5 +810,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       // ignore this
       return false;
     }
+  }
+
+  public Optional<ServiceEntity> getService(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
   }
 }

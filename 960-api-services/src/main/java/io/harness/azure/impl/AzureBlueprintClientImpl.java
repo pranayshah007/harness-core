@@ -32,6 +32,7 @@ import io.harness.azure.model.blueprint.assignment.Assignment;
 import io.harness.azure.model.blueprint.assignment.WhoIsBlueprintContract;
 import io.harness.azure.model.blueprint.assignment.operation.AssignmentOperation;
 import io.harness.azure.utility.AzureResourceUtility;
+import io.harness.exception.runtime.azure.AzureBPDeploymentException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.serializer.JsonUtils;
 
@@ -66,16 +67,16 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName,
       final String blueprintJSON) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(blueprintJSON)) {
-      throw new IllegalArgumentException(BLUEPRINT_JSON_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_JSON_BLANK_VALIDATION_MSG);
     }
     if (isBlank(blueprintName)) {
-      throw new IllegalArgumentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
     }
 
     JsonNode blueprintObj = JsonUtils.readTree(blueprintJSON);
@@ -109,13 +110,13 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
   private Observable<ServiceResponse<Blueprint>> getBlueprintWithServiceResponseAsync(
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(blueprintName)) {
-      throw new IllegalArgumentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
     }
 
     return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
@@ -152,19 +153,19 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName, final String artifactName,
       final String artifactJSON) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(blueprintName)) {
-      throw new IllegalArgumentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(artifactJSON)) {
-      throw new IllegalArgumentException(ARTIFACT_JSON_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(ARTIFACT_JSON_BLANK_VALIDATION_MSG);
     }
     if (isBlank(artifactName)) {
-      throw new IllegalArgumentException(ARTIFACT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(ARTIFACT_NAME_BLANK_VALIDATION_MSG);
     }
 
     JsonNode artifactObj = JsonUtils.readTree(artifactJSON);
@@ -201,16 +202,16 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
   private Observable<ServiceResponse<PublishedBlueprint>> publishBlueprintDefinitionWithServiceResponseAsync(
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName, final String versionId) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(blueprintName)) {
-      throw new IllegalArgumentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(versionId)) {
-      throw new IllegalArgumentException(VERSION_ID_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(VERSION_ID_BLANK_VALIDATION_MSG);
     }
 
     return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
@@ -246,16 +247,16 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
   private Observable<ServiceResponse<PublishedBlueprint>> getPublishedBlueprintVersionWithServiceResponseAsync(
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName, final String versionId) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(blueprintName)) {
-      throw new IllegalArgumentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(versionId)) {
-      throw new IllegalArgumentException(VERSION_ID_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(VERSION_ID_BLANK_VALIDATION_MSG);
     }
 
     return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
@@ -362,16 +363,16 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
       final AzureConfig azureConfig, final String resourceScope, final String assignmentName,
       final String assignmentJSON) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(assignmentName)) {
-      throw new IllegalArgumentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(assignmentJSON)) {
-      throw new IllegalArgumentException(ASSIGNMENT_JSON_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(ASSIGNMENT_JSON_BLANK_VALIDATION_MSG);
     }
 
     JsonNode assignmentObj = JsonUtils.readTree(assignmentJSON);
@@ -409,13 +410,13 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
   private Observable<ServiceResponse<Assignment>> getAssignmentWithServiceResponseAsync(
       final AzureConfig azureConfig, final String resourceScope, final String assignmentName) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(assignmentName)) {
-      throw new IllegalArgumentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
     }
 
     return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
@@ -578,13 +579,13 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
   private Observable<ServiceResponse<WhoIsBlueprintContract>> whoIsBlueprintWithServiceResponseAsync(
       final AzureConfig azureConfig, final String resourceScope, final String assignmentName) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(assignmentName)) {
-      throw new IllegalArgumentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
     }
 
     return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())

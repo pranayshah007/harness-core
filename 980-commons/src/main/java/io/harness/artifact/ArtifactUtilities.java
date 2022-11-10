@@ -7,10 +7,12 @@
 
 package io.harness.artifact;
 
+import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -200,5 +202,23 @@ public class ArtifactUtilities {
       }
     }
     return stringToTrim;
+  }
+
+  public String getArtifactName(final String artifactPath) {
+    if (isEmpty(artifactPath)) {
+      return artifactPath;
+    }
+
+    int index = artifactPath.lastIndexOf('/');
+    if (index == -1) {
+      index = artifactPath.lastIndexOf('\\');
+    }
+
+    return index == -1 ? EMPTY : artifactPath.substring(index + 1);
+  }
+
+  public String getBasicAuthHeader(boolean hasCredentials, final String username, char[] password) {
+    String pair = username + ":" + new String(password);
+    return hasCredentials ? "Basic " + encodeBase64(pair) : null;
   }
 }

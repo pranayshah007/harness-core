@@ -175,7 +175,7 @@ public class EcsCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return ecsStepCommonHelper.startChainLink(ambiance, stepParameters, ecsStepHelper);
+    return ecsStepCommonHelper.startChainLink(this, ambiance, stepParameters, ecsStepHelper);
   }
 
   @Override

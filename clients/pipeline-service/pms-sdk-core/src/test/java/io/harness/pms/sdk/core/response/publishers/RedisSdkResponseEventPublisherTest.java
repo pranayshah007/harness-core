@@ -7,7 +7,6 @@
 
 package io.harness.pms.sdk.core.response.publishers;
 
-import static io.harness.pms.events.PmsEventFrameworkConstants.PIPELINE_MONITORING_ENABLED;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.mockito.Mockito.verify;
@@ -59,7 +58,6 @@ public class RedisSdkResponseEventPublisherTest {
                              .build())
             .build();
     Map<String, String> metadataMap = new HashMap<>();
-    metadataMap.put(PIPELINE_MONITORING_ENABLED, "false");
     metadataMap.put("eventType", SdkResponseEventType.ADD_EXECUTABLE_RESPONSE.name());
     metadataMap.put("nodeExecutionId", NODE_EXECUTION_ID);
     metadataMap.put("planExecutionId", PLAN_EXECUTION_ID);

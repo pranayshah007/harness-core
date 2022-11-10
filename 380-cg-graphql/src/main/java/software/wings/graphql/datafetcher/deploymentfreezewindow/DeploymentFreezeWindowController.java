@@ -69,6 +69,12 @@ public class DeploymentFreezeWindowController {
     List<ApplicationFilter> appSelections =
         populateAppSelectionsEntity(qlCreateDeploymentFreezeWindowInput.getFreezeWindows());
 
+    // EXCLUDE APP SELECTIONS POPULATED
+    List<ApplicationFilter> excludeAppSelections = new ArrayList<>();
+    if (qlCreateDeploymentFreezeWindowInput.getExcludeFreezeWindows() != null) {
+      excludeAppSelections = populateAppSelectionsEntity(qlCreateDeploymentFreezeWindowInput.getExcludeFreezeWindows());
+    }
+
     // TIME RANGE POPULATED
     TimeRange timeRange = populateTimeRangeEntity(qlCreateDeploymentFreezeWindowInput.getSetup());
     String uuid = null;
@@ -81,6 +87,7 @@ public class DeploymentFreezeWindowController {
         .description(qlCreateDeploymentFreezeWindowInput.getDescription())
         .applicable(false)
         .appSelections(appSelections)
+        .excludeAppSelections(excludeAppSelections)
         .timeRange(timeRange)
         .userGroups(qlCreateDeploymentFreezeWindowInput.getNotifyTo())
         .uuid(uuid)
@@ -424,15 +431,20 @@ public class DeploymentFreezeWindowController {
       // UPDATE -> FREEZE_WINDOWS(APP_SELECTIONS)
       List<ApplicationFilter> updatedAppSelections = populateAppSelectionsEntity(parameter.getFreezeWindows());
       existingFreezeWindow.setAppSelections(updatedAppSelections);
+
+      // UPDATE -> FREEZE_WINDOWS(EXCLUDE_APP_SELECTIONS)
+      List<ApplicationFilter> updatedExcludeAppSelections = new ArrayList<>();
+      if (parameter.getExcludeFreezeWindows() != null) {
+        updatedExcludeAppSelections = populateAppSelectionsEntity(parameter.getExcludeFreezeWindows());
+      }
+      existingFreezeWindow.setExcludeAppSelections(updatedExcludeAppSelections);
     }
     return existingFreezeWindow;
   }
 
-  public QLDeploymentFreezeWindow populateDeploymentFreezeWindowPayload(
-      TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig) {
-    // POPULATING APP SELECTIONS FOR PAYLOAD
+  public List<QLFreezeWindow> populateFreezeWindowsPayload(List<ApplicationFilter> appSelections) {
     List<QLFreezeWindow> qlFreezeWindowList = new ArrayList<>();
-    for (ApplicationFilter applicationFilter : timeRangeBasedFreezeConfig.getAppSelections()) {
+    for (ApplicationFilter applicationFilter : appSelections) {
       List<String> appIds = new ArrayList<>();
       if (applicationFilter.getFilterType().equals(CUSTOM)) {
         appIds = ((CustomAppFilter) applicationFilter).getApps();
@@ -461,6 +473,18 @@ public class DeploymentFreezeWindowController {
 
       qlFreezeWindowList.add(qlFreezeWindow);
     }
+    return qlFreezeWindowList;
+  }
+
+  public QLDeploymentFreezeWindow populateDeploymentFreezeWindowPayload(
+      TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig) {
+    // POPULATING APP SELECTIONS FOR PAYLOAD
+    List<QLFreezeWindow> qlFreezeWindowList =
+        populateFreezeWindowsPayload(timeRangeBasedFreezeConfig.getAppSelections());
+    List<QLFreezeWindow> qlExcludeFreezeWindowList = new ArrayList<>();
+    if (timeRangeBasedFreezeConfig.getExcludeAppSelections() != null) {
+      qlExcludeFreezeWindowList = populateFreezeWindowsPayload(timeRangeBasedFreezeConfig.getExcludeAppSelections());
+    }
 
     // POPULATING TIME RANGE FOR PAYLOAD
     TimeRange timeRange = timeRangeBasedFreezeConfig.getTimeRange();
@@ -483,6 +507,7 @@ public class DeploymentFreezeWindowController {
         .applicable(timeRangeBasedFreezeConfig.isApplicable())
         .notifyTo(timeRangeBasedFreezeConfig.getUserGroups())
         .freezeWindows(qlFreezeWindowList)
+        .excludeFreezeWindows(qlExcludeFreezeWindowList)
         .setup(qlSetup)
         .userGroupSelection(populateUserGroupSelection(timeRangeBasedFreezeConfig.getUserGroupSelection()))
         .build();
@@ -497,11 +522,18 @@ public class DeploymentFreezeWindowController {
     validateUserGroups(timeRangeBasedFreezeConfig, accountId);
 
     // VALIDATE_APP_SELECTIONS
-    validateAppSelections(timeRangeBasedFreezeConfig, accountId);
+    validateAppSelections(timeRangeBasedFreezeConfig, accountId, false);
+
+    // VALIDATE_EXCLUDE_APP_SELECTIONS
+    if (timeRangeBasedFreezeConfig.getExcludeAppSelections() != null) {
+      validateAppSelections(timeRangeBasedFreezeConfig, accountId, true);
+    }
   }
 
-  private void validateAppSelections(TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig, String accountId) {
-    List<ApplicationFilter> appSelections = timeRangeBasedFreezeConfig.getAppSelections();
+  private void validateAppSelections(
+      TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig, String accountId, Boolean excluded) {
+    List<ApplicationFilter> appSelections =
+        excluded ? timeRangeBasedFreezeConfig.getExcludeAppSelections() : timeRangeBasedFreezeConfig.getAppSelections();
 
     for (ApplicationFilter applicationFilter : appSelections) {
       // APP_IDS VALIDATION

@@ -16,6 +16,7 @@ import static io.harness.pms.contracts.execution.ExecutionMode.CONSTRAINT;
 import static io.harness.pms.contracts.execution.ExecutionMode.SYNC;
 import static io.harness.pms.contracts.execution.ExecutionMode.TASK;
 import static io.harness.pms.contracts.execution.ExecutionMode.TASK_CHAIN;
+import static io.harness.pms.contracts.execution.ExecutionMode.WAIT_STEP;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -34,7 +35,8 @@ public class ExecutionModeUtils {
 
   private final Set<ExecutionMode> TASK_MODES = EnumSet.of(TASK, TASK_CHAIN);
 
-  private final Set<ExecutionMode> LEAF_MODES = EnumSet.of(TASK, TASK_CHAIN, ASYNC, SYNC, APPROVAL, CONSTRAINT);
+  private final Set<ExecutionMode> LEAF_MODES =
+      EnumSet.of(TASK, TASK_CHAIN, ASYNC, SYNC, APPROVAL, CONSTRAINT, WAIT_STEP);
 
   public Set<ExecutionMode> chainModes() {
     return CHAIN_MODES;

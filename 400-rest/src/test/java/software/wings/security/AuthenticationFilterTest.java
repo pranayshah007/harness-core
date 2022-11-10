@@ -510,7 +510,7 @@ public class AuthenticationFilterTest extends CategoryTest {
   private Method getMockResourceMethod() {
     Class mockClass = UserResourceNG.class;
     try {
-      return mockClass.getMethod("getUser", String.class);
+      return mockClass.getMethod("getUser", String.class, Boolean.class);
     } catch (NoSuchMethodException e) {
       return null;
     }

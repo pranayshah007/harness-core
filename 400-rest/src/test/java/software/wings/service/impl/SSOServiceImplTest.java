@@ -48,6 +48,7 @@ import io.harness.ng.core.account.OauthProviderType;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.filter.OutboxEventFilter;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -88,6 +89,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 /**
  * @author Vaibhav Tulsyan
@@ -169,7 +172,10 @@ public class SSOServiceImplTest extends WingsBaseTest {
                           .withAppId(APP_ID)
                           .withCompanyName("Account 2")
                           .withAuthenticationMechanism(USER_PASSWORD)
+                          .withNextGenEnabled(true)
                           .build();
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(new ArrayList<>());
 
     accountService.save(account, false);
     ssoService.uploadOauthConfiguration(
@@ -206,6 +212,7 @@ public class SSOServiceImplTest extends WingsBaseTest {
                           .withLicenseInfo(getLicenseInfo())
                           .withAppId(APP_ID)
                           .withCompanyName("Account 2")
+                          .withNextGenEnabled(false)
                           .withAuthenticationMechanism(USER_PASSWORD)
                           .build();
 
@@ -447,7 +454,6 @@ public class SSOServiceImplTest extends WingsBaseTest {
                           .withAuthenticationMechanism(USER_PASSWORD)
                           .build();
     accountService.save(account, false);
-    when(featureFlagService.isEnabled(FeatureName.AUDIT_TRAIL_ENHANCEMENT, account.getUuid())).thenReturn(true);
 
     ssoService.setAuthenticationMechanism(account.getUuid(), SAML);
     List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
@@ -463,5 +469,19 @@ public class SSOServiceImplTest extends WingsBaseTest {
         .isEqualTo(USER_PASSWORD);
     assertThat(loginSettingsAuthMechanismUpdateEvent.getNewAuthMechanismYamlDTO().getAuthenticationMechanism())
         .isEqualTo(SAML);
+
+    ssoService.setAuthenticationMechanism(account.getUuid(), LDAP);
+    outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(AUTHENTICATION_MECHANISM_UPDATED);
+    loginSettingsAuthMechanismUpdateEvent = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+        outboxEvent.getEventData(), LoginSettingsAuthMechanismUpdateEvent.class);
+
+    assertThat(loginSettingsAuthMechanismUpdateEvent.getAccountIdentifier()).isEqualTo(account.getUuid());
+    assertThat(loginSettingsAuthMechanismUpdateEvent.getOldAuthMechanismYamlDTO().getAuthenticationMechanism())
+        .isEqualTo(SAML);
+    assertThat(loginSettingsAuthMechanismUpdateEvent.getNewAuthMechanismYamlDTO().getAuthenticationMechanism())
+        .isEqualTo(LDAP);
   }
 }

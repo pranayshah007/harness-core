@@ -44,7 +44,7 @@ public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
                 : EMPTY_JSON)
         .logStreamingTaskClient(logCallback)
         .steadyStateTimeoutInMin((int) TimeUnit.MILLISECONDS.toMinutes(deploymentParameters.getTimeoutInMs()))
-        .isRollback(deploymentParameters.isRollback()) // I still need to check this part
+        .isRollback(deploymentParameters.isRollback())
         .build();
   }
 
@@ -77,7 +77,9 @@ public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
         .managementGroupId(deploymentParameters.getManagementGroupId())
         .mode(deploymentParameters.getDeploymentMode())
         .templateJson(deploymentParameters.getTemplateBody().fetchFileContent())
-        .parametersJson(deploymentParameters.getParametersBody().fetchFileContent())
+        .parametersJson(deploymentParameters.getParametersBody() != null
+                ? deploymentParameters.getParametersBody().fetchFileContent()
+                : EMPTY_JSON)
         .logStreamingTaskClient(logStreamingTaskClient)
         .steadyStateTimeoutInMin((int) TimeUnit.MILLISECONDS.toMinutes(deploymentParameters.getTimeoutInMs()))
         .build();
@@ -110,7 +112,9 @@ public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
         .deploymentDataLocation(deploymentParameters.getDeploymentDataLocation())
         .mode(deploymentParameters.getDeploymentMode())
         .templateJson(deploymentParameters.getTemplateBody().fetchFileContent())
-        .parametersJson(deploymentParameters.getParametersBody().fetchFileContent())
+        .parametersJson(deploymentParameters.getParametersBody() != null
+                ? deploymentParameters.getParametersBody().fetchFileContent()
+                : EMPTY_JSON)
         .logStreamingTaskClient(logStreamingTaskClient)
         .steadyStateTimeoutInMin((int) TimeUnit.MILLISECONDS.toMinutes(deploymentParameters.getTimeoutInMs()))
         .build();
@@ -126,7 +130,9 @@ public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
         .subscriptionId(deploymentParameters.getSubscriptionId())
         .mode(deploymentParameters.getDeploymentMode())
         .templateJson(deploymentParameters.getTemplateBody().fetchFileContent())
-        .parametersJson(deploymentParameters.getParametersBody().fetchFileContent())
+        .parametersJson(deploymentParameters.getParametersBody() != null
+                ? deploymentParameters.getParametersBody().fetchFileContent()
+                : EMPTY_JSON)
         .logStreamingTaskClient(logStreamingTaskClient)
         .steadyStateTimeoutInMin((int) TimeUnit.MILLISECONDS.toMinutes(deploymentParameters.getTimeoutInMs()))
         .build();

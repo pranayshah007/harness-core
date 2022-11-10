@@ -15,6 +15,8 @@ import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 
+import software.wings.beans.AwsCrossAccountAttributes;
+
 import com.amazonaws.services.organizations.AWSOrganizationsClient;
 import com.amazonaws.services.organizations.model.Account;
 import com.amazonaws.services.organizations.model.ListAccountsRequest;
@@ -43,15 +45,20 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
     accountList.forEach(account -> {
       String awsAccountId = getAccountIdFromArn(account.getArn());
       if (!awsAccountId.equals(masterAwsAccountId)) {
-        CECloudAccount cloudAccount = CECloudAccount.builder()
-                                          .accountId(accountId)
-                                          .accountArn(account.getArn())
-                                          .accountStatus(CECloudAccount.AccountStatus.NOT_VERIFIED)
-                                          .accountName(account.getName())
-                                          .infraAccountId(awsAccountId)
-                                          .infraMasterAccountId(ceAwsConnectorDTO.getAwsAccountId())
-                                          .masterAccountSettingId(connectorId)
-                                          .build();
+        CECloudAccount cloudAccount =
+            CECloudAccount.builder()
+                .accountId(accountId)
+                .accountArn(account.getArn())
+                .accountStatus(CECloudAccount.AccountStatus.NOT_VERIFIED)
+                .accountName(account.getName())
+                .infraAccountId(awsAccountId)
+                .infraMasterAccountId(ceAwsConnectorDTO.getAwsAccountId())
+                .masterAccountSettingId(connectorId)
+                .awsCrossAccountAttributes(AwsCrossAccountAttributes.builder()
+                                               .crossAccountRoleArn(crossAccountAccess.getCrossAccountRoleArn())
+                                               .externalId(crossAccountAccess.getExternalId())
+                                               .build())
+                .build();
         ceCloudAccounts.add(cloudAccount);
       }
     });

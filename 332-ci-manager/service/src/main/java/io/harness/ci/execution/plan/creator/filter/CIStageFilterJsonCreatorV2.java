@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ci.plan.creator.filter;
 
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
@@ -15,7 +22,6 @@ import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -117,24 +123,27 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
     return ciFilterBuilder.build();
   }
 
+  private void validateRuntime(IntegrationStageConfig integrationStageConfig) {
+    Runtime runtime = integrationStageConfig.getRuntime();
+    if (runtime != null && (runtime.getType() == Runtime.Type.CLOUD || runtime.getType() == Runtime.Type.DOCKER)) {
+      return;
+    } else {
+      throw new CIStageExecutionException(
+          "Infrastructure or runtime field with type Cloud (for vm) or type Docker (for docker) is mandatory for execution");
+    }
+  }
+
   private void validateStage(IntegrationStageNode stageNode) {
     IntegrationStageConfig integrationStageConfig = stageNode.getIntegrationStageConfig();
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
-      Runtime runtime = integrationStageConfig.getRuntime();
-      if (runtime == null || runtime.getType() != Runtime.Type.CLOUD) {
-        throw new CIStageExecutionException(
-            "Infrastructure or runtime field with type Cloud is mandatory for execution");
-      }
+      validateRuntime(integrationStageConfig);
     } else {
       if (infrastructure.getType() == Infrastructure.Type.VM) {
         validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
       }
-      if (infrastructure.getType() == KUBERNETES_DIRECT
-          && k8InitializeTaskUtils.getOS(infrastructure) == OSType.Windows) {
-        validationUtils.validateWindowsK8Stage(integrationStageConfig.getExecution());
-      }
+      validationUtils.validateStage(integrationStageConfig.getExecution(), infrastructure);
     }
   }
 
@@ -167,11 +176,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
 
     IntegrationStageConfig integrationStage = stageNode.getIntegrationStageConfig();
     if (integrationStage.getInfrastructure() == null) {
-      Runtime runtime = integrationStage.getRuntime();
-      if (runtime == null || runtime.getType() != Runtime.Type.CLOUD) {
-        throw new CIStageExecutionException(
-            "Infrastructure or runtime field with type Cloud is mandatory for execution");
-      }
+      validateRuntime(integrationStage);
     } else {
       if (integrationStage.getInfrastructure().getType() == KUBERNETES_DIRECT) {
         K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) integrationStage.getInfrastructure();

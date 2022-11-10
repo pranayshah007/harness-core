@@ -164,7 +164,7 @@ public class AzureCreateBPStepTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testExecuteAzureCreateStepTaskWithFilesInHarnessStore() throws Exception {
+  public void testExecuteAzureCreateStepTaskWithFilesInHarnessStore() {
     StepElementParameters step = createStepHarnessStore();
     FileReference fileReference = FileReference.builder().build();
     Mockito.mockStatic(FileReference.class);

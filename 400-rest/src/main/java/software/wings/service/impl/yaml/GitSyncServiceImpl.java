@@ -78,6 +78,7 @@ import software.wings.yaml.gitSync.YamlGitConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.AggregationOptions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -86,6 +87,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
@@ -294,7 +296,10 @@ public class GitSyncServiceImpl implements GitSyncService {
             grouping(GitFileActivityKeys.errorMessage, first(GitFileActivityKeys.errorMessage)))
         .project(projection(GitFileActivityKeys.filePath, ID_KEY),
             projection(GitFileActivityKeys.errorMessage, GitFileActivityKeys.errorMessage))
-        .aggregate(LatestErrorInGitFileActivity.class)
+        .aggregate(LatestErrorInGitFileActivity.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(GitFileActivity.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(
             fileErrorPair -> fileNameErrorMap.put(fileErrorPair.getFilePath(), fileErrorPair.getErrorMessage()));
     return fileNameErrorMap;

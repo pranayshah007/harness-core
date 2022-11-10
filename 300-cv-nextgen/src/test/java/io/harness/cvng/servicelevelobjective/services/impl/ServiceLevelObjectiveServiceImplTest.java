@@ -57,14 +57,13 @@ import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetB
 import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetRemainingPercentageCondition;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
-import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
-import io.harness.cvng.servicelevelobjective.beans.SLOTarget;
+import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
@@ -86,6 +85,7 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHeal
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveKeys;
+import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -118,7 +118,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -140,16 +139,15 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   @Mock FakeNotificationClient notificationClient;
   @Inject private SLIRecordServiceImpl sliRecordService;
   @Inject private OutboxService outboxService;
-  @Inject CVServiceOutboxEventHandler cvServiceOutboxEventHandler;
   String accountId;
   String orgIdentifier;
   String projectIdentifier;
   String identifier;
   String name;
   List<ServiceLevelIndicatorDTO> serviceLevelIndicators;
-  SLOTarget sloTarget;
-  SLOTarget calendarSloTarget;
-  SLOTarget updatedSloTarget;
+  SLOTargetDTO sloTarget;
+  SLOTargetDTO calendarSloTarget;
+  SLOTargetDTO updatedSloTarget;
   String userJourneyIdentifier;
   String description;
   String monitoredServiceIdentifier;
@@ -189,13 +187,13 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                                                                      .build())
                                                            .build());
 
-    sloTarget = SLOTarget.builder()
+    sloTarget = SLOTargetDTO.builder()
                     .type(SLOTargetType.ROLLING)
                     .sloTargetPercentage(80.0)
                     .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
                     .build();
 
-    calendarSloTarget = SLOTarget.builder()
+    calendarSloTarget = SLOTargetDTO.builder()
                             .type(SLOTargetType.CALENDER)
                             .sloTargetPercentage(80.0)
                             .spec(CalenderSLOTargetSpec.builder()
@@ -204,7 +202,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
 
                                       .build())
                             .build();
-    updatedSloTarget = SLOTarget.builder()
+    updatedSloTarget = SLOTargetDTO.builder()
                            .type(SLOTargetType.ROLLING)
                            .sloTargetPercentage(80.0)
                            .spec(RollingSLOTargetSpec.builder().periodLength("60d").build())
@@ -234,6 +232,18 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreate_WithoutTagsSuccess() {
+    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+    sloDTO.setTags(new HashMap<>());
+    createMonitoredService();
+    ServiceLevelObjectiveResponse serviceLevelObjectiveResponse =
+        serviceLevelObjectiveService.create(projectParams, sloDTO);
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO()).isEqualTo(sloDTO);
+  }
+
+  @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testCreate_validateSLOHealthIndicatorCreationTest() {
@@ -244,18 +254,6 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     SLOHealthIndicator sloHealthIndicator =
         sloHealthIndicatorService.getBySLOIdentifier(projectParams, sloDTO.getIdentifier());
     assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(100.0);
-  }
-
-  @Test
-  @Owner(developers = DEEPAK_CHHIKARA)
-  @Category(UnitTests.class)
-  public void testCreate_WithoutTagsSuccess() {
-    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
-    sloDTO.setTags(new HashMap<>());
-    createMonitoredService();
-    ServiceLevelObjectiveResponse serviceLevelObjectiveResponse =
-        serviceLevelObjectiveService.create(projectParams, sloDTO);
-    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO()).isEqualTo(sloDTO);
   }
 
   @Test
@@ -572,7 +570,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
         serviceLevelObjectiveService.getEntity(projectParams, sloDTO.getIdentifier());
     assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(14);
     LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
-    ServiceLevelObjective.TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
+    TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
     Instant startTime = timePeriod.getStartTime(serviceLevelObjective.getZoneOffset());
     assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().get(0).getAnalysisStartTime()).isBefore(startTime);
   }
@@ -861,7 +859,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                  .identifier("id2")
                  .userJourneyRef("uj1")
                  .type(ServiceLevelIndicatorType.AVAILABILITY)
-                 .target(SLOTarget.builder()
+                 .target(SLOTargetDTO.builder()
                              .type(SLOTargetType.CALENDER)
                              .sloTargetPercentage(80.0)
                              .spec(CalenderSLOTargetSpec.builder()
@@ -929,9 +927,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     List<String> verificationTaskIds =
         verificationTaskService.getSLIVerificationTaskIds(projectParams.getAccountIdentifier(), sliIds);
     List<CVNGLogDTO> cvngLogDTOs =
-        IntStream.range(0, 3)
-            .mapToObj(index -> builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build())
-            .collect(Collectors.toList());
+        Arrays.asList(builderFactory.executionLogDTOBuilder().traceableId(verificationTaskIds.get(0)).build());
     cvngLogService.save(cvngLogDTOs);
 
     SLILogsFilter sliLogsFilter = SLILogsFilter.builder()
@@ -1127,25 +1123,6 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = KAPIL)
-  @Category(UnitTests.class)
-  public void testCreate_withIncorrectNotificationRule() {
-    NotificationRuleDTO notificationRuleDTO =
-        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
-    NotificationRuleResponse notificationRuleResponseOne =
-        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
-    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
-    sloDTO.setNotificationRuleRefs(
-        Arrays.asList(NotificationRuleRefDTO.builder()
-                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
-                          .enabled(true)
-                          .build()));
-    createMonitoredService();
-    assertThatThrownBy(() -> serviceLevelObjectiveService.create(projectParams, sloDTO))
-        .hasMessage("NotificationRule with identifier rule is of type MONITORED_SERVICE and cannot be added into SLO");
-  }
-
-  @Test
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
   public void testCreate_ServiceLevelObjectiveCreateAuditEvent() {
@@ -1219,6 +1196,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveService mockServiceLevelObjectiveService = spy(serviceLevelObjectiveService);
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByProjectIdentifier(ServiceLevelObjective.class,
@@ -1234,6 +1212,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveService mockServiceLevelObjectiveService = spy(serviceLevelObjectiveService);
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByOrgIdentifier(
@@ -1249,6 +1228,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveService mockServiceLevelObjectiveService = spy(serviceLevelObjectiveService);
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(

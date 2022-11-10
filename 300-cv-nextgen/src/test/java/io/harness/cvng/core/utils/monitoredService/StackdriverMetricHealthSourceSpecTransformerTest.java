@@ -20,6 +20,7 @@ import io.harness.cvng.core.beans.StackdriverDefinition;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.AnalysisInfo.DeploymentVerification;
 import io.harness.cvng.core.entities.AnalysisInfo.LiveMonitoring;
 import io.harness.cvng.core.entities.AnalysisInfo.SLI;
@@ -111,6 +112,7 @@ public class StackdriverMetricHealthSourceSpecTransformerTest extends CvNextGenT
     metricInfo.setSli(SLI.builder().enabled(Boolean.TRUE).build());
     cvConfig.setMetricPack(MetricPack.builder()
                                .category(CVMonitoringCategory.PERFORMANCE)
+                               .identifier(MonitoredServiceConstants.CUSTOM_METRIC_PACK)
                                .metrics(Collections.singleton(
                                    MetricPack.MetricDefinition.builder()
                                        .name(metricName)

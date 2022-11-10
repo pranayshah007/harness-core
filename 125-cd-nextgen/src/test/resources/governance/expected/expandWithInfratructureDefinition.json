@@ -1,0 +1,28 @@
+{
+  "environment" : {
+    "name" : "dev_environment",
+    "tags" : { }
+  },
+  "allowSimultaneousDeployments" : false,
+  "infrastructureDefinition" : {
+    "type" : "ECS",
+    "spec" : {
+      "cluster" : "us-east-1-cluster",
+      "region" : "us-east-1",
+      "connector" : {
+        "name" : "k8s_connector_name",
+        "identifier" : null,
+        "description" : null,
+        "orgIdentifier" : null,
+        "projectIdentifier" : null,
+        "tags" : null,
+        "type" : null,
+        "spec" : {
+          "credential" : null,
+          "delegateSelectors" : [ "del-1" ],
+          "executeOnDelegate" : true
+        }
+      }
+    }
+  }
+}

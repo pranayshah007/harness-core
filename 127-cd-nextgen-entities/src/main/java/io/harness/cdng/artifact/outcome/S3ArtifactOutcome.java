@@ -64,6 +64,6 @@ public class S3ArtifactOutcome implements ArtifactOutcome {
 
   @Override
   public String getTag() {
-    return null;
+    return filePath;
   }
 }

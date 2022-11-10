@@ -127,6 +127,14 @@ if [[ "" != "$VM_SECURITY_IMAGE" ]]; then
   export VM_SECURITY_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.security=env(VM_SECURITY_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$CACHE_BUCKET" ]]; then
+  export CACHE_BUCKET; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.bucket=env(CACHE_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CACHE_SERVICE_KEY" ]]; then
+  export CACHE_SERVICE_KEY; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.serviceKey=env(CACHE_SERVICE_KEY)' $CONFIG_FILE
+fi
+
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
   export VM_ARTIFACTORY_UPLOAD_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.artifactoryUpload=env(VM_ARTIFACTORY_UPLOAD_IMAGE)' $CONFIG_FILE
 fi
@@ -192,8 +200,16 @@ if [[ "" != "$LOG_SERVICE_GLOBAL_TOKEN" ]]; then
   export LOG_SERVICE_GLOBAL_TOKEN; yq -i '.logServiceConfig.globalToken=env(LOG_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
 fi
 
+if [[ "" != "$LOG_SERVICE_INTERNAL_URL" ]]; then
+  export LOG_SERVICE_INTERNAL_URL; yq -i '.logServiceConfig.internalUrl=env(LOG_SERVICE_INTERNAL_URL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$TI_SERVICE_ENDPOINT" ]]; then
   export TI_SERVICE_ENDPOINT; yq -i '.tiServiceConfig.baseUrl=env(TI_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TI_SERVICE_INTERNAL_URL" ]]; then
+  export TI_SERVICE_INTERNAL_URL; yq -i '.tiServiceConfig.internalUrl=env(TI_SERVICE_INTERNAL_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then
@@ -264,6 +280,11 @@ if [[ "" != "$ENABLE_DASHBOARD_TIMESCALE" ]]; then
   export ENABLE_DASHBOARD_TIMESCALE; yq -i '.enableDashboardTimescale=env(ENABLE_DASHBOARD_TIMESCALE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DISTRIBUTED_LOCK_IMPLEMENTATION" ]]; then
+  export DISTRIBUTED_LOCK_IMPLEMENTATION; yq -i '.distributedLockImplementation=env(DISTRIBUTED_LOCK_IMPLEMENTATION)' $CONFIG_FILE
+fi
+
+
 if [[ "" != "$MANAGER_SECRET" ]]; then
   export MANAGER_SECRET; yq -i '.managerServiceSecret=env(MANAGER_SECRET)' $CONFIG_FILE
 fi
@@ -324,6 +345,22 @@ fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_CONNECTION_POOL_SIZE" ]]; then
+  export REDIS_CONNECTION_POOL_SIZE; yq -i '.singleServerConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_RETRY_INTERVAL" ]]; then
+  export REDIS_RETRY_INTERVAL; yq -i '.singleServerConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_RETRY_ATTEMPTS" ]]; then
+  export REDIS_RETRY_ATTEMPTS; yq -i '.singleServerConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_TIMEOUT" ]]; then
+  export REDIS_TIMEOUT; yq -i '.singleServerConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
 fi
 
 yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
@@ -391,3 +428,28 @@ replace_key_value eventsFramework.redis.password $EVENTS_FRAMEWORK_REDIS_PASSWOR
 replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+
+if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
+  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
+  INDEX=0
+  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
+
+replace_key_value redisLockConfig.redisUrl "$LOCK_CONFIG_REDIS_URL"
+replace_key_value redisLockConfig.envNamespace "$LOCK_CONFIG_ENV_NAMESPACE"
+replace_key_value redisLockConfig.sentinel "$LOCK_CONFIG_USE_SENTINEL"
+replace_key_value redisLockConfig.masterName "$LOCK_CONFIG_SENTINEL_MASTER_NAME"
+replace_key_value redisLockConfig.userName "$LOCK_CONFIG_REDIS_USERNAME"
+replace_key_value redisLockConfig.password "$LOCK_CONFIG_REDIS_PASSWORD"
+replace_key_value redisLockConfig.nettyThreads "$REDIS_NETTY_THREADS"
+replace_key_value redisLockConfig.connectionPoolSize $REDIS_CONNECTION_POOL_SIZE
+replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
+replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
+
+replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"

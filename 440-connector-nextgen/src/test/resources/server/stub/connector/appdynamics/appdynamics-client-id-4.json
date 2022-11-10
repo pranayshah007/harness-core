@@ -1,0 +1,35 @@
+{
+  "connector" : {
+    "name" : "example_connector",
+    "slug" : "example_connector",
+    "description" : "example_connector",
+    "org" : "default",
+    "project" : "example_project",
+    "tags" : {
+      "property1" : "example_connector"
+    },
+    "spec" : {
+      "type" : "AppdynamicsClientId",
+      "delegate_selectors" : [ ],
+      "account_name" : "appdynamics-account-name",
+      "controller_url" : "https://appdynamics.com/controller/",
+      "client_id" : "appdynamics-client-id",
+      "client_secret_ref" : "account.appdynamics-client-secret"
+    }
+  },
+  "created" : 1234567890,
+  "updated" : 1234567890,
+  "status" : {
+    "status" : "FAILURE",
+    "errors" : [ {
+      "reason" : "Unexpected Error",
+      "message" : "Check your credentials",
+      "code" : 450
+    } ],
+    "error_summary" : "Error Encountered (Check your credentials)",
+    "tested_at" : 1234567890,
+    "connected_at" : 1234567890
+  },
+  "harness_managed" : false,
+  "governance_metadata" : null
+}

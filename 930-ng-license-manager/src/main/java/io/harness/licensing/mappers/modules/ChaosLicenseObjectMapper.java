@@ -21,16 +21,16 @@ public class ChaosLicenseObjectMapper implements LicenseObjectMapper<ChaosModule
   @Override
   public ChaosModuleLicenseDTO toDTO(ChaosModuleLicense entity) {
     return ChaosModuleLicenseDTO.builder()
-        .totalChaosScenarioRun(entity.getTotalChaosScenarioRun())
-        .totalChaosDelegates(entity.getTotalChaosDelegates())
+        .totalChaosExperimentRuns(entity.getTotalChaosExperimentRuns())
+        .totalChaosInfrastructures(entity.getTotalChaosInfrastructures())
         .build();
   }
 
   @Override
   public ChaosModuleLicense toEntity(ChaosModuleLicenseDTO dto) {
     return ChaosModuleLicense.builder()
-        .totalChaosScenarioRun(dto.getTotalChaosScenarioRun())
-        .totalChaosDelegates(dto.getTotalChaosDelegates())
+        .totalChaosExperimentRuns(dto.getTotalChaosExperimentRuns())
+        .totalChaosInfrastructures(dto.getTotalChaosInfrastructures())
         .build();
   }
 }

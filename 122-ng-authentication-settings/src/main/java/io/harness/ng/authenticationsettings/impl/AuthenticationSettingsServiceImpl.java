@@ -192,6 +192,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
                        .displayName(ldapSettings.getDisplayName())
                        .cronExpression(ldapSettings.getCronExpression())
                        .nextIterations(ldapSettings.getNextIterations())
+                       .disabled(ldapSettings.isDisabled())
                        .build());
       }
     }
@@ -320,6 +321,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
         .displayName(ldapSettings.getDisplayName())
         .cronExpression(ldapSettings.getCronExpression())
         .nextIterations(ldapSettings.getNextIterations())
+        .disabled(ldapSettings.isDisabled())
         .build();
   }
 
@@ -335,6 +337,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
 
     toLdapSettings.setUuid(ldapSettings.getIdentifier());
     toLdapSettings.setCronExpression(ldapSettings.getCronExpression());
+    toLdapSettings.setDisabled(ldapSettings.isDisabled());
     return toLdapSettings;
   }
 }

@@ -51,8 +51,11 @@ import io.harness.migrations.timescaledb.CreateCeRecommendationTable;
 import io.harness.migrations.timescaledb.CreateCloudProviderTable;
 import io.harness.migrations.timescaledb.CreateDeploymentParentTable;
 import io.harness.migrations.timescaledb.CreateDeploymentStageTable;
+import io.harness.migrations.timescaledb.CreateDeploymentStepTable;
 import io.harness.migrations.timescaledb.CreateEnvironmentTable;
+import io.harness.migrations.timescaledb.CreateExecutionInterruptTable;
 import io.harness.migrations.timescaledb.CreateIndexOnKubernetesUtilizationData;
+import io.harness.migrations.timescaledb.CreateInfraDefinitionTable;
 import io.harness.migrations.timescaledb.CreateInstanceStatsDayTable;
 import io.harness.migrations.timescaledb.CreateInstanceStatsHourTable;
 import io.harness.migrations.timescaledb.CreateKubernetesUtilizationData;
@@ -158,6 +161,9 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(67, AddAzureColumnAnomaly.class))
         .add(Pair.of(68, AddFailureDetailsToDeployment.class))
         .add(Pair.of(69, AddParentPipelineToDeployment.class))
+        .add(Pair.of(70, CreateInfraDefinitionTable.class))
+        .add(Pair.of(71, CreateDeploymentStepTable.class))
+        .add(Pair.of(72, CreateExecutionInterruptTable.class))
         .build();
   }
 }

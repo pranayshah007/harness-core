@@ -7,6 +7,7 @@
 
 package io.harness.data.structure;
 
+import com.google.common.collect.ImmutableMap;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
@@ -16,7 +17,7 @@ import lombok.experimental.UtilityClass;
 // Technically it can inherit the ImmutableMap and became a an object class, but this will serve no purpose
 // since it does not extend the functionality of the class.
 public class NullSafeImmutableMap {
-  public static class NullSafeBuilder<K, V> extends com.google.common.collect.ImmutableMap.Builder<K, V> {
+  public static class NullSafeBuilder<K, V> extends ImmutableMap.Builder<K, V> {
     @Override
     public NullSafeBuilder<K, V> put(@NonNull K key, @NonNull V value) {
       super.put(key, value);

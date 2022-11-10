@@ -10,10 +10,12 @@ package software.wings.beans.command;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.beans.artifact.ArtifactFileMetadata.builder;
 import static io.harness.rule.OwnerRule.AADITI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.command.CommandExecutionContext.Builder.aCommandExecutionContext;
+import static software.wings.beans.command.DownloadArtifactCommandUnit.POWERSHELL_USE_ENV_PROXY;
 import static software.wings.utils.WingsTestConstants.ACCESS_KEY;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_FILE_NAME;
@@ -38,6 +40,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.SystemWrapper;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -95,6 +98,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 @OwnedBy(CDC)
 @RunWith(JUnitParamsRunner.class)
@@ -633,6 +638,86 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(executor).executeCommandString(argument.capture(), anyBoolean());
     assertThat(argument.getValue()).endsWith(command);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDownloadFromArtifactoryUsingPowerShellAndProxy() {
+    ShellCommandExecutionContext context = artifactoryContext;
+
+    context.setExecutor(executor);
+    downloadArtifactCommandUnit.setScriptType(ScriptType.POWERSHELL);
+    downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
+
+    try (MockedStatic<SystemWrapper> aMock = Mockito.mockStatic(SystemWrapper.class)) {
+      aMock.when(() -> SystemWrapper.getenv(POWERSHELL_USE_ENV_PROXY)).thenReturn("true");
+
+      downloadArtifactCommandUnit.executeInternal(context);
+      ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+      verify(executor).executeCommandString(argument.capture(), anyBoolean());
+      assertThat(argument.getValue()).endsWith("-Proxy \"$env:HTTP_PROXY\"");
+    }
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDownloadFromArtifactoryUsingPowerShellNoProxyWhenEnvSettingIsWrong() {
+    ShellCommandExecutionContext context = artifactoryContext;
+
+    context.setExecutor(executor);
+    downloadArtifactCommandUnit.setScriptType(ScriptType.POWERSHELL);
+    downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
+
+    try (MockedStatic<SystemWrapper> aMock = Mockito.mockStatic(SystemWrapper.class)) {
+      aMock.when(() -> SystemWrapper.getenv(POWERSHELL_USE_ENV_PROXY)).thenReturn("wrong-value");
+
+      downloadArtifactCommandUnit.executeInternal(context);
+      ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+      verify(executor).executeCommandString(argument.capture(), anyBoolean());
+      assertThat(argument.getValue()).doesNotContain("-Proxy \"$env:HTTP_PROXY\"");
+    }
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDownloadFromArtifactoryUsingPowerShellNoProxyWhenEnvSettingIsNull() {
+    ShellCommandExecutionContext context = artifactoryContext;
+
+    context.setExecutor(executor);
+    downloadArtifactCommandUnit.setScriptType(ScriptType.POWERSHELL);
+    downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
+
+    try (MockedStatic<SystemWrapper> aMock = Mockito.mockStatic(SystemWrapper.class)) {
+      aMock.when(() -> SystemWrapper.getenv(POWERSHELL_USE_ENV_PROXY)).thenReturn(null);
+
+      downloadArtifactCommandUnit.executeInternal(context);
+      ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+      verify(executor).executeCommandString(argument.capture(), anyBoolean());
+      assertThat(argument.getValue()).doesNotContain("-Proxy \"$env:HTTP_PROXY\"");
+    }
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDownloadFromArtifactoryUsingPowerShellNoProxy() {
+    ShellCommandExecutionContext context = artifactoryContext;
+
+    context.setExecutor(executor);
+    downloadArtifactCommandUnit.setScriptType(ScriptType.POWERSHELL);
+    downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
+
+    try (MockedStatic<SystemWrapper> aMock = Mockito.mockStatic(SystemWrapper.class)) {
+      aMock.when(() -> SystemWrapper.getenv(POWERSHELL_USE_ENV_PROXY)).thenReturn("false");
+
+      downloadArtifactCommandUnit.executeInternal(context);
+      ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+      verify(executor).executeCommandString(argument.capture(), anyBoolean());
+      assertThat(argument.getValue()).doesNotContain("-Proxy \"$env:HTTP_PROXY\"");
+    }
   }
 
   private Map<String, String> mockMetadata(ArtifactStreamType artifactStreamType) {

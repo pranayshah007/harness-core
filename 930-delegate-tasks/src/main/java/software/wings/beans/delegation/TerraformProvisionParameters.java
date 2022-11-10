@@ -100,6 +100,7 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
 
   private final boolean useTfClient; // FF: USE_TF_CLIENT
   private final boolean useActivityIdBasedTfBaseDir;
+  private final boolean syncGitCloneAndCopyToDestDir;
   /**
    * Boolean to indicate if we should skip updating terraform state using refresh command before applying an approved
    * terraform plan

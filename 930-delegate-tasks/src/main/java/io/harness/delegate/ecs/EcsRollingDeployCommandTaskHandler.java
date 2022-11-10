@@ -110,10 +110,12 @@ public class EcsRollingDeployCommandTaskHandler extends EcsCommandTaskNGHandler 
               .ecsTasks(ecsCommandTaskHelper.getRunningEcsTasks(ecsInfraConfig.getAwsConnectorDTO(),
                   ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion()))
               .build();
+
       EcsRollingDeployResponse ecsRollingDeployResponse = EcsRollingDeployResponse.builder()
                                                               .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                               .ecsRollingDeployResult(ecsRollingDeployResult)
                                                               .build();
+
       deployLogCallback.saveExecutionLog(color(format("%n Deployment Successful."), LogColor.Green, LogWeight.Bold),
           LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 

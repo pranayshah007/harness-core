@@ -69,12 +69,12 @@ public class AwsLambdaRollback extends AwsLambdaState {
     PageResponse<Activity> pageResponse =
         activityService.list(aPageRequest()
                                  .withLimit("1")
-                                 .addFilter("appId", EQ, appId)
-                                 .addFilter("serviceId", EQ, serviceId)
+                                 .addFilter(ActivityKeys.appId, EQ, appId)
+                                 .addFilter(ActivityKeys.serviceId, EQ, serviceId)
                                  .addFilter(ActivityKeys.environmentId, EQ, envId)
-                                 .addFilter("status", EQ, ExecutionStatus.SUCCESS)
-                                 .addFilter("workflowExecutionId", NOT_EQ, workflowExecutionId)
-                                 .addFilter("artifactId", EXISTS)
+                                 .addFilter(ActivityKeys.status, EQ, ExecutionStatus.SUCCESS)
+                                 .addFilter(ActivityKeys.workflowExecutionId, NOT_EQ, workflowExecutionId)
+                                 .addFilter(ActivityKeys.artifactId, EXISTS)
                                  .addFilter(ActivityKeys.infrastructureDefinitionId, OR, op1, op2)
                                  .build());
     if (isNotEmpty(pageResponse)) {

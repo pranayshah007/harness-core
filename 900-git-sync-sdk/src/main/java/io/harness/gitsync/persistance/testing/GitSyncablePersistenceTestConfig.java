@@ -14,6 +14,7 @@ import static com.google.inject.name.Names.named;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.persistance.GitSyncableHarnessRepo;
+import io.harness.mongo.MongoConfig;
 import io.harness.springdata.HMongoTemplate;
 
 import com.google.inject.Injector;
@@ -66,7 +67,7 @@ public class GitSyncablePersistenceTestConfig extends AbstractMongoConfiguration
   @Bean(name = "primary")
   @Primary
   public MongoTemplate mongoTemplate() throws Exception {
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter());
+    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter(), MongoConfig.builder().build());
   }
 
   @Override

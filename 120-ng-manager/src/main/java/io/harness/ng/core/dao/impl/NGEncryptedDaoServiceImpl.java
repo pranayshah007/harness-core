@@ -48,4 +48,12 @@ public class NGEncryptedDaoServiceImpl implements NGEncryptedDataDao {
                    accountIdentifier, orgIdentifier, projectIdentifier, identifier)
         > 0;
   }
+
+  @Override
+  public NGEncryptedData hardDelete(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    return encryptedDataRepository
+        .hardDeleteNGEncryptedDataByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+  }
 }

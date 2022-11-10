@@ -18,6 +18,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.pipeline.service.yamlschema.approval.ApprovalYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlService;
+import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaService;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
 import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
@@ -32,17 +33,22 @@ public class LocalSchemaGetter implements SchemaGetter {
   private final ModuleType moduleType;
   private YamlSchemaProvider yamlSchemaProvider;
   private final ApprovalYamlSchemaService approvalYamlSchemaService;
+
+  private final PipelineStageYamlSchemaService pipelineStageYamlSchemaService;
   private final CustomStageYamlSchemaService customStageYamlSchemaService;
   private final FeatureFlagYamlService featureFlagYamlService;
   private final PmsYamlSchemaHelper pmsYamlSchemaHelper;
 
   public LocalSchemaGetter(String accountIdentifier, ModuleType moduleType, YamlSchemaProvider yamlSchemaProvider,
-      ApprovalYamlSchemaService approvalYamlSchemaService, CustomStageYamlSchemaService customStageYamlSchemaService,
-      FeatureFlagYamlService featureFlagYamlService, PmsYamlSchemaHelper pmsYamlSchemaHelper) {
+      ApprovalYamlSchemaService approvalYamlSchemaService,
+      PipelineStageYamlSchemaService pipelineStageYamlSchemaService,
+      CustomStageYamlSchemaService customStageYamlSchemaService, FeatureFlagYamlService featureFlagYamlService,
+      PmsYamlSchemaHelper pmsYamlSchemaHelper) {
     this.accountIdentifier = accountIdentifier;
     this.moduleType = moduleType;
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.approvalYamlSchemaService = approvalYamlSchemaService;
+    this.pipelineStageYamlSchemaService = pipelineStageYamlSchemaService;
     this.customStageYamlSchemaService = customStageYamlSchemaService;
     this.featureFlagYamlService = featureFlagYamlService;
     this.pmsYamlSchemaHelper = pmsYamlSchemaHelper;
@@ -57,6 +63,7 @@ public class LocalSchemaGetter implements SchemaGetter {
         accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
     partialSchemaDTOList.add(customStageYamlSchemaService.getCustomStageYamlSchema(
         accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
+    // TODO: add pipelineStageYamlSchemaService after PIE-5634 gets fixed (prashantsharma)
     return partialSchemaDTOList;
   }
 

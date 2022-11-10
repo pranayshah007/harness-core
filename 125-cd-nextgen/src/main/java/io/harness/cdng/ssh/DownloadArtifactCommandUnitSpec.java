@@ -15,13 +15,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Builder.Default;
 import lombok.Data;
 import lombok.Getter;
 
@@ -37,7 +35,7 @@ public class DownloadArtifactCommandUnitSpec implements CommandUnitBaseSpec {
   String uuid;
 
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> destinationPath;
-  @JsonIgnore @Default CommandUnitSourceType sourceType = CommandUnitSourceType.Artifact;
+
   @Override
   public String getType() {
     return CommandUnitSpecType.DOWNLOAD_ARTIFACT;

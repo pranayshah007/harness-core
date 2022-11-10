@@ -29,6 +29,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnsupportedOperationException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
@@ -111,9 +112,9 @@ public class VariableServiceImplTest extends CategoryTest {
                                   .type(STRING)
                                   .variableConfig(StringVariableConfigDTO.builder().valueType(FIXED_SET).build())
                                   .build();
-    exceptionRule.expect(InvalidRequestException.class);
-    exceptionRule.expectMessage(String.format("Value(s) for field [%s] must be provide when value type is [%s]",
-        StringVariableConfigDTOKeys.allowedValues, FIXED_SET));
+    exceptionRule.expect(UnsupportedOperationException.class);
+    exceptionRule.expectMessage(
+        String.format("Value Type [%s] is not supported", variableDTO.getVariableConfig().getValueType().name()));
     variableDTO.getVariableConfig().validate();
   }
 
@@ -125,9 +126,9 @@ public class VariableServiceImplTest extends CategoryTest {
                                   .type(STRING)
                                   .variableConfig(StringVariableConfigDTO.builder().valueType(REGEX).build())
                                   .build();
-    exceptionRule.expect(InvalidRequestException.class);
-    exceptionRule.expectMessage(String.format(
-        "Value for field [%s] must be provide when value type is [%s]", StringVariableConfigDTOKeys.regex, REGEX));
+    exceptionRule.expect(UnsupportedOperationException.class);
+    exceptionRule.expectMessage(
+        String.format("Value Type [%s] is not supported", variableDTO.getVariableConfig().getValueType().name()));
     variableDTO.getVariableConfig().validate();
   }
 
@@ -141,8 +142,9 @@ public class VariableServiceImplTest extends CategoryTest {
             .type(STRING)
             .variableConfig(StringVariableConfigDTO.builder().valueType(REGEX).regex(regex).build())
             .build();
-    exceptionRule.expect(InvalidRequestException.class);
-    exceptionRule.expectMessage(String.format("[%s] is not a valid regex", regex));
+    exceptionRule.expect(UnsupportedOperationException.class);
+    exceptionRule.expectMessage(
+        String.format("Value Type [%s] is not supported", variableDTO.getVariableConfig().getValueType().name()));
     variableDTO.getVariableConfig().validate();
   }
 

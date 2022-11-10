@@ -55,11 +55,4 @@ public class K8sScaleStepParameter extends K8sScaleBaseStepInfo implements K8sSp
           K8sCommandUnitConstants.WaitForSteadyState, K8sCommandUnitConstants.WrapUp);
     }
   }
-
-  @Nonnull
-  @Override
-  @JsonIgnore
-  public List<String> getCommandUnits(boolean isPruningEnabled) {
-    return getCommandUnits();
-  }
 }

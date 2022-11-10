@@ -19,10 +19,12 @@ import lombok.Getter;
 @Getter
 public class NGTemplateResolveException extends NGTemplateException {
   private final TemplateInputsErrorMetadataDTO errorResponseDTO;
+  private String referredByYaml;
 
-  public NGTemplateResolveException(
-      String message, EnumSet<ReportTarget> reportTarget, TemplateInputsErrorMetadataDTO errorResponseDTO) {
+  public NGTemplateResolveException(String message, EnumSet<ReportTarget> reportTarget,
+      TemplateInputsErrorMetadataDTO errorResponseDTO, String yaml) {
     super(message, reportTarget, errorResponseDTO);
     this.errorResponseDTO = errorResponseDTO;
+    this.referredByYaml = yaml;
   }
 }

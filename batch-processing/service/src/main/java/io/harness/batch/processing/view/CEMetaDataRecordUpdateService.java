@@ -10,11 +10,17 @@ package io.harness.batch.processing.view;
 import static io.harness.batch.processing.billing.tasklet.BillingDataGeneratedMailTasklet.DATA_TYPE;
 import static io.harness.batch.processing.billing.tasklet.BillingDataGeneratedMailTasklet.FIRST_DATA_RECEIVED;
 import static io.harness.batch.processing.billing.tasklet.BillingDataGeneratedMailTasklet.MODULE;
+import static io.harness.notification.dtos.NotificationChannelDTO.NotificationChannelDTOBuilder;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
+import static java.util.Collections.singletonList;
+
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
+import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.batch.processing.shard.AccountShardService;
+import io.harness.ccm.anomaly.url.HarnessNgUrl;
+import io.harness.ccm.cluster.entities.CEUserInfo;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord.CEMetadataRecordBuilder;
@@ -22,26 +28,44 @@ import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.ff.FeatureFlagService;
+import io.harness.notification.Team;
+import io.harness.notification.dtos.NotificationChannelDTO;
+import io.harness.notification.notificationclient.NotificationResult;
+import io.harness.notifications.NotificationResourceClient;
+import io.harness.rest.RestResponse;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
 
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.User;
+import software.wings.beans.security.UserGroup;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 import software.wings.settings.SettingVariableTypes;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Singleton;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import retrofit2.Response;
 
 @Service
 @Singleton
@@ -57,7 +81,12 @@ public class CEMetaDataRecordUpdateService {
   @Autowired private CEMetadataRecordDao metadataRecordDao;
   @Autowired TelemetryReporter telemetryReporter;
   @Autowired private NGConnectorHelper ngConnectorHelper;
-
+  @Autowired private NotificationResourceClient notificationResourceClient;
+  @Autowired private BatchMainConfig mainConfiguration;
+  public static final String CONNECTOR_TYPE = "CONNECTOR_TYPE";
+  public static final String CONNECTOR_NAME = "CONNECTOR_NAME";
+  public static final String CCM_URL = "CCM_URL";
+  public static final String USER_NAME = "USER_NAME";
   public void updateCloudProviderMetadata() {
     List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     accountIds.forEach(this::updateCloudProviderMetadata);
@@ -112,6 +141,22 @@ public class CEMetaDataRecordUpdateService {
               Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
           ceMetadataRecord.setSegmentDataReadyEventSent(true);
         }
+
+        if (null == currentCEMetadataRecord.getDataGeneratedForCloudProvider()
+            || !currentCEMetadataRecord.getDataGeneratedForCloudProvider()) {
+          try {
+            ConnectorType connectorType = getConnectorType(ceMetadataRecord);
+            if (Objects.nonNull(connectorType)) {
+              ConnectorInfoDTO connector = getConnectorFromType(connectorType, nextGenConnectorResponses);
+              if (Objects.nonNull(connector)) {
+                sendMail(accountId, connector);
+                ceMetadataRecord.setDataGeneratedForCloudProvider(true);
+              }
+            }
+          } catch (URISyntaxException e) {
+            log.error("Error in Cloud billing data received mail: {}", e);
+          }
+        }
       }
 
       cloudToHarnessMappingService.upsertCEMetaDataRecord(ceMetadataRecord);
@@ -146,5 +191,76 @@ public class CEMetaDataRecordUpdateService {
           connectorResponseDTO -> connectorResponseDTO.getConnector().getConnectorType().equals(connectorType));
     }
     return connectorPresent;
+  }
+
+  private void sendMail(final String accountId, final ConnectorInfoDTO connector) throws URISyntaxException {
+    List<CEUserInfo> users = getUsers(accountId);
+    Map<String, String> templateModel = new HashMap<>();
+    templateModel.put(CONNECTOR_TYPE, connector.getConnectorType().getDisplayName());
+    templateModel.put(CONNECTOR_NAME, connector.getName());
+    templateModel.put(CCM_URL, HarnessNgUrl.getCCMExplorerNGUrl(accountId, mainConfiguration.getBaseUrl()));
+    if (!users.isEmpty()) {
+      users.forEach(user -> {
+        templateModel.put(USER_NAME, user.getName());
+        NotificationChannelDTOBuilder emailChannelBuilder = NotificationChannelDTO.builder()
+                                                                .accountId(accountId)
+                                                                .emailRecipients(singletonList(user.getEmail()))
+                                                                .team(Team.OTHER)
+                                                                .templateId("email_ccm_cloud_data_ready")
+                                                                .templateData(ImmutableMap.copyOf(templateModel))
+                                                                .userGroups(Collections.emptyList());
+        try {
+          Response<RestResponse<NotificationResult>> response =
+              notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build()).execute();
+          if (!response.isSuccessful()) {
+            log.error("Failed to send email notification for cloud data generated: {}",
+                (response.errorBody() != null) ? response.errorBody().string() : response.code());
+          } else {
+            log.info("Mail sent for cloud data generated to user {}, for accountId : {}", user.getName(), accountId);
+          }
+        } catch (IOException e) {
+          log.error("Cloud billing data received mail couldn't be sent ", e);
+        }
+      });
+    } else {
+      log.info("No users found for accountId : {}", accountId);
+    }
+  }
+
+  private List<CEUserInfo> getUsers(final String accountId) {
+    List<CEUserInfo> users = new ArrayList<>();
+    List<UserGroup> userGroups = cloudToHarnessMappingService.listUserGroupsForAccount(accountId);
+    Set<String> userIds = new HashSet<>();
+    userGroups.forEach(userGroup -> userIds.addAll(userGroup.getMemberIds()));
+
+    userIds.forEach(id -> {
+      User user = cloudToHarnessMappingService.getUser(id);
+      users.add(CEUserInfo.builder().name(user.getName()).email(user.getEmail()).build());
+    });
+    return users;
+  }
+
+  private ConnectorType getConnectorType(final CEMetadataRecord ceMetadataRecord) {
+    if (ceMetadataRecord.getAwsConnectorConfigured()) {
+      return ConnectorType.CE_AWS;
+    } else if (ceMetadataRecord.getAzureConnectorConfigured()) {
+      return ConnectorType.CE_AZURE;
+    } else if (ceMetadataRecord.getGcpConnectorConfigured()) {
+      return ConnectorType.GCP_CLOUD_COST;
+    } else {
+      return null;
+    }
+  }
+
+  private ConnectorInfoDTO getConnectorFromType(
+      final ConnectorType type, final List<ConnectorResponseDTO> nextGenConnectorResponses) {
+    Optional<ConnectorResponseDTO> connectorResponseDTO =
+        nextGenConnectorResponses.stream()
+            .filter(connectorResponse -> connectorResponse.getConnector().getConnectorType().equals(type))
+            .findFirst();
+    if (connectorResponseDTO.isPresent()) {
+      return connectorResponseDTO.get().getConnector();
+    }
+    return null;
   }
 }

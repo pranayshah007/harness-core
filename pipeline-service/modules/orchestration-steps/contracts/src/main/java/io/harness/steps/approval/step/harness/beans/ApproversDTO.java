@@ -62,6 +62,8 @@ public class ApproversDTO {
       } catch (NumberFormatException ne) {
         throw new InvalidRequestException("The minimum count value (" + minCountObj + ") must be a valid integer");
       }
+    } else if (minCountObj instanceof Double && (int) ((double) minCountObj) == (double) minCountObj) {
+      minimumCount = (int) ((double) minCountObj);
     } else if (minCountObj instanceof Integer) {
       minimumCount = (int) minCountObj;
     } else {

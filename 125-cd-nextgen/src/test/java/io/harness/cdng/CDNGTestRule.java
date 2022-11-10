@@ -41,6 +41,7 @@ import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -71,11 +72,15 @@ import io.harness.serializer.ManagerRegistrars;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
 import io.harness.threading.ExecutorModule;
 import io.harness.time.TimeModule;
+import io.harness.timescaledb.TimeScaleDBConfig;
+import io.harness.timescaledb.TimeScaleDBService;
+import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.user.remote.UserClient;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
@@ -105,6 +110,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
 import org.junit.rules.MethodRule;
@@ -193,6 +199,12 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
       }
 
       @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
+      }
+
+      @Provides
       @Named("yaml-schema-subtypes")
       @Singleton
       public Map<Class<?>, Set<Class<?>>> yamlSchemaSubtypes() {
@@ -205,10 +217,26 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
       public boolean getSerializationForDelegate() {
         return false;
       }
+
+      @Provides
+      @Named("TimeScaleDBConfig")
+      @Singleton
+      public TimeScaleDBConfig getTimeScaleDBConfig() {
+        return TimeScaleDBConfig.builder().build();
+      }
+
+      @Provides
+      @Singleton
+      TemplateResourceClient getTemplateResourceClient() {
+        return mock(TemplateResourceClient.class);
+      }
     });
     modules.add(new AbstractModule() {
+      @SneakyThrows
       @Override
       protected void configure() {
+        bind(TimeScaleDBService.class)
+            .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
         bind(HPersistence.class).to(MongoPersistence.class);
         bind(ConnectorService.class)
             .annotatedWith(Names.named(DEFAULT_CONNECTOR_SERVICE))

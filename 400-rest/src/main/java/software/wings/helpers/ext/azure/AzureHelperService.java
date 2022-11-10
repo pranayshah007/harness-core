@@ -251,22 +251,20 @@ public class AzureHelperService {
     if (isNotEmpty(vms)) {
       List<Host> azureHosts = new ArrayList<>();
       for (VirtualMachine vm : vms) {
-        Host host =
-            aHost()
-                .withHostName(vm.name())
-                .withPublicDns(azureInfrastructureMapping.isUsePublicDns()
-                        ? (vm.getPrimaryPublicIPAddress() != null ? vm.getPrimaryPublicIPAddress().fqdn() : null)
-                        : null)
-                .withAppId(azureInfrastructureMapping.getAppId())
-                .withEnvId(azureInfrastructureMapping.getEnvId())
-                .withHostConnAttr(azureInfrastructureMapping.getHostConnectionAttrs())
-                .withWinrmConnAttr(DeploymentType.WINRM == deploymentType
-                        ? azureInfrastructureMapping.getWinRmConnectionAttributes()
-                        : null)
-                .withInfraMappingId(azureInfrastructureMapping.getUuid())
-                .withInfraDefinitionId(azureInfrastructureMapping.getInfrastructureDefinitionId())
-                .withServiceTemplateId(azureInfrastructureMapping.getServiceTemplateId())
-                .build();
+        Host host = aHost()
+                        .withHostName(vm.name())
+                        .withPublicDns(computeHostConnectString(azureInfrastructureMapping.isUsePublicDns(),
+                            azureInfrastructureMapping.isUsePrivateIp(), vm))
+                        .withAppId(azureInfrastructureMapping.getAppId())
+                        .withEnvId(azureInfrastructureMapping.getEnvId())
+                        .withHostConnAttr(azureInfrastructureMapping.getHostConnectionAttrs())
+                        .withWinrmConnAttr(DeploymentType.WINRM == deploymentType
+                                ? azureInfrastructureMapping.getWinRmConnectionAttributes()
+                                : null)
+                        .withInfraMappingId(azureInfrastructureMapping.getUuid())
+                        .withInfraDefinitionId(azureInfrastructureMapping.getInfrastructureDefinitionId())
+                        .withServiceTemplateId(azureInfrastructureMapping.getServiceTemplateId())
+                        .build();
         azureHosts.add(host);
       }
       return aPageResponse().withResponse(azureHosts).build();
@@ -286,21 +284,19 @@ public class AzureHelperService {
     if (isNotEmpty(vms)) {
       List<Host> azureHosts = new ArrayList<>();
       for (VirtualMachine vm : vms) {
-        Host host =
-            aHost()
-                .withHostName(vm.name())
-                .withPublicDns(azureInstanceInfrastructure.isUsePublicDns()
-                        ? (vm.getPrimaryPublicIPAddress() != null ? vm.getPrimaryPublicIPAddress().fqdn() : null)
-                        : null)
-                .withAppId(infrastructureDefinition.getAppId())
-                .withEnvId(infrastructureDefinition.getEnvId())
-                .withHostConnAttr(azureInstanceInfrastructure.getHostConnectionAttrs())
-                .withWinrmConnAttr(DeploymentType.WINRM == deploymentType
-                        ? azureInstanceInfrastructure.getWinRmConnectionAttributes()
-                        : null)
-                .withInfraMappingId(infrastructureDefinition.getUuid())
-                .withInfraDefinitionId(infrastructureDefinition.getUuid())
-                .build();
+        Host host = aHost()
+                        .withHostName(vm.name())
+                        .withPublicDns(computeHostConnectString(azureInstanceInfrastructure.isUsePublicDns(),
+                            azureInstanceInfrastructure.isUsePrivateIp(), vm))
+                        .withAppId(infrastructureDefinition.getAppId())
+                        .withEnvId(infrastructureDefinition.getEnvId())
+                        .withHostConnAttr(azureInstanceInfrastructure.getHostConnectionAttrs())
+                        .withWinrmConnAttr(DeploymentType.WINRM == deploymentType
+                                ? azureInstanceInfrastructure.getWinRmConnectionAttributes()
+                                : null)
+                        .withInfraMappingId(infrastructureDefinition.getUuid())
+                        .withInfraDefinitionId(infrastructureDefinition.getUuid())
+                        .build();
         azureHosts.add(host);
       }
       return aPageResponse().withResponse(azureHosts).build();
@@ -401,5 +397,15 @@ public class AzureHelperService {
     }
     log.info("Found azure vaults {} or account id: {}", vaultList, accountId);
     return vaultList;
+  }
+
+  private String computeHostConnectString(boolean isUsePublicDns, boolean isUsePrivateIp, VirtualMachine vm) {
+    if (isUsePublicDns && vm.getPrimaryPublicIPAddress() != null) {
+      return vm.getPrimaryPublicIPAddress().fqdn();
+    }
+    if (isUsePrivateIp && vm.getPrimaryNetworkInterface() != null) {
+      return vm.getPrimaryNetworkInterface().primaryPrivateIP();
+    }
+    return vm.name();
   }
 }

@@ -14,15 +14,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.WingsException;
 import io.harness.maintenance.MaintenanceListener;
 import io.harness.mongo.MongoConfig;
-import io.harness.mongo.MongoModule;
 import io.harness.mongo.MongoSSLConfig;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientOptions.Builder;
 import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -72,36 +71,35 @@ public class HQuartzScheduler implements PersistentScheduler, MaintenanceListene
     populateMongoSSLProperties(properties, mongoConfig);
     StdSchedulerFactory factory = new StdSchedulerFactory(properties);
     Scheduler newScheduler = factory.getScheduler();
+
     // by default newScheduler does not create all needed mongo indexes.
     // it is a bit hack but we are going to add them from here
     if (schedulerConfig.getJobStoreClass().equals(
             com.novemberain.quartz.mongodb.DynamicMongoDBJobStore.class.getCanonicalName())) {
-      MongoClientURI uri = new MongoClientURI(
-          getMongoUri(), MongoClientOptions.builder(MongoModule.getDefaultMongoClientOptions(mongoConfig)));
-      try (MongoClient mongoClient = new MongoClient(uri)) {
-        final String databaseName = uri.getDatabase();
-        if (databaseName == null) {
-          throw new WingsException("The mongo db uri does not specify database name");
-        }
-        final MongoDatabase database = mongoClient.getDatabase(databaseName);
-
-        final String prefix = properties.getProperty("org.quartz.jobStore.collectionPrefix");
-
-        final MongoCollection<Document> collection = database.getCollection(prefix + "_triggers");
-
-        BasicDBObject jobIdKey = new BasicDBObject("jobId", 1);
-        collection.createIndex(jobIdKey, new IndexOptions().background(true));
-
-        BasicDBObject fireKeys = new BasicDBObject();
-        fireKeys.append("state", 1);
-        fireKeys.append("nextFireTime", 1);
-        collection.createIndex(fireKeys, new IndexOptions().background(true).name("fire"));
-
-        BasicDBObject oldKeys = new BasicDBObject();
-        oldKeys.append("lockState", 1);
-        oldKeys.append("lastUpdated", 1);
-        collection.createIndex(oldKeys, new IndexOptions().background(true).name("old"));
+      MongoClient mongoClient = injector.getInstance(Key.get(MongoClient.class, Names.named("primaryMongoClient")));
+      MongoClientURI uri = new MongoClientURI(getMongoUri());
+      final String databaseName = uri.getDatabase();
+      if (databaseName == null) {
+        throw new WingsException("The mongo db uri does not specify database name");
       }
+      final MongoDatabase database = mongoClient.getDatabase(databaseName);
+
+      final String prefix = properties.getProperty("org.quartz.jobStore.collectionPrefix");
+
+      final MongoCollection<Document> collection = database.getCollection(prefix + "_triggers");
+
+      BasicDBObject jobIdKey = new BasicDBObject("jobId", 1);
+      collection.createIndex(jobIdKey, new IndexOptions().background(true));
+
+      BasicDBObject fireKeys = new BasicDBObject();
+      fireKeys.append("state", 1);
+      fireKeys.append("nextFireTime", 1);
+      collection.createIndex(fireKeys, new IndexOptions().background(true).name("fire"));
+
+      BasicDBObject oldKeys = new BasicDBObject();
+      oldKeys.append("lockState", 1);
+      oldKeys.append("lastUpdated", 1);
+      collection.createIndex(oldKeys, new IndexOptions().background(true).name("old"));
     }
 
     newScheduler.setJobFactory(injector.getInstance(InjectorJobFactory.class));
@@ -114,15 +112,7 @@ public class HQuartzScheduler implements PersistentScheduler, MaintenanceListene
 
     if (schedulerConfig.getJobStoreClass().equals(
             com.novemberain.quartz.mongodb.DynamicMongoDBJobStore.class.getCanonicalName())) {
-      Builder mongoClientOptions = MongoClientOptions.builder()
-                                       .retryWrites(true)
-                                       .connectTimeout(50000)
-                                       .serverSelectionTimeout(90000)
-                                       .maxConnectionIdleTime(600000)
-                                       .connectionsPerHost(30)
-                                       .minConnectionsPerHost(5)
-                                       .localThreshold(30);
-      MongoClientURI uri = new MongoClientURI(getMongoUri(), mongoClientOptions);
+      MongoClientURI uri = new MongoClientURI(getMongoUri());
 
       final String databaseName = uri.getDatabase();
       if (databaseName == null) {

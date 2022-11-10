@@ -27,4 +27,5 @@ public class QLApproveOrRejectApprovalsInput {
   String applicationId;
   String comments;
   String clientMutationId;
+  String userEmail;
 }

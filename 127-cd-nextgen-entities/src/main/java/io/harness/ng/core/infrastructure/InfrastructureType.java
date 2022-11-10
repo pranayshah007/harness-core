@@ -27,7 +27,8 @@ public enum InfrastructureType {
   @JsonProperty(InfrastructureKind.AZURE_WEB_APP) AZURE_WEB_APP(InfrastructureKind.AZURE_WEB_APP),
   @JsonProperty(InfrastructureKind.SSH_WINRM_AWS) SSH_WINRM_AWS(InfrastructureKind.SSH_WINRM_AWS),
   @JsonProperty(InfrastructureKind.CUSTOM_DEPLOYMENT) CUSTOM_DEPLOYMENT(InfrastructureKind.CUSTOM_DEPLOYMENT),
-  @JsonProperty(InfrastructureKind.ECS) ECS(InfrastructureKind.ECS);
+  @JsonProperty(InfrastructureKind.ECS) ECS(InfrastructureKind.ECS),
+  @JsonProperty(InfrastructureKind.ELASTIGROUP) ELASTIGROUP(InfrastructureKind.ELASTIGROUP);
 
   private final String displayName;
 

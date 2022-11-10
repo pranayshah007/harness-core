@@ -24,6 +24,9 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
+import io.harness.exception.DelegateServiceDriverException;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -37,13 +40,16 @@ import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nonnull;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 @Singleton
 public class EcrImagePullSecretHelper {
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject ExceptionManager exceptionManager;
 
   BaseNGAccess getBaseNGAccess(String accountId, String orgIdentifier, String projectIdentifier) {
     return BaseNGAccess.builder()
@@ -84,7 +90,11 @@ public class EcrImagePullSecretHelper {
             .taskSetupAbstraction(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier())
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
             .build();
-    return delegateGrpcClientWrapper.executeSyncTask(taskRequest);
+    try {
+      return delegateGrpcClientWrapper.executeSyncTask(taskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
   private ArtifactTaskExecutionResponse getTaskExecutionResponse(
       DelegateResponseData responseData, String ifFailedMessage) {

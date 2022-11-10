@@ -25,7 +25,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome")
-public class AzureWebAppInfrastructureOutcome extends InfrastructureDetailsAbstract implements InfrastructureOutcome {
+public class AzureWebAppInfrastructureOutcome extends InfrastructureOutcomeAbstract {
   String connectorRef;
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;

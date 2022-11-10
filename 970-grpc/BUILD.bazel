@@ -14,9 +14,6 @@ harness_grpc_library(
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
-    resource_jars = [
-        ":970_grpc_java_proto",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         ":970_grpc_java_proto",

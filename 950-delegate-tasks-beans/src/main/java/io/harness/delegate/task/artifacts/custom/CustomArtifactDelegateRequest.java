@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.artifacts.custom;
 
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.CUSTOM_ARTIFACT;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -68,5 +69,10 @@ public class CustomArtifactDelegateRequest
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     return new ArrayList<>();
+  }
+
+  @Override
+  public ArtifactSourceType getSourceType() {
+    return CUSTOM_ARTIFACT;
   }
 }

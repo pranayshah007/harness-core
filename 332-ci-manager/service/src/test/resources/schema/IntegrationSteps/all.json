@@ -94,6 +94,9 @@
                 }
               ]
             },
+            "subscriptionId": {
+              "type": "string"
+            },
             "tags": {
               "oneOf": [
                 {
@@ -109,6 +112,45 @@
             },
             "target": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ActionStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CIStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uses"
+          ],
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -980,6 +1022,45 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldMapStringString": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PluginStepInfo": {
       "allOf": [
         {
@@ -1404,7 +1485,8 @@
                     "Bazel",
                     "Gradle",
                     "Dotnet",
-                    "Nunitconsole"
+                    "Nunitconsole",
+                    "SBT"
                   ]
                 },
                 {
@@ -1416,6 +1498,9 @@
             },
             "connectorRef": {
               "type": "string"
+            },
+            "enableTestSplitting": {
+              "type": "boolean"
             },
             "envVariables": {
               "oneOf": [
@@ -1472,6 +1557,8 @@
                   "type": "string",
                   "enum": [
                     "Java",
+                    "Kotlin",
+                    "Scala",
                     "Csharp"
                   ]
                 },
@@ -1577,6 +1664,22 @@
             },
             "testAnnotations": {
               "type": "string"
+            },
+            "testSplitStrategy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ClassTiming",
+                    "TestCount"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }

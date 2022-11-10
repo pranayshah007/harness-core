@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "hsqs_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/harness/harness-core/queue-service/hsqs",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//queue-service/hsqs/cmd",
+    ],
+)
+
+go_binary(
+    name = "hsqs",
+    embed = [":hsqs_lib"],
+    visibility = ["//visibility:public"],
+)

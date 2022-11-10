@@ -1,0 +1,37 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          name: Blue Green Deployment
+          identifier: blueGreenDepoyment
+          steps:
+            - step:
+                name: ECS Blue Green Create Service
+                identifier: EcsBlueGreenCreateService
+                type: EcsBlueGreenCreateService
+                timeout: 10m
+                spec:
+                  loadBalancer: loadBalancer
+                  prodListener: prodListener
+                  prodListenerRuleArn: prodListenerRuleArn
+                  stageListener: stageListener
+                  stageListenerRuleArn: stageListenerRuleArn
+            - step:
+                name: ECS Blue Green Swap Target Groups
+                identifier: EcsBlueGreenSwapTargetGroups
+                type: EcsBlueGreenSwapTargetGroups
+                timeout: 10m
+                spec: {}
+    rollbackSteps:
+      - step:
+          name: ECS Blue Green Rollback
+          identifier: EcsBlueGreenRollback
+          type: EcsBlueGreenRollback
+          timeout: 10m
+          spec: {}

@@ -21,6 +21,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -37,6 +38,7 @@ public class AccountClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private AccountHttpClientFactory accountClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new AccountHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.NON_PRIVILEGED);
@@ -44,6 +46,7 @@ public class AccountClientModule extends AbstractModule {
 
   @Provides
   @Named("PRIVILEGED")
+  @Singleton
   private AccountHttpClientFactory privilegedAccountClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new AccountHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.PRIVILEGED);

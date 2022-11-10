@@ -56,4 +56,5 @@ public class TemplateSummaryResponseDTO {
   EntityValidityDetails entityValidityDetails;
   long lastUpdatedAt;
   long createdAt;
+  String icon;
 }

@@ -47,6 +47,24 @@ accessControlClient:
   accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
 
+redisLockConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+  userName: ""
+  password: ""
+
+distributedLockImplementation: MONGO
+
+
 harness-mongo:
   uri: mongodb://localhost:27017/harness
   connectTimeout: 30000
@@ -77,10 +95,12 @@ scmConnectionConfig:
   url: localhost:8091
 
 logServiceConfig:
+  internalUrl: http://localhost:8079
   baseUrl: https://qa.harness.io/log-service/
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
+  internalUrl: http://localhost:8078
   baseUrl: http://localhost:8078
   globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
 
@@ -112,9 +132,12 @@ ciExecutionServiceConfig:
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.14
-  liteEngineImage: harness/ci-lite-engine:1.14.14
+  addonImage: harness/ci-addon:1.14.19
+  liteEngineImage: harness/ci-lite-engine:1.14.22
   isLocal: false
+  cacheIntelligenceConfig:
+    bucket: "gcp_bucket"
+    serviceKey: "gcp_service_key"
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
@@ -138,7 +161,7 @@ ciExecutionServiceConfig:
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.6.6
+      image: plugins/kaniko-acr:1.6.7
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -220,14 +243,14 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: false
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
 
 enableDashboardTimescale: false
 
 timescaledb:
-  timescaledbUrl: "jdbc:postgresql://34.83.25.129:5432/harness"
-  timescaledbUsername: "harnessappdev"
-  timescaledbPassword: "harnessappdev"
+  timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
+  timescaledbUsername: "postgres"
+  timescaledbPassword: ""
   connectTimeout: 10
   socketTimeout: 30
   logUnclosedConnections: false
@@ -277,3 +300,5 @@ pmsPlanCreatorServicePoolConfig:
   maxPoolSize: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_MAX_SIZE:-3}
   idleTime: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+enableOpentelemetry: false

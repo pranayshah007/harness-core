@@ -123,6 +123,7 @@ public class ApprovalInstanceResponseMapper {
             connectorDTO.getServiceNowUrl(), instance.getTicketNumber(), instance.getTicketType()))
         .approvalCriteria(instance.getApprovalCriteria())
         .rejectionCriteria(instance.getRejectionCriteria())
+        .changeWindowSpec(instance.getChangeWindow())
         .build();
   }
 

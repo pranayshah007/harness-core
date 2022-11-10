@@ -81,9 +81,9 @@ public class FileBasedWinRmExecutorTest extends CategoryTest {
     final WinRmSessionConfig winRmSessionConfig =
         WinRmSessionConfig.builder().authenticationScheme(KERBEROS).username("admin").domain("domain").build();
     plainOldExecutor =
-        spy(new FileBasedWinRmExecutor(logCallback, delegateFileManager, false, winRmSessionConfig, false));
+        spy(new FileBasedWinRmExecutor(logCallback, delegateFileManager, false, winRmSessionConfig, false, false));
     executorWithDisableEncoding =
-        spy(new FileBasedWinRmExecutor(logCallback, delegateFileManager, false, winRmSessionConfig, true));
+        spy(new FileBasedWinRmExecutor(logCallback, delegateFileManager, false, winRmSessionConfig, true, false));
   }
 
   @Test

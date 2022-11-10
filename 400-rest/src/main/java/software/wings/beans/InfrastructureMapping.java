@@ -105,6 +105,13 @@ public abstract class InfrastructureMapping
                  .field(InfrastructureMappingKeys.appId)
                  .descSortField(InfrastructureMappingKeys.createdAt)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("appId_envId_serviceId_infrastructureDefinitionId")
+                 .field(InfrastructureMappingKeys.appId)
+                 .field(InfrastructureMappingKeys.envId)
+                 .field(InfrastructureMappingKeys.serviceId)
+                 .field(InfrastructureMappingKeys.infrastructureDefinitionId)
+                 .build())
         .build();
   }
 

@@ -7,7 +7,7 @@
 
 package io.harness.connector.impl;
 
-import static io.harness.delegate.beans.connector.ConnectorType.ELK;
+import static io.harness.delegate.beans.connector.ConnectorType.ELASTICSEARCH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -83,7 +83,7 @@ public class ELKConnectorTest extends CategoryTest {
                     .authType(ELKAuthType.USERNAME_PASSWORD)
                     .build();
 
-    elkConfig.setType(ConnectorType.ELK);
+    elkConfig.setType(ConnectorType.ELASTICSEARCH);
     elkConfig.setIdentifier(identifier);
     elkConfig.setAccountIdentifier(accountIdentifier);
 
@@ -99,7 +99,7 @@ public class ELKConnectorTest extends CategoryTest {
     ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder()
                                          .name(name)
                                          .identifier(identifier)
-                                         .connectorType(ConnectorType.ELK)
+                                         .connectorType(ConnectorType.ELASTICSEARCH)
                                          .connectorConfig(elkConnectorDTO)
                                          .build();
     connectorRequest = ConnectorDTO.builder().connectorInfo(connectorInfo).build();
@@ -140,7 +140,7 @@ public class ELKConnectorTest extends CategoryTest {
     assertThat(connector).isNotNull();
     assertThat(connector.getName()).isEqualTo(name);
     assertThat(connector.getIdentifier()).isEqualTo(identifier);
-    assertThat(connector.getConnectorType()).isEqualTo(ELK);
+    assertThat(connector.getConnectorType()).isEqualTo(ELASTICSEARCH);
     ELKConnectorDTO elkConnectorDTO = (ELKConnectorDTO) connector.getConnectorConfig();
     assertThat(elkConnectorDTO).isNotNull();
     assertThat(elkConnectorDTO.getUsername()).isEqualTo(userName);

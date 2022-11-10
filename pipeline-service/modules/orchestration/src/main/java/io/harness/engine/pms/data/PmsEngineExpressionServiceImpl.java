@@ -30,9 +30,20 @@ public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionServic
   }
 
   @Override
-  public String evaluateExpression(Ambiance ambiance, String expression) {
+  public String renderExpression(Ambiance ambiance, String expression, ExpressionMode expressionMode) {
     EngineExpressionEvaluator evaluator = prepareExpressionEvaluator(ambiance);
-    Object value = evaluator.evaluateExpression(expression);
+    return evaluator.renderExpression(expression, expressionMode);
+  }
+
+  @Override
+  public String evaluateExpression(Ambiance ambiance, String expression) {
+    return evaluateExpression(ambiance, expression, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+  }
+
+  @Override
+  public String evaluateExpression(Ambiance ambiance, String expression, ExpressionMode expressionMode) {
+    EngineExpressionEvaluator evaluator = prepareExpressionEvaluator(ambiance);
+    Object value = evaluator.evaluateExpression(expression, expressionMode);
     return RecastOrchestrationUtils.toJson(value);
   }
 

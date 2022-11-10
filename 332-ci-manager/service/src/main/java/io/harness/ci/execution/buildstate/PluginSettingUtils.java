@@ -104,6 +104,8 @@ public class PluginSettingUtils {
 
   public static final String REPOSITORY = "REPOSITORY";
   public static final String PLUGIN_REPO = "PLUGIN_REPO";
+
+  public static final String SUBSCRIPTION_ID = "SUBSCRIPTION_ID";
   public static final String PLUGIN_TAGS = "PLUGIN_TAGS";
   public static final String PLUGIN_DOCKERFILE = "PLUGIN_DOCKERFILE";
   public static final String PLUGIN_CONTEXT = "PLUGIN_CONTEXT";
@@ -130,6 +132,8 @@ public class PluginSettingUtils {
   public static final String SECURITY_ENV_PREFIX = "SECURITY_";
   public static final String PLUGIN_BACKEND_OPERATION_TIMEOUT = "PLUGIN_BACKEND_OPERATION_TIMEOUT";
   public static final String PLUGIN_CACHE_KEY = "PLUGIN_CACHE_KEY";
+  public static final String PLUGIN_AUTO_DETECT_CACHE = "PLUGIN_AUTO_CACHE";
+  public static final String PLUGIN_AUTO_CACHE_ACCOUNT_ID = "PLUGIN_ACCOUNT_ID";
   public static final String PLUGIN_BACKEND = "PLUGIN_BACKEND";
   public static final String PLUGIN_OVERRIDE = "PLUGIN_OVERRIDE";
   public static final String PLUGIN_ARCHIVE_FORMAT = "PLUGIN_ARCHIVE_FORMAT";
@@ -304,6 +308,11 @@ public class PluginSettingUtils {
     Map<String, String> map = new HashMap<>();
     String pluginRepo =
         resolveStringParameter(REPOSITORY, "BuildAndPushACR", identifier, stepInfo.getRepository(), true);
+    String subscriptionId =
+        resolveStringParameter(REPOSITORY, "SubscriptionId", identifier, stepInfo.getSubscriptionId(), false);
+    if (StringUtils.isNotBlank(subscriptionId)) {
+      setOptionalEnvironmentVariable(map, SUBSCRIPTION_ID, subscriptionId);
+    }
     String pluginRegistry = StringUtils.substringBefore(pluginRepo, "/");
     setMandatoryEnvironmentVariable(map, PLUGIN_REGISTRY, pluginRegistry);
     setMandatoryEnvironmentVariable(map, PLUGIN_REPO, pluginRepo);
@@ -923,15 +932,7 @@ public class PluginSettingUtils {
 
   // converts list "value1", "value2" to string "value1,value2"
   private static String listToStringSlice(List<String> stringList) {
-    if (isEmpty(stringList)) {
-      return "";
-    }
-    StringBuilder listAsString = new StringBuilder();
-    for (String value : stringList) {
-      listAsString.append(value).append(',');
-    }
-    listAsString.deleteCharAt(listAsString.length() - 1);
-    return listAsString.toString();
+    return String.join(",", stringList);
   }
 
   private static void setOptionalEnvironmentVariable(Map<String, String> envVarMap, String var, String value) {

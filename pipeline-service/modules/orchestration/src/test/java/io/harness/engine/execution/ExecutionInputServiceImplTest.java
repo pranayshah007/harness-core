@@ -25,8 +25,13 @@ import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionInputInstance;
+import io.harness.execution.NodeExecution;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.ExecutionInputRepository;
 import io.harness.repositories.ExecutionInputRepositoryCustomImpl;
@@ -60,6 +65,8 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
   @Mock MongoTemplate mongoTemplate;
   @InjectMocks ExecutionInputRepositoryCustomImpl executionInputRepositoryCustom;
   @InjectMocks private ExecutionInputServiceImpl inputService;
+  @Mock PmsEngineExpressionService pmsEngineExpressionService;
+  @Mock NodeExecutionService nodeExecutionService;
   ObjectMapper objectMapper = new YAMLMapper();
   String nodeExecutionId = "nodeExecutionId";
   String inputInstanceId = "inputInstanceId";
@@ -137,6 +144,10 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
                                                          .build();
     doReturn(executionInputInstance1).when(executionInputRepository).save(any());
     doReturn(fullExecutionInputYamlMap).when(executionInputServiceHelper).getExecutionInputMap(eq(template), any());
+    doReturn(NodeExecution.builder().ambiance(Ambiance.newBuilder().build()).build())
+        .when(nodeExecutionService)
+        .getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withAmbianceAndStatus);
+    doReturn(fullExecutionInputYaml).when(pmsEngineExpressionService).resolve(any(), any(), any());
 
     ArgumentCaptor<ExecutionInputInstance> inputInstanceArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionInputInstance.class);
@@ -145,6 +156,7 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
     assertTrue(inputService.continueExecution(nodeExecutionId, fullExecutionInputYaml));
     verify(executionInputRepository, times(1)).save(inputInstanceArgumentCaptor.capture());
     verify(waitNotifyEngine, times(1)).doneWith(inputInstanceIdCapture.capture(), any());
+    verify(pmsEngineExpressionService, times(1)).resolve(any(), any(), any());
 
     ExecutionInputInstance savedEntity = inputInstanceArgumentCaptor.getValue();
     // MergedTemplate would be equals to executionInputYaml.
@@ -153,6 +165,7 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
     assertEquals(inputInstanceIdCapture.getValue(), inputInstanceId);
 
     // Providing invalid input values. Would return false.
+    doReturn("a:b").when(pmsEngineExpressionService).resolve(any(), any(), any());
     assertFalse(inputService.continueExecution(nodeExecutionId, "a:b"));
 
     // Giving partial user input. MergedUserInput should contain provided field's value and other value should be
@@ -161,6 +174,7 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
         .when(executionInputServiceHelper)
         .getExecutionInputMap(eq(template), any());
 
+    doReturn(partialExecutionInputYaml).when(pmsEngineExpressionService).resolve(any(), any(), any());
     assertTrue(inputService.continueExecution(nodeExecutionId, partialExecutionInputYaml));
     verify(executionInputRepository, times(2)).save(inputInstanceArgumentCaptor.capture());
     verify(waitNotifyEngine, times(2)).doneWith(inputInstanceIdCapture.capture(), any());

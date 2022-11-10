@@ -555,9 +555,6 @@
                 }
               ]
             },
-            "metadata": {
-              "type": "string"
-            },
             "subject": {
               "type": "string"
             },
@@ -757,6 +754,62 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ImportDataSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ImportDataSpecWrapper": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Json",
+            "KeyValues"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Json"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JsonImportDataSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "KeyValues"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/KeyValuesImportDataSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
     "JexlCriteriaSpec": {
       "allOf": [
         {
@@ -938,6 +991,25 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "JsonImportDataSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ImportDataSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "jsonBody"
+          ],
+          "properties": {
+            "jsonBody": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "KeyValuesCriteriaSpec": {
       "allOf": [
         {
@@ -964,6 +1036,28 @@
                   "type": "string"
                 }
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "KeyValuesImportDataSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ImportDataSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "fields"
+          ],
+          "properties": {
+            "fields": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ServiceNowField"
+              }
             }
           }
         }
@@ -1014,7 +1108,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -1270,7 +1364,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -1420,17 +1514,59 @@
     "ServiceNowField": {
       "type": "object",
       "required": [
+        "name",
         "value"
       ],
       "properties": {
         "name": {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         "value": {
           "type": "string"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServiceNowImportSetStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/PMSStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "importData",
+            "stagingTableName"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "importData": {
+              "$ref": "#/definitions/ImportDataSpecWrapper"
+            },
+            "stagingTableName": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ServiceNowUpdateStepInfo": {
@@ -1840,7 +1976,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",

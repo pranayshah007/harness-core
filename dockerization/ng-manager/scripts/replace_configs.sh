@@ -116,6 +116,10 @@ if [[ "" != "$MONGO_TRANSACTIONS_ALLOWED" ]]; then
   export MONGO_TRANSACTIONS_ALLOWED; yq -i '.mongo.transactionsEnabled=env(MONGO_TRANSACTIONS_ALLOWED)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MANAGER_TARGET" ]]; then
   export MANAGER_TARGET; yq -i '.grpcClient.target=env(MANAGER_TARGET)' $CONFIG_FILE
 fi
@@ -330,6 +334,10 @@ replace_key_value redisLockConfig.masterName $LOCK_CONFIG_SENTINEL_MASTER_NAME
 replace_key_value redisLockConfig.userName $LOCK_CONFIG_REDIS_USERNAME
 replace_key_value redisLockConfig.password $LOCK_CONFIG_REDIS_PASSWORD
 replace_key_value redisLockConfig.nettyThreads $REDIS_NETTY_THREADS
+replace_key_value redisLockConfig.connectionPoolSize $REDIS_CONNECTION_POOL_SIZE
+replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
+replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
 
 if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
   export LOCK_CONFIG_REDIS_URL; yq -i '.singleServerConfig.address=env(LOCK_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE
@@ -385,6 +393,22 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
 fi
 
+if [[ "" != "$REDIS_CONNECTION_POOL_SIZE" ]]; then
+  export REDIS_CONNECTION_POOL_SIZE; yq -i '.singleServerConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_RETRY_INTERVAL" ]]; then
+  export REDIS_RETRY_INTERVAL; yq -i '.singleServerConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_RETRY_ATTEMPTS" ]]; then
+  export REDIS_RETRY_ATTEMPTS; yq -i '.singleServerConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_TIMEOUT" ]]; then
+  export REDIS_TIMEOUT; yq -i '.singleServerConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
+fi
+
 yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
@@ -432,10 +456,7 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
   fi
 fi
 
-if [[ "" != "$CD_TSDB_RETENTION_PERIOD_MONTHS" ]]; then
-  export CD_TSDB_RETENTION_PERIOD_MONTHS; yq -i '.cdTsDbRetentionPeriodMonths=env(CD_TSDB_RETENTION_PERIOD_MONTHS)' $CD_TSDB_RETENTION_PERIOD_MONTHS
-fi
-
+replace_key_value cdTsDbRetentionPeriodMonths "$CD_TSDB_RETENTION_PERIOD_MONTHS"
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
@@ -543,6 +564,7 @@ replace_key_value opaServerConfig.baseUrl "$OPA_SERVER_BASEURL"
 replace_key_value opaServerConfig.secret "$OPA_SERVER_SECRET"
 replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
 replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
+replace_key_value opaConnectivityEnabled "$OPA_CONNECTIVITY_ENABLED"
 if [[ "" != "$OPA_CONNECT_TIMEOUT" ]]; then
   replace_key_value opaClientConfig.connectTimeOutSeconds "$OPA_CONNECT_TIMEOUT"
 fi
@@ -554,3 +576,5 @@ replace_key_value subscriptionConfig.stripeApiKey "$STRIPE_API_KEY"
 
 replace_key_value gitopsResourceClientConfig.config.baseUrl "$GITOPS_SERVICE_CLIENT_BASEURL"
 replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"
+
+replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"

@@ -10,7 +10,6 @@ package software.wings.service.intfc;
 import static io.harness.annotations.dev.HarnessModule._945_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.account.ProvisionStep;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
@@ -99,13 +98,7 @@ public interface AccountService {
 
   Optional<String> getAccountType(String accountId);
 
-  String generateSampleDelegate(String accountId);
-
   boolean isPaidAccount(String accountId);
-
-  boolean sampleDelegateExists(String accountId);
-
-  List<ProvisionStep> sampleDelegateProgress(String accountId);
 
   /**
    * List.
@@ -148,6 +141,8 @@ public interface AccountService {
   boolean setAuthenticationMechanism(String accountId, AuthenticationMechanism authenticationMechanism);
 
   boolean isFeatureFlagEnabled(String featureName, String accountId);
+
+  Set<String> getFeatureFlagEnabledAccountIds(String featureName);
 
   PageResponse<CVEnabledService> getServices(
       String accountId, User user, PageRequest<String> request, String serviceId);
@@ -200,11 +195,6 @@ public interface AccountService {
   boolean isSSOEnabled(Account account);
 
   /**
-   * Validates subdomain URL
-   */
-  boolean validateSubdomainUrl(SubdomainUrl subdomainUrl);
-
-  /**
    * Set subdomainUrl of Account
    */
   void setSubdomainUrl(Account account, SubdomainUrl subdomainUrl);
@@ -252,6 +242,8 @@ public interface AccountService {
   boolean isRestrictedAccessEnabled(String accountId);
 
   boolean isAutoInviteAcceptanceEnabled(String accountId);
+
+  boolean isPLNoEmailForSamlAccountInvitesEnabled(String accountId);
 
   Void setDefaultExperience(String accountId, DefaultExperience defaultExperience);
 

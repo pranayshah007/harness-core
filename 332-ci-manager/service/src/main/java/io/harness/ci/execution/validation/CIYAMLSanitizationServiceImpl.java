@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ci.validation;
 
 import static io.harness.beans.steps.CIStepInfoType.RUN;
@@ -91,9 +98,10 @@ public class CIYAMLSanitizationServiceImpl implements CIYAMLSanitizationService 
   }
 
   private boolean defaultCommand(ParameterField<String> command) {
-    if (command.getValue().equals(command.getDefaultValue())) {
-      return true;
+    if (command != null && command.getValue() != null) {
+      return command.getValue().equals(command.getDefaultValue());
     }
-    return false;
+    // when command is null we treat it as default and no further validation required
+    return true;
   }
 }

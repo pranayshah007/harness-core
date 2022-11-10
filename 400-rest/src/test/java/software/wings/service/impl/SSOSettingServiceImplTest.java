@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.SHASHANK;
 
 import static software.wings.beans.loginSettings.LoginSettingsConstants.LDAP_SSO_CREATED;
@@ -23,9 +24,11 @@ import static software.wings.beans.loginSettings.LoginSettingsConstants.SAML_SSO
 import static software.wings.beans.loginSettings.LoginSettingsConstants.SAML_SSO_UPDATED;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -40,11 +43,14 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.account.OauthProviderType;
+import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.filter.OutboxEventFilter;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.usergroups.UserGroupClient;
 
 import software.wings.WingsBaseTest;
 import software.wings.annotation.EncryptableSetting;
@@ -84,10 +90,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 /**
  * @author Deepak Patankar
@@ -108,6 +117,12 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Mock LdapSyncJobConfig ldapSyncJobConfig;
   @Inject private OutboxService outboxService;
   @Mock private AccountService accountService;
+  private UserGroupClient userGroupClient;
+
+  @Before
+  public void setup() {
+    userGroupClient = mock(UserGroupClient.class, RETURNS_DEEP_STUBS);
+  }
 
   @Test
   @Owner(developers = DEEPAK)
@@ -371,6 +386,8 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
                                     .displayName("Okta")
                                     .origin("dev-274703.oktapreview.com")
                                     .build();
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(new ArrayList<>());
     SamlSettings savedSamlSettings = ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(samlSettings);
     List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
     OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
@@ -485,6 +502,8 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   public void testCreateLdapSettings_ForLDAPCreateUpdateDeleteNGAudits() throws IOException {
     LdapSettings ldapSettings = createLDAPSSOProvider();
     ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(new ArrayList<>());
     LdapSettings savedLdapSettings = ssoSettingService.createLdapSettings(ldapSettings);
     List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
     OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
@@ -530,6 +549,72 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     assertThat(loginSettingsLDAPDeleteEvent.getOldLdapSettingsYamlDTO().getLdapSettings())
         .isEqualTo(newSavedLdapSettings);
     assertThat(loginSettingsLDAPDeleteEvent.getNewLdapSettingsYamlDTO()).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void deleteLdapSettingsNGNotEnabled() {
+    // Arrange
+    LdapSettings ldapSettings = createLDAPSSOProvider();
+    ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
+    ldapSettings = ssoSettingService.createLdapSettings(ldapSettings);
+    when(accountService.isNextGenEnabled(ldapSettings.getAccountId())).thenReturn(false);
+
+    // Act
+    LdapSettings deletedLdapSettings = ssoSettingService.deleteLdapSettings(ldapSettings.getAccountId());
+
+    // Assert
+    assertThat(deletedLdapSettings.getUuid()).isNotEmpty();
+    assertThat(deletedLdapSettings.getCronExpression()).isNotEmpty().isEqualTo("0 0/15 * 1/1 * ? *");
+    assertThat(deletedLdapSettings.getNextIterations()).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void deleteLdapSettingsNoLinkedSsoNG() {
+    // Arrange
+    LdapSettings ldapSettings = createLDAPSSOProvider();
+    ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
+    ldapSettings = ssoSettingService.createLdapSettings(ldapSettings);
+    when(accountService.isNextGenEnabled(ldapSettings.getAccountId())).thenReturn(true);
+
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(new ArrayList<>());
+
+    // Act
+    LdapSettings deletedLdapSettings = ssoSettingService.deleteLdapSettings(ldapSettings.getAccountId());
+
+    // Assert
+    assertThat(deletedLdapSettings.getUuid()).isNotEmpty();
+    assertThat(deletedLdapSettings.getCronExpression()).isNotEmpty().isEqualTo("0 0/15 * 1/1 * ? *");
+    assertThat(deletedLdapSettings.getNextIterations()).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void deleteLdapSettingsWithLinkedSsoNG() {
+    // Arrange
+    LdapSettings ldapSettings = createLDAPSSOProvider();
+    ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
+    final LdapSettings createdLdapSettings = ssoSettingService.createLdapSettings(ldapSettings);
+    when(accountService.isNextGenEnabled(ldapSettings.getAccountId())).thenReturn(true);
+
+    UserGroupDTO testUGDto = UserGroupDTO.builder()
+                                 .accountIdentifier(ldapSettings.getAccountId())
+                                 .identifier("UG_Test_Identifier_01")
+                                 .build();
+    List<UserGroupDTO> ugDtoList = new ArrayList<>();
+    ugDtoList.add(testUGDto);
+
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(ugDtoList);
+
+    // Act & Assert
+    assertThatThrownBy(() -> ssoSettingService.deleteLdapSettings(createdLdapSettings.getAccountId()))
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   public LdapSettings createLDAPSSOProvider() {

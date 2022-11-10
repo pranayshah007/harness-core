@@ -85,6 +85,23 @@
           ],
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
+        "AutoVerificationJobSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/VerificationJobSpec"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "trafficSplitPercentage": {
+                  "type": "string",
+                  "description": "Example: 50, You can put max upto 50."
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
         "BlueGreenVerificationJobSpec": {
           "allOf": [
             {
@@ -118,6 +135,22 @@
           },
           "$schema": "http://json-schema.org/draft-07/schema#",
           "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Auto"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/AutoVerificationJobSpec"
+                  }
+                }
+              }
+            },
             {
               "if": {
                 "properties": {
@@ -276,18 +309,6 @@
           ],
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "ExcludeConfig": {
-          "type": "object",
-          "properties": {
-            "exclude": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            }
-          },
-          "$schema": "http://json-schema.org/draft-07/schema#"
-        },
         "FailureStrategyActionConfig": {
           "type": "object",
           "required": [
@@ -306,7 +327,7 @@
                 "StepGroupRollback",
                 "PipelineRollback",
                 "ManualIntervention",
-                "ProceedWithDefaultValue"
+                "ProceedWithDefaultValues"
               ]
             }
           },
@@ -336,7 +357,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -351,7 +372,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -365,7 +386,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -379,7 +400,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -393,7 +414,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -407,7 +428,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -475,22 +496,6 @@
               }
             }
           ],
-          "$schema": "http://json-schema.org/draft-07/schema#"
-        },
-        "InputSetValidator": {
-          "type": "object",
-          "properties": {
-            "parameters": {
-              "type": "string"
-            },
-            "validatorType": {
-              "type": "string",
-              "enum": [
-                "ALLOWED_VALUES",
-                "REGEX"
-              ]
-            }
-          },
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "JsonNode": {
@@ -562,51 +567,8 @@
           ],
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "MatrixConfig": {
-          "allOf": [
-            {
-              "$ref": "#/definitions/cvng/MatrixConfigInterface"
-            },
-            {
-              "type": "object",
-              "properties": {
-                "exclude": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/definitions/cvng/ParameterFieldListExcludeConfig"
-                    },
-                    {
-                      "type": "array"
-                    },
-                    {
-                      "type": "string",
-                      "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                      "minLength": 1
-                    }
-                  ]
-                },
-                "maxConcurrency": {
-                  "oneOf": [
-                    {
-                      "type": "integer",
-                      "format": "int32",
-                      "minimum": 0
-                    },
-                    {
-                      "type": "string",
-                      "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
-                      "minLength": 1
-                    }
-                  ]
-                }
-              }
-            }
-          ],
-          "$schema": "http://json-schema.org/draft-07/schema#"
-        },
         "MatrixConfigInterface": {
           "type": "object",
-          "discriminator": "type",
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "MonitoredServiceNode": {
@@ -718,7 +680,7 @@
                   "Verification",
                   "DelegateProvisioning",
                   "PolicyEvaluationFailure",
-                  "ExecutionInputTimeoutError"
+                  "InputTimeoutError"
                 ]
               }
             }
@@ -799,78 +761,6 @@
           },
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
-        "ParameterField": {
-          "type": "object",
-          "properties": {
-            "defaultValue": {
-              "type": "object"
-            },
-            "executionInput": {
-              "type": "boolean"
-            },
-            "expression": {
-              "type": "boolean"
-            },
-            "expressionValue": {
-              "type": "string"
-            },
-            "inputSetValidator": {
-              "$ref": "#/definitions/cvng/InputSetValidator"
-            },
-            "jsonResponseField": {
-              "type": "boolean"
-            },
-            "responseField": {
-              "type": "string"
-            },
-            "typeString": {
-              "type": "boolean"
-            },
-            "value": {
-              "type": "object"
-            }
-          },
-          "$schema": "http://json-schema.org/draft-07/schema#"
-        },
-        "ParameterFieldListExcludeConfig": {
-          "type": "object",
-          "properties": {
-            "defaultValue": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/cvng/ExcludeConfig"
-              }
-            },
-            "executionInput": {
-              "type": "boolean"
-            },
-            "expression": {
-              "type": "boolean"
-            },
-            "expressionValue": {
-              "type": "string"
-            },
-            "inputSetValidator": {
-              "$ref": "#/definitions/cvng/InputSetValidator"
-            },
-            "jsonResponseField": {
-              "type": "boolean"
-            },
-            "responseField": {
-              "type": "string"
-            },
-            "typeString": {
-              "type": "boolean"
-            },
-            "value": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/cvng/ExcludeConfig"
-              }
-            }
-          },
-          "$schema": "http://json-schema.org/draft-07/schema#"
-        },
         "PipelineRollbackFailureActionConfig": {
           "allOf": [
             {
@@ -907,7 +797,7 @@
                 "type": {
                   "type": "string",
                   "enum": [
-                    "ProceedWithDefaultValue"
+                    "ProceedWithDefaultValues"
                   ]
                 }
               }
@@ -1036,11 +926,7 @@
           "type": "object",
           "properties": {
             "matrix": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/cvng/MatrixConfig"
-                }
-              ]
+              "$ref": "#/definitions/cvng/MatrixConfigInterface"
             },
             "parallelism": {
               "oneOf": [
@@ -1051,7 +937,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]

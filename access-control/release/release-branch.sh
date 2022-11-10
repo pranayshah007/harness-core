@@ -105,3 +105,10 @@ sed -i "s:build.number=???00:build.number=${VERSION}00:g" ${VERSION_FILE}
 git add ${VERSION_FILE}
 git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${VERSION}xx"
 git push origin release/${PURPOSE}/${VERSION}xx
+
+#creating the fix version
+chmod +x access-control/release/release-branch-create-acl-versions.sh
+access-control/release/release-branch-create-acl-versions.sh
+
+chmod +x access-control/release/release-branch-update-jiras.sh
+access-control/release/release-branch-update-jiras.sh

@@ -31,7 +31,6 @@ import static io.harness.rule.OwnerRule.VLAD;
 import static io.harness.rule.OwnerRule.VUK;
 
 import static software.wings.utils.Utils.uuidToIdentifier;
-import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.DELEGATE_ID;
 import static software.wings.utils.WingsTestConstants.HOST_NAME;
 
@@ -39,7 +38,6 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.fail;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -224,6 +222,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void setUp() throws IllegalAccessException {
     when(broadcasterFactory.lookup(anyString(), anyBoolean())).thenReturn(broadcaster);
     FieldUtils.writeField(delegateTaskService, "retryObserverSubject", retryObserverSubject, true);
+    FieldUtils.writeField(delegateService, "subject", new Subject<>(), true);
   }
 
   private DelegateBuilder createDelegateBuilder() {
@@ -234,19 +233,6 @@ public class DelegateServiceImplTest extends WingsBaseTest {
         .version(VERSION)
         .status(DelegateInstanceStatus.ENABLED)
         .lastHeartBeat(System.currentTimeMillis());
-  }
-
-  @Test
-  @Owner(developers = MARKO)
-  @Category(UnitTests.class)
-  public void testRetrieveLogStreamingAccountToken() {
-    String accountId = generateUuid();
-
-    try {
-      delegateTaskServiceClassic.retrieveLogStreamingAccountToken(accountId);
-      fail("Should have failed while retrieving log streaming token");
-    } catch (Exception ignored) {
-    }
   }
 
   @Test
@@ -599,7 +585,27 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     assertThat(retrievedDelegateConnection.getDelegateId()).isEqualTo(delegateId);
     assertThat(retrievedDelegateConnection.getAccountId()).isEqualTo(accountId);
     assertThat(retrievedDelegateConnection.isDisconnected()).isTrue();
+  }
 
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateObserverEventOnDelegateDisconnected() {
+    DelegateObserver delegateObserver = mock(DelegateObserver.class);
+    delegateService.getSubject().register(delegateObserver);
+
+    String delegateId = generateUuid();
+    String delegateConnectionId = generateUuid();
+    String accountId = generateUuid();
+
+    DelegateConnection delegateConnection = DelegateConnection.builder()
+                                                .accountId(accountId)
+                                                .uuid(delegateConnectionId)
+                                                .delegateId(delegateId)
+                                                .disconnected(false)
+                                                .build();
+    persistence.save(delegateConnection);
+    delegateService.onDelegateDisconnected(accountId, delegateId);
     verify(delegateObserver).onDisconnected(accountId, delegateId);
   }
 
@@ -716,7 +722,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = NICOLAS)
   @Category(UnitTests.class)
   public void testGetConnectedDelegates() {
-    List<String> delegateIds = new ArrayList<>();
+    List<Delegate> delegates = new ArrayList<>();
 
     Delegate delegate1 = createDelegateBuilder().accountId(ACCOUNT_ID).build();
     String delegateId1 = persistence.save(delegate1);
@@ -731,7 +737,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
     persistence.save(delegateConnection1);
 
-    delegateIds.add(delegateId1);
+    delegates.add(delegate1);
 
     Delegate delegate2 = createDelegateBuilder().accountId(ACCOUNT_ID).build();
     String delegateId2 = persistence.save(delegate2);
@@ -746,10 +752,10 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
     persistence.save(delegateConnection2);
 
-    delegateIds.add(delegateId2);
+    delegates.add(delegate2);
 
     when(accountService.getAccountPrimaryDelegateVersion(any())).thenReturn(versionInfoManager.getFullVersion());
-    List<String> connectedDelegates = delegateService.getConnectedDelegates(ACCOUNT_ID, delegateIds);
+    List<Delegate> connectedDelegates = delegateService.getConnectedDelegates(ACCOUNT_ID, delegates);
 
     assertThat(connectedDelegates.size()).isEqualTo(1);
   }
@@ -1664,7 +1670,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
   public void testGetConnectedDelegatesForGlobalDelegateAccount() {
-    List<String> delegateIds = new ArrayList<>();
+    List<Delegate> delegates = new ArrayList<>();
 
     Delegate delegate1 = createDelegateBuilder().accountId(GLOBAL_DELEGATE_ACCOUNT_ID).build();
     String delegateId1 = persistence.save(delegate1);
@@ -1679,7 +1685,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
     persistence.save(delegateConnection1);
 
-    delegateIds.add(delegateId1);
+    delegates.add(delegate1);
 
     Delegate delegate2 = createDelegateBuilder().accountId(GLOBAL_DELEGATE_ACCOUNT_ID).build();
     String delegateId2 = persistence.save(delegate2);
@@ -1694,10 +1700,10 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
     persistence.save(delegateConnection2);
 
-    delegateIds.add(delegateId2);
+    delegates.add(delegate2);
 
     when(accountService.getAccountPrimaryDelegateVersion(any())).thenReturn(versionInfoManager.getFullVersion());
-    List<String> connectedDelegates = delegateService.getConnectedDelegates(GLOBAL_DELEGATE_ACCOUNT_ID, delegateIds);
+    List<Delegate> connectedDelegates = delegateService.getConnectedDelegates(GLOBAL_DELEGATE_ACCOUNT_ID, delegates);
 
     assertThat(connectedDelegates.size()).isEqualTo(2);
   }

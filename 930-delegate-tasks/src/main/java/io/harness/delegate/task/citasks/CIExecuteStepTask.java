@@ -14,8 +14,8 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ci.CIExecuteStepTaskParams;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.ngexception.CIStageExecutionException;
 
 import com.google.inject.Inject;
@@ -41,9 +41,10 @@ public class CIExecuteStepTask extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
     CIExecuteStepTaskParams ciExecuteStepTaskParams = (CIExecuteStepTaskParams) parameters;
-    if (ciExecuteStepTaskParams.getType() == CIExecuteStepTaskParams.Type.K8) {
+    CIExecuteStepTaskParams.Type type = ciExecuteStepTaskParams.getType();
+    if (type == CIExecuteStepTaskParams.Type.K8) {
       return ciK8ExecuteStepTaskHandler.executeTaskInternal(ciExecuteStepTaskParams, getTaskId());
-    } else if (ciExecuteStepTaskParams.getType() == CIExecuteStepTaskParams.Type.VM) {
+    } else if (type == CIExecuteStepTaskParams.Type.VM || type == CIExecuteStepTaskParams.Type.DOCKER) {
       return ciVmExecuteStepTaskHandler.executeTaskInternal(ciExecuteStepTaskParams, getTaskId());
     } else {
       throw new CIStageExecutionException(

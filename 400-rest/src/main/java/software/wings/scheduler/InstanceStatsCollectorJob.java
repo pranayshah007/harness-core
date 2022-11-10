@@ -16,7 +16,6 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.scheduler.BackgroundExecutorService;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.beans.Account;
@@ -35,6 +34,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Date;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +44,7 @@ import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.SimpleScheduleBuilder;
+import org.quartz.SimpleTrigger;
 import org.quartz.TriggerBuilder;
 
 @DisallowConcurrentExecution
@@ -62,7 +63,7 @@ public class InstanceStatsCollectorJob implements Job {
   private static final long DATA_MIGRATION_CRON_LOCK_EXPIRY_IN_SECONDS = 660; // 60 * 11
   private static final String DATA_MIGRATION_CRON_LOCK_PREFIX = "INSTANCE_DATA_MIGRATION_CRON:";
 
-  @Inject private BackgroundExecutorService executorService;
+  @Inject private ExecutorService executorService;
   @Inject private PersistentLocker persistentLocker;
   @Inject private StatsCollector statsCollector;
   @Inject private InstanceUsageLimitExcessHandler instanceLimitHandler;
@@ -70,6 +71,19 @@ public class InstanceStatsCollectorJob implements Job {
   @Inject private AccountService accountService;
   @Inject private IInstanceReconService instanceReconService;
   @Inject private FeatureFlagService featureFlagService;
+
+  private static TriggerBuilder<SimpleTrigger> instanceStatsTriggerBuilder(String accountId) {
+    return TriggerBuilder.newTrigger()
+        .withIdentity(accountId, GROUP)
+        .withSchedule(SimpleScheduleBuilder.simpleSchedule()
+                          .withIntervalInMinutes(SYNC_INTERVAL)
+                          .repeatForever()
+                          .withMisfireHandlingInstructionNowWithExistingCount());
+  }
+
+  public TriggerBuilder<SimpleTrigger> getInstanceStatsTriggerBuilder(String accountId) {
+    return instanceStatsTriggerBuilder(accountId);
+  }
 
   public static void addWithDelay(PersistentScheduler jobScheduler, String accountId) {
     // Add some randomness in the trigger start time to avoid overloading quartz by firing jobs at the same time.
@@ -87,12 +101,7 @@ public class InstanceStatsCollectorJob implements Job {
                         .usingJobData(ACCOUNT_ID_KEY, accountId)
                         .build();
 
-    TriggerBuilder triggerBuilder = TriggerBuilder.newTrigger()
-                                        .withIdentity(accountId, GROUP)
-                                        .withSchedule(SimpleScheduleBuilder.simpleSchedule()
-                                                          .withIntervalInMinutes(SYNC_INTERVAL)
-                                                          .repeatForever()
-                                                          .withMisfireHandlingInstructionNowWithExistingCount());
+    TriggerBuilder triggerBuilder = instanceStatsTriggerBuilder(accountId);
     if (triggerStartTime != null) {
       triggerBuilder.startAt(triggerStartTime);
     }

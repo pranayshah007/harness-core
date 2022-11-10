@@ -10,6 +10,7 @@ package io.harness.delegate.task.stepstatus.artifact;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import lombok.Builder;
 import lombok.Singular;
@@ -17,7 +18,9 @@ import lombok.Value;
 
 @Value
 @Builder
+@JsonTypeName(ArtifactMetadataTypes.FILE_ARTIFACT_METADATA)
 @OwnedBy(HarnessTeam.CI)
 public class FileArtifactMetadata implements ArtifactMetadataSpec {
   @Singular List<FileArtifactDescriptor> fileArtifactDescriptors;
+  String type;
 }

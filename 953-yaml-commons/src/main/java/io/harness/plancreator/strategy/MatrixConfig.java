@@ -9,7 +9,7 @@ package io.harness.plancreator.strategy;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
-import static io.harness.common.NGExpressionUtils.GENERIC_EXPRESSIONS_PATTERN;
+import static io.harness.common.NGExpressionUtils.GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
@@ -114,7 +114,7 @@ public class MatrixConfig implements MatrixConfigInterface {
   }
 
   private void handleString(String key, Object value) {
-    if (NGExpressionUtils.matchesPattern(GENERIC_EXPRESSIONS_PATTERN, value.toString())) {
+    if (NGExpressionUtils.matchesPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, value.toString())) {
       expressionAxes.put(
           key, new ExpressionAxisConfig(ParameterField.createExpressionField(true, (String) value, null, false)));
     } else {

@@ -35,6 +35,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidCredentialsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -153,6 +154,24 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
 
   @Override
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(JenkinsArtifactDelegateRequest attributesRequest) {
+    if (isNotEmpty(attributesRequest.getBuildNumber())) {
+      List<BuildDetails> buildDetails = jenkinsRegistryService.getBuildsForJob(
+          JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), attributesRequest.getJobName(),
+          attributesRequest.getArtifactPaths(), ARTIFACT_RETENTION_SIZE);
+      buildDetails = buildDetails.stream()
+                         .filter(buildDetail -> buildDetail.getNumber().equals(attributesRequest.getBuildNumber()))
+                         .collect(toList());
+      if (buildDetails.get(0) != null) {
+        JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
+            JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
+        return getSuccessTaskExecutionResponse(
+            Collections.singletonList(jenkinsArtifactDelegateResponse), Collections.singletonList(buildDetails.get(0)));
+      } else {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Check if the version exist & check if the right connector chosen for fetching the build.",
+            "Version didn't matched ", new InvalidRequestException("Version didn't matched"));
+      }
+    }
     BuildDetails buildDetails = jenkinsRegistryService.getLastSuccessfulBuildForJob(
         JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), attributesRequest.getJobName(),
         attributesRequest.getArtifactPaths());
@@ -290,7 +309,7 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
       }
 
       if (buildResult != BuildResult.SUCCESS
-          && (buildResult != BuildResult.UNSTABLE || attributesRequest.isUnstableStatusAsSuccess())) {
+          && (buildResult != BuildResult.UNSTABLE || !attributesRequest.isUnstableStatusAsSuccess())) {
         executionStatus = ExecutionStatus.FAILED;
       }
     } catch (WingsException e) {
@@ -385,7 +404,7 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
     return jenkinsBuild;
   }
 
-  private BuildWithDetails waitForJobExecutionToFinish(Build jenkinsBuild, String unitName,
+  public BuildWithDetails waitForJobExecutionToFinish(Build jenkinsBuild, String unitName,
       JenkinsInternalConfig jenkinsInternalConfig, LogCallback logCallback) throws IOException {
     CustomBuildWithDetails jenkinsBuildWithDetails = null;
     AtomicInteger consoleLogsSent = new AtomicInteger();

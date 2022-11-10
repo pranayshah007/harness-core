@@ -99,7 +99,7 @@ public class InputSetValidationHelper {
   operation is to a new branch or not. If it is to a new branch, then it creates a guard to fetch the pipeline from the
   base branch. If not, no guard is needed.
   */
-  PipelineEntity getPipelineEntity(PMSPipelineService pmsPipelineService, String accountId, String orgIdentifier,
+  public PipelineEntity getPipelineEntity(PMSPipelineService pmsPipelineService, String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier) {
     Optional<PipelineEntity> optionalPipelineEntity;
     if (GitContextHelper.isUpdateToNewBranch()) {
@@ -149,8 +149,9 @@ public class InputSetValidationHelper {
     return InputSetErrorsHelper.getErrorMap(pipelineYaml, yaml);
   }
 
-  String getPipelineYamlForOldGitSyncFlow(PMSPipelineService pmsPipelineService, String accountId, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, String pipelineBranch, String pipelineRepoID) {
+  public String getPipelineYamlForOldGitSyncFlow(PMSPipelineService pmsPipelineService, String accountId,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String pipelineBranch,
+      String pipelineRepoID) {
     if (EmptyPredicate.isEmpty(pipelineBranch) || EmptyPredicate.isEmpty(pipelineRepoID)) {
       return getPipelineYamlForOldGitSyncFlowInternal(
           pmsPipelineService, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);

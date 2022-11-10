@@ -10,7 +10,6 @@ package io.harness.batch.processing.dao.impl;
 import static io.harness.persistence.HQuery.excludeValidate;
 
 import io.harness.batch.processing.dao.intfc.ECSServiceDao;
-import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.entities.ecs.ECSService;
 import io.harness.ccm.commons.entities.ecs.ECSService.ECSServiceKeys;
 import io.harness.persistence.HPersistence;
@@ -59,6 +58,7 @@ public class ECSServiceDaoImpl implements ECSServiceDao {
                    .set(ECSServiceKeys.clusterId, ecsService.getClusterId())
                    .set(ECSServiceKeys.serviceArn, ecsService.getServiceArn())
                    .set(ECSServiceKeys.serviceName, ecsService.getServiceName())
+                   .set(ECSServiceKeys.launchType, ecsService.getLaunchType())
                    .set(ECSServiceKeys.resource, ecsService.getResource())
                    .set(ECSServiceKeys.labels, ecsService.getLabels()),
                HPersistence.upsertReturnNewOptions))
@@ -66,17 +66,15 @@ public class ECSServiceDaoImpl implements ECSServiceDao {
   }
 
   @Override
-  public Map<String, Resource> fetchResourceForServices(String accountId, List<String> serviceArns) {
-    Map<String, Resource> resourceMap = new HashMap<>();
+  public Map<String, ECSService> fetchServices(String accountId, List<String> serviceArns) {
+    Map<String, ECSService> resourceMap = new HashMap<>();
     for (ECSService ecsService : hPersistence.createQuery(ECSService.class, excludeValidate)
                                      .field(ECSServiceKeys.accountId)
                                      .equal(accountId)
                                      .field(ECSServiceKeys.serviceArn)
                                      .in(serviceArns)
-                                     .project(ECSServiceKeys.serviceArn, true)
-                                     .project(ECSServiceKeys.resource, true)
                                      .fetch()) {
-      resourceMap.put(ecsService.getServiceArn(), ecsService.getResource());
+      resourceMap.put(ecsService.getServiceArn(), ecsService);
     }
     return resourceMap;
   }

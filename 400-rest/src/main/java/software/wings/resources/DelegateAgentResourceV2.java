@@ -21,7 +21,7 @@ import io.harness.delegate.beans.DelegateTaskLoggingV2;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskPackageV2;
 import io.harness.delegate.task.DelegateLogContext;
-import io.harness.delegate.task.TaskLogContext;
+import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.security.annotations.DelegateAuth;

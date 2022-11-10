@@ -33,9 +33,11 @@ import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpRequest;
 import io.harness.delegate.task.gcp.request.GcpTaskParameters;
 import io.harness.delegate.task.gcp.response.GcpTaskResponse;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.GcpServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -51,13 +53,16 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@Slf4j
 @OwnedBy(CDP)
 public class GcpHelperService {
   @Inject @Named(DEFAULT_CONNECTOR_SERVICE) private ConnectorService connectorService;
   @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject ExceptionManager exceptionManager;
 
   public <T extends GcpTaskResponse> T executeSyncTask(
       BaseNGAccess ngAccess, GcpRequest request, GcpTaskType type, String description) {
@@ -115,7 +120,11 @@ public class GcpHelperService {
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
             .taskSelectors(gcpRequest.getDelegateSelectors())
             .build();
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    try {
+      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
 
   private <T extends GcpTaskResponse> T getTaskExecutionResponse(

@@ -13,8 +13,14 @@ import io.harness.WalkTreeModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceServiceImpl;
+import io.harness.cdng.artifact.resources.ami.AMIResourceService;
+import io.harness.cdng.artifact.resources.ami.AMIResourceServiceImpl;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl;
+import io.harness.cdng.artifact.resources.azureartifacts.AzureArtifactsResourceService;
+import io.harness.cdng.artifact.resources.azureartifacts.AzureArtifactsResourceServiceImpl;
+import io.harness.cdng.artifact.resources.custom.CustomResourceService;
+import io.harness.cdng.artifact.resources.custom.CustomResourceServiceImpl;
 import io.harness.cdng.artifact.resources.docker.service.DockerResourceService;
 import io.harness.cdng.artifact.resources.docker.service.DockerResourceServiceImpl;
 import io.harness.cdng.artifact.resources.ecr.service.EcrResourceService;
@@ -53,6 +59,10 @@ import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceServiceImpl;
 import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
 import io.harness.cdng.k8s.resources.gcp.service.impl.GcpResourceServiceImpl;
+import io.harness.cdng.manifest.resources.HelmChartService;
+import io.harness.cdng.manifest.resources.HelmChartServiceImpl;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
@@ -126,10 +136,13 @@ public class NGModule extends AbstractModule {
     bind(AzureResourceService.class).to(AzureResourceServiceImpl.class);
     bind(JenkinsResourceService.class).to(JenkinsResourceServiceImpl.class);
     bind(GithubPackagesResourceService.class).to(GithubPackagesResourceServiceImpl.class);
+    bind(AzureArtifactsResourceService.class).to(AzureArtifactsResourceServiceImpl.class);
+    bind(AMIResourceService.class).to(AMIResourceServiceImpl.class);
     bind(FilterService.class).to(FilterServiceImpl.class);
     bind(ClusterService.class).to(ClusterServiceImpl.class);
     bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
     bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
+    bind(CustomResourceService.class).to(CustomResourceServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("CdTelemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,
@@ -138,8 +151,10 @@ public class NGModule extends AbstractModule {
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(StageExecutionInfoService.class).to(StageExecutionInfoServiceImpl.class);
+    bind(TerraformPlanExectionDetailsService.class).to(TerraformPlanExectionDetailsServiceImpl.class);
     bind(InstanceDeploymentInfoService.class).to(InstanceDeploymentInfoServiceImpl.class);
     bind(GARResourceService.class).to(GARResourceServiceImpl.class);
+    bind(HelmChartService.class).to(HelmChartServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())

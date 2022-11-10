@@ -19,6 +19,7 @@ import io.harness.ng.core.infrastructure.InfrastructureType;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -40,7 +41,7 @@ public class InfrastructureRequestDTO {
   @Schema(description = "description of the infrastructure") String description;
   @Schema(description = "tags associated with the infrastructure") Map<String, String> tags;
 
-  @Schema(description = "type of the infrastructure") InfrastructureType type;
+  @NotNull @Schema(description = "type of the infrastructure") InfrastructureType type;
 
   @Schema(description = "yaml spec of the infrastructure") String yaml;
 }

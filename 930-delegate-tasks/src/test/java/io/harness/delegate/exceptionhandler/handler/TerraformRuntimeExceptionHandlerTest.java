@@ -13,6 +13,8 @@ import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hin
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_CHECK_TERRAFORM_CONFIG_LOCATION_ARGUMENT;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_FAILED_TO_GET_EXISTING_WORKSPACES;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_FAIL_TO_INSTALL_PROVIDER;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Message.GENERIC_NO_TERRAFORM_ERROR;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Message.MESSAGE_ERROR_TOO_LONG;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Message.MESSAGE_FAILED_TO_GET_EXISTING_WORKSPACES;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -34,6 +36,7 @@ import io.harness.rule.Owner;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -57,6 +60,8 @@ public class TerraformRuntimeExceptionHandlerTest {
       "Could not find provided terraform config folder terraform-dir/module1";
   private static final String TEST_ERROR_FAILED_INSTALL_PROVIDER =
       "[31m \u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mFailed to install provider\u001B[0m  \u001B[0mError while installing hashicorp/null v3.1.0: mkdir .terraform: no such file or directory \u001B[0m\u001B[0m";
+
+  private static final String TEST_LONG_UNKNOWN_ERROR = StringUtils.repeat("Errr", 156);
 
   TerraformRuntimeExceptionHandler handler = new TerraformRuntimeExceptionHandler();
 
@@ -173,6 +178,34 @@ public class TerraformRuntimeExceptionHandlerTest {
             "The root module input variable \"keyName\" is not set, and has no default value. Use a -var or -var-file command line argument to provide a value for this variable.",
             "The root module input variable \"tag_name\" is not set, and has no default value. Use a -var or -var-file command line argument to provide a value for this variable."),
         "terraform refresh failed with: No value for required variable");
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testHandleExceptionLongUnhandledException() {
+    TerraformCliRuntimeException cliRuntimeException =
+        new TerraformCliRuntimeException("Terraform failed", "terraform refresh", TEST_LONG_UNKNOWN_ERROR);
+    WingsException handledException = handler.handleException(cliRuntimeException);
+    assertThat(handledException).isInstanceOf(TerraformCommandExecutionException.class);
+    TerraformCommandExecutionException terraformCommandExecutionException =
+        (TerraformCommandExecutionException) handledException;
+    // Expected Errr to be repeated 128 that is going to be exact 512 characters
+    assertThat(terraformCommandExecutionException.getParams().get("message"))
+        .isEqualTo(StringUtils.repeat("Errr", 128) + "... (" + MESSAGE_ERROR_TOO_LONG + ")");
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testHandleExceptionNoCliError() {
+    TerraformCliRuntimeException cliRuntimeException =
+        new TerraformCliRuntimeException("Terraform failed", "terraform refresh", " ");
+    WingsException handledException = handler.handleException(cliRuntimeException);
+    assertThat(handledException).isInstanceOf(TerraformCommandExecutionException.class);
+    TerraformCommandExecutionException terraformCommandExecutionException =
+        (TerraformCommandExecutionException) handledException;
+    assertThat(terraformCommandExecutionException.getParams().get("message")).isEqualTo(GENERIC_NO_TERRAFORM_ERROR);
   }
 
   private void assertSingleErrorMessage(WingsException exception, String hint, String explanation, String message) {

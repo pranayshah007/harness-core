@@ -9,7 +9,12 @@ package io.harness.delegate.task.azure.arm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.ARM_DEPLOYMENT_STATUS_CHECK_INTERVAL;
+import static io.harness.azure.model.AzureConstants.AUTHORIZATION_ERROR;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_VALIDATION_FAILED_MSG_PATTERN;
+import static io.harness.azure.model.AzureConstants.ERROR_CODE_LOCATION_NOT_FOUND;
+import static io.harness.azure.model.AzureConstants.ERROR_INVALID_MANAGEMENT_GROUP_ID;
+import static io.harness.azure.model.AzureConstants.ERROR_INVALID_TENANT_CREDENTIALS;
+import static io.harness.azure.model.AzureConstants.ERROR_LOCATION_NOT_FOUND;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
@@ -28,7 +33,10 @@ import io.harness.delegate.task.azure.arm.deployment.context.DeploymentManagemen
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentResourceGroupContext;
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentSubscriptionContext;
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentTenantContext;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.runtime.azure.AzureARMManagementScopeException;
+import io.harness.exception.runtime.azure.AzureARMSubscriptionScopeException;
+import io.harness.exception.runtime.azure.AzureARMTenantScopeException;
+import io.harness.exception.runtime.azure.AzureARMValidationException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -40,6 +48,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.microsoft.azure.management.resources.ErrorResponse;
 import com.microsoft.azure.management.resources.implementation.DeploymentValidateResultInner;
+import java.util.Objects;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -88,7 +97,7 @@ public class AzureARMDeploymentService {
     ErrorResponse errorResponse = deploymentValidateResultInner.error();
     if (errorResponse != null) {
       logCallback.saveExecutionLog("Template validation failed", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw new InvalidRequestException(
+      throw new AzureARMValidationException(
           format("Unable to deploy at resource group scope, deployment validation failed: %s",
               getValidationErrorMsg(errorResponse)));
     }
@@ -138,7 +147,11 @@ public class AzureARMDeploymentService {
     ErrorResponse errorResponse = deploymentValidateResultInner.error();
     if (errorResponse != null) {
       logCallback.saveExecutionLog("Template validation failed", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw new InvalidRequestException(
+      if (Objects.equals(errorResponse.code(), ERROR_CODE_LOCATION_NOT_FOUND)) {
+        throw new AzureARMSubscriptionScopeException(
+            format(ERROR_LOCATION_NOT_FOUND, context.getDeploymentDataLocation()));
+      }
+      throw new AzureARMSubscriptionScopeException(
           format("Unable to deploy at subscription scope, deployment validation failed: %s",
               getValidationErrorMsg(errorResponse)));
     }
@@ -180,22 +193,33 @@ public class AzureARMDeploymentService {
 
     LogCallback logCallback = getARMDeploymentLogCallback(context);
     logCallback.saveExecutionLog("Starting template validation");
-    DeploymentValidateResultInner deploymentValidateResultInner =
-        azureManagementClient.validateDeploymentAtManagementGroupScope(
-            azureConfig, managementGroupId, azureARMTemplate);
-    ErrorResponse errorResponse = deploymentValidateResultInner.error();
-    if (errorResponse != null) {
-      logCallback.saveExecutionLog("Template validation failed", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw new InvalidRequestException(
-          format("Unable to deploy at management group scope, deployment validation failed: %s",
-              getValidationErrorMsg(errorResponse)));
-    }
+    try {
+      DeploymentValidateResultInner deploymentValidateResultInner =
+          azureManagementClient.validateDeploymentAtManagementGroupScope(
+              azureConfig, managementGroupId, azureARMTemplate);
+      ErrorResponse errorResponse = deploymentValidateResultInner.error();
+      if (errorResponse != null) {
+        logCallback.saveExecutionLog("Template validation failed", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+        if (Objects.equals(errorResponse.code(), ERROR_CODE_LOCATION_NOT_FOUND)) {
+          throw new AzureARMManagementScopeException(
+              format(ERROR_LOCATION_NOT_FOUND, context.getDeploymentDataLocation()));
+        }
+        throw new AzureARMManagementScopeException(
+            format("Unable to deploy at management group scope, deployment validation failed: %s",
+                getValidationErrorMsg(errorResponse)));
+      }
 
-    logCallback.saveExecutionLog(String.format(
-        "Starting ARM Deployment at Management scope. Deployment Name - [%s]", azureARMTemplate.getDeploymentName()));
-    azureManagementClient.deployAtManagementGroupScope(azureConfig, managementGroupId, azureARMTemplate);
-    logCallback.saveExecutionLog("ARM Deployment request send successfully", LogLevel.INFO, SUCCESS);
-    return performSteadyStateCheckManagementGroupScope(context);
+      logCallback.saveExecutionLog(String.format(
+          "Starting ARM Deployment at Management scope. Deployment Name - [%s]", azureARMTemplate.getDeploymentName()));
+      azureManagementClient.deployAtManagementGroupScope(azureConfig, managementGroupId, azureARMTemplate);
+      logCallback.saveExecutionLog("ARM Deployment request send successfully", LogLevel.INFO, SUCCESS);
+      return performSteadyStateCheckManagementGroupScope(context);
+    } catch (Exception ex) {
+      if (ex.getMessage() != null && ex.getMessage().contains(AUTHORIZATION_ERROR)) {
+        throw new AzureARMManagementScopeException(ERROR_INVALID_MANAGEMENT_GROUP_ID);
+      }
+      throw ex;
+    }
   }
 
   private String performSteadyStateCheckManagementGroupScope(DeploymentManagementGroupContext context) {
@@ -226,20 +250,31 @@ public class AzureARMDeploymentService {
 
     LogCallback logCallback = getARMDeploymentLogCallback(context);
     logCallback.saveExecutionLog("Starting template validation");
-    DeploymentValidateResultInner deploymentValidateResultInner =
-        azureManagementClient.validateDeploymentAtTenantScope(azureConfig, azureARMTemplate);
-    ErrorResponse errorResponse = deploymentValidateResultInner.error();
-    if (errorResponse != null) {
-      logCallback.saveExecutionLog("Template validation failed", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw new InvalidRequestException(format(
-          "Unable to deploy at tenant scope, deployment validation failed: %s", getValidationErrorMsg(errorResponse)));
-    }
+    try {
+      DeploymentValidateResultInner deploymentValidateResultInner =
+          azureManagementClient.validateDeploymentAtTenantScope(azureConfig, azureARMTemplate);
+      ErrorResponse errorResponse = deploymentValidateResultInner.error();
+      if (errorResponse != null) {
+        logCallback.saveExecutionLog("Template validation failed", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+        if (Objects.equals(errorResponse.code(), ERROR_CODE_LOCATION_NOT_FOUND)) {
+          throw new AzureARMTenantScopeException(format(ERROR_LOCATION_NOT_FOUND, context.getDeploymentDataLocation()));
+        }
+        throw new AzureARMTenantScopeException(
+            format("Unable to deploy at tenant scope, deployment validation failed: %s",
+                getValidationErrorMsg(errorResponse)));
+      }
 
-    logCallback.saveExecutionLog(String.format(
-        "Starting ARM Deployment at Tenant scope. Deployment Name - [%s]", azureARMTemplate.getDeploymentName()));
-    azureManagementClient.deployAtTenantScope(azureConfig, azureARMTemplate);
-    logCallback.saveExecutionLog("ARM Deployment request send successfully", LogLevel.INFO, SUCCESS);
-    return performSteadyStateCheckTenantScope(context);
+      logCallback.saveExecutionLog(String.format(
+          "Starting ARM Deployment at Tenant scope. Deployment Name - [%s]", azureARMTemplate.getDeploymentName()));
+      azureManagementClient.deployAtTenantScope(azureConfig, azureARMTemplate);
+      logCallback.saveExecutionLog("ARM Deployment request send successfully", LogLevel.INFO, SUCCESS);
+      return performSteadyStateCheckTenantScope(context);
+    } catch (Exception ex) {
+      if (ex.getMessage() != null && ex.getMessage().contains(AUTHORIZATION_ERROR)) {
+        throw new AzureARMTenantScopeException(ERROR_INVALID_TENANT_CREDENTIALS);
+      }
+      throw ex;
+    }
   }
 
   private String performSteadyStateCheckTenantScope(DeploymentTenantContext context) {

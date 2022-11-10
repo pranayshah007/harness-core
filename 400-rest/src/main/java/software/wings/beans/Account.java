@@ -13,6 +13,7 @@ import static io.harness.delegate.beans.DelegateConfiguration.DelegateConfigurat
 import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.common.VerificationConstants.SERVICE_GUAARD_LIMIT;
+import static software.wings.ngmigration.NGMigrationEntityType.ACCOUNT;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
@@ -37,6 +38,7 @@ import io.harness.security.EncryptionInterface;
 import io.harness.security.SimpleEncryption;
 import io.harness.validation.Create;
 
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
 
@@ -134,6 +136,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter boolean isProductLed;
 
+  @Getter @Setter private boolean smpAccount;
+
   /**
    * If this flag is set, all encryption/decryption activities will go through LOCAL security manager.
    * No VAULT/KMS secret manager can be configured. This helps for accounts whose delegate can't access
@@ -153,8 +157,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter private AccountPreferences accountPreferences;
 
-  @FdIndex private Long serviceGuardDataCollectionIteration;
-  @FdIndex private Long serviceGuardDataAnalysisIteration;
+  private Long serviceGuardDataCollectionIteration;
+  private Long serviceGuardDataAnalysisIteration;
   @FdIndex private Long workflowDataCollectionIteration;
   @FdIndex private Long usageMetricsTaskIteration;
   @FdIndex private Long licenseExpiryCheckIteration;
@@ -165,9 +169,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @FdIndex private Long ceLicenseExpiryIteration;
   @FdIndex private Long resourceLookupSyncIteration;
   @FdIndex private long delegateTelemetryPublisherIteration;
-  @FdIndex private long delegateTaskFailIteration;
   @FdIndex private long delegateTaskRebroadcastIteration;
   @FdIndex private Long perpetualTaskRebalanceIteration;
+
+  // adding this to avoid kryo exception. Its not used anymore, check DEL-5047
+  @Deprecated private long delegateTaskFailIteration;
 
   @Getter private boolean cloudCostEnabled;
   @Getter @Setter private boolean ceAutoCollectK8sEvents;
@@ -223,6 +229,18 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @Override
   public String getMigrationEntityName() {
     return getCompanyName() + " " + getAccountName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getAccountName())
+        .type(ACCOUNT)
+        .appId(getAppId())
+        .accountId(getUuid())
+        .build();
   }
 
   public boolean isNextGenEnabled() {
@@ -431,17 +449,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
-    if (AccountKeys.serviceGuardDataCollectionIteration.equals(fieldName)) {
-      this.serviceGuardDataCollectionIteration = nextIteration;
-      return;
-    }
-
-    else if (AccountKeys.serviceGuardDataAnalysisIteration.equals(fieldName)) {
-      this.serviceGuardDataAnalysisIteration = nextIteration;
-      return;
-    }
-
-    else if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
+    if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
       this.workflowDataCollectionIteration = nextIteration;
       return;
     }
@@ -486,11 +494,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return;
     }
 
-    else if (AccountKeys.delegateTaskFailIteration.equals(fieldName)) {
-      this.delegateTaskFailIteration = nextIteration;
-      return;
-    }
-
     else if (AccountKeys.delegateTaskRebroadcastIteration.equals(fieldName)) {
       this.delegateTaskRebroadcastIteration = nextIteration;
       return;
@@ -506,15 +509,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Override
   public Long obtainNextIteration(String fieldName) {
-    if (AccountKeys.serviceGuardDataCollectionIteration.equals(fieldName)) {
-      return this.serviceGuardDataCollectionIteration;
-    }
-
-    else if (AccountKeys.serviceGuardDataAnalysisIteration.equals(fieldName)) {
-      return this.serviceGuardDataAnalysisIteration;
-    }
-
-    else if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
+    if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
       return this.workflowDataCollectionIteration;
     }
 
@@ -548,10 +543,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     else if (AccountKeys.delegateTelemetryPublisherIteration.equals(fieldName)) {
       return this.delegateTelemetryPublisherIteration;
-    }
-
-    else if (AccountKeys.delegateTaskFailIteration.equals(fieldName)) {
-      return this.delegateTaskFailIteration;
     }
 
     else if (AccountKeys.delegateTaskRebroadcastIteration.equals(fieldName)) {
@@ -886,7 +877,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     public static final String isHarnessSupportAccessAllowed = "isHarnessSupportAccessAllowed";
     public static final String resourceLookupSyncIteration = "resourceLookupSyncIteration";
     public static final String instanceStatsMetricsPublisherInteration = "instanceStatsMetricsPublisherIteration";
-    public static final String delegateTaskFailIteration = "delegateTaskFailIteration";
     public static final String delegateTaskRebroadcastIteration = "delegateTaskRebroadcastIteration";
     public static final String DELEGATE_CONFIGURATION_DELEGATE_VERSIONS =
         delegateConfiguration + "." + DelegateConfigurationKeys.delegateVersions;

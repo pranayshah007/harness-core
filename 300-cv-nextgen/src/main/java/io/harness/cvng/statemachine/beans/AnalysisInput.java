@@ -7,9 +7,11 @@
 
 package io.harness.cvng.statemachine.beans;
 
+import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.core.beans.TimeRange;
 
 import java.time.Instant;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -20,7 +22,17 @@ import lombok.experimental.FieldNameConstants;
 public class AnalysisInput {
   private Instant startTime;
   private Instant endTime;
+
+  // Used in DeploymentTimeSeriesAnalysisState
   private String verificationTaskId;
+  // Used in DeploymentTimeSeriesAnalysisState
+  private String verificationJobInstanceId;
+  // Used in DeploymentTimeSeriesAnalysisState
+  private Set<String> controlHosts;
+  // Used in DeploymentTimeSeriesAnalysisState
+  private Set<String> testHosts;
+  // Used in DeploymentTimeSeriesAnalysisState
+  private LearningEngineTaskType learningEngineTaskType;
 
   public TimeRange getTimeRange() {
     return TimeRange.builder().startTime(startTime).endTime(endTime).build();

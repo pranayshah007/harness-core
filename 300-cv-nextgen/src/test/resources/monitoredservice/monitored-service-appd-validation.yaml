@@ -1,0 +1,53 @@
+monitoredService:
+  type: Application
+  serviceRef: template1
+  environmentRef: testing_env
+  tags: {}
+  sources:
+    changeSources:
+      - identifier: harness_cd_next_gen
+        type: HarnessCDNextGen
+        name: Harness CD Next Gen
+        enabled: true
+        category: Deployment
+        spec: {}
+    healthSources:
+      - identifier: appdnew
+        type: AppDynamics
+        name: appd-new
+        spec:
+          applicationName: cv-app
+          tierName: docker-tier
+          metricData:
+            Errors: true
+            Performance: true
+          metricDefinitions:
+            - identifier: appdMetric
+              metricName: appdMetric
+              baseFolder:
+              metricPath:
+              completeMetricPath: Overall Application Performance | error | Errors per Minute
+              groupName: g2
+              sli:
+                enabled: true
+              analysis:
+                riskProfile:
+                  category: Performance
+                  metricType: ERROR
+                  thresholdTypes:
+                    - ACT_WHEN_HIGHER
+                liveMonitoring:
+                  enabled: true
+                deploymentVerification:
+                  enabled: true
+                  serviceInstanceMetricPath: Individual Nodes|*|Errors per Minute
+          feature: Application Monitoring
+          connectorRef: demokaran
+          metricPacks:
+            - identifier: Errors
+            - identifier: Performance
+  variables:
+    - name: path
+      type: String
+      description:
+      value: Overall Application Performance | error | Errors per Minute

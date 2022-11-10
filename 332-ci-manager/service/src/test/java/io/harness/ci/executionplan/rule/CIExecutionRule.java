@@ -17,6 +17,7 @@ import io.harness.ModuleType;
 import io.harness.SCMGrpcClientModule;
 import io.harness.ScmConnectionConfig;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsClient;
@@ -58,6 +59,7 @@ import io.harness.govern.ServersModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -139,6 +141,12 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       @Override
       protected void configure() {
         bind(CILicenseService.class).to(CILicenseNoopServiceImpl.class);
+      }
+    });
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(AccountClient.class).toInstance(mock(AccountClient.class));
       }
     });
 
@@ -244,6 +252,12 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       @Singleton
       DistributedLockImplementation distributedLockImplementation() {
         return DistributedLockImplementation.NOOP;
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

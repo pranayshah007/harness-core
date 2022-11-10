@@ -9,7 +9,6 @@ package software.wings.scheduler;
 
 import static software.wings.common.Constants.ACCOUNT_ID_KEY;
 
-import io.harness.scheduler.BackgroundExecutorService;
 import io.harness.scheduler.BackgroundSchedulerLocker;
 import io.harness.scheduler.PersistentScheduler;
 
@@ -19,6 +18,7 @@ import com.google.inject.Inject;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.DisallowConcurrentExecution;
@@ -27,6 +27,7 @@ import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.SimpleScheduleBuilder;
+import org.quartz.SimpleTrigger;
 import org.quartz.TriggerBuilder;
 
 /**
@@ -40,9 +41,22 @@ public class LimitVicinityCheckerJob implements Job {
 
   private static final int SYNC_INTERVAL_IN_MINUTES = 30;
 
-  @Inject private BackgroundExecutorService executorService;
+  @Inject private ExecutorService executorService;
   @Inject private BackgroundSchedulerLocker persistentLocker;
   @Inject private LimitVicinityHandler limitVicinityHandler;
+
+  private static TriggerBuilder<SimpleTrigger> vicinityTriggerBuilder(String accountId) {
+    return TriggerBuilder.newTrigger()
+        .withIdentity(accountId, GROUP)
+        .withSchedule(SimpleScheduleBuilder.simpleSchedule()
+                          .withIntervalInMinutes(SYNC_INTERVAL_IN_MINUTES)
+                          .repeatForever()
+                          .withMisfireHandlingInstructionFireNow());
+  }
+
+  public TriggerBuilder<SimpleTrigger> getLimitVicinityTriggerBuilder(String accountId) {
+    return vicinityTriggerBuilder(accountId);
+  }
 
   public static void addWithDelay(PersistentScheduler jobScheduler, String accountId) {
     // Add some randomness in the trigger start time to avoid overloading quartz by firing jobs at the same time.
@@ -61,11 +75,7 @@ public class LimitVicinityCheckerJob implements Job {
                         .usingJobData(ACCOUNT_ID_KEY, accountId)
                         .build();
 
-    TriggerBuilder triggerBuilder =
-        TriggerBuilder.newTrigger()
-            .withIdentity(accountId, GROUP)
-            .withSchedule(
-                SimpleScheduleBuilder.simpleSchedule().withIntervalInMinutes(SYNC_INTERVAL_IN_MINUTES).repeatForever());
+    TriggerBuilder triggerBuilder = vicinityTriggerBuilder(accountId);
     if (triggerStartTime != null) {
       triggerBuilder.startAt(triggerStartTime);
     }

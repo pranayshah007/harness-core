@@ -12,11 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrency.MaxConcurrentChildCallback;
 import io.harness.engine.execution.ExecutionInputData;
+import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.execution.WaitForExecutionInputCallback;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.engine.interrupts.AbortInterruptCallback;
 import io.harness.engine.interrupts.callback.FailureInterruptCallback;
 import io.harness.engine.interrupts.handlers.AbortAllInterruptCallback;
+import io.harness.engine.pms.execution.strategy.plan.PlanExecutionResumeCallback;
 import io.harness.engine.pms.resume.EngineResumeAllCallback;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.engine.pms.resume.EngineWaitRetryCallback;
@@ -40,5 +42,7 @@ public class OrchestrationKryoRegistrar implements KryoRegistrar {
     kryo.register(ExecutionInputData.class, 87012);
     kryo.register(WaitForExecutionInputCallback.class, 87013);
     kryo.register(MaxConcurrentChildCallback.class, 87014);
+    kryo.register(PipelineStageResponseData.class, 87015);
+    kryo.register(PlanExecutionResumeCallback.class, 87016);
   }
 }

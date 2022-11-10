@@ -36,6 +36,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
+import io.harness.connector.entities.embedded.vaultconnector.VaultConnector.VaultConnectorKeys;
 import io.harness.connector.mappers.secretmanagermapper.VaultDTOToEntity;
 import io.harness.connector.mappers.secretmanagermapper.VaultEntityToDTO;
 import io.harness.connector.services.NGConnectorSecretManagerService;
@@ -52,6 +53,8 @@ import io.harness.git.model.ChangeType;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.SecretCrudService;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.encryptors.NGManagerEncryptorHelper;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.repositories.ConnectorRepository;
@@ -256,6 +259,63 @@ public class NGVaultServiceImplTest extends CategoryTest {
 
     assertEquals(delegateTaskRequest.getTaskSetupAbstractions().get(NG_DELEGATE_OWNER_CONSTANT),
         ORG_IDENTIFIER + "/" + PROJECT_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void processAppRole_shouldCreateAuthTokenRef_whenDoNotRenewAppRoleTokenFF_disabled() throws IOException {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildAppRoleVaultConnector());
+    vaultConnectorDTO.setRenewAppRoleToken(true);
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    setUpCommonMocks();
+    when(delegateService.executeSyncTask(any()))
+        .thenReturn(
+            NGVaultRenewalAppRoleTaskResponse.builder()
+                .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
+                .build());
+    ArgumentCaptor<SecretDTOV2> argumentCaptor = ArgumentCaptor.forClass(SecretDTOV2.class);
+    when(secretCrudService.create(any(), argumentCaptor.capture())).thenReturn(SecretResponseWrapper.builder().build());
+    ngVaultService.processAppRole(inputConnector, null, ACCOUNT_IDENTIFIER, true);
+    verify(secretCrudService, times(1)).create(any(), any());
+    SecretDTOV2 secretDTOV2 = argumentCaptor.getValue();
+    assertNotNull(secretDTOV2);
+    assertThat(secretDTOV2.getIdentifier()).isEqualTo(CONNECTOR_ID + "_" + VaultConnectorKeys.authTokenRef);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void processAppRole_shouldNotCreateAuthTokenRef_whenDoNotRenewAppRoleTokenFF_enabled() throws IOException {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildAppRoleVaultConnector());
+    vaultConnectorDTO.setRenewAppRoleToken(false);
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    setUpCommonMocks();
+    when(delegateService.executeSyncTask(any()))
+        .thenReturn(
+            NGVaultRenewalAppRoleTaskResponse.builder()
+                .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
+                .build());
+    ngVaultService.processAppRole(inputConnector, null, ACCOUNT_IDENTIFIER, true);
+    verify(secretCrudService, times(0)).create(any(), any());
   }
 
   @Test

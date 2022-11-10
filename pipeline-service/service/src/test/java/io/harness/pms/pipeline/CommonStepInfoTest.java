@@ -19,6 +19,8 @@ import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.rule.Owner;
+import io.harness.steps.FolderPathConstants;
+import io.harness.steps.StepCategoryConstants;
 import io.harness.steps.StepSpecTypeConstants;
 
 import java.util.List;
@@ -36,6 +38,17 @@ public class CommonStepInfoTest extends CategoryTest {
           .setName("Shell Script")
           .setType("ShellScript")
           .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Scripted").build())
+          .build();
+  StepInfo customApprovalStepInfo =
+      StepInfo.newBuilder()
+          .setName("Custom Approval")
+          .setType("CustomApproval")
+          .setStepMetaData(StepMetaData.newBuilder()
+                               .addCategory(StepCategoryConstants.PROVISIONER)
+                               .addCategory(StepCategoryConstants.APPROVAL)
+                               .addFolderPaths(FolderPathConstants.APPROVAL)
+                               .build())
+          .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_CUSTOM_SCRIPT.name())
           .build();
   StepInfo httpStepInfo =
       StepInfo.newBuilder()
@@ -108,13 +121,11 @@ public class CommonStepInfoTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetCommonSteps() {
     List<StepInfo> stepInfos = commonStepInfo.getCommonSteps("Approval");
-    assertTrue(stepInfos.contains(httpStepInfo));
     assertTrue(stepInfos.contains(harnessApprovalStepInfo));
     assertTrue(stepInfos.contains(jiraApprovalStepInfo));
-    assertTrue(stepInfos.contains(jiraCreateStepInfo));
-    assertTrue(stepInfos.contains(jiraUpdateStepInfo));
-    assertTrue(stepInfos.contains(barrierStepInfo));
-    stepInfos = commonStepInfo.getCommonSteps("NotApproval");
+    assertTrue(stepInfos.contains(serviceNowApprovalStepInfo));
+    assertTrue(stepInfos.contains(customApprovalStepInfo));
+    stepInfos = commonStepInfo.getCommonSteps("");
     assertTrue(stepInfos.contains(httpStepInfo));
     assertTrue(stepInfos.contains(harnessApprovalStepInfo));
     assertTrue(stepInfos.contains(jiraApprovalStepInfo));

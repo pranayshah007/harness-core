@@ -28,6 +28,14 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
 
+load("//:tools/bazel/openapi.bzl", "openapi_repositories")
+
+openapi_repositories(
+    codegen_cli_provider = "harness-swagger-v3",
+    codegen_cli_sha256 = "8153719ed24ff1bdcf6d5bbe8713d26091ff85a3b253c2224f6e5c8490e9643d",
+    codegen_cli_version = "3.0.35-harness-SNAPSHOT",
+)
+
 # Download the Go rules
 http_archive(
     name = "io_bazel_rules_go",
@@ -128,6 +136,146 @@ go_repository(
     importpath = "google.golang.org/grpc/cmd/protoc-gen-go-grpc",
     sum = "h1:M1YKkFIboKNieVO5DLUEVzQfGwJD30Nv2jfUgzb5UcE=",
     version = "v1.1.0",
+)
+
+go_repository(
+    name = "com_github_agiledragon_gomonkey_v2",
+    importpath = "github.com/agiledragon/gomonkey/v2",
+    sum = "h1:k+UnUY0EMNYUFUAQVETGY9uUTxjMdnUkP0ARyJS1zzs=",
+    version = "v2.3.1",
+)
+
+go_repository(
+    name = "com_github_coreos_go_systemd_v22",
+    importpath = "github.com/coreos/go-systemd/v22",
+    sum = "h1:rtAn27wIbmOGUs7RIbVgPEjb31ehTVniDwPGXyMxm5U=",
+    version = "v22.3.3-0.20220203105225-a9a7ef127534",
+)
+
+go_repository(
+    name = "com_github_godbus_dbus_v5",
+    importpath = "github.com/godbus/dbus/v5",
+    sum = "h1:9349emZab16e7zQvpmsbtjc18ykshndd8y2PG3sgJbA=",
+    version = "v5.0.4",
+)
+
+go_repository(
+    name = "com_github_golang_jwt_jwt",
+    importpath = "github.com/golang-jwt/jwt",
+    sum = "h1:IfV12K8xAKAnZqdXVzCZ+TOjboZ2keLg81eXfW3O+oY=",
+    version = "v3.2.2+incompatible",
+)
+
+go_repository(
+    name = "com_github_josharian_intern",
+    importpath = "github.com/josharian/intern",
+    sum = "h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=",
+    version = "v1.0.0",
+)
+
+go_repository(
+    name = "com_github_kylebanks_depth",
+    importpath = "github.com/KyleBanks/depth",
+    sum = "h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc=",
+    version = "v1.2.1",
+)
+
+go_repository(
+    name = "com_github_labstack_echo_v4",
+    importpath = "github.com/labstack/echo/v4",
+    sum = "h1:wPOF1CE6gvt/kmbMR4dGzWvHMPT+sAEUJOwOTtvITVY=",
+    version = "v4.9.0",
+)
+
+go_repository(
+    name = "com_github_labstack_gommon",
+    importpath = "github.com/labstack/gommon",
+    sum = "h1:OomWaJXm7xR6L1HmEtGyQf26TEn7V6X88mktX9kee9o=",
+    version = "v0.3.1",
+)
+
+go_repository(
+    name = "com_github_otiai10_copy",
+    importpath = "github.com/otiai10/copy",
+    sum = "h1:hVoPiN+t+7d2nzzwMiDHPSOogsWAStewq3TwU05+clE=",
+    version = "v1.7.0",
+)
+
+go_repository(
+    name = "com_github_otiai10_curr",
+    importpath = "github.com/otiai10/curr",
+    sum = "h1:TJIWdbX0B+kpNagQrjgq8bCMrbhiuX73M2XwgtDMoOI=",
+    version = "v1.0.0",
+)
+
+go_repository(
+    name = "com_github_otiai10_mint",
+    importpath = "github.com/otiai10/mint",
+    sum = "h1:7JgpsBaN0uMkyju4tbYHu0mnM55hNKVYLsXmwr15NQI=",
+    version = "v1.3.3",
+)
+
+go_repository(
+    name = "com_github_swaggo_echo_swagger",
+    importpath = "github.com/swaggo/echo-swagger",
+    sum = "h1:8B+yVqjVm7cMy4QBLRUuRaOzrTVAqZahcrgrOSdpC5I=",
+    version = "v1.3.4",
+)
+
+go_repository(
+    name = "com_github_swaggo_files",
+    importpath = "github.com/swaggo/files",
+    sum = "h1:kAe4YSu0O0UFn1DowNo2MY5p6xzqtJ/wQ7LZynSvGaY=",
+    version = "v0.0.0-20220728132757-551d4a08d97a",
+)
+
+go_repository(
+    name = "com_github_swaggo_swag",
+    importpath = "github.com/swaggo/swag",
+    sum = "h1:2rgOaLbonWu1PLP6G+/rYjSvPg0jQE0HtrEKuE380eg=",
+    version = "v1.8.6",
+)
+
+go_repository(
+    name = "com_github_urfave_cli_v2",
+    importpath = "github.com/urfave/cli/v2",
+    sum = "h1:qph92Y649prgesehzOrQjdWyxFOp/QVM+6imKHad91M=",
+    version = "v2.3.0",
+)
+
+go_repository(
+    name = "com_github_valyala_fasttemplate",
+    importpath = "github.com/valyala/fasttemplate",
+    sum = "h1:TVEnxayobAdVkhQfrfes2IzOB6o+z4roRkPF52WA1u4=",
+    version = "v1.2.1",
+)
+
+go_repository(
+    name = "com_github_go_redis_redismock_v8",
+    importpath = "github.com/go-redis/redismock/v8",
+    sum = "h1:rtuijPgGynsRB2Y7KDACm09WvjHWS4RaG44Nm7rcj4Y=",
+    version = "v8.0.6",
+)
+
+go_repository(
+    name = "io_opentelemetry_go_otel_metric",
+    importpath = "go.opentelemetry.io/otel/metric",
+    sum = "h1:dtZ1Ju44gkJkYvo+3qGqVXmf88tc+a42edOywypengg=",
+    version = "v0.19.0",
+)
+
+go_repository(
+    name = "io_opentelemetry_go_otel_oteltest",
+    importpath = "go.opentelemetry.io/otel/oteltest",
+    sum = "h1:YVfA0ByROYqTwOxqHVZYZExzEpfZor+MU1rU+ip2v9Q=",
+    version = "v0.19.0",
+)
+
+go_repository(
+    name = "io_opentelemetry_go_otel_trace",
+    importpath = "go.opentelemetry.io/otel/trace",
+    sum = "h1:1ucYlenXIDA1OlHVLDZKX0ObXV5RLaq06DtUKz5e5zc=",
+    version = "v0.19.0",
 )
 
 go_rules_dependencies()
@@ -238,15 +386,15 @@ go_repository(
 go_repository(
     name = "com_github_kr_pretty",
     importpath = "github.com/kr/pretty",
-    sum = "h1:s5hAObm+yFO5uHYt5dYjxi2rXrsnmRpJx4OYvIWUaQs=",
-    version = "v0.2.0",
+    sum = "h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=",
+    version = "v0.1.0",
 )
 
 go_repository(
     name = "com_github_kr_pty",
     importpath = "github.com/kr/pty",
-    sum = "h1:hyz3dwM5QLc1Rfoz4FuWJQG5BN7tc6K1MndAUnGpQr4=",
-    version = "v1.1.5",
+    sum = "h1:VkoXIwSboBpnk99O/KFauAEILuNHv5DVFKZMBN/gUgw=",
+    version = "v1.1.1",
 )
 
 go_repository(
@@ -287,8 +435,8 @@ go_repository(
 go_repository(
     name = "com_github_stretchr_objx",
     importpath = "github.com/stretchr/objx",
-    sum = "h1:Hbg2NidpLE8veEBkEZTL3CvlkUIVzuU9jDplZO54c48=",
-    version = "v0.2.0",
+    sum = "h1:4G4v2dO3VZwixGIRoQ5Lfboy6nUhCyYzaqnIAPPhYs4=",
+    version = "v0.1.0",
 )
 
 go_repository(
@@ -315,15 +463,15 @@ go_repository(
 go_repository(
     name = "in_gopkg_yaml_v2",
     importpath = "gopkg.in/yaml.v2",
-    sum = "h1:clyUAQHOM3G0M3f5vQj7LuJrETvjVot3Z5el9nffUtU=",
-    version = "v2.3.0",
+    sum = "h1:D8xgwECY7CYvx+Y2n4sBz93Jn9JRvxdiyyo8CTfuKaY=",
+    version = "v2.4.0",
 )
 
 go_repository(
     name = "org_golang_x_crypto",
     importpath = "golang.org/x/crypto",
-    sum = "h1:hb9wdF1z5waM+dSIICn1l0DkLVDT3hqhhQsDNUmHPRE=",
-    version = "v0.0.0-20201002170205-7f63de1d35b0",
+    sum = "h1:kUhD7nTDoI3fVd9G4ORWrbV5NY0liEs/Jg2pv5f+bBA=",
+    version = "v0.0.0-20220411220226-7b82a4e95df4",
 )
 
 go_repository(
@@ -336,15 +484,15 @@ go_repository(
 go_repository(
     name = "org_golang_x_mod",
     importpath = "golang.org/x/mod",
-    sum = "h1:Gz96sIWK3OalVv/I/qNygP42zyoKp3xptRVCWRFEBvo=",
-    version = "v0.4.2",
+    sum = "h1:kQgndtyPBW/JIYERgdxfwMYh3AVStj88WQTlNDi2a+o=",
+    version = "v0.6.0-dev.0.20220106191415-9b9b3d81d5e3",
 )
 
 go_repository(
     name = "org_golang_x_sys",
     importpath = "golang.org/x/sys",
-    sum = "h1:XfKQ4OlFl8okEOr5UvAqFRVj8pY/4yfcXrddB8qAbU0=",
-    version = "v0.0.0-20220114195835-da31bd327af9",
+    sum = "h1:xHms4gcpe1YE7A3yIllJXP16CMAGuqwO2lX1mTyyRRc=",
+    version = "v0.0.0-20220422013727-9388b58f7150",
 )
 
 go_repository(
@@ -357,8 +505,8 @@ go_repository(
 go_repository(
     name = "org_golang_x_tools",
     importpath = "golang.org/x/tools",
-    sum = "h1:ouewzE6p+/VEB31YYnTbEJdi8pFqKp4P4n85vwo3DHA=",
-    version = "v0.1.5",
+    sum = "h1:QjFRCZxdOhBJ/UNgnBZLbNV13DlbnK0quyivTnXJM20=",
+    version = "v0.1.10",
 )
 
 go_repository(
@@ -481,6 +629,20 @@ go_repository(
 )
 
 go_repository(
+    name = "com_github_wings_software_dlite",
+    importpath = "github.com/wings-software/dlite",
+    sum = "h1:143lMB7T+9OqU9VYSpm71B4DzIONQOUvWWGsmreTpHI=",
+    version = "v0.0.0-20220915141325-eb8c295a2189",
+)
+
+go_repository(
+    name = "com_github_patrickmn_go_cache",
+    importpath = "github.com/patrickmn/go-cache",
+    sum = "h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=",
+    version = "v2.1.0+incompatible",
+)
+
+go_repository(
     name = "com_github_chzyer_test",
     importpath = "github.com/chzyer/test",
     sum = "h1:q763qf9huN11kDQavWsoZXJNW3xEE4JJyHa5Q25/sd8=",
@@ -546,8 +708,8 @@ go_repository(
 go_repository(
     name = "com_github_golang_protobuf",
     importpath = "github.com/golang/protobuf",
-    sum = "h1:ROPKBNFfQgOUMifHyP+KYbvpjbdoFNs+aK7DXlji0Tw=",
-    version = "v1.5.2",
+    sum = "h1:+Z5KGCizgyZCbGh1KZqA0fcLLkwbsjIzS4aV2v7wJX0=",
+    version = "v1.4.2",
 )
 
 go_repository(
@@ -560,8 +722,8 @@ go_repository(
 go_repository(
     name = "com_github_google_go_cmp",
     importpath = "github.com/google/go-cmp",
-    sum = "h1:BKbKCqvP6I+rmFHt06ZmyQtvB8xAkWdhFyr0ZUNZcxQ=",
-    version = "v0.5.6",
+    sum = "h1:Khx7svrCpmxxtHBq5j2mp/xVjsi8hQMfNLvJFAlrGgU=",
+    version = "v0.5.5",
 )
 
 go_repository(
@@ -623,8 +785,8 @@ go_repository(
 go_repository(
     name = "com_github_yuin_goldmark",
     importpath = "github.com/yuin/goldmark",
-    sum = "h1:dPmz1Snjq0kmkz159iL7S6WzdahUTHnHB5M56WFVifs=",
-    version = "v1.3.5",
+    sum = "h1:/vn0k+RBvwlxEmP5E7SZMqNxPhfMVFEJiykr15/0XKM=",
+    version = "v1.4.1",
 )
 
 go_repository(
@@ -728,8 +890,8 @@ go_repository(
 go_repository(
     name = "org_golang_google_protobuf",
     importpath = "google.golang.org/protobuf",
-    sum = "h1:SnqbnDw1V7RiZcXPx5MEeqPv2s79L9i7BJUlG/+RurQ=",
-    version = "v1.27.1",
+    sum = "h1:4MY060fB1DLGMB/7MBTLnwQUY6+F09GEiz6SsrNqyzM=",
+    version = "v1.23.0",
 )
 
 go_repository(
@@ -756,8 +918,8 @@ go_repository(
 go_repository(
     name = "org_golang_x_net",
     importpath = "golang.org/x/net",
-    sum = "h1:1n1fc535VhN8SYtD4cDUyNlfpAF2ROMM9+11equK3hs=",
-    version = "v0.0.0-20220114011407-0dd24b26b47d",
+    sum = "h1:HVyaeDAYux4pnY+D/SiwmLOR36ewZ4iGQIIrtnuCjFA=",
+    version = "v0.0.0-20220425223048-2871e0cb64e4",
 )
 
 go_repository(
@@ -777,8 +939,8 @@ go_repository(
 go_repository(
     name = "org_golang_x_time",
     importpath = "golang.org/x/time",
-    sum = "h1:NusfzzA6yGQ+ua51ck7E3omNUX/JuqbFSaRGqU8CcLI=",
-    version = "v0.0.0-20200416051211-89c76fbcd5d1",
+    sum = "h1:Hir2P/De0WpUhtrKGGjvSb2YxUgyZ7EFOSLIcSSpiwE=",
+    version = "v0.0.0-20201208040808-7e3f01d25324",
 )
 
 go_repository(
@@ -1022,8 +1184,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:H2nUtly+xsrVMlbmI2a+C9okAjgEYThL9wb4FgIXglg=",
-    version = "v1.27.1-0.20220914214843-b1a365cc57af",
+    sum = "h1:etbHrY65OMp3/vjs4LHW4zNcb9av8VHJRVA4E7MZxes=",
+    version = "v1.27.1-0.20220927200245-ed290da0ed40",
 )
 
 go_repository(
@@ -1071,8 +1233,8 @@ go_repository(
 go_repository(
     name = "com_github_joho_godotenv",
     importpath = "github.com/joho/godotenv",
-    sum = "h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=",
-    version = "v1.3.0",
+    sum = "h1:3l4+N6zfMWnkbPEXKng2o2/MR5mSwTrBih4ZEkkz1lg=",
+    version = "v1.4.0",
 )
 
 go_repository(
@@ -1463,8 +1625,8 @@ go_repository(
 go_repository(
     name = "com_github_cpuguy83_go_md2man_v2",
     importpath = "github.com/cpuguy83/go-md2man/v2",
-    sum = "h1:EoUDS0afbrsXAZ9YQ9jdu/mZ2sXgT1/2yyNng4PGlyM=",
-    version = "v2.0.0",
+    sum = "h1:p1EgwI/C7NhT0JmVkwCD2ZBK8j4aeHQX2pMHHBfMQ6w=",
+    version = "v2.0.2",
 )
 
 go_repository(
@@ -1639,29 +1801,29 @@ go_repository(
 go_repository(
     name = "com_github_go_openapi_jsonpointer",
     importpath = "github.com/go-openapi/jsonpointer",
-    sum = "h1:gihV7YNZK1iK6Tgwwsxo2rJbD1GTbdm72325Bq8FI3w=",
-    version = "v0.19.3",
+    sum = "h1:gZr+CIYByUqjcgeLXnQu2gHYQC9o73G2XUeOFYEICuY=",
+    version = "v0.19.5",
 )
 
 go_repository(
     name = "com_github_go_openapi_jsonreference",
     importpath = "github.com/go-openapi/jsonreference",
-    sum = "h1:5cxNfTy0UVC3X8JL5ymxzyoUZmo8iZb+jeTWn7tUa8o=",
-    version = "v0.19.3",
+    sum = "h1:UBIxjkht+AWIgYzCDSv2GN+E/togfwXUJFRTWhl2Jjs=",
+    version = "v0.19.6",
 )
 
 go_repository(
     name = "com_github_go_openapi_spec",
     importpath = "github.com/go-openapi/spec",
-    sum = "h1:0XRyw8kguri6Yw4SxhsQA/atC88yqrk0+G4YhI2wabc=",
-    version = "v0.19.3",
+    sum = "h1:O8hJrt0UMnhHcluhIdUgCLRWyM2x7QkBXRvOs7m+O1M=",
+    version = "v0.20.4",
 )
 
 go_repository(
     name = "com_github_go_openapi_swag",
     importpath = "github.com/go-openapi/swag",
-    sum = "h1:lTz6Ys4CmqqCQmZPBlbQENR1/GucA2bzYTE12Pw4tFY=",
-    version = "v0.19.5",
+    sum = "h1:D2NRCBzS9/pEY3gP9Nl8aDqGUcPFrwG2p+CNFrLyrCM=",
+    version = "v0.19.15",
 )
 
 go_repository(
@@ -2241,8 +2403,8 @@ go_repository(
 go_repository(
     name = "com_github_mailru_easyjson",
     importpath = "github.com/mailru/easyjson",
-    sum = "h1:aizVhC/NAAcKWb+5QsU1iNOZb4Yws5UO2I+aIprQITM=",
-    version = "v0.7.0",
+    sum = "h1:UGYAvKxe3sBsEDzO8ZeWOSlIQfWFlxbzLZe7hwFURr0=",
+    version = "v0.7.7",
 )
 
 go_repository(
@@ -2276,8 +2438,8 @@ go_repository(
 go_repository(
     name = "com_github_mattn_go_colorable",
     importpath = "github.com/mattn/go-colorable",
-    sum = "h1:UVL0vNpWh04HeJXV0KLcaT7r06gOH2l4OW6ddYRUIY4=",
-    version = "v0.0.9",
+    sum = "h1:jF+Du6AlPIjs2BiUiQlKOX0rt3SujHxPnksPKZbaA40=",
+    version = "v0.1.12",
 )
 
 go_repository(
@@ -2290,8 +2452,8 @@ go_repository(
 go_repository(
     name = "com_github_mattn_go_isatty",
     importpath = "github.com/mattn/go-isatty",
-    sum = "h1:bnP0vzxcAdeI1zdubAl5PjU6zsERjGZb7raWodagDYs=",
-    version = "v0.0.4",
+    sum = "h1:yVuAays6BHfxijgZPzw+3Zlu5yQgKGP2/hcQbHb7S9Y=",
+    version = "v0.0.14",
 )
 
 go_repository(
@@ -2479,15 +2641,15 @@ go_repository(
 go_repository(
     name = "com_github_onsi_ginkgo",
     importpath = "github.com/onsi/ginkgo",
-    sum = "h1:Iw5WCbBcaAAd0fpRb1c9r5YCylv4XDoCSigm1zLevwU=",
-    version = "v1.12.0",
+    sum = "h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=",
+    version = "v1.16.5",
 )
 
 go_repository(
     name = "com_github_onsi_gomega",
     importpath = "github.com/onsi/gomega",
-    sum = "h1:R1uwffexN6Pr340GtYRIdZmAiN4J+iw6WG4wog1DUXg=",
-    version = "v1.9.0",
+    sum = "h1:M1GfJqGRrBrrGGsbxzV5dqM2U2ApXefZCQpkukxYRLE=",
+    version = "v1.18.1",
 )
 
 go_repository(
@@ -2647,8 +2809,8 @@ go_repository(
 go_repository(
     name = "com_github_russross_blackfriday_v2",
     importpath = "github.com/russross/blackfriday/v2",
-    sum = "h1:lPqVAte+HuHNfhJ/0LC98ESWRz8afy9tM/0RK8m9o+Q=",
-    version = "v2.0.1",
+    sum = "h1:JIOH55/0cWyOuilr9/qlrm0BSXldqnqwMsf35Ld67mk=",
+    version = "v2.1.0",
 )
 
 go_repository(
@@ -2787,8 +2949,8 @@ go_repository(
 go_repository(
     name = "com_github_spf13_cobra",
     importpath = "github.com/spf13/cobra",
-    sum = "h1:xghbfqPkxzxP3C/f3n5DdpAbdKLj4ZE4BWQI362l53M=",
-    version = "v1.1.3",
+    sum = "h1:X+jTBEBqF0bHN+9cSMgmfuvv2VHJ9ezmFNf9Y/XstYU=",
+    version = "v1.5.0",
 )
 
 go_repository(
@@ -3325,8 +3487,8 @@ go_repository(
 go_repository(
     name = "com_github_cespare_xxhash_v2",
     importpath = "github.com/cespare/xxhash/v2",
-    sum = "h1:6MnRN8NT7+YBpUIWxHtefFZOKTAPgGjpQSxqLNn0+qY=",
-    version = "v2.1.1",
+    sum = "h1:YRXhKfTDauu4ajMg1TPgFO5jnlC2HCbmLXMcTG5cbYE=",
+    version = "v2.1.2",
 )
 
 go_repository(
@@ -3346,8 +3508,8 @@ go_repository(
 go_repository(
     name = "com_github_go_redis_redis_v8",
     importpath = "github.com/go-redis/redis/v8",
-    sum = "h1:PC0VsF9sFFd2sko5bu30aEFc8F1TKl6n65o0b8FnCIE=",
-    version = "v8.0.0",
+    sum = "h1:AcZZR7igkdvfVmQTPnu9WE37LRrO/YrBH5zWyjDC0oI=",
+    version = "v8.11.5",
 )
 
 go_repository(
@@ -3360,22 +3522,22 @@ go_repository(
 go_repository(
     name = "com_github_nxadm_tail",
     importpath = "github.com/nxadm/tail",
-    sum = "h1:DQuhQpB1tVlglWS2hLQ5OV6B5r8aGxSrPc5Qo6uTN78=",
-    version = "v1.4.4",
+    sum = "h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=",
+    version = "v1.4.8",
 )
 
 go_repository(
     name = "in_gopkg_yaml_v3",
     importpath = "gopkg.in/yaml.v3",
-    sum = "h1:dUUwHk2QECo/6vqA44rthZ8ie2QXMNeKRTHCNY2nXvo=",
-    version = "v3.0.0-20200313102051-9f266ea9e77c",
+    sum = "h1:h8qDotaEPuJATrMmW04NCwg7v22aHH28wwpauUhK9Oo=",
+    version = "v3.0.0-20210107192922-496545a6307b",
 )
 
 go_repository(
     name = "io_opentelemetry_go_otel",
     importpath = "go.opentelemetry.io/otel",
-    sum = "h1:IN2tzQa9Gc4ZVKnTaMbPVcHjvzOdg5n9QfnmlqiET7E=",
-    version = "v0.11.0",
+    sum = "h1:Lenfy7QHRXPZVsw/12CWpxX6d/JkrX8wrx2vO8G80Ng=",
+    version = "v0.19.0",
 )
 
 go_repository(
@@ -3472,8 +3634,8 @@ go_repository(
 go_repository(
     name = "org_golang_x_term",
     importpath = "golang.org/x/term",
-    sum = "h1:v+OssWQX+hTHEmOBgwxdZxK4zHq3yOs8F9J7mk0PY8E=",
-    version = "v0.0.0-20201126162022-7de9c90e9dd1",
+    sum = "h1:JGgROgKl9N8DuW20oFS5gxc+lE67/N3FcwmBPMe7ArY=",
+    version = "v0.0.0-20210927222741-03fcf44c2211",
 )
 
 go_repository(
@@ -3570,15 +3732,15 @@ go_repository(
 go_repository(
     name = "com_github_rs_xid",
     importpath = "github.com/rs/xid",
-    sum = "h1:mhH9Nq+C1fY2l1XIpgxIiUOfNpRBYH1kKcr+qfKgjRc=",
-    version = "v1.2.1",
+    sum = "h1:qd7wPTDkN6KQx2VmMBLrpHkiyQwgFXRnkOLacUiaSNY=",
+    version = "v1.4.0",
 )
 
 go_repository(
     name = "com_github_rs_zerolog",
     importpath = "github.com/rs/zerolog",
-    sum = "h1:uPRuwkWF4J6fGsJ2R0Gn2jB1EQiav9k3S6CSdygQJXY=",
-    version = "v1.15.0",
+    sum = "h1:MirSo27VyNi7RJYP3078AA1+Cyzd2GB66qy3aUHvsWY=",
+    version = "v1.28.0",
 )
 
 go_repository(
@@ -4358,7 +4520,6 @@ plain_artifacts = [
     "com.azure:azure-security-keyvault-secrets:4.4.1",
     "com.azure:azure-storage-blob:12.16.0",
     "com.azure:azure-storage-common:12.15.1",
-    "com.bertramlabs.plugins:hcl4j:0.1.7",
     "com.bettercloud:vault-java-driver:4.0.0",
     "com.rabbitmq:amqp-client:jar:4.8.0",
     "com.bugsnag:bugsnag:3.6.2",
@@ -4371,26 +4532,26 @@ plain_artifacts = [
     "com.esotericsoftware:kryo:4.0.2",
     "com.esotericsoftware:minlog:1.3.0",
     "com.esotericsoftware:reflectasm:1.11.3",
-    "com.fasterxml.jackson.core:jackson-annotations:2.13.3",
-    "com.fasterxml.jackson.core:jackson-core:2.13.3",
-    "com.fasterxml.jackson.core:jackson-databind:2.13.3",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.13.3",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.13.3",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.3",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3",
-    "com.fasterxml.jackson.datatype:jackson-datatype-guava:2.13.3",
-    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.13.3",
-    "com.fasterxml.jackson.datatype:jackson-datatype-joda:2.13.3",
-    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3",
-    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.13.3",
-    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.13.3",
-    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-yaml-provider:2.13.3",
-    "com.fasterxml.jackson.module:jackson-module-afterburner:2.13.3",
-    "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.13.3",
-    "com.fasterxml.jackson.module:jackson-module-jsonSchema:2.13.3",
-    "com.fasterxml.jackson.module:jackson-module-parameter-names:2.13.3",
+    "com.fasterxml.jackson.core:jackson-annotations:2.13.4",
+    "com.fasterxml.jackson.core:jackson-core:2.13.4",
+    "com.fasterxml.jackson.core:jackson-databind:2.13.4.2",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.13.4",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.13.4",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.4",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.4",
+    "com.fasterxml.jackson.datatype:jackson-datatype-guava:2.13.4",
+    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.13.4",
+    "com.fasterxml.jackson.datatype:jackson-datatype-joda:2.13.4",
+    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.4",
+    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.13.4",
+    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.13.4",
+    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-yaml-provider:2.13.4",
+    "com.fasterxml.jackson.module:jackson-module-afterburner:2.13.4",
+    "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.13.4",
+    "com.fasterxml.jackson.module:jackson-module-jsonSchema:2.13.4",
+    "com.fasterxml.jackson.module:jackson-module-parameter-names:2.13.4",
     "com.fasterxml.uuid:java-uuid-generator:4.0.1",
-    "com.fasterxml.woodstox:woodstox-core:5.3.0",
+    "com.fasterxml.woodstox:woodstox-core:6.4.0",
     "com.fasterxml:classmate:1.4.0",
     "com.github.allbegray:slack-api:v1.3.0.RELEASE",
     "com.github.ben-manes.caffeine:caffeine:2.8.4",
@@ -4420,7 +4581,7 @@ plain_artifacts = [
     "com.google.api.grpc:proto-google-cloud-kms-v1:0.79.0",
     "com.google.api.grpc:proto-google-cloud-logging-v2:0.76.0",
     "com.google.api.grpc:proto-google-cloud-pubsub-v1:1.89.0",
-    "com.google.api.grpc:proto-google-cloud-secretmanager-v1:1.2.8",
+    "com.google.api.grpc:proto-google-cloud-secretmanager-v1:2.5.0",
     "com.google.api.grpc:proto-google-common-protos:1.17.0",
     "com.google.api.grpc:proto-google-iam-v1:0.13.0",
     "com.google.api:api-common:1.8.1",
@@ -4471,8 +4632,8 @@ plain_artifacts = [
     "com.google.inject:guice:4.2.3",
     "com.google.j2objc:j2objc-annotations:1.3",
     "com.google.oauth-client:google-oauth-client:1.34.0",
-    "com.google.protobuf:protobuf-java-util:3.19.2",
-    "com.google.protobuf:protobuf-java:3.19.2",
+    "com.google.protobuf:protobuf-java-util:3.21.7",
+    "com.google.protobuf:protobuf-java:3.21.7",
     "com.googlecode.javaewah:JavaEWAH:1.1.6",
     "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20211018.1",
     "com.graphql-java:graphql-java:12.0",
@@ -4490,7 +4651,7 @@ plain_artifacts = [
     "com.j256.two-factor-auth:two-factor-auth:1.0",
     "com.jakewharton.retrofit:retrofit1-okhttp3-client:1.1.0",
     "com.jayway.jsonpath:json-path:2.2.0",
-    "com.jcraft.harness:jsch-0-1-54-harness-patch:1.1",
+    "com.github.mwiede:jsch:0.1.72",
     "com.jcraft:jzlib:1.1.3",
     "com.lmax:disruptor:jar:3.4.2",
     "com.mashape.unirest:unirest-java:1.4.9",
@@ -4551,6 +4712,8 @@ plain_artifacts = [
     "com.splunk:splunk:1.6.3.0",
     "com.spotify:docker-client:8.16.0",
     "com.spotify:docker-client:8.16.0",
+    "com.squareup.okhttp:okhttp:2.7.5",
+    "com.squareup.okhttp:logging-interceptor:2.7.5",
     "com.squareup.okhttp3:logging-interceptor:3.14.3",
     "com.squareup.okhttp3:okhttp-urlconnection:3.12.2",
     "com.squareup.okhttp3:okhttp:3.12.2",
@@ -4559,7 +4722,7 @@ plain_artifacts = [
     "com.squareup.retrofit2:adapter-rxjava:2.7.2",
     "com.squareup.retrofit2:converter-gson:2.3.0",
     "com.squareup.retrofit2:converter-jackson:2.6.0",
-    "com.squareup.retrofit2:converter-simplexml:2.6.0",
+    "com.squareup.retrofit2:converter-jaxb:jar:2.9.0",
     "com.squareup.retrofit2:retrofit:2.6.0",
     "com.squareup.wire:wire-runtime:2.2.0",
     "com.squareup.wire:wire-schema:3.2.2",
@@ -4676,15 +4839,19 @@ plain_artifacts = [
     "io.grpc:grpc-grpclb:1.48.0",
     "io.grpc:grpc-netty-shaded:1.48.0",
     "io.grpc:grpc-netty:1.48.0",
-    "io.grpc:grpc-protobuf-lite:1.48.0",
-    "io.grpc:grpc-protobuf:1.48.0",
-    "io.grpc:grpc-services:1.48.0",
-    "io.grpc:grpc-stub:1.48.0",
+    "io.grpc:grpc-protobuf-lite:1.50.1",
+    "io.grpc:grpc-protobuf:1.50.1",
+    "io.grpc:grpc-services:1.50.1",
+    "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.41-RELEASE",
-    "io.harness:ff-java-server-sdk:1.0.5.1",
-    "io.harness:access-control-server-spec:1.0.7",
-    "io.harness:ng-manager-server-spec:1.0.16",
+    "io.harness.cv:data-collection-dsl:0.42-RELEASE",
+    "io.harness:ff-java-server-sdk:1.0.5.3",
+    "io.harness:access-control-server-spec:1.0.9",
+    "io.harness:common-models:1.0.4",
+    "io.harness:ng-manager-server-spec:1.0.25",
+    "io.harness:platform-server-spec:1.0.10",
+    "io.harness:pipeline-server-spec:1.0.202",
+    "io.harness:template-server-spec:1.0.9",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
     "io.kubernetes:client-java-extended:16.0.0",
@@ -4709,9 +4876,9 @@ plain_artifacts = [
     "io.opencensus:opencensus-exporter-stats-prometheus:0.28.0",
     "io.opencensus:opencensus-impl:0.28.0",
     "io.perfmark:perfmark-api:0.19.0",
-    "io.projectreactor.netty:reactor-netty:1.0.19",
-    "io.projectreactor.netty:reactor-netty-core:1.0.19",
-    "io.projectreactor.netty:reactor-netty-http:1.0.19",
+    "io.projectreactor.netty:reactor-netty:1.0.24",
+    "io.projectreactor.netty:reactor-netty-core:1.0.24",
+    "io.projectreactor.netty:reactor-netty-http:1.0.24",
     "io.projectreactor:reactor-core:3.4.18",
     "io.prometheus:simpleclient:0.5.0",
     "io.prometheus:simpleclient_common:0.5.0",
@@ -4787,7 +4954,7 @@ plain_artifacts = [
     "org.apache.commons:commons-jexl3:3.0",
     "org.apache.commons:commons-lang3:3.10",
     "org.apache.commons:commons-math3:3.6.1",
-    "org.apache.commons:commons-text:1.8",
+    "org.apache.commons:commons-text:1.10.0",
     "org.apache.cxf:cxf-core:3.4.7",
     "org.apache.cxf:cxf-rt-bindings-soap:3.3.10",
     "org.apache.cxf:cxf-rt-bindings-xml:3.3.10",
@@ -4810,8 +4977,8 @@ plain_artifacts = [
     "org.mybatis:mybatis:jar:3.5.7",
     "org.apache.kafka:connect-api:2.8.1",
     "org.apache.kafka:kafka-clients:2.8.1",
-    "org.apache.logging.log4j:log4j-api:2.16.0",
-    "org.apache.logging.log4j:log4j-to-slf4j:2.16.0",
+    "org.apache.logging.log4j:log4j-api:2.17.1",
+    "org.apache.logging.log4j:log4j-to-slf4j:2.17.1",
     "org.apache.lucene:lucene-analyzers-common:8.5.1",
     "org.apache.lucene:lucene-backward-codecs:8.5.1",
     "org.apache.lucene:lucene-core:8.5.1",
@@ -4863,7 +5030,7 @@ plain_artifacts = [
     "org.coursera:metrics-datadog:1.1.13",
     "org.cryptacular:cryptacular:1.1.4",
     "org.javassist:javassist:3.27.0-GA",
-    "org.glassfish:jakarta.el:3.0.3",
+    "org.glassfish:jakarta.el:3.0.4",
     "org.eclipse.jetty.http2:http2-common:9.4.48.v20220622",
     "org.eclipse.jetty.http2:http2-hpack:9.4.48.v20220622",
     "org.eclipse.jetty.http2:http2-server:9.4.48.v20220622",
@@ -4993,7 +5160,6 @@ plain_artifacts = [
     "org.reactivestreams:reactive-streams:1.0.2",
     "org.redisson:redisson:3.13.3",
     "org.reflections:reflections:0.9.12-SNAPSHOT",
-    "org.simpleframework:simple-xml:2.7.1",
     "org.slf4j:jcl-over-slf4j:1.7.30",
     "org.slf4j:jul-to-slf4j:1.7.30",
     "org.slf4j:log4j-over-slf4j:1.7.30",
@@ -5010,23 +5176,23 @@ plain_artifacts = [
     "org.springframework.kafka:spring-kafka:2.3.7.RELEASE",
     "org.springframework.retry:spring-retry:1.2.5.RELEASE",
     "org.springframework.security:spring-security-crypto:5.3.5.RELEASE",
-    "org.springframework:spring-aop:5.3.18",
-    "org.springframework:spring-beans:5.3.18",
-    "org.springframework:spring-context:5.3.18",
-    "org.springframework:spring-core:5.3.18",
-    "org.springframework:spring-expression:5.3.18",
-    "org.springframework:spring-jcl:5.3.18",
-    "org.springframework:spring-messaging:5.3.18",
-    "org.springframework:spring-test:5.3.18",
-    "org.springframework:spring-tx:5.3.18",
-    "org.springframework:spring-web:5.3.18",
+    "org.springframework:spring-aop:5.3.23",
+    "org.springframework:spring-beans:5.3.23",
+    "org.springframework:spring-context:5.3.23",
+    "org.springframework:spring-core:5.3.23",
+    "org.springframework:spring-expression:5.3.23",
+    "org.springframework:spring-jcl:5.3.23",
+    "org.springframework:spring-messaging:5.3.23",
+    "org.springframework:spring-test:5.3.23",
+    "org.springframework:spring-tx:5.3.23",
+    "org.springframework:spring-web:5.3.23",
     "org.threeten:threetenbp:1.4.1",
     "org.webjars.npm:viz.js-for-graphviz-java:2.1.3",
     "org.xerial.snappy:snappy-java:1.1.7.3",
     "org.xerial.snappy:snappy-java:1.1.7.3",
     "org.xmlunit:xmlunit-core:2.3.0",
     "org.xmlunit:xmlunit-matchers:2.3.0",
-    "org.yaml:snakeyaml:1.28",
+    "org.yaml:snakeyaml:1.33",
     "org.zeroturnaround:zt-exec:1.9",
     "ru.vyarus:guice-validator:1.2.0",
     "com.amazonaws:aws-encryption-sdk-java:2.3.3",
@@ -5034,7 +5200,7 @@ plain_artifacts = [
     "stax:stax-api:1.0.1",
     "stax:stax:1.2.0",
     "wsdl4j:wsdl4j:1.6.3",
-    "xerces:xercesImpl:2.12.0",
+    "xerces:xercesImpl:2.12.2",
     "xml-apis:xml-apis:1.4.01",
     "xml-resolver:xml-resolver:1.2",
     "xpp3:xpp3:1.1.3.3",
@@ -5044,6 +5210,8 @@ plain_artifacts = [
     "io.swagger.core.v3:swagger-annotations:2.2.0",
     "io.swagger.core.v3:swagger-models:2.2.0",
     "io.swagger.core.v3:swagger-integration:2.2.0",
+    "io.opentelemetry:opentelemetry-api:1.18.0",
+    "io.harness:smp-license:1.0.7",
 ]
 
 amazon_artifacts = [
@@ -5064,6 +5232,7 @@ amazon_artifacts = [
         "aws-java-sdk-codedeploy",
         "aws-java-sdk-core",
         "aws-java-sdk-costandusagereport",
+        "aws-java-sdk-costexplorer",
         "aws-java-sdk-ec2",
         "aws-java-sdk-ecr",
         "aws-java-sdk-ecs",
@@ -5104,6 +5273,7 @@ amazon_v2_artifacts = [
         "sts",
         "sdk-core",
         "health",
+        "elasticloadbalancingv2",
     ]
 ]
 
@@ -5245,7 +5415,7 @@ maven_install(
     maven_install_json = "//project:main_maven_install.json",
     override_targets = {
         "org.apache.commons:commons-io": "@maven//:commons_io_commons_io",
-        "com.jcraft:jsch": "@maven//:com_jcraft_harness_jsch_0_1_54_harness_patch",
+        "com.jcraft:jsch": "@maven//:com_github_mwiede_jsch",
         "org.mongodb:mongodb-driver": "@maven//:org_mongodb_mongo_java_driver",
     },
     repositories = [
@@ -5276,7 +5446,7 @@ maven_install(
 maven_install(
     name = "batch",
     artifacts = [
-        "com.fasterxml.jackson.core:jackson-databind:2.13.3",
+        "com.fasterxml.jackson.core:jackson-databind:2.13.4.2",
         "com.azure:azure-core:1.29.1",
         "com.azure:azure-identity:1.5.0",
         "com.azure:azure-storage-blob:12.16.0",

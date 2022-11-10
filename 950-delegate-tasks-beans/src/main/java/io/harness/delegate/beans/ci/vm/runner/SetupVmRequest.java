@@ -25,6 +25,7 @@ public class SetupVmRequest {
   @JsonProperty("log_key") String logKey;
   @JsonProperty("tags") Map<String, String> tags;
   @JsonProperty("setup_request") Config config;
+  @JsonProperty("infra_type") String infraType;
 
   @Data
   @Builder

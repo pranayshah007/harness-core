@@ -9,4 +9,5 @@ ${basicSnippet
 ?replace("<+extend_artifact_script_powershell>", extendArtifactScriptPS)
 ?replace("<+create_apppool_script_powershell>", createAppPoolScriptPS)
 ?replace("<+create_website_script_powershell>", createWebsiteScriptPS)
-?replace("<+create_virtual_directory_script_powershell>", createVirtualDirectoryScriptPS)}
+?replace("<+create_virtual_directory_script_powershell>", createVirtualDirectoryScriptPS)
+?replace("<+setup_runtime_paths_script_powershell>", setupRuntimePathsScriptPS)}

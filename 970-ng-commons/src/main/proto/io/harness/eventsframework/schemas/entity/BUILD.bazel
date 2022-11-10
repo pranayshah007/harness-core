@@ -9,6 +9,7 @@ proto_library(
         "entity_scope_info.proto",
         "entity_type.proto",
         "identifier_ref.proto",
+        "infra_definition_ref.proto",
         "input_set_ref.proto",
         "scope.proto",
         "template_reference.proto",

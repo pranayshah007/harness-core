@@ -39,6 +39,7 @@ import io.harness.accesscontrol.commons.iterators.AccessControlIteratorsConfig;
 import io.harness.accesscontrol.commons.notifications.NotificationConfig;
 import io.harness.accesscontrol.commons.outbox.AccessControlOutboxEventHandler;
 import io.harness.accesscontrol.commons.validation.HarnessActionValidator;
+import io.harness.accesscontrol.commons.version.MockQueueController;
 import io.harness.accesscontrol.health.HealthResource;
 import io.harness.accesscontrol.health.HealthResourceImpl;
 import io.harness.accesscontrol.permissions.api.PermissionResource;
@@ -64,6 +65,9 @@ import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupSer
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupServiceImpl;
 import io.harness.accesscontrol.resources.resourcegroups.events.ResourceGroupEventConsumer;
 import io.harness.accesscontrol.roleassignments.RoleAssignment;
+import io.harness.accesscontrol.roleassignments.api.AccountRoleAssignmentsApiImpl;
+import io.harness.accesscontrol.roleassignments.api.OrgRoleAssignmentsApiImpl;
+import io.harness.accesscontrol.roleassignments.api.ProjectRoleAssignmentsApiImpl;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResource;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResourceImpl;
@@ -92,7 +96,6 @@ import io.harness.aggregator.consumers.ChangeEventFailureHandler;
 import io.harness.aggregator.consumers.RoleAssignmentCRUDEventHandler;
 import io.harness.aggregator.consumers.UserGroupCRUDEventHandler;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -101,7 +104,6 @@ import io.harness.environment.EnvironmentResourceClientModule;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
-import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
 import io.harness.ff.FeatureFlagClientModule;
 import io.harness.lock.DistributedLockImplementation;
@@ -112,13 +114,18 @@ import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.project.ProjectClientModule;
+import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.serviceaccount.ServiceAccountClientModule;
-import io.harness.spec.server.accesscontrol.AccountRolesApi;
-import io.harness.spec.server.accesscontrol.OrganizationRolesApi;
-import io.harness.spec.server.accesscontrol.ProjectRolesApi;
+import io.harness.spec.server.accesscontrol.v1.AccountRoleAssignmentsApi;
+import io.harness.spec.server.accesscontrol.v1.AccountRolesApi;
+import io.harness.spec.server.accesscontrol.v1.OrgRoleAssignmentsApi;
+import io.harness.spec.server.accesscontrol.v1.OrganizationRolesApi;
+import io.harness.spec.server.accesscontrol.v1.ProjectRoleAssignmentsApi;
+import io.harness.spec.server.accesscontrol.v1.ProjectRolesApi;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
@@ -194,7 +201,7 @@ public class AccessControlModule extends AbstractModule {
   public RedissonClient getRedissonClient() {
     RedisConfig redisConfig = config.getEventsConfig().getRedisConfig();
     if (config.getEventsConfig().isEnabled()) {
-      return RedisUtils.getClient(redisConfig);
+      return RedissonClientFactory.getClient(redisConfig);
     }
     return null;
   }
@@ -235,7 +242,6 @@ public class AccessControlModule extends AbstractModule {
   @Override
   protected void configure() {
     install(VersionModule.getInstance());
-    install(PrimaryVersionManagerModule.getInstance());
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(
         5, 100, 500L, TimeUnit.MILLISECONDS, new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
     install(ExecutorModule.getInstance());
@@ -380,6 +386,8 @@ public class AccessControlModule extends AbstractModule {
     bind(PrivilegedRoleAssignmentService.class).to(PrivilegedRoleAssignmentServiceImpl.class);
     bind(ResourceAttributeProvider.class).to(ResourceAttributeProviderImpl.class);
 
+    bind(QueueController.class).to(MockQueueController.class);
+
     bind(ACLResource.class).to(ACLResourceImpl.class);
     bind(AggregatorResource.class).to(AggregatorResourceImpl.class);
     bind(HealthResource.class).to(HealthResourceImpl.class);
@@ -390,5 +398,8 @@ public class AccessControlModule extends AbstractModule {
     bind(AccountRolesApi.class).to(AccountRolesApiImpl.class);
     bind(OrganizationRolesApi.class).to(OrgRolesApiImpl.class);
     bind(ProjectRolesApi.class).to(ProjectRolesApiImpl.class);
+    bind(AccountRoleAssignmentsApi.class).to(AccountRoleAssignmentsApiImpl.class);
+    bind(OrgRoleAssignmentsApi.class).to(OrgRoleAssignmentsApiImpl.class);
+    bind(ProjectRoleAssignmentsApi.class).to(ProjectRoleAssignmentsApiImpl.class);
   }
 }

@@ -179,6 +179,9 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     ObjectNode pipelineDefinitions = (ObjectNode) pipelineSchema.get(DEFINITIONS_NODE);
     ObjectNode pipelineStepsDefinitions = (ObjectNode) pipelineSteps.get(DEFINITIONS_NODE);
 
+    JsonNodeUtils.deletePropertiesInJsonNode(
+        (ObjectNode) pipelineSchema.get(DEFINITIONS_NODE).get("PipelineInfoConfig"), "required");
+
     ObjectNode mergedDefinitions = (ObjectNode) JsonNodeUtils.merge(pipelineDefinitions, pipelineStepsDefinitions);
 
     // Merging the schema for all steps that are moved to new schema.

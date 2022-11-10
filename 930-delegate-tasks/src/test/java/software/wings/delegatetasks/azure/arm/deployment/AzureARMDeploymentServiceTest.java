@@ -33,7 +33,10 @@ import io.harness.delegate.task.azure.arm.deployment.context.DeploymentResourceG
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentSubscriptionContext;
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentTenantContext;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.runtime.azure.AzureARMManagementScopeException;
+import io.harness.exception.runtime.azure.AzureARMSubscriptionScopeException;
+import io.harness.exception.runtime.azure.AzureARMTenantScopeException;
+import io.harness.exception.runtime.azure.AzureARMValidationException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -95,7 +98,7 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
         .validateDeploymentAtResourceGroupScope(any(AzureClientContext.class), any(AzureARMTemplate.class));
 
     assertThatThrownBy(() -> azureARMDeploymentService.validateTemplate(context))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(AzureARMValidationException.class)
         .hasMessage(
             "Unable to deploy at resource group scope, deployment validation failed: Code: InvalidTemplate, Message: "
             + "Deployment template validation failed, Target:  /providers/Microsoft.Management/resource_id\n");
@@ -161,7 +164,7 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
         .validateDeploymentAtSubscriptionScope(any(AzureConfig.class), eq(subscriptionId), any(AzureARMTemplate.class));
 
     assertThatThrownBy(() -> azureARMDeploymentService.deployAtSubscriptionScope(context))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(AzureARMSubscriptionScopeException.class)
         .hasMessage(
             "Unable to deploy at subscription scope, deployment validation failed: Code: InvalidTemplate, Message: "
             + "Deployment template validation failed, Target:  /providers/Microsoft.Management/resource_id\n");
@@ -231,7 +234,7 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
         .validateDeploymentAtManagementGroupScope(any(AzureConfig.class), eq(groupId), any(AzureARMTemplate.class));
 
     assertThatThrownBy(() -> azureARMDeploymentService.deployAtManagementGroupScope(context))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(AzureARMManagementScopeException.class)
         .hasMessage(
             "Unable to deploy at management group scope, deployment validation failed: Code: InvalidTemplate, Message: "
             + "Deployment template validation failed, Target:  /providers/Microsoft.Management/resource_id\n");
@@ -299,7 +302,7 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
         .validateDeploymentAtTenantScope(any(AzureConfig.class), any(AzureARMTemplate.class));
 
     assertThatThrownBy(() -> azureARMDeploymentService.deployAtTenantScope(context))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(AzureARMTenantScopeException.class)
         .hasMessage("Unable to deploy at tenant scope, deployment validation failed: Code: InvalidTemplate, Message: "
             + "Deployment template validation failed, Target:  /providers/Microsoft.Management/resource_id\n");
   }

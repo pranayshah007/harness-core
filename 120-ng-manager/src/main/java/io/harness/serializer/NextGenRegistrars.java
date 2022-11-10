@@ -76,10 +76,8 @@ public class NextGenRegistrars {
           .add(FeedbackMorphiaRegistrars.class)
           .addAll(InstanceRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
-          .addAll(SubscriptionRegistrars.morphiaRegistrars)
           .addAll(NGVariableRegistrars.morphiaRegistrars)
           .addAll(NGSettingRegistrar.morphiaRegistrars)
-          .addAll(FreezeRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
@@ -87,6 +85,7 @@ public class NextGenRegistrars {
           .addAll(ConnectorNextGenRegistrars.yamlSchemaRegistrars)
           .addAll(GitOpsRegistrars.yamlSchemaRegistrars)
           .addAll(CDNGRegistrars.yamlSchemaRegistrars)
+          .addAll(FreezeRegistrars.yamlSchemaRegistrars)
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.SECRETS)
                    .availableAtProjectLevel(true)

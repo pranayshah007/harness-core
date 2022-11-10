@@ -9,6 +9,7 @@ package io.harness.delegate.task.azure;
 
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,16 +28,20 @@ import io.harness.connector.task.azure.AzureValidationHandler;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.azure.ManagementGroupData;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
 import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
+import io.harness.delegate.beans.azure.response.AzureLocationsResponse;
+import io.harness.delegate.beans.azure.response.AzureMngGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
+import io.harness.delegate.beans.azure.response.AzureTagsResponse;
 import io.harness.delegate.beans.azure.response.AzureValidateTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
@@ -491,6 +496,70 @@ public class AzureTaskTest {
     AzureHostsResponse response = (AzureHostsResponse) delegateResponseData;
     assertThat(response).isNotNull();
     assertThat(response.getHosts().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testListMngGroup() {
+    TaskParameters taskParameters = getAzureTaskParams(AzureTaskType.LIST_MNG_GROUP, null);
+
+    AzureMngGroupsResponse result =
+        AzureMngGroupsResponse.builder()
+            .managementGroups(Arrays.asList(ManagementGroupData.builder().name("group").build()))
+            .build();
+
+    doReturn(result).when(azureAsyncTaskHelper).listMngGroup(any(), any());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    assertThat(delegateResponseData).isInstanceOf(AzureMngGroupsResponse.class);
+
+    AzureMngGroupsResponse response = (AzureMngGroupsResponse) delegateResponseData;
+    assertThat(response).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testListSubscriptionLocations() {
+    Map<AzureAdditionalParams, String> additionalParamsStringMap = new HashMap<>();
+    additionalParamsStringMap.put(AzureAdditionalParams.SUBSCRIPTION_ID, subscriptionId);
+
+    TaskParameters taskParameters =
+        getAzureTaskParams(AzureTaskType.LIST_SUBSCRIPTION_LOCATIONS, additionalParamsStringMap);
+
+    AzureLocationsResponse result = AzureLocationsResponse.builder().locations(Arrays.asList("location")).build();
+
+    doReturn(result).when(azureAsyncTaskHelper).listSubscriptionLocations(any(), any(), anyString());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    assertThat(delegateResponseData).isInstanceOf(AzureLocationsResponse.class);
+
+    AzureLocationsResponse response = (AzureLocationsResponse) delegateResponseData;
+    assertThat(response).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testListTags() {
+    Map<AzureAdditionalParams, String> additionalParamsStringMap = new HashMap<>();
+    additionalParamsStringMap.put(AzureAdditionalParams.SUBSCRIPTION_ID, subscriptionId);
+
+    TaskParameters taskParameters = getAzureTaskParams(AzureTaskType.LIST_TAGS, additionalParamsStringMap);
+
+    AzureTagsResponse result = AzureTagsResponse.builder().tags(Arrays.asList("location")).build();
+
+    doReturn(result).when(azureAsyncTaskHelper).listTags(any(), any(), anyString());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    assertThat(delegateResponseData).isInstanceOf(AzureTagsResponse.class);
+
+    AzureTagsResponse response = (AzureTagsResponse) delegateResponseData;
+    assertThat(response).isNotNull();
   }
 
   private TaskParameters getAzureTaskParams(

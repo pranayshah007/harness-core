@@ -58,6 +58,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -67,6 +68,7 @@ public class StripeHelperImpl implements StripeHelper {
   private static final String ACCOUNT_IDENTIFIER_KEY = "accountIdentifier";
   private static final String MODULE_TYPE_KEY = "moduleType";
   private static final String CUSTOMER_EMAIL_KEY = "customer_email";
+  private static final String PRICE_NOT_FOUND = "Price could not be found in Stripe.";
   private static final String SEARCH_MODULE_TYPE_EDITION_BILLED_MAX =
       "metadata['module']:'%s' AND metadata['type']:'%s' AND metadata['edition']:'%s' AND metadata['billed']:'%s' AND metadata['max']:'%s'";
   private static final String SEARCH_MODULE_TYPE_EDITION_BILLED =
@@ -115,6 +117,17 @@ public class StripeHelperImpl implements StripeHelper {
     }
     if (!Strings.isNullOrEmpty(customerParams.getAccountIdentifier())) {
       paramsBuilder.setMetadata(ImmutableMap.of("accountId", customerParams.getAccountIdentifier()));
+    }
+    if (customerParams.getAddress() != null) {
+      AddressDto addressDto = customerParams.getAddress();
+      paramsBuilder.setAddress(CustomerUpdateParams.Address.builder()
+                                   .setLine1(addressDto.getLine1())
+                                   .setLine2(addressDto.getLine2())
+                                   .setCity(addressDto.getCity())
+                                   .setState(addressDto.getState())
+                                   .setPostalCode(addressDto.getPostalCode())
+                                   .setCountry(addressDto.getCountry())
+                                   .build());
     }
 
     Customer customer = stripeHandler.updateCustomer(customerParams.getCustomerId(), paramsBuilder.build());
@@ -187,9 +200,13 @@ public class StripeHelperImpl implements StripeHelper {
     PriceSearchParams params =
         PriceSearchParams.builder().setQuery(searchString).addAllExpand(Lists.newArrayList("data.tiers")).build();
 
-    List<Price> priceResults = stripeHandler.searchPrices(params).getData();
+    Optional<Price> priceResult = stripeHandler.searchPrices(params).getData().stream().findFirst();
 
-    return priceResults.stream().findFirst().get();
+    if (priceResult.isPresent()) {
+      return priceResult.get();
+    } else {
+      throw new InvalidArgumentsException(PRICE_NOT_FOUND);
+    }
   }
 
   @Override
@@ -200,9 +217,13 @@ public class StripeHelperImpl implements StripeHelper {
     PriceSearchParams params =
         PriceSearchParams.builder().setQuery(searchString).addAllExpand(Lists.newArrayList("data.tiers")).build();
 
-    List<Price> priceResults = stripeHandler.searchPrices(params).getData();
+    Optional<Price> priceResult = stripeHandler.searchPrices(params).getData().stream().findFirst();
 
-    return priceResults.stream().findFirst().get();
+    if (priceResult.isPresent()) {
+      return priceResult.get();
+    } else {
+      throw new InvalidArgumentsException(PRICE_NOT_FOUND);
+    }
   }
 
   @Override

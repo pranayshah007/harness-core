@@ -78,8 +78,8 @@ public interface PipelineDashboardOverviewResourceV2 {
           NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE,
           required = true) @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @Parameter(description = PipelineResourceConstants.MODULE_TYPE_PARAM_MESSAGE,
-          required = true) @NotNull @QueryParam("moduleInfo") String moduleInfo,
+      @Parameter(description = PipelineResourceConstants.MODULE_TYPE_PARAM_MESSAGE) @QueryParam(
+          "moduleInfo") String moduleInfo,
       @Parameter(description = PipelineResourceConstants.START_TIME_EPOCH_PARAM_MESSAGE,
           required = true) @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @Parameter(description = PipelineResourceConstants.END_TIME_EPOCH_PARAM_MESSAGE,
@@ -108,8 +108,8 @@ public interface PipelineDashboardOverviewResourceV2 {
           NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE,
           required = true) @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @Parameter(description = PipelineResourceConstants.MODULE_TYPE_PARAM_MESSAGE,
-          required = true) @NotNull @QueryParam("moduleInfo") String moduleInfo,
+      @Parameter(description = PipelineResourceConstants.MODULE_TYPE_PARAM_MESSAGE) @QueryParam(
+          "moduleInfo") String moduleInfo,
       @Parameter(description = PipelineResourceConstants.START_TIME_EPOCH_PARAM_MESSAGE,
           required = true) @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @Parameter(description = PipelineResourceConstants.END_TIME_EPOCH_PARAM_MESSAGE,

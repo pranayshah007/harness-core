@@ -8,6 +8,8 @@
 package io.harness.delegate.beans.connector.scm.github;
 
 import io.harness.beans.DecryptableEntity;
+import io.harness.delegate.beans.connector.scm.github.outcome.GithubCredentialsOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.github.outcome.GithubSshCredentialsOutcomeDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretReference;
 
@@ -30,4 +32,8 @@ import lombok.experimental.FieldDefaults;
     description = "This contains details of the Github credentials used via SSH connections")
 public class GithubSshCredentialsDTO implements GithubCredentialsDTO, DecryptableEntity {
   @NotNull @SecretReference @ApiModelProperty(dataType = "string") SecretRefData sshKeyRef;
+  @Override
+  public GithubCredentialsOutcomeDTO toOutcome() {
+    return GithubSshCredentialsOutcomeDTO.builder().sshKeyRef(this.sshKeyRef).build();
+  }
 }

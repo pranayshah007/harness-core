@@ -42,6 +42,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Clock;
@@ -147,8 +148,8 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
       log.error("Failed to persist monitored service: " + monitoredServiceDTO.getIdentifier(), e);
     }
   }
-
-  private String getTemplateYaml(TemplateMonitoredServiceSpec templateMonitoredServiceSpec) {
+  @VisibleForTesting
+  protected String getTemplateYaml(TemplateMonitoredServiceSpec templateMonitoredServiceSpec) {
     String monitoredServiceTemplateRef = templateMonitoredServiceSpec.getMonitoredServiceTemplateRef().getValue();
     String versionLabel = templateMonitoredServiceSpec.getVersionLabel();
     JsonNode templateInputsNode = templateMonitoredServiceSpec.getTemplateInputs();
@@ -226,7 +227,13 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
           case ARRAY:
             List<JsonNode> cleanedChildren = new ArrayList<>();
             ArrayNode arr = (ArrayNode) rootNode.get(i);
-            arr.forEach(c -> cleanedChildren.add(cleanRootNode(c, key)));
+            arr.forEach(c -> {
+              if (c.isTextual()) {
+                cleanedChildren.add(c);
+              } else {
+                cleanedChildren.add(cleanRootNode(c, key));
+              }
+            });
             map.put(i, new ArrayNode(JsonNodeFactory.instance, cleanedChildren));
             break;
           default:

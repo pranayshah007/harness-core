@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.cdng.chaos.ChaosStepNotifyData;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.connector.ConnectorInfoDTO;
@@ -45,6 +46,11 @@ public class ChaosServiceImpl implements ChaosService {
   @Inject private WaitNotifyEngine waitNotifyEngine;
 
   private final String K8S_APPLY_COMMAND_NAME = "K8s Apply";
+
+  @Override
+  public void notifyStep(String notifyId, ChaosStepNotifyData data) {
+    waitNotifyEngine.doneWith(notifyId, data);
+  }
 
   @Override
   public String applyK8sManifest(ChaosK8sRequest chaosK8sRequest) {

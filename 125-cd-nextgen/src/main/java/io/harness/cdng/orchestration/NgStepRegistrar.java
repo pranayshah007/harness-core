@@ -23,16 +23,24 @@ import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStep;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStep;
 import io.harness.cdng.azure.webapp.ConnectionStringsStep;
 import io.harness.cdng.azure.webapp.StartupCommandStep;
+import io.harness.cdng.chaos.ChaosStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
 import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
+import io.harness.cdng.customDeployment.FetchInstanceScriptStep;
+import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStep;
+import io.harness.cdng.ecs.EcsBlueGreenRollbackStep;
+import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStep;
 import io.harness.cdng.ecs.EcsCanaryDeleteStep;
 import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
+import io.harness.cdng.ecs.EcsRunTaskStep;
+import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
 import io.harness.cdng.gitops.CreatePRStep;
 import io.harness.cdng.gitops.MergePRStep;
+import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
@@ -65,6 +73,7 @@ import io.harness.cdng.provision.azure.AzureCreateBPStep;
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStep;
 import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStep;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStep;
+import io.harness.cdng.provision.shellscript.ShellScriptProvisionStep;
 import io.harness.cdng.provision.terraform.TerraformApplyStep;
 import io.harness.cdng.provision.terraform.TerraformDestroyStep;
 import io.harness.cdng.provision.terraform.TerraformPlanStep;
@@ -81,6 +90,8 @@ import io.harness.cdng.service.steps.ServiceSpecStep;
 import io.harness.cdng.service.steps.ServiceStep;
 import io.harness.cdng.service.steps.ServiceStepV2;
 import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStep;
+import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStep;
 import io.harness.cdng.ssh.CommandStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
@@ -99,6 +110,7 @@ public class NgStepRegistrar {
     // Add CDNG steps here
     engineSteps.put(CreatePRStep.STEP_TYPE, CreatePRStep.class);
     engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
+    engineSteps.put(UpdateReleaseRepoStep.STEP_TYPE, UpdateReleaseRepoStep.class);
     engineSteps.put(RollbackOptionalChildChainStep.STEP_TYPE, RollbackOptionalChildChainStep.class);
     engineSteps.put(RollbackOptionalChildrenStep.STEP_TYPE, RollbackOptionalChildrenStep.class);
     engineSteps.put(NGSectionStep.STEP_TYPE, NGSectionStep.class);
@@ -157,6 +169,7 @@ public class NgStepRegistrar {
     engineSteps.put(AzureWebAppRollbackStep.STEP_TYPE, AzureWebAppRollbackStep.class);
     engineSteps.put(StartupCommandStep.STEP_TYPE, StartupCommandStep.class);
     engineSteps.put(AzureServiceSettingsStep.STEP_TYPE, AzureServiceSettingsStep.class);
+    engineSteps.put(ElastigroupServiceSettingsStep.STEP_TYPE, ElastigroupServiceSettingsStep.class);
     engineSteps.put(ApplicationSettingsStep.STEP_TYPE, ApplicationSettingsStep.class);
     engineSteps.put(ConnectionStringsStep.STEP_TYPE, ConnectionStringsStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
@@ -167,11 +180,25 @@ public class NgStepRegistrar {
     engineSteps.put(EcsRollingRollbackStep.STEP_TYPE, EcsRollingRollbackStep.class);
     engineSteps.put(EcsCanaryDeployStep.STEP_TYPE, EcsCanaryDeployStep.class);
     engineSteps.put(EcsCanaryDeleteStep.STEP_TYPE, EcsCanaryDeleteStep.class);
+    engineSteps.put(EcsBlueGreenCreateServiceStep.STEP_TYPE, EcsBlueGreenCreateServiceStep.class);
+    engineSteps.put(EcsBlueGreenSwapTargetGroupsStep.STEP_TYPE, EcsBlueGreenSwapTargetGroupsStep.class);
+    engineSteps.put(EcsBlueGreenRollbackStep.STEP_TYPE, EcsBlueGreenRollbackStep.class);
+    engineSteps.put(EcsRunTaskStep.STEP_TYPE, EcsRunTaskStep.class);
 
     engineSteps.put(AzureCreateARMResourceStep.STEP_TYPE, AzureCreateARMResourceStep.class);
     engineSteps.put(MultiDeploymentSpawnerStep.STEP_TYPE, MultiDeploymentSpawnerStep.class);
     engineSteps.put(AzureCreateBPStep.STEP_TYPE, AzureCreateBPStep.class);
     engineSteps.put(AzureARMRollbackStep.STEP_TYPE, AzureARMRollbackStep.class);
+    engineSteps.put(FetchInstanceScriptStep.STEP_TYPE, FetchInstanceScriptStep.class);
+    engineSteps.put(ShellScriptProvisionStep.STEP_TYPE, ShellScriptProvisionStep.class);
+
+    // Chaos
+    // TODO : Enable this for UI
+    engineSteps.put(ChaosStep.STEP_TYPE, ChaosStep.class);
+
+    engineSteps.put(ElastigroupDeployStep.STEP_TYPE, ElastigroupDeployStep.class);
+    engineSteps.put(ElastigroupRollbackStep.STEP_TYPE, ElastigroupRollbackStep.class);
+
     return engineSteps;
   }
 }
