@@ -8,6 +8,7 @@
 package io.harness.cdng.spot.elastigroup.deploy;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 
@@ -263,7 +264,7 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
 
     stepResponseBuilder.status(StepUtils.getStepStatus(taskResponse.getStatus()));
 
-    if (taskResponse.getErrorMessage() != null) {
+    if (isNotEmpty(taskResponse.getErrorMessage())) {
       FailureInfo.Builder failureInfoBuilder = FailureInfo.newBuilder();
       failureInfoBuilder.addFailureData(FailureData.newBuilder()
                                             .addFailureTypes(FailureType.APPLICATION_FAILURE)
