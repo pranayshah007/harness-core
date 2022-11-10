@@ -24,6 +24,7 @@ import io.harness.spec.server.template.v1.model.TemplateUpdateRequestBody;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Objects;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -38,8 +39,15 @@ public class ProjectTemplateApiImpl implements ProjectTemplateApi {
       TemplateCreateRequestBody templateCreateRequestBody, @AccountIdentifier String account) {
     GitCreateDetails gitCreateDetails = templateCreateRequestBody.getGitDetails();
     String templateYaml = templateCreateRequestBody.getTemplateYaml();
-    return templateResourceApiUtils.createTemplate(account, org, project, gitCreateDetails, templateYaml,
-        templateCreateRequestBody.isIsStable(), templateCreateRequestBody.getComments());
+    Boolean check = Objects.isNull(templateCreateRequestBody.isIsStable());
+    Boolean isStable;
+    if (check) {
+      isStable = false;
+    } else {
+      isStable = templateCreateRequestBody.isIsStable();
+    }
+    return templateResourceApiUtils.createTemplate(
+        account, org, project, gitCreateDetails, templateYaml, isStable, templateCreateRequestBody.getComments());
   }
 
   @Override
