@@ -17,6 +17,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.resources.custom.CustomResourceService;
+import io.harness.data.algorithm.HashGenerator;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -76,42 +77,47 @@ public class CustomArtifactResource {
       @QueryParam("fqnPath") String fqnPath, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     String script = customScriptInfo.getScript();
     List<NGVariable> inputs = customScriptInfo.getInputs();
+    int secretFunctor = HashGenerator.generateIntegerHash();
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactSpecFromService;
-      if (customScriptInfo == null) {
+      if (isEmpty(customScriptInfo.getScript())) {
         CustomScriptInlineSource customScriptInlineSource = (CustomScriptInlineSource) customArtifactConfig.getScripts()
                                                                 .getFetchAllArtifacts()
                                                                 .getShellScriptBaseStepInfo()
                                                                 .getSource()
                                                                 .getSpec();
-        script = customScriptInlineSource.getScript().getValue();
+        script = customScriptInlineSource.getScript().fetchFinalValue().toString();
+      }
+      if (isEmpty(customScriptInfo.getInputs())) {
         inputs = customArtifactConfig.getInputs();
       }
-      if (customScriptInfo != null) {
-        if (isEmpty(customScriptInfo.getScript())) {
-          CustomScriptInlineSource customScriptInlineSource =
-              (CustomScriptInlineSource) customArtifactConfig.getScripts()
-                  .getFetchAllArtifacts()
-                  .getShellScriptBaseStepInfo()
-                  .getSource()
-                  .getSpec();
-          script = customScriptInlineSource.getScript().getValue();
-        }
-        if (isEmpty(customScriptInfo.getInputs())) {
-          inputs = customArtifactConfig.getInputs();
-        }
-      }
       if (isEmpty(arrayPath)) {
-        arrayPath = customArtifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().getValue();
+        arrayPath = customArtifactConfig.getScripts()
+                        .getFetchAllArtifacts()
+                        .getArtifactsArrayPath()
+                        .fetchFinalValue()
+                        .toString();
       }
       if (isEmpty(versionPath)) {
-        arrayPath = customArtifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue();
+        versionPath =
+            customArtifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().fetchFinalValue().toString();
       }
     }
+    if (isNotEmpty(customScriptInfo.getRuntimeInputYaml())) {
+      script =
+          artifactResourceUtils.getResolvedExpression(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+              customScriptInfo.getRuntimeInputYaml(), script, fqnPath, gitEntityBasicInfo, serviceRef, secretFunctor);
+      arrayPath =
+          artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+              customScriptInfo.getRuntimeInputYaml(), arrayPath, fqnPath, gitEntityBasicInfo, serviceRef);
+      versionPath =
+          artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+              customScriptInfo.getRuntimeInputYaml(), versionPath, fqnPath, gitEntityBasicInfo, serviceRef);
+    }
     List<BuildDetails> buildDetails = customResourceService.getBuilds(script, versionPath, arrayPath,
-        NGVariablesUtils.getStringMapVariables(inputs, 0L), accountId, orgIdentifier, projectIdentifier);
+        NGVariablesUtils.getStringMapVariables(inputs, 0L), accountId, orgIdentifier, projectIdentifier, secretFunctor);
     return ResponseDTO.newResponse(buildDetails);
   }
 }

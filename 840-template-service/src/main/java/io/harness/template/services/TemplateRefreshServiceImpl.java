@@ -82,22 +82,8 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
     String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, yaml);
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(
         accountId, orgId, projectId, templateIdentifier, versionLabel, refreshedYaml);
-    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    if (gitEntityInfo != null) {
-      if (templateResponse.getGitDetails() != null) {
-        if (templateResponse.getGitDetails().getCommitId() != null) {
-          gitEntityInfo.setLastCommitId(templateResponse.getGitDetails().getCommitId());
-        }
-        if (templateResponse.getGitDetails().getObjectId() != null) {
-          gitEntityInfo.setLastObjectId(templateResponse.getGitDetails().getObjectId());
-        }
-        if (templateResponse.getGitDetails().getFilePath() != null) {
-          gitEntityInfo.setFilePath(templateResponse.getGitDetails().getFilePath());
-        }
-      }
-    }
-
-    templateService.updateTemplateEntity(templateEntity, ChangeType.MODIFY, false, "Refreshed template inputs");
+    templateService.updateTemplateEntity(
+        templateEntity, ChangeType.MODIFY, false, "Refreshed template inputs", templateResponse);
   }
 
   private TemplateEntityGetResponse getTemplate(
@@ -189,9 +175,12 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
     if (validateTemplateInputsResponse.isValidYaml()) {
       return YamlFullRefreshResponseDTO.builder().shouldRefreshYaml(false).build();
     }
-
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     refreshTemplateInputsForErrorNodes(
         accountId, orgId, projectId, validateTemplateInputsResponse.getErrorNodeSummary());
+
+    // Setting parent context again for fetching refreshLinkedTemplateInputs call
+    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo.toBuilder().build());
     String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, yaml);
     return YamlFullRefreshResponseDTO.builder().shouldRefreshYaml(true).refreshedYaml(refreshedYaml).build();
   }
@@ -204,6 +193,7 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
 
     Stack<ErrorNodeSummary> orderedStack = getProcessingOrderOfErrorNodes(errorNodeSummary);
     Set<TemplateResponseDTO> visitedTemplateSet = new HashSet<>();
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     while (!orderedStack.isEmpty()) {
       ErrorNodeSummary top = orderedStack.pop();
       if (top.getTemplateInfo() == null) {
@@ -215,6 +205,7 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
         accessControlClient.checkForAccessOrThrow(
             ResourceScope.of(accountId, templateResponse.getOrgIdentifier(), templateResponse.getProjectIdentifier()),
             Resource.of(TEMPLATE, templateResponse.getIdentifier()), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+        GitAwareContextHelper.updateGitEntityContext(gitEntityInfo.toBuilder().build());
         updateTemplateYamlAndGitDetails(accountId, templateResponse);
         visitedTemplateSet.add(templateResponse);
       }

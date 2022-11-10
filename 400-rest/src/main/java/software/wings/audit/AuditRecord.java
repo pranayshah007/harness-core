@@ -55,7 +55,7 @@ public class AuditRecord
   @Id @NotNull private String uuid;
   @NotEmpty String auditHeaderId;
   @NotNull EntityAuditRecord entityAuditRecord;
-  private long createdAt;
+  @FdIndex private long createdAt;
   @Setter @FdIndex private Long nextIteration;
   private String accountId;
 
