@@ -348,7 +348,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject DelegateTaskFactory delegateTaskFactory;
   @Inject(optional = true) @Nullable private DelegateServiceAgentClient delegateServiceAgentClient;
   @Inject private KryoSerializer kryoSerializer;
-  @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
+  @Inject private ChronicleEventTailer chronicleEventTailer;
   @Inject HarnessMetricRegistry metricRegistry;
 
   private final AtomicBoolean waiter = new AtomicBoolean(true);
@@ -1360,6 +1360,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void startChroniqleQueueMonitor() {
+    log.info("chronicleEventTailer : {}", chronicleEventTailer);
     if (chronicleEventTailer != null) {
       chronicleEventTailer.setAccountId(accountId);
       chronicleEventTailer.startAsync().awaitRunning();
