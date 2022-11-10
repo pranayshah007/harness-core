@@ -8,6 +8,7 @@
 package io.harness.batch.processing.tasklet;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.commons.constants.RecommendationConstants.SAVINGS_THRESHOLD;
 import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -119,14 +120,17 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
     RecommendationResponse recommendation = getRecommendation(serviceProvider, request);
     log.info("RecommendationResponse: {}", recommendation);
 
-    String mongoEntityId = k8sRecommendationDAO.insertNodeRecommendationResponse(
-        jobConstants, nodePoolId, request, serviceProvider, recommendation, totalResourceUsage);
-
     RecommendationOverviewStats stats = getMonthlyCostAndSaving(serviceProvider, recommendation);
     log.info("The monthly stat is: {}", stats);
 
-    final String clusterName = clusterHelper.fetchClusterName(nodePoolId.getClusterid());
-    recommendationCrudService.upsertNodeRecommendation(mongoEntityId, jobConstants, nodePoolId, clusterName, stats);
+    if (stats.getTotalMonthlySaving() > SAVINGS_THRESHOLD) {
+      String mongoEntityId = k8sRecommendationDAO.insertNodeRecommendationResponse(
+          jobConstants, nodePoolId, request, serviceProvider, recommendation, totalResourceUsage);
+
+      final String clusterName = clusterHelper.fetchClusterName(nodePoolId.getClusterid());
+
+      recommendationCrudService.upsertNodeRecommendation(mongoEntityId, jobConstants, nodePoolId, clusterName, stats);
+    }
   }
 
   private K8sServiceProvider getCurrentNodePoolConfiguration(

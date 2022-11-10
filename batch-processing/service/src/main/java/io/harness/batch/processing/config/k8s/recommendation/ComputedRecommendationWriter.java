@@ -12,6 +12,8 @@ import static io.harness.batch.processing.config.k8s.recommendation.estimators.C
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ContainerResourceRequirementEstimators.customRecommender;
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ContainerResourceRequirementEstimators.guaranteedRecommender;
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ContainerResourceRequirementEstimators.recommendedRecommender;
+import static io.harness.ccm.commons.constants.RecommendationConstants.RECOMMENDATION_TTL;
+import static io.harness.ccm.commons.constants.RecommendationConstants.SAVINGS_THRESHOLD;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.CPU;
@@ -59,8 +61,6 @@ import org.springframework.batch.item.ItemWriter;
 
 @Slf4j
 class ComputedRecommendationWriter implements ItemWriter<K8sWorkloadRecommendation> {
-  public static final Duration RECOMMENDATION_TTL = Duration.ofDays(15);
-
   private static final long podMinCpuMilliCores = 25L;
   private static final long podMinMemoryBytes = 250_000_000L;
   private static final int cpuScale = 3;
@@ -230,11 +230,13 @@ class ComputedRecommendationWriter implements ItemWriter<K8sWorkloadRecommendati
       recommendation.setTtl(Instant.now().plus(RECOMMENDATION_TTL));
       recommendation.setDirty(false);
 
-      final String uuid = workloadRecommendationDao.save(recommendation);
-      Preconditions.checkNotNullNorEmpty(uuid, "unexpected, uuid can't be null or empty");
+      if (recommendation.getEstimatedSavings().doubleValue() > SAVINGS_THRESHOLD) {
+        final String uuid = workloadRecommendationDao.save(recommendation);
+        Preconditions.checkNotNullNorEmpty(uuid, "unexpected, uuid can't be null or empty");
 
-      final String clusterName = clusterHelper.fetchClusterName(workloadId.getClusterId());
-      recommendationCrudService.upsertWorkloadRecommendation(uuid, workloadId, clusterName, recommendation);
+        final String clusterName = clusterHelper.fetchClusterName(workloadId.getClusterId());
+        recommendationCrudService.upsertWorkloadRecommendation(uuid, workloadId, clusterName, recommendation);
+      }
     }
   }
 

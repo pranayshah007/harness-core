@@ -8,6 +8,8 @@
 package io.harness.batch.processing.cloudevents.aws.ec2.service.tasklet;
 
 import static io.harness.batch.processing.ccm.UtilizationInstanceType.EC2_INSTANCE;
+import static io.harness.ccm.commons.constants.RecommendationConstants.RECOMMENDATION_TTL;
+import static io.harness.ccm.commons.constants.RecommendationConstants.SAVINGS_THRESHOLD;
 
 import io.harness.batch.processing.billing.timeseries.data.InstanceUtilizationData;
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
@@ -111,10 +113,13 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               }
               recommendation.setAccountId(accountId);
               recommendation.setLastUpdatedTime(startTime);
-              // Save the ec2 recommendation to mongo and timescale
-              EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
-              log.debug("EC2Recommendation saved to mongoDB = {}", ec2Recommendation);
-              saveRecommendationInTimeScaleDB(ec2Recommendation);
+              recommendation.setTtl(Instant.now().plus(RECOMMENDATION_TTL));
+              if (calculateMaxSaving(instanceLevelRecommendation.getValue()) > SAVINGS_THRESHOLD) {
+                // Save the ec2 recommendation to mongo and timescale
+                EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
+                log.debug("EC2Recommendation saved to mongoDB = {}", ec2Recommendation);
+                saveRecommendationInTimeScaleDB(ec2Recommendation);
+              }
             }
           }
           List<AWSEC2Details> instances = extractEC2InstanceDetails(ec2RecommendationResponse);
@@ -263,7 +268,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
         .sku(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getSku())
         .vcpu(recommendation.getCurrentInstance().getResourceDetails().getEC2ResourceDetails().getVcpu())
         .recommendationInfo(buildRecommendationInfo(recommendations))
-        .expectedSaving(calculateMaxSaving(recommendations))
+        .expectedSaving(String.valueOf(calculateMaxSaving(recommendations)))
         .rightsizingType(recommendation.getRightsizingType())
         .build();
   }
@@ -353,8 +358,8 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
         currentMonthCost, monthlySaving, ec2Recommendation.getLastUpdatedTime());
   }
 
-  private String calculateMaxSaving(List<EC2InstanceRecommendationInfo> recommendations) {
-    Double maxCost = recommendations.stream()
+  private Double calculateMaxSaving(List<EC2InstanceRecommendationInfo> recommendations) {
+    return recommendations.stream()
                          .map(rightsizingRecommendation
                              -> Double.valueOf(rightsizingRecommendation.getRecommendation()
                                                    .getModifyRecommendationDetail()
@@ -363,6 +368,5 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
                                                    .getEstimatedMonthlySavings()))
                          .reduce(Double::max)
                          .orElse(0.0);
-    return String.valueOf(maxCost);
   }
 }

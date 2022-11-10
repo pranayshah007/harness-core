@@ -13,6 +13,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.MongoMapSanitizer;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
@@ -27,6 +28,7 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -78,4 +80,5 @@ public final class EC2Recommendation
   List<EC2RecommendationDetail> recommendationInfo;
   String expectedSaving;
   Instant lastUpdatedTime;
+  @EqualsAndHashCode.Exclude @FdTtlIndex Instant ttl;
 }

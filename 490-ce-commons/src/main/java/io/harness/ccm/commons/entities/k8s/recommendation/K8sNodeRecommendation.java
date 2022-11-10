@@ -8,6 +8,7 @@
 package io.harness.ccm.commons.entities.k8s.recommendation;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.commons.constants.RecommendationConstants.RECOMMENDATION_TTL;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
@@ -83,7 +84,7 @@ public final class K8sNodeRecommendation
   @EqualsAndHashCode.Exclude
   @Builder.Default
   @FdTtlIndex
-  Date validUntil = Date.from(OffsetDateTime.now().plusDays(90).toInstant());
+  Date validUntil = Date.from(OffsetDateTime.now().plusDays(RECOMMENDATION_TTL.toDays()).toInstant());
 
   @Builder.Default int version = 2;
 }

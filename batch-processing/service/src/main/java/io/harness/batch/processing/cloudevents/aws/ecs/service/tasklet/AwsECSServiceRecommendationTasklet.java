@@ -11,6 +11,8 @@ import static io.harness.batch.processing.config.k8s.recommendation.estimators.R
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.makeResourceMap;
 import static io.harness.ccm.RecommenderUtils.EPSILON;
 
+import static io.harness.ccm.commons.constants.RecommendationConstants.RECOMMENDATION_TTL;
+import static io.harness.ccm.commons.constants.RecommendationConstants.SAVINGS_THRESHOLD;
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.CPU;
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.MEMORY;
 
@@ -81,7 +83,6 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
   private static final int RECOMMENDATION_FOR_DAYS = 7;
   private static final Set<Integer> requiredPercentiles = ImmutableSet.of(50, 80, 90, 95, 99);
   private static final String PERCENTILE_KEY = "p%d";
-  public static final Duration RECOMMENDATION_TTL = Duration.ofDays(30);
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -169,17 +170,19 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
         recommendation.setTtl(Instant.now().plus(RECOMMENDATION_TTL));
         recommendation.setDirty(false);
 
-        // Save recommendation in mongo
-        log.info("Saving ECS Recommendation: {}", recommendation);
-        final ECSServiceRecommendation ecsServiceRecommendation =
-            ecsRecommendationDAO.saveRecommendation(recommendation);
-        final Double monthlyCost = calculateMonthlyCost(recommendation);
-        final Double monthlySaving =
-            ofNullable(recommendation.getEstimatedSavings()).map(BigDecimal::doubleValue).orElse(null);
-        // Save recommendation in timescale
-        ecsRecommendationDAO.upsertCeRecommendation(ecsServiceRecommendation.getUuid(), accountId, clusterName,
-            serviceName, monthlyCost, monthlySaving, recommendation.shouldShowRecommendation(),
-            recommendation.getLastReceivedUtilDataAt());
+        if (recommendation.getEstimatedSavings().doubleValue() > SAVINGS_THRESHOLD) {
+          // Save recommendation in mongo
+          log.info("Saving ECS Recommendation: {}", recommendation);
+          final ECSServiceRecommendation ecsServiceRecommendation =
+              ecsRecommendationDAO.saveRecommendation(recommendation);
+          final Double monthlyCost = calculateMonthlyCost(recommendation);
+          final Double monthlySaving =
+              ofNullable(recommendation.getEstimatedSavings()).map(BigDecimal::doubleValue).orElse(null);
+          // Save recommendation in timescale
+          ecsRecommendationDAO.upsertCeRecommendation(ecsServiceRecommendation.getUuid(), accountId, clusterName,
+              serviceName, monthlyCost, monthlySaving, recommendation.shouldShowRecommendation(),
+              recommendation.getLastReceivedUtilDataAt());
+        }
       }
     }
 
