@@ -34,4 +34,6 @@ public class TimeScaleDBConfig {
   int deploymentDataMigrationQueryBatchSize;
   boolean isHealthCheckNeeded;
   boolean isConnectionValidationNeeded;
+  String sslMode;
+  String sslRootCert;
 }

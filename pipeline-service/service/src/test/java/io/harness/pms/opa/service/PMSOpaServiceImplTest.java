@@ -54,7 +54,7 @@ public class PMSOpaServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testGetPipelineContextNoPipelineEntityNotPresent() {
-    when(pmsPipelineService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.empty());
+    when(pmsPipelineService.getAndValidatePipeline(any(), any(), any(), any(), eq(false))).thenReturn(Optional.empty());
     assertThatThrownBy(() -> pmsOpaService.getPipelineContext(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", ""))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format("The given pipeline id [%s] does not exist", PIPELINE_ID));
@@ -72,7 +72,7 @@ public class PMSOpaServiceImplTest extends PipelineServiceTestBase {
             .action("")
             .build();
     when(currentUserHelper.getPrincipalFromSecurityContext()).thenReturn(principal);
-    when(pmsPipelineService.get(any(), any(), any(), any(), eq(false)))
+    when(pmsPipelineService.getAndValidatePipeline(any(), any(), any(), any(), eq(false)))
         .thenReturn(Optional.of(PipelineEntity.builder().build()));
     assertThat(pmsOpaService.getPipelineContext(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "")).isNotNull();
     assertThat(pmsOpaService.getPipelineContext(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", ""))
@@ -93,7 +93,7 @@ public class PMSOpaServiceImplTest extends PipelineServiceTestBase {
             .action("")
             .build();
     when(currentUserHelper.getPrincipalFromSecurityContext()).thenReturn(principal);
-    when(pmsPipelineService.get(any(), any(), any(), any(), eq(false)))
+    when(pmsPipelineService.getAndValidatePipeline(any(), any(), any(), any(), eq(false)))
         .thenReturn(Optional.of(PipelineEntity.builder().build()));
     assertThat(pmsOpaService.getPipelineContextFromExecution(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, ""))
         .isNotNull();

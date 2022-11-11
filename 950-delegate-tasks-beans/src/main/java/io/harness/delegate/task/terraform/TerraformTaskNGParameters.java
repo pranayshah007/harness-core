@@ -30,6 +30,8 @@ import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 
+import software.wings.beans.TaskType;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +55,8 @@ public class TerraformTaskNGParameters
   GitFetchFilesConfig configFile;
   FileStoreFetchFilesConfig fileStoreConfigFiles;
   @Expression(ALLOW_SECRETS) List<TerraformVarFileInfo> varFileInfos;
+  @Expression(ALLOW_SECRETS) TerraformBackendConfigFileInfo backendConfigFileInfo;
+  // TODO once FF TERRAFORM_REMOTE_BACKEND_CONFIG is remoted, this field can be removed as well
   @Expression(ALLOW_SECRETS) String backendConfig;
   @Expression(DISALLOW_SECRETS) List<String> targets;
   @Expression(ALLOW_SECRETS) Map<String, String> environmentVariables;
@@ -108,38 +112,58 @@ public class TerraformTaskNGParameters
         if (varFileInfo instanceof RemoteTerraformVarFileInfo) {
           GitFetchFilesConfig gitFetchFilesConfig = ((RemoteTerraformVarFileInfo) varFileInfo).getGitFetchFilesConfig();
           if (gitFetchFilesConfig != null) {
-            capabilities.add(
-                GitConnectionNGCapability.builder()
-                    .gitConfig((GitConfigDTO) gitFetchFilesConfig.getGitStoreDelegateConfig().getGitConfigDTO())
-                    .encryptedDataDetails(gitFetchFilesConfig.getGitStoreDelegateConfig().getEncryptedDataDetails())
-                    .sshKeySpecDTO(gitFetchFilesConfig.getGitStoreDelegateConfig().getSshKeySpecDTO())
-                    .build());
-
-            GitConfigDTO gitConfigDTO =
-                (GitConfigDTO) gitFetchFilesConfig.getGitStoreDelegateConfig().getGitConfigDTO();
-            if (isNotEmpty(gitConfigDTO.getDelegateSelectors())) {
-              capabilities.add(SelectorCapability.builder().selectors(gitConfigDTO.getDelegateSelectors()).build());
-            }
-          }
-          FileStoreFetchFilesConfig fileFactoryFetchFilesConfig =
-              ((RemoteTerraformVarFileInfo) varFileInfo).getFilestoreFetchFilesConfig();
-          if (fileFactoryFetchFilesConfig != null) {
-            switch (fileFactoryFetchFilesConfig.getManifestStoreType()) {
-              case "Artifactory":
-                capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
-                    fileFactoryFetchFilesConfig.getConnectorDTO().getConnectorConfig(), maskingEvaluator));
-                log.info("Adding Required Execution Capabilities for ArtifactoryStores");
-                break;
-              default:
-            }
+            FileStoreFetchFilesConfig fileStoreFetchConfig =
+                ((RemoteTerraformVarFileInfo) varFileInfo).getFilestoreFetchFilesConfig();
+            capabilities.addAll(getCapabilities(maskingEvaluator, gitFetchFilesConfig, fileStoreFetchConfig));
           }
         }
       }
+    }
+    if (backendConfigFileInfo instanceof RemoteTerraformBackendConfigFileInfo) {
+      GitFetchFilesConfig gitFetchFilesConfig =
+          ((RemoteTerraformBackendConfigFileInfo) backendConfigFileInfo).getGitFetchFilesConfig();
+      FileStoreFetchFilesConfig fileStoreFetchConfig =
+          ((RemoteTerraformBackendConfigFileInfo) backendConfigFileInfo).getFilestoreFetchFilesConfig();
+      capabilities.addAll(getCapabilities(maskingEvaluator, gitFetchFilesConfig, fileStoreFetchConfig));
     }
     if (encryptionConfig != null) {
       capabilities.addAll(
           EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilityForSecretManager(encryptionConfig, null));
     }
     return capabilities;
+  }
+
+  private List<ExecutionCapability> getCapabilities(ExpressionEvaluator maskingEvaluator,
+      GitFetchFilesConfig gitFetchFilesConfig, FileStoreFetchFilesConfig fileStoreFetchConfig) {
+    List<ExecutionCapability> capabilities = new ArrayList<>();
+    if (gitFetchFilesConfig != null) {
+      capabilities.add(
+          GitConnectionNGCapability.builder()
+              .gitConfig((GitConfigDTO) gitFetchFilesConfig.getGitStoreDelegateConfig().getGitConfigDTO())
+              .encryptedDataDetails(gitFetchFilesConfig.getGitStoreDelegateConfig().getEncryptedDataDetails())
+              .sshKeySpecDTO(gitFetchFilesConfig.getGitStoreDelegateConfig().getSshKeySpecDTO())
+              .build());
+
+      GitConfigDTO gitConfigDTO = (GitConfigDTO) gitFetchFilesConfig.getGitStoreDelegateConfig().getGitConfigDTO();
+      if (isNotEmpty(gitConfigDTO.getDelegateSelectors())) {
+        capabilities.add(SelectorCapability.builder().selectors(gitConfigDTO.getDelegateSelectors()).build());
+      }
+    }
+
+    if (fileStoreFetchConfig != null) {
+      switch (fileStoreFetchConfig.getManifestStoreType()) {
+        case "Artifactory":
+          capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
+              fileStoreFetchConfig.getConnectorDTO().getConnectorConfig(), maskingEvaluator));
+          log.info("Adding Required Execution Capabilities for ArtifactoryStores");
+          break;
+        default:
+      }
+    }
+    return capabilities;
+  }
+
+  public TaskType getDelegateTaskType() {
+    return this.backendConfigFileInfo == null ? TaskType.TERRAFORM_TASK_NG : TaskType.TERRAFORM_TASK_NG_V2;
   }
 }

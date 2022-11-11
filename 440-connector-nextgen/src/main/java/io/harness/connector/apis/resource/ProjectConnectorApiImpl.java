@@ -88,7 +88,7 @@ public class ProjectConnectorApiImpl implements ProjectConnectorApi {
     if (!connectorResponseDTO.isPresent()) {
       throw new NotFoundException(String.format("Connector with identifier [%s] not found", connector));
     }
-    boolean deleted = connectorService.delete(account, org, project, connector);
+    boolean deleted = connectorService.delete(account, org, project, connector, false);
 
     if (!deleted) {
       throw new InvalidRequestException(String.format("Connector with slug [%s] could not be deleted", connector));

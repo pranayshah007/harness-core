@@ -12,13 +12,16 @@ import static io.harness.ccm.budget.AlertThresholdBase.FORECASTED_COST;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.Math.max;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
+import static org.joda.time.Months.monthsBetween;
 
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.mail.CEMailNotificationService;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.ccm.budget.AlertThreshold;
+import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.entities.BudgetAlertsData;
@@ -57,6 +60,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import retrofit2.Response;
@@ -112,12 +116,26 @@ public class BudgetAlertsServiceImpl {
     AlertThreshold[] alertsBasedOnActualCost =
         BudgetUtils.getSortedAlertThresholds(ACTUAL_COST, budget.getAlertThresholds());
     double actualCost = budget.getActualCost();
+    if (budget.getBudgetMonthlyBreakdown() != null
+        && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+      int month = monthDifferenceStartAndCurrentTime(budget.getStartTime());
+      if (month != -1) {
+        actualCost = budget.getBudgetMonthlyBreakdown().getActualMonthlyCost()[month];
+      }
+    }
     checkAlertThresholdsAndSendAlerts(budget, alertsBasedOnActualCost, emailAddresses, actualCost);
 
     // For sending alerts based on forecast cost
     AlertThreshold[] alertsBasedOnForecastCost =
         BudgetUtils.getSortedAlertThresholds(FORECASTED_COST, budget.getAlertThresholds());
     double forecastCost = budget.getForecastCost();
+    if (budget.getBudgetMonthlyBreakdown() != null
+        && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+      int month = monthDifferenceStartAndCurrentTime(budget.getStartTime());
+      if (month != -1) {
+        forecastCost = budget.getBudgetMonthlyBreakdown().getForecastMonthlyCost()[month];
+      }
+    }
     checkAlertThresholdsAndSendAlerts(budget, alertsBasedOnForecastCost, emailAddresses, forecastCost);
   }
 
@@ -151,7 +169,7 @@ public class BudgetAlertsServiceImpl {
                                   .time(System.currentTimeMillis())
                                   .build();
 
-      if (BudgetUtils.isAlertSentInCurrentPeriod(
+      if (BudgetUtils.isAlertSentInCurrentPeriod(budget,
               budgetTimescaleQueryHelper.getLastAlertTimestamp(data, budget.getAccountId()), budget.getStartTime())) {
         break;
       }
@@ -303,6 +321,14 @@ public class BudgetAlertsServiceImpl {
     switch (alertThreshold.getBasedOn()) {
       case ACTUAL_COST:
       case FORECASTED_COST:
+        if (budget.getBudgetMonthlyBreakdown() != null
+            && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+          int month = monthDifferenceStartAndCurrentTime(budget.getStartTime());
+          if (month != -1) {
+            return budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount()[month] * alertThreshold.getPercentage()
+                / 100;
+          }
+        }
         return budget.getBudgetAmount() * alertThreshold.getPercentage() / 100;
       default:
         return 0;
@@ -323,5 +349,15 @@ public class BudgetAlertsServiceImpl {
     } catch (Exception e) {
       log.error("Can't update CG budget : {}, Exception: ", budget.getUuid(), e);
     }
+  }
+
+  private int monthDifferenceStartAndCurrentTime(long startTime) {
+    long currentTime = BudgetUtils.getStartOfMonthGivenTime(max(startTime, BudgetUtils.getStartOfCurrentDay()));
+    long startTimeUpdated = BudgetUtils.getStartOfMonthGivenTime(startTime);
+    int monthDiff = monthsBetween(new DateTime(startTimeUpdated), new DateTime(currentTime)).getMonths();
+    if (monthDiff > 11) {
+      return -1;
+    }
+    return monthDiff;
   }
 }

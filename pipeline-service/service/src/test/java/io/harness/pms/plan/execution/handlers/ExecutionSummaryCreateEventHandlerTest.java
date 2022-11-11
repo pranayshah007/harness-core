@@ -129,7 +129,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
                                              .build())
                         .build());
 
-    when(pmsPipelineService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(pmsPipelineService.getAndValidatePipeline(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(pipelineEntity));
 
     doNothing()

@@ -51,7 +51,7 @@ public class MigrateEnvironmentsToTimeScaleDB implements TimeScaleEntityMigratio
       findOptions_environments.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<Environment> iterator =
-               new HIterator<>(wingsPersistence.createQuery(Environment.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(Environment.class, excludeAuthority)
                                    .field(EnvironmentKeys.accountId)
                                    .equal(accountId)
                                    .fetch(findOptions_environments))) {

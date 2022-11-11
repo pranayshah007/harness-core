@@ -1,0 +1,41 @@
+stages:
+  - type: Custom
+    name: custom_stage_name
+    spec:
+      strategy:
+        matrix:
+          service: ["Service1","Service2", "Service3"]
+          maxConcurrency: 2
+      steps:
+        - type: Http
+          name: HttpStepWithStrategy
+          spec:
+            strategy:
+              parallelism: 3
+            method: GET
+            url: http://www.google.com
+        - type: Http
+          spec:
+            strategy:
+              matrix:
+                service: ["Service1","Service2", "Service3"]
+            method: GET
+            url: http://www.google.com
+  - type: Custom
+    name: custom_stage_name_1
+    spec:
+      steps:
+        - type: Http
+          name: HttpStepWithStrategy
+          spec:
+            strategy:
+              parallelism: 3
+            method: GET
+            url: http://www.google.com
+        - type: Http
+          spec:
+            strategy:
+              matrix:
+                service: ["Service1","Service2", "Service3"]
+            method: GET
+            url: http://www.google.com

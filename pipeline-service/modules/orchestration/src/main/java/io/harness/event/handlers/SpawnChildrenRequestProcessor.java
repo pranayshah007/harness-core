@@ -89,16 +89,25 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
 
       for (Child child : request.getChildren().getChildrenList()) {
         String uuid = callbackIds.get(currentChild);
-        if (child.hasStrategyMetadata()) {
-          InitiateMode initiateMode = InitiateMode.CREATE;
-          if (shouldCreateAndStart(maxConcurrency, currentChild)) {
-            initiateMode = InitiateMode.CREATE_AND_START;
-          }
-          createAndStart(ambiance, nodeExecutionId, uuid, child.getChildNodeId(), child.getStrategyMetadata(),
-              maxConcurrency, initiateMode, request.getChildren().getShouldProceedIfFailed());
+        StrategyMetadata strategyMetadata = child.hasStrategyMetadata() ? child.getStrategyMetadata() : null;
+        // If the current child count is less than maxConcurrency then create and start the nodeExecution
+        if (shouldCreateAndStart(maxConcurrency, currentChild)) {
+          initiateNodeHelper.publishEvent(
+              ambiance, child.getChildNodeId(), uuid, strategyMetadata, InitiateMode.CREATE_AND_START);
         } else {
-          initiateNodeHelper.publishEvent(ambiance, child.getChildNodeId(), uuid);
+          // IF the current child count is greater than maxConcurrency then only create the nodeExecution
+          orchestrationEngine.initiateNode(
+              ambiance, child.getChildNodeId(), uuid, null, strategyMetadata, InitiateMode.CREATE);
         }
+        MaxConcurrentChildCallback maxConcurrentChildCallback =
+            MaxConcurrentChildCallback.builder()
+                .parentNodeExecutionId(nodeExecutionId)
+                .ambiance(ambiance)
+                .maxConcurrency(maxConcurrency)
+                .proceedIfFailed(request.getChildren().getShouldProceedIfFailed())
+                .build();
+
+        waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, uuid);
         currentChild++;
       }
 
@@ -116,30 +125,5 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
 
   private boolean shouldCreateAndStart(int maxConcurrency, int currentChild) {
     return currentChild < maxConcurrency;
-  }
-
-  /**
-   * (100, 10)
-   *
-   * @param ambiance
-   * @param parentNodeExecutionId
-   * @param childNodeExecutionId
-   * @param childNodeId
-   * @param strategyMetadata
-   * @param maxConcurrency
-   * @param initiateMode
-   */
-  private void createAndStart(Ambiance ambiance, String parentNodeExecutionId, String childNodeExecutionId,
-      String childNodeId, StrategyMetadata strategyMetadata, int maxConcurrency, InitiateMode initiateMode,
-      Boolean proceedIfFailed) {
-    initiateNodeHelper.publishEvent(ambiance, childNodeId, childNodeExecutionId, strategyMetadata, initiateMode);
-    MaxConcurrentChildCallback maxConcurrentChildCallback = MaxConcurrentChildCallback.builder()
-                                                                .parentNodeExecutionId(parentNodeExecutionId)
-                                                                .ambiance(ambiance)
-                                                                .maxConcurrency(maxConcurrency)
-                                                                .proceedIfFailed(proceedIfFailed)
-                                                                .build();
-
-    waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, childNodeExecutionId);
   }
 }

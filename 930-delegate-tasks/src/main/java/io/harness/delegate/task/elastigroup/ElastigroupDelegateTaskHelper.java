@@ -18,24 +18,18 @@ import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandResponse;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
-import com.google.inject.Inject;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupDelegateTaskHelper {
-  @Inject private Map<String, ElastigroupCommandTaskNGHandler> commandTaskTypeToTaskHandlerMap;
-
-  public ElastigroupCommandResponse getElastigroupCommandResponse(
+  public ElastigroupCommandResponse getElastigroupCommandResponse(ElastigroupCommandTaskNGHandler commandTaskHandler,
       ElastigroupCommandRequest elastigroupCommandRequest, ILogStreamingTaskClient iLogStreamingTaskClient) {
     CommandUnitsProgress commandUnitsProgress = elastigroupCommandRequest.getCommandUnitsProgress() != null
         ? elastigroupCommandRequest.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();
-    log.info("Starting task execution for command: {}", elastigroupCommandRequest.getElastigroupCommandType().name());
+    log.info("Starting task execution for command: {}", elastigroupCommandRequest.getCommandName());
 
-    ElastigroupCommandTaskNGHandler commandTaskHandler =
-        commandTaskTypeToTaskHandlerMap.get(elastigroupCommandRequest.getElastigroupCommandType().name());
     try {
       ElastigroupCommandResponse elastigroupCommandResponse =
           commandTaskHandler.executeTask(elastigroupCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
@@ -44,8 +38,7 @@ public class ElastigroupDelegateTaskHelper {
       return elastigroupCommandResponse;
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error("Exception in processing elastigroup task [{}]",
-          elastigroupCommandRequest.getCommandName() + ":" + elastigroupCommandRequest.getElastigroupCommandType(),
+      log.error("Exception in processing elastigroup task [{}]", elastigroupCommandRequest.getCommandName(),
           sanitizedException);
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);

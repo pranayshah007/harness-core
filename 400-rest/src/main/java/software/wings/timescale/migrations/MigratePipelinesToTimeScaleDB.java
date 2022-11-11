@@ -58,10 +58,11 @@ public class MigratePipelinesToTimeScaleDB implements TimeScaleEntityMigrationIn
       FindOptions findOptions_pipelines = new FindOptions();
       findOptions_pipelines.readPreference(ReadPreference.secondaryPreferred());
 
-      try (HIterator<Pipeline> iterator = new HIterator<>(wingsPersistence.createQuery(Pipeline.class, excludeAuthority)
-                                                              .field(PipelineKeys.accountId)
-                                                              .equal(accountId)
-                                                              .fetch(findOptions_pipelines))) {
+      try (HIterator<Pipeline> iterator =
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(Pipeline.class, excludeAuthority)
+                                   .field(PipelineKeys.accountId)
+                                   .equal(accountId)
+                                   .fetch(findOptions_pipelines))) {
         while (iterator.hasNext()) {
           Pipeline pipeline = iterator.next();
           saveToTimeScale(pipeline);

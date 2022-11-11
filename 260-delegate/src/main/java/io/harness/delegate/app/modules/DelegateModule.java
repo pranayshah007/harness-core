@@ -119,8 +119,6 @@ import io.harness.delegate.ecs.EcsPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRollingDeployCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRollingRollbackCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRunTaskCommandTaskHandler;
-import io.harness.delegate.elastigroup.ElastigroupCommandTaskNGHandler;
-import io.harness.delegate.elastigroup.ElastigroupSetupCommandTaskHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonClientExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonServiceExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AuthenticationExceptionHandler;
@@ -262,10 +260,9 @@ import io.harness.delegate.task.ecs.EcsCommandTaskNG;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsGitFetchRunTask;
 import io.harness.delegate.task.ecs.EcsGitFetchTask;
-import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupParametersFetchTask;
+import io.harness.delegate.task.elastigroup.ElastigroupSetupCommandTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupStartupScriptFetchRunTask;
-import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
 import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
@@ -1896,6 +1893,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_AWS_CODE_COMMIT_TASK).toInstance(AwsCodeCommitDelegateTask.class);
     mapBinder.addBinding(TaskType.NG_DECRYT_GIT_API_ACCESS_TASK).toInstance(DecryptGitAPIAccessTask.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG).toInstance(TerraformTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V2).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.SCM_PUSH_TASK).toInstance(ScmPushTask.class);
     mapBinder.addBinding(TaskType.SCM_PATH_FILTER_EVALUATION_TASK).toInstance(ScmPathFilterEvaluationTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_REF_TASK).toInstance(ScmGitRefTask.class);
@@ -1941,22 +1939,13 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_RUN_TASK_NG).toInstance(EcsGitFetchRunTask.class);
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
 
-    // Elastigroup NG
-    mapBinder.addBinding(TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG)
-        .toInstance(ElastigroupStartupScriptFetchRunTask.class);
-    mapBinder.addBinding(TaskType.ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG)
-        .toInstance(ElastigroupParametersFetchTask.class);
-    MapBinder<String, ElastigroupCommandTaskNGHandler> elastigroupCommandTaskNGHandlerMapBinder =
-        MapBinder.newMapBinder(binder(), String.class, ElastigroupCommandTaskNGHandler.class);
-    elastigroupCommandTaskNGHandlerMapBinder.addBinding(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP.name())
-        .to(ElastigroupSetupCommandTaskHandler.class);
-
-    mapBinder.addBinding(TaskType.ELASTIGROUP_COMMAND_TASK_NG).toInstance(ElastigroupCommandTaskNG.class);
-
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
     mapBinder.addBinding(TaskType.AZURE_NG_ARM).toInstance(AzureResourceCreationTaskNG.class);
     mapBinder.addBinding(TaskType.SHELL_SCRIPT_PROVISION).toInstance(ShellScriptProvisionTaskNG.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG).toInstance(ElastigroupStartupScriptFetchRunTask.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG).toInstance(ElastigroupParametersFetchTask.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG).toInstance(ElastigroupSetupCommandTaskNG.class);
   }
 
   private void registerSecretManagementBindings() {

@@ -157,46 +157,8 @@ public class CDPipelineInstrumentationHelperTest extends CategoryTest {
     String orgId = "TestOrgId";
     String projectId = "TestProjectId";
 
-    InstanceDTO instanceDTO1 = InstanceDTO.builder()
-                                   .accountIdentifier(accountId)
-                                   .projectIdentifier("proj1")
-                                   .orgIdentifier("org")
-                                   .serviceIdentifier("svcId1")
-                                   .build();
-
-    InstanceDTO instanceDTO2 = InstanceDTO.builder()
-                                   .accountIdentifier(accountId)
-                                   .projectIdentifier("proj2")
-                                   .orgIdentifier("org")
-                                   .serviceIdentifier("svcId2")
-                                   .build();
-
-    InstanceDTO instanceDTO3 = InstanceDTO.builder()
-                                   .accountIdentifier(accountId)
-                                   .projectIdentifier("proj2")
-                                   .orgIdentifier("org")
-                                   .serviceIdentifier("svcId3")
-                                   .build();
-
-    InstanceDTO instanceDTO4 = InstanceDTO.builder()
-                                   .accountIdentifier(accountId)
-                                   .projectIdentifier("proj1")
-                                   .orgIdentifier("org")
-                                   .serviceIdentifier("svcId1")
-                                   .build();
-
-    List<InstanceDTO> responseList = new ArrayList<>();
-    responseList.add(instanceDTO1);
-    responseList.add(instanceDTO2);
-    responseList.add(instanceDTO3);
-    responseList.add(instanceDTO4);
-
-    doReturn(responseList)
-        .when(instanceService)
-        .getInstancesDeployedInInterval(any(), any(), any(), anyLong(), anyLong());
-
     cdPipelineInstrumentationHelper.sendCountOfDistinctActiveServicesEvent(
-        pipelineId, identity, accountId, accountName, orgId, projectId);
+        pipelineId, identity, accountId, accountName, orgId, projectId, 3L);
 
     ArgumentCaptor<HashMap> captor = ArgumentCaptor.forClass(HashMap.class);
     verify(telemetryReporter, times(1)).sendTrackEvent(any(), any(), any(), captor.capture(), any(), any(), any());
@@ -217,49 +179,15 @@ public class CDPipelineInstrumentationHelperTest extends CategoryTest {
     String orgId = "TestOrgId";
     String projectId = "TestProjectId";
 
-    InstanceDTO instanceDTO1 = InstanceDTO.builder()
-                                   .accountIdentifier(accountId)
-                                   .projectIdentifier("proj1")
-                                   .orgIdentifier("org")
-                                   .serviceIdentifier("svcId1")
-                                   .build();
-
-    InstanceDTO instanceDTO2 = InstanceDTO.builder()
-                                   .accountIdentifier(accountId)
-                                   .projectIdentifier("proj2")
-                                   .orgIdentifier("org")
-                                   .serviceIdentifier("svcId2")
-                                   .build();
-
-    InstanceDTO instanceDTO3 = InstanceDTO.builder()
-                                   .accountIdentifier(accountId)
-                                   .projectIdentifier("proj2")
-                                   .orgIdentifier("org")
-                                   .serviceIdentifier("svcId3")
-                                   .build();
-
-    InstanceDTO instanceDTO4 = InstanceDTO.builder()
-                                   .accountIdentifier(accountId)
-                                   .projectIdentifier("proj1")
-                                   .orgIdentifier("org")
-                                   .serviceIdentifier("svcId1")
-                                   .build();
-
-    List<InstanceDTO> instancesList = new ArrayList<>();
-    instancesList.add(instanceDTO1);
-    instancesList.add(instanceDTO2);
-    instancesList.add(instanceDTO3);
-    instancesList.add(instanceDTO4);
-
     cdPipelineInstrumentationHelper.sendCountOfServiceInstancesEvent(
-        pipelineId, identity, accountId, accountName, orgId, projectId, instancesList);
+        pipelineId, identity, accountId, accountName, orgId, projectId, 4L);
 
     ArgumentCaptor<HashMap> captor = ArgumentCaptor.forClass(HashMap.class);
     verify(telemetryReporter, times(1)).sendTrackEvent(any(), any(), any(), captor.capture(), any(), any(), any());
     HashMap prop = (HashMap) captor.getValue();
 
     assertThat(prop.size()).isEqualTo(6);
-    assertThat(prop.get(SERVICE_INSTANCES_COUNT)).isEqualTo(4);
+    assertThat(prop.get(SERVICE_INSTANCES_COUNT)).isEqualTo(4L);
   }
 
   @Test

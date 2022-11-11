@@ -52,10 +52,11 @@ public class MigrateServicesToTimeScaleDB implements TimeScaleEntityMigrationInt
       FindOptions findOptions_services = new FindOptions();
       findOptions_services.readPreference(ReadPreference.secondaryPreferred());
 
-      try (HIterator<Service> iterator = new HIterator<>(wingsPersistence.createQuery(Service.class, excludeAuthority)
-                                                             .field(ServiceKeys.accountId)
-                                                             .equal(accountId)
-                                                             .fetch(findOptions_services))) {
+      try (HIterator<Service> iterator =
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(Service.class, excludeAuthority)
+                                   .field(ServiceKeys.accountId)
+                                   .equal(accountId)
+                                   .fetch(findOptions_services))) {
         while (iterator.hasNext()) {
           Service service = iterator.next();
           saveToTimeScale(service);

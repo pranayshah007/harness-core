@@ -841,7 +841,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetTriggerCatalogScheduled() {
     Set<TriggerCatalogType> catalogTypes = new HashSet<>();
-    catalogTypes.add(TriggerCatalogType.SCHEDULED);
+    catalogTypes.add(TriggerCatalogType.CRON);
     List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
         TriggerCatalogItem.builder().category(TriggerCategory.SCHEDULED).triggerCatalogType(catalogTypes).build());
     when(ngTriggerService.getTriggerCatalog(ACCOUNT_ID)).thenReturn(triggerCatalogItems);

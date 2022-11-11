@@ -8,6 +8,7 @@
 package io.harness.pms.pipelinestage.step;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.OrchestrationStepTypes;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -24,7 +25,9 @@ import io.harness.pms.pipelinestage.PipelineStageStepParameters;
 import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.pipelinestage.output.PipelineStageSweepingOutput;
 import io.harness.pms.plan.execution.PipelineExecutor;
+import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.PlanExecutionResponseDto;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -54,6 +57,8 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
 
   @Inject private AccessControlClient client;
 
+  @Inject private PMSExecutionService pmsExecutionService;
+
   @Override
   public Class<PipelineStageStepParameters> getStepParametersClass() {
     return PipelineStageStepParameters.class;
@@ -62,7 +67,12 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
   @Override
   public void handleAbort(
       Ambiance ambiance, PipelineStageStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // TODO: to be handled
+    // This is required
+    setSourcePrincipal(ambiance);
+    if (isNotEmpty(executableResponse.getCallbackIdsList())) {
+      pmsExecutionService.registerInterrupt(
+          PlanExecutionInterruptType.ABORTALL, executableResponse.getCallbackIds(0), null);
+    }
   }
 
   public void setSourcePrincipal(Ambiance ambiance) {

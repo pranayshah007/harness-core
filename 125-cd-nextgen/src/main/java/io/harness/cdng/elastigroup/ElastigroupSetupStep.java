@@ -28,7 +28,6 @@ import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
-import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -48,11 +47,13 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.TaskType;
 import software.wings.utils.ServiceVersionConvention;
 
 import com.google.inject.Inject;
@@ -85,12 +86,16 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     ElastigroupSetupStepParameters elastigroupSetupStepParameters =
         (ElastigroupSetupStepParameters) stepParameters.getSpec();
 
-    String elastigroupNamePrefix = elastigroupSetupStepParameters.getName().getValue();
+    ParameterField<String> elastigroupSetupStepParametersName = elastigroupSetupStepParameters.getName();
+    String elastigroupNamePrefix = elastigroupSetupStepParametersName.isExpression()
+        ? elastigroupStepCommonHelper.renderExpression(
+            ambiance, elastigroupSetupStepParametersName.getExpressionValue())
+        : elastigroupSetupStepParametersName.getValue();
 
     elastigroupNamePrefix = isBlank(elastigroupNamePrefix)
         ? Misc.normalizeExpression(ServiceVersionConvention.getPrefix(
             elastigroupSetupStepParameters.getName().getValue(), infrastructureOutcome.getEnvironment().getName()))
-        : Misc.normalizeExpression(elastigroupStepCommonHelper.renderExpression(ambiance, elastigroupNamePrefix));
+        : Misc.normalizeExpression(elastigroupNamePrefix);
 
     ElastiGroup elastiGroupOriginalConfig =
         generateOriginalConfigFromJson(elastigroupStepExecutorParams.getElastigroupParameters(),
@@ -103,7 +108,6 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .accountId(accountId)
             .spotInstConfig(spotInstConfig)
             .elastigroupJson(elastigroupStepExecutorParams.getElastigroupParameters())
-            .elastigroupCommandType(ElastigroupCommandTypeNG.ELASTIGROUP_SETUP)
             .startupScript(elastigroupStepCommonHelper.getBase64EncodedStartupScript(
                 ambiance, elastigroupStepExecutorParams.getStartupScript()))
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
@@ -117,8 +121,8 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
                 elastigroupSetupStepParameters.getInstances().getType()))
             .build();
 
-    return elastigroupStepCommonHelper.queueElastigroupTask(
-        stepParameters, elastigroupSetupCommandRequest, ambiance, executionPassThroughData, true);
+    return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSetupCommandRequest, ambiance,
+        executionPassThroughData, true, TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG);
   }
 
   private Integer fetchCurrentRunningCountForSetupRequest(ElastigroupInstances elastigroupInstances) {

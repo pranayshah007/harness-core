@@ -345,9 +345,9 @@ func (r *runTestsTask) getSplitTests(ctx context.Context, testsToSplit []types.R
 	for _, t := range testsToSplit {
 		switch splitStrategy {
 		case classTimingTestSplitStrategy, countTestSplitStrategy:
-			testID = t.Pkg + t.Class
+			testID = t.Pkg + "." + t.Class
 		default:
-			testID = t.Pkg + t.Class
+			testID = t.Pkg + "." + t.Class
 		}
 		currentTestSet[testID] = true
 		currentTestMap[testID] = append(currentTestMap[testID], t)

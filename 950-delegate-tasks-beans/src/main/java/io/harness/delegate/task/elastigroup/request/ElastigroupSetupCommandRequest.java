@@ -13,7 +13,6 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
-import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionReflectionUtils;
@@ -28,7 +27,6 @@ import lombok.experimental.NonFinal;
 public class ElastigroupSetupCommandRequest
     implements ElastigroupCommandRequest, ExpressionReflectionUtils.NestedAnnotationResolver {
   String accountId;
-  ElastigroupCommandTypeNG elastigroupCommandType;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   String elastigroupJson;

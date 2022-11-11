@@ -66,6 +66,7 @@ public class TerraformConfig implements PersistentEntity, CreatedAtAware {
   FileStorageConfigDTO fileStoreConfig;
   List<TerraformVarFileConfig> varFileConfigs;
   String backendConfig;
+  TerraformBackendConfigFileConfig backendConfigFileConfig;
   Map<String, String> environmentVariables;
   String workspace;
   List<String> targets;

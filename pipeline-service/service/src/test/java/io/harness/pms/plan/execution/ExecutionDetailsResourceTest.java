@@ -46,9 +46,9 @@ import io.harness.rule.Owner;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
@@ -149,7 +149,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
         .getPipelineExecutionSummaryEntity(any(), any());
     doReturn(Optional.of(PipelineEntity.builder().build()))
         .when(pmsPipelineService)
-        .get(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+        .getAndValidatePipeline(anyString(), anyString(), anyString(), anyString(), anyBoolean());
 
     doReturn(null).when(pmsGitSyncHelper).getGitSyncBranchContextBytesThreadLocal();
 
@@ -279,7 +279,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testGetListOfRepos() {
-    HashSet<String> repoList = new HashSet<>();
+    List<String> repoList = new ArrayList<>();
     repoList.add("testRepo");
     repoList.add("testRepo2");
 
@@ -297,7 +297,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testGetListOfBranch() {
-    HashSet<String> branchList = new HashSet<>();
+    List<String> branchList = new ArrayList<>();
     branchList.add("main");
     branchList.add("main-patch");
 

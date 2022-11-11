@@ -89,7 +89,7 @@ public class OrgConnectorApiImpl implements OrgConnectorApi {
     if (!connectorResponseDTO.isPresent()) {
       throw new NotFoundException(String.format("Connector with identifier [%s] not found", connector));
     }
-    boolean deleted = connectorService.delete(account, org, null, connector);
+    boolean deleted = connectorService.delete(account, org, null, connector, false);
 
     if (!deleted) {
       throw new InvalidRequestException(String.format("Connector with slug [%s] could not be deleted", connector));

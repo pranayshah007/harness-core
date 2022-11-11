@@ -437,7 +437,7 @@ public class ExecutionInterruptManager {
       return Collections.emptyList();
     }
 
-    return wingsPersistence.createQuery(ExecutionInterrupt.class, excludeAuthority)
+    return wingsPersistence.createAnalyticsQuery(ExecutionInterrupt.class, excludeAuthority)
         .field(ExecutionInterruptKeys.uuid)
         .in(ids)
         .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
@@ -448,7 +448,7 @@ public class ExecutionInterruptManager {
       return Collections.emptyList();
     }
 
-    return wingsPersistence.createQuery(ExecutionInterrupt.class, excludeAuthority)
+    return wingsPersistence.createAnalyticsQuery(ExecutionInterrupt.class, excludeAuthority)
         .field(ExecutionInterruptKeys.stateExecutionInstanceId)
         .in(stateExecutionIds)
         .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
