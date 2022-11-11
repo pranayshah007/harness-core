@@ -43,4 +43,5 @@ public class SLOHealthListView {
   public ErrorBudgetRisk getErrorBudgetRisk() {
     return ErrorBudgetRisk.getFromPercentage(errorBudgetRemainingPercentage);
   }
+
 }
