@@ -73,6 +73,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
+@Deprecated
 public class EnvironmentResource {
   private final EnvironmentService environmentService;
 

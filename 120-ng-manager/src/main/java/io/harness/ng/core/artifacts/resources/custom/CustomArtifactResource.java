@@ -65,7 +65,7 @@ public class CustomArtifactResource {
   @POST
   @Path("builds")
   @Hidden
-  @ApiOperation(value = "Gets Job details for Custom", nickname = "getJobDetailsForCustom")
+  @ApiOperation(value = "Gets Job details for Custom Artifact", nickname = "getJobDetailsForCustom")
   public ResponseDTO<List<BuildDetails>> getBuildsDetails(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
