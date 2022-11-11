@@ -16,6 +16,7 @@ import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.spotinst.model.ElastiGroup;
 
 import lombok.Builder;
 import lombok.Value;
@@ -31,6 +32,7 @@ public class ElastigroupSetupCommandRequest
   CommandUnitsProgress commandUnitsProgress;
   String elastigroupJson;
   String elastigroupNamePrefix;
+  ElastiGroup elastigroupOriginalConfig;
   private Integer maxInstanceCount;
   private boolean useCurrentRunningInstanceCount;
   private Integer currentRunningInstanceCount;
