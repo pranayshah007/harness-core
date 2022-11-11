@@ -486,7 +486,8 @@ public enum FeatureName {
       "FF for customers on updated delegate to use GetFileV2 call which is more performance efficient",
       HarnessTeam.PIPELINE),
   PL_HIDE_LAUNCH_NEXTGEN("FF to hide Launch NextGen button", HarnessTeam.PL),
-  CIE_HOSTED_VMS_MAC("FF for enabling hosted builds for mac os", HarnessTeam.CI);
+  CIE_HOSTED_VMS_MAC("FF for enabling hosted builds for mac os", HarnessTeam.CI),
+  GITOPS_API_PARAMS_MERGE_PR("Show API parameters in Merge PR step", HarnessTeam.GITOPS);
 
   @Deprecated
   FeatureName() {
