@@ -13,6 +13,7 @@ import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphData;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
+import io.harness.cvng.servicelevelobjective.beans.SimpleSLODetails;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
@@ -27,6 +28,9 @@ import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetSer
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
@@ -35,7 +39,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
+import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
 public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService {
@@ -82,13 +90,45 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
   @Override
   public List<SLOHealthIndicator> getBySLOIdentifiers(
       ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers) {
-    return hPersistence.createQuery(SLOHealthIndicator.class)
+    Query<SLOHealthIndicator> sloQuery = hPersistence.createQuery(SLOHealthIndicator.class)
         .filter(SLOHealthIndicatorKeys.accountId, projectParams.getAccountIdentifier())
-        .filter(SLOHealthIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
-        .filter(SLOHealthIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier())
         .field(SLOHealthIndicatorKeys.serviceLevelObjectiveIdentifier)
-        .in(serviceLevelObjectiveIdentifiers)
-        .asList();
+        .in(serviceLevelObjectiveIdentifiers);
+    if (isNotEmpty(projectParams.getOrgIdentifier())) {
+      sloQuery.filter(SLOHealthIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier());
+    }
+    if (isNotEmpty(projectParams.getProjectIdentifier())) {
+      sloQuery.filter(SLOHealthIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier());
+    }
+    return sloQuery.asList();
+  }
+
+  @Override
+  public List<SLOHealthIndicator> getBySLOIdentifiersForAssociatedSLOs(
+          ProjectParams projectParams, List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList, List<String> serviceLevelObjectiveIdentifiers) {
+    List<SLOHealthIndicator> sloHealthIndicators = getBySLOIdentifiers(projectParams, serviceLevelObjectiveIdentifiers);
+    if (isEmpty(serviceLevelObjectivesDetailList)) {
+      return sloHealthIndicators;
+    }
+    Map<SimpleSLODetails, SLOHealthIndicator> simpleSLODetailsToSLOHealthIndicatorMap =
+            sloHealthIndicators.stream().collect(
+                    Collectors.toMap(sloHealthIndicator -> SimpleSLODetails.builder()
+                            .accountId(sloHealthIndicator.getAccountId())
+                            .orgIdentifier(sloHealthIndicator.getOrgIdentifier())
+                            .projectIdentifier(sloHealthIndicator.getProjectIdentifier())
+                            .serviceLevelObjectiveRef(sloHealthIndicator.getServiceLevelObjectiveIdentifier())
+                            .build(), slo -> slo));
+    List<SimpleSLODetails> sloDetailsList = serviceLevelObjectivesDetailList.stream().map(sloDetail ->
+            SimpleSLODetails.builder()
+                    .serviceLevelObjectiveRef(sloDetail.getServiceLevelObjectiveRef())
+                    .accountId(sloDetail.getAccountId())
+                    .orgIdentifier(sloDetail.getOrgIdentifier())
+                    .projectIdentifier(sloDetail.getProjectIdentifier())
+                    .build()).collect(Collectors.toList());
+    return sloDetailsList.stream()
+            .filter(simpleSLODetailsToSLOHealthIndicatorMap::containsKey)
+            .map(simpleSLODetailsToSLOHealthIndicatorMap::get)
+            .collect(Collectors.toList());
   }
 
   @Override

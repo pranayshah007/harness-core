@@ -31,6 +31,7 @@ import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilt
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 
@@ -49,6 +50,7 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   boolean delete(ProjectParams projectParams, String identifier);
   List<MonitoredServiceResponse> get(ProjectParams projectParams, Set<String> identifier);
   MonitoredServiceResponse get(ProjectParams projectParams, String identifier);
+  List<MonitoredServiceResponse> getForAssociatedSLOs(ProjectParams projectParams, List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList, Set<String> identifierSet);
   MonitoredServiceResponse getApplicationMonitoredServiceResponse(ServiceEnvironmentParams serviceEnvironmentParams);
   PageResponse<MonitoredServiceResponse> getList(ProjectParams projectParams, List<String> environmentIdentifiers,
       Integer offset, Integer pageSize, String filter);

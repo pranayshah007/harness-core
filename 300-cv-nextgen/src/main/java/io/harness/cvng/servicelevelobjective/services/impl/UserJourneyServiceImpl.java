@@ -14,12 +14,15 @@ import io.harness.cvng.servicelevelobjective.entities.UserJourney;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney.UserJourneyKeys;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
 import io.harness.ng.beans.PageResponse;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.persistence.HPersistence;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 
 public class UserJourneyServiceImpl implements UserJourneyService {
@@ -33,12 +36,16 @@ public class UserJourneyServiceImpl implements UserJourneyService {
 
   @Override
   public List<UserJourney> get(ProjectParams projectParams) {
-    return hPersistence.createQuery(UserJourney.class)
+    Query<UserJourney> sloQuery = hPersistence.createQuery(UserJourney.class)
         .filter(UserJourneyKeys.accountId, projectParams.getAccountIdentifier())
-        .filter(UserJourneyKeys.orgIdentifier, projectParams.getOrgIdentifier())
-        .filter(UserJourneyKeys.projectIdentifier, projectParams.getProjectIdentifier())
-        .order(Sort.descending(UserJourneyKeys.lastUpdatedAt))
-        .asList();
+        .order(Sort.descending(UserJourneyKeys.lastUpdatedAt));
+    if(isNotEmpty(projectParams.getOrgIdentifier())) {
+      sloQuery.filter(UserJourneyKeys.orgIdentifier, projectParams.getOrgIdentifier());
+    }
+    if (isNotEmpty(projectParams.getProjectIdentifier())) {
+      sloQuery.filter(UserJourneyKeys.projectIdentifier, projectParams.getProjectIdentifier());
+    }
+    return sloQuery.asList();
   }
 
   @Override

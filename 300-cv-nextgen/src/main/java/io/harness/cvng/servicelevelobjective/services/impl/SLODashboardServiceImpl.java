@@ -22,7 +22,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
-import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView.SLOHealthListViewBuilder;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
@@ -31,6 +30,8 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Respon
 import io.harness.cvng.servicelevelobjective.beans.UserJourneyDTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
@@ -45,8 +46,8 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorS
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.ng.beans.PageResponse;
-import io.harness.ng.core.mapper.TagMapper;
 import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
@@ -54,6 +55,8 @@ import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -111,15 +114,21 @@ public class SLODashboardServiceImpl implements SLODashboardService {
               return Stream.empty();
             })
             .collect(Collectors.toSet());
+
+    List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList = Collections.emptyList();
+    if (isNotEmpty(filter.getCompositeSLOIdentifier())) {
+      serviceLevelObjectivesDetailList = ((CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, filter.getCompositeSLOIdentifier())).getServiceLevelObjectivesDetails();
+    }
+
     List<MonitoredServiceResponse> monitoredServices =
-        monitoredServiceService.get(projectParams, monitoredServiceIdentifiers);
+        monitoredServiceService.getForAssociatedSLOs(projectParams, serviceLevelObjectivesDetailList, monitoredServiceIdentifiers);
 
     List<String> sloIdentifiers = sloPageResponse.getContent()
                                       .stream()
                                       .map(AbstractServiceLevelObjective::getIdentifier)
                                       .collect(Collectors.toList());
     List<SLOHealthIndicator> sloHealthIndicators =
-        sloHealthIndicatorService.getBySLOIdentifiers(projectParams, sloIdentifiers);
+        sloHealthIndicatorService.getBySLOIdentifiersForAssociatedSLOs(projectParams, serviceLevelObjectivesDetailList, sloIdentifiers);
 
     List<UserJourney> userJourneyList = userJourneyService.get(projectParams);
 
@@ -293,7 +302,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
       MonitoredServiceDTO monitoredService =
           monitoredServiceIdentifierToDTOMap.get(simpleServiceLevelObjective.getMonitoredServiceIdentifier());
 
-      return getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
+      return SLOHealthListView.getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
           .monitoredServiceIdentifier(monitoredService.getIdentifier())
           .monitoredServiceName(monitoredService.getName())
           .environmentIdentifier(monitoredService.getEnvironmentRef())
@@ -313,26 +322,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .build();
     }
 
-    return getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator).build();
-  }
-
-  private SLOHealthListViewBuilder getSLOHealthListViewBuilder(AbstractServiceLevelObjective serviceLevelObjective,
-      List<UserJourneyDTO> userJourneys, int totalErrorBudgetMinutes, SLOHealthIndicator sloHealthIndicator) {
-    return SLOHealthListView.builder()
-        .sloIdentifier(serviceLevelObjective.getIdentifier())
-        .name(serviceLevelObjective.getName())
-        .sloTargetType(serviceLevelObjective.getSloTarget().getType())
-        .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
-        .userJourneys(userJourneys)
-        .userJourneyName(userJourneys.get(0).getName())
-        .tags(TagMapper.convertToMap(serviceLevelObjective.getTags()))
-        .description(serviceLevelObjective.getDesc())
-        .totalErrorBudget(totalErrorBudgetMinutes)
-        .errorBudgetRemaining(sloHealthIndicator.getErrorBudgetRemainingMinutes())
-        .errorBudgetRemainingPercentage(sloHealthIndicator.getErrorBudgetRemainingPercentage())
-        .burnRate(sloHealthIndicator.getErrorBudgetBurnRate())
-        .noOfActiveAlerts(serviceLevelObjective.getNotificationRuleRefs().size())
-        .sloType(serviceLevelObjective.getType());
+    return SLOHealthListView.getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator).build();
   }
 
   private String getHealthSourceName(MonitoredServiceDTO monitoredServiceDTO, String healthSourceRef) {

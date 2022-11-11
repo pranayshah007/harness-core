@@ -12,12 +12,4 @@ public class SimpleSLODetails {
   String orgIdentifier;
   String projectIdentifier;
   String serviceLevelObjectiveRef;
-
-  public static SimpleSLODetailsBuilder getSimpleSLODetailsBuilder(AbstractServiceLevelObjective slo) {
-    return SimpleSLODetails.builder()
-        .accountId(slo.getAccountId())
-        .orgIdentifier(slo.getOrgIdentifier())
-        .projectIdentifier(slo.getProjectIdentifier())
-        .serviceLevelObjectiveRef(slo.getIdentifier());
-  }
 }

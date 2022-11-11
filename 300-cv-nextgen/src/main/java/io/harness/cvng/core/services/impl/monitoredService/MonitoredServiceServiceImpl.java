@@ -102,6 +102,9 @@ import io.harness.cvng.notification.entities.NotificationRule.CVNGNotificationCh
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
+import io.harness.cvng.servicelevelobjective.beans.SimpleSLODetails;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
@@ -519,15 +522,18 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   @Override
   public List<MonitoredServiceResponse> get(ProjectParams projectParams, Set<String> identifierSet) {
-    List<MonitoredService> monitoredServices =
-        hPersistence.createQuery(MonitoredService.class)
+    Query<MonitoredService> sloQuery = hPersistence.createQuery(MonitoredService.class)
             .filter(MonitoredServiceKeys.accountId, projectParams.getAccountIdentifier())
-            .filter(MonitoredServiceKeys.orgIdentifier, projectParams.getOrgIdentifier())
-            .filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier())
             .field(MonitoredServiceKeys.identifier)
-            .in(identifierSet)
-            .asList();
-    List<MonitoredServiceResponse> monitoredServiceResponseList = new ArrayList<>();
+            .in(identifierSet);
+    if (isNotEmpty(projectParams.getOrgIdentifier())) {
+      sloQuery.filter(MonitoredServiceKeys.orgIdentifier, projectParams.getOrgIdentifier());
+    }
+    if (isNotEmpty(projectParams.getProjectIdentifier())) {
+      sloQuery.filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier());
+    }
+    List<MonitoredService> monitoredServices = sloQuery.asList();
+            List<MonitoredServiceResponse> monitoredServiceResponseList = new ArrayList<>();
     monitoredServices.forEach(monitoredService -> {
       ServiceEnvironmentParams environmentParams =
           builderWithProjectParams(projectParams)
@@ -553,6 +559,29 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             .build();
 
     return createMonitoredServiceDTOFromEntity(monitoredServiceEntity, environmentParams);
+  }
+
+  @Override
+  public List<MonitoredServiceResponse> getForAssociatedSLOs(ProjectParams projectParams, List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList, Set<String> identifierSet) {
+    List<MonitoredServiceResponse> monitoredServiceResponseList = get(projectParams, identifierSet);
+    if (isEmpty(serviceLevelObjectivesDetailList)) {
+      return monitoredServiceResponseList;
+    }
+    Map<ProjectParams, MonitoredServiceResponse> projectParamsToMSResponseMap =
+            monitoredServiceResponseList.stream().collect(
+                    Collectors.toMap(monitoredServiceResponse -> {
+                      MonitoredServiceDTO msDTO = monitoredServiceResponse.getMonitoredServiceDTO();
+                      return ProjectParams
+                              .builder()
+                              .accountIdentifier(projectParams.getAccountIdentifier())
+                              .orgIdentifier(msDTO.getOrgIdentifier())
+                              .projectIdentifier(msDTO.getProjectIdentifier())
+                              .build();
+                    }, monitoredServiceResponse -> monitoredServiceResponse));
+    List<ProjectParams> sloAssociatedProjects = serviceLevelObjectivesDetailList.stream().map(sloDetail -> ProjectParams.builder().accountIdentifier(sloDetail.getAccountId()).orgIdentifier(sloDetail.getOrgIdentifier()).projectIdentifier(sloDetail.getProjectIdentifier()).build()).collect(Collectors.toList());
+    return sloAssociatedProjects.stream()
+            .filter(projectParamsToMSResponseMap::containsKey)
+            .map(projectParamsToMSResponseMap::get).distinct().collect(Collectors.toList());
   }
 
   private MonitoredServiceResponse createMonitoredServiceDTOFromEntity(

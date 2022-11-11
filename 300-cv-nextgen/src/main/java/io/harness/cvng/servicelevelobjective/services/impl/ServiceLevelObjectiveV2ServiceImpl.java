@@ -436,6 +436,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                                  .stream()
                                  .map(ServiceLevelObjectivesDetail::getServiceLevelObjectiveRef)
                                  .collect(Collectors.toList());
+      serviceLevelObjectivesDetailList = compositeSLO.getServiceLevelObjectivesDetails();
     }
     return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(), serviceLevelObjectivesDetailList,
         Filter.builder()
@@ -451,6 +452,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                     ? sloTargetTypeSLOTargetTransformerMap.get(filter.getSloTargetFilterDTO().getType())
                           .getSLOTarget(filter.getSloTargetFilterDTO().getSpec())
                     : null)
+            .compositeSLOIdentifier(filter.getCompositeSLOIdentifier())
             .build());
   }
 
@@ -667,13 +669,12 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     Query<AbstractServiceLevelObjective> sloQuery =
         hPersistence.createQuery(AbstractServiceLevelObjective.class)
             .disableValidation()
-            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.accountId,
-                projectParams.getAccountIdentifier())
-            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.orgIdentifier,
-                projectParams.getOrgIdentifier())
-            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.projectIdentifier,
-                projectParams.getProjectIdentifier())
-            .order(Sort.descending(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.lastUpdatedAt));
+            .filter(ServiceLevelObjectiveV2Keys.accountId, projectParams.getAccountIdentifier())
+            .order(Sort.descending(ServiceLevelObjectiveV2Keys.lastUpdatedAt));
+    if (isEmpty(filter.getCompositeSLOIdentifier())) {
+      sloQuery.filter(ServiceLevelObjectiveV2Keys.orgIdentifier, projectParams.getOrgIdentifier());
+      sloQuery.filter(ServiceLevelObjectiveV2Keys.projectIdentifier, projectParams.getProjectIdentifier());
+    }
     if (isNotEmpty(filter.getUserJourneys())) {
       sloQuery.field(ServiceLevelObjectiveV2Keys.userJourneyIdentifiers).hasAnyOf(filter.getUserJourneys());
     }
@@ -744,10 +745,22 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       List<AbstractServiceLevelObjective> serviceLevelObjectiveList) {
     Map<SimpleSLODetails, AbstractServiceLevelObjective> simpleSLODetailsToAbstractServiceLevelObjectiveMap =
         serviceLevelObjectiveList.stream().collect(
-            Collectors.toMap(slo -> SimpleSLODetails.getSimpleSLODetailsBuilder(slo).build(), slo -> slo));
-    return serviceLevelObjectivesDetailList.stream()
-        .filter(sloDetail -> simpleSLODetailsToAbstractServiceLevelObjectiveMap.containsKey(sloDetail))
-        .map(sloDetail -> simpleSLODetailsToAbstractServiceLevelObjectiveMap.get(sloDetail))
+            Collectors.toMap(slo -> SimpleSLODetails.builder()
+                    .accountId(slo.getAccountId())
+                    .orgIdentifier(slo.getOrgIdentifier())
+                    .projectIdentifier(slo.getProjectIdentifier())
+                    .serviceLevelObjectiveRef(slo.getIdentifier())
+                    .build(), slo -> slo));
+    List<SimpleSLODetails> sloDetailsList = serviceLevelObjectivesDetailList.stream().map(sloDetail ->
+            SimpleSLODetails.builder()
+                    .serviceLevelObjectiveRef(sloDetail.getServiceLevelObjectiveRef())
+                    .accountId(sloDetail.getAccountId())
+                    .orgIdentifier(sloDetail.getOrgIdentifier())
+                    .projectIdentifier(sloDetail.getProjectIdentifier())
+                    .build()).collect(Collectors.toList());
+    return sloDetailsList.stream()
+        .filter(simpleSLODetailsToAbstractServiceLevelObjectiveMap::containsKey)
+        .map(simpleSLODetailsToAbstractServiceLevelObjectiveMap::get)
         .collect(Collectors.toList());
   }
 
@@ -772,5 +785,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     String searchFilter;
     ServiceLevelObjective.SLOTarget sloTarget;
     ServiceLevelObjectiveType sloType;
+    String compositeSLOIdentifier;
   }
 }

@@ -10,6 +10,10 @@ package io.harness.cvng.servicelevelobjective.beans;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
+import io.harness.ng.core.mapper.TagMapper;
 import lombok.Builder;
 import lombok.Value;
 
@@ -42,5 +46,24 @@ public class SLOHealthListView {
   @NotNull
   public ErrorBudgetRisk getErrorBudgetRisk() {
     return ErrorBudgetRisk.getFromPercentage(errorBudgetRemainingPercentage);
+  }
+
+  public static SLOHealthListViewBuilder getSLOHealthListViewBuilder(AbstractServiceLevelObjective serviceLevelObjective,
+                                                               List<UserJourneyDTO> userJourneys, int totalErrorBudgetMinutes, SLOHealthIndicator sloHealthIndicator) {
+    return SLOHealthListView.builder()
+            .sloIdentifier(serviceLevelObjective.getIdentifier())
+            .name(serviceLevelObjective.getName())
+            .sloTargetType(serviceLevelObjective.getSloTarget().getType())
+            .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
+            .userJourneys(userJourneys)
+            .userJourneyName(userJourneys.get(0).getName())
+            .tags(TagMapper.convertToMap(serviceLevelObjective.getTags()))
+            .description(serviceLevelObjective.getDesc())
+            .totalErrorBudget(totalErrorBudgetMinutes)
+            .errorBudgetRemaining(sloHealthIndicator.getErrorBudgetRemainingMinutes())
+            .errorBudgetRemainingPercentage(sloHealthIndicator.getErrorBudgetRemainingPercentage())
+            .burnRate(sloHealthIndicator.getErrorBudgetBurnRate())
+            .noOfActiveAlerts(serviceLevelObjective.getNotificationRuleRefs().size())
+            .sloType(serviceLevelObjective.getType());
   }
 }
