@@ -276,8 +276,7 @@ public class MailServiceImpl implements ChannelService {
       if (responseData instanceof ErrorNotifyResponseData) {
         throw new NotificationException("Failed to send email. Check SMTP configuration.", DEFAULT_ERROR_CODE, USER);
       } else {
-        notificationTaskResponse =
-            (NotificationTaskResponse) delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+        notificationTaskResponse = (NotificationTaskResponse) responseData;
       }
     } else {
       notificationProcessingResponse =

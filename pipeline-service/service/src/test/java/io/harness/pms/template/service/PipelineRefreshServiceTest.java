@@ -75,14 +75,16 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
 
   @Before
   public void setup() {
-    when(pmsPipelineService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false))
+    when(pmsPipelineService.getAndValidatePipeline(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false))
         .thenReturn(Optional.of(pipelineEntityWithTemplates));
-    when(pmsPipelineService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false))
+    when(pmsPipelineService.getAndValidatePipeline(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false))
         .thenReturn(Optional.of(pipelineEntityWithoutTemplates));
-    when(pmsPipelineService.getPipelineWithoutPerformingValidations(
+    when(pmsPipelineService.getPipeline(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false, false))
         .thenReturn(Optional.of(pipelineEntityWithoutTemplates));
-    when(pmsPipelineService.getPipelineWithoutPerformingValidations(
+    when(pmsPipelineService.getPipeline(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false, false))
         .thenReturn(Optional.of(pipelineEntityWithTemplates));
   }
@@ -92,7 +94,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void shouldFailRefreshTemplateInputsInPipelineWhenPipelineDoesnotExist() {
     String pipelineIdentifier = "someNoneExistentPipelineId";
-    when(pmsPipelineService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineIdentifier, false))
+    when(pmsPipelineService.getAndValidatePipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineIdentifier, false))
         .thenReturn(Optional.empty());
 
     assertThatThrownBy(()
@@ -110,8 +112,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     pipelineRefreshService.refreshTemplateInputsInPipeline(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES);
     verify(pmsPipelineService)
-        .getPipelineWithoutPerformingValidations(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false, false);
+        .getPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false, false);
     verify(pmsPipelineTemplateHelper, times(1))
         .getRefreshedYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
   }
@@ -124,7 +125,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     when(pmsPipelineTemplateHelper.getRefreshedYaml(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml(), pipelineEntityWithTemplates))
         .thenReturn(RefreshResponseDTO.builder().refreshedYaml(refreshedYaml).build());
-    when(pmsPipelineService.updatePipelineYaml(any(), any()))
+    when(pmsPipelineService.validateAndUpdatePipeline(any(), any()))
         .thenReturn(PipelineCRUDResult.builder()
                         .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                         .build());
@@ -132,13 +133,12 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     pipelineRefreshService.refreshTemplateInputsInPipeline(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES);
     verify(pmsPipelineService)
-        .getPipelineWithoutPerformingValidations(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false, false);
+        .getPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false, false);
     verify(pmsPipelineTemplateHelper)
         .getRefreshedYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
 
     ArgumentCaptor<PipelineEntity> argumentCaptor = ArgumentCaptor.forClass(PipelineEntity.class);
-    verify(pmsPipelineService).updatePipelineYaml(argumentCaptor.capture(), eq(ChangeType.MODIFY));
+    verify(pmsPipelineService).validateAndUpdatePipeline(argumentCaptor.capture(), eq(ChangeType.MODIFY));
     PipelineEntity updatedPipeline = argumentCaptor.getValue();
     assertThat(updatedPipeline).isNotNull();
     assertThat(updatedPipeline.getYaml()).isEqualTo(refreshedYaml);
@@ -152,7 +152,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     when(pmsPipelineTemplateHelper.getRefreshedYaml(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml(), pipelineEntityWithTemplates))
         .thenReturn(RefreshResponseDTO.builder().refreshedYaml(pipelineEntityWithTemplates.getYaml()).build());
-    when(pmsPipelineService.updatePipelineYaml(pipelineEntityWithTemplates, ChangeType.MODIFY))
+    when(pmsPipelineService.validateAndUpdatePipeline(pipelineEntityWithTemplates, ChangeType.MODIFY))
         .thenReturn(
             PipelineCRUDResult.builder()
                 .governanceMetadata(
@@ -181,8 +181,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     YamlDiffResponseDTO responseDTO =
         pipelineRefreshService.getYamlDiff(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES);
     verify(pmsPipelineService)
-        .getPipelineWithoutPerformingValidations(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false, false);
+        .getPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false, false);
     verify(pmsPipelineTemplateHelper)
         .getRefreshedYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
     assertThat(responseDTO).isNotNull();
@@ -201,8 +200,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     ValidateTemplateInputsResponseDTO responseDTO = pipelineRefreshService.validateTemplateInputsInPipeline(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES);
     verify(pmsPipelineService)
-        .getPipelineWithoutPerformingValidations(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false, false);
+        .getPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false, false);
     verify(pmsPipelineTemplateHelper)
         .validateTemplateInputsForGivenYaml(
             anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
@@ -224,8 +222,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     ValidateTemplateInputsResponseDTO responseDTO = pipelineRefreshService.validateTemplateInputsInPipeline(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES);
     verify(pmsPipelineService)
-        .getPipelineWithoutPerformingValidations(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false, false);
+        .getPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false, false);
     verify(pmsPipelineTemplateHelper)
         .validateTemplateInputsForGivenYaml(
             anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
@@ -246,7 +243,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     when(pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml(), pipelineEntityWithTemplates))
         .thenReturn(YamlFullRefreshResponseDTO.builder().shouldRefreshYaml(true).refreshedYaml(refreshedYaml).build());
-    when(pmsPipelineService.updatePipelineYaml(any(), any()))
+    when(pmsPipelineService.validateAndUpdatePipeline(any(), any()))
         .thenReturn(PipelineCRUDResult.builder()
                         .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                         .build());
@@ -254,13 +251,12 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     pipelineRefreshService.recursivelyRefreshAllTemplateInputsInPipeline(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, GitEntityUpdateInfoDTO.builder().build());
     verify(pmsPipelineService)
-        .getPipelineWithoutPerformingValidations(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false, false);
+        .getPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false, false);
     verify(pmsPipelineTemplateHelper)
         .refreshAllTemplatesForYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
 
     ArgumentCaptor<PipelineEntity> argumentCaptor = ArgumentCaptor.forClass(PipelineEntity.class);
-    verify(pmsPipelineService).updatePipelineYaml(argumentCaptor.capture(), eq(ChangeType.MODIFY));
+    verify(pmsPipelineService).validateAndUpdatePipeline(argumentCaptor.capture(), eq(ChangeType.MODIFY));
     PipelineEntity updatedPipeline = argumentCaptor.getValue();
     assertThat(updatedPipeline).isNotNull();
     assertThat(updatedPipeline.getYaml()).isEqualTo(refreshedYaml);
@@ -274,8 +270,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     pipelineRefreshService.recursivelyRefreshAllTemplateInputsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID,
         PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, GitEntityUpdateInfoDTO.builder().build());
     verify(pmsPipelineService)
-        .getPipelineWithoutPerformingValidations(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false, false);
+        .getPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false, false);
     verify(pmsPipelineTemplateHelper, times(1))
         .refreshAllTemplatesForYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
   }

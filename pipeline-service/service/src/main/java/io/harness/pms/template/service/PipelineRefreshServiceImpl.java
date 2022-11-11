@@ -50,7 +50,7 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
   private void updatePipelineWithYaml(PipelineEntity pipelineEntity, String refreshedYaml) {
     PipelineEntity updatedPipelineEntity = pipelineEntity.withYaml(refreshedYaml);
     PipelineCRUDResult pipelineCRUDResult =
-        pmsPipelineService.updatePipelineYaml(updatedPipelineEntity, ChangeType.MODIFY);
+        pmsPipelineService.validateAndUpdatePipeline(updatedPipelineEntity, ChangeType.MODIFY);
     PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
   }
 
@@ -72,8 +72,8 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
 
   private PipelineEntity getPipelineEntity(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    Optional<PipelineEntity> optionalPipelineEntity = pmsPipelineService.getPipelineWithoutPerformingValidations(
-        accountId, orgId, projectId, pipelineIdentifier, false, false);
+    Optional<PipelineEntity> optionalPipelineEntity =
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineIdentifier, false, false);
     if (!optionalPipelineEntity.isPresent()) {
       throw new InvalidRequestException(
           String.format("Pipeline with the given id: %s does not exist or has been deleted", pipelineIdentifier));

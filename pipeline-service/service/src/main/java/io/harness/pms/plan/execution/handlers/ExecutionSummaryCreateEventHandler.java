@@ -99,7 +99,8 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
 
     ExecutionMetadata metadata = planExecution.getMetadata();
     String pipelineId = metadata.getPipelineIdentifier();
-    Optional<PipelineEntity> pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
+    Optional<PipelineEntity> pipelineEntity =
+        pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     if (!pipelineEntity.isPresent()) {
       return;
     }

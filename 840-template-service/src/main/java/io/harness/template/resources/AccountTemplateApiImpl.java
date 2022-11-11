@@ -38,8 +38,9 @@ public class AccountTemplateApiImpl implements AccountTemplateApi {
       TemplateCreateRequestBody templateCreateRequestBody, @AccountIdentifier String account) {
     GitCreateDetails gitCreateDetails = templateCreateRequestBody.getGitDetails();
     String templateYaml = templateCreateRequestBody.getTemplateYaml();
-    return templateResourceApiUtils.createTemplate(account, null, null, gitCreateDetails, templateYaml,
-        templateCreateRequestBody.isIsStable(), templateCreateRequestBody.getComments());
+    Boolean isStable = Boolean.TRUE.equals(templateCreateRequestBody.isIsStable());
+    return templateResourceApiUtils.createTemplate(
+        account, null, null, gitCreateDetails, templateYaml, isStable, templateCreateRequestBody.getComments());
   }
 
   @Override

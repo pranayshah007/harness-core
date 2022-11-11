@@ -298,14 +298,15 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
       List<V1KeyToPath> l = new ArrayList<>();
       destPaths.forEach(path
           -> l.add(new V1KeyToPathBuilder().withKey(secretKey).withPath(secretVolumesHelper.getName(path)).build()));
+      // All certs get mounted to the lite engine certs directory
+      String liteEnginePath = LITE_ENGINE_CERTS_DIR + secretVolumesHelper.getName(srcPath);
+      l.add(new V1KeyToPathBuilder().withKey(secretKey).withPath(secretVolumesHelper.getName(liteEnginePath)).build());
 
       V1SecretVolumeSource secretVolumeSource =
           new V1SecretVolumeSourceBuilder().withSecretName(secretKey).withItems(l).build();
 
       podVolumes.add(new V1VolumeBuilder().withSecret(secretVolumeSource).withName(secretKey).build());
 
-      // All certs get mounted to the lite engine certs directory
-      String liteEnginePath = LITE_ENGINE_CERTS_DIR + secretVolumesHelper.getName(srcPath);
       liteEngineVolumeMounts.add(new V1VolumeMountBuilder()
                                      .withName(secretKey)
                                      .withMountPath(liteEnginePath)

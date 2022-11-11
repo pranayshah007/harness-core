@@ -248,17 +248,17 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public boolean delete(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
+  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorIdentifier, boolean forceDelete) {
     return defaultConnectorService.delete(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, NONE);
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, NONE, forceDelete);
   }
 
   @Override
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorIdentifier, ChangeType changeType) {
+      String connectorIdentifier, ChangeType changeType, boolean forceDelete) {
     return defaultConnectorService.delete(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, changeType);
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, changeType, forceDelete);
   }
 
   @Override
