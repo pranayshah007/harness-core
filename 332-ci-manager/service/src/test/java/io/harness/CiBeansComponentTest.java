@@ -35,11 +35,9 @@ public class CiBeansComponentTest extends CiBeansTestBase {
   @Owner(developers = AMAN)
   @Category(UnitTests.class)
   @HarnessHierarchy(TestExecution.class)
-  @Ignore("CI-6025: TI team to follow up")
   public void componentCiBeansTests() {
     for (Entry<String, TestExecution> test : tests.entrySet()) {
       assertThatCode(() -> test.getValue().run()).as(test.getKey()).doesNotThrowAnyException();
-
       log.info("{} passed", test.getKey());
     }
   }
