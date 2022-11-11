@@ -32,4 +32,5 @@ public class EcsGitFetchPassThroughData implements PassThroughData {
   String targetGroupArnKey;
   InfrastructureOutcome infrastructureOutcome;
   EcsS3ManifestFileConfigs ecsS3ManifestFileConfigs;
+  EcsRunTaskS3FileConfigs ecsRunTaskS3FileConfigs;
 }

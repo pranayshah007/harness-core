@@ -8,10 +8,8 @@
 package io.harness.delegate.task.ecs;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
-import static software.wings.beans.LogColor.Red;
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
@@ -36,7 +34,9 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRequest;
+import io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest;
 import io.harness.delegate.task.ecs.response.EcsS3FetchResponse;
+import io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.NestedExceptionUtils;
@@ -55,7 +55,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -87,59 +86,106 @@ public class EcsS3FetchTask extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     try {
-      EcsS3FetchRequest ecsS3FetchRequest = (EcsS3FetchRequest) parameters;
-      log.info("Running Ecs S3 Fetch Task for activityId {}", ecsS3FetchRequest.getActivityId());
-
-      LogCallback executionLogCallback =
-          new NGDelegateLogCallback(getLogStreamingTaskClient(), EcsCommandUnitConstants.fetchManifests.toString(),
-              ecsS3FetchRequest.isShouldOpenLogStream(), commandUnitsProgress);
-      executionLogCallback.saveExecutionLog(
-          format("Started Fetching S3 Manifest files... ", LogColor.White, LogWeight.Bold));
-
-      String ecsS3TaskDefinitionContent = null;
-      if (ecsS3FetchRequest.getEcsTaskDefinitionS3FetchFileConfig() != null) {
-        ecsS3TaskDefinitionContent =
-            fetchS3ManifestsContent(ecsS3FetchRequest.getEcsTaskDefinitionS3FetchFileConfig(), executionLogCallback);
+      DelegateResponseData responseData = null;
+      if (parameters instanceof EcsS3FetchRequest) {
+        responseData = getEcsS3CommandResponse(parameters, commandUnitsProgress);
+      } else {
+        responseData = getRunTaskS3CommandResponse(parameters, commandUnitsProgress);
       }
-
-      String ecsS3ServiceDefinitionContent = null;
-      if (ecsS3FetchRequest.getEcsServiceDefinitionS3FetchFileConfig() != null) {
-        ecsS3ServiceDefinitionContent =
-            fetchS3ManifestsContent(ecsS3FetchRequest.getEcsServiceDefinitionS3FetchFileConfig(), executionLogCallback);
-      }
-
-      List<String> ecsS3ScalableTargetContents = new ArrayList<>();
-      if (CollectionUtils.isNotEmpty(ecsS3FetchRequest.getEcsScalableTargetS3FetchFileConfigs())) {
-        for (EcsS3FetchFileConfig ecsS3FetchFileConfig : ecsS3FetchRequest.getEcsScalableTargetS3FetchFileConfigs()) {
-          ecsS3ScalableTargetContents.add(fetchS3ManifestsContent(ecsS3FetchFileConfig, executionLogCallback));
-        }
-      }
-
-      List<String> ecsS3ScalingPolicyContents = new ArrayList<>();
-      if (CollectionUtils.isNotEmpty(ecsS3FetchRequest.getEcsScalingPolicyS3FetchFileConfigs())) {
-        for (EcsS3FetchFileConfig ecsS3FetchFileConfig : ecsS3FetchRequest.getEcsScalingPolicyS3FetchFileConfigs()) {
-          ecsS3ScalingPolicyContents.add(fetchS3ManifestsContent(ecsS3FetchFileConfig, executionLogCallback));
-        }
-      }
-
-      executionLogCallback.saveExecutionLog(
-          color(format("%nFetched all S3 manifests successfully..%n"), LogColor.White, LogWeight.Bold), INFO,
-          CommandExecutionStatus.SUCCESS);
-
-      return EcsS3FetchResponse.builder()
-          .taskStatus(TaskStatus.SUCCESS)
-          .ecsS3TaskDefinitionContent(ecsS3TaskDefinitionContent)
-          .ecsS3ServiceDefinitionContent(ecsS3ServiceDefinitionContent)
-          .ecsS3ScalableTargetContents(ecsS3ScalableTargetContents)
-          .ecsS3ScalingPolicyContents(ecsS3ScalingPolicyContents)
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-          .build();
+      return responseData;
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in S3 Fetch Files Task", sanitizedException);
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     }
+  }
+
+  private DelegateResponseData getEcsS3CommandResponse(
+      TaskParameters parameters, CommandUnitsProgress commandUnitsProgress) throws Exception {
+    EcsS3FetchRequest ecsS3FetchRequest = (EcsS3FetchRequest) parameters;
+    log.info("Running Ecs S3 Fetch Task for activityId {}", ecsS3FetchRequest.getActivityId());
+
+    LogCallback executionLogCallback =
+        new NGDelegateLogCallback(getLogStreamingTaskClient(), EcsCommandUnitConstants.fetchManifests.toString(),
+            ecsS3FetchRequest.isShouldOpenLogStream(), commandUnitsProgress);
+    executionLogCallback.saveExecutionLog(
+        format("Started Fetching S3 Manifest files... ", LogColor.White, LogWeight.Bold));
+
+    String ecsS3TaskDefinitionContent = null;
+    if (ecsS3FetchRequest.getEcsTaskDefinitionS3FetchFileConfig() != null) {
+      ecsS3TaskDefinitionContent =
+          fetchS3ManifestsContent(ecsS3FetchRequest.getEcsTaskDefinitionS3FetchFileConfig(), executionLogCallback);
+    }
+
+    String ecsS3ServiceDefinitionContent = null;
+    if (ecsS3FetchRequest.getEcsServiceDefinitionS3FetchFileConfig() != null) {
+      ecsS3ServiceDefinitionContent =
+          fetchS3ManifestsContent(ecsS3FetchRequest.getEcsServiceDefinitionS3FetchFileConfig(), executionLogCallback);
+    }
+
+    List<String> ecsS3ScalableTargetContents = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(ecsS3FetchRequest.getEcsScalableTargetS3FetchFileConfigs())) {
+      for (EcsS3FetchFileConfig ecsS3FetchFileConfig : ecsS3FetchRequest.getEcsScalableTargetS3FetchFileConfigs()) {
+        ecsS3ScalableTargetContents.add(fetchS3ManifestsContent(ecsS3FetchFileConfig, executionLogCallback));
+      }
+    }
+
+    List<String> ecsS3ScalingPolicyContents = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(ecsS3FetchRequest.getEcsScalingPolicyS3FetchFileConfigs())) {
+      for (EcsS3FetchFileConfig ecsS3FetchFileConfig : ecsS3FetchRequest.getEcsScalingPolicyS3FetchFileConfigs()) {
+        ecsS3ScalingPolicyContents.add(fetchS3ManifestsContent(ecsS3FetchFileConfig, executionLogCallback));
+      }
+    }
+
+    executionLogCallback.saveExecutionLog(
+        color(format("%nFetched all S3 manifests successfully..%n"), LogColor.White, LogWeight.Bold), INFO,
+        CommandExecutionStatus.SUCCESS);
+
+    return EcsS3FetchResponse.builder()
+        .taskStatus(TaskStatus.SUCCESS)
+        .ecsS3TaskDefinitionContent(ecsS3TaskDefinitionContent)
+        .ecsS3ServiceDefinitionContent(ecsS3ServiceDefinitionContent)
+        .ecsS3ScalableTargetContents(ecsS3ScalableTargetContents)
+        .ecsS3ScalingPolicyContents(ecsS3ScalingPolicyContents)
+        .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+        .build();
+  }
+
+  private DelegateResponseData getRunTaskS3CommandResponse(
+      TaskParameters parameters, CommandUnitsProgress commandUnitsProgress) throws Exception {
+    EcsS3FetchRunTaskRequest ecsS3FetchRunTaskRequest = (EcsS3FetchRunTaskRequest) parameters;
+
+    log.info("Running Ecs S3 Fetch Task for activityId {}", ecsS3FetchRunTaskRequest.getActivityId());
+
+    LogCallback executionLogCallback =
+        new NGDelegateLogCallback(getLogStreamingTaskClient(), EcsCommandUnitConstants.fetchManifests.toString(),
+            ecsS3FetchRunTaskRequest.isShouldOpenLogStream(), commandUnitsProgress);
+    executionLogCallback.saveExecutionLog(
+        format("Started Fetching Run Task S3 Manifest files... ", LogColor.White, LogWeight.Bold));
+
+    String runTaskS3TaskDefinitionContent = null;
+    if (ecsS3FetchRunTaskRequest.getRunTaskDefinitionS3FetchFileConfig() != null) {
+      runTaskS3TaskDefinitionContent = fetchS3ManifestsContent(
+          ecsS3FetchRunTaskRequest.getRunTaskDefinitionS3FetchFileConfig(), executionLogCallback);
+    }
+
+    String runTaskS3TaskRequestDefinitionContent = null;
+    if (ecsS3FetchRunTaskRequest.getRunTaskRequestDefinitionS3FetchFileConfig() != null) {
+      runTaskS3TaskRequestDefinitionContent = fetchS3ManifestsContent(
+          ecsS3FetchRunTaskRequest.getRunTaskRequestDefinitionS3FetchFileConfig(), executionLogCallback);
+    }
+
+    executionLogCallback.saveExecutionLog(
+        color(format("%nFetched Run Task S3 manifests successfully..%n"), LogColor.White, LogWeight.Bold), INFO,
+        CommandExecutionStatus.SUCCESS);
+
+    return EcsS3FetchRunTaskResponse.builder()
+        .taskStatus(TaskStatus.SUCCESS)
+        .runTaskDefinitionFileContent(runTaskS3TaskDefinitionContent)
+        .runTaskRequestDefinitionFileContent(runTaskS3TaskRequestDefinitionContent)
+        .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+        .build();
   }
 
   private String fetchS3ManifestsContent(EcsS3FetchFileConfig ecsS3FetchFileConfig, LogCallback executionLogCallback)

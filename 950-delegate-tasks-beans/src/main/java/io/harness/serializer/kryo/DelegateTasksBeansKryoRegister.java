@@ -529,6 +529,7 @@ import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingRollbackRequest;
 import io.harness.delegate.task.ecs.request.EcsRunTaskRequest;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRequest;
+import io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
@@ -542,6 +543,7 @@ import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.delegate.task.ecs.response.EcsS3FetchResponse;
+import io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpListBucketsRequest;
 import io.harness.delegate.task.gcp.request.GcpListClustersRequest;
@@ -1846,6 +1848,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsS3FetchRequest.class, 573545);
     kryo.register(EcsS3FetchResponse.class, 573546);
     kryo.register(EcsS3FetchFileConfig.class, 573547);
+    kryo.register(EcsS3FetchRunTaskRequest.class, 573548);
+    kryo.register(EcsS3FetchRunTaskResponse.class, 573549);
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);

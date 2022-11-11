@@ -28,6 +28,8 @@ import io.harness.cdng.ecs.beans.EcsManifestsContent;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
 import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome.EcsRollingRollbackDataOutcomeBuilder;
+import io.harness.cdng.ecs.beans.EcsRunTaskManifestsContent;
+import io.harness.cdng.ecs.beans.EcsRunTaskS3FileConfigs;
 import io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
@@ -67,6 +69,7 @@ import io.harness.delegate.task.ecs.request.EcsCommandRequest;
 import io.harness.delegate.task.ecs.request.EcsGitFetchRequest;
 import io.harness.delegate.task.ecs.request.EcsGitFetchRunTaskRequest;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRequest;
+import io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
@@ -80,6 +83,7 @@ import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.delegate.task.ecs.response.EcsS3FetchResponse;
+import io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.ExceptionUtils;
@@ -119,6 +123,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -358,18 +363,109 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     return taskChainResponse;
   }
 
+  private TaskChainResponse prepareEcsRunTaskHarnessStoreTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
+      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
+      EcsRunTaskManifestsContent ecsRunTaskManifestsContent, LogCallback logCallback) {
+    logCallback.saveExecutionLog("Fetched both task definition and run task request definition from Harness Store ",
+        INFO, CommandExecutionStatus.SUCCESS);
+
+    UnitProgressData unitProgressData =
+        getCommandUnitProgressData(EcsCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
+
+    EcsStepExecutorParams ecsStepExecutorParams =
+        EcsStepExecutorParams.builder()
+            .shouldOpenFetchFilesLogStream(false)
+            .ecsTaskDefinitionManifestContent(ecsRunTaskManifestsContent.getRunTaskDefinitionFileContent())
+            .ecsRunTaskRequestDefinitionManifestContent(
+                ecsRunTaskManifestsContent.getRunTaskRequestDefinitionFileContent())
+            .build();
+
+    EcsExecutionPassThroughData ecsExecutionPassThroughData = EcsExecutionPassThroughData.builder()
+                                                                  .infrastructure(infrastructureOutcome)
+                                                                  .lastActiveUnitProgressData(unitProgressData)
+                                                                  .build();
+
+    return ecsStepExecutor.executeEcsTask(
+        ambiance, stepElementParameters, ecsExecutionPassThroughData, unitProgressData, ecsStepExecutorParams);
+  }
+
   public TaskChainResponse startChainLinkEcsRunTask(
       EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
     // Get InfrastructureOutcome
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
-    return prepareEcsRunTaskGitFetchTask(ecsStepExecutor, ambiance, stepElementParameters, infrastructureOutcome);
+    List<ManifestOutcome> ecsRunTaskManifestOutcomes = getEcsRunTaskManifestOutcomes(stepElementParameters);
+
+    LogCallback logCallback = getLogCallback(EcsCommandUnitConstants.fetchManifests.toString(), ambiance, true);
+
+    EcsRunTaskManifestsContent runTaskHarnessStoreContent =
+        getHarnessStoreRunTaskFilesContent(ambiance, ecsRunTaskManifestOutcomes, logCallback);
+
+    EcsRunTaskS3FileConfigs ecsRunTaskS3FileConfigs =
+        getRunTaskS3ManifestFileConfigs(ambiance, ecsRunTaskManifestOutcomes);
+
+    TaskChainResponse taskChainResponse = null;
+    if (checkForGitManifest(ecsRunTaskManifestOutcomes)) {
+      EcsGitFetchPassThroughData ecsGitFetchPassThroughData =
+          EcsGitFetchPassThroughData.builder()
+              .infrastructureOutcome(infrastructureOutcome)
+              .taskDefinitionHarnessFileContent(runTaskHarnessStoreContent.getRunTaskDefinitionFileContent())
+              .ecsRunTaskRequestDefinitionHarnessFileContent(
+                  runTaskHarnessStoreContent.getRunTaskRequestDefinitionFileContent())
+              .ecsRunTaskS3FileConfigs(ecsRunTaskS3FileConfigs)
+              .build();
+      taskChainResponse = prepareEcsRunTaskGitFetchTask(
+          ambiance, stepElementParameters, ecsRunTaskManifestOutcomes, ecsGitFetchPassThroughData);
+    } else {
+      if (areAllManifestsFromHarnessFileStore(ecsRunTaskManifestOutcomes)) { // all harness store
+        taskChainResponse = prepareEcsRunTaskHarnessStoreTask(ecsStepExecutor, ambiance, stepElementParameters,
+            infrastructureOutcome, runTaskHarnessStoreContent, logCallback);
+      } else { // at least one s3 no git
+        EcsS3FetchPassThroughData ecsS3FetchRunTaskPassThroughData =
+            EcsS3FetchPassThroughData.builder()
+                .infrastructureOutcome(infrastructureOutcome)
+                .ecsOtherStoreRunTaskContent(runTaskHarnessStoreContent)
+                .build();
+        taskChainResponse = prepareEcsRunTaskS3FetchTask(
+            ambiance, stepElementParameters, ecsS3FetchRunTaskPassThroughData, ecsRunTaskS3FileConfigs);
+      }
+    }
+
+    return taskChainResponse;
   }
 
   public List<ManifestOutcome> getEcsManifestOutcome(
       @NotEmpty Collection<ManifestOutcome> manifestOutcomes, EcsStepHelper ecsStepHelper) {
     return ecsStepHelper.getEcsManifestOutcome(manifestOutcomes);
+  }
+
+  public List<ManifestOutcome> getEcsRunTaskManifestOutcomes(StepElementParameters stepElementParameters) {
+    EcsRunTaskStepParameters ecsRunTaskStepParameters = (EcsRunTaskStepParameters) stepElementParameters.getSpec();
+
+    if (ecsRunTaskStepParameters.getTaskDefinition() == null
+        || ecsRunTaskStepParameters.getTaskDefinition().getValue() == null) {
+      String errorMessage = "ECS Task Definition is empty in ECS Run Task Step";
+      throw new InvalidRequestException(errorMessage);
+    }
+
+    if (ecsRunTaskStepParameters.getRunTaskRequestDefinition() == null
+        || ecsRunTaskStepParameters.getRunTaskRequestDefinition().getValue() == null) {
+      String errorMessage = "ECS Run Task Request Definition is empty in ECS Run Task Step";
+      throw new InvalidRequestException(errorMessage);
+    }
+
+    StoreConfig ecsRunTaskDefinitionStoreConfig = ecsRunTaskStepParameters.getTaskDefinition().getValue().getSpec();
+    ManifestOutcome ecsRunTaskDefinitionManifestOutcome =
+        EcsTaskDefinitionManifestOutcome.builder().store(ecsRunTaskDefinitionStoreConfig).build();
+
+    StoreConfig ecsRunTaskRequestDefinitionStoreConfig =
+        ecsRunTaskStepParameters.getRunTaskRequestDefinition().getValue().getSpec();
+
+    ManifestOutcome ecsRunTaskRequestDefinitionManifestOutcome =
+        EcsRunTaskRequestDefinitionManifestOutcome.builder().store(ecsRunTaskRequestDefinitionStoreConfig).build();
+
+    return Arrays.asList(ecsRunTaskDefinitionManifestOutcome, ecsRunTaskRequestDefinitionManifestOutcome);
   }
 
   public ManifestsOutcome resolveEcsManifestsOutcome(Ambiance ambiance) {
@@ -439,6 +535,29 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         .ecsS3ServiceDefinitionFileConfig(ecsServiceDefinitionS3FetchFileConfig)
         .ecsS3ScalableTargetFileConfigs(ecsScalableTargetS3FetchFileConfigs)
         .ecsS3ScalingPolicyFileConfigs(ecsScalingPolicyS3FetchFileConfigs)
+        .build();
+  }
+
+  private EcsRunTaskS3FileConfigs getRunTaskS3ManifestFileConfigs(
+      Ambiance ambiance, List<ManifestOutcome> ecsRunTaskManifestOutcomes) {
+    ManifestOutcome ecsRunTaskDefinitionManifestOutcome = ecsRunTaskManifestOutcomes.get(0);
+    EcsS3FetchFileConfig taskDefinitionEcsS3FetchRunTaskFileConfig = null;
+
+    if (ManifestStoreType.S3.equals(ecsRunTaskDefinitionManifestOutcome.getStore().getKind())) {
+      taskDefinitionEcsS3FetchRunTaskFileConfig =
+          getEcsRunTaskS3FetchFilesConfigFromManifestOutcome(ambiance, ecsRunTaskDefinitionManifestOutcome);
+    }
+    ManifestOutcome ecsRunTaskRequestDefinitionManifestOutcome = ecsRunTaskManifestOutcomes.get(1);
+    EcsS3FetchFileConfig ecsRunTaskRequestEcsS3FetchRunTaskFileConfig = null;
+
+    if (ManifestStoreType.S3.equals(ecsRunTaskRequestDefinitionManifestOutcome.getStore().getKind())) {
+      ecsRunTaskRequestEcsS3FetchRunTaskFileConfig =
+          getEcsRunTaskS3FetchFilesConfigFromManifestOutcome(ambiance, ecsRunTaskRequestDefinitionManifestOutcome);
+    }
+
+    return EcsRunTaskS3FileConfigs.builder()
+        .runTaskDefinitionS3FetchFileConfig(taskDefinitionEcsS3FetchRunTaskFileConfig)
+        .runTaskRequestDefinitionS3FetchFileConfig(ecsRunTaskRequestEcsS3FetchRunTaskFileConfig)
         .build();
   }
 
@@ -559,91 +678,72 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         ecsScalableTargetGitFetchFileConfigs, ecsScalingPolicyGitFetchFileConfigs);
   }
 
-  private TaskChainResponse prepareEcsRunTaskGitFetchTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome) {
-    EcsRunTaskStepParameters ecsRunTaskStepParameters = (EcsRunTaskStepParameters) stepElementParameters.getSpec();
+  private EcsRunTaskManifestsContent getHarnessStoreRunTaskFilesContent(
+      Ambiance ambiance, List<ManifestOutcome> ecsRunTaskManifestOutcomes, LogCallback logCallback) {
+    ManifestOutcome ecsRunTaskDefinitionManifestOutcome = ecsRunTaskManifestOutcomes.get(0);
+    StoreConfig ecsRunTaskDefinitionStoreConfig = ecsRunTaskDefinitionManifestOutcome.getStore();
 
-    LogCallback logCallback = getLogCallback(EcsCommandUnitConstants.fetchManifests.toString(), ambiance, true);
-
-    if (ecsRunTaskStepParameters.getTaskDefinition() == null
-        || ecsRunTaskStepParameters.getTaskDefinition().getValue() == null) {
-      String errorMessage = "ECS Task Definition is empty in ECS Run Task Step";
-      throw new InvalidRequestException(errorMessage);
-    }
-
-    if (ecsRunTaskStepParameters.getRunTaskRequestDefinition() == null
-        || ecsRunTaskStepParameters.getRunTaskRequestDefinition().getValue() == null) {
-      String errorMessage = "ECS Run Task Request Definition is empty in ECS Run Task Step";
-      throw new InvalidRequestException(errorMessage);
-    }
-
-    StoreConfig ecsRunTaskDefinitionStoreConfig = ecsRunTaskStepParameters.getTaskDefinition().getValue().getSpec();
-    StoreConfig ecsRunTaskRequestDefinitionStoreConfig =
-        ecsRunTaskStepParameters.getRunTaskRequestDefinition().getValue().getSpec();
-
-    EcsGitFetchRunTaskFileConfig taskDefinitionEcsGitFetchRunTaskFileConfig = null;
     String taskDefinitionFileContent = null;
-    ManifestOutcome ecsRunTaskDefinitionManifestOutcome =
-        EcsTaskDefinitionManifestOutcome.builder().store(ecsRunTaskDefinitionStoreConfig).build();
 
     if (ecsRunTaskDefinitionStoreConfig.getKind() == HARNESS_STORE_TYPE) {
       taskDefinitionFileContent =
           fetchFilesContentFromLocalStore(ambiance, ecsRunTaskDefinitionManifestOutcome, logCallback).get(0);
       taskDefinitionFileContent = engineExpressionService.renderExpression(ambiance, taskDefinitionFileContent);
-    } else {
-      taskDefinitionEcsGitFetchRunTaskFileConfig =
-          getEcsGitFetchRunTaskFileConfig(ecsRunTaskDefinitionManifestOutcome, ambiance);
     }
 
-    EcsGitFetchRunTaskFileConfig ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig = null;
+    ManifestOutcome ecsRunTaskRequestDefinitionManifestOutcome = ecsRunTaskManifestOutcomes.get(1);
+    StoreConfig ecsRunTaskRequestDefinitionStoreConfig = ecsRunTaskRequestDefinitionManifestOutcome.getStore();
     String ecsRunTaskRequestDefinitionFileContent = null;
-    ManifestOutcome ecsRunTaskRequestDefinitionManifestOutcome =
-        EcsRunTaskRequestDefinitionManifestOutcome.builder().store(ecsRunTaskRequestDefinitionStoreConfig).build();
 
     if (ecsRunTaskRequestDefinitionStoreConfig.getKind() == HARNESS_STORE_TYPE) {
       ecsRunTaskRequestDefinitionFileContent =
           fetchFilesContentFromLocalStore(ambiance, ecsRunTaskRequestDefinitionManifestOutcome, logCallback).get(0);
       ecsRunTaskRequestDefinitionFileContent =
           engineExpressionService.renderExpression(ambiance, ecsRunTaskRequestDefinitionFileContent);
-    } else {
+    }
+
+    return EcsRunTaskManifestsContent.builder()
+        .runTaskDefinitionFileContent(taskDefinitionFileContent)
+        .runTaskRequestDefinitionFileContent(ecsRunTaskRequestDefinitionFileContent)
+        .build();
+  }
+
+  private TaskChainResponse prepareEcsRunTaskGitFetchTask(Ambiance ambiance,
+      StepElementParameters stepElementParameters, List<ManifestOutcome> ecsRunTaskManifestOutcomes,
+      EcsGitFetchPassThroughData ecsGitFetchPassThroughData) {
+    ManifestOutcome ecsRunTaskDefinitionManifestOutcome = ecsRunTaskManifestOutcomes.get(0);
+    StoreConfig ecsRunTaskDefinitionStoreConfig = ecsRunTaskDefinitionManifestOutcome.getStore();
+
+    EcsGitFetchRunTaskFileConfig taskDefinitionEcsGitFetchRunTaskFileConfig = null;
+    if (ManifestStoreType.isInGitSubset(ecsRunTaskDefinitionStoreConfig.getKind())) {
+      taskDefinitionEcsGitFetchRunTaskFileConfig =
+          getEcsGitFetchRunTaskFileConfig(ecsRunTaskDefinitionManifestOutcome, ambiance);
+    }
+
+    EcsGitFetchRunTaskFileConfig ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig = null;
+    ManifestOutcome ecsRunTaskRequestDefinitionManifestOutcome = ecsRunTaskManifestOutcomes.get(1);
+    StoreConfig ecsRunTaskRequestDefinitionStoreConfig = ecsRunTaskRequestDefinitionManifestOutcome.getStore();
+    if (ManifestStoreType.isInGitSubset(ecsRunTaskRequestDefinitionStoreConfig.getKind())) {
       ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig =
           getEcsGitFetchRunTaskFileConfig(ecsRunTaskRequestDefinitionManifestOutcome, ambiance);
     }
 
-    EcsGitFetchPassThroughData ecsGitFetchPassThroughData =
-        EcsGitFetchPassThroughData.builder()
-            .infrastructureOutcome(infrastructureOutcome)
-            .taskDefinitionHarnessFileContent(taskDefinitionFileContent)
-            .ecsRunTaskRequestDefinitionHarnessFileContent(ecsRunTaskRequestDefinitionFileContent)
-            .build();
-
     // if both task definition, ecs run task request definition are from Harness Store
-    if (ecsRunTaskDefinitionStoreConfig.getKind() == HARNESS_STORE_TYPE
-        && ecsRunTaskRequestDefinitionStoreConfig.getKind() == HARNESS_STORE_TYPE) {
-      logCallback.saveExecutionLog("Fetched both task definition and run task request definition from Harness Store ",
-          INFO, CommandExecutionStatus.SUCCESS);
-
-      UnitProgressData unitProgressData =
-          getCommandUnitProgressData(EcsCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
-
-      EcsStepExecutorParams ecsStepExecutorParams =
-          EcsStepExecutorParams.builder()
-              .shouldOpenFetchFilesLogStream(false)
-              .ecsTaskDefinitionManifestContent(taskDefinitionFileContent)
-              .ecsRunTaskRequestDefinitionManifestContent(ecsRunTaskRequestDefinitionFileContent)
-              .build();
-
-      EcsExecutionPassThroughData ecsExecutionPassThroughData = EcsExecutionPassThroughData.builder()
-                                                                    .infrastructure(infrastructureOutcome)
-                                                                    .lastActiveUnitProgressData(unitProgressData)
-                                                                    .build();
-
-      return ecsStepExecutor.executeEcsTask(
-          ambiance, stepElementParameters, ecsExecutionPassThroughData, unitProgressData, ecsStepExecutorParams);
-    }
 
     return getGitFetchFileRunTaskResponse(ambiance, false, stepElementParameters, ecsGitFetchPassThroughData,
         taskDefinitionEcsGitFetchRunTaskFileConfig, ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig);
+  }
+
+  private TaskChainResponse prepareEcsRunTaskS3FetchTask(Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsS3FetchPassThroughData ecsS3FetchRunTaskPassThroughData, EcsRunTaskS3FileConfigs ecsRunTaskS3FileConfigs) {
+    EcsS3FetchFileConfig runTaskDefinitionS3FetchFileConfig =
+        ecsRunTaskS3FileConfigs.getRunTaskDefinitionS3FetchFileConfig();
+
+    EcsS3FetchFileConfig runTaskRequestDefinitionS3FetchFileConfig =
+        ecsRunTaskS3FileConfigs.getRunTaskRequestDefinitionS3FetchFileConfig();
+
+    return getS3FetchFileTaskRunTaskResponse(ambiance, false, stepElementParameters, ecsS3FetchRunTaskPassThroughData,
+        runTaskDefinitionS3FetchFileConfig, runTaskRequestDefinitionS3FetchFileConfig);
   }
 
   private EcsGitFetchFileConfig getEcsGitFetchFilesConfigFromManifestOutcome(
@@ -676,12 +776,30 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     return getEcsS3FetchFilesConfig(ambiance, s3StoreConfig, manifestOutcome, ecsStepHelper);
   }
 
+  private EcsS3FetchFileConfig getEcsRunTaskS3FetchFilesConfigFromManifestOutcome(
+      Ambiance ambiance, ManifestOutcome manifestOutcome) {
+    StoreConfig storeConfig = manifestOutcome.getStore();
+    if (!ManifestStoreType.S3.equals(storeConfig.getKind())) {
+      throw new InvalidRequestException("Invalid kind of storeConfig for Ecs step", USER);
+    }
+    S3StoreConfig s3StoreConfig = (S3StoreConfig) storeConfig;
+    return getEcsRunTaskS3FetchFilesConfig(ambiance, s3StoreConfig, manifestOutcome);
+  }
+
   private EcsS3FetchFileConfig getEcsS3FetchFilesConfig(
       Ambiance ambiance, S3StoreConfig s3StoreConfig, ManifestOutcome manifestOutcome, EcsStepHelper ecsStepHelper) {
     return EcsS3FetchFileConfig.builder()
         .s3StoreDelegateConfig(getS3StoreDelegateConfig(ambiance, s3StoreConfig, manifestOutcome))
         .identifier(manifestOutcome.getIdentifier())
         .manifestType(manifestOutcome.getType())
+        .succeedIfFileNotFound(false)
+        .build();
+  }
+
+  private EcsS3FetchFileConfig getEcsRunTaskS3FetchFilesConfig(
+      Ambiance ambiance, S3StoreConfig s3StoreConfig, ManifestOutcome manifestOutcome) {
+    return EcsS3FetchFileConfig.builder()
+        .s3StoreDelegateConfig(getS3StoreDelegateConfig(ambiance, s3StoreConfig, manifestOutcome))
         .succeedIfFileNotFound(false)
         .build();
   }
@@ -745,6 +863,40 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         .chainEnd(false)
         .taskRequest(taskRequest)
         .passThroughData(ecsGitFetchPassThroughData)
+        .build();
+  }
+
+  private TaskChainResponse getS3FetchFileTaskRunTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
+      StepElementParameters stepElementParameters, EcsS3FetchPassThroughData ecsS3FetchRunTaskPassThroughData,
+      EcsS3FetchFileConfig runTaskDefinitionS3FetchFileConfig,
+      EcsS3FetchFileConfig runTaskRequestDefinitionS3FetchFileConfig) {
+    EcsS3FetchRunTaskRequest ecsS3FetchRunTaskRequest =
+        EcsS3FetchRunTaskRequest.builder()
+            .runTaskDefinitionS3FetchFileConfig(runTaskDefinitionS3FetchFileConfig)
+            .runTaskRequestDefinitionS3FetchFileConfig(runTaskRequestDefinitionS3FetchFileConfig)
+            .shouldOpenLogStream(shouldOpenLogStream)
+            .build();
+
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                                  .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
+                                  .parameters(new Object[] {ecsS3FetchRunTaskRequest})
+                                  .build();
+
+    String taskName = TaskType.ECS_S3_FETCH_TASK_NG.getDisplayName();
+
+    EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
+
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        ecsSpecParameters.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
+        stepHelper.getEnvironmentType(ambiance));
+
+    return TaskChainResponse.builder()
+        .chainEnd(false)
+        .taskRequest(taskRequest)
+        .passThroughData(ecsS3FetchRunTaskPassThroughData)
         .build();
   }
 
@@ -931,6 +1083,11 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
         taskChainResponse = handleEcsGitFetchFilesResponseRunTask(
             ecsGitFetchRunTaskResponse, ecsStepExecutor, ambiance, stepElementParameters, ecsGitFetchPassThroughData);
+      } else if (responseData instanceof EcsS3FetchRunTaskResponse) {
+        EcsS3FetchRunTaskResponse ecsS3FetchRunTaskResponse = (EcsS3FetchRunTaskResponse) responseData;
+        EcsS3FetchPassThroughData ecsS3FetchPassThroughData = (EcsS3FetchPassThroughData) passThroughData;
+        taskChainResponse = handleEcsS3FetchFilesResponseRunTask(
+            ecsS3FetchRunTaskResponse, ecsStepExecutor, ambiance, stepElementParameters, ecsS3FetchPassThroughData);
       }
     } catch (Exception e) {
       taskChainResponse =
@@ -1227,21 +1384,82 @@ public class EcsStepCommonHelper extends EcsStepUtils {
           ecsGitFetchPassThroughData.getEcsRunTaskRequestDefinitionHarnessFileContent();
     }
 
+    TaskChainResponse taskChainResponse = null;
+    if (ecsGitFetchPassThroughData.getEcsRunTaskS3FileConfigs() == null) {
+      EcsStepExecutorParams ecsStepExecutorParams =
+          EcsStepExecutorParams.builder()
+              .shouldOpenFetchFilesLogStream(false)
+              .ecsTaskDefinitionManifestContent(ecsTaskDefinitionFileContent)
+              .ecsRunTaskRequestDefinitionManifestContent(ecsRunTaskRequestDefinitionFileContent)
+              .build();
+
+      EcsExecutionPassThroughData ecsExecutionPassThroughData =
+          EcsExecutionPassThroughData.builder()
+              .infrastructure(ecsGitFetchPassThroughData.getInfrastructureOutcome())
+              .lastActiveUnitProgressData(ecsGitFetchRunTaskResponse.getUnitProgressData())
+              .build();
+
+      taskChainResponse = ecsStepExecutor.executeEcsTask(ambiance, stepElementParameters, ecsExecutionPassThroughData,
+          ecsGitFetchRunTaskResponse.getUnitProgressData(), ecsStepExecutorParams);
+    } else {
+      EcsRunTaskManifestsContent ecsOtherStoreRunTaskContent =
+          EcsRunTaskManifestsContent.builder()
+              .runTaskDefinitionFileContent(ecsTaskDefinitionFileContent)
+              .runTaskRequestDefinitionFileContent(ecsRunTaskRequestDefinitionFileContent)
+              .build();
+      EcsS3FetchPassThroughData ecsS3FetchRunTaskPassThroughData =
+          EcsS3FetchPassThroughData.builder()
+              .infrastructureOutcome(ecsGitFetchPassThroughData.getInfrastructureOutcome())
+              .ecsOtherStoreRunTaskContent(ecsOtherStoreRunTaskContent)
+              .build();
+      taskChainResponse = prepareEcsRunTaskS3FetchTask(ambiance, stepElementParameters,
+          ecsS3FetchRunTaskPassThroughData, ecsGitFetchPassThroughData.getEcsRunTaskS3FileConfigs());
+    }
+    return taskChainResponse;
+  }
+
+  private TaskChainResponse handleEcsS3FetchFilesResponseRunTask(EcsS3FetchRunTaskResponse ecsS3FetchRunTaskResponse,
+      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsS3FetchPassThroughData ecsS3FetchPassThroughData) {
+    if (ecsS3FetchRunTaskResponse.getTaskStatus() != TaskStatus.SUCCESS) {
+      return null;
+    }
+
+    EcsRunTaskManifestsContent ecsRunTaskManifestsContent = ecsS3FetchPassThroughData.getEcsOtherStoreRunTaskContent();
+
+    String ecsRunTaskDefinitionFileContent = null;
+    if (ecsS3FetchRunTaskResponse.getRunTaskDefinitionFileContent() != null) {
+      ecsRunTaskDefinitionFileContent = ecsS3FetchRunTaskResponse.getRunTaskDefinitionFileContent();
+      ecsRunTaskDefinitionFileContent =
+          engineExpressionService.renderExpression(ambiance, ecsRunTaskDefinitionFileContent);
+    } else {
+      ecsRunTaskDefinitionFileContent = ecsRunTaskManifestsContent.getRunTaskDefinitionFileContent();
+    }
+
+    String ecsRunTaskRequestDefinitionFileContent = null;
+    if (ecsS3FetchRunTaskResponse.getRunTaskRequestDefinitionFileContent() != null) {
+      ecsRunTaskRequestDefinitionFileContent = ecsS3FetchRunTaskResponse.getRunTaskRequestDefinitionFileContent();
+      ecsRunTaskRequestDefinitionFileContent =
+          engineExpressionService.renderExpression(ambiance, ecsRunTaskRequestDefinitionFileContent);
+    } else {
+      ecsRunTaskRequestDefinitionFileContent = ecsRunTaskManifestsContent.getRunTaskRequestDefinitionFileContent();
+    }
+
     EcsStepExecutorParams ecsStepExecutorParams =
         EcsStepExecutorParams.builder()
             .shouldOpenFetchFilesLogStream(false)
-            .ecsTaskDefinitionManifestContent(ecsTaskDefinitionFileContent)
+            .ecsTaskDefinitionManifestContent(ecsRunTaskDefinitionFileContent)
             .ecsRunTaskRequestDefinitionManifestContent(ecsRunTaskRequestDefinitionFileContent)
             .build();
 
     EcsExecutionPassThroughData ecsExecutionPassThroughData =
         EcsExecutionPassThroughData.builder()
-            .infrastructure(ecsGitFetchPassThroughData.getInfrastructureOutcome())
-            .lastActiveUnitProgressData(ecsGitFetchRunTaskResponse.getUnitProgressData())
+            .infrastructure(ecsS3FetchPassThroughData.getInfrastructureOutcome())
+            .lastActiveUnitProgressData(ecsS3FetchRunTaskResponse.getUnitProgressData())
             .build();
 
     return ecsStepExecutor.executeEcsTask(ambiance, stepElementParameters, ecsExecutionPassThroughData,
-        ecsGitFetchRunTaskResponse.getUnitProgressData(), ecsStepExecutorParams);
+        ecsS3FetchRunTaskResponse.getUnitProgressData(), ecsStepExecutorParams);
   }
 
   private TaskChainResponse handleEcsS3FetchFilesResponseBlueGreen(EcsS3FetchResponse ecsS3FetchResponse,

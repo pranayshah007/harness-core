@@ -26,4 +26,5 @@ public class EcsS3FetchPassThroughData implements PassThroughData {
   String otherStoreTargetGroupArnKey;
   InfrastructureOutcome infrastructureOutcome;
   EcsManifestsContent ecsOtherStoreContents;
+  EcsRunTaskManifestsContent ecsOtherStoreRunTaskContent;
 }
