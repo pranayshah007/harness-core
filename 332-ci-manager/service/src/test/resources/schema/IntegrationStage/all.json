@@ -5228,7 +5228,7 @@
               }
             }
           },
-          "then": {
+         "then": {
             "properties": {
               "spec": {
                 "$ref": "#/definitions/JUnitTestReport"
