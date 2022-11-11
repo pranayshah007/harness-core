@@ -17,9 +17,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
-@Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class AzureMachineImageTaskHelper {
   private final AzureMachineImageTaskHandler azureMachineImageTaskHandler;
   public ArtifactTaskResponse getArtifactCollectResponse(ArtifactTaskParameters artifactTaskParameters) {

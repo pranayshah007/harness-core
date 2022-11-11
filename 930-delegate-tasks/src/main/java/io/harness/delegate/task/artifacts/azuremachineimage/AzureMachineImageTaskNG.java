@@ -7,6 +7,8 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
+import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 
 import com.google.inject.Inject;
@@ -23,6 +25,7 @@ public class AzureMachineImageTaskNG extends AbstractDelegateRunnableTask {
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
+    System.out.println("hello");
   }
 
   @Override
@@ -36,9 +39,10 @@ public class AzureMachineImageTaskNG extends AbstractDelegateRunnableTask {
   }
 
   @Override
-  public DelegateResponseData run(TaskParameters parameters) {
+  public ArtifactTaskResponse run(TaskParameters parameters) {
+    //    return null;
+    ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
+    //            return azureMachineImageTaskHelper.getArtifactCollectResponse(taskParameters);
     return null;
-    //        ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
-    //        return azureMachineImageTaskHelper.getArtifactCollectResponse(taskParameters);
   }
 }

@@ -40,6 +40,8 @@ public class AzureCapabilityHelper extends ConnectorCapabilityBaseHelper {
             encryptionServiceUrl = AZURE_US_GOV_URL;
             break;
           case AZURE:
+            encryptionServiceUrl = AZURE_URL;
+            break;
           default:
             encryptionServiceUrl = AZURE_URL;
         }

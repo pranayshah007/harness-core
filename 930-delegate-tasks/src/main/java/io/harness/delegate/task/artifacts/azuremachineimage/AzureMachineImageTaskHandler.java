@@ -13,12 +13,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
-@Slf4j
 public class AzureMachineImageTaskHandler extends DelegateArtifactTaskHandler<AzureMachineImageDelegateRequest> {
   private final SecretDecryptionService secretDecryptionService;
   private final AzureMachineImageTaskHelper azureMachineImageTaskHelper;
