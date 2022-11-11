@@ -5,18 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.gitsync.common.beans;
+package io.harness.engine.executions.plan;
 
-public enum ScmApis {
-  LIST_REPOSITORIES,
-  GET_FILE,
-  CREATE_PULL_REQUEST,
-  CREATE_FILE,
-  UPDATE_FILE,
-  CREATE_BRANCH,
-  LIST_BRANCHES,
-  GET_DEFAULT_BRANCH,
-  GET_BRANCH_HEAD_COMMIT,
-  LIST_FILES,
-  ;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@Data
+@Builder
+@EqualsAndHashCode
+public class PlanExecutionMetric {
+  String accountId;
+  String projectId;
+  String orgIdentifier;
 }

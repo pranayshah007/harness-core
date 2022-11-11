@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud;
+package io.harness.gitsync.common.scmerrorhandling.handlers.github;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
@@ -23,8 +23,17 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(PL)
-public class BitbucketListBranchesScmApiErrorHandler implements ScmApiErrorHandler {
-  public static final String LIST_BRANCH_FAILED_MESSAGE = "Listing branches from Bitbucket failed. ";
+public class GithubListFilesScmApiErrorHandler implements ScmApiErrorHandler {
+  public static final String LIST_FILES_NOT_FOUND_EXPLANATION =
+      "There was an issue while fetching head commit details for ref<REF>. Possible reasons can be:\n"
+      + "1. The requested repository<REPO> doesn't exist in Github.\n"
+      + "2. The requested ref<REF> doesn't exist in given Github repository<REPO>.\n"
+      + "3. The request file directory<FILEPATH> doesn't exist at ref<REF>.";
+  public static final String LIST_FILES_NOT_FOUND_HINT = "Please check the following:\n"
+      + "1. If the requested repo<REPO> exists on Github or not.\n"
+      + "2. If the requested ref<REF> exists in repo<REPO> on Github or not.\n"
+      + "3. If the requested file directory<FILEPATH> exists or not at ref<REF>.";
+  public static final String LIST_FILES_FAILED_MESSAGE = "Listing files from Github failed. ";
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
@@ -34,16 +43,15 @@ public class BitbucketListBranchesScmApiErrorHandler implements ScmApiErrorHandl
         throw NestedExceptionUtils.hintWithExplanationException(
             ErrorMessageFormatter.formatMessage(ScmErrorHints.INVALID_CREDENTIALS, errorMetadata),
             ErrorMessageFormatter.formatMessage(
-                LIST_BRANCH_FAILED_MESSAGE + ScmErrorExplanations.INVALID_CONNECTOR_CREDS, errorMetadata),
+                LIST_FILES_FAILED_MESSAGE + ScmErrorExplanations.INVALID_CONNECTOR_CREDS, errorMetadata),
             new ScmUnauthorizedException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(
-            ErrorMessageFormatter.formatMessage(ScmErrorHints.REPO_NOT_FOUND, errorMetadata),
-            ErrorMessageFormatter.formatMessage(
-                LIST_BRANCH_FAILED_MESSAGE + ScmErrorExplanations.REPO_NOT_FOUND, errorMetadata),
+            ErrorMessageFormatter.formatMessage(LIST_FILES_NOT_FOUND_HINT, errorMetadata),
+            ErrorMessageFormatter.formatMessage(LIST_FILES_NOT_FOUND_EXPLANATION, errorMetadata),
             new ScmBadRequestException(errorMessage));
       default:
-        log.error(String.format("Error while listing bitbucket branches: [%s: %s]", statusCode, errorMessage));
+        log.error(String.format("Error while list files operation: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

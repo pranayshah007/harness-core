@@ -19,4 +19,5 @@ public class ErrorMetadata {
   String targetBranchName;
   String newBranchName;
   String connectorRef;
+  String ref;
 }

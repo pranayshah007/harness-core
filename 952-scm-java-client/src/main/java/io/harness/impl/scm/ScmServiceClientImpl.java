@@ -283,7 +283,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
-  public FindFilesInCommitResponse findFilesInCommit(
+  public FindFilesInCommitResponse listFilesInCommit(
       ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     FindFilesInCommitRequest findFilesInCommitRequest = getFindFilesInCommitRequest(scmConnector, gitFilePathDetails);
     // still to be resolved
@@ -314,7 +314,10 @@ public class ScmServiceClientImpl implements ScmServiceClient {
                                         .contentType(ContentType.mapFromScmProtoValue(file.getContentType()))
                                         .path(file.getPath())
                                         .build()));
-    } while (response.getPagination().getNext() != 0 && isNotEmpty(response.getPagination().getNextUrl()));
+      if (isFailureResponse(response.getStatus())) {
+        return ListFilesInCommitResponse.builder().statusCode(response.getStatus()).error(response.getError()).build();
+      }
+    } while (response.getPagination().getNext() != 0 || isNotEmpty(response.getPagination().getNextUrl()));
 
     return ListFilesInCommitResponse.builder()
         .statusCode(Constants.HTTP_SUCCESS_STATUS_CODE)
@@ -551,6 +554,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return FindFilesInCommitRequest.newBuilder()
         .setSlug(scmGitProviderHelper.getSlug(scmConnector))
         .setRef(request.getRef())
+        .setPath(request.getFileDirectoryPath())
         .setProvider(scmGitProviderMapper.mapToSCMGitProvider(scmConnector));
   }
 
@@ -1162,9 +1166,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       ScmConnector scmConnector, ListFilesInCommitRequest listFilesInCommitRequest) {
     FindFilesInCommitRequest.Builder findFilesInCommitRequestBuilder =
         getFindFilesInCommitRequestBuilder(scmConnector, listFilesInCommitRequest);
-    int page = 0;
+    int page = 1;
     if (isBitbucket(scmConnector)) {
-      page = 1;
+      page = 0;
     }
     findFilesInCommitRequestBuilder.setPagination(PageRequest.newBuilder().setPage(page).build());
     return findFilesInCommitRequestBuilder;

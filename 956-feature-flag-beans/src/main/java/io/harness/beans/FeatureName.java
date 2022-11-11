@@ -486,7 +486,7 @@ public enum FeatureName {
       "FF for customers on updated delegate to use GetFileV2 call which is more performance efficient",
       HarnessTeam.PIPELINE),
   GITOPS_ONPREM_ENABLED("Enable the gitops tab in the UI in case of ONPREM/SMP", HarnessTeam.GITOPS),
-  ;
+  CIE_HOSTED_VMS_MAC("FF for enabling hosted builds for mac os", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

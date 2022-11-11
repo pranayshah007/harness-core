@@ -106,8 +106,8 @@ public class SCMServiceGitClientImpl implements ScmClient {
   }
 
   @Override
-  public FindFilesInCommitResponse findFilesInCommit(ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails) {
-    return scmServiceClient.findFilesInCommit(scmConnector, gitFilePathDetails, scmBlockingStub);
+  public FindFilesInCommitResponse listFilesInCommit(ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails) {
+    return scmServiceClient.listFilesInCommit(scmConnector, gitFilePathDetails, scmBlockingStub);
   }
 
   @Override

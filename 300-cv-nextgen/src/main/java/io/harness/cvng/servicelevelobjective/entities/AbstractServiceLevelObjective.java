@@ -83,6 +83,7 @@ public abstract class AbstractServiceLevelObjective
   @FdIndex private long nextNotificationIteration;
   @FdIndex private long nextVerificationIteration;
   @FdIndex private long createNextTaskIteration;
+  @FdIndex private long recordMetricIteration;
   @NotNull ServiceLevelObjectiveType type;
 
   public static List<MongoIndex> mongoIndexes() {
@@ -146,6 +147,9 @@ public abstract class AbstractServiceLevelObjective
     if (ServiceLevelObjectiveV2Keys.createNextTaskIteration.equals(fieldName)) {
       return this.createNextTaskIteration;
     }
+    if (ServiceLevelObjectiveV2Keys.recordMetricIteration.equals(fieldName)) {
+      return this.recordMetricIteration;
+    }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
@@ -161,6 +165,10 @@ public abstract class AbstractServiceLevelObjective
     }
     if (ServiceLevelObjectiveV2Keys.createNextTaskIteration.equals(fieldName)) {
       this.createNextTaskIteration = nextIteration;
+      return;
+    }
+    if (ServiceLevelObjectiveV2Keys.recordMetricIteration.equals(fieldName)) {
+      this.recordMetricIteration = nextIteration;
       return;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
