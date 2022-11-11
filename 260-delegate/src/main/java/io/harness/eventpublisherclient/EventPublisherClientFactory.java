@@ -48,6 +48,7 @@ import retrofit2.converter.protobuf.ProtoConverterFactory;
 @OwnedBy(HarnessTeam.CE)
 public class EventPublisherClientFactory implements Provider<EventPublisherClient> {
   private static final String CCM_EVENT_SERVICE_ENDPOINT = "ccmevent/";
+  private static final String SUBSTRING_TO_REMOVE_FROM_MANAGER_URL = "api";
 
   private final VersionInfoManager versionInfoManager;
   private final DelegateKryoConverterFactory kryoConverterFactory;
@@ -144,7 +145,16 @@ public class EventPublisherClientFactory implements Provider<EventPublisherClien
         .build();
   }
 
-  private String getCcmEventServiceEndpoint(String managerBaseUrl) {
-    return managerBaseUrl.substring(0, managerBaseUrl.lastIndexOf('/')) + CCM_EVENT_SERVICE_ENDPOINT;
+  // This is added because we don't want to have an entry in delegate config for CCMEventService
+  private static String getCcmEventServiceEndpoint(String managerBaseUrl) {
+    int lastIndex = managerBaseUrl.lastIndexOf(SUBSTRING_TO_REMOVE_FROM_MANAGER_URL);
+    if (lastIndex == -1) {
+      if (!managerBaseUrl.endsWith("/")) {
+        managerBaseUrl += "/";
+      }
+    } else {
+      managerBaseUrl = managerBaseUrl.substring(0, lastIndex);
+    }
+    return managerBaseUrl + CCM_EVENT_SERVICE_ENDPOINT;
   }
 }
