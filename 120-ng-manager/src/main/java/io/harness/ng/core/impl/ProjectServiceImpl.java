@@ -437,7 +437,7 @@ public class ProjectServiceImpl implements ProjectService {
     if (pageable.getSort() != null && pageable.getSort().getOrderFor(ProjectKeys.lastModifiedAt) != null) {
       permittedProjects.sort(Comparator.comparing(Project::getLastModifiedAt).reversed());
     }
-    return PageUtils.getPage(permittedProjects, (int) pageable.getOffset(), pageable.getPageSize());
+    return PageUtils.getPage(permittedProjects, pageable.getPageNumber(), pageable.getPageSize());
   }
 
   @Override
