@@ -10,6 +10,7 @@ package io.harness.engine.executions.plan;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -67,6 +68,6 @@ public class PlanExecutionMonitorServiceImplTest extends OrchestrationTestBase {
             .build());
     doReturn(planExecutions).when(planExecutionService).findByStatusWithProjections(any(), any());
     planExecutionMonitorService.registerActiveExecutionMetrics();
-    verify(metricService, times(3)).incCounter(anyString());
+    verify(metricService, times(3)).recordMetric(anyString(), anyDouble());
   }
 }

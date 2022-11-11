@@ -438,4 +438,47 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     update.set(InstanceKeys.infrastructureMappingId, infrastructureMappingId);
     mongoTemplate.findAndModify(query, update, Instance.class);
   }
+
+  @Override
+  public long countServiceInstancesDeployedInInterval(String accountId, long startTS, long endTS) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountId)
+                            .and(InstanceKeys.lastDeployedAt)
+                            .gte(startTS)
+                            .lte(endTS);
+    return secondaryMongoTemplate.count(new Query().addCriteria(criteria), Instance.class);
+  }
+
+  @Override
+  public long countServiceInstancesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountId)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(orgId)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(projectId)
+                            .and(InstanceKeys.lastDeployedAt)
+                            .gte(startTS)
+                            .lte(endTS);
+    return secondaryMongoTemplate.count(new Query().addCriteria(criteria), Instance.class);
+  }
+
+  @Override
+  public long countDistinctActiveServicesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountId)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(orgId)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(projectId)
+                            .and(InstanceKeys.lastDeployedAt)
+                            .gte(startTS)
+                            .lte(endTS);
+
+    return secondaryMongoTemplate
+        .findDistinct(new Query(criteria), InstanceKeys.serviceIdentifier, Instance.class, String.class)
+        .size();
+  }
 }

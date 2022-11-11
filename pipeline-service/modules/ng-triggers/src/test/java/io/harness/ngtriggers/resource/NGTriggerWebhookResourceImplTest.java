@@ -55,7 +55,6 @@ public class NGTriggerWebhookResourceImplTest extends CategoryTest {
   @Mock WebhookConfigProvider webhookConfigProvider;
   TriggerWebhookValidator triggerWebhookValidator;
   @InjectMocks private UrlHelper urlHelper = spy(UrlHelper.class);
-  private final String BASE_API_URL = "base_api_url/";
   private final String accountIdentifier = "account";
   private final String orgIdentifier = "org";
   private final String projectIdentifier = "project";
@@ -65,7 +64,6 @@ public class NGTriggerWebhookResourceImplTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    when(webhookConfigProvider.getCustomApiBaseUrl()).thenReturn(BASE_API_URL);
     triggerWebhookValidator = spy(new TriggerWebhookValidator(ngTriggerService));
     ngTriggerWebhookConfigResource = new NGTriggerWebhookConfigResourceImpl(
         ngTriggerService, ngTriggerElementMapper, triggerWebhookValidator, urlHelper);
@@ -162,8 +160,8 @@ public class NGTriggerWebhookResourceImplTest extends CategoryTest {
     ResponseDTO<NGProcessWebhookResponseDTO> response = ngTriggerWebhookConfigResource.processWebhookEventV2(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, triggerIdentifier, "payload", headers);
     assertThat(response.getData().getEventCorrelationId()).isEqualTo(executionUuid);
-    String expectedApiUrl = format(
-        "%swebhook/triggerExecutionDetails/%s?accountIdentifier=%s", BASE_API_URL, executionUuid, accountIdentifier);
+    String expectedApiUrl = format("%sgateway/pipeline/api/webhook/triggerExecutionDetails/%s?accountIdentifier=%s",
+        "base_ui_url/", executionUuid, accountIdentifier);
     assertThat(response.getData().getApiUrl()).isEqualTo(expectedApiUrl);
     String expectedUiUrl = format("%sng/#/account/%s/cd/orgs/%s/projects/%s/deployments?pipelineIdentifier=%s&page=0",
         "base_ui_url/", accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier);

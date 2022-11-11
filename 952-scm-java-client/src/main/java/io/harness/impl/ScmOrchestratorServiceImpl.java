@@ -104,8 +104,8 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   }
 
   @Override
-  public FindFilesInCommitResponse findFilesInCommit(ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails) {
-    return scmServiceGitClient.findFilesInCommit(scmConnector, gitFilePathDetails);
+  public FindFilesInCommitResponse listFilesInCommit(ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails) {
+    return scmServiceGitClient.listFilesInCommit(scmConnector, gitFilePathDetails);
   }
 
   @Override

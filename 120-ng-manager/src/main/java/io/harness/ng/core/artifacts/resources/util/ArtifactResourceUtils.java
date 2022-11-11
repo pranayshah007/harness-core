@@ -32,6 +32,7 @@ import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.evaluators.CDExpressionEvaluator;
 import io.harness.evaluators.CDYamlExpressionEvaluator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
@@ -146,6 +147,36 @@ public class ArtifactResourceUtils {
       imagePath = CDYamlExpressionEvaluator.renderExpression(imagePath);
     }
     return imagePath;
+  }
+
+  public String getResolvedExpression(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String runtimeInputYaml, String param, String fqnPath,
+      GitEntityFindInfoDTO gitEntityBasicInfo, String serviceId, int secretFunctor) {
+    if (EngineExpressionEvaluator.hasExpressions(param)) {
+      String mergedCompleteYaml = getMergedCompleteYaml(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+      if (isNotEmpty(mergedCompleteYaml) && TemplateRefHelper.hasTemplateRef(mergedCompleteYaml)) {
+        mergedCompleteYaml = applyTemplatesOnGivenYaml(
+            accountId, orgIdentifier, projectIdentifier, mergedCompleteYaml, gitEntityBasicInfo);
+      }
+      String[] split = fqnPath.split("\\.");
+      String stageIdentifier = split[2];
+      YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
+      Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
+
+      if (isEmpty(serviceId)) {
+        // pipelines with inline service definitions
+        serviceId = getServiceRef(fqnObjectMap, stageIdentifier);
+      }
+      // get environment ref
+      String environmentId = getEnvironmentRef(fqnObjectMap, stageIdentifier);
+      List<YamlField> aliasYamlField =
+          getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
+      CDExpressionEvaluator CDExpressionEvaluator =
+          new CDExpressionEvaluator(mergedCompleteYaml, fqnPath, aliasYamlField, secretFunctor);
+      param = CDExpressionEvaluator.renderExpression(param);
+    }
+    return param;
   }
 
   /**

@@ -254,6 +254,8 @@ timescaledb:
   deploymentDataMigrationRowLimit: 1000
   deploymentDataMigrationQueryBatchSize: 100
   isHealthCheckNeeded: false
+  sslMode: disable
+  sslRootCert: ""
 
 grpcServerConfig:
   connectors:

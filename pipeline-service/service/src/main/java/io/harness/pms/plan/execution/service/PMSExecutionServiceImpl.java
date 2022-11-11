@@ -66,7 +66,6 @@ import com.google.protobuf.ByteString;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -232,7 +231,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       log.error(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
       throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
     }
-    return PMSPipelineListRepoResponse.builder().repositories(new HashSet<>(uniqueRepos)).build();
+    return PMSPipelineListRepoResponse.builder().repositories(uniqueRepos).build();
   }
 
   @Override
@@ -243,7 +242,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       log.error(String.format(BRANCH_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
       throw new InternalServerErrorException(String.format(BRANCH_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
     }
-    return PMSPipelineListBranchesResponse.builder().branches(new HashSet<>(uniqueBranches)).build();
+    return PMSPipelineListBranchesResponse.builder().branches(uniqueBranches).build();
   }
 
   @Override

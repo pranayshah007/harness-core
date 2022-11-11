@@ -385,8 +385,33 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
       log.info("Encountered exception ", ex);
     }
     when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
-    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier);
+    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, false);
     verify(entitySetupUsageClient, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    assertThat(deleted).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_withForceDeleteAsTrue() {
+    createConnector(identifier, name);
+    when(connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
+             any(ConnectorInfoDTO.class), anyString()))
+        .thenReturn(true);
+    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, true);
+    verify(entitySetupUsageClient, times(0)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    assertThat(deleted).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_withForceDeleteAsTrue_throwsException() {
+    createConnector(identifier, name);
+    when(connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
+             any(ConnectorInfoDTO.class), anyString()))
+        .thenThrow(RuntimeException.class);
+    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, true);
     assertThat(deleted).isTrue();
   }
 
@@ -403,7 +428,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     }
     when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
     try {
-      connectorService.delete(accountIdentifier, null, null, identifier);
+      connectorService.delete(accountIdentifier, null, null, identifier, false);
     } catch (ReferencedEntityException e) {
       assertThat(e.getMessage())
           .isEqualTo("Could not delete the connector identifier as it is referenced by other entities");
@@ -415,7 +440,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void testDeleteWhenConnectorDoesNotExists() {
-    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier);
+    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, false);
     assertThat(deleted).isFalse();
   }
 

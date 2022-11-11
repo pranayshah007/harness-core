@@ -165,7 +165,7 @@ public class ConnectorServiceImplTest extends CategoryTest {
              fullyQualifiedIdentifier, null, null, accountIdentifier, true))
         .thenReturn(Optional.of(secretManager));
     try {
-      connectorService.delete(accountIdentifier, null, null, connectorIdentifier);
+      connectorService.delete(accountIdentifier, null, null, connectorIdentifier, false);
       fail("Should fail with InvalidRequestException as no other secret manager is present in the account");
     } catch (InvalidRequestException ex) {
       assertEquals(ex.getMessage(),

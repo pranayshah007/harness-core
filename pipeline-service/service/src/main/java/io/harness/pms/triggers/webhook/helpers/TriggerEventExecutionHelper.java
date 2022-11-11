@@ -463,8 +463,7 @@ public class TriggerEventExecutionHelper {
   private PMSPipelineSummaryResponseDTO getPipelineSummary(
       String accountId, String orgId, String projectId, String pipelineId) {
     Optional<PipelineEntity> pipelineEntity;
-    pipelineEntity = pmsPipelineService.getPipelineWithoutPerformingValidations(
-        accountId, orgId, projectId, pipelineId, false, false);
+    pipelineEntity = pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     if (!pipelineEntity.isPresent()) {
       log.warn("Pipeline does not exist or has been deleted: identifier {} in project {}, org {}, account {}",
           pipelineId, projectId, orgId, accountId);

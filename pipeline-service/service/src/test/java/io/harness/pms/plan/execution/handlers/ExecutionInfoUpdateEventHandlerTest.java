@@ -74,7 +74,7 @@ public class ExecutionInfoUpdateEventHandlerTest extends PipelineServiceTestBase
                                                                   .build())
                                         .build();
 
-    when(pmsPipelineService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(pmsPipelineService.getAndValidatePipeline(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(pipelineEntity));
 
     when(planExecutionService.get(anyString())).thenReturn(PlanExecution.builder().status(Status.FAILED).build());

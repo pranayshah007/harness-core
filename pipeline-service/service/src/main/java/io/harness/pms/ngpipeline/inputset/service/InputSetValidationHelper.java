@@ -107,12 +107,12 @@ public class InputSetValidationHelper {
       GitSyncBranchContext branchContext =
           GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().branch(baseBranch).build()).build();
       try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
-        optionalPipelineEntity =
-            pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
       }
     } else {
-      optionalPipelineEntity =
-          pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+      optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     }
     if (!optionalPipelineEntity.isPresent()) {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
@@ -169,8 +169,8 @@ public class InputSetValidationHelper {
 
   String getPipelineYamlForOldGitSyncFlowInternal(PMSPipelineService pmsPipelineService, String accountId,
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
-    Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> pipelineEntity = pmsPipelineService.getAndValidatePipeline(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     if (pipelineEntity.isPresent()) {
       return pipelineEntity.get().getYaml();
     } else {
