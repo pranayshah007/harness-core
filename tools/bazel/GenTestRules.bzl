@@ -25,10 +25,12 @@ def run_tests(**kwargs):
         native.java_test(
             name = test,
             runtime_deps = ["tests"],
-            size = "enormous",
+            size = "medium",
             jvm_flags = [
                 "$(HARNESS_ARGS)",
-                "-Xmx4G",
+                "-Xms6g",
+                "-Xmx6g",
+                "-verbose:gc",
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
             ],
@@ -137,7 +139,7 @@ EOF""" % code,
             name = package + ".tests" + index,
             test_class = package + "." + test_class,
             deps = [":shared_package_tests"] + deps,
-            size = "enormous",
+            size = "medium",
 
             # inputs
             srcs = code_filepath + [x[0] for x in tests],
@@ -146,7 +148,9 @@ EOF""" % code,
             visibility = ["//visibility:public"],
             jvm_flags = [
                 "$(HARNESS_ARGS)",
-                "-Xmx4G",
+                "-Xms6g",
+                "-Xmx6g",
+                "-verbose:gc",
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
             ],
@@ -213,13 +217,15 @@ def optimized_package_test(combined_tests_target_index, package, index, test_cla
         name = target_name,
         test_class = package + "." + test_class,
         runtime_deps = [COMBINED_TESTS_TARGET + str(combined_tests_target_index)],
-        size = "enormous",
+        size = "medium",
 
         #Additional
         visibility = ["//visibility:public"],
         jvm_flags = [
             "$(HARNESS_ARGS)",
-            "-Xmx4G",
+            "-Xms6g",
+            "-Xmx6g",
+            "-verbose:gc",
             "-XX:+HeapDumpOnOutOfMemoryError",
             "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
         ],
