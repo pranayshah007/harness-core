@@ -365,6 +365,8 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
+import io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageDelegateRequest;
+import io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
@@ -1929,5 +1931,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AMITag.class, 60013);
     kryo.register(AMIFilter.class, 60014);
     kryo.register(EmptyHostDelegateConfig.class, 60015);
+    kryo.register(AzureMachineImageDelegateRequest.class, 55426);
+    kryo.register(AzureMachineImageDelegateResponse.class, 55427);
   }
 }

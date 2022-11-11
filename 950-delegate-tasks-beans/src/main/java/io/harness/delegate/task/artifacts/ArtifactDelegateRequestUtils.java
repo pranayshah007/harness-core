@@ -32,6 +32,7 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegat
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
+import io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
@@ -69,6 +70,14 @@ public class ArtifactDelegateRequestUtils {
         .gcpConnectorDTO(gcpConnectorDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
+        .build();
+  }
+  public AzureMachineImageDelegateRequest getAzureMachineImageDelegateRequest(String cloudProviderId,
+      String subscriptionId, AzureConnectorDTO connector, List<EncryptedDataDetail> encryptedDataDetails,
+      ArtifactSourceType sourceType) {
+    return AzureMachineImageDelegateRequest.builder()
+        .azureConnectorDTO(connector)
+        .encryptedDataDetails(encryptedDataDetails)
         .build();
   }
 

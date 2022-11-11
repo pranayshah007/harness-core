@@ -15,6 +15,7 @@ import io.harness.delegate.task.artifacts.ami.AMIArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsTaskHandler;
+import io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageTaskHandler;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactTaskHandler;
@@ -70,6 +71,8 @@ public class ArtifactCollectionServiceRegistryNg {
         return AzureArtifactsTaskHandler.class;
       case AMI:
         return AMIArtifactTaskHandler.class;
+      case AZURE_MACHINE_IMAGE:
+        return AzureMachineImageTaskHandler.class;
       default:
         throw new InvalidRequestException("Unknown artifact source type: " + artifactSourceType);
     }

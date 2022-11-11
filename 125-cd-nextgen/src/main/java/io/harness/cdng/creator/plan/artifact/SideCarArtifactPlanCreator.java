@@ -46,7 +46,7 @@ public class SideCarArtifactPlanCreator implements PartialPlanCreator<SidecarArt
             ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME, ArtifactSourceConstants.AMAZON_S3_NAME,
             ArtifactSourceConstants.JENKINS_NAME, ArtifactSourceConstants.GITHUB_PACKAGES_NAME,
             ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME, ArtifactSourceConstants.AZURE_ARTIFACTS_NAME,
-            ArtifactSourceConstants.AMI_ARTIFACTS_NAME)));
+            ArtifactSourceConstants.AMI_ARTIFACTS_NAME, ArtifactSourceConstants.AZURE_MACHINE_IMAGE_NAME)));
   }
 
   @Override

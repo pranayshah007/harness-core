@@ -28,6 +28,7 @@ import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService
 import io.harness.delegate.task.artifacts.ami.AMIArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsTaskHandler;
+import io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactTaskHandler;
@@ -60,5 +61,6 @@ public class NGDelegateModule extends AbstractModule {
     bind(ArtifactoryArtifactTaskHandler.class);
     bind(AzureArtifactsTaskHandler.class);
     bind(AMIArtifactTaskHandler.class);
+    bind(AzureMachineImageTaskHandler.class);
   }
 }
