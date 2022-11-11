@@ -92,19 +92,13 @@ import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.apache.commons.lang3.tuple.Pair;
+import org.elasticsearch.common.util.Comparators;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -116,6 +110,7 @@ import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.Assert;
 
 @OwnedBy(PL)
 @Singleton
@@ -436,51 +431,52 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public Page<Project> listPermittedProjects(
       String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO) {
-    Criteria criteria = createProjectFilterCriteria(
-        Criteria.where(ProjectKeys.accountIdentifier).is(accountIdentifier).and(ProjectKeys.deleted).is(FALSE),
-        projectFilterDTO);
-    List<Scope> projects = projectRepository.findAllProjects(criteria);
-    List<Scope> permittedProjects = scopeAccessHelper.getPermittedScopes(projects);
+    Assert.notNull(pageable, "Pageable must not be null!");
+    List<Project> permittedProjects = listPermittedProjectsInternal(accountIdentifier, projectFilterDTO);
 
-    if (permittedProjects.isEmpty()) {
-      return Page.empty();
+    if (pageable.getSort() != null && pageable.getSort().getOrderFor(ProjectKeys.lastModifiedAt) != null) {
+      permittedProjects.sort(Comparator.comparing(Project::getLastModifiedAt).reversed());
     }
-
-    criteria = Criteria.where(ProjectKeys.accountIdentifier).is(accountIdentifier);
-    Criteria[] subCriteria = permittedProjects.stream()
-                                 .map(project
-                                     -> Criteria.where(ProjectKeys.orgIdentifier)
-                                            .is(project.getOrgIdentifier())
-                                            .and(ProjectKeys.identifier)
-                                            .is(project.getProjectIdentifier()))
-                                 .toArray(Criteria[] ::new);
-    criteria.orOperator(subCriteria);
-    return projectRepository.findAll(criteria, pageable);
+    return PageUtils.getPage(permittedProjects, (int) pageable.getOffset(), pageable.getPageSize());
   }
 
   @Override
   public List<ProjectDTO> listPermittedProjects(String accountIdentifier, ProjectFilterDTO projectFilterDTO) {
+    List<Project> permittedProjects = listPermittedProjectsInternal(accountIdentifier, projectFilterDTO);
+    return permittedProjects.stream().map(ProjectMapper::writeDTO).collect(Collectors.toList());
+  }
+
+  private List<Project> listPermittedProjectsInternal(String accountIdentifier, ProjectFilterDTO projectFilterDTO) {
     Criteria criteria = createProjectFilterCriteria(
         Criteria.where(ProjectKeys.accountIdentifier).is(accountIdentifier).and(ProjectKeys.deleted).is(FALSE),
         projectFilterDTO);
-    List<Scope> projects = projectRepository.findAllProjects(criteria);
-    List<Scope> permittedProjects = scopeAccessHelper.getPermittedScopes(projects);
+    List<Project> projects = projectRepository.findAllProjects(criteria);
+    List<Scope> scopes = projects.stream()
+                             .map(project
+                                 -> Scope.builder()
+                                        .accountIdentifier(project.getAccountIdentifier())
+                                        .orgIdentifier(project.getOrgIdentifier())
+                                        .projectIdentifier(project.getIdentifier())
+                                        .build())
+                             .collect(Collectors.toList());
+    List<Scope> permittedScopes = scopeAccessHelper.getPermittedScopes(scopes);
 
-    if (permittedProjects.isEmpty()) {
+    if (permittedScopes.isEmpty()) {
       return Collections.emptyList();
     }
 
-    criteria = Criteria.where(ProjectKeys.accountIdentifier).is(accountIdentifier);
-    Criteria[] subCriteria = permittedProjects.stream()
-                                 .map(project
-                                     -> Criteria.where(ProjectKeys.orgIdentifier)
-                                            .is(project.getOrgIdentifier())
-                                            .and(ProjectKeys.identifier)
-                                            .is(project.getProjectIdentifier()))
-                                 .toArray(Criteria[] ::new);
-    criteria.orOperator(subCriteria);
-    List<Project> projectsList = projectRepository.findAll(criteria);
-    return projectsList.stream().map(ProjectMapper::writeDTO).collect(Collectors.toList());
+    List<Project> permittedProjects = new ArrayList<>();
+    projects.forEach(project -> {
+      Scope scope = Scope.builder()
+                        .accountIdentifier(project.getAccountIdentifier())
+                        .orgIdentifier(project.getOrgIdentifier())
+                        .projectIdentifier(project.getIdentifier())
+                        .build();
+      if (permittedScopes.contains(scope)) {
+        permittedProjects.add(project);
+      }
+    });
+    return permittedProjects;
   }
 
   @Override
@@ -489,8 +485,16 @@ public class ProjectServiceImpl implements ProjectService {
     Criteria criteria = createProjectFilterCriteria(
         Criteria.where(ProjectKeys.accountIdentifier).is(accountIdentifier).and(ProjectKeys.deleted).is(FALSE),
         projectFilterDTO);
-    List<Scope> projects = projectRepository.findAllProjects(criteria);
-    List<Scope> permittedProjects = scopeAccessHelper.getPermittedScopes(projects);
+    List<Project> projects = projectRepository.findAllProjects(criteria);
+    List<Scope> scopes = projects.stream()
+                             .map(project
+                                 -> Scope.builder()
+                                        .accountIdentifier(project.getAccountIdentifier())
+                                        .orgIdentifier(project.getOrgIdentifier())
+                                        .projectIdentifier(project.getIdentifier())
+                                        .build())
+                             .collect(Collectors.toList());
+    List<Scope> permittedProjects = scopeAccessHelper.getPermittedScopes(scopes);
 
     if (permittedProjects.isEmpty()) {
       return ActiveProjectsCountDTO.builder().count(0).build();

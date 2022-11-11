@@ -10,13 +10,11 @@ package io.harness.repositories.core.custom;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.Scope;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 
 import com.google.inject.Inject;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -44,20 +42,12 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
   }
 
   @Override
-  public List<Scope> findAllProjects(Criteria criteria) {
+  public List<Project> findAllProjects(Criteria criteria) {
     Query query = new Query(criteria);
     query.fields().include(ProjectKeys.identifier);
     query.fields().include(ProjectKeys.orgIdentifier);
     query.fields().include(ProjectKeys.accountIdentifier);
-    return mongoTemplate.find(query, Project.class)
-        .stream()
-        .map(project
-            -> Scope.builder()
-                   .accountIdentifier(project.getAccountIdentifier())
-                   .orgIdentifier(project.getOrgIdentifier())
-                   .projectIdentifier(project.getIdentifier())
-                   .build())
-        .collect(Collectors.toList());
+    return mongoTemplate.find(query, Project.class);
   }
 
   @Override
