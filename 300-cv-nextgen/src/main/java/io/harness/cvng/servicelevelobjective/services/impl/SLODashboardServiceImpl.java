@@ -234,16 +234,16 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .healthSourceName(getHealthSourceName(monitoredService, simpleServiceLevelObjectiveSpec.getHealthSourceRef()))
           .type(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).getType())
           .build();
+    } else {
+      CompositeServiceLevelObjective compositeSLO = (CompositeServiceLevelObjective) serviceLevelObjective;
+      SLODashboardWidget.SLOGraphData sloGraphData =
+          sloRecordService.getGraphData(compositeSLO, timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()),
+              currentTimeMinute, totalErrorBudgetMinutes, compositeSLO.getVersion(), filter);
+
+      return getSloDashboardWidgetBuilder(
+          slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes, currentLocalDate)
+          .build();
     }
-
-    CompositeServiceLevelObjective compositeSLO = (CompositeServiceLevelObjective) serviceLevelObjective;
-    SLODashboardWidget.SLOGraphData sloGraphData =
-        sloRecordService.getGraphData(compositeSLO, timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()),
-            currentTimeMinute, totalErrorBudgetMinutes, compositeSLO.getVersion(), filter);
-
-    return getSloDashboardWidgetBuilder(
-        slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes, currentLocalDate)
-        .build();
   }
 
   private SLODashboardWidgetBuilder getSloDashboardWidgetBuilder(ServiceLevelObjectiveV2DTO slo, TimePeriod timePeriod,

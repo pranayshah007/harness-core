@@ -11,6 +11,7 @@ import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
@@ -71,6 +72,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -198,41 +200,44 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getTimeRemainingDays()).isEqualTo(66);
   }
 
-  //    @Test
-  //    @Owner(developers = ABHIJITH)
-  //    @Category(UnitTests.class)
-  //    public void testGetSloDashboardDetail_withSLOErrorBudgetReset() {
-  //      String monitoredServiceIdentifier = "monitoredServiceIdentifier";
-  //      MonitoredServiceDTO monitoredServiceDTO =
-  //          builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
-  //      HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
-  //      monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-  //      ServiceLevelObjectiveV2DTO serviceLevelObjective =
-  //      builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build(); SimpleServiceLevelObjectiveSpec
-  //      simpleServiceLevelObjectiveSpec = (SimpleServiceLevelObjectiveSpec) serviceLevelObjective.getSpec();
-  //      simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier);
-  //      simpleServiceLevelObjectiveSpec.setHealthSourceRef(healthSource.getIdentifier());
-  //      serviceLevelObjective.setSpec(simpleServiceLevelObjectiveSpec);
-  //
-  //      serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjective);
-  //      sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
-  //          builderFactory.getSLOErrorBudgetResetDTOBuilder()
-  //              .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
-  //              .errorBudgetIncrementMinutes(100)
-  //              .build());
-  //      sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
-  //          builderFactory.getSLOErrorBudgetResetDTOBuilder()
-  //              .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
-  //              .errorBudgetIncrementMinutes(50)
-  //              .build());
-  //      SLODashboardWidget sloDashboardWidget =
-  //              sloDashboardService.getSloDashboardDetail(builderFactory.getProjectParams(),
-  //                      serviceLevelObjective.getIdentifier(), null, null).getSloDashboardWidget();
-  //
-  //      assertThat(sloDashboardWidget.getErrorBudgetRemaining())
-  //          .isEqualTo(8790); // 30 days - 30*24*60 - 20% -> 8640 -> 8640 + 100 -> 8740  -> 8740 + 50-> 8790
-  //      assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(100, offset(0.0001));
-  //    }
+  @Test
+  @Ignore("resetErrorBudget function is not present")
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testGetSloDashboardDetail_withSLOErrorBudgetReset() {
+    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    ServiceLevelObjectiveV2DTO serviceLevelObjective =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+        (SimpleServiceLevelObjectiveSpec) serviceLevelObjective.getSpec();
+    simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier);
+    simpleServiceLevelObjectiveSpec.setHealthSourceRef(healthSource.getIdentifier());
+    serviceLevelObjective.setSpec(simpleServiceLevelObjectiveSpec);
+
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjective);
+    sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
+        builderFactory.getSLOErrorBudgetResetDTOBuilder()
+            .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
+            .errorBudgetIncrementMinutes(100)
+            .build());
+    sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
+        builderFactory.getSLOErrorBudgetResetDTOBuilder()
+            .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
+            .errorBudgetIncrementMinutes(50)
+            .build());
+    SLODashboardWidget sloDashboardWidget =
+        sloDashboardService
+            .getSloDashboardDetail(builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier(), null, null)
+            .getSloDashboardWidget();
+
+    assertThat(sloDashboardWidget.getErrorBudgetRemaining())
+        .isEqualTo(8790); // 30 days - 30*24*60 - 20% -> 8640 -> 8640 + 100 -> 8740  -> 8740 + 50-> 8790
+    assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(100, offset(0.0001));
+  }
 
   @Test
   @Owner(developers = KAMAL)
