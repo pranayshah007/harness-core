@@ -3271,7 +3271,8 @@
             {
               "type": "string",
               "enum": [
-                "Amd64"
+                "Amd64",
+                "Arm64"
               ]
             },
             {
