@@ -120,24 +120,17 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return gson.fromJson(groupConfigJson, ElastiGroup.class);
   }
 
-  public int renderCount(ParameterField<String> field, Ambiance ambiance, int defaultValue) {
-    int retVal = defaultValue;
-    if (field.isExpression()) {
+  public int renderCount(ParameterField<Integer> field, Ambiance ambiance, int defaultValue) {
+    if (field == null || field.isExpression() || field.getValue() == null) {
+      return defaultValue;
+    } else {
       try {
-        retVal = Integer.parseInt(renderExpression(ambiance, field.getExpressionValue()));
+        return Integer.parseInt(field.fetchFinalValue().toString());
       } catch (NumberFormatException e) {
-        log.error(format("Number format Exception while evaluating: [%s]", field.getExpressionValue()), e);
-        retVal = defaultValue;
-      }
-    } else if (!ParameterField.isBlank(field)) {
-      try {
-        retVal = Integer.parseInt(field.getValue());
-      } catch (NumberFormatException e) {
-        log.error(format("Number format Exception while evaluating: [%s]", field.getExpressionValue()), e);
-        retVal = defaultValue;
+        log.error(format("Number format Exception while evaluating: [%s]", field.fetchFinalValue().toString()), e);
+        return defaultValue;
       }
     }
-    return retVal;
   }
 
   public String renderExpression(Ambiance ambiance, String stringObject) {
@@ -527,8 +520,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
                             .async(true)
                             .build();
 
-    String taskName =
-            taskType.getDisplayName();
+    String taskName = taskType.getDisplayName();
 
     ElastigroupSpecParameters elastigroupSpecParameters = (ElastigroupSpecParameters) stepElementParameters.getSpec();
 
