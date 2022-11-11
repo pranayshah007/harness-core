@@ -63,7 +63,7 @@ public enum ConnectorType implements EntitySubtype {
   @JsonProperty("ElasticSearch") ELASTICSEARCH("ElasticSearch"),
   @JsonProperty("GcpSecretManager") GCP_SECRET_MANAGER("GcpSecretManager"),
   @JsonProperty("AzureArtifacts") AZURE_ARTIFACTS("AzureArtifacts"),
-  @JsonProperty("Pcf") PCF("pcf"),
+  @JsonProperty("Pcf") PCF("Pcf"),
 
   @JsonProperty("Spot") SPOT("Spot");
 
