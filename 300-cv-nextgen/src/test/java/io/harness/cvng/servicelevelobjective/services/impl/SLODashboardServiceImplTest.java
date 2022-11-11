@@ -201,9 +201,9 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Ignore("resetErrorBudget function is not present")
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
+  @Ignore("resetErrorBudget function is not present")
   public void testGetSloDashboardDetail_withSLOErrorBudgetReset() {
     String monitoredServiceIdentifier = "monitoredServiceIdentifier";
     MonitoredServiceDTO monitoredServiceDTO =
