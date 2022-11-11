@@ -28,7 +28,6 @@ import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
-import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
@@ -70,9 +69,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -367,46 +364,32 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloRecords.size()).isEqualTo(3);
     assertThat(sloRecords.get(2).getRunningBadCount()).isEqualTo(1.25);
     assertThat(sloRecords.get(2).getRunningGoodCount()).isEqualTo(1.75);
+    assertThat(sloRecords.get(0).getSloVersion()).isEqualTo(0);
 
-    List<SLIRecord.SLIState> sliStateList1 = Arrays.asList(SLIRecord.SLIState.BAD, SLIRecord.SLIState.BAD,
-        SLIRecord.SLIState.GOOD, SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.GOOD);
-    List<SLIRecord.SLIState> sliStateList2 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD, SLIRecord.SLIState.BAD);
-    String sliId1 = serviceLevelIndicatorService
-                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
-                            simpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
-                        .getUuid();
-    String sliId2 = serviceLevelIndicatorService
-                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
-                            simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
-                        .getUuid();
-    List<SLIRecord> sliRecordList3 = createSLIRecords(sliId1, sliStateList1);
-    List<SLIRecord> sliRecordList4 = createSLIRecords(sliId2, sliStateList2);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>
-        serviceLevelObjectivesDetailCompositeSLORecordMap1 = new HashMap<>();
-    serviceLevelObjectivesDetailCompositeSLORecordMap1.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), sliRecordList3);
-    serviceLevelObjectivesDetailCompositeSLORecordMap1.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), sliRecordList4);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
-        objectivesDetailSLIMissingDataTypeMap1 = new HashMap<>();
-    objectivesDetailSLIMissingDataTypeMap1.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), SLIMissingDataType.GOOD);
-    objectivesDetailSLIMissingDataTypeMap1.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), SLIMissingDataType.GOOD);
-    sloRecordService.create(serviceLevelObjectivesDetailCompositeSLORecordMap1, objectivesDetailSLIMissingDataTypeMap1,
-        1, verificationTaskId, startTime, endTime);
-    List<CompositeSLORecord> sloRecords1 = sloRecordService.getSLORecords(verificationTaskId, startTime, endTime);
-    assertThat(sloRecords1.size()).isEqualTo(5);
-    assertThat(sloRecords1.get(4).getRunningBadCount()).isEqualTo(2.0);
-    assertThat(sloRecords1.get(4).getRunningGoodCount()).isEqualTo(3.0);
-    assertThat(sloRecords1.get(4).getSloVersion()).isEqualTo(1);
-
-    SLODashboardWidget sloDashboardWidget = sloDashboardService
-                                                .getSloDashboardDetail(builderFactory.getProjectParams(),
-                                                    compositeServiceLevelObjective.getIdentifier(), null, null)
-                                                .getSloDashboardWidget();
+    SLODashboardWidget sloDashboardWidget =
+        sloDashboardService
+            .getSloDashboardDetail(builderFactory.getProjectParams(), compositeServiceLevelObjective.getIdentifier(),
+                startTime.toEpochMilli(), endTime.toEpochMilli())
+            .getSloDashboardWidget();
     assertThat(sloDashboardWidget.getSloIdentifier()).isEqualTo(compositeServiceLevelObjective.getIdentifier());
+    assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjectiveV2DTO.getTags());
+    assertThat(sloDashboardWidget.getSloTargetType())
+        .isEqualTo(compositeServiceLevelObjective.getSloTarget().getType());
+    assertThat(sloDashboardWidget.getCurrentPeriodLengthDays()).isEqualTo(30);
+    assertThat(sloDashboardWidget.getCurrentPeriodStartTime())
+        .isEqualTo(Instant.parse("2020-06-27T10:50:00Z").toEpochMilli());
+    assertThat(sloDashboardWidget.getCurrentPeriodEndTime())
+        .isEqualTo(Instant.parse("2020-07-27T10:50:00Z").toEpochMilli());
+    assertThat(sloDashboardWidget.getErrorBudgetRemaining()).isEqualTo(8639); // 8640 - (1.25 bad mins)
+    assertThat(sloDashboardWidget.getSloTargetPercentage()).isCloseTo(80, offset(.0001));
+    assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(99.9855, offset(0.001));
+    assertThat(sloDashboardWidget.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
+    assertThat(sloDashboardWidget.isRecalculatingSLI()).isFalse();
+    assertThat(sloDashboardWidget.isCalculatingSLI()).isFalse();
+    assertThat(sloDashboardWidget.getTimeRemainingDays()).isEqualTo(0);
+    assertCompositeSLOGraphData(clock.instant().minus(Duration.ofMinutes(10)),
+        sloDashboardWidget.getSloPerformanceTrend(), sloDashboardWidget.getErrorBudgetBurndown(), runningGoodCount,
+        runningBadCount, 8640);
   }
 
   @Test
@@ -773,6 +756,22 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
       assertThat(errorBudgetBurndown.get(i).getTimestamp())
           .isEqualTo(startTime.plus(Duration.ofMinutes(i)).toEpochMilli());
       assertThat(errorBudgetBurndown.get(i).getValue()).isCloseTo(expectedBurndown.get(i), offset(0.01));
+    }
+  }
+
+  private void assertCompositeSLOGraphData(Instant startTime, List<Point> sloPerformanceTrend,
+      List<Point> errorBudgetBurndown, List<Double> runningGoodCount, List<Double> runningBadCount,
+      int totalErrorBudgetMinutes) {
+    for (int i = 0; i < sloPerformanceTrend.size(); i++) {
+      assertThat(sloPerformanceTrend.get(i).getTimestamp())
+          .isEqualTo(startTime.plus(Duration.ofMinutes(i)).toEpochMilli());
+      assertThat(sloPerformanceTrend.get(i).getValue())
+          .isCloseTo((runningGoodCount.get(i) * 100.0) / (i + 1), offset(0.01));
+      assertThat(errorBudgetBurndown.get(i).getTimestamp())
+          .isEqualTo(startTime.plus(Duration.ofMinutes(i)).toEpochMilli());
+      assertThat(errorBudgetBurndown.get(i).getValue())
+          .isCloseTo(
+              ((totalErrorBudgetMinutes - runningBadCount.get(i)) * 100.0) / totalErrorBudgetMinutes, offset(0.01));
     }
   }
 }
