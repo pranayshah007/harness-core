@@ -10,7 +10,6 @@ package io.harness.cdng.creator.plan.stage;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
 
-import com.google.common.annotations.VisibleForTesting;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -85,6 +84,7 @@ import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
