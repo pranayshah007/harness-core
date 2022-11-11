@@ -27,7 +27,6 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
-import io.harness.perpetualtask.instancesyncv2.DirectK8sReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.serializer.KryoSerializer;
 
