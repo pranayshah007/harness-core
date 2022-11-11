@@ -15,6 +15,8 @@ import io.harness.artifacts.ami.service.AMIRegistryService;
 import io.harness.artifacts.ami.service.AMIRegistryServiceImpl;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl;
+import io.harness.artifacts.azuremachineimage.service.AzureMachineImageRegistryService;
+import io.harness.artifacts.azuremachineimage.service.AzureMachineImageRegistryServiceImpl;
 import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
 import io.harness.artifacts.gar.service.GARApiServiceImpl;
@@ -54,6 +56,7 @@ public class NGDelegateModule extends AbstractModule {
     bind(AMIRegistryService.class).to(AMIRegistryServiceImpl.class);
     bind(GarApiService.class).to(GARApiServiceImpl.class);
     bind(HttpService.class).to(HttpServiceImpl.class);
+    bind(AzureMachineImageRegistryService.class).to(AzureMachineImageRegistryServiceImpl.class);
     bind(DockerArtifactTaskHandler.class);
     bind(GithubPackagesArtifactTaskHandler.class);
     bind(S3ArtifactTaskHandler.class);

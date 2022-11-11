@@ -37,6 +37,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMI_ARTIFACTS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_ARTIFACTS_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_MACHINE_IMAGE_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
@@ -255,10 +256,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
       ManifestType.HelmChart, ManifestType.ReleaseRepo, ManifestType.OpenshiftTemplate, ManifestType.OpenshiftParam);
   private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
       Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
-  private static final Set<String> EMPTY_PRIMARY_TYPES =
-      Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME, DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME,
-          ARTIFACTORY_REGISTRY_NAME, ECR_NAME, GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME,
-          NEXUS2_REGISTRY_NAME, GITHUB_PACKAGES_NAME, AZURE_ARTIFACTS_NAME, AMI_ARTIFACTS_NAME);
+  private static final Set<String> EMPTY_PRIMARY_TYPES = Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME,
+      DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME, ARTIFACTORY_REGISTRY_NAME, ECR_NAME,
+      GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME, NEXUS2_REGISTRY_NAME, GITHUB_PACKAGES_NAME,
+      AZURE_ARTIFACTS_NAME, AMI_ARTIFACTS_NAME, AZURE_MACHINE_IMAGE_NAME);
   private static final Set<String> EMPTY_SERVICE_DEFINITION_TYPES = Sets.newHashSet(ManifestType.ServerlessAwsLambda,
       DelegateType.ECS, ServiceSpecType.NATIVE_HELM, ServiceSpecType.SSH, AZURE_WEBAPP, ServiceSpecType.WINRM,
       KUBERNETES, CUSTOM_DEPLOYMENT, ServiceSpecType.ELASTIGROUP);
