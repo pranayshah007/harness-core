@@ -31,7 +31,6 @@ public class CDNGComponentTest extends CDNGTestBase {
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
   @HarnessHierarchy(TestExecution.class)
-  @Ignore("CI-6025: TI team to follow up")
   public void componentCDNGTests() {
     for (Map.Entry<String, TestExecution> test : tests.entrySet()) {
       assertThatCode(() -> test.getValue().run()).as(test.getKey()).doesNotThrowAnyException();
