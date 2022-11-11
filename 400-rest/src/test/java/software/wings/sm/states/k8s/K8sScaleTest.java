@@ -226,6 +226,8 @@ public class K8sScaleTest extends CategoryTest {
   @Owner(developers = BOJANA)
   @Category(UnitTests.class)
   public void testHandleAsyncResponse() {
+    ExecutionContext executionContext = spy(context);
+    doReturn("accountId").when(executionContext).getAccountId();
     K8sTaskExecutionResponse k8sTaskExecutionResponse = K8sTaskExecutionResponse.builder()
                                                             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                             .k8sTaskResponse(K8sScaleResponse.builder().build())
@@ -236,7 +238,8 @@ public class K8sScaleTest extends CategoryTest {
         .when(k8sScale)
         .fetchInstanceElementListParam(anyListOf(K8sPod.class));
     doReturn(emptyList()).when(k8sScale).fetchInstanceStatusSummaries(any(), any());
-    k8sScale.handleAsyncResponse(context, response);
+    doReturn(false).when(featureFlagService).isEnabled(eq(FeatureName.INSTANCE_SYNC_V2_CG), any());
+    k8sScale.handleAsyncResponse(executionContext, response);
     verify(activityService, times(1)).updateStatus(nullable(String.class), anyString(), any(ExecutionStatus.class));
   }
 

@@ -132,6 +132,7 @@ io.harness.cdng.manifest.yaml.GitStore
 io.harness.plancreator.steps.common.StepElementParameters
 io.harness.cdng.service.steps.ServiceStepOutcome
 io.harness.cdng.provision.terraform.InlineTerraformBackendConfigSpec
+io.harness.cdng.provision.terraform.RemoteTerraformBackendConfigSpec
 io.harness.cdng.service.steps.ServiceConfigStepParameters
 io.harness.cdng.service.steps.ServiceSectionStepParameters
 io.harness.ngpipeline.artifact.bean.ArtifactsOutcome

@@ -5,24 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.instancesyncmonitoring.model;
+package io.harness.cvng.servicelevelobjective.beans;
 
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
-
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@OwnedBy(HarnessTeam.CDP)
-@Value
+@Data
 @Builder
-public class InstanceSyncMetricDetails {
+public class ServiceLevelObjectiveDetailsRefDTO {
   @NotNull String accountId;
-  String appId;
-  String orgId;
-  String projectId;
-  @NotNull boolean isNg;
-  @NotNull String deploymentType;
-  @NotNull String status;
+  String orgIdentifier;
+  String projectIdentifier;
+  @NotNull @NotBlank String serviceLevelObjectiveRef;
 }

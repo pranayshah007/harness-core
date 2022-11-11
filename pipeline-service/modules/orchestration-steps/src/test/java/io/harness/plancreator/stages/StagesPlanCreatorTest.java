@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -25,6 +27,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StagesStep;
 import io.harness.steps.common.NGSectionStepParameters;
 
@@ -40,6 +43,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
 public class StagesPlanCreatorTest extends CategoryTest {
@@ -47,8 +52,11 @@ public class StagesPlanCreatorTest extends CategoryTest {
   StagesConfig stagesConfig;
   PlanCreationContext context;
 
+  @Mock KryoSerializer kryoSerializer;
+
   @Before
   public void setUp() throws IOException {
+    MockitoAnnotations.openMocks(this);
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("complex_pipeline.yaml");
     assertThat(testFile).isNotNull();
@@ -71,7 +79,7 @@ public class StagesPlanCreatorTest extends CategoryTest {
     List<YamlNode> stages = stagesYamlField.getNode().asArray();
     String approvalStageUuid = Objects.requireNonNull(stages.get(0).getField("stage")).getNode().getUuid();
     List<String> childrenNodeIds = Collections.singletonList(approvalStageUuid);
-    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator();
+    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(null);
     PlanNode planForParentNode = stagesPlanCreator.createPlanForParentNode(context, stagesConfig, childrenNodeIds);
     assertThat(planForParentNode).isNotNull();
 
@@ -97,6 +105,7 @@ public class StagesPlanCreatorTest extends CategoryTest {
   @Category(UnitTests.class)
   @Ignore("CI-6025: TI team to follow up")
   public void testCreatePlanForChildrenNodes() {
+    doReturn(new byte[2]).when(kryoSerializer).asBytes(any());
     List<YamlNode> stages = stagesYamlField.getNode().asArray();
     YamlField approvalStage = stages.get(0).getField("stage");
     assertThat(approvalStage).isNotNull();
@@ -105,7 +114,7 @@ public class StagesPlanCreatorTest extends CategoryTest {
     assertThat(parallelDeploymentStages).isNotNull();
     String parallelStagesUuid = parallelDeploymentStages.getNode().getUuid();
 
-    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator();
+    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(kryoSerializer);
     LinkedHashMap<String, PlanCreationResponse> planForChildrenNodes =
         stagesPlanCreator.createPlanForChildrenNodes(context, stagesConfig);
     assertThat(planForChildrenNodes).isNotEmpty();
@@ -140,12 +149,13 @@ public class StagesPlanCreatorTest extends CategoryTest {
     assertThat(parallelDeploymentStages).isNotNull();
     String parallelStagesUuid = parallelDeploymentStages.getNode().getUuid();
 
-    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator();
+    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(null);
     GraphLayoutResponse layoutNodeInfo = stagesPlanCreator.getLayoutNodeInfo(context, stagesConfig);
     assertThat(layoutNodeInfo).isNotNull();
     assertThat(layoutNodeInfo.getStartingNodeId()).isEqualTo(approvalStageUuid);
-    assertThat(layoutNodeInfo.getLayoutNodes()).hasSize(1);
+    assertThat(layoutNodeInfo.getLayoutNodes()).hasSize(2);
     assertThat(layoutNodeInfo.getLayoutNodes().containsKey(approvalStageUuid)).isTrue();
+    assertThat(layoutNodeInfo.getLayoutNodes().containsKey(approvalStageUuid + "_rollbackStage")).isTrue();
 
     GraphLayoutNode stageLayoutNode = layoutNodeInfo.getLayoutNodes().get(approvalStageUuid);
     assertThat(stageLayoutNode.getNodeUUID()).isEqualTo(approvalStageUuid);
@@ -158,5 +168,12 @@ public class StagesPlanCreatorTest extends CategoryTest {
     assertThat(edgeLayoutList).isNotNull();
     assertThat(edgeLayoutList.getNextIdsList()).hasSize(1);
     assertThat(edgeLayoutList.getNextIds(0)).isEqualTo(parallelStagesUuid);
+
+    GraphLayoutNode rollbackStageLayoutNode = layoutNodeInfo.getLayoutNodes().get(approvalStageUuid + "_rollbackStage");
+    assertThat(rollbackStageLayoutNode.getNodeUUID()).isEqualTo(approvalStageUuid + "_rollbackStage");
+    assertThat(rollbackStageLayoutNode.getNodeType()).isEqualTo("Approval");
+    assertThat(rollbackStageLayoutNode.getName()).isEqualTo("a1-1 (Rollback Stage)");
+    assertThat(rollbackStageLayoutNode.getNodeGroup()).isEqualTo("STAGE");
+    assertThat(rollbackStageLayoutNode.getNodeIdentifier()).isEqualTo(approvalStageUuid + "_rollbackStage");
   }
 }

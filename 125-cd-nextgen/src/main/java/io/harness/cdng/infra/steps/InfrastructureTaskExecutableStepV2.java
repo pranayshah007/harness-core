@@ -298,9 +298,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   private void executeSync(
       Ambiance ambiance, InfrastructureConfig infrastructure, NGLogCallback logCallback, boolean skipInstances) {
     final Infrastructure spec = infrastructure.getInfrastructureDefinitionConfig().getSpec();
-    validateConnector(spec, ambiance);
+    validateConnector(spec, ambiance, logCallback);
     saveExecutionLog(logCallback, "Fetching environment information...");
-    validateInfrastructure(spec, ambiance);
+    validateInfrastructure(spec, ambiance, logCallback);
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();

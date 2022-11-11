@@ -52,7 +52,7 @@ public class MigrateTagLinksToTImeScaleDB implements TimeScaleEntityMigrationInt
       findOptionsTagLinks.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<HarnessTagLink> iterator =
-               new HIterator<>(wingsPersistence.createQuery(HarnessTagLink.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(HarnessTagLink.class, excludeAuthority)
                                    .field(HarnessTagLinkKeys.accountId)
                                    .equal(accountId)
                                    .fetch(findOptionsTagLinks))) {

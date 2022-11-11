@@ -12,6 +12,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
+import io.harness.cdng.expressionEvaluator.CustomScriptSecretExpressionEvaluator;
 import io.harness.common.NGTaskType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -53,14 +54,17 @@ public class CustomResourceServiceImpl implements CustomResourceService {
 
   @Override
   public List<BuildDetails> getBuilds(String script, String versionPath, String arrayPath, Map<String, String> inputs,
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, int secretFunctor) {
     BaseNGAccess baseNGAccess = getBaseNGAccess(accountIdentifier, orgIdentifier, projectIdentifier);
+    CustomScriptSecretExpressionEvaluator customScriptSecretExpressionEvaluator =
+        new CustomScriptSecretExpressionEvaluator(script, secretFunctor);
+    script = customScriptSecretExpressionEvaluator.renderExpression(script);
     CustomArtifactDelegateRequest customArtifactDelegateRequest = ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         arrayPath, null, "Inline", ArtifactSourceType.CUSTOM_ARTIFACT, versionPath, script, Collections.emptyMap(),
         inputs, null, null, 10, accountIdentifier);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(customArtifactDelegateRequest,
-          ArtifactTaskType.GET_BUILDS, baseNGAccess, "Custom Get Build task failure due to error");
+          ArtifactTaskType.GET_BUILDS, baseNGAccess, "Custom Get Build task failure due to error", secretFunctor);
       return artifactTaskExecutionResponse.getBuildDetails();
     } catch (DelegateServiceDriverException ex) {
       throw new HintException(
@@ -73,13 +77,14 @@ public class CustomResourceServiceImpl implements CustomResourceService {
   }
 
   private ArtifactTaskExecutionResponse executeSyncTask(CustomArtifactDelegateRequest customArtifactDelegateRequest,
-      ArtifactTaskType taskType, BaseNGAccess ngAccess, String ifFailedMessage) {
-    DelegateResponseData responseData = getResponseData(ngAccess, customArtifactDelegateRequest, taskType);
+      ArtifactTaskType taskType, BaseNGAccess ngAccess, String ifFailedMessage, int secretFunctor) {
+    DelegateResponseData responseData =
+        getResponseData(ngAccess, customArtifactDelegateRequest, taskType, secretFunctor);
     return getTaskExecutionResponse(responseData, ifFailedMessage);
   }
 
-  private DelegateResponseData getResponseData(
-      BaseNGAccess ngAccess, CustomArtifactDelegateRequest delegateRequest, ArtifactTaskType artifactTaskType) {
+  private DelegateResponseData getResponseData(BaseNGAccess ngAccess, CustomArtifactDelegateRequest delegateRequest,
+      ArtifactTaskType artifactTaskType, int secretFunctor) {
     ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
                                                         .accountId(ngAccess.getAccountIdentifier())
                                                         .artifactTaskType(artifactTaskType)
@@ -89,6 +94,7 @@ public class CustomResourceServiceImpl implements CustomResourceService {
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.CUSTOM_ARTIFACT_NG.name())
+            .expressionFunctorToken(secretFunctor)
             .taskParameters(artifactTaskParameters)
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
             .taskSetupAbstraction("ng", "true");

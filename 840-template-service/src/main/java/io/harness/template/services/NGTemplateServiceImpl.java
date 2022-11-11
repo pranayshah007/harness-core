@@ -867,7 +867,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       log.error(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
       throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
     }
-    return TemplateListRepoResponse.builder().repositories(new HashSet<>(uniqueRepos)).build();
+    return TemplateListRepoResponse.builder().repositories(uniqueRepos).build();
   }
 
   private void checkGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {

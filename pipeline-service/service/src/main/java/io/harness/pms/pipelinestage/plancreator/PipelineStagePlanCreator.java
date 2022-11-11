@@ -75,8 +75,8 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
       throw new InvalidRequestException("Pipeline Stage Yaml does not contain spec");
     }
     Optional<PipelineEntity> childPipelineEntity =
-        pmsPipelineService.getPipelineWithoutPerformingValidations(ctx.getMetadata().getAccountIdentifier(),
-            config.getOrg(), config.getProject(), config.getPipeline(), false, false);
+        pmsPipelineService.getPipeline(ctx.getMetadata().getAccountIdentifier(), config.getOrg(), config.getProject(),
+            config.getPipeline(), false, false);
 
     if (!childPipelineEntity.isPresent()) {
       throw new InvalidRequestException(String.format("Child pipeline does not exists %s ", config.getPipeline()));

@@ -336,6 +336,18 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                     .build()),
             scmConnector);
 
+    if (ScmApiErrorHandlingHelper.isFailureResponse(
+            listFilesInCommitResponse.getStatusCode(), scmConnector.getConnectorType())) {
+      ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_FILES, scmConnector.getConnectorType(),
+          scmConnector.getUrl(), listFilesInCommitResponse.getStatusCode(), listFilesInCommitResponse.getError(),
+          ErrorMetadata.builder()
+              .connectorRef(scmListFilesRequestDTO.getConnectorRef())
+              .repoName(scmListFilesRequestDTO.getRepoName())
+              .filepath(scmListFilesRequestDTO.getFileDirectoryPath())
+              .ref(scmListFilesRequestDTO.getRef())
+              .build());
+    }
+
     return ScmListFilesResponseDTO.builder()
         .fileGitDetailsDTOList(
             ScmFileGitDetailsDTO.toScmFileGitDetailsDTOList(listFilesInCommitResponse.getFileGitDetailsList()))

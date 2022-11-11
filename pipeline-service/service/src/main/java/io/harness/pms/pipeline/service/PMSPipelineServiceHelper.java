@@ -76,6 +76,7 @@ import io.harness.telemetry.TelemetryReporter;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -466,9 +467,9 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  private static void checkAndThrowMismatchInImportedPipelineMetadataInternal(String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest,
-      String importedPipeline) {
+  @VisibleForTesting
+  static void checkAndThrowMismatchInImportedPipelineMetadataInternal(String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline) {
     YamlField pipelineYamlField;
     try {
       pipelineYamlField = YamlUtils.readTree(importedPipeline);
@@ -505,13 +506,6 @@ public class PMSPipelineServiceHelper {
         pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.PROJECT_IDENTIFIER);
     if (!projectIdentifier.equals(projectIdentifierFromGit)) {
       changedFields.put(YAMLMetadataFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifierFromGit);
-    }
-
-    String descriptionFromGit = pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.DESCRIPTION);
-    if (!(EmptyPredicate.isEmpty(pipelineImportRequest.getPipelineDescription())
-            && EmptyPredicate.isEmpty(descriptionFromGit))
-        && !pipelineImportRequest.getPipelineDescription().equals(descriptionFromGit)) {
-      changedFields.put(YAMLMetadataFieldNameConstants.DESCRIPTION, descriptionFromGit);
     }
 
     if (!changedFields.isEmpty()) {

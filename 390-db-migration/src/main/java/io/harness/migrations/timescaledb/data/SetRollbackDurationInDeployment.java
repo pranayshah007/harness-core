@@ -61,7 +61,7 @@ public class SetRollbackDurationInDeployment implements TimeScaleDBDataMigration
       FindOptions findOptions = new FindOptions();
       findOptions.readPreference(ReadPreference.secondaryPreferred());
       try (HIterator<WorkflowExecution> iterator =
-               new HIterator<>(wingsPersistence.createQuery(WorkflowExecution.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(WorkflowExecution.class, excludeAuthority)
                                    .field(WorkflowExecutionKeys.createdAt)
                                    .greaterThanOrEq(System.currentTimeMillis() - (60 * 24 * 3600 * 1000L))
                                    .field(WorkflowExecutionKeys.pipelineExecutionId)

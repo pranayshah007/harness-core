@@ -35,8 +35,8 @@ public enum CIStepInfoType {
   SAVE_CACHE_S3(CI_LITE_ENGINE, "SaveCacheS3"),
   RESTORE_CACHE_S3(CI_LITE_ENGINE, "RestoreCacheS3"),
   UPLOAD_ARTIFACTORY(CI_LITE_ENGINE, "ArtifactoryUpload"),
+  ACTION(CI_LITE_ENGINE, "Action"),
   SECURITY(CI_LITE_ENGINE, "Security"),
-
   AQUA_TRIVY(CI_LITE_ENGINE, "AquaTrivy"),
   AWS_ECR(CI_LITE_ENGINE, "AWSECR"),
   BANDIT(CI_LITE_ENGINE, "Bandit"),

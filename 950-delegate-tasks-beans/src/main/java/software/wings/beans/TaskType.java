@@ -395,7 +395,8 @@ public enum TaskType {
   SPOT_TASK_NG(TaskGroup.SPOTINST, "Spot NG Task"),
   FETCH_INSTANCE_SCRIPT_TASK_NG(TaskGroup.CUSTOM_DEPLOYMENT_NG, "Fetch Instance Script Task"),
   AZURE_WEB_APP_TASK_NG_V2(TaskGroup.AZURE, "Azure Web App Task V2", false),
-  HELM_FETCH_CHART_VERSIONS_TASK_NG(TaskGroup.HELM, "Fetch Helm Chart Versions Task");
+  HELM_FETCH_CHART_VERSIONS_TASK_NG(TaskGroup.HELM, "Fetch Helm Chart Versions Task"),
+  TERRAFORM_TASK_NG_V2(TaskGroup.TERRAFORM_NG, "Terraform Task NG V2");
 
   private final TaskGroup taskGroup;
   private final String displayName;

@@ -60,21 +60,6 @@ public class CDPipelineInstrumentationHelper {
   @Inject InstanceService instanceService;
   @Inject TelemetryReporter telemetryReporter;
 
-  public long getTotalNumberOfServiceInstanceInInterval(
-      String accountIdentifier, long startInterval, long endInterval) {
-    return getServiceInstancesInInterval(accountIdentifier, startInterval, endInterval).size();
-  }
-
-  public long getTotalNumberOfActiveServices(String accountIdentifier, long startInterval, long endInterval) {
-    return getTotalNumberOfActiveServices(getServiceInstancesInInterval(accountIdentifier, startInterval, endInterval));
-  }
-
-  private long getTotalNumberOfActiveServices(
-      String accountIdentifier, String organizationId, String projectId, long startInterval, long endInterval) {
-    return getTotalNumberOfActiveServices(
-        getServiceInstancesInInterval(accountIdentifier, organizationId, projectId, startInterval, endInterval));
-  }
-
   public long getTotalNumberOfActiveServices(List<InstanceDTO> serviceInstances) {
     return getActiveServices(serviceInstances).length;
   }
@@ -134,6 +119,19 @@ public class CDPipelineInstrumentationHelper {
         "&", instanceDTO.getOrgIdentifier(), instanceDTO.getProjectIdentifier(), instanceDTO.getServiceIdentifier());
   }
 
+  public long getCountOfServiceInstancesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS) {
+    if (EmptyPredicate.isEmpty(orgId) && EmptyPredicate.isEmpty(projectId)) {
+      return instanceService.countServiceInstancesDeployedInInterval(accountId, startTS, endTS);
+    }
+    return instanceService.countServiceInstancesDeployedInInterval(accountId, orgId, projectId, startTS, endTS);
+  }
+
+  public long getCountOfDistinctActiveServicesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS) {
+    return instanceService.countDistinctActiveServicesDeployedInInterval(accountId, orgId, projectId, startTS, endTS);
+  }
+
   private class UniqueServiceEntityId {
     @Getter private final String serviceIdentifier;
     @Getter private final String projectIdentifier;
@@ -146,24 +144,9 @@ public class CDPipelineInstrumentationHelper {
     }
   }
 
-  public void sendCountOfDistinctActiveServicesEvent(
-      String pipelineId, String identity, String accountId, String accountName, String orgId, String projectId) {
-    sendCountOfDistinctActiveServicesEvent(pipelineId, identity, accountId, accountName, orgId, projectId, null);
-  }
-
   public void sendCountOfDistinctActiveServicesEvent(String pipelineId, String identity, String accountId,
-      String accountName, String orgId, String projectId, List<InstanceDTO> serviceInstances) {
-    long currentTS = System.currentTimeMillis();
-    long searchingPeriod = 30L * 24 * 60 * 60 * 1000; // 30 days
-
+      String accountName, String orgId, String projectId, long count) {
     try {
-      long count = 0;
-      if (EmptyPredicate.isEmpty(serviceInstances)) {
-        count = getTotalNumberOfActiveServices(accountId, orgId, projectId, currentTS - searchingPeriod, currentTS);
-      } else {
-        count = getTotalNumberOfActiveServices(serviceInstances);
-      }
-
       HashMap<String, Object> activeServicesCountPropMap = new HashMap<>();
       activeServicesCountPropMap.put(ACTIVE_SERVICES_COUNT, count);
       activeServicesCountPropMap.put(ACTIVE_SERVICES_ACCOUNT_ID, accountId);
@@ -181,10 +164,10 @@ public class CDPipelineInstrumentationHelper {
   }
 
   public void sendCountOfServiceInstancesEvent(String pipelineId, String identity, String accountId, String accountName,
-      String orgId, String projectId, List<InstanceDTO> serviceInstances) {
+      String orgId, String projectId, long countOfServiceInstances) {
     try {
       HashMap<String, Object> serviceInstancesPropMap = new HashMap<>();
-      serviceInstancesPropMap.put(SERVICE_INSTANCES_COUNT, serviceInstances.size());
+      serviceInstancesPropMap.put(SERVICE_INSTANCES_COUNT, countOfServiceInstances);
       serviceInstancesPropMap.put(SERVICE_INSTANCES_ACCOUNT_ID, accountId);
       serviceInstancesPropMap.put(SERVICE_INSTANCES_ACCOUNT_NAME, accountName);
       serviceInstancesPropMap.put(SERVICE_INSTANCES_PROJECT_ID, projectId);

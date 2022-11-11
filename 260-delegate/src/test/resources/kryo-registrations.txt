@@ -2429,6 +2429,8 @@
 9800005:io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig
 9800006:io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig
 9800007:io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig
+9800008:io.harness.delegate.task.terraform.InlineTerraformBackendConfigFileInfo
+9800009:io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
@@ -2436,4 +2438,3 @@
 10000103:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType
 10000109:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO
 10000111:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
-

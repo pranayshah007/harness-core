@@ -138,15 +138,20 @@ public class YamlAuditRecordGenerationUtils {
           if (featureFlagService.isEnabled(FeatureName.ENTITY_AUDIT_RECORD, accountId)) {
             long now = System.currentTimeMillis();
             record.setCreatedAt(now);
-            AuditRecord auditRecord = AuditRecord.builder()
-                                          .auditHeaderId(auditHeader.getUuid())
-                                          .entityAuditRecord(record)
-                                          .createdAt(now)
-                                          .accountId(accountId)
-                                          .nextIteration(now + TimeUnit.MINUTES.toMillis(3))
-                                          .build();
+            if (isNotEmpty(accountId)) {
+              AuditRecord auditRecord = AuditRecord.builder()
+                                            .auditHeaderId(auditHeader.getUuid())
+                                            .entityAuditRecord(record)
+                                            .createdAt(now)
+                                            .accountId(accountId)
+                                            .nextIteration(now + TimeUnit.MINUTES.toMillis(3))
+                                            .build();
 
-            wingsPersistence.save(auditRecord);
+              wingsPersistence.save(auditRecord);
+            } else {
+              log.warn("Unable to create audit for entityAuditRecord {} because accountId is {}", record, accountId,
+                  new Exception());
+            }
           } else {
             auditHeader.getEntityAuditRecords().add(record);
           }

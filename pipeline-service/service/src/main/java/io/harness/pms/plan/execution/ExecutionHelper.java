@@ -115,8 +115,8 @@ public class ExecutionHelper {
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
-    Optional<PipelineEntity> pipelineEntityOptional =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> pipelineEntityOptional = pmsPipelineService.getAndValidatePipeline(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     if (!pipelineEntityOptional.isPresent()) {
       throw new InvalidRequestException(
           String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineIdentifier));

@@ -757,7 +757,9 @@ import io.harness.delegate.task.stepstatus.artifact.DockerArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactMetadata;
+import io.harness.delegate.task.terraform.InlineTerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.InlineTerraformVarFileInfo;
+import io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.RemoteTerraformVarFileInfo;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformCommand;
@@ -1896,6 +1898,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureFetchArmPreDeploymentDataTaskParameters.class, 55423);
     kryo.register(AzureFetchArmPreDeploymentDataTaskResponse.class, 55424);
     kryo.register(AwsS3ArtifactDelegateConfig.class, 9800007);
+    kryo.register(InlineTerraformBackendConfigFileInfo.class, 9800008);
+    kryo.register(RemoteTerraformBackendConfigFileInfo.class, 9800009);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
     kryo.register(GcpSecretManagerValidationParams.class, 19879);
     kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);

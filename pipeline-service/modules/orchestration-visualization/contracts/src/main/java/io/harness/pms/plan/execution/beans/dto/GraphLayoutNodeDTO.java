@@ -61,4 +61,5 @@ public class GraphLayoutNodeDTO {
   String nodeExecutionId;
   StrategyMetadata strategyMetadata;
   Boolean executionInputConfigured;
+  Boolean isRollbackStageNode;
 }

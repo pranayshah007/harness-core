@@ -403,6 +403,10 @@ public class PipelinesApiUtils {
         .baseBranch(gitDetails.getBaseBranch())
         .lastCommitId(gitDetails.getLastCommitId())
         .lastObjectId(gitDetails.getLastObjectId())
+        .repoName(gitDetails.getRepoName())
+        .storeType(StoreType.getFromStringOrNull(
+            (gitDetails.getStoreType() == null) ? null : gitDetails.getStoreType().value()))
+        .connectorRef(gitDetails.getConnectorRef())
         .build();
   }
 

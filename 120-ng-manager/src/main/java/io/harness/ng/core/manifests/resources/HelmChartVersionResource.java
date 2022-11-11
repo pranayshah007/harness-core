@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.manifests.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
@@ -38,7 +45,6 @@ import lombok.extern.slf4j.Slf4j;
     })
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
-
 public class HelmChartVersionResource {
   private final HelmChartService helmChartService;
   private final ArtifactResourceUtils artifactResourceUtils;
@@ -50,9 +56,11 @@ public class HelmChartVersionResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
-      @NotNull @QueryParam("fqnPath") String fqnPath) {
-    HelmChartResponseDTO helmChartResponseDTO =
-        helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      @NotNull @QueryParam("fqnPath") String fqnPath, @QueryParam("connectorRef") String connectorIdentifier,
+      @QueryParam("chartName") String chartName, @QueryParam("region") String region,
+      @QueryParam("bucketName") String bucketName, @QueryParam("folderPath") String folderPath) {
+    HelmChartResponseDTO helmChartResponseDTO = helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier,
+        projectIdentifier, serviceRef, fqnPath, connectorIdentifier, chartName, region, bucketName, folderPath);
     return ResponseDTO.newResponse(helmChartResponseDTO);
   }
 }

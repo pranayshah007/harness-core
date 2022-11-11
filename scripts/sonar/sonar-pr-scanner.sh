@@ -1,4 +1,8 @@
 #!/bin/bash
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 #Copyright 2021 Harness Inc. All rights reserved.
 #Use of this source code is governed by the PolyForm Shield 1.0.0 license
@@ -36,7 +40,7 @@ JAVA_CLASSES_PATH="/tmp/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin"
 JAVA_SRCS="src"
 JAVA_TEST_SRCS='src/test/**/*.java'
 JAVA_LIBS="*.jar"
-JAVA_SRC_CLASS="_javac/**/*.class"
+JAVA_SRC_CLASS="_javac"
 PR_MODULES_JAVAC_FILE="pr_javac_list.txt"
 PR_MODULES_LIB_FILE="pr_lib_list.txt"
 PR_SRCS_FILE="pr_srcs.txt"
@@ -89,7 +93,7 @@ fi
 
 export SONAR_JAVAC_FILES=$(cat $PR_MODULES_JAVAC_FILE | tr '\r\n' ',' | rev | cut -c2- | rev)
 export SONAR_LIBS_FILES=$(cat $PR_MODULES_LIB_FILE | tr '\r\n' ',' | rev | cut -c2- | rev)
-export SONAR_SRCS=$(cat $PR_SRCS_FILE | tr '\r\n' ',' | rev | cut -c2- | rev)
+export SONAR_SRCS=$(cat $PR_SRCS_FILE | sort -u | tr '\r\n' ',' | rev | cut -c2- | rev)
 export SONAR_TEST_INCLUSIONS=$(cat $PR_TEST_INCLUSION_FILE | tr '\r\n' ',' | rev | cut -c2- | rev)
 
 echo "sonar.sources=$SONAR_SRCS" >> ${SONAR_CONFIG_FILE}

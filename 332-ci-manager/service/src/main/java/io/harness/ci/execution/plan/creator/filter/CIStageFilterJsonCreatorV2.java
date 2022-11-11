@@ -22,7 +22,6 @@ import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -144,10 +143,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
       if (infrastructure.getType() == Infrastructure.Type.VM) {
         validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
       }
-      if (infrastructure.getType() == KUBERNETES_DIRECT
-          && k8InitializeTaskUtils.getOS(infrastructure) == OSType.Windows) {
-        validationUtils.validateWindowsK8Stage(integrationStageConfig.getExecution());
-      }
+      validationUtils.validateStage(integrationStageConfig.getExecution(), infrastructure);
     }
   }
 

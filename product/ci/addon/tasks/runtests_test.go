@@ -889,6 +889,41 @@ instrPackages: p1, p2, p3`
 	assert.NotNil(t, err)
 }
 
+func Test_GetSplitTests(t *testing.T) {
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: false,
+		preCommand:           "echo x",
+		args:                 "test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+		testSplitStrategy:    countTestSplitStrategy,
+		parallelizeTests:     false,
+	}
+	testsToSplit := []types.RunnableTest{
+		{Pkg: "pkg1", Class: "cls1"},
+		{Pkg: "pkg1", Class: "cls2"},
+		{Pkg: "pkg2", Class: "cls1"},
+		{Pkg: "pkg2", Class: "cls2"},
+		{Pkg: "pkg3", Class: "cls1"},
+	}
+	splitStrategy := countTestSplitStrategy
+	splitTotal := 3
+	tests, _ := r.getSplitTests(ctx, testsToSplit, splitStrategy, 0, splitTotal)
+	assert.Equal(t, len(tests), 2)
+	tests, _ = r.getSplitTests(ctx, testsToSplit, splitStrategy, 1, splitTotal)
+	assert.Equal(t, len(tests), 2)
+	tests, _ = r.getSplitTests(ctx, testsToSplit, splitStrategy, 2, splitTotal)
+	assert.Equal(t, len(tests), 1)
+}
+
 func TestNewRunTestsTask(t *testing.T) {
 	diff := "diff"
 	preCommand := "pre"

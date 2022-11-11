@@ -54,6 +54,7 @@ import io.harness.repositories.inputset.PMSInputSetRepository;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.yaml.validator.InvalidYamlException;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -438,6 +439,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   }
 
   // todo: move to helper class when created during refactoring
+  @VisibleForTesting
   void checkAndThrowMismatchInImportedInputSetMetadata(String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequest,
       String importedInputSet) {
@@ -503,12 +505,6 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       changedFields.put(YAMLFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifierFromGit);
     }
 
-    String descriptionFromGit = inputSetInnerField.getNode().getStringValue(YAMLFieldNameConstants.DESCRIPTION);
-    if (!(EmptyPredicate.isEmpty(inputSetImportRequest.getInputSetDescription())
-            && EmptyPredicate.isEmpty(descriptionFromGit))
-        && !inputSetImportRequest.getInputSetDescription().equals(descriptionFromGit)) {
-      changedFields.put(YAMLFieldNameConstants.DESCRIPTION, descriptionFromGit);
-    }
     if (isOverlay) {
       String pipelineIdentifierFromGit =
           inputSetInnerField.getNode().getStringValue(YAMLFieldNameConstants.PIPELINE_IDENTIFIER);

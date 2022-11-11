@@ -13,6 +13,7 @@ import static io.harness.logging.LogLevel.WARN;
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_JSON_FILE_NAME;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.TMACARI;
@@ -300,6 +301,26 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = JELENA)
+  @Category(UnitTests.class)
+  public void testAddVarFiesCommitIdsToMapBackendConfig() {
+    GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig();
+    TerraformBackendConfigFileInfo configFile =
+        RemoteTerraformBackendConfigFileInfo.builder()
+            .gitFetchFilesConfig(GitFetchFilesConfig.builder().gitStoreDelegateConfig(gitStoreDelegateConfig).build())
+            .build();
+
+    Map<String, String> commitIdMap = new HashMap<>();
+    doReturn("commitsha").when(spyTerraformBaseHelper).getLatestCommitSHA(new File("repoDir"));
+    doReturn("repoDir").when(gitClientHelper).getRepoDirectory(any(GitBaseRequest.class));
+    doReturn("commitsha").when(spyTerraformBaseHelper).getLatestCommitSHAFromLocalRepo(any(GitBaseRequest.class));
+
+    terraformBaseHelper.addBackendFileCommitIdsToMap("configFileIdentifier", configFile, commitIdMap);
+    assertThat(commitIdMap).isNotNull();
+    assertThat(commitIdMap.size()).isEqualTo(1);
+  }
+
+  @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testFetchConfigFileAndPrepareScriptDir() throws IOException {
@@ -526,6 +547,27 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     assertThat(varFilePaths.get(0))
         .isEqualTo(Paths.get(tfvarDir).toAbsolutePath() + "/"
             + "filepath1");
+  }
+
+  @Test
+  @Owner(developers = JELENA)
+  @Category(UnitTests.class)
+  public void testCheckoutRemoteBackendConfigFileAndConvertToFilePath() throws IOException {
+    String scriptDirectory = "repository/testSaveAndGetTerraformPlanFile";
+    FileIo.createDirectoryIfDoesNotExist(scriptDirectory);
+    String configDir = "repository/backendConfigDir";
+    FileIo.createDirectoryIfDoesNotExist(configDir);
+    GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig();
+    TerraformBackendConfigFileInfo configFile =
+        RemoteTerraformBackendConfigFileInfo.builder()
+            .gitFetchFilesConfig(GitFetchFilesConfig.builder().gitStoreDelegateConfig(gitStoreDelegateConfig).build())
+            .build();
+
+    String filePath = terraformBaseHelper.checkoutRemoteBackendConfigFileAndConvertToFilePath(
+        configFile, scriptDirectory, logCallback, "accountId", configDir);
+    assertThat(filePath).isNotNull();
+    assertThat(filePath).isEqualTo(Paths.get(configDir).toAbsolutePath() + "/"
+        + "filepath1");
   }
 
   @Test
