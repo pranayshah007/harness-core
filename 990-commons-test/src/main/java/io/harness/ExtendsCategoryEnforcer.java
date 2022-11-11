@@ -14,6 +14,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
+import org.junit.runner.notification.RunListener;
 
 @RunListener.ThreadSafe
 @Slf4j
