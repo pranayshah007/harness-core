@@ -47,6 +47,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.supplier.ThrowingSupplier;
@@ -84,12 +85,16 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     ElastigroupSetupStepParameters elastigroupSetupStepParameters =
         (ElastigroupSetupStepParameters) stepParameters.getSpec();
 
-    String elastigroupNamePrefix = elastigroupSetupStepParameters.getName().getValue();
+    ParameterField<String> elastigroupSetupStepParametersName = elastigroupSetupStepParameters.getName();
+    String elastigroupNamePrefix = elastigroupSetupStepParametersName.isExpression()
+        ? elastigroupStepCommonHelper.renderExpression(
+            ambiance, elastigroupSetupStepParametersName.getExpressionValue())
+        : elastigroupSetupStepParametersName.getValue();
 
     elastigroupNamePrefix = isBlank(elastigroupNamePrefix)
         ? Misc.normalizeExpression(ServiceVersionConvention.getPrefix(
             elastigroupSetupStepParameters.getName().getValue(), infrastructureOutcome.getEnvironment().getName()))
-        : Misc.normalizeExpression(elastigroupStepCommonHelper.renderExpression(ambiance, elastigroupNamePrefix));
+        : Misc.normalizeExpression(elastigroupNamePrefix);
 
     ElastiGroup elastiGroupOriginalConfig =
         generateOriginalConfigFromJson(elastigroupStepExecutorParams.getElastigroupParameters(),
