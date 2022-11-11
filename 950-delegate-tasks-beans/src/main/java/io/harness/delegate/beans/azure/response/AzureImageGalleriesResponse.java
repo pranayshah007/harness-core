@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.beans.AzureImageGallery;
+import software.wings.beans.AzureImageVersion;
 
 import java.util.List;
 import lombok.Data;

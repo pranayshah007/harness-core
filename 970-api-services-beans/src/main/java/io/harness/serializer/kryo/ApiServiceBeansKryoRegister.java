@@ -143,6 +143,7 @@ import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.AzureImageDefinition;
 import software.wings.beans.AzureImageGallery;
+import software.wings.beans.AzureImageVersion;
 import software.wings.beans.AzureKubernetesCluster;
 import software.wings.beans.ExecutionCredential;
 import software.wings.beans.GcpKubernetesCluster;
@@ -428,6 +429,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(TimeSpan.class, 7425);
     kryo.register(AzureImageGallery.class, 40017);
     kryo.register(AzureImageDefinition.class, 40018);
+    kryo.register(AzureImageVersion.class, 400190);
     kryo.register(ExecutionCredential.ExecutionType.class, 5023);
     kryo.register(JobDetails.JobParameter.class, 5241);
     kryo.register(JobDetails.class, 5121);

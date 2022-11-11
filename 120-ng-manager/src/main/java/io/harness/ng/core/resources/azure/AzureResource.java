@@ -20,6 +20,7 @@ import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.AzureInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureBuildsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureImageGalleriesDTO;
@@ -161,6 +162,26 @@ public class AzureResource {
     return ResponseDTO.newResponse(azureResourceService.getImageGallery(
         connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup));
   }
+  @GET
+  @Path(
+      "subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/galleryName/{galleryName}/imageDefinition/{imageDefinition}/getBuilds")
+  @ApiOperation(value = "Gets azure machine image builds", nickname = "Getsazuremachineimagebuilds")
+  public ResponseDTO<AzureBuildsDTO>
+  getBuilds(@QueryParam("connectorRef") String azureConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @PathParam("subscriptionId") String subscriptionId, @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @PathParam("resourceGroup") String resourceGroup, @PathParam("galleryName") String galleryName,
+      @PathParam("imageDefinition") String imageDefinition) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    return ResponseDTO.newResponse(azureResourceService.getBuilds(
+        connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup, galleryName, imageDefinition));
+  }
+
   @GET
   @Path("v2/resourceGroups")
   @ApiOperation(value = "Gets azure resource groups V2", nickname = "getAzureResourceGroupsV2")

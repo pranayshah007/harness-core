@@ -38,6 +38,7 @@ import io.harness.azure.utility.AzureUtils;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.data.encoding.EncodingUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.azure.ManagementGroupData;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
@@ -48,6 +49,7 @@ import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.azure.response.AzureImageGalleriesResponse;
 import io.harness.delegate.beans.azure.response.AzureLocationsResponse;
+import io.harness.delegate.beans.azure.response.AzureMachineImageBuildResponse;
 import io.harness.delegate.beans.azure.response.AzureMngGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
@@ -70,6 +72,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
+import software.wings.beans.AzureImageVersion;
 import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -91,6 +94,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -193,8 +197,48 @@ public class AzureAsyncTaskHelper {
             .azureImageGalleries(azureComputeClient.listImageGalleries(azureConfig, subscriptionId, resourceGroup))
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .build();
-
     return response;
+  }
+  public AzureMachineImageBuildResponse listImageDefinitionVersions(List<EncryptedDataDetail> encryptionDetails,
+      AzureConnectorDTO azureConnector, String subscriptionId, String resourceGroupName, String galleryName,
+      String imageDefinition) {
+    log.info(format("Fetching Azure machine get image builds for subscription %s for %s user type", subscriptionId,
+        azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
+
+    log.trace(format("User: \n%s", azureConnector.toString()));
+
+    //    encryptionService.decrypt(azureConfig, encryptionDetails, false);
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
+        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
+        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+
+    AzureMachineImageBuildResponse response;
+
+    response = AzureMachineImageBuildResponse.builder()
+                   .azureImageVersions(azureComputeClient.listImageDefinitionVersions(
+                       azureConfig, subscriptionId, resourceGroupName, galleryName, imageDefinition))
+                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                   .build();
+    // Only fetch successful Azure Image versions
+    return response;
+  }
+
+  public AzureMachineImageBuildResponse getLastSuccessfulBuildRegex(List<EncryptedDataDetail> encryptionDetails,
+      AzureConnectorDTO azureConnector, String subscriptionId, String resourceGroupName, String galleryName,
+      String imageDefinition, String version, String versionRegex) {
+    AzureMachineImageBuildResponse azureMachineImageBuildResponse = listImageDefinitionVersions(
+        encryptionDetails, azureConnector, subscriptionId, resourceGroupName, galleryName, imageDefinition);
+
+    List<AzureImageVersion> azureImageVersions = azureMachineImageBuildResponse.getAzureImageVersions();
+
+    if (EmptyPredicate.isNotEmpty(versionRegex)) {
+      List<String> list =
+          azureImageVersions.stream()
+              .map(tag -> tag.getName())
+              .filter(build -> StringUtils.isBlank(versionRegex) || new RegexFunctor().match(versionRegex, build))
+              .collect(Collectors.toList());
+      return List
+    }
   }
   public AzureWebAppNamesResponse listWebAppNames(List<EncryptedDataDetail> encryptionDetails,
       AzureConnectorDTO azureConnector, String subscriptionId, String resourceGroup) {

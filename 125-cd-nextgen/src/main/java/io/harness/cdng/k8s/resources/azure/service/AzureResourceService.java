@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.azure.resources.dtos.AzureTagsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureBuildsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureImageGalleriesDTO;
@@ -49,4 +50,7 @@ public interface AzureResourceService {
 
   AzureImageGalleriesDTO getImageGallery(IdentifierRef connectorRef, @NonNull String orgIdentifier,
       @NonNull String projectIdentifier, String subscriptionId, String resourceGroup);
+
+  AzureBuildsDTO getBuilds(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier,
+      String subscriptionId, String resourceGroup, String galleryName, String imageDefinition);
 }

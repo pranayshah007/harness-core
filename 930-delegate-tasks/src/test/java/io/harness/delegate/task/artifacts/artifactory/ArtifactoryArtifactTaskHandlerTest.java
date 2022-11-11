@@ -11,6 +11,7 @@ import static io.harness.artifactory.service.ArtifactoryRegistryService.DEFAULT_
 import static io.harness.artifactory.service.ArtifactoryRegistryService.MAX_NO_OF_BUILDS_PER_ARTIFACT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -40,7 +41,9 @@ import software.wings.utils.RepositoryFormat;
 
 import io.fabric8.utils.Lists;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
@@ -354,6 +357,109 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
     assertThat(regex).isFalse();
   }
 
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testLabel() {
+    ArtifactoryUsernamePasswordAuthDTO artifactoryUsernamePasswordAuthDTO = createArtifactoryCredentials();
+
+    ArtifactoryConnectorDTO artifactoryConnectorDTO = createArtifactoryConnector(artifactoryUsernamePasswordAuthDTO);
+
+    BuildDetailsInternal buildDetailsInternal =
+        BuildDetailsInternal.builder().number(IMAGE_TAG).metadata(createBuildMetadata()).build();
+
+    ArtifactoryConfigRequest artifactoryInternalConfig =
+        ArtifactoryConfigRequest.builder()
+            .artifactoryUrl(artifactoryConnectorDTO.getArtifactoryServerUrl())
+            .username(artifactoryUsernamePasswordAuthDTO.getUsername())
+            .password(artifactoryUsernamePasswordAuthDTO.getPasswordRef().getDecryptedValue())
+            .artifactRepositoryUrl(ARTIFACT_REPO_URL)
+            .build();
+
+    ArtifactoryArtifactDelegateRequest sourceAttributes = ArtifactoryArtifactDelegateRequest.builder()
+                                                              .repositoryName(REPO_NAME)
+                                                              .artifactPath(IMAGE_NAME)
+                                                              .repositoryFormat(RepositoryFormat.docker.name())
+                                                              .tag(IMAGE_TAG)
+                                                              .artifactRepositoryUrl(ARTIFACT_REPO_URL)
+                                                              .artifactoryConnectorDTO(artifactoryConnectorDTO)
+                                                              .build();
+
+    doReturn(buildDetailsInternal)
+        .when(artifactoryRegistryService)
+        .verifyBuildNumber(any(), any(), any(), any(), any());
+
+    Map<String, String> labels = new HashMap<>();
+    labels.put("multi.key.value", "abc");
+    labels.put("build_date", "2017-09-05");
+    labels.put("maintainer", "dev@someproject.org");
+
+    List<Map<String, String>> labelsList = new ArrayList<>();
+
+    labelsList.add(labels);
+
+    doReturn(labelsList).when(artifactoryRegistryService).getLabels(any(), any(), any(), any());
+
+    ArtifactTaskExecutionResponse lastSuccessfulBuild =
+        artifactoryArtifactService.getLastSuccessfulBuild(sourceAttributes);
+
+    ArtifactoryArtifactDelegateResponse attributes =
+        (ArtifactoryArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
+
+    assertThat(attributes.getLabel()).isEqualTo(labels);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetLabelsFromRegex() {
+    ArtifactoryUsernamePasswordAuthDTO artifactoryUsernamePasswordAuthDTO =
+        ArtifactoryUsernamePasswordAuthDTO.builder()
+            .username(ARTIFACTORY_USERNAME)
+            .passwordRef(SecretRefData.builder().decryptedValue(ARTIFACTORY_PASSWORD.toCharArray()).build())
+            .build();
+
+    ArtifactoryConnectorDTO artifactoryConnectorDTO =
+        ArtifactoryConnectorDTO.builder()
+            .artifactoryServerUrl(ARTIFACTORY_URL)
+            .auth(ArtifactoryAuthenticationDTO.builder().credentials(artifactoryUsernamePasswordAuthDTO).build())
+            .build();
+
+    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number(IMAGE_TAG).build();
+    ArtifactoryConfigRequest artifactoryInternalConfig =
+        ArtifactoryConfigRequest.builder()
+            .artifactoryUrl(artifactoryConnectorDTO.getArtifactoryServerUrl())
+            .username(artifactoryUsernamePasswordAuthDTO.getUsername())
+            .password(artifactoryUsernamePasswordAuthDTO.getPasswordRef().getDecryptedValue())
+            .hasCredentials(true)
+            .artifactRepositoryUrl(ARTIFACT_REPO_URL)
+            .build();
+
+    ArtifactoryArtifactDelegateRequest sourceAttributes = ArtifactoryArtifactDelegateRequest.builder()
+                                                              .repositoryName(REPO_NAME)
+                                                              .artifactPath(IMAGE_NAME)
+                                                              .repositoryFormat(RepositoryFormat.docker.name())
+                                                              .tagRegex(IMAGE_TAG_REGEX)
+                                                              .artifactRepositoryUrl(ARTIFACT_REPO_URL)
+                                                              .artifactoryConnectorDTO(artifactoryConnectorDTO)
+                                                              .build();
+
+    doReturn(buildDetailsInternal)
+        .when(artifactoryRegistryService)
+        .getLastSuccessfulBuildFromRegex(
+            artifactoryInternalConfig, REPO_NAME, IMAGE_NAME, RepositoryFormat.docker.name(), IMAGE_TAG_REGEX);
+
+    ArtifactTaskExecutionResponse lastSuccessfulBuild =
+        artifactoryArtifactService.getLastSuccessfulBuild(sourceAttributes);
+    assertThat(lastSuccessfulBuild).isNotNull();
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().get(0))
+        .isInstanceOf(ArtifactoryArtifactDelegateResponse.class);
+    ArtifactoryArtifactDelegateResponse attributes =
+        (ArtifactoryArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
+    assertThat(attributes.getArtifactPath()).isEqualTo(IMAGE_NAME);
+    assertThat(attributes.getTag()).isEqualTo(IMAGE_TAG);
+  }
   private ArtifactoryUsernamePasswordAuthDTO createArtifactoryCredentials() {
     return ArtifactoryUsernamePasswordAuthDTO.builder()
         .username(ARTIFACTORY_USERNAME)

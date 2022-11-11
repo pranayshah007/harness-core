@@ -16,6 +16,7 @@ import io.harness.azure.model.AzureVMSSTagsData;
 import io.harness.azure.model.VirtualMachineData;
 
 import software.wings.beans.AzureImageGallery;
+import software.wings.beans.AzureImageVersion;
 
 import com.microsoft.azure.management.appservice.DeploymentSlot;
 import com.microsoft.azure.management.compute.GalleryImage;
@@ -156,6 +157,9 @@ public interface AzureComputeClient {
    * @return
    */
   List<String> listResourceGroupsNamesBySubscriptionId(AzureConfig azureConfig, String subscriptionId);
+
+  List<AzureImageVersion> listImageDefinitionVersions(AzureConfig azureConfig, String subscriptionId,
+      String resourceGroupName, String galleryName, String imageDefinition);
 
   List<AzureImageGallery> listImageGalleries(AzureConfig azureConfig, String subscriptionId, String resourceGroup);
   /**

@@ -94,6 +94,35 @@ public class AzureTask extends AbstractDelegateRunnableTask {
             azureTaskParams.getAzureConnector(),
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID),
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.RESOURCE_GROUP));
+      case GET_BUILDS:
+        validateAzureResourceExist(azureTaskParams,
+            "Could not retrieve any image galleries because of invalid parameter(s)",
+            AzureAdditionalParams.SUBSCRIPTION_ID);
+        validateAzureResourceExist(azureTaskParams,
+            "Could not retrieve any image galleries because of invalid parameter(s)",
+            AzureAdditionalParams.RESOURCE_GROUP);
+        return azureAsyncTaskHelper.listImageDefinitionVersions(azureTaskParams.getEncryptionDetails(),
+            azureTaskParams.getAzureConnector(),
+            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID),
+            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.RESOURCE_GROUP),
+            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.IMAGE_GALLERY),
+            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.IMAGE_DEFINITION));
+      case GET_LAST_SUCCESSFUL_BUILD:
+        validateAzureResourceExist(azureTaskParams,
+            "Could not retrieve any image galleries because of invalid parameter(s)",
+            AzureAdditionalParams.SUBSCRIPTION_ID);
+        validateAzureResourceExist(azureTaskParams,
+            "Could not retrieve any image galleries because of invalid parameter(s)",
+            AzureAdditionalParams.RESOURCE_GROUP);
+        return  azureAsyncTaskHelper.listImageDefinitionVersions(azureTaskParams.getEncryptionDetails(),
+                azureTaskParams.getAzureConnector(),
+                azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID),
+                azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.RESOURCE_GROUP),
+                azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.IMAGE_GALLERY),
+                azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.IMAGE_DEFINITION);
+        return azureAsyncTaskHelper.getLastSuccessfulBuildRegex();
+
+
       case LIST_WEBAPP_NAMES:
         msg = "Could not retrieve any Azure Web App names because of invalid parameter(s)";
         validateAzureResourceExist(azureTaskParams, msg, AzureAdditionalParams.SUBSCRIPTION_ID);
@@ -113,12 +142,12 @@ public class AzureTask extends AbstractDelegateRunnableTask {
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.RESOURCE_GROUP),
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.WEB_APP_NAME));
       case LIST_CONTAINER_REGISTRIES: {
-        validateAzureResourceExist(azureTaskParams,
-            "Could not retrieve any container registries because of invalid parameter(s)",
-            AzureAdditionalParams.SUBSCRIPTION_ID);
-        return azureAsyncTaskHelper.listContainerRegistries(azureTaskParams.getEncryptionDetails(),
-            azureTaskParams.getAzureConnector(),
-            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID));
+          validateAzureResourceExist(azureTaskParams,
+              "Could not retrieve any container registries because of invalid parameter(s)",
+              AzureAdditionalParams.SUBSCRIPTION_ID);
+          return azureAsyncTaskHelper.listContainerRegistries(azureTaskParams.getEncryptionDetails(),
+              azureTaskParams.getAzureConnector(),
+              azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID));
       }
       case LIST_CLUSTERS:
         msg = "Could not retrieve any cluster because of invalid parameter(s)";
@@ -129,20 +158,20 @@ public class AzureTask extends AbstractDelegateRunnableTask {
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID),
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.RESOURCE_GROUP));
       case LIST_REPOSITORIES: {
-        msg = "Could not retrieve any repositories because of invalid parameter(s)";
-        validateAzureResourceExist(azureTaskParams, msg, AzureAdditionalParams.SUBSCRIPTION_ID);
-        validateAzureResourceExist(azureTaskParams, msg, AzureAdditionalParams.CONTAINER_REGISTRY);
-        return azureAsyncTaskHelper.listRepositories(azureTaskParams.getEncryptionDetails(),
-            azureTaskParams.getAzureConnector(),
-            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID),
-            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.CONTAINER_REGISTRY));
+          msg = "Could not retrieve any repositories because of invalid parameter(s)";
+          validateAzureResourceExist(azureTaskParams, msg, AzureAdditionalParams.SUBSCRIPTION_ID);
+          validateAzureResourceExist(azureTaskParams, msg, AzureAdditionalParams.CONTAINER_REGISTRY);
+          return azureAsyncTaskHelper.listRepositories(azureTaskParams.getEncryptionDetails(),
+              azureTaskParams.getAzureConnector(),
+              azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID),
+              azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.CONTAINER_REGISTRY));
       }
       case GET_ACR_TOKEN: {
-        msg = "Could not retrieve any container registries because of invalid parameter(s)";
-        validateAzureResourceExist(azureTaskParams, msg, AzureAdditionalParams.CONTAINER_REGISTRY);
-        return azureAsyncTaskHelper.getAcrLoginToken(
-            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.CONTAINER_REGISTRY),
-            azureTaskParams.getEncryptionDetails(), azureTaskParams.getAzureConnector());
+          msg = "Could not retrieve any container registries because of invalid parameter(s)";
+          validateAzureResourceExist(azureTaskParams, msg, AzureAdditionalParams.CONTAINER_REGISTRY);
+          return azureAsyncTaskHelper.getAcrLoginToken(
+              azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.CONTAINER_REGISTRY),
+              azureTaskParams.getEncryptionDetails(), azureTaskParams.getAzureConnector());
       }
       case LIST_TAGS:
         validateAzureResourceExist(azureTaskParams, "Could not retrieve any tags because of invalid parameter(s)",

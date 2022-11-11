@@ -89,6 +89,7 @@ import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.azure.response.AzureImageGalleriesResponse;
 import io.harness.delegate.beans.azure.response.AzureLocationsResponse;
+import io.harness.delegate.beans.azure.response.AzureMachineImageBuildResponse;
 import io.harness.delegate.beans.azure.response.AzureMngGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
@@ -1622,6 +1623,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureHostResponse.class, 543525);
     kryo.register(AzureHostsResponse.class, 543527);
     kryo.register(AzureImageGalleriesResponse.class, 543528);
+    kryo.register(AzureMachineImageBuildResponse.class, 543529);
     kryo.register(HostValidationResponse.class, 5167);
     kryo.register(HostReachabilityInfo.class, 5172);
     kryo.register(HttpHelmRepoConfig.class, 7159);

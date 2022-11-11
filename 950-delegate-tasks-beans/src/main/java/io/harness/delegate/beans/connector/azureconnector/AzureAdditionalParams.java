@@ -17,7 +17,11 @@ public enum AzureAdditionalParams {
   RESOURCE_GROUP("Resource group name"),
   WEB_APP_NAME("Web App name"),
   OS_TYPE("OS type"),
-  HOST_CONNECTION_TYPE("Host connection type");
+  HOST_CONNECTION_TYPE("Host connection type"),
+  IMAGE_GALLERY("IMAGE GALLERY NAME"),
+  IMAGE_DEFINITION("IMAGE DEFINITION"),
+  VERSION("VERSION"),
+  VERSION_REGEX("VERSION REGEX");
 
   private final String resourceName;
 

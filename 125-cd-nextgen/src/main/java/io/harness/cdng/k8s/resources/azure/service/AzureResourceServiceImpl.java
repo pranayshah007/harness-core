@@ -13,6 +13,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.resources.dtos.AzureTagDTO;
 import io.harness.cdng.azure.resources.dtos.AzureTagsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureBuildsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClusterDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotDTO;
@@ -29,6 +30,7 @@ import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
 import io.harness.delegate.beans.azure.response.AzureImageGalleriesResponse;
 import io.harness.delegate.beans.azure.response.AzureLocationsResponse;
+import io.harness.delegate.beans.azure.response.AzureMachineImageBuildResponse;
 import io.harness.delegate.beans.azure.response.AzureMngGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
@@ -304,5 +306,32 @@ public class AzureResourceServiceImpl implements AzureResourceService {
     return AzureImageGalleriesDTO.builder()
         .azureImageGalleries(imageGalleriesResponse.getAzureImageGalleries())
         .build();
+  }
+
+  @Override
+  public AzureBuildsDTO getBuilds(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier,
+      String subscriptionId, String resourceGroup, String galleryName, String imageDefinition) {
+    AzureConnectorDTO connector = azureHelperService.getConnector(connectorRef);
+    BaseNGAccess baseNGAccess =
+        azureHelperService.getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+    List<EncryptedDataDetail> encryptionDetails = azureHelperService.getEncryptionDetails(connector, baseNGAccess);
+
+    Map<AzureAdditionalParams, String> additionalParams = new HashMap<>();
+    additionalParams.put(AzureAdditionalParams.SUBSCRIPTION_ID, subscriptionId);
+    additionalParams.put(AzureAdditionalParams.RESOURCE_GROUP, resourceGroup);
+    additionalParams.put(AzureAdditionalParams.IMAGE_GALLERY, galleryName);
+    additionalParams.put(AzureAdditionalParams.IMAGE_DEFINITION, imageDefinition);
+    AzureTaskParams azureTaskParamsTaskParams = AzureTaskParams.builder()
+                                                    .azureTaskType(AzureTaskType.GET_BUILDS)
+                                                    .azureConnector(connector)
+                                                    .encryptionDetails(encryptionDetails)
+                                                    .delegateSelectors(connector.getDelegateSelectors())
+                                                    .additionalParams(additionalParams)
+                                                    .build();
+
+    AzureMachineImageBuildResponse imageGalleriesResponse =
+        (AzureMachineImageBuildResponse) azureHelperService.executeSyncTask(
+            azureTaskParamsTaskParams, baseNGAccess, "Azure list image galleries task failure due to error");
+    return AzureBuildsDTO.builder().azureImageVersions(imageGalleriesResponse.getAzureImageVersions()).build();
   }
 }
