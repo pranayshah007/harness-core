@@ -1,20 +1,10 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 4
+version : 5
 settings :
-  - identifier: mandate_webhook_secrets_for_github_triggers_CD
-    name: Mandate Webhook Secrets for Github Triggers - CD
-    category: CD
-    defaultValue: false
-    valueType: BOOLEAN
-    allowOverrides: true
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: mandate_webhook_secrets_for_github_triggers_CI
-    name: Mandate Webhook Secrets for Github Triggers - CI
-    category: CI
+  - identifier: mandate_webhook_secrets_for_github_triggers
+    name: Mandate Webhook Secrets for Github Triggers
+    category: CORE
     defaultValue: false
     valueType: BOOLEAN
     allowOverrides: true

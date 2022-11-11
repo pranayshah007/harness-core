@@ -110,7 +110,8 @@ public class KubernetesConnectorImpl implements BaseConnector {
       credentialDTO = getClientKeyCertCredentials(
           masterUrl, caCertRef, clientCertRef, clientKeyRef, clientKeyPassphraseRef, clusterConfig.getClientKeyAlgo());
     } else if (authType.equals(KubernetesClusterAuthType.NONE)) {
-      throw new UnsupportedOperationException("Kubernetes NG auth does not support this configuration");
+      credentialDTO = null;
+      log.warn("Kubernetes NG auth does not support this configuration");
     } else {
       throw new InvalidRequestException("K8s Auth type not supported");
     }
