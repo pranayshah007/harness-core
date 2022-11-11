@@ -65,7 +65,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public abstract class AbstractServiceLevelObjective
     implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   @NotNull String accountId;
-  @NotNull String orgIdentifier;
+  String orgIdentifier;
   String projectIdentifier;
   @NotNull @Id private String uuid;
   @NotNull String identifier;
@@ -179,9 +179,7 @@ public abstract class AbstractServiceLevelObjective
   public abstract static class AbstractServiceLevelObjectiveUpdatableEntity<T extends AbstractServiceLevelObjective>
       implements UpdatableEntity<T, T> {
     protected void setCommonOperations(UpdateOperations<T> updateOperations, T abstractServiceLevelObjective) {
-      updateOperations.set(ServiceLevelObjectiveV2Keys.orgIdentifier, abstractServiceLevelObjective.getOrgIdentifier())
-          .set(ServiceLevelObjectiveV2Keys.projectIdentifier, abstractServiceLevelObjective.getProjectIdentifier())
-          .set(ServiceLevelObjectiveV2Keys.name, abstractServiceLevelObjective.getName())
+      updateOperations.set(ServiceLevelObjectiveV2Keys.name, abstractServiceLevelObjective.getName())
           .set(ServiceLevelObjectiveV2Keys.tags, abstractServiceLevelObjective.getTags())
           .set(ServiceLevelObjectiveV2Keys.userJourneyIdentifiers,
               abstractServiceLevelObjective.getUserJourneyIdentifiers())
@@ -189,6 +187,14 @@ public abstract class AbstractServiceLevelObjective
           .set(ServiceLevelObjectiveV2Keys.sloTargetPercentage, abstractServiceLevelObjective.getSloTargetPercentage());
       if (abstractServiceLevelObjective.getDesc() != null) {
         updateOperations.set(ServiceLevelObjectiveV2Keys.desc, abstractServiceLevelObjective.getDesc());
+      }
+      if (abstractServiceLevelObjective.getOrgIdentifier() != null) {
+        updateOperations.set(
+            ServiceLevelObjectiveV2Keys.orgIdentifier, abstractServiceLevelObjective.getOrgIdentifier());
+      }
+      if (abstractServiceLevelObjective.getProjectIdentifier() != null) {
+        updateOperations.set(
+            ServiceLevelObjectiveV2Keys.projectIdentifier, abstractServiceLevelObjective.getProjectIdentifier());
       }
     }
   }

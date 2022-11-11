@@ -7,15 +7,12 @@
 
 package io.harness.pms.triggers.webhook.helpers;
 
-import static io.harness.ModuleType.CD;
-import static io.harness.ModuleType.CI;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.constants.Constants.X_HUB_SIGNATURE_256;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ngtriggers.Constants.CD_TRIGGERS_MANDATE_GITHUB_AUTHENTICATION;
-import static io.harness.ngtriggers.Constants.CI_TRIGGERS_MANDATE_GITHUB_AUTHENTICATION;
 import static io.harness.ngtriggers.Constants.MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE;
+import static io.harness.ngtriggers.Constants.TRIGGERS_MANDATE_GITHUB_AUTHENTICATION;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.INVALID_RUNTIME_INPUT_YAML;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TARGET_EXECUTION_REQUESTED;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_AUTHENTICATION_FAILED;
@@ -61,7 +58,6 @@ import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.helpers.WebhookEventMapperHelper;
 import io.harness.ngtriggers.utils.TaskExecutionUtils;
-import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
 import io.harness.pms.contracts.triggers.ArtifactData;
 import io.harness.pms.contracts.triggers.ManifestData;
 import io.harness.pms.contracts.triggers.ParsedPayload;
@@ -69,10 +65,6 @@ import io.harness.pms.contracts.triggers.SourceType;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload.Builder;
 import io.harness.pms.contracts.triggers.Type;
-import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
-import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
-import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.triggers.TriggerExecutionHelper;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
@@ -96,9 +88,6 @@ import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -110,11 +99,9 @@ public class TriggerEventExecutionHelper {
   private KryoSerializer kryoSerializer;
   private SecretManagerClientService ngSecretService;
   private TaskExecutionUtils taskExecutionUtils;
-  private final WebhookEventPayloadParser webhookEventPayloadParser;
   private final NGSettingsClient settingsClient;
   private final NGTriggerRepository ngTriggerRepository;
   private final PmsFeatureFlagService pmsFeatureFlagService;
-  private final PMSPipelineService pmsPipelineService;
   private final TriggerExecutionHelper triggerExecutionHelper;
   private final WebhookEventMapperHelper webhookEventMapperHelper;
 
@@ -429,46 +416,15 @@ public class TriggerEventExecutionHelper {
   private Boolean shouldAuthenticateTrigger(
       TriggerWebhookEvent triggerWebhookEvent, NGTriggerConfigV2 ngTriggerConfigV2, Boolean ngSettingsFFEnabled) {
     if (ngSettingsFFEnabled) {
-      PMSPipelineSummaryResponseDTO pipelineSummary =
-          getPipelineSummary(triggerWebhookEvent.getAccountId(), ngTriggerConfigV2.getOrgIdentifier(),
-              ngTriggerConfigV2.getProjectIdentifier(), ngTriggerConfigV2.getPipelineIdentifier());
-      if (pipelineSummary != null) {
-        Set<String> modules =
-            pipelineSummary.getModules().stream().map(String::toLowerCase).collect(Collectors.toSet());
-        if (modules.contains(CD.name().toLowerCase())) {
-          String mandatoryAuth = NGRestUtils
-                                     .getResponse(settingsClient.getSetting(CD_TRIGGERS_MANDATE_GITHUB_AUTHENTICATION,
-                                         triggerWebhookEvent.getAccountId(), ngTriggerConfigV2.getOrgIdentifier(),
-                                         ngTriggerConfigV2.getProjectIdentifier()))
-                                     .getValue();
-          if (mandatoryAuth.equals(MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE)) {
-            return true;
-          }
-        }
-        if (modules.contains(CI.name().toLowerCase())) {
-          String mandatoryAuth = NGRestUtils
-                                     .getResponse(settingsClient.getSetting(CI_TRIGGERS_MANDATE_GITHUB_AUTHENTICATION,
-                                         triggerWebhookEvent.getAccountId(), ngTriggerConfigV2.getOrgIdentifier(),
-                                         ngTriggerConfigV2.getProjectIdentifier()))
-                                     .getValue();
-          if (mandatoryAuth.equals(MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE)) {
-            return true;
-          }
-        }
+      String mandatoryAuth = NGRestUtils
+                                 .getResponse(settingsClient.getSetting(TRIGGERS_MANDATE_GITHUB_AUTHENTICATION,
+                                     triggerWebhookEvent.getAccountId(), ngTriggerConfigV2.getOrgIdentifier(),
+                                     ngTriggerConfigV2.getProjectIdentifier()))
+                                 .getValue();
+      if (mandatoryAuth.equals(MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE)) {
+        return true;
       }
     }
     return isNotEmpty(ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier());
-  }
-
-  private PMSPipelineSummaryResponseDTO getPipelineSummary(
-      String accountId, String orgId, String projectId, String pipelineId) {
-    Optional<PipelineEntity> pipelineEntity;
-    pipelineEntity = pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
-    if (!pipelineEntity.isPresent()) {
-      log.warn("Pipeline does not exist or has been deleted: identifier {} in project {}, org {}, account {}",
-          pipelineId, projectId, orgId, accountId);
-      return null;
-    }
-    return PMSPipelineDtoMapper.preparePipelineSummary(pipelineEntity.get(), false);
   }
 }
