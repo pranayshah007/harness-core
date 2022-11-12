@@ -44,11 +44,11 @@ import io.harness.tasks.ResponseData;
 
 import software.wings.beans.AccountType;
 import software.wings.beans.Application;
+import software.wings.beans.DelegateConnectionResult;
 import software.wings.beans.DynaTraceConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.delegatetasks.cv.CVConstants;
-import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.service.impl.AssignDelegateServiceImpl;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.ContinuousVerificationExecutionMetaData;

@@ -63,11 +63,11 @@ import io.harness.service.dto.RetryDelegate;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateTaskRetryObserver;
 
+import software.wings.beans.DelegateConnectionResult;
+import software.wings.beans.DelegateConnectionResult.DelegateConnectionResultKeys;
 import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.TaskType;
-import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
-import software.wings.delegatetasks.validation.core.DelegateConnectionResult.DelegateConnectionResultKeys;
 import software.wings.service.intfc.AssignDelegateService;
 import software.wings.service.intfc.DelegateSelectionLogsService;
 import software.wings.service.intfc.DelegateService;

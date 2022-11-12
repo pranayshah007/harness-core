@@ -21,7 +21,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.validation.Create;
 
-import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
+import software.wings.beans.DelegateConnectionResult;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import com.google.common.annotations.VisibleForTesting;

@@ -79,10 +79,10 @@ import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountPreferences;
+import software.wings.beans.DelegateConnectionResult;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceResponse;
-import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.dl.WingsPersistence;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
