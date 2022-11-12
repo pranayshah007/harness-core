@@ -12,10 +12,7 @@ services:
       - ACCOUNT_ID=ACCOUNT_ID
       - DELEGATE_TOKEN=ACCOUNT_KEY
       - MANAGER_HOST_AND_PORT=https://localhost:9090
-      - WATCHER_STORAGE_URL=http://localhost:8888
-      - WATCHER_CHECK_LOCATION=watcherci.txt
-      - DELEGATE_STORAGE_URL=http://localhost:8888
-      - DELEGATE_CHECK_LOCATION=delegateci.txt
+      - LOG_STREAMING_SERVICE_URL=http://localhost:8079
       - DEPLOY_MODE=KUBERNETES
       - DELEGATE_NAME=harness-delegate
       - NEXT_GEN=true
