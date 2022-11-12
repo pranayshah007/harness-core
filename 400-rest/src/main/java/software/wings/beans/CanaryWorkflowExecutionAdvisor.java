@@ -697,7 +697,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
 
         if (featureFlagService.isEnabled(FeatureName.SPG_PIPELINE_ROLLBACK, stateExecutionInstance.getAccountId())) {
           Pipeline pipeline = pipelineService.getPipeline(stateExecutionInstance.getAppId(), pipelineId);
-          if (pipeline.isRollbackPreviousStages()) {
+          if (pipeline != null && pipeline.isRollbackPreviousStages()) {
             return null;
           }
         }

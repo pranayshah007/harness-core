@@ -27,6 +27,7 @@ public class NodeStatusUpdateHandlerFactory {
   @Inject ResumeStepStatusUpdate resumeStepStatusUpdate;
   @Inject TerminalStepStatusUpdate terminalStepStatusUpdate;
   @Inject AbortAndRunningStepStatusUpdate abortAndRunningStepStatusUpdate;
+  @Inject WaitStepStatusUpdate waitStepStatusUpdate;
 
   public NodeStatusUpdateHandler obtainStepStatusUpdate(NodeUpdateInfo nodeStatusUpdateInfo) {
     switch (nodeStatusUpdateInfo.getStatus()) {
@@ -42,6 +43,8 @@ public class NodeStatusUpdateHandlerFactory {
         return resumeStepStatusUpdate;
       case ABORTED:
         return abortAndRunningStepStatusUpdate;
+      case WAIT_STEP_RUNNING:
+        return waitStepStatusUpdate;
       default:
         // Do not do this for other statuses as there multiple queries
         // Till Now only handling these will figure out a better way to do this

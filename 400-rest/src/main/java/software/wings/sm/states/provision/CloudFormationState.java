@@ -27,6 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
+import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.TriggeredBy;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.TaskData;
@@ -56,7 +57,6 @@ import software.wings.beans.infrastructure.CloudFormationRollbackConfig;
 import software.wings.beans.infrastructure.CloudFormationRollbackConfig.CloudFormationRollbackConfigKeys;
 import software.wings.common.TemplateExpressionProcessor;
 import software.wings.dl.WingsPersistence;
-import software.wings.helpers.ext.cloudformation.CloudFormationCompletionFlag;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCommandRequest;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandExecutionResponse;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandResponse;
@@ -107,6 +107,8 @@ import org.mongodb.morphia.query.Query;
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 @BreakDependencyOn("software.wings.service.intfc.DelegateService")
 public abstract class CloudFormationState extends State {
+  protected static final String CLOUDFORMATION_COMPLETION_FLAG = "CloudFormationCompletionFlag";
+
   @Inject protected transient ActivityService activityService;
   @Inject private transient SettingsService settingsService;
   @Inject private transient AppService appService;
@@ -426,14 +428,26 @@ public abstract class CloudFormationState extends State {
                               .build());
   }
 
-  protected CloudFormationCompletionFlag getCloudFormationCompletionFlag(ExecutionContext context) {
-    SweepingOutputInquiry inquiry =
-        context.prepareSweepingOutputInquiryBuilder().name(getCompletionStatusFlagSweepingOutputName()).build();
-    return sweepingOutputService.findSweepingOutput(inquiry);
+  protected SweepingOutputInstance getCloudFormationCompletionFlag(ExecutionContext context, String prefix) {
+    SweepingOutputInquiry inquiry = context.prepareSweepingOutputInquiryBuilder()
+                                        .name(getCompletionStatusFlagSweepingOutputName(prefix, context))
+                                        .build();
+    return sweepingOutputService.find(inquiry);
   }
 
-  protected String getCompletionStatusFlagSweepingOutputName() {
-    return String.format("CloudFormationCompletionFlag %s", provisionerId);
+  protected String getCompletionStatusFlagSweepingOutputName(String prefix, ExecutionContext context) {
+    if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CUSTOM_STACK_NAME, context.getAccountId())
+        && isUseCustomStackName()) {
+      if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CONFIG_FILTER, context.getAccountId())) {
+        return String.format("%s %s-%s-%s-%s", prefix, fetchResolvedAwsConfigId(context), provisionerId,
+            getCustomStackName(), getRegion());
+      }
+      return String.format("%s %s-%s-%s", prefix, provisionerId, getCustomStackName(), getRegion());
+    }
+    if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CONFIG_FILTER, context.getAccountId())) {
+      return String.format("%s %s-%s", prefix, fetchResolvedAwsConfigId(context), provisionerId);
+    }
+    return String.format("%s %s", prefix, provisionerId);
   }
 
   @Override

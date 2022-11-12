@@ -55,8 +55,6 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
-import software.wings.beans.TaskType;
-
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
@@ -135,15 +133,19 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
           TerraformConfigSweepingOutput.builder().terraformConfig(rollbackConfig).tfTaskType(tfTaskType).build(),
           StepOutcomeGroup.STEP.name());
 
-      TerraformTaskNGParametersBuilder builder = TerraformTaskNGParameters.builder()
-                                                     .accountId(AmbianceUtils.getAccountId(ambiance))
-                                                     .currentStateFileId(terraformStepHelper.getLatestFileId(entityId))
-                                                     .taskType(tfTaskType)
-                                                     .terraformCommandUnit(TerraformCommandUnit.Rollback)
-                                                     .entityId(entityId)
-                                                     .workspace(rollbackConfig.getWorkspace())
-                                                     .varFileInfos(terraformStepHelper.prepareTerraformVarFileInfo(
-                                                         rollbackConfig.getVarFileConfigs(), ambiance));
+      TerraformTaskNGParametersBuilder builder =
+          TerraformTaskNGParameters.builder()
+              .accountId(AmbianceUtils.getAccountId(ambiance))
+              .currentStateFileId(terraformStepHelper.getLatestFileId(entityId))
+              .taskType(tfTaskType)
+              .terraformCommandUnit(TerraformCommandUnit.Rollback)
+              .entityId(entityId)
+              .workspace(rollbackConfig.getWorkspace())
+              .varFileInfos(
+                  terraformStepHelper.prepareTerraformVarFileInfo(rollbackConfig.getVarFileConfigs(), ambiance))
+              .backendConfigFileInfo(terraformStepHelper.prepareTerraformBackendConfigFileInfo(
+                  rollbackConfig.getBackendConfigFileConfig(), ambiance));
+
       if (rollbackConfig.getConfigFiles() != null) {
         builder.configFile(terraformStepHelper.getGitFetchFilesConfig(
             rollbackConfig.getConfigFiles().toGitStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES));
@@ -162,17 +164,19 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
                   : rollbackConfig.getEnvironmentVariables())
           .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
 
+      TerraformTaskNGParameters terraformTaskNGParameters = builder.build();
       TaskData taskData =
           TaskData.builder()
               .async(true)
-              .taskType(TaskType.TERRAFORM_TASK_NG.name())
+              .taskType(terraformTaskNGParameters.getDelegateTaskType().name())
               .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
-              .parameters(new Object[] {builder.build()})
+              .parameters(new Object[] {terraformTaskNGParameters})
               .build();
 
       ParameterField<List<TaskSelectorYaml>> delegateSelectors = stepParametersSpec.getDelegateSelectors();
       return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-          Collections.singletonList(TerraformCommandUnit.Rollback.name()), TaskType.TERRAFORM_TASK_NG.getDisplayName(),
+          Collections.singletonList(TerraformCommandUnit.Rollback.name()),
+          terraformTaskNGParameters.getDelegateTaskType().getDisplayName(),
           TaskSelectorYaml.toTaskSelector(delegateSelectors), stepHelper.getEnvironmentType(ambiance));
     }
   }

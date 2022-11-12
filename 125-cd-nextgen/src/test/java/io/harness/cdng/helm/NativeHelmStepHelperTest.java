@@ -14,6 +14,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.AWS;
 import static io.harness.delegate.beans.connector.ConnectorType.GCP;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.HTTP_HELM_REPO;
+import static io.harness.delegate.beans.connector.ConnectorType.OCI_HELM_REPO;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -65,9 +66,12 @@ import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.InheritFromManifestStoreConfig;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
+import io.harness.cdng.manifest.yaml.OciHelmChartStoreGenericConfig;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
@@ -83,6 +87,9 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthType;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmAuthType;
+import io.harness.delegate.beans.connector.helm.OciHelmAuthenticationDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
@@ -95,6 +102,7 @@ import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
@@ -1411,6 +1419,95 @@ public class NativeHelmStepHelperTest extends CategoryTest {
             .getStoreDelegateConfig();
     assertThat(httpStoreConfig.getRepoName()).isEqualTo("0755aa99-0254-3266-895a-2697d0d27b68");
     assertThat(httpStoreConfig.getRepoDisplayName()).isEqualTo("helm-http-repo-display");
+    List<HelmFetchFileConfig> helmFetchFileConfigs = helmValuesFetchRequest.getHelmFetchFileConfigList();
+    assertThat(helmFetchFileConfigs.size()).isEqualTo(2);
+    assertThat(helmFetchFileConfigs.get(1).getIdentifier()).isEqualTo(helmChartManifestOutcome.getIdentifier());
+    assertThat(helmFetchFileConfigs.get(1).getManifestType()).isEqualTo("HelmChart");
+    assertThat(helmFetchFileConfigs.get(1).getFilePaths())
+        .isEqualTo(helmChartManifestOutcome.getValuesPaths().getValue());
+    assertThat(helmFetchFileConfigs.get(0).getIdentifier()).isEqualTo(helmChartManifestOutcome.getIdentifier());
+    assertThat(helmFetchFileConfigs.get(0).getManifestType()).isEqualTo("HelmChart");
+    assertThat(helmFetchFileConfigs.get(0).getFilePaths()).isEqualTo(asList("values.yaml"));
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testShouldPrepareOCIHelmValuesFetchTask() {
+    K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome =
+        K8sDirectInfrastructureOutcome.builder().namespace("default").infrastructureKey(INFRA_KEY).build();
+    OciHelmChartConfig httpStore =
+        OciHelmChartConfig.builder()
+            .config(ParameterField.createValueField(
+                OciHelmChartStoreConfigWrapper.builder()
+                    .spec(OciHelmChartStoreGenericConfig.builder()
+                              .connectorRef(ParameterField.createValueField("oci-helm-connector"))
+                              .build())
+                    .build()))
+            .build();
+
+    HelmChartManifestOutcome helmChartManifestOutcome =
+        HelmChartManifestOutcome.builder()
+            .identifier("helm")
+            .store(httpStore)
+            .chartName(ParameterField.createValueField("chart"))
+            .valuesPaths(ParameterField.createValueField(asList("valuesOverride.yaml")))
+            .build();
+    Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("helm", helmChartManifestOutcome);
+    RefObject manifests = RefObject.newBuilder()
+                              .setName(OutcomeExpressionConstants.MANIFESTS)
+                              .setKey(OutcomeExpressionConstants.MANIFESTS)
+                              .setRefType(RefType.newBuilder().setType(OrchestrationRefType.OUTCOME).build())
+                              .build();
+
+    RefObject infra = RefObject.newBuilder()
+                          .setName(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME)
+                          .setKey(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME)
+                          .setRefType(RefType.newBuilder().setType(OrchestrationRefType.OUTCOME).build())
+                          .build();
+
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder().spec(HelmDeployStepParams.infoBuilder().build()).build();
+    OptionalOutcome manifestsOutcome =
+        OptionalOutcome.builder().found(true).outcome(new ManifestsOutcome(manifestOutcomeMap)).build();
+    doReturn(manifestsOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
+    doReturn(k8sDirectInfrastructureOutcome).when(outcomeService).resolve(eq(ambiance), eq(infra));
+    doReturn(k8sDirectInfrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(eq(ambiance));
+    doReturn(
+        Optional.of(
+            ConnectorResponseDTO.builder()
+                .connector(
+                    ConnectorInfoDTO.builder()
+                        .connectorConfig(
+                            OciHelmConnectorDTO.builder()
+                                .auth(OciHelmAuthenticationDTO.builder().authType(OciHelmAuthType.ANONYMOUS).build())
+                                .build())
+                        .name("OCI-HELM-REPO-display")
+                        .identifier("OCI-HELM-REPO")
+                        .connectorType(OCI_HELM_REPO)
+                        .build())
+                .build()))
+        .when(connectorService)
+        .get(any(), any(), any(), any());
+
+    TaskChainResponse taskChainResponse =
+        nativeHelmStepHelper.startChainLink(nativeHelmStepExecutor, ambiance, stepElementParameters);
+    assertThat(taskChainResponse).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
+    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
+    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
+    HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
+    assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
+    assertThat(helmValuesFetchRequest.getHelmChartManifestDelegateConfig().getStoreDelegateConfig())
+        .isInstanceOf(OciHelmStoreDelegateConfig.class);
+    OciHelmStoreDelegateConfig ociHelmStoreConfig =
+        (OciHelmStoreDelegateConfig) helmValuesFetchRequest.getHelmChartManifestDelegateConfig()
+            .getStoreDelegateConfig();
+    assertThat(ociHelmStoreConfig.getRepoName()).isEqualTo("dd43c344-96a8-3b93-8136-baa4d0b4cbe6");
+    assertThat(ociHelmStoreConfig.getRepoDisplayName()).isEqualTo("OCI-HELM-REPO-display");
     List<HelmFetchFileConfig> helmFetchFileConfigs = helmValuesFetchRequest.getHelmFetchFileConfigList();
     assertThat(helmFetchFileConfigs.size()).isEqualTo(2);
     assertThat(helmFetchFileConfigs.get(1).getIdentifier()).isEqualTo(helmChartManifestOutcome.getIdentifier());

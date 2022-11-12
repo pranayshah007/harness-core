@@ -25,13 +25,17 @@ public class AwsAccountConnectionDetailsHelper {
   private static final String EXTERNAL_ID_TEMPLATE = "harness:%s:%s";
   private static final String stackBaseTemplate =
       "https://console.aws.amazon.com/cloudformation/home?#/stacks/quickcreate?stackName=%s&templateURL=%s";
+  private static final String govCloudstackBaseTemplate =
+      "https://console.amazonaws-us-gov.com/cloudformation/home?#/stacks/quickcreate?stackName=%s&templateURL=%s";
   private static final String stackNameValue = "harness-ce-iam-role-stack";
   public AwsAccountConnectionDetail getAwsAccountConnectorDetail(String accountId, Boolean isGov) {
     String url = (isGov != null && isGov == true) ? (configuration.getAwsGovCloudCftUrl())
                                                   : (configuration.getAwsConfig().getAwsConnectorTemplate());
     String harnessAccountId = configuration.getAwsConfig().getHarnessAwsAccountId();
     String externalId = String.format(EXTERNAL_ID_TEMPLATE, getProcessedAccountId(harnessAccountId), accountId);
-    String stackLaunchTemplateLink = String.format(stackBaseTemplate, stackNameValue, url);
+    String stackLaunchTemplateLink = (isGov != null && isGov == true)
+        ? String.format(govCloudstackBaseTemplate, stackNameValue, url)
+        : String.format(stackBaseTemplate, stackNameValue, url);
     return AwsAccountConnectionDetail.builder()
         .externalId(externalId)
         .harnessAccountId(getProcessedAccountId(harnessAccountId))

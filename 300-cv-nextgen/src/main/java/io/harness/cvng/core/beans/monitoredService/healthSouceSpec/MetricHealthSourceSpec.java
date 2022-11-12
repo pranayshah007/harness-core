@@ -12,13 +12,16 @@ import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 
 import java.util.List;
 import java.util.Set;
+import javax.validation.Valid;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+@Data
 @SuperBuilder
 @NoArgsConstructor
 public abstract class MetricHealthSourceSpec extends HealthSourceSpec {
-  public abstract List<? extends HealthSourceMetricDefinition> getMetricDefinitions();
+  @Valid Set<TimeSeriesMetricPackDTO> metricPacks;
 
-  public abstract Set<TimeSeriesMetricPackDTO> getMetricPacks();
+  public abstract List<? extends HealthSourceMetricDefinition> getMetricDefinitions();
 }

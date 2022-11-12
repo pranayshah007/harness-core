@@ -151,7 +151,8 @@ public class PMSResourceConstraintServiceImpl implements PMSResourceConstraintSe
              new AutoLogContext(ImmutableMap.of("accountId", accountId, "orgIdentifier", orgIdentifier,
                                     "projectIdentifier", projectIdentifier, "pipelineIdentifier", pipelineIdentifier),
                  OVERRIDE_ERROR)) {
-      return pipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false)
+      return pipelineService
+          .getAndValidatePipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false)
           .orElseGet(() -> PipelineEntity.builder().build());
     } catch (RuntimeException e) {
       log.warn("An error occurs when resource constraint try access the pipeline entity", e);

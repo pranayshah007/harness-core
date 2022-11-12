@@ -22,7 +22,7 @@ import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
-import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
+import io.harness.mongo.iterator.provider.MorphiaPersistenceRequiredProvider;
 import io.harness.workers.background.AccountStatusBasedEntityProcessController;
 
 import software.wings.audit.AuditRecord;
@@ -39,7 +39,7 @@ public class EntityAuditRecordHandler implements Handler<AuditRecord> {
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private AuditService auditService;
-  @Inject private MorphiaPersistenceProvider<AuditRecord> persistenceProvider;
+  @Inject private MorphiaPersistenceRequiredProvider<AuditRecord> persistenceProvider;
 
   public void registerIterators() {
     persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(

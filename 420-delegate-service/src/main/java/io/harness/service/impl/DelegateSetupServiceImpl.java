@@ -9,6 +9,7 @@ package io.harness.service.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.DelegateType.DOCKER;
 import static io.harness.filter.FilterType.DELEGATEPROFILE;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.service.impl.DelegateConnectivityStatus.GROUP_STATUS_CONNECTED;
@@ -468,7 +469,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .delegateGroupIdentifier(delegateGroupIdentifier)
         .delegateType(delegateType)
         .groupName(groupName)
-        .autoUpgrade(setAutoUpgrade(upgraderLastUpdated, immutableDelegate, delegateCreationTime, groupVersion))
+        .autoUpgrade(
+            setAutoUpgrade(upgraderLastUpdated, immutableDelegate, delegateCreationTime, groupVersion, delegateType))
         .upgraderLastUpdated(upgraderLastUpdated)
         .delegateGroupExpirationTime(groupExpirationTime)
         .delegateDescription(delegateDescription)
@@ -798,8 +800,12 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   }
 
   @Override
-  public AutoUpgrade setAutoUpgrade(
-      long upgraderLastUpdated, boolean immutableDelegate, long delegateCreationTime, String version) {
+  public AutoUpgrade setAutoUpgrade(long upgraderLastUpdated, boolean immutableDelegate, long delegateCreationTime,
+      String version, String delegateType) {
+    if (DOCKER.equals(delegateType)) {
+      return AutoUpgrade.OFF;
+    }
+
     // version can be empty in case of delegateGroup with no delegates.
     if (isNotEmpty(version)) {
       try {

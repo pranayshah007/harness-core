@@ -8,8 +8,11 @@
 package io.harness.cdng.manifest.yaml.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.FileStorageConfigDTO;
+import io.harness.cdng.manifest.yaml.FileStorageStoreConfig;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.List;
@@ -19,7 +22,7 @@ import lombok.Value;
 @OwnedBy(CDP)
 @Value
 @Builder
-public class HarnessStoreDTO {
+public class HarnessStoreDTO implements FileStorageConfigDTO {
   List<String> files;
   List<String> secretFiles;
 
@@ -28,5 +31,15 @@ public class HarnessStoreDTO {
         .files(ParameterField.createValueField(files))
         .secretFiles(ParameterField.createValueField(secretFiles))
         .build();
+  }
+
+  @Override
+  public String getKind() {
+    return HARNESS_STORE_TYPE;
+  }
+
+  @Override
+  public FileStorageStoreConfig toFileStorageStoreConfig() {
+    return toHarnessStore();
   }
 }

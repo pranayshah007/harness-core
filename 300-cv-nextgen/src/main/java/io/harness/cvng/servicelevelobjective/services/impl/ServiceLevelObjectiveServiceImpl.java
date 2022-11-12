@@ -208,17 +208,22 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
 
   @Override
   public boolean delete(ProjectParams projectParams, String identifier) {
+    try {
+      serviceLevelObjectiveV2Service.delete(projectParams, identifier);
+    } catch (Exception e) {
+      log.error("[SLO Data Mismatch]: SLOV2 not deleted", e);
+    }
+    return deleteSLOV1(projectParams, identifier);
+  }
+
+  @Override
+  public boolean deleteSLOV1(ProjectParams projectParams, String identifier) {
     ServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
     if (serviceLevelObjective == null) {
       throw new InvalidRequestException(String.format(
           "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
           identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
-    }
-    try {
-      serviceLevelObjectiveV2Service.delete(projectParams, identifier);
-    } catch (Exception e) {
-      log.error("[SLO Data Mismatch]: SLOV2 not deleted", e);
     }
     ServiceLevelObjectiveDTO serviceLevelObjectiveDTO =
         serviceLevelObjectiveToServiceLevelObjectiveDTO(serviceLevelObjective);
@@ -857,6 +862,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                                       .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
                                       .build();
     return ServiceLevelObjectiveDTO.builder()
+        .type(serviceLevelObjective.getType())
         .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
         .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
         .identifier(serviceLevelObjective.getIdentifier())
@@ -890,11 +896,11 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
             .asList();
 
     serviceLevelObjectives.forEach(serviceLevelObjective -> {
-      delete(ProjectParams.builder()
-                 .accountIdentifier(serviceLevelObjective.getAccountId())
-                 .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
-                 .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-                 .build(),
+      deleteSLOV1(ProjectParams.builder()
+                      .accountIdentifier(serviceLevelObjective.getAccountId())
+                      .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                      .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                      .build(),
           serviceLevelObjective.getIdentifier());
     });
   }
@@ -908,11 +914,11 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
             .asList();
 
     serviceLevelObjectives.forEach(serviceLevelObjective -> {
-      delete(ProjectParams.builder()
-                 .accountIdentifier(serviceLevelObjective.getAccountId())
-                 .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
-                 .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-                 .build(),
+      deleteSLOV1(ProjectParams.builder()
+                      .accountIdentifier(serviceLevelObjective.getAccountId())
+                      .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                      .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                      .build(),
           serviceLevelObjective.getIdentifier());
     });
   }
@@ -924,11 +930,11 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                                                              .asList();
 
     serviceLevelObjectives.forEach(serviceLevelObjective -> {
-      delete(ProjectParams.builder()
-                 .accountIdentifier(serviceLevelObjective.getAccountId())
-                 .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
-                 .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-                 .build(),
+      deleteSLOV1(ProjectParams.builder()
+                      .accountIdentifier(serviceLevelObjective.getAccountId())
+                      .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                      .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                      .build(),
           serviceLevelObjective.getIdentifier());
     });
   }

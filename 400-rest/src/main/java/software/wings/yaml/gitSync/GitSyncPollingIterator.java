@@ -21,7 +21,8 @@ import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.yaml.YamlChangeSetService;
-import software.wings.yaml.gitSync.YamlGitConfig.YamlGitConfigKeys;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.YamlGitConfigKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

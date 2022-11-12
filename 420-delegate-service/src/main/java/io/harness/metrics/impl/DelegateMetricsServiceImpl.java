@@ -79,8 +79,8 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
     try (AutoMetricContext ignore = new DelegateTaskMetricContext(task.getAccountId())) {
       metricService.incCounter(metricName);
     }
-
-    try (AutoMetricContext ignore = new DelegateTaskTypeMetricContext(task.getData().getTaskType())) {
+    String taskType = task.getTaskDataV2() != null ? task.getTaskDataV2().getTaskType() : task.getData().getTaskType();
+    try (AutoMetricContext ignore = new DelegateTaskTypeMetricContext(taskType)) {
       metricService.incCounter(metricName + TASK_TYPE_SUFFIX);
     }
   }

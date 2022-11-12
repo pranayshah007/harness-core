@@ -17,7 +17,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("archType")
 @RecasterAlias("io.harness.beans.yaml.extended.platform.ArchType")
 public enum ArchType {
-  @JsonProperty("Amd64") Amd64("Amd64");
+  @JsonProperty("Amd64") Amd64("Amd64"),
+  @JsonProperty("Arm64") Arm64("Arm64");
   private final String yamlName;
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

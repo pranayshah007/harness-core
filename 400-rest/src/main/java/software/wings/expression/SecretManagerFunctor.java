@@ -45,6 +45,7 @@ import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -77,7 +78,7 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
 
   @Default private Map<String, String> evaluatedSecrets = new ConcurrentHashMap<>();
   @Default private Map<String, String> evaluatedDelegateSecrets = new ConcurrentHashMap<>();
-  @Default private Map<String, EncryptionConfig> encryptionConfigs = new ConcurrentHashMap<>();
+  @Default private Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
   @Default private Map<String, SecretDetail> secretDetails = new ConcurrentHashMap<>();
 
   DelegateMetricsService delegateMetricsService;
@@ -243,7 +244,13 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
     EncryptedDataDetail encryptedDataDetail = nonLocalEncryptedDetails.get(0);
 
     String encryptionConfigUuid = encryptedDataDetail.getEncryptionConfig().getUuid();
+
     encryptionConfigs.put(encryptionConfigUuid, encryptedDataDetail.getEncryptionConfig());
+    if (isEmpty(encryptionConfigUuid)) {
+      log.warn("Got encryptionConfigUuid as null, name: {}, isGlobalKms {}, type: {}",
+          encryptedDataDetail.getEncryptionConfig().getName(), encryptedDataDetail.getEncryptionConfig().isGlobalKms(),
+          encryptedDataDetail.getEncryptionConfig().getType());
+    }
 
     SecretDetail secretDetail = SecretDetail.builder()
                                     .configUuid(encryptionConfigUuid)

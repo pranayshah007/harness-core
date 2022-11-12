@@ -37,6 +37,7 @@ import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.SecretDecryptionService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
@@ -97,15 +98,9 @@ public class AzureRepoApiClient implements GitApiClient {
 
         JSONObject mergePRResponse;
         mergePRResponse = azureRepoService.mergePR(azureRepoConfig, token, sha, gitApiTaskParams.getOwner(), project,
-            repo, prNumber, gitApiTaskParams.isDeleteSourceBranch());
+            repo, prNumber, gitApiTaskParams.isDeleteSourceBranch(), gitApiTaskParams.getApiParamOptions());
 
-        if (mergePRResponse != null) {
-          responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-              .gitApiResult(GitApiMergePRTaskResponse.builder().sha(mergePRResponse.get("sha").toString()).build());
-        } else {
-          responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
-              format("Merging PR encountered a problem. sha:%s Repo:%s PrNumber:%s", sha, repo, prNumber));
-        }
+        prepareResponseBuilder(responseBuilder, repo, prNumber, sha, mergePRResponse);
       }
     } catch (Exception e) {
       log.error(
@@ -115,6 +110,40 @@ public class AzureRepoApiClient implements GitApiClient {
     }
 
     return responseBuilder.build();
+  }
+
+  @VisibleForTesting
+  void prepareResponseBuilder(
+      GitApiTaskResponseBuilder responseBuilder, String repo, String prNumber, String sha, JSONObject mergePRResponse) {
+    if (mergePRResponse != null) {
+      Object merged = getValue(mergePRResponse, "merged");
+      if (merged instanceof Boolean && (boolean) merged) {
+        Object responseSha = getValue(mergePRResponse, "sha");
+        responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .gitApiResult(
+                GitApiMergePRTaskResponse.builder().sha(responseSha == null ? null : responseSha.toString()).build());
+      } else {
+        responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
+            format("Merging PR encountered a problem. sha:%s Repo:%s PrNumber:%s Message:%s Code:%s", sha, repo,
+                prNumber, getValue(mergePRResponse, "error"), getValue(mergePRResponse, "code")));
+      }
+    } else {
+      responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
+          format("Merging PR encountered a problem. sha:%s Repo:%s PrNumber:%s", sha, repo, prNumber));
+    }
+  }
+
+  @VisibleForTesting
+  Object getValue(JSONObject jsonObject, String key) {
+    if (jsonObject == null) {
+      return null;
+    }
+    try {
+      return jsonObject.get(key);
+    } catch (Exception ex) {
+      log.error("Failed to get key: {} in JsonObject: {}", key, jsonObject);
+      return null;
+    }
   }
 
   @Override

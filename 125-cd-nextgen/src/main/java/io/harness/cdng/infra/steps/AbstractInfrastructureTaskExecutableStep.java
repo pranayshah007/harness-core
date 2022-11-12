@@ -167,7 +167,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       NGLogCallback logCallback, Boolean addRcStep, boolean skipInstances) {
     saveExecutionLog(logCallback, "Starting infrastructure step...");
 
-    validateConnector(infrastructure, ambiance);
+    validateConnector(infrastructure, ambiance, logCallback);
     validateInfrastructure(infrastructure);
 
     saveExecutionLog(logCallback, "Fetching environment information...");
@@ -590,9 +590,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   }
 
   @VisibleForTesting
-  void validateConnector(Infrastructure infrastructure, Ambiance ambiance) {
-    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
-
+  void validateConnector(Infrastructure infrastructure, Ambiance ambiance, NGLogCallback logCallback) {
     if (infrastructure == null) {
       return;
     }
@@ -652,24 +650,22 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     saveExecutionLog(logCallback, color("Connector validated", Green));
   }
 
-  void validateInfrastructure(Infrastructure infrastructure, Ambiance ambiance) {
+  void validateInfrastructure(Infrastructure infrastructure, Ambiance ambiance, NGLogCallback logCallback) {
     String k8sNamespaceLogLine = "Kubernetes Namespace: %s";
-
-    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
 
     if (infrastructure == null) {
       throw new InvalidRequestException("Infrastructure definition can't be null or empty");
     }
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
-        K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
+        K8SDirectInfrastructure k8sDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(
-            k8SDirectInfrastructure.getConnectorRef(), k8SDirectInfrastructure.getNamespace());
+            k8sDirectInfrastructure.getConnectorRef(), k8sDirectInfrastructure.getNamespace());
 
-        if (k8SDirectInfrastructure.getNamespace() != null
-            && isNotEmpty(k8SDirectInfrastructure.getNamespace().getValue())) {
+        if (k8sDirectInfrastructure.getNamespace() != null
+            && isNotEmpty(k8sDirectInfrastructure.getNamespace().getValue())) {
           saveExecutionLog(logCallback,
-              color(format(k8sNamespaceLogLine, k8SDirectInfrastructure.getNamespace().getValue()), Yellow));
+              color(format(k8sNamespaceLogLine, k8sDirectInfrastructure.getNamespace().getValue()), Yellow));
         }
         break;
 

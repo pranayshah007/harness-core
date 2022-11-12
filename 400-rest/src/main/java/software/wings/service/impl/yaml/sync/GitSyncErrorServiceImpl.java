@@ -79,8 +79,8 @@ import software.wings.yaml.errorhandling.GitSyncError.GitSyncErrorKeys;
 import software.wings.yaml.errorhandling.GitToHarnessErrorDetails;
 import software.wings.yaml.errorhandling.HarnessToGitErrorDetails;
 import software.wings.yaml.gitSync.GitFileActivity;
-import software.wings.yaml.gitSync.YamlGitConfig;
-import software.wings.yaml.gitSync.YamlGitConfig.YamlGitConfigKeys;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.YamlGitConfigKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -675,9 +675,9 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
 
   private <T extends Change> void populateGitDetails(
       UpdateOperations<GitSyncError> failedUpdateOperations, GitFileChange failedGitFileChange, String appId) {
-    final YamlGitConfig yamlGitConfig = failedGitFileChange.getYamlGitConfig() != null
+    final software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig = failedGitFileChange.getYamlGitConfig() != null
         ? failedGitFileChange.getYamlGitConfig()
-        : yamlGitService.fetchYamlGitConfig(appId, failedGitFileChange.getAccountId());
+        : yamlGitService.fetchYamlGitConfig(appId, failedGitFileChange.getAccountId()).toDTO();
 
     if (yamlGitConfig != null) {
       final String gitConnectorId = Strings.emptyIfNull(yamlGitConfig.getGitConnectorId());

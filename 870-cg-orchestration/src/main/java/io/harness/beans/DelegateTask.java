@@ -17,6 +17,7 @@ import io.harness.delegate.beans.DelegateTaskRank;
 import io.harness.delegate.beans.NgSetupFields;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskData.TaskDataKeys;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.HDelegateTask;
 import io.harness.iterator.PersistentRegularIterable;
@@ -41,7 +42,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
@@ -97,7 +97,10 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
   private static final Long DEFAULT_FORCE_EXECUTE_TIMEOUT = Duration.ofSeconds(5).toMillis();
   public static final Long DELEGATE_QUEUE_TIMEOUT = Duration.ofSeconds(6).toMillis();
 
-  @NotNull private TaskData data;
+  private TaskData data;
+
+  private TaskDataV2 taskDataV2;
+
   private List<ExecutionCapability> executionCapabilities;
 
   @Id private String uuid;

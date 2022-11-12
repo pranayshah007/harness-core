@@ -10,6 +10,7 @@ package io.harness.template.resources;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
@@ -43,8 +44,8 @@ public class TemplateResourceApiMapper {
     String templateInputYaml = templateInput.getTemplateInputs();
     TemplateResponseDTO templateResponse = templateInput.getTemplateResponseDTO();
     TemplateWithInputsResponse templateWithInputsResponse = new TemplateWithInputsResponse();
-    templateWithInputsResponse.setInputYaml(templateInputYaml);
-    templateWithInputsResponse.setTemplateResponse(toTemplateResponse(templateResponse));
+    templateWithInputsResponse.setInputs(templateInputYaml);
+    templateWithInputsResponse.setTemplate(toTemplateResponse(templateResponse));
     Set<ConstraintViolation<TemplateResponseDTO>> violations = validator.validate(templateResponse);
     if (!violations.isEmpty()) {
       throw new JerseyViolationException(violations, null);
@@ -53,8 +54,8 @@ public class TemplateResourceApiMapper {
   }
   public TemplateWithInputsResponse toTemplateResponseDefault(TemplateResponseDTO templateResponse) {
     TemplateWithInputsResponse templateWithInputsResponse = new TemplateWithInputsResponse();
-    templateWithInputsResponse.setInputYaml("Input YAML not requested");
-    templateWithInputsResponse.setTemplateResponse(toTemplateResponse(templateResponse));
+    templateWithInputsResponse.setInputs("Input YAML not requested");
+    templateWithInputsResponse.setTemplate(toTemplateResponse(templateResponse));
     Set<ConstraintViolation<TemplateWithInputsResponse>> violations = validator.validate(templateWithInputsResponse);
     if (!violations.isEmpty()) {
       throw new JerseyViolationException(violations, null);
@@ -134,7 +135,7 @@ public class TemplateResourceApiMapper {
 
   public EntityGitDetails toEntityGitDetails(io.harness.gitsync.sdk.EntityGitDetails entityGitDetails) {
     EntityGitDetails responseGitDetails = new EntityGitDetails();
-    responseGitDetails.setEntityIdentifier(entityGitDetails.getObjectId());
+    responseGitDetails.setObjectId(entityGitDetails.getObjectId());
     responseGitDetails.setBranchName(entityGitDetails.getBranch());
     responseGitDetails.setFilePath(entityGitDetails.getFilePath());
     responseGitDetails.setRepoName(entityGitDetails.getRepoName());
@@ -164,23 +165,15 @@ public class TemplateResourceApiMapper {
       case "slug":
         property = TemplateEntityKeys.identifier;
         break;
-      case "harness_account":
-        property = TemplateEntityKeys.accountId;
-        break;
-      case "org":
-        property = TemplateEntityKeys.orgIdentifier;
-        break;
-      case "project":
-        property = TemplateEntityKeys.projectIdentifier;
-        break;
-      case "created":
-        property = TemplateEntityKeys.createdAt;
+      case "name":
+        property = sort;
         break;
       case "updated":
         property = TemplateEntityKeys.lastUpdatedAt;
         break;
       default:
-        property = sort;
+        throw new InvalidRequestException(
+            "Field provided for sorting unidentified. Accepted values: slug / name / updated");
     }
     return property + ',' + order;
   }
@@ -224,11 +217,11 @@ public class TemplateResourceApiMapper {
     }
     return GitEntityInfo.builder()
         .branch(gitDetails.getBranchName())
-        .parentEntityProjectIdentifier(gitDetails.getParentProjectId())
-        .parentEntityOrgIdentifier(gitDetails.getParentOrgId())
-        .parentEntityAccountIdentifier(gitDetails.getParentAccountId())
-        .parentEntityRepoName(gitDetails.getParentRepoName())
-        .parentEntityConnectorRef(gitDetails.getParentConnectorRef())
+        .parentEntityProjectIdentifier(gitDetails.getParentEntityProjectId())
+        .parentEntityOrgIdentifier(gitDetails.getParentEntityOrgId())
+        .parentEntityAccountIdentifier(gitDetails.getParentEntityAccountId())
+        .parentEntityRepoName(gitDetails.getParentEntityRepoName())
+        .parentEntityConnectorRef(gitDetails.getParentEntityConnectorRef())
         .build();
   }
 }

@@ -204,7 +204,7 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 @OwnedBy(CE)
 public class ViewsBillingServiceImpl implements ViewsBillingService {
-  private static final int months = 12;
+  private static final int MONTHS = 12;
   @Inject private ViewsQueryBuilder viewsQueryBuilder;
   @Inject private CEViewService viewService;
   @Inject private ViewsQueryHelper viewsQueryHelper;
@@ -698,7 +698,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
   public Double[] getActualCostGroupedByPeriod(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
-      ViewQueryParams queryParams) {
+      ViewQueryParams queryParams, boolean lastPeriod) {
     boolean isClusterTableQuery = isClusterTableQuery(filters, groupBy, queryParams);
     List<QLCEViewFilter> idFilters = getModifiedIdFilters(getIdFilters(filters), isClusterTableQuery);
     List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
@@ -716,11 +716,20 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       return null;
     }
 
-    Double[] monthlyCosts = new Double[months];
-    int i = ((Long) result.getTotalRows()).intValue();
-    for (FieldValueList row : result.iterateAll()) {
-      monthlyCosts[months - i] = row.get("cost").getNumericValue().doubleValue();
-      i--;
+    Double[] monthlyCosts = new Double[MONTHS];
+    Arrays.fill(monthlyCosts, 0.0D);
+    if (lastPeriod) {
+      int startPosition = ((Long) result.getTotalRows()).intValue();
+      for (FieldValueList row : result.iterateAll()) {
+        monthlyCosts[MONTHS - startPosition] = row.get("cost").getNumericValue().doubleValue();
+        startPosition--;
+      }
+    } else {
+      int startPosition = 0;
+      for (FieldValueList row : result.iterateAll()) {
+        monthlyCosts[startPosition] = row.get("cost").getNumericValue().doubleValue();
+        startPosition++;
+      }
     }
     return monthlyCosts;
   }

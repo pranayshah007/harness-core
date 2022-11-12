@@ -8,6 +8,7 @@
 package io.harness.delegate.task.terraform.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.TMACARI;
 
@@ -34,6 +35,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthen
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
+import io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.RemoteTerraformVarFileInfo;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
@@ -138,6 +140,32 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
     verify(terraformBaseHelper, times(1)).addVarFilesCommitIdsToMap(any(), any(), any());
   }
 
+  @Test
+  @Owner(developers = JELENA)
+  @Category(UnitTests.class)
+  public void testDestoryWithArtifactoryConfigAndBackendConfig()
+      throws IOException, TimeoutException, InterruptedException {
+    when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), eq(logCallback), any()))
+        .thenReturn("sourceDir");
+    doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
+    FileIo.createDirectoryIfDoesNotExist("sourceDir");
+    File outputFile = new File("sourceDir/terraform-backend-config");
+    FileUtils.touch(outputFile);
+    when(terraformBaseHelper.executeTerraformDestroyStep(any()))
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+                .build());
+    TerraformTaskNGResponse response = terraformDestroyTaskHandler.executeTaskInternal(
+        getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback);
+    assertThat(response).isNotNull();
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    Files.deleteIfExists(Paths.get(outputFile.getPath()));
+    Files.deleteIfExists(Paths.get("sourceDir"));
+    verify(terraformBaseHelper, times(1)).addBackendFileCommitIdsToMap(any(), any(), any());
+  }
+
   private TerraformTaskNGParameters getTerraformTaskParameters() {
     return TerraformTaskNGParameters.builder()
         .accountId("accountId")
@@ -184,6 +212,26 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
         .entityId("provisionerIdentifier")
         .encryptedTfPlan(encryptedPlanContent)
         .configFile(null)
+        .backendConfigFileInfo(
+            RemoteTerraformBackendConfigFileInfo.builder()
+                .gitFetchFilesConfig(
+                    GitFetchFilesConfig.builder()
+                        .gitStoreDelegateConfig(
+                            GitStoreDelegateConfig.builder()
+                                .branch("main")
+                                .path("remote_state")
+                                .gitConfigDTO(
+                                    GitConfigDTO.builder()
+                                        .gitAuthType(GitAuthType.HTTP)
+                                        .gitAuth(GitHTTPAuthenticationDTO.builder()
+                                                     .username(gitUsername)
+                                                     .passwordRef(
+                                                         SecretRefData.builder().identifier(gitPasswordRefId).build())
+                                                     .build())
+                                        .build())
+                                .build())
+                        .build())
+                .build())
         .fileStoreConfigFiles(artifactoryStoreDelegateConfig)
         .varFileInfos(Collections.singletonList(RemoteTerraformVarFileInfo.builder().build()))
         .planName("planName")

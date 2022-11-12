@@ -9,9 +9,8 @@ package io.harness.instancesyncmonitoring.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.instancesyncmonitoring.model.InstanceSyncMetricDetails;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface InstanceSyncMonitoringService {
-  void recordMetrics(InstanceSyncMetricDetails instanceSyncMetricDetails, boolean isNewDeployment, long duration);
+  void recordMetrics(String accountId, boolean isNg, boolean isNewDeployment, long duration);
 }

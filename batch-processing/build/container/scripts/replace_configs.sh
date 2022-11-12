@@ -60,6 +60,14 @@ if [[ "" != "$TIMESCALEDB_PASSWORD" ]]; then
   export TIMESCALEDB_PASSWORD; yq -i '.timescaledb.timescaledbPassword=env(TIMESCALEDB_PASSWORD)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TIMESCALEDB_SSL_MODE" ]]; then
+  export TIMESCALEDB_SSL_MODE; yq -i '.timescaledb.sslMode=env(TIMESCALEDB_SSL_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TIMESCALEDB_SSL_ROOT_CERT" ]]; then
+  export TIMESCALEDB_SSL_ROOT_CERT; yq -i '.timescaledb.sslRootCert=env(TIMESCALEDB_SSL_ROOT_CERT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$S3_SYNC_CONFIG_BUCKET_NAME" ]]; then
   export S3_SYNC_CONFIG_BUCKET_NAME; yq -i '.awsS3SyncConfig.awsS3BucketName=env(S3_SYNC_CONFIG_BUCKET_NAME)' $CONFIG_FILE
 fi

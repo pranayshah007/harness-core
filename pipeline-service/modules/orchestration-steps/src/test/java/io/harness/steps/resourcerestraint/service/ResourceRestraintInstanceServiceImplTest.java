@@ -161,7 +161,7 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  public void shouldTestFinishActiveInstance_InvalidRequestException() {
+  public void shouldTestFinishActiveInstance_Null() {
     ResourceRestraintInstance instance = ResourceRestraintInstance.builder()
                                              .releaseEntityId(generateUuid())
                                              .releaseEntityType("PLAN")
@@ -174,10 +174,8 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
     ResourceRestraintInstance savedInstance = resourceRestraintInstanceService.save(instance);
     assertThat(savedInstance).isNotNull();
 
-    assertThatThrownBy(
-        () -> resourceRestraintInstanceService.finishInstance(generateUuid(), savedInstance.getResourceUnit()))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageStartingWith("Cannot find ResourceRestraintInstance with id");
+    assertThat(resourceRestraintInstanceService.finishInstance(generateUuid(), savedInstance.getResourceUnit()))
+        .isNull();
   }
 
   @Test

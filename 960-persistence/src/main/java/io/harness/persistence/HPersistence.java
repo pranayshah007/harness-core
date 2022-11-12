@@ -160,6 +160,24 @@ public interface HPersistence extends HealthMonitor {
   <T extends PersistentEntity> Query<T> createQuery(Class<T> cls);
 
   /**
+   * Creates the query for analytics.
+   *
+   * @param <T> the generic type
+   * @param cls the cls
+   * @return the query
+   */
+  <T extends PersistentEntity> Query<T> createAnalyticsQuery(Class<T> cls);
+
+  /**
+   * Creates the query for analytics.
+   *
+   * @param <T> the generic type
+   * @param cls the cls
+   * @return the query
+   */
+  <T extends PersistentEntity> Query<T> createAnalyticsQuery(Class<T> cls, Set<QueryChecks> queryChecks);
+
+  /**
    * Creates the query.
    *
    * @param <T>          the generic type
@@ -400,6 +418,17 @@ public interface HPersistence extends HealthMonitor {
    */
 
   <T> PageResponse<T> querySecondary(Class<T> cls, PageRequest<T> req);
+
+  /**
+   * Query. Read preference is set to analytics mongo
+   *
+   * @param <T> the generic type
+   * @param cls the cls
+   * @param req the req
+   * @return the page response
+   */
+
+  <T> PageResponse<T> queryAnalytics(Class<T> cls, PageRequest<T> req);
 
   /**
    * Query page response.

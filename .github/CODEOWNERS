@@ -1,4 +1,4 @@
-DockerFile* diptiman.adak@harness.io udham.singh@harness.io guna.chandrasekaran@harness.io
+DockerFile* diptiman.adak@harness.io udham.singh@harness.io
 .bazel* diptiman.adak@harness.io udham.singh@harness.io
 bazel* diptiman.adak@harness.io udham.singh@harness.io
 /dockerization/delegate/ raghu@harness.io jenny.james@harness.io marko.milic@harness.io arpit.tiwari@harness.io gaurav.jain@harness.io
@@ -97,3 +97,5 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /pipeline-service/service/src/test/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io pooja.singhal@harness.io sridhar.balijepalli@harness.io rajendra.baviskar@harness.io
 /pipeline-service/pms-sdk-core/ archit.singla@harness.io sahil.hindwani@harness.io vaibhav.si@harness.io sanyasi.naidu@harness.io
 /tools/build-cleaner/ gaurav.nanda@harness.io
+
+/100-migrator/ deepak.puthraya@harness.io manjunatha.etagi@harness.io prabu.rajendran@harness.io

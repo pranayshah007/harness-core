@@ -32,6 +32,7 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
+import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
@@ -139,7 +140,14 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
       final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters, entityMap);
 
-      executeEnvironmentPart(ambiance, stepParameters, servicePartResponse, logCallback, entityMap);
+      // Support GitOps Flow
+      // If environment group is only set for GitOps or if GitOps flow and deploying to multi-environments
+      if (ParameterField.isNotNull(stepParameters.getGitOpsMultiSvcEnvEnabled())
+          && stepParameters.getGitOpsMultiSvcEnvEnabled().getValue()) {
+        executeGitOpsEnvironmentPart(ambiance, servicePartResponse, logCallback);
+      } else {
+        executeEnvironmentPart(ambiance, stepParameters, servicePartResponse, logCallback, entityMap);
+      }
 
       ChildrenExecutableResponse childrenExecutableResponse = executeFreezePart(ambiance, entityMap);
       if (childrenExecutableResponse != null) {
@@ -154,9 +162,22 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                               .map(id -> ChildrenExecutableResponse.Child.newBuilder().setChildNodeId(id).build())
                               .collect(Collectors.toList()))
           .build();
+    } catch (WingsException wingsException) {
+      throw wingsException;
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
+  }
+
+  private void executeGitOpsEnvironmentPart(
+      Ambiance ambiance, ServicePartResponse servicePartResponse, NGLogCallback logCallback) {
+    processServiceVariables(ambiance, servicePartResponse, logCallback, null);
+
+    serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
+        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_MANIFESTS_SWEEPING_OUTPUT);
+
+    serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(
+        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
   }
 
   private void validate(ServiceStepV3Parameters stepParameters) {
@@ -174,8 +195,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private void executeEnvironmentPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
-      ServicePartResponse servicePartResponse, NGLogCallback logCallback, Map<FreezeEntityType, List<String>> entityMap)
-      throws IOException {
+      ServicePartResponse servicePartResponse, NGLogCallback logCallback,
+      Map<FreezeEntityType, List<String>> entityMap) {
     final ParameterField<String> envRef = parameters.getEnvRef();
     final ParameterField<Map<String, Object>> envInputs = parameters.getEnvInputs();
     if (ParameterField.isNull(envRef)) {
@@ -259,8 +280,14 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   private void processServiceVariables(Ambiance ambiance, ServicePartResponse servicePartResponse,
       NGLogCallback logCallback, EnvironmentOutcome environmentOutcome) {
-    VariablesSweepingOutput variablesSweepingOutput = getVariablesSweepingOutput(
-        servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(), logCallback, environmentOutcome);
+    VariablesSweepingOutput variablesSweepingOutput;
+    if (environmentOutcome != null) {
+      variablesSweepingOutput = getVariablesSweepingOutput(
+          servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(), logCallback, environmentOutcome);
+    } else {
+      variablesSweepingOutput = getVariablesSweepingOutputForGitOps(
+          servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(), logCallback);
+    }
 
     sweepingOutputService.consume(ambiance, YAMLFieldNameConstants.VARIABLES, variablesSweepingOutput, null);
 
@@ -392,6 +419,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
 
+    if (ngServiceV2InfoConfig.getServiceDefinition() == null) {
+      throw new InvalidRequestException(
+          "Service Definition is not defined for service : " + serviceEntity.getIdentifier());
+    }
+
     serviceStepsHelper.validateResources(ambiance, ngServiceConfig);
 
     entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(serviceEntity.getOrgIdentifier()));
@@ -435,6 +467,14 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       envVariables.putAll(environmentOutcome.getVariables());
     }
     Map<String, Object> variables = getFinalVariablesMap(serviceV2InfoConfig, envVariables, logCallback);
+    VariablesSweepingOutput variablesOutcome = new VariablesSweepingOutput();
+    variablesOutcome.putAll(variables);
+    return variablesOutcome;
+  }
+
+  private VariablesSweepingOutput getVariablesSweepingOutputForGitOps(
+      NGServiceV2InfoConfig serviceV2InfoConfig, NGLogCallback logCallback) {
+    Map<String, Object> variables = getFinalVariablesMap(serviceV2InfoConfig, Map.of(), logCallback);
     VariablesSweepingOutput variablesOutcome = new VariablesSweepingOutput();
     variablesOutcome.putAll(variables);
     return variablesOutcome;
@@ -484,7 +524,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       String accountId = AmbianceUtils.getAccountId(ambiance);
       String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
       String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(accountId, orgId, projectId, accessControlClient)) {
+      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
+              ngFeatureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
         return null;
       }
       List<FreezeSummaryResponseDTO> globalFreezeConfigs;

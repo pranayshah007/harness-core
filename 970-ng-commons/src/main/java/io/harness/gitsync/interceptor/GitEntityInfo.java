@@ -22,7 +22,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @FieldNameConstants(innerTypeName = "GitEntityInfoKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(DX)

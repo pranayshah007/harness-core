@@ -87,7 +87,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
       Query<WorkflowExecution> query, FindOptions findOptions, boolean includeGraph);
 
   PageResponse<WorkflowExecution> listExecutions(PageRequest<WorkflowExecution> pageRequest, boolean includeGraph,
-      boolean runningOnly, boolean withBreakdownAndSummary, boolean includeStatus, boolean withFailureDetails);
+      boolean runningOnly, boolean withBreakdownAndSummary, boolean includeStatus, boolean withFailureDetails,
+      boolean fromUi);
 
   WorkflowExecution triggerPipelineExecution(
       @NotNull String appId, @NotNull String pipelineId, ExecutionArgs executionArgs, Trigger trigger);

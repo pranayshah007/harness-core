@@ -11,7 +11,6 @@ import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.VerificationTask;
-import io.harness.cvng.metrics.beans.AccountMetricContext;
 import io.harness.cvng.metrics.beans.AnalysisStateMachineContext;
 import io.harness.cvng.metrics.beans.DataCollectionTaskMetricContext;
 import io.harness.cvng.metrics.beans.LETaskMetricContext;
@@ -20,6 +19,7 @@ import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.metrics.AutoMetricContext;
+import io.harness.metrics.beans.AccountMetricContext;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Singleton;

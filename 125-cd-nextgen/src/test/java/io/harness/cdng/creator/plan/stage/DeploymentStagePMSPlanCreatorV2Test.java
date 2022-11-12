@@ -188,6 +188,9 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     doReturn(true)
         .when(featureFlagHelperService)
         .isEnabled(ctx.getMetadata().getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE);
+    doReturn(false)
+        .when(featureFlagHelperService)
+        .isEnabled(ctx.getMetadata().getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE_OVERRIDE);
     when(accessControlClient.hasAccess(ResourceScope.of(anyString(), anyString(), anyString()),
              Resource.of("DEPLOYMENTFREEZE", null), PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION))
         .thenReturn(false);

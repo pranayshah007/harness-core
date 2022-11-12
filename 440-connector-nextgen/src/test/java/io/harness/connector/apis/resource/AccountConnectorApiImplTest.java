@@ -362,11 +362,11 @@ public class AccountConnectorApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteAccountScopedConnector() {
     doReturn(Optional.of(connectorResponseDTO)).when(connectorService).get(any(), any(), any(), any());
-    doReturn(true).when(connectorService).delete(any(), any(), any(), any());
+    doReturn(true).when(connectorService).delete(any(), any(), any(), any(), eq(false));
 
     Response response = accountConnectorApi.deleteAccountScopedConnector(slug, account);
 
-    verify(connectorService, times(1)).delete(eq(account), eq(null), eq(null), eq(slug));
+    verify(connectorService, times(1)).delete(eq(account), eq(null), eq(null), eq(slug), eq(false));
 
     assertThat(response.getStatus()).isEqualTo(200);
 
@@ -412,7 +412,7 @@ public class AccountConnectorApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteAccountScopedConnectorNotDeleted() {
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(connectorResponseDTO));
-    when(connectorService.delete(any(), any(), any(), any())).thenReturn(false);
+    when(connectorService.delete(any(), any(), any(), any(), eq(false))).thenReturn(false);
 
     Throwable thrown = catchThrowableOfType(
         () -> accountConnectorApi.deleteAccountScopedConnector(slug, account), InvalidRequestException.class);

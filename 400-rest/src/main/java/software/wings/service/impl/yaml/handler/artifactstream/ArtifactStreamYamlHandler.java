@@ -16,6 +16,7 @@ import static software.wings.service.impl.ArtifactStreamServiceImpl.ARTIFACT_STR
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.Application;
 import software.wings.beans.Service;
@@ -112,6 +113,9 @@ public abstract class ArtifactStreamYamlHandler<Y extends Yaml, B extends Artifa
     String yamlFilePath = changeContext.getChange().getFilePath();
     B previous = get(changeContext.getChange().getAccountId(), yamlFilePath);
     if (previous != null) {
+      if (!previous.getArtifactStreamType().equals(changeContext.getYaml().getType())) {
+        throw new InvalidRequestException("Cannot change artifact stream type on artifact stream update");
+      }
       toBean(previous, changeContext, previous.fetchAppId());
       previous.setSyncFromGit(changeContext.getChange().isSyncFromGit());
       return (B) artifactStreamService.update(previous, !previous.isSyncFromGit());

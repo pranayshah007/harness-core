@@ -24,33 +24,34 @@ import (
 )
 
 const (
-	accountIDEnv      = "HARNESS_ACCOUNT_ID"
-	orgIDEnv          = "HARNESS_ORG_ID"
-	projectIDEnv      = "HARNESS_PROJECT_ID"
-	buildIDEnv        = "HARNESS_BUILD_ID"
-	stageIDEnv        = "HARNESS_STAGE_ID"
-	pipelineIDEnv     = "HARNESS_PIPELINE_ID"
-	tiSvcEp           = "HARNESS_TI_SERVICE_ENDPOINT"
-	tiSvcToken        = "HARNESS_TI_SERVICE_TOKEN"
-	logSvcEp          = "HARNESS_LOG_SERVICE_ENDPOINT"
-	logSvcToken       = "HARNESS_LOG_SERVICE_TOKEN"
-	logPrefixEnv      = "HARNESS_LOG_PREFIX"
-	serviceLogKeyEnv  = "HARNESS_SERVICE_LOG_KEY"
-	secretList        = "HARNESS_SECRETS_LIST"
-	dBranch           = "DRONE_COMMIT_BRANCH"
-	dSourceBranch     = "DRONE_SOURCE_BRANCH"
-	dTargetBranch     = "DRONE_TARGET_BRANCH"
-	dRemoteUrl        = "DRONE_REMOTE_URL"
-	dCommitSha        = "DRONE_COMMIT_SHA"
-	dCommitLink       = "DRONE_COMMIT_LINK"
-	wrkspcPath        = "HARNESS_WORKSPACE"
-	logUploadFf       = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
-	gitBin            = "git"
-	diffFilesCmd      = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
-	harnessStepIndex  = "HARNESS_STEP_INDEX"
-	harnessStepTotal  = "HARNESS_STEP_TOTAL"
-	harnessStageIndex = "HARNESS_STAGE_INDEX"
-	harnessStageTotal = "HARNESS_STAGE_TOTAL"
+	accountIDEnv       = "HARNESS_ACCOUNT_ID"
+	orgIDEnv           = "HARNESS_ORG_ID"
+	projectIDEnv       = "HARNESS_PROJECT_ID"
+	buildIDEnv         = "HARNESS_BUILD_ID"
+	stageIDEnv         = "HARNESS_STAGE_ID"
+	pipelineIDEnv      = "HARNESS_PIPELINE_ID"
+	tiSvcEp            = "HARNESS_TI_SERVICE_ENDPOINT"
+	tiSvcToken         = "HARNESS_TI_SERVICE_TOKEN"
+	logSvcEp           = "HARNESS_LOG_SERVICE_ENDPOINT"
+	logSvcToken        = "HARNESS_LOG_SERVICE_TOKEN"
+	logPrefixEnv       = "HARNESS_LOG_PREFIX"
+	serviceLogKeyEnv   = "HARNESS_SERVICE_LOG_KEY"
+	additionalCertsDir = "HARNESS_ADDITIONAL_CERTS_DIR"
+	secretList         = "HARNESS_SECRETS_LIST"
+	dBranch            = "DRONE_COMMIT_BRANCH"
+	dSourceBranch      = "DRONE_SOURCE_BRANCH"
+	dTargetBranch      = "DRONE_TARGET_BRANCH"
+	dRemoteUrl         = "DRONE_REMOTE_URL"
+	dCommitSha         = "DRONE_COMMIT_SHA"
+	dCommitLink        = "DRONE_COMMIT_LINK"
+	wrkspcPath         = "HARNESS_WORKSPACE"
+	logUploadFf        = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
+	gitBin             = "git"
+	diffFilesCmd       = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
+	harnessStepIndex   = "HARNESS_STEP_INDEX"
+	harnessStepTotal   = "HARNESS_STEP_TOTAL"
+	harnessStageIndex  = "HARNESS_STAGE_INDEX"
+	harnessStageTotal  = "HARNESS_STAGE_TOTAL"
 )
 
 // GetChangedFiles executes a shell command and returns a list of files changed in the PR
@@ -166,7 +167,7 @@ func GetRemoteHTTPClient() (client.Client, error) {
 	if !ok {
 		return nil, fmt.Errorf("log service token not set %s", logSvcToken)
 	}
-	return client.NewHTTPClient(l, account, token, false), nil
+	return client.NewHTTPClient(l, account, token, false, GetAdditionalCertsDir()), nil
 }
 
 // GetLogKey returns a key for log service
@@ -189,6 +190,11 @@ func GetServiceLogKey() (string, error) {
 	return logKey, nil
 }
 
+// GetAdditionalCertsPath returns additional certs path
+func GetAdditionalCertsDir() string {
+	return os.Getenv(additionalCertsDir)
+}
+
 // GetTiHTTPClient returns a client to talk to the TI service
 func GetTiHTTPClient() (ticlient.Client, error) {
 	l, ok := os.LookupEnv(tiSvcEp)
@@ -203,7 +209,7 @@ func GetTiHTTPClient() (ticlient.Client, error) {
 	if !ok {
 		return nil, fmt.Errorf("TI service token not set %s", tiSvcToken)
 	}
-	return ticlient.NewHTTPClient(l, account, token, false), nil
+	return ticlient.NewHTTPClient(l, account, token, false, GetAdditionalCertsDir()), nil
 }
 
 // GetTiHTTPClientWithToken returns a client to talk to the TI service
@@ -216,7 +222,7 @@ func GetTiHTTPClientWithToken(token string) (ticlient.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ticlient.NewHTTPClient(l, account, token, false), nil
+	return ticlient.NewHTTPClient(l, account, token, false, GetAdditionalCertsDir()), nil
 }
 
 func GetAccountId() (string, error) {

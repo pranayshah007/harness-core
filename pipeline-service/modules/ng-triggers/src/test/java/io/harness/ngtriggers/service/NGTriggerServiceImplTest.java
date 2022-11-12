@@ -422,13 +422,14 @@ public class NGTriggerServiceImplTest extends CategoryTest {
                 .build(),
             TriggerCatalogItem.builder()
                 .category(TriggerCategory.SCHEDULED)
-                .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.SCHEDULED)))
+                .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.CRON)))
                 .build(),
             TriggerCatalogItem.builder()
                 .category(TriggerCategory.MANIFEST)
                 .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.HELM_CHART)))
                 .build()));
     List<TriggerCatalogItem> lst = ngTriggerServiceImpl.getTriggerCatalog(ACCOUNT_ID);
+    assertThat(lst).isNotNull();
     assertThat(lst.size()).isEqualTo(4);
   }
 }

@@ -59,7 +59,7 @@ paths:
           description: List of Pipeline identifiers on the basis of which the Pipelines are filtered.
         - schema:
             type: string
-            pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+            pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
             minLength: 1
             maxLength: 64
           in: query
@@ -153,6 +153,16 @@ paths:
           in: query
           name: template_applied
           description: 'If true, returns Pipeline YAML with Templates applied on it.'
+        - schema:
+            type: string
+          in: query
+          name: connector_ref
+          description: Identifier of the Harness Connector used for CRUD operations on the Entity (for Git Experience).
+        - schema:
+            type: string
+          in: query
+          name: repo_name
+          description: Name of the repository (for Git Experience).
       tags:
         - Pipelines
       responses:
@@ -186,6 +196,24 @@ paths:
       responses:
         '204':
           description: No Content
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                example-resp:
+                  value: {}
+            application/yaml:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                example-resp:
+                  value: |
+                    {}
 components:
   schemas:
     GitDetails:
@@ -206,7 +234,7 @@ components:
       properties:
         object_id:
           type: string
-          description: Entity identifier
+          description: Object identifier / blob id
           pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
           minLength: 1
           maxLength: 64
@@ -284,24 +312,24 @@ components:
         slug:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
         name:
           type: string
           description: Pipeline name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         org:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Organization identifier
         project:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Project identifier
@@ -382,7 +410,7 @@ components:
               started: 1234567890
               ended: 1234567890
               run_number: 5
-          store_type: INLINE
+          store_type: REMOTE
           connector_ref: example_connector
           valid: true
           git_details:
@@ -398,13 +426,13 @@ components:
         slug:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
         name:
           type: string
           description: Pipeline name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         description:
@@ -596,7 +624,7 @@ components:
             commit_message: Added Harness Git Experience
             base_branch: old_branch
             connector_ref: git_connector
-            store_type: INLINE
+            store_type: REMOTE
             repo_name: example_repository
       properties:
         pipeline_yaml:
@@ -604,13 +632,13 @@ components:
           description: Pipeline YAML (to be passed as a String).
         slug:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Pipeline identifier
         name:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Pipeline name
@@ -643,7 +671,7 @@ components:
         slug:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
     YAMLSchemaErrorWrapper:
@@ -702,7 +730,7 @@ components:
       properties:
         slug:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Entity identifier
@@ -711,7 +739,7 @@ components:
           description: Type of Entity
         name:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Name of Entity
@@ -729,7 +757,7 @@ components:
           $ref: '#/components/schemas/ExecutorInfo'
         execution_id:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Execution identifier
@@ -807,9 +835,6 @@ components:
         username:
           type: string
           description: Username of the Executor.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
-          minLength: 1
-          maxLength: 64
         email:
           type: string
           description: Email address of the Executor.
@@ -824,6 +849,15 @@ components:
         id: 36li0g4pug41q
       type: object
       description: Contains parameters related to creating an Entity for Git Experience.
+      x-examples:
+        example-create-git:
+          branch_name: branch
+          file_path: /folder/file.json
+          commit_message: Added Harness Git Experience
+          base_branch: old_branch
+          connector_ref: git_connector
+          store_type: REMOTE
+          repo_name: example_repository
       properties:
         branch_name:
           type: string
@@ -849,21 +883,22 @@ components:
         repo_name:
           type: string
           description: Name of the repository.
-      x-examples:
-        example-create-git:
-          branch_name: branch
-          file_path: /folder/file.json
-          commit_message: Added Harness Git Experience
-          base_branch: old_branch
-          connector_ref: git_connector
-          store_type: INLINE
-          repo_name: example_repository
     GitUpdateDetails:
       title: Update Git Details
       x-stoplight:
         id: cko6b02f6trvt
       type: object
       description: Contains parameters related to updating an Entity for Git Experience.
+      x-examples:
+        example-update-git:
+          branch_name: branch
+          commit_message: Added Harness Git Experience
+          last_object_id: abcdXYZ
+          base_branch: old_branch
+          last_commit_id: abcdXYZ
+          connector_ref: git_connector
+          store_type: REMOTE
+          repo_name: example_repository
       properties:
         branch_name:
           type: string
@@ -873,20 +908,25 @@ components:
           description: Commit message used for the merge commit.
         last_object_id:
           type: string
-          description: Last object identifier (for Github).
+          description: Last object identifier (for Github only).
         base_branch:
           type: string
           description: Name of the default branch (this checks out a new branch titled by branch_name).
         last_commit_id:
           type: string
-          description: Last commit identifier (for Git Repositories other than Github).
-      x-examples:
-        example-update-git:
-          branch_name: branch
-          commit_message: Added Harness Git Experience
-          last_object_id: abcdXYZ
-          base_branch: old_branch
-          last_commit_id: abcdXYZ
+          description: Last commit identifier.
+        connector_ref:
+          type: string
+          description: Identifier of the Harness Connector used for CRUD operations on the Entity.
+        store_type:
+          type: string
+          enum:
+            - INLINE
+            - REMOTE
+          description: Specifies whether the Entity is to be stored in Git or not.
+        repo_name:
+          type: string
+          description: Name of the repository.
     PipelineUpdateRequestBody:
       title: Pipeline Update Request Body
       x-stoplight:
@@ -994,19 +1034,22 @@ components:
             last_object_id: abcdXYZ
             base_branch: old_branch
             last_commit_id: abcdXYZ
+            connector_ref: git_connector
+            store_type: REMOTE
+            repo_name: example_repository
       properties:
         pipeline_yaml:
           type: string
           description: Pipeline YAML (to be passed as a String).
         slug:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Pipeline identifier
         name:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
           description: Pipeline name
@@ -1272,7 +1315,7 @@ components:
                       started: 1234567890
                       ended: 1234567890
                       run_number: 5
-                  store_type: INLINE
+                  store_type: REMOTE
                   connector_ref: example_connector
                   valid: true
                   git_details:
@@ -1329,7 +1372,7 @@ components:
                       started: 1234567890
                       ended: 1234567890
                       run_number: 5
-                  store_type: INLINE
+                  store_type: REMOTE
                   connector_ref: example_connector
                   valid: true
                   git_details:
@@ -1456,7 +1499,7 @@ components:
                   commit_message: Added Harness Git Experience
                   base_branch: old_branch
                   connector_ref: git_connector
-                  store_type: INLINE
+                  store_type: REMOTE
                   repo_name: example_repository
         application/yaml:
           schema:
@@ -1477,7 +1520,7 @@ components:
                   commit_message: Added Harness Git Experience
                   base_branch: old_branch
                   connector_ref: git_connector
-                  store_type: INLINE
+                  store_type: REMOTE
                   repo_name: example_repository
       description: Pipeline request body
       required: true
@@ -1588,6 +1631,9 @@ components:
                   last_object_id: abcdXYZ
                   base_branch: old_branch
                   last_commit_id: abcdXYZ
+                  connector_ref: git_connector
+                  store_type: REMOTE
+                  repo_name: example_repository
         application/yaml:
           schema:
             $ref: '#/components/schemas/PipelineUpdateRequestBody'
@@ -1607,5 +1653,8 @@ components:
                   last_object_id: abcdXYZ
                   base_branch: old_branch
                   last_commit_id: abcdXYZ
+                  connector_ref: git_connector
+                  store_type: REMOTE
+                  repo_name: example_repository
       description: Pipeline request body
       required: true

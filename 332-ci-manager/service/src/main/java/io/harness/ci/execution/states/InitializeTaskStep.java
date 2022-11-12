@@ -252,8 +252,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
     if (buildSetupTaskParams.getType() == DLITE_VM) {
       HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
-      String platformSelector =
-          vmInitializeTaskParamsBuilder.getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform());
+      String platformSelector = vmInitializeTaskParamsBuilder.getHostedPoolId(
+          hostedVmInfraYaml.getSpec().getPlatform(), AmbianceUtils.getAccountId(ambiance));
       TaskSelector taskSelector = TaskSelector.newBuilder().setSelector(platformSelector).build();
       taskSelectors.add(taskSelector);
       executeOnHarnessHostedDelegates = true;

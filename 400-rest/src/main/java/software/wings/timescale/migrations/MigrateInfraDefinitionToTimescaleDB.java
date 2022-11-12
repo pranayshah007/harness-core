@@ -64,7 +64,7 @@ public class MigrateInfraDefinitionToTimescaleDB implements TimeScaleEntityMigra
       findOptions_infra_definitions.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<InfrastructureDefinition> iterator =
-               new HIterator<>(wingsPersistence.createQuery(InfrastructureDefinition.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(InfrastructureDefinition.class, excludeAuthority)
                                    .field(InfrastructureDefinitionKeys.accountId)
                                    .equal(accountId)
                                    .fetch(findOptions_infra_definitions))) {

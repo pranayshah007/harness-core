@@ -665,6 +665,14 @@ if [[ "$TIMESCALEDB_HEALTH_CHECK_NEEDED" == "true" ]]; then
   export TIMESCALEDB_HEALTH_CHECK_NEEDED; yq -i '.timescaledb.isHealthCheckNeeded=env(TIMESCALEDB_HEALTH_CHECK_NEEDED)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TIMESCALEDB_SSL_MODE" ]]; then
+  export TIMESCALEDB_SSL_MODE; yq -i '.timescaledb.sslMode=env(TIMESCALEDB_SSL_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TIMESCALEDB_SSL_ROOT_CERT" ]]; then
+  export TIMESCALEDB_SSL_ROOT_CERT; yq -i '.timescaledb.sslRootCert=env(TIMESCALEDB_SSL_ROOT_CERT)' $CONFIG_FILE
+fi
+
 if [[ "$SEARCH_ENABLED" == "true" ]]; then
   yq -i '.searchEnabled=true' $CONFIG_FILE
 fi
@@ -752,18 +760,14 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   export REDIS_NETTY_THREADS; yq -i '.redisLockConfig.nettyThreads=env(REDIS_NETTY_THREADS)' $CONFIG_FILE
   export REDIS_NETTY_THREADS; yq -i '.redisAtmosphereConfig.nettyThreads=env(REDIS_NETTY_THREADS)' $CONFIG_FILE
   export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
+
+  export REDIS_NETTY_THREADS; yq -i '.singleServerConfig.connectionMinimumIdleSize=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_CONNECTION_POOL_SIZE" ]]; then
   export REDIS_CONNECTION_POOL_SIZE; yq -i '.redisLockConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $CONFIG_FILE
   export REDIS_CONNECTION_POOL_SIZE; yq -i '.redisAtmosphereConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $CONFIG_FILE
   export REDIS_CONNECTION_POOL_SIZE; yq -i '.singleServerConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$REDIS_CONNECTION_MINIMUM_IDLE_SIZE" ]]; then
-  export REDIS_CONNECTION_MINIMUM_IDLE_SIZE; yq -i '.redisLockConfig.connectionMinimumIdleSize=env(REDIS_CONNECTION_MINIMUM_IDLE_SIZE)' $CONFIG_FILE
-  export REDIS_CONNECTION_MINIMUM_IDLE_SIZE; yq -i '.redisAtmosphereConfig.connectionMinimumIdleSize=env(REDIS_CONNECTION_MINIMUM_IDLE_SIZE)' $CONFIG_FILE
-  export REDIS_CONNECTION_MINIMUM_IDLE_SIZE; yq -i '.singleServerConfig.connectionMinimumIdleSize=env(REDIS_CONNECTION_MINIMUM_IDLE_SIZE)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_RETRY_INTERVAL" ]]; then

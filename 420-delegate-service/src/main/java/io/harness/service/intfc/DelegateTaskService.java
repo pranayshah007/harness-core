@@ -24,6 +24,8 @@ public interface DelegateTaskService {
 
   void handleResponse(DelegateTask delegateTask, Query<DelegateTask> taskQuery, DelegateTaskResponse response);
 
+  void handleResponseV2(DelegateTask delegateTask, Query<DelegateTask> taskQuery, DelegateTaskResponse response);
+
   void publishTaskProgressResponse(
       String accountId, String driverId, String delegateTaskId, DelegateProgressData responseData);
 

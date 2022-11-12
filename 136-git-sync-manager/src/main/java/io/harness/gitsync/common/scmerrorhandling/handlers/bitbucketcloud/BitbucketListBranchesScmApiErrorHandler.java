@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 public class BitbucketListBranchesScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String LIST_BRANCH_FAILED_MESSAGE = "Listing branches from Bitbucket failed. ";
+
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
     switch (statusCode) {

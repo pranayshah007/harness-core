@@ -10,10 +10,9 @@ package software.wings.delegatetasks.azure.common;
 import static io.harness.rule.OwnerRule.IVAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -21,33 +20,31 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.rule.Owner;
 
-import software.wings.WingsBaseTest;
 import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.DelegateFileManager;
 import software.wings.delegatetasks.azure.common.context.ArtifactDownloaderContext;
 
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collections;
+import java.util.concurrent.ExecutionException;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({File.class, FileOutputStream.class, IOUtils.class, ArtifactDownloaderService.class})
+@RunWith(MockitoJUnitRunner.class)
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
-public class ArtifactDownloaderServiceTest extends WingsBaseTest {
-  public static final String ARTIFACT_FILE_DIRECTORY = "/working-directory-abs-path/any-random-uuid/";
+public class ArtifactDownloaderServiceTest {
+  public static final String ARTIFACT_FILE_DIRECTORY = System.getProperty("java.io.tmpdir");
   public static final String FILE_UUID = "file-uuid";
   public static final String ACCOUNT_ID = "account-id";
 
@@ -57,69 +54,57 @@ public class ArtifactDownloaderServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
-  public void testDownloadArtifactFile() throws Exception {
+  public void testDownloadArtifactFile() throws IOException, ExecutionException {
     InputStream mockArtifactFileStream = mock(InputStream.class);
     ArtifactDownloaderContext downloaderContext = getArtifactDownloaderContext();
     ArtifactStreamAttributes artifactStreamAttributes = downloaderContext.getArtifactStreamAttributes();
 
-    doReturn(mockArtifactFileStream)
-        .when(delegateFileManager)
-        .downloadArtifactAtRuntime(artifactStreamAttributes, downloaderContext.getAccountId(),
-            downloaderContext.getAppId(), downloaderContext.getActivityId(), downloaderContext.getCommandName(),
-            artifactStreamAttributes.getRegistryHostName());
+    when(delegateFileManager.downloadArtifactAtRuntime(artifactStreamAttributes, downloaderContext.getAccountId(),
+             downloaderContext.getAppId(), downloaderContext.getActivityId(), downloaderContext.getCommandName(),
+             artifactStreamAttributes.getRegistryHostName()))
+        .thenReturn(mockArtifactFileStream);
 
-    mockCopyArtifactFile(
-        mockArtifactFileStream, downloaderContext.getWorkingDirectory(), artifactStreamAttributes.getArtifactName());
+    mockCopyArtifactFile(downloaderContext.getWorkingDirectory(), artifactStreamAttributes.getArtifactName());
 
-    File artifactFile = artifactDownloaderService.downloadArtifactFile(downloaderContext);
+    try (MockedStatic<IOUtils> ioMock = Mockito.mockStatic(IOUtils.class)) {
+      File artifactFile = artifactDownloaderService.downloadArtifactFile(downloaderContext);
+      ioMock.verify(() -> IOUtils.copy(any(InputStream.class), any(OutputStream.class)));
 
-    assertThat(artifactFile).isNotNull();
-    assertThat(artifactFile.getAbsolutePath())
-        .isEqualTo(ARTIFACT_FILE_DIRECTORY.concat(artifactStreamAttributes.getArtifactName()));
+      assertThat(artifactFile).isNotNull();
+      assertThat(artifactFile.getAbsolutePath()).startsWith(ARTIFACT_FILE_DIRECTORY);
+      assertThat(artifactFile.getAbsolutePath()).endsWith(artifactStreamAttributes.getArtifactName());
+    }
   }
 
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
-  public void testDownloadArtifactFileFromManager() throws Exception {
+  public void testDownloadArtifactFileFromManager() throws IOException, ExecutionException {
     InputStream mockArtifactFileStream = mock(InputStream.class);
     ArtifactDownloaderContext downloaderContext = getArtifactDownloaderContext();
     ArtifactStreamAttributes artifactStreamAttributes = downloaderContext.getArtifactStreamAttributes();
 
-    doReturn(mockArtifactFileStream)
-        .when(delegateFileManager)
-        .downloadArtifactByFileId(FileBucket.ARTIFACTS, FILE_UUID, ACCOUNT_ID);
+    when(delegateFileManager.downloadArtifactByFileId(FileBucket.ARTIFACTS, FILE_UUID, ACCOUNT_ID))
+        .thenReturn(mockArtifactFileStream);
 
-    mockCopyArtifactFile(
-        mockArtifactFileStream, downloaderContext.getWorkingDirectory(), artifactStreamAttributes.getArtifactName());
+    mockCopyArtifactFile(downloaderContext.getWorkingDirectory(), artifactStreamAttributes.getArtifactName());
 
-    File artifactFile = artifactDownloaderService.downloadArtifactFileFromManager(downloaderContext);
+    try (MockedStatic<IOUtils> ioMock = Mockito.mockStatic(IOUtils.class)) {
+      File artifactFile = artifactDownloaderService.downloadArtifactFileFromManager(downloaderContext);
+      ioMock.verify(() -> IOUtils.copy(any(InputStream.class), any(OutputStream.class)));
 
-    assertThat(artifactFile).isNotNull();
-    assertThat(artifactFile.getAbsolutePath())
-        .isEqualTo(ARTIFACT_FILE_DIRECTORY.concat(artifactStreamAttributes.getArtifactName()));
+      assertThat(artifactFile).isNotNull();
+      assertThat(artifactFile.getAbsolutePath()).startsWith(ARTIFACT_FILE_DIRECTORY);
+      assertThat(artifactFile.getAbsolutePath()).endsWith(downloaderContext.getArtifactFiles().get(0).getName());
+    }
   }
 
-  private void mockCopyArtifactFile(InputStream mockArtifactFileStream, File mockWorkingDirectory, String artifactName)
-      throws Exception {
+  private void mockCopyArtifactFile(File mockWorkingDirectory, String artifactName) {
     mockCreateArtifactFileInWorkingDirectory(mockWorkingDirectory, artifactName);
-
-    FileOutputStream mockFileOutputStream = mock(FileOutputStream.class);
-    PowerMockito.whenNew(FileOutputStream.class).withAnyArguments().thenReturn(mockFileOutputStream);
-
-    PowerMockito.mockStatic(IOUtils.class);
-    PowerMockito.when(IOUtils.copy(mockArtifactFileStream, mockFileOutputStream)).thenAnswer(invocationOnMock -> 1024);
   }
 
-  private void mockCreateArtifactFileInWorkingDirectory(File workingDirectory, String artifactName) throws Exception {
-    doReturn(ARTIFACT_FILE_DIRECTORY).when(workingDirectory).getAbsolutePath();
-
-    File mockArtifactFile = mock(File.class);
-    String artifactFilePath = ARTIFACT_FILE_DIRECTORY.concat(artifactName);
-    doReturn(artifactFilePath).when(mockArtifactFile).getAbsolutePath();
-
-    whenNew(File.class).withArguments(anyString()).thenReturn(mockArtifactFile);
-    doReturn(true).when(mockArtifactFile).createNewFile();
+  private void mockCreateArtifactFileInWorkingDirectory(File workingDirectory, String artifactName) {
+    when(workingDirectory.getAbsolutePath()).thenReturn(ARTIFACT_FILE_DIRECTORY);
   }
 
   public ArtifactDownloaderContext getArtifactDownloaderContext() {
@@ -141,6 +126,10 @@ public class ArtifactDownloaderServiceTest extends WingsBaseTest {
   }
 
   private ArtifactFile getArtifactFile() {
-    return ArtifactFile.Builder.anArtifactFile().withFileUuid(FILE_UUID).withFileName("file-name").build();
+    return ArtifactFile.Builder.anArtifactFile()
+        .withFileUuid(FILE_UUID)
+        .withName("artifact-name")
+        .withFileName("file-name")
+        .build();
   }
 }

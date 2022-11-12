@@ -14,6 +14,8 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.manifest.yaml.FileStorageConfigDTO;
+import io.harness.cdng.manifest.yaml.FileStorageStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.visitor.helpers.store.HarnessStoreVisitorHelper;
 import io.harness.common.ParameterFieldHelper;
@@ -43,7 +45,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = HarnessStoreVisitorHelper.class)
 @TypeAlias("harnessStore")
 @RecasterAlias("io.harness.cdng.manifest.yaml.harness.HarnessStore")
-public class HarnessStore implements HarnessStoreConfig, Visitable {
+public class HarnessStore implements HarnessStoreConfig, FileStorageStoreConfig, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -99,5 +101,10 @@ public class HarnessStore implements HarnessStoreConfig, Visitable {
   @Override
   public VisitableChildren getChildrenToWalk() {
     return VisitableChildren.builder().build();
+  }
+
+  @Override
+  public FileStorageConfigDTO toFileStorageConfigDTO() {
+    return toHarnessStoreDTO();
   }
 }

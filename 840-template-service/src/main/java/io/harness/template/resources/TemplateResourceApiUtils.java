@@ -212,7 +212,7 @@ public class TemplateResourceApiUtils {
   public Response getTemplates(@AccountIdentifier String account, @OrgIdentifier String org,
       @ProjectIdentifier String project, int page, int limit, String sort, String order, String searchTerm,
       String listType, boolean recursive, List<String> names, List<String> identifiers, String description,
-      List<String> entityTypes, List<String> child_types) {
+      List<String> entityTypes, List<String> childTypes) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, org, project), Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     log.info(String.format("Get List of templates in project: %s, org: %s, account: %s", project, org, account));
@@ -223,10 +223,10 @@ public class TemplateResourceApiUtils {
     filterProperties.setTemplateNames(names);
     filterProperties.setDescription(description);
     filterProperties.setTemplateIdentifiers(identifiers);
-    filterProperties.setChildTypes(child_types);
+    filterProperties.setChildTypes(childTypes);
     TemplateFilterProperties templateFilterProperties =
         NGTemplateDtoMapper.toTemplateFilterProperties(filterProperties);
-    String type = toListtype(listType);
+    String type = toListType(listType);
     TemplateListType templateListType = TemplateListType.getTemplateType(type);
     FilterParamsDTO filterParamsDTO = NGTemplateDtoMapper.prepareFilterParamsDTO(
         searchTerm, "", templateListType, templateFilterProperties, recursive, false);
@@ -277,7 +277,7 @@ public class TemplateResourceApiUtils {
     }
     return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
-  public String toListtype(String listType) {
+  public String toListType(String listType) {
     String type;
     if (isEmpty(listType)) {
       listType = "ALL";
@@ -286,8 +286,12 @@ public class TemplateResourceApiUtils {
       type = LAST_UPDATES_TEMPLATE;
     } else if (listType.equals("STABLE_TEMPLATE")) {
       type = STABLE_TEMPLATE;
-    } else {
+    } else if (listType.equals("ALL")) {
       type = ALL;
+    } else {
+      throw new InvalidRequestException(String.format(
+          "Expected query param 'type' to be of value LAST_UPDATES_TEMPLATE, STABLE_TEMPLATE, ALL. [%s] value Not allowed",
+          listType));
     }
     return type;
   }

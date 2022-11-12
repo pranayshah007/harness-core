@@ -76,7 +76,7 @@ import io.serializer.HObjectMapper;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -369,25 +369,14 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   }
 
   @Override
-  public Page<Secret> list(List<Secret> secrets, int page, int size) {
-    if (secrets.isEmpty()) {
+  public Page<Secret> getPaginatedResult(List<Secret> unpagedSecrets, int page, int size) {
+    if (unpagedSecrets.isEmpty()) {
       return Page.empty();
     }
-
-    Criteria[] criteria = secrets.stream()
-                              .map(secret
-                                  -> Criteria.where(SecretKeys.accountIdentifier)
-                                         .is(secret.getAccountIdentifier())
-                                         .and(SecretKeys.orgIdentifier)
-                                         .is(secret.getOrgIdentifier())
-                                         .and(SecretKeys.projectIdentifier)
-                                         .is(secret.getProjectIdentifier())
-                                         .and(SecretKeys.identifier)
-                                         .is(secret.getIdentifier()))
-                              .toArray(Criteria[] ::new);
-
-    return secretRepository.findAll(new Criteria().orOperator(criteria),
-        PageUtils.getPageRequest(page, size, Collections.singletonList(SecretKeys.createdAt + ",desc")));
+    List<Secret> secrets = new ArrayList<>(unpagedSecrets);
+    secrets.sort(Comparator.comparing(Secret::getCreatedAt).reversed());
+    // This method is used because here list of secrets have unpaginated results
+    return PageUtils.getPage(secrets, page, size);
   }
 
   private Collection<Secret> checkAccess(List<Secret> secrets) {

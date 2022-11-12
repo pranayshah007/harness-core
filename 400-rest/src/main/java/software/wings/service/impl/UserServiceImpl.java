@@ -1465,6 +1465,7 @@ public class UserServiceImpl implements UserService {
 
     if (!isInviteAcceptanceRequired || isPLNoEmailForSamlAccountInvitesEnabled) {
       addUserToUserGroups(accountId, user, userGroups, false, true);
+      userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
     }
     boolean isAutoInviteAcceptanceEnabled = !isInviteAcceptanceRequired;
 

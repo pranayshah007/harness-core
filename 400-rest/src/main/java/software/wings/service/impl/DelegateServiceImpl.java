@@ -123,6 +123,8 @@ import io.harness.delegate.beans.DuplicateDelegateException;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
 import io.harness.delegate.beans.K8sConfigDetails;
+import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.events.DelegateGroupDeleteEvent;
 import io.harness.delegate.events.DelegateGroupUpsertEvent;
 import io.harness.delegate.events.DelegateRegisterEvent;
@@ -859,12 +861,13 @@ public class DelegateServiceImpl implements DelegateService {
           final long upgraderLastUpdated = delegateGroupMap.getOrDefault(entry.getKey(), 0L);
           final String version =
               isNotEmpty(entry.getValue()) ? entry.getValue().stream().findAny().get().getVersion() : null;
+          final String delegateType = entry.getValue().get(0).getDelegateType();
           return DelegateScalingGroup.builder()
               .groupName(entry.getKey())
               .upgraderLastUpdated(delegateGroupMap.getOrDefault(entry.getKey(), 0L))
               .immutable(isImmutable)
-              .autoUpgrade(
-                  delegateSetupService.setAutoUpgrade(upgraderLastUpdated, isImmutable, delegateCreationTime, version))
+              .autoUpgrade(delegateSetupService.setAutoUpgrade(
+                  upgraderLastUpdated, isImmutable, delegateCreationTime, version, delegateType))
               .delegateGroupExpirationTime(setDelegateScalingGroupExpiration(entry.getValue()))
               .delegates(buildInnerDelegates(accountId, entry.getValue(), activeDelegateConnections, true))
               .build();
@@ -3259,7 +3262,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   private boolean isImmutableDelegate(final String accountId, final String delegateType) {
     return featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, accountId)
-        && (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType));
+        && (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType) || DOCKER.equals(delegateType));
   }
 
   @Override
@@ -4022,8 +4025,24 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
+  public String queueTaskV2(DelegateTask task) {
+    if (task.getUuid() == null) {
+      task.setUuid(generateUuid());
+    }
+    copyTaskDataToTaskDataV2(task);
+    log.debug("Task id [{}] has wait Id [{}], task Object: [{}]", task.getUuid(), task.getWaitId(), task);
+    return delegateTaskServiceClassic.queueTaskV2(task);
+  }
+
+  @Override
   public void scheduleSyncTask(DelegateTask task) {
     delegateTaskServiceClassic.scheduleSyncTask(task);
+  }
+
+  @Override
+  public void scheduleSyncTaskV2(DelegateTask task) {
+    copyTaskDataToTaskDataV2(task);
+    delegateTaskServiceClassic.scheduleSyncTaskV2(task);
   }
 
   @Override
@@ -4032,6 +4051,37 @@ public class DelegateServiceImpl implements DelegateService {
       task.setUuid(generateUuid());
     }
     return delegateTaskServiceClassic.executeTask(task);
+  }
+
+  @Override
+  public <T extends DelegateResponseData> T executeTaskV2(DelegateTask task) throws InterruptedException {
+    if (task.getUuid() == null) {
+      task.setUuid(generateUuid());
+    }
+    copyTaskDataToTaskDataV2(task);
+    return delegateTaskServiceClassic.executeTaskV2(task);
+  }
+
+  private void copyTaskDataToTaskDataV2(DelegateTask delegateTask) {
+    if (delegateTask != null && delegateTask.getData() != null) {
+      TaskData taskData = delegateTask.getData();
+      if (taskData != null) {
+        TaskDataV2 taskDataV2 = TaskDataV2.builder()
+                                    .data(taskData.getData())
+                                    .taskType(taskData.getTaskType())
+                                    .async(taskData.isAsync())
+                                    .parked(taskData.isParked())
+                                    .parameters(taskData.getParameters())
+                                    .timeout(taskData.getTimeout())
+                                    .expressionFunctorToken(taskData.getExpressionFunctorToken())
+                                    .expressions(taskData.getExpressions())
+                                    .serializationFormat(io.harness.beans.SerializationFormat.valueOf(
+                                        taskData.getSerializationFormat().name()))
+                                    .build();
+        delegateTask.setTaskDataV2(taskDataV2);
+        delegateTask.setData(null);
+      }
+    }
   }
 
   @Override

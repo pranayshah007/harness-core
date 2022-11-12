@@ -86,7 +86,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(COMMIT_ID, responseGitDetails.getCommitId());
     assertEquals(REPO_NAME, responseGitDetails.getRepoName());
     assertEquals(FILE_PATH, responseGitDetails.getFilePath());
-    assertEquals(OBJECT_ID, responseGitDetails.getEntityIdentifier());
+    assertEquals(OBJECT_ID, responseGitDetails.getObjectId());
     assertEquals(FILE_URL, responseGitDetails.getFileUrl());
     assertEquals(REPO_URL, responseGitDetails.getRepoUrl());
   }
@@ -144,7 +144,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(entityGitDetails.getRepoName(), templateMetadataSummaryResponse.getGitDetails().getRepoName());
     assertEquals(entityGitDetails.getFileUrl(), templateMetadataSummaryResponse.getGitDetails().getFileUrl());
     assertEquals(entityGitDetails.getRepoUrl(), templateMetadataSummaryResponse.getGitDetails().getRepoUrl());
-    assertEquals(entityGitDetails.getObjectId(), templateMetadataSummaryResponse.getGitDetails().getEntityIdentifier());
+    assertEquals(entityGitDetails.getObjectId(), templateMetadataSummaryResponse.getGitDetails().getObjectId());
   }
   @Test
   @Owner(developers = TARUN_UBA)
@@ -198,7 +198,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(entityGitDetails.getRepoName(), templateResponse.getGitDetails().getRepoName());
     assertEquals(entityGitDetails.getFileUrl(), templateResponse.getGitDetails().getFileUrl());
     assertEquals(entityGitDetails.getRepoUrl(), templateResponse.getGitDetails().getRepoUrl());
-    assertEquals(entityGitDetails.getObjectId(), templateResponse.getGitDetails().getEntityIdentifier());
+    assertEquals(entityGitDetails.getObjectId(), templateResponse.getGitDetails().getObjectId());
   }
 
   @Test
@@ -233,7 +233,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
 
     TemplateWithInputsResponse templateWithInputsResponse =
         templateResourceApiMapper.toTemplateResponseDefault(templateResponseDTO);
-    TemplateResponse templateResponse = templateWithInputsResponse.getTemplateResponse();
+    TemplateResponse templateResponse = templateWithInputsResponse.getTemplate();
     Set<ConstraintViolation<Object>> violations = validator.validate(templateResponse);
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
     assertEquals(ACCOUNT_ID, templateResponse.getAccount());
@@ -255,8 +255,8 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(entityGitDetails.getRepoName(), templateResponse.getGitDetails().getRepoName());
     assertEquals(entityGitDetails.getFileUrl(), templateResponse.getGitDetails().getFileUrl());
     assertEquals(entityGitDetails.getRepoUrl(), templateResponse.getGitDetails().getRepoUrl());
-    assertEquals(entityGitDetails.getObjectId(), templateResponse.getGitDetails().getEntityIdentifier());
-    assertEquals(templateWithInputsResponse.getInputYaml(), "Input YAML not requested");
+    assertEquals(entityGitDetails.getObjectId(), templateResponse.getGitDetails().getObjectId());
+    assertEquals(templateWithInputsResponse.getInputs(), "Input YAML not requested");
   }
   @Test
   @Owner(developers = TARUN_UBA)
@@ -293,7 +293,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
                                                                       .build();
     TemplateWithInputsResponse templateWithInputsResponse =
         templateResourceApiMapper.toTemplateWithInputResponse(templateWithInputsResponseDTO);
-    TemplateResponse templateResponse = templateWithInputsResponse.getTemplateResponse();
+    TemplateResponse templateResponse = templateWithInputsResponse.getTemplate();
     assertEquals(ACCOUNT_ID, templateResponse.getAccount());
     assertEquals(description, templateResponse.getDescription());
     assertEquals(ORG_IDENTIFIER, templateResponse.getOrg());
@@ -313,7 +313,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(entityGitDetails.getRepoName(), templateResponse.getGitDetails().getRepoName());
     assertEquals(entityGitDetails.getFileUrl(), templateResponse.getGitDetails().getFileUrl());
     assertEquals(entityGitDetails.getRepoUrl(), templateResponse.getGitDetails().getRepoUrl());
-    assertEquals(entityGitDetails.getObjectId(), templateResponse.getGitDetails().getEntityIdentifier());
-    assertEquals(templateWithInputsResponse.getInputYaml(), "With Input Response");
+    assertEquals(entityGitDetails.getObjectId(), templateResponse.getGitDetails().getObjectId());
+    assertEquals(templateWithInputsResponse.getInputs(), "With Input Response");
   }
 }

@@ -1116,6 +1116,7 @@ public class StateMachineExecutor implements StateInspectionListener {
       StateExecutionInstance parentInstance = context.getStateExecutionInstance();
       List<StateExecutionInstance> childFailedEnvInstances =
           wingsPersistence.createQuery(StateExecutionInstance.class)
+              .filter(StateExecutionInstanceKeys.appId, context.getAppId())
               .filter(StateExecutionInstanceKeys.parentInstanceId, parentInstance.getUuid())
               .filter(StateExecutionInstanceKeys.status, FAILED)
               .filter(StateExecutionInstanceKeys.stateType, ENV_STATE.getType())
@@ -1133,6 +1134,7 @@ public class StateMachineExecutor implements StateInspectionListener {
 
       List<StateExecutionInstance> rollbackInstances =
           wingsPersistence.createQuery(StateExecutionInstance.class)
+              .filter(StateExecutionInstanceKeys.appId, context.getAppId())
               .field(StateExecutionInstanceKeys.executionUuid)
               .in(failedWorkflowExecutionIdsSet)
               .filter(StateExecutionInstanceKeys.rollback, true)
@@ -1562,6 +1564,9 @@ public class StateMachineExecutor implements StateInspectionListener {
 
   private boolean isPipelineRollback(StateExecutionInstance stateExecutionInstance, StateMachine sm) {
     State state = sm.getState(null, stateExecutionInstance.getStateName());
+    if (state == null) {
+      return false;
+    }
     return POSSIBLE_ROLLBACK_STATE_TYPES.contains(stateExecutionInstance.getStateType()) && state.isRollback()
         && state.getParentId() == null;
   }

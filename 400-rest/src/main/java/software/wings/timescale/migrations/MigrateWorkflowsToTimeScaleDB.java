@@ -55,10 +55,11 @@ public class MigrateWorkflowsToTimeScaleDB implements TimeScaleEntityMigrationIn
       FindOptions findOptions_workflows = new FindOptions();
       findOptions_workflows.readPreference(ReadPreference.secondaryPreferred());
 
-      try (HIterator<Workflow> iterator = new HIterator<>(wingsPersistence.createQuery(Workflow.class, excludeAuthority)
-                                                              .field(WorkflowKeys.accountId)
-                                                              .equal(accountId)
-                                                              .fetch(findOptions_workflows))) {
+      try (HIterator<Workflow> iterator =
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(Workflow.class, excludeAuthority)
+                                   .field(WorkflowKeys.accountId)
+                                   .equal(accountId)
+                                   .fetch(findOptions_workflows))) {
         while (iterator.hasNext()) {
           Workflow workflow = iterator.next();
           saveToTimeScale(workflow);

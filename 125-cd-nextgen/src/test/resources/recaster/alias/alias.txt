@@ -132,6 +132,7 @@ io.harness.cdng.manifest.yaml.GitStore
 io.harness.plancreator.steps.common.StepElementParameters
 io.harness.cdng.service.steps.ServiceStepOutcome
 io.harness.cdng.provision.terraform.InlineTerraformBackendConfigSpec
+io.harness.cdng.provision.terraform.RemoteTerraformBackendConfigSpec
 io.harness.cdng.service.steps.ServiceConfigStepParameters
 io.harness.cdng.service.steps.ServiceSectionStepParameters
 io.harness.ngpipeline.artifact.bean.ArtifactsOutcome
@@ -545,3 +546,14 @@ io.harness.cdng.common.capacity.Capacity
 io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepNode
 io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepParameters
 io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo
+io.harness.cdng.elastigroup.ElastigroupSetupStepInfo
+io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePassThroughData
+io.harness.cdng.elastigroup.ElastigroupSetupStepParameters
+io.harness.cdng.elastigroup.ElastigroupInstances
+io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData
+io.harness.cdng.elastigroup.ElastigroupCurrentRunningInstances
+io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome
+io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData
+io.harness.cdng.elastigroup.ElastigroupSetupStepNode
+io.harness.cdng.elastigroup.ElastigroupFixedInstances
+io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData

@@ -89,7 +89,7 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   public PipelineConfig save(String accountIdentifier, String yaml) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.create(entity);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(entity);
     PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
     PipelineEntity pipelineEntity = pipelineCRUDResult.getPipelineEntity();
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
@@ -98,7 +98,7 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   public PipelineConfig update(String accountIdentifier, String yaml, ChangeType changeType) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.updatePipelineYaml(entity, changeType);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndUpdatePipeline(entity, changeType);
     PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
     PipelineEntity pipelineEntity = pipelineCRUDResult.getPipelineEntity();
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
@@ -177,7 +177,7 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
     final PipelineInfoConfig pipelineInfoConfig = pipelineConfig.getPipelineInfoConfig();
     try {
       final Optional<PipelineEntity> pipelineEntity =
-          pmsPipelineService.get(accountIdentifier, pipelineInfoConfig.getOrgIdentifier(),
+          pmsPipelineService.getAndValidatePipeline(accountIdentifier, pipelineInfoConfig.getOrgIdentifier(),
               pipelineInfoConfig.getProjectIdentifier(), pipelineInfoConfig.getIdentifier(), false);
       return pipelineEntity.map(EntityGitDetailsMapper::mapEntityGitDetails);
     } catch (EntityNotFoundException e) {
@@ -193,11 +193,11 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   public String getYamlFromEntityRef(EntityDetailProtoDTO entityReference) {
     final IdentifierRefProtoDTO identifierRef = entityReference.getIdentifierRef();
-    final Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.get(StringValueUtils.getStringFromStringValue(identifierRef.getAccountIdentifier()),
-            StringValueUtils.getStringFromStringValue(identifierRef.getOrgIdentifier()),
-            StringValueUtils.getStringFromStringValue(identifierRef.getProjectIdentifier()),
-            StringValueUtils.getStringFromStringValue(identifierRef.getIdentifier()), false);
+    final Optional<PipelineEntity> pipelineEntity = pmsPipelineService.getAndValidatePipeline(
+        StringValueUtils.getStringFromStringValue(identifierRef.getAccountIdentifier()),
+        StringValueUtils.getStringFromStringValue(identifierRef.getOrgIdentifier()),
+        StringValueUtils.getStringFromStringValue(identifierRef.getProjectIdentifier()),
+        StringValueUtils.getStringFromStringValue(identifierRef.getIdentifier()), false);
     if (!pipelineEntity.isPresent()) {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
           StringValueUtils.getStringFromStringValue(identifierRef.getOrgIdentifier()),

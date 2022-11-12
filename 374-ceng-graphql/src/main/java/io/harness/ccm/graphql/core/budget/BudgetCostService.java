@@ -8,7 +8,6 @@
 package io.harness.ccm.graphql.core.budget;
 
 import io.harness.ccm.budget.BudgetPeriod;
-import io.harness.ccm.budget.BudgetType;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 
@@ -19,7 +18,11 @@ public interface BudgetCostService {
   double getForecastCost(String accountId, String perspectiveId, long startTime, BudgetPeriod period);
   double getLastPeriodCost(Budget budget);
   double getLastPeriodCost(String accountId, String perspectiveId, long startTime, BudgetPeriod period);
-  Double[] getLastYearMonthlyCost(
-      String accountId, String perspectiveId, long startTime, BudgetPeriod period, BudgetType type);
+  Double[] getActualMonthlyCost(Budget budget);
+  Double[] getActualMonthlyCost(String accountId, String perspectiveId, long startOfPeriod, BudgetPeriod period);
+  Double[] getForecastMonthlyCost(Budget budget);
+  Double[] getForecastMonthlyCost(String accountId, String perspectiveId, long startOfPeriod, BudgetPeriod period);
+  Double[] getLastYearMonthlyCost(Budget budget);
+  Double[] getLastYearMonthlyCost(String accountId, String perspectiveId, long startTime, BudgetPeriod period);
   BudgetData getBudgetTimeSeriesStats(Budget budget);
 }

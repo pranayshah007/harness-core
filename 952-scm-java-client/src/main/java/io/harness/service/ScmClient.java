@@ -68,7 +68,7 @@ public interface ScmClient {
 
   FindFilesInBranchResponse findFilesInBranch(ScmConnector scmConnector, String branchName);
 
-  FindFilesInCommitResponse findFilesInCommit(ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails);
+  FindFilesInCommitResponse listFilesInCommit(ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails);
 
   ListFilesInCommitResponse listFilesInCommit(ScmConnector scmConnector, ListFilesInCommitRequest request);
 

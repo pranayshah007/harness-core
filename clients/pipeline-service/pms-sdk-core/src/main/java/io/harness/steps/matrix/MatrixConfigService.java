@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -69,7 +70,8 @@ public class MatrixConfigService implements StrategyConfigService {
     return children;
   }
 
-  public StrategyInfo expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
+  public StrategyInfo expandJsonNode(
+      StrategyConfig strategyConfig, JsonNode jsonNode, Optional<Integer> maxExpansionLimit) {
     MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig();
     List<Map<String, String>> combinations = new ArrayList<>();
     List<List<Integer>> matrixMetadata = new ArrayList<>();
@@ -82,6 +84,13 @@ public class MatrixConfigService implements StrategyConfigService {
       throw new InvalidRequestException(
           "Total number of iterations found to be 0 for this strategy. Please check pipeline yaml");
     }
+
+    if (maxExpansionLimit.isPresent()) {
+      if (totalCount > maxExpansionLimit.get()) {
+        throw new InvalidYamlException("Iteration count is beyond the supported limit of " + maxExpansionLimit.get());
+      }
+    }
+
     List<JsonNode> jsonNodes = new ArrayList<>();
     int currentIteration = 0;
     for (List<Integer> matrixData : matrixMetadata) {

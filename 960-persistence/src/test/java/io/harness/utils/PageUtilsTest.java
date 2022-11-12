@@ -7,6 +7,7 @@
 
 package io.harness.utils;
 
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.VIKAS;
 
@@ -20,9 +21,11 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
@@ -112,5 +115,52 @@ public class PageUtilsTest extends CategoryTest {
     assertThat(output.getTotalItems()).isEqualTo(numOfElements);
     assertThat(output.getPageItemCount()).isEqualTo(3);
     assertThat(output.getContent()).isEqualTo(Lists.newArrayList("e-32", "e-33", "e-34"));
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetPage() {
+    int numOfElements = 35;
+    List<String> input = new ArrayList<>();
+    for (int i = 0; i < numOfElements; i++) {
+      input.add("e-" + i);
+    }
+
+    Page<String> output = PageUtils.getPage(input, 0, numOfElements);
+    assertThat(output.getTotalElements()).isEqualTo(numOfElements);
+    assertThat(output.getContent()).isEqualTo(input);
+    assertThat(output.getTotalPages()).isEqualTo(1);
+    assertThat(output.getNumberOfElements()).isEqualTo(numOfElements);
+
+    output = PageUtils.getPage(input, 0, 4);
+    assertThat(output.getNumberOfElements()).isEqualTo(4);
+    assertThat(output.getContent()).isEqualTo(input.subList(0, 4));
+    assertThat(output.getTotalPages()).isEqualTo(9);
+    assertThat(output.getTotalElements()).isEqualTo(numOfElements);
+
+    output = PageUtils.getPage(input, 3, 7);
+    assertThat(output.getNumberOfElements()).isEqualTo(7);
+    assertThat(output.getContent()).isEqualTo(input.subList(21, 28));
+    assertThat(output.getTotalPages()).isEqualTo(5);
+    assertThat(output.getTotalElements()).isEqualTo(numOfElements);
+
+    output = PageUtils.getPage(input, 8, 4);
+    assertThat(output.getNumberOfElements()).isEqualTo(3);
+    assertThat(output.getContent()).isEqualTo(input.subList(32, 35));
+    assertThat(output.getTotalPages()).isEqualTo(9);
+    assertThat(output.getTotalElements()).isEqualTo(numOfElements);
+
+    output = PageUtils.getPage(input, 9, 4);
+    assertThat(output.getNumberOfElements()).isEqualTo(0);
+    assertThat(output.getContent()).isEqualTo(Collections.emptyList());
+    assertThat(output.getTotalPages()).isEqualTo(9);
+    assertThat(output.getTotalElements()).isEqualTo(numOfElements);
+
+    output = PageUtils.getPage(Collections.emptyList(), 0, 4);
+    assertThat(output.getNumberOfElements()).isEqualTo(0);
+    assertThat(output.getContent()).isEqualTo(Collections.emptyList());
+    assertThat(output.getTotalPages()).isEqualTo(0);
+    assertThat(output.getTotalElements()).isEqualTo(0);
   }
 }
