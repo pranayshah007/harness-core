@@ -26,5 +26,9 @@ public class DelegateConnectionResult {
   private boolean validated;
   private long duration;
   private long lastUpdatedAt;
-  private Date validUntil = Date.from(OffsetDateTime.now().plusDays(30).toInstant());
+  @Builder.Default private Date validUntil = getValidUntilTime();
+
+  public static Date getValidUntilTime() {
+    return Date.from(OffsetDateTime.now().plusDays(30).toInstant());
+  }
 }
