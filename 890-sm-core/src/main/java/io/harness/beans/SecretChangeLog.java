@@ -75,4 +75,17 @@ public class SecretChangeLog implements PersistentEntity, UuidAware, CreatedAtAw
   // Secret change log could be retrieved from external system such as Vault (secret versions metadata)
   // This flag is used to denote if this log entry is originated from external system.
   private boolean external;
+
+  public static io.harness.beans.dto.SecretChangeLog toSecretChangeLogDto(SecretChangeLog secretChangeLog) {
+    return io.harness.beans.dto.SecretChangeLog.builder()
+        .accountId(secretChangeLog.accountId)
+        .createdAt(secretChangeLog.createdAt)
+        .createdBy(secretChangeLog.getCreatedBy())
+        .description(secretChangeLog.description)
+        .encryptedDataId(secretChangeLog.encryptedDataId)
+        .external(secretChangeLog.external)
+        .lastUpdatedAt(secretChangeLog.lastUpdatedAt)
+        .lastUpdatedBy(secretChangeLog.lastUpdatedBy)
+        .build();
+  }
 }

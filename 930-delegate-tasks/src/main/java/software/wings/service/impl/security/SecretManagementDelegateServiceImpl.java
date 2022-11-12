@@ -22,7 +22,7 @@ import static java.time.Duration.ofMillis;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
-import io.harness.beans.SecretChangeLog;
+import io.harness.beans.dto.SecretChangeLog;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.vault.SSHVaultAuthResult;
 import io.harness.helpers.ext.vault.SecretEngineSummary;

@@ -9,7 +9,6 @@ package io.harness.serializer.kryo;
 
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedDataParent;
-import io.harness.beans.SecretChangeLog;
 import io.harness.cvng.beans.SplunkSavedSearch;
 import io.harness.cvng.beans.SplunkValidationResponse;
 import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
@@ -912,7 +911,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(BaseVaultConfig.class, 15014);
     kryo.register(BuildCollectParameters.class, 8602);
     kryo.register(RancherConfig.class, 50006);
-    kryo.register(SecretChangeLog.class, 5598);
     kryo.register(VaultConfig.class, 5214);
     kryo.register(WinrmHostValidationCapability.class, 7327);
     kryo.register(WinRmConnectionAttributes.class, 5255);

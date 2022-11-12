@@ -10,6 +10,7 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SecretChangeLog;
 import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -17,5 +18,7 @@ import com.esotericsoftware.kryo.Kryo;
 @OwnedBy(PL)
 public class SMCoreKryoRegistrar implements KryoRegistrar {
   @Override
-  public void register(Kryo kryo) {}
+  public void register(Kryo kryo) {
+    kryo.register(SecretChangeLog.class, 5598);
+  }
 }

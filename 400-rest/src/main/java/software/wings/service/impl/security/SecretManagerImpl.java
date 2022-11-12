@@ -493,7 +493,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   }
 
   private List<SecretChangeLog> getChangeLogsInternal(String accountId, String entityId, EncryptedData encryptedData,
-      SettingVariableTypes variableType) throws IllegalAccessException {
+                                                                           SettingVariableTypes variableType) throws IllegalAccessException {
     List<String> secretIds = getSecretIds(accountId, Lists.newArrayList(entityId), variableType);
     List<SecretChangeLog> secretChangeLogs = wingsPersistence.createQuery(SecretChangeLog.class, excludeCount)
                                                  .filter(SecretChangeLogKeys.accountId, accountId)
@@ -514,7 +514,6 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
             (SecretChangeLog o1, SecretChangeLog o2) -> (int) (o2.getLastUpdatedAt() - o1.getLastUpdatedAt()));
       }
     }
-
     return secretChangeLogs;
   }
 
