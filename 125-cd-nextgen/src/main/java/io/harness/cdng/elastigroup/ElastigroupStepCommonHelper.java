@@ -481,15 +481,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
       image = amiArtifactOutcome.getAmiId();
     }
     if(isEmpty(image)) {
-      ElastigroupStepExceptionPassThroughData elastigroupStepExceptionPassThroughData =
-              ElastigroupStepExceptionPassThroughData.builder()
-                      .errorMessage("AMI not available. Please specify the AMI artifact in the pipeline.")
-                      .unitProgressData(unitProgressData)
-                      .build();
-      return TaskChainResponse.builder()
-              .passThroughData(elastigroupStepExceptionPassThroughData)
-              .chainEnd(true)
-              .build();
+      return stepFailureTaskResponseWithMessage(unitProgressData, "AMI not available. Please specify the AMI artifact in the pipeline.");
     }
 
     ElastigroupStepExecutorParams elastigroupStepExecutorParams =
@@ -502,6 +494,18 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
     return elastigroupStepExecutor.executeElastigroupTask(ambiance, stepElementParameters,
         elastigroupExecutionPassThroughData, unitProgressData, elastigroupStepExecutorParams);
+  }
+
+  public TaskChainResponse stepFailureTaskResponseWithMessage(UnitProgressData unitProgressData, String msg) {
+    ElastigroupStepExceptionPassThroughData elastigroupStepExceptionPassThroughData =
+            ElastigroupStepExceptionPassThroughData.builder()
+                    .errorMessage(msg)
+                    .unitProgressData(unitProgressData)
+                    .build();
+    return TaskChainResponse.builder()
+            .passThroughData(elastigroupStepExceptionPassThroughData)
+            .chainEnd(true)
+            .build();
   }
 
   private TaskChainResponse handleFailureStartupScriptFetchTask(

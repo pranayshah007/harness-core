@@ -93,10 +93,10 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             ambiance, elastigroupSetupStepParametersName.getExpressionValue())
         : elastigroupSetupStepParametersName.getValue();
 
-    elastigroupNamePrefix = isBlank(elastigroupNamePrefix)
-        ? Misc.normalizeExpression(ServiceVersionConvention.getPrefix(
-            elastigroupSetupStepParameters.getName().getValue(), infrastructureOutcome.getEnvironment().getName()))
-        : Misc.normalizeExpression(elastigroupNamePrefix);
+    if(isBlank(elastigroupNamePrefix)) {
+      return elastigroupStepCommonHelper.stepFailureTaskResponseWithMessage(unitProgressData, "Name not provided in the pipeline for new elastigroup to be created");
+    }
+    elastigroupNamePrefix = Misc.normalizeExpression(elastigroupNamePrefix);
 
     ElastiGroup elastiGroupOriginalConfig = null;
     try {
@@ -104,15 +104,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
               generateOriginalConfigFromJson(elastigroupStepExecutorParams.getElastigroupParameters(),
                       elastigroupSetupStepParameters.getInstances(), ambiance);
     } catch (Exception e) {
-      ElastigroupStepExceptionPassThroughData elastigroupStepExceptionPassThroughData =
-              ElastigroupStepExceptionPassThroughData.builder()
-                      .errorMessage("Incorrect Elastigroup Json Provided")
-                      .unitProgressData(unitProgressData)
-                      .build();
-      return TaskChainResponse.builder()
-              .passThroughData(elastigroupStepExceptionPassThroughData)
-              .chainEnd(true)
-              .build();
+      return elastigroupStepCommonHelper.stepFailureTaskResponseWithMessage(unitProgressData, "Incorrect Elastigroup Json Provided");
     }
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         ElastigroupSetupCommandRequest.builder()
