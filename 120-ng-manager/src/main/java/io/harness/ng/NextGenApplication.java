@@ -50,6 +50,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
+import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.entities.Connector;
@@ -87,7 +88,9 @@ import io.harness.gitsync.server.GitSyncServiceConfiguration;
 import io.harness.govern.ProviderModule;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
+import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
 import io.harness.licensing.migrations.LicenseManagerMigrationProvider;
+import io.harness.licensing.services.LicenseService;
 import io.harness.logstreaming.LogStreamingModule;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
@@ -459,6 +462,19 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     } else {
       log.info("NextGenApplication DEPLOY_VERSION is not COMMUNITY");
     }
+    if (shouldCheckForSMPLicense()) {
+      log.info("Applying smp license");
+      LicenseService licenseService = injector.getInstance(LicenseService.class);
+      String license = System.getenv("SMP_LICENSE");
+      SMPEncLicenseDTO encLicenseDTO = SMPEncLicenseDTO.builder().encryptedLicense(license).decrypt(true).build();
+      licenseService.applySMPLicense(encLicenseDTO);
+    }
+  }
+
+  // ToDo-SMP: enable for future releases only for now (add condition on release tag)
+  private boolean shouldCheckForSMPLicense() {
+    return DeployMode.isOnPrem(System.getenv(DeployMode.DEPLOY_MODE))
+        && Boolean.parseBoolean(System.getenv("ENABLE_SMP_LICENSING"));
   }
 
   private void registerNotificationTemplates(Injector injector) {
