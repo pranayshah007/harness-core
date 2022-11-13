@@ -50,6 +50,9 @@ public class DeploymentReconTask implements Runnable {
   @Override
   public void run() {
     try {
+      if (featureFlagService.isGlobalEnabled(FeatureName.DEPLOYMENT_RECONCILIATION_REDESIGN)) {
+        return;
+      }
       long startTime = System.currentTimeMillis();
       List<Account> accountList = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
       for (Account account : accountList) {

@@ -691,6 +691,8 @@ iteratorsConfig:
       threadPoolSize: ${FAIL_DELEGATE_TASK_ITERATOR_THREAD_COUNT:-2}
   gitSyncPollingIteratorConfig:
       threadPoolSize: ${GIT_SYNC_POLLING_ITERATOR_THREAD_COUNT:-2}
+  deploymentReconciliationConfig:
+      threadPoolSize: ${DEPLOYMENT_RECONCILIATION_ITERATOR_THREAD_COUNT:-10}
 
 disableDelegateMgmtInManager: false
 

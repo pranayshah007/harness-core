@@ -160,6 +160,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   private Long serviceGuardDataCollectionIteration;
   private Long serviceGuardDataAnalysisIteration;
   @FdIndex private Long workflowDataCollectionIteration;
+  @FdIndex private Long dataReconciliationIteration;
   @FdIndex private Long usageMetricsTaskIteration;
   @FdIndex private Long licenseExpiryCheckIteration;
   @FdIndex private Long accountBackgroundJobCheckIteration;
@@ -504,6 +505,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return;
     }
 
+    else if (AccountKeys.dataReconciliationIteration.equals(fieldName)) {
+      this.dataReconciliationIteration = nextIteration;
+      return;
+    }
+
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
@@ -551,6 +557,10 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     else if (AccountKeys.perpetualTaskRebalanceIteration.equals(fieldName)) {
       return this.perpetualTaskRebalanceIteration;
+    }
+
+    else if (AccountKeys.dataReconciliationIteration.equals(fieldName)) {
+      return this.dataReconciliationIteration;
     }
 
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);

@@ -33,4 +33,5 @@ public class IteratorsConfig {
   IteratorConfig delegateTaskRebroadcastIteratorConfig;
   IteratorConfig failDelegateTaskIteratorConfig;
   IteratorConfig gitSyncPollingIteratorConfig;
+  IteratorConfig deploymentReconciliationConfig;
 }

@@ -36,6 +36,7 @@ import io.harness.persistence.UuidAware;
 
 import software.wings.api.PhaseElement;
 import software.wings.beans.LoopParams;
+import software.wings.beans.WorkflowExecution;
 import software.wings.beans.entityinterface.ApplicationAccess;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -94,6 +95,20 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
                  .name("appId_endTs")
                  .field(StateExecutionInstanceKeys.appId)
                  .ascSortField(StateExecutionInstanceKeys.endTs)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_status_stateType_startTs")
+                 .field(StateExecutionInstanceKeys.accountId)
+                 .field(StateExecutionInstanceKeys.status)
+                 .field(StateExecutionInstanceKeys.stateType)
+                 .field(StateExecutionInstanceKeys.startTs)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_status_stateType_endTs")
+                 .field(StateExecutionInstanceKeys.accountId)
+                 .field(StateExecutionInstanceKeys.status)
+                 .field(StateExecutionInstanceKeys.stateType)
+                 .field(StateExecutionInstanceKeys.startTs)
                  .build())
         .build();
   }

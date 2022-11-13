@@ -539,7 +539,12 @@ public class LicenseServiceImpl implements LicenseService {
     // TODO when we have distributed cache, account should be cached and referred.
     Account account = dbCache.get(Account.class, accountId);
     notNullCheck("Invalid account with id: " + accountId, account);
+    return isAccountExpired(account);
+  }
 
+  @Override
+  public boolean isAccountExpired(Account account) {
+    String accountId = account.getUuid();
     LicenseInfo licenseInfo = account.getLicenseInfo();
 
     if (licenseInfo == null) {
