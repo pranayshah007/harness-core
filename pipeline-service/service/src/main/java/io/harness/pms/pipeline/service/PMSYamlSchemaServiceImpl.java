@@ -145,6 +145,10 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       yamlSchemaValidator.validate(yaml, schemaString,
           pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, accountIdentifier),
           allowedParallelStages, PIPELINE_NODE + "/" + STAGES_NODE);
+    } catch (NullPointerException ex) {
+      log.error(format(
+          "Schema validation thrown NullPointerException. Please check the generated schema for account: %s, org: %s, project: %s",
+          accountIdentifier, orgId, projectId));
     } catch (io.harness.yaml.validator.InvalidYamlException e) {
       log.info("[PMS_SCHEMA] Schema validation took total time {}ms", System.currentTimeMillis() - start);
       throw e;
