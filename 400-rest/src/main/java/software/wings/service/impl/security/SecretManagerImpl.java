@@ -68,8 +68,8 @@ import io.harness.security.encryption.EncryptionType;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.annotation.EncryptableSetting;
-import software.wings.beans.SecretChangeLog;
-import software.wings.beans.SecretChangeLog.SecretChangeLogKeys;
+import io.harness.beans.SecretChangeLog;
+import io.harness.beans.SecretChangeLog.SecretChangeLogKeys;
 import software.wings.beans.SecretManagerRuntimeParameters;
 import software.wings.beans.SecretManagerRuntimeParameters.SecretManagerRuntimeParametersKeys;
 import io.harness.beans.SecretUsageLog;

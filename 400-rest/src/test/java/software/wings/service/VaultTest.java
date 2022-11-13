@@ -90,7 +90,7 @@ import software.wings.beans.EntityType;
 import software.wings.beans.Event;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.MigrateSecretTask;
-import software.wings.beans.SecretChangeLog;
+import io.harness.beans.SecretChangeLog;
 import io.harness.beans.SecretUsageLog;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;

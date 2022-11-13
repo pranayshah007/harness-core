@@ -46,7 +46,7 @@ import io.harness.beans.EnvironmentType;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
-import software.wings.beans.SecretChangeLog;
+import io.harness.beans.SecretChangeLog;
 import io.harness.beans.SecretFile;
 import io.harness.beans.SecretText;
 import io.harness.category.element.UnitTests;

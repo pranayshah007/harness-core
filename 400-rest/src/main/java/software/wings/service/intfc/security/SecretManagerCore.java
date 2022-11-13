@@ -3,7 +3,7 @@ package software.wings.service.intfc.security;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 
-import software.wings.beans.SecretChangeLog;
+import io.harness.beans.SecretChangeLog;
 import software.wings.beans.SecretManagerRuntimeParameters;
 import io.harness.beans.SecretUsageLog;
 import software.wings.settings.SettingVariableTypes;

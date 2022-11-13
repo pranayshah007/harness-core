@@ -40,7 +40,7 @@ import io.harness.security.encryption.EncryptionType;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.app.MainConfiguration;
-import software.wings.beans.SecretChangeLog;
+import io.harness.beans.SecretChangeLog;
 import io.harness.beans.SecretUsageLog;
 import software.wings.beans.SettingAttribute;
 import software.wings.security.PermissionAttribute;
