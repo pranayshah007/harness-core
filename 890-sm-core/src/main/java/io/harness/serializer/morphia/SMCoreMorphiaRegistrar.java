@@ -17,7 +17,7 @@ import io.harness.ng.core.models.Secret;
 import software.wings.beans.MigrateSecretTask;
 import software.wings.beans.SecretChangeLog;
 import software.wings.beans.SecretManagerRuntimeParameters;
-import software.wings.beans.SecretUsageLog;
+import io.harness.beans.SecretUsageLog;
 
 import java.util.Set;
 

@@ -41,7 +41,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.SecretChangeLog;
-import software.wings.beans.SecretUsageLog;
+import io.harness.beans.SecretUsageLog;
 import software.wings.beans.SettingAttribute;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.UsageRestrictions;

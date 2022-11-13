@@ -26,7 +26,7 @@ import io.harness.security.encryption.EncryptionType;
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.SecretChangeLog;
 import software.wings.beans.SecretManagerRuntimeParameters;
-import software.wings.beans.SecretUsageLog;
+import io.harness.beans.SecretUsageLog;
 import software.wings.beans.SettingAttribute;
 import software.wings.security.UsageRestrictions;
 import software.wings.service.intfc.security.EncryptedSettingAttributes;

@@ -44,7 +44,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Application;
-import software.wings.beans.SecretUsageLog;
+import io.harness.beans.SecretUsageLog;
 import software.wings.beans.Service;
 import software.wings.beans.WebHookRequest;
 import software.wings.beans.WebHookResponse;

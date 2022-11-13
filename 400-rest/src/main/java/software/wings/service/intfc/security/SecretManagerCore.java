@@ -5,7 +5,7 @@ import io.harness.beans.PageResponse;
 
 import software.wings.beans.SecretChangeLog;
 import software.wings.beans.SecretManagerRuntimeParameters;
-import software.wings.beans.SecretUsageLog;
+import io.harness.beans.SecretUsageLog;
 import software.wings.settings.SettingVariableTypes;
 
 import java.util.List;

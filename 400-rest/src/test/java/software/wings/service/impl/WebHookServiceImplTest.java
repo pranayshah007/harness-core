@@ -71,7 +71,7 @@ import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Application;
 import software.wings.beans.SecretChangeLog.SecretChangeLogKeys;
-import software.wings.beans.SecretUsageLog;
+import io.harness.beans.SecretUsageLog;
 import software.wings.beans.Service;
 import software.wings.beans.WebHookRequest;
 import software.wings.beans.WebHookResponse;

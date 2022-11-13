@@ -69,7 +69,7 @@ import software.wings.beans.ConfigFile.ConfigFileKeys;
 import software.wings.beans.EntityType;
 import software.wings.beans.EntityVersion;
 import software.wings.beans.Event;
-import software.wings.beans.SecretUsageLog;
+import io.harness.beans.SecretUsageLog;
 import software.wings.beans.ServiceTemplate;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.impl.security.auth.ConfigFileAuthHandler;

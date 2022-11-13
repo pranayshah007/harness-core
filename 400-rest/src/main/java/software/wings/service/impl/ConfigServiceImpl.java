@@ -43,7 +43,7 @@ import software.wings.beans.EntityType;
 import software.wings.beans.EntityVersion;
 import software.wings.beans.EntityVersion.ChangeType;
 import software.wings.beans.Event.Type;
-import software.wings.beans.SecretUsageLog;
+import io.harness.beans.SecretUsageLog;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.ConfigService;
