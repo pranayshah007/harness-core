@@ -10,6 +10,7 @@ package io.harness.cdng.elastigroup;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.spotinst.model.SpotInstConstants.GROUP_CONFIG_ELEMENT;
@@ -60,6 +61,7 @@ import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.UnitProgress;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -170,18 +172,17 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
       } else if (ManifestStoreType.INLINE.equals(startupScriptOutcome.getStore().getKind())) {
         logCallback.saveExecutionLog(
-            color(format("%nFetching %s from Inline Store", "startupScript"), LogColor.White, LogWeight.Bold));
+            color(format("Fetching %s from Inline Store", "startupScript"), LogColor.White, LogWeight.Bold));
         startupScript = ((InlineStoreConfig) startupScriptOutcome.getStore()).extractContent();
         logCallback.saveExecutionLog("Fetched Startup Script ", INFO, CommandExecutionStatus.SUCCESS);
         UnitProgressData unitProgressData = getCommandUnitProgressData(
             ElastigroupCommandUnitConstants.fetchStartupScript.toString(), CommandExecutionStatus.SUCCESS);
 
         //     Render expressions for all file content fetched from Harness File Store
-        if (startupScript != null) {
+        if (isNotEmpty(startupScript)) {
           startupScript = renderExpression(ambiance, startupScript);
         }
-
-        fetchElastigroupParameters(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
+        return fetchElastigroupParameters(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
             startupScript, infrastructureOutcome);
       }
     }
@@ -226,7 +227,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
     } else if (ManifestStoreType.INLINE.equals(storeConfig.getKind())) {
       logCallback.saveExecutionLog(
-          color(format("%nFetching %s from Inline Store", "elastigroup json"), LogColor.White, LogWeight.Bold));
+          color(format("Fetching %s from Inline Store", "elastigroup json"), LogColor.White, LogWeight.Bold));
       elastigroupParameters = ((InlineStoreConfig) storeConfig).extractContent();
       logCallback.saveExecutionLog("Fetched Elastigroup Json", INFO, CommandExecutionStatus.SUCCESS);
       unitProgressData.getUnitProgresses().add(
@@ -472,13 +473,25 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
           amiArtifactOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
       image = amiArtifactOutcome.getAmiId();
     }
+    if(isEmpty(image)) {
+      ElastigroupStepExceptionPassThroughData elastigroupStepExceptionPassThroughData =
+              ElastigroupStepExceptionPassThroughData.builder()
+                      .errorMessage("AMI not available. Please specify the AMI artifact in the pipeline.")
+                      .unitProgressData(unitProgressData)
+                      .build();
+      return TaskChainResponse.builder()
+              .passThroughData(elastigroupStepExceptionPassThroughData)
+              .chainEnd(true)
+              .build();
+    }
 
-    ElastigroupStepExecutorParams elastigroupStepExecutorParams = ElastigroupStepExecutorParams.builder()
-                                                                      .shouldOpenFetchFilesLogStream(false)
-                                                                      .startupScript(startupScript)
-                                                                      .image(image)
-                                                                      .elastigroupParameters(elastigroupParameters)
-                                                                      .build();
+    ElastigroupStepExecutorParams elastigroupStepExecutorParams =
+            ElastigroupStepExecutorParams.builder()
+                    .shouldOpenFetchFilesLogStream(false)
+                    .startupScript(startupScript)
+                    .image(image)
+                    .elastigroupParameters(elastigroupParameters)
+                    .build();
 
     return elastigroupStepExecutor.executeElastigroupTask(ambiance, stepElementParameters,
         elastigroupExecutionPassThroughData, unitProgressData, elastigroupStepExecutorParams);
