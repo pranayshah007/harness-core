@@ -44,15 +44,12 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
-import software.wings.beans.MigrateSecretTask;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
-import software.wings.beans.SecretChangeLog;
 import io.harness.beans.SecretFile;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
-import io.harness.beans.SecretUsageLog;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
 import io.harness.encryptors.KmsEncryptor;
@@ -92,6 +89,9 @@ import software.wings.beans.ConfigFile.ConfigOverrideType;
 import software.wings.beans.EntityType;
 import software.wings.beans.Event;
 import software.wings.beans.KmsConfig;
+import software.wings.beans.MigrateSecretTask;
+import software.wings.beans.SecretChangeLog;
+import software.wings.beans.SecretUsageLog;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
@@ -1679,7 +1679,7 @@ public class VaultTest extends WingsBaseTest {
       configService.downloadForActivity(appId, configFileId, activity.getUuid());
     }
     List<SecretUsageLog> usageLogs =
-        secretManager.getUsageLogs(aPageRequest().build(), accountId, encryptedUuid, CONFIG_FILE);
+        secretManagerCore.getUsageLogs(aPageRequest().build(), accountId, encryptedUuid, CONFIG_FILE);
     assertThat(usageLogs).hasSize(numOfAccess);
 
     for (SecretUsageLog usageLog : usageLogs) {

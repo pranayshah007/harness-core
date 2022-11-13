@@ -31,7 +31,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
-import io.harness.beans.SecretUsageLog;
 import io.harness.beans.WorkflowType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
@@ -45,6 +44,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Application;
+import software.wings.beans.SecretUsageLog;
 import software.wings.beans.Service;
 import software.wings.beans.WebHookRequest;
 import software.wings.beans.WebHookResponse;

@@ -1,7 +1,11 @@
 package software.wings.service.intfc.security;
 
+import io.harness.beans.PageRequest;
+import io.harness.beans.PageResponse;
+
 import software.wings.beans.SecretChangeLog;
 import software.wings.beans.SecretManagerRuntimeParameters;
+import software.wings.beans.SecretUsageLog;
 import software.wings.settings.SettingVariableTypes;
 
 import java.util.List;
@@ -9,14 +13,15 @@ import java.util.Map;
 import java.util.Optional;
 
 public interface SecretManagerCore {
+  SecretManagerRuntimeParameters configureSecretManagerRuntimeCredentialsForExecution(
+      String accountId, String kmsId, String executionId, Map<String, String> runtimeParameters);
 
-    SecretManagerRuntimeParameters configureSecretManagerRuntimeCredentialsForExecution(
-            String accountId, String kmsId, String executionId, Map<String, String> runtimeParameters);
+  Optional<SecretManagerRuntimeParameters> getSecretManagerRuntimeCredentialsForExecution(
+      String executionId, String secretManagerId);
 
-    Optional<SecretManagerRuntimeParameters> getSecretManagerRuntimeCredentialsForExecution(
-            String executionId, String secretManagerId);
+  List<SecretChangeLog> getChangeLogs(String accountId, String entityId, SettingVariableTypes variableType)
+      throws IllegalAccessException;
 
-    List<SecretChangeLog> getChangeLogs(String accountId, String entityId, SettingVariableTypes variableType)
-            throws IllegalAccessException;
-
+  PageResponse<SecretUsageLog> getUsageLogs(PageRequest<SecretUsageLog> pageRequest, String accountId, String entityId,
+      SettingVariableTypes variableType) throws IllegalAccessException;
 }

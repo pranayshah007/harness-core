@@ -48,14 +48,11 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.beans.EnvironmentType;
-import software.wings.beans.MigrateSecretTask;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
-import software.wings.beans.SecretChangeLog;
 import io.harness.beans.SecretFile;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
-import io.harness.beans.SecretUsageLog;
 import io.harness.category.element.UnitTests;
 import io.harness.datacollection.utils.EmptyPredicate;
 import io.harness.encryptors.KmsEncryptor;
@@ -94,6 +91,9 @@ import software.wings.beans.EntityType;
 import software.wings.beans.Event;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.LocalEncryptionConfig;
+import software.wings.beans.MigrateSecretTask;
+import software.wings.beans.SecretChangeLog;
+import software.wings.beans.SecretUsageLog;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
@@ -603,7 +603,7 @@ public class KmsTest extends WingsBaseTest {
     assertThat(encryptedData.getCreatedBy().getName()).isEqualTo(userName);
 
     List<SecretChangeLog> changeLogs =
-            secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
+        secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
     assertThat(changeLogs).hasSize(1);
     SecretChangeLog secretChangeLog = changeLogs.get(0);
     assertThat(secretChangeLog.getUser().getUuid()).isEqualTo(user.getUuid());
@@ -782,7 +782,7 @@ public class KmsTest extends WingsBaseTest {
       throws IllegalAccessException {
     Query<EncryptedData> query;
     List<SecretChangeLog> changeLogs =
-            secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
+        secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
     assertThat(changeLogs).hasSize(2);
     SecretChangeLog secretChangeLog = changeLogs.get(0);
     assertThat(secretChangeLog.getUser().getUuid()).isEqualTo(user1.getUuid());
@@ -976,7 +976,7 @@ public class KmsTest extends WingsBaseTest {
     assertThat(query.count()).isEqualTo(1);
 
     List<SecretChangeLog> changeLogs =
-            secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
+        secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
     assertThat(changeLogs).hasSize(1);
     SecretChangeLog secretChangeLog = changeLogs.get(0);
 

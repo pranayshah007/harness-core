@@ -186,6 +186,7 @@ import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.beans.dto.KubernetesContainerTask;
 import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.dto.ManifestFile;
+import software.wings.beans.dto.SecretChangeLog;
 import software.wings.beans.jira.JiraTaskParameters;
 import software.wings.beans.servicenow.ServiceNowFieldType;
 import software.wings.beans.servicenow.ServiceNowMetaDTO;
@@ -911,7 +912,7 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(BaseVaultConfig.class, 15014);
     kryo.register(BuildCollectParameters.class, 8602);
     kryo.register(RancherConfig.class, 50006);
-    //kryo.register(SecretChangeLog.class, 5598);
+    kryo.register(SecretChangeLog.class, 5598);
     kryo.register(VaultConfig.class, 5214);
     kryo.register(WinrmHostValidationCapability.class, 7327);
     kryo.register(WinRmConnectionAttributes.class, 5255);

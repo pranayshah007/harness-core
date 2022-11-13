@@ -14,6 +14,11 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 import io.harness.ng.core.models.Secret;
 
+import software.wings.beans.MigrateSecretTask;
+import software.wings.beans.SecretChangeLog;
+import software.wings.beans.SecretManagerRuntimeParameters;
+import software.wings.beans.SecretUsageLog;
+
 import java.util.Set;
 
 @OwnedBy(PL)
@@ -21,6 +26,10 @@ public class SMCoreMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(Secret.class);
+    set.add(SecretManagerRuntimeParameters.class);
+    set.add(SecretChangeLog.class);
+    set.add(SecretUsageLog.class);
+    set.add(MigrateSecretTask.class);
   }
   @Override
   public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {}

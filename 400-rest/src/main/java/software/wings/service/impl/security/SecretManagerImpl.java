@@ -47,14 +47,10 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
 import io.harness.beans.SearchFilter.Operator;
-import software.wings.beans.SecretChangeLog;
-import software.wings.beans.SecretChangeLog.SecretChangeLogKeys;
 import io.harness.beans.SecretFile;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretMetadata;
 import io.harness.beans.SecretText;
-import io.harness.beans.SecretUsageLog;
-import io.harness.beans.SecretUsageLog.SecretUsageLogKeys;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
@@ -72,8 +68,12 @@ import io.harness.security.encryption.EncryptionType;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.annotation.EncryptableSetting;
+import software.wings.beans.SecretChangeLog;
+import software.wings.beans.SecretChangeLog.SecretChangeLogKeys;
 import software.wings.beans.SecretManagerRuntimeParameters;
 import software.wings.beans.SecretManagerRuntimeParameters.SecretManagerRuntimeParametersKeys;
+import software.wings.beans.SecretUsageLog;
+import software.wings.beans.SecretUsageLog.SecretUsageLogKeys;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
@@ -509,7 +509,9 @@ public class SecretManagerImpl implements SecretManager, SecretManagerCore, Encr
       if (encryptionType == EncryptionType.VAULT && isNotEmpty(encryptedData.getPath())) {
         VaultConfig vaultConfig = (VaultConfig) secretManagerConfigService.getSecretManager(
             accountId, encryptedData.getKmsId(), encryptedData.getEncryptionType());
-        //List<software.wings.beans.dto.SecretChangeLog> secretChangeLogList = vaultService.getVaultSecretChangeLogs(encryptedData, vaultConfig).stream().map(secretChangeLog ->  SecretChangeLog.toSecretChangeLogDto(secretChangeLog)).collect(Collectors.toList());
+        // List<software.wings.beans.dto.SecretChangeLog> secretChangeLogList =
+        // vaultService.getVaultSecretChangeLogs(encryptedData, vaultConfig).stream().map(secretChangeLog ->
+        // SecretChangeLog.toSecretChangeLogDto(secretChangeLog)).collect(Collectors.toList());
         secretChangeLogs.addAll(vaultService.getVaultSecretChangeLogs(encryptedData, vaultConfig));
         // Sort the change log by change time in descending order.
         secretChangeLogs.sort(

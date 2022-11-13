@@ -17,7 +17,6 @@ import io.harness.beans.SecretFile;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretMetadata;
 import io.harness.beans.SecretText;
-import io.harness.beans.SecretUsageLog;
 import io.harness.secrets.setupusage.SecretSetupUsage;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -26,7 +25,6 @@ import io.harness.security.encryption.EncryptionType;
 import software.wings.annotation.EncryptableSetting;
 import software.wings.security.UsageRestrictions;
 import software.wings.service.intfc.ownership.OwnedByAccount;
-import software.wings.settings.SettingVariableTypes;
 
 import java.io.File;
 import java.io.InputStream;
@@ -57,11 +55,7 @@ public interface SecretManager extends OwnedByAccount {
 
   void resetUnchangedEncryptedFields(EncryptableSetting sourceObject, EncryptableSetting destinationObject);
 
-  PageResponse<SecretUsageLog> getUsageLogs(PageRequest<SecretUsageLog> pageRequest, String accountId, String entityId,
-      SettingVariableTypes variableType) throws IllegalAccessException;
-
   Set<SecretSetupUsage> getSecretUsage(String accountId, String secretId);
-
 
   Optional<EncryptedDataDetail> encryptedDataDetails(
       String accountId, String fieldName, String refId, String workflowExecutionId);

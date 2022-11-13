@@ -25,11 +25,9 @@ import io.harness.beans.EncryptedData;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
-import software.wings.beans.SecretChangeLog;
 import io.harness.beans.SecretFile;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
-import io.harness.beans.SecretUsageLog;
 import io.harness.exception.SecretManagementException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -42,6 +40,8 @@ import io.harness.security.encryption.EncryptionType;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.app.MainConfiguration;
+import software.wings.beans.SecretChangeLog;
+import software.wings.beans.SecretUsageLog;
 import software.wings.beans.SettingAttribute;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.UsageRestrictions;
@@ -111,7 +111,7 @@ public class SecretManagementResource {
   public RestResponse<PageResponse<SecretUsageLog>> getUsageLogs(@BeanParam PageRequest<SecretUsageLog> pageRequest,
       @QueryParam("accountId") final String accountId, @QueryParam("entityId") final String entityId,
       @QueryParam("type") final SettingVariableTypes variableType) throws IllegalAccessException {
-    return new RestResponse<>(secretManager.getUsageLogs(pageRequest, accountId, entityId, variableType));
+    return new RestResponse<>(secretManagerCore.getUsageLogs(pageRequest, accountId, entityId, variableType));
   }
 
   @GET
