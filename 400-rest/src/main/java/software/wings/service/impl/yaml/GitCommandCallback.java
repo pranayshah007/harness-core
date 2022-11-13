@@ -26,6 +26,7 @@ import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.beans.FeatureName;
+import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.eraro.ErrorCode;
@@ -430,10 +431,11 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
       try {
         ResponseData responseData = responseDataSupplier.get();
         notify(responseData);
-      } catch (NoAvailableDelegatesException | NoInstalledDelegatesException e) {
-        log.error("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
-            changeSetId, accountId, response);
-        log.error("Delegate not available or installed, retrying.", e);
+      } catch (
+          NoAvailableDelegatesException | NoInstalledDelegatesException | NoEligibleDelegatesInAccountException e) {
+        log.error(
+            "Git request failed because of no delegate for command:[{}], changeSetId:[{}], account:[{}], response:[{}]",
+            gitCommandType, changeSetId, accountId, response, e);
         yamlGitService.raiseAlertForGitFailure(accountId, GLOBAL_APP_ID,
             GitSyncFailureAlertDetails.builder()
                 .branchName(branchName)
