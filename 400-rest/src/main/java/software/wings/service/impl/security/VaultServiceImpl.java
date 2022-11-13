@@ -29,7 +29,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.beans.FeatureName;
-import io.harness.beans.SecretChangeLog;
+import software.wings.beans.SecretChangeLog;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
 import io.harness.encryptors.VaultEncryptorsRegistry;
@@ -49,7 +49,6 @@ import software.wings.beans.SyncTaskContext;
 import software.wings.beans.VaultConfig;
 import software.wings.beans.alert.AlertType;
 import software.wings.service.intfc.AccountService;
-import software.wings.service.intfc.security.SecretManagementDelegateService;
 import software.wings.service.intfc.security.VaultService;
 
 import com.google.common.base.Preconditions;
@@ -331,8 +330,9 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
                                           .build();
     boolean isCertValidationRequired = accountService.isCertValidationRequired(vaultConfig.getAccountId());
     vaultConfig.setCertValidationRequired(isCertValidationRequired);
-    return delegateProxyFactory.get(SecretManagementDelegateService.class, syncTaskContext)
-        .getVaultSecretChangeLogs(encryptedData, vaultConfig);
+   /* return delegateProxyFactory.get(SecretManagementDelegateService.class, syncTaskContext)
+        .getVaultSecretChangeLogs(encryptedData, vaultConfig);*/
+    return null;
   }
 
   private void validateVaultFields(VaultConfig vaultConfig) {

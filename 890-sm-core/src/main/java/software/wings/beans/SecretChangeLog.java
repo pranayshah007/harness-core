@@ -5,13 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.beans;
+package software.wings.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -75,4 +76,15 @@ public class SecretChangeLog implements PersistentEntity, UuidAware, CreatedAtAw
   // Secret change log could be retrieved from external system such as Vault (secret versions metadata)
   // This flag is used to denote if this log entry is originated from external system.
   private boolean external;
+
+
+  public static software.wings.beans.dto.SecretChangeLog toSecretChangeLogDto(SecretChangeLog secretChangeLog){
+    return  software.wings.beans.dto.SecretChangeLog.builder()
+            .accountId(secretChangeLog.accountId)
+            .encryptedDataId(secretChangeLog.encryptedDataId)
+            .description(secretChangeLog.description)
+            .external(true)
+            .user(secretChangeLog.user)
+            .build();
+  }
 }

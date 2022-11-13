@@ -678,7 +678,7 @@
 5592:software.wings.service.impl.stackdriver.StackDriverSetupTestNodeData
 5593:software.wings.service.impl.stackdriver.StackDriverMetric
 5594:software.wings.service.impl.stackdriver.StackDriverDataCollectionInfo
-5598:io.harness.beans.SecretChangeLog
+5598:software.wings.beans.SecretChangeLog
 5599:software.wings.beans.command.InitSshCommandUnitV2
 5600:io.harness.delegate.task.aws.AwsElbListener
 5601:software.wings.service.impl.aws.model.AwsElbListListenerRequest

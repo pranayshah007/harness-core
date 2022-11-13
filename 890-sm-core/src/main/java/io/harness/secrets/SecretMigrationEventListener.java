@@ -13,7 +13,7 @@ import static io.harness.threading.Morpheus.sleep;
 import static java.time.Duration.ofMillis;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.MigrateSecretTask;
+import software.wings.beans.MigrateSecretTask;
 import io.harness.exception.WingsException;
 import io.harness.queue.QueueConsumer;
 import io.harness.queue.QueueListener;

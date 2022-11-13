@@ -22,7 +22,7 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
-import io.harness.beans.MigrateSecretTask;
+import software.wings.beans.MigrateSecretTask;
 import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;

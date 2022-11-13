@@ -44,11 +44,11 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
-import io.harness.beans.MigrateSecretTask;
+import software.wings.beans.MigrateSecretTask;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
-import io.harness.beans.SecretChangeLog;
+import software.wings.beans.SecretChangeLog;
 import io.harness.beans.SecretFile;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
@@ -124,6 +124,7 @@ import software.wings.service.intfc.security.KmsService;
 import software.wings.service.intfc.security.LocalSecretManagerService;
 import software.wings.service.intfc.security.SecretManagementDelegateService;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.service.intfc.security.SecretManagerCore;
 import software.wings.service.intfc.security.VaultService;
 import software.wings.settings.SettingVariableTypes;
 
@@ -185,6 +186,7 @@ public class VaultTest extends WingsBaseTest {
   @Inject @InjectMocks private SecretService secretService;
   @Inject protected SettingsService settingsService;
   @Inject private SecretManager secretManager;
+  @Inject private SecretManagerCore secretManagerCore;
   @Inject private QueueConsumer<MigrateSecretTask> kmsTransitionConsumer;
   @Inject protected LocalSecretManagerService localSecretManagerService;
   @Inject private SecretManagementTestHelper secretManagementTestHelper;
@@ -864,7 +866,7 @@ public class VaultTest extends WingsBaseTest {
     assertThat(encryptedData.getCreatedBy().getName()).isEqualTo(userName);
 
     List<SecretChangeLog> changeLogs =
-        secretManager.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
+        secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
     assertThat(changeLogs).hasSize(1);
     SecretChangeLog secretChangeLog = changeLogs.get(0);
     assertThat(secretChangeLog.getUser().getUuid()).isEqualTo(user.getUuid());
@@ -936,7 +938,7 @@ public class VaultTest extends WingsBaseTest {
     assertThat(encryptedData.getKmsId()).isEqualTo(vaultConfig.getUuid());
 
     List<SecretChangeLog> changeLogs =
-        secretManager.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
+        secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
     assertThat(changeLogs).hasSize(2);
     SecretChangeLog secretChangeLog = changeLogs.get(0);
     assertThat(secretChangeLog.getUser().getUuid()).isEqualTo(user1.getUuid());
@@ -961,7 +963,7 @@ public class VaultTest extends WingsBaseTest {
     query = wingsPersistence.createQuery(EncryptedData.class).field(PARENT_ID_KEY).hasThisOne(savedAttributeId);
     assertThat(query.count()).isEqualTo(1);
 
-    changeLogs = secretManager.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
+    changeLogs = secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
     assertThat(changeLogs).hasSize(3);
     secretChangeLog = changeLogs.get(0);
     assertThat(secretChangeLog.getUser().getUuid()).isEqualTo(user2.getUuid());
@@ -1067,7 +1069,7 @@ public class VaultTest extends WingsBaseTest {
     assertThat(query.count()).isEqualTo(1);
 
     List<SecretChangeLog> changeLogs =
-        secretManager.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
+        secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
     assertThat(changeLogs).hasSize(1);
     SecretChangeLog secretChangeLog = changeLogs.get(0);
 
@@ -1098,7 +1100,7 @@ public class VaultTest extends WingsBaseTest {
     assertThat(query.count()).isEqualTo(1);
     EncryptedData encryptedData = query.get();
 
-    changeLogs = secretManager.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
+    changeLogs = secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
     assertThat(changeLogs).hasSize(2);
     secretChangeLog = changeLogs.get(0);
     assertThat(secretChangeLog.getUser().getUuid()).isEqualTo(user1.getUuid());
@@ -1138,7 +1140,7 @@ public class VaultTest extends WingsBaseTest {
     assertThat(query.count()).isEqualTo(1);
     encryptedData = query.get();
 
-    changeLogs = secretManager.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
+    changeLogs = secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.APP_DYNAMICS);
     assertThat(changeLogs).hasSize(3);
     secretChangeLog = changeLogs.get(0);
     assertThat(secretChangeLog.getUser().getUuid()).isEqualTo(user2.getUuid());
@@ -1223,7 +1225,7 @@ public class VaultTest extends WingsBaseTest {
     assertThat(String.valueOf(savedVariable.getValue())).isEqualTo(secretValue);
 
     List<SecretChangeLog> changeLogs =
-        secretManager.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.SERVICE_VARIABLE);
+        secretManagerCore.getChangeLogs(accountId, savedAttributeId, SettingVariableTypes.SERVICE_VARIABLE);
     assertThat(changeLogs).hasSize(1);
     SecretChangeLog secretChangeLog = changeLogs.get(0);
     assertThat(secretChangeLog.getUser().getUuid()).isEqualTo(user.getUuid());

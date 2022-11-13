@@ -15,7 +15,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
-import io.harness.beans.SecretChangeLog;
+import software.wings.beans.SecretChangeLog;
 import io.harness.beans.SecretFile;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretMetadata;
@@ -31,6 +31,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.security.UsageRestrictions;
 import software.wings.service.intfc.security.EncryptedSettingAttributes;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.service.intfc.security.SecretManagerCore;
 import software.wings.settings.SettingVariableTypes;
 
 import java.io.File;
@@ -46,7 +47,7 @@ import java.util.Set;
  */
 @OwnedBy(PL)
 @TargetModule(HarnessModule._440_SECRET_MANAGEMENT_SERVICE)
-public class NoOpSecretManagerImpl implements SecretManager, EncryptedSettingAttributes {
+public class NoOpSecretManagerImpl implements SecretManager, SecretManagerCore, EncryptedSettingAttributes {
   @Override
   public List<SecretManagerConfig> listSecretManagers(String accountId) {
     throw new UnsupportedOperationException();

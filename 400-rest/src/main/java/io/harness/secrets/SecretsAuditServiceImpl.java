@@ -15,7 +15,7 @@ import static software.wings.beans.Event.Type.UPDATE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EncryptedData;
-import io.harness.beans.SecretChangeLog;
+import software.wings.beans.SecretChangeLog;
 import io.harness.beans.SecretUpdateData;
 
 import software.wings.dl.WingsPersistence;

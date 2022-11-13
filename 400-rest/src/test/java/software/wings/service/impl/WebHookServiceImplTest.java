@@ -58,7 +58,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
-import io.harness.beans.SecretChangeLog.SecretChangeLogKeys;
+import software.wings.beans.SecretChangeLog.SecretChangeLogKeys;
 import io.harness.beans.SecretUsageLog;
 import io.harness.beans.WorkflowType;
 import io.harness.category.element.UnitTests;

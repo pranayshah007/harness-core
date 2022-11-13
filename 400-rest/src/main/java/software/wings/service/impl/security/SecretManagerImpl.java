@@ -47,8 +47,8 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
 import io.harness.beans.SearchFilter.Operator;
-import io.harness.beans.SecretChangeLog;
-import io.harness.beans.SecretChangeLog.SecretChangeLogKeys;
+import software.wings.beans.SecretChangeLog;
+import software.wings.beans.SecretChangeLog.SecretChangeLogKeys;
 import io.harness.beans.SecretFile;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretMetadata;
@@ -90,6 +90,7 @@ import software.wings.service.intfc.security.CustomEncryptedDataDetailBuilder;
 import software.wings.service.intfc.security.EncryptedSettingAttributes;
 import software.wings.service.intfc.security.LocalSecretManagerService;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.service.intfc.security.SecretManagerCore;
 import software.wings.service.intfc.security.VaultService;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.utils.WingsReflectionUtils;
@@ -139,7 +140,7 @@ import org.mongodb.morphia.query.Query;
 @Slf4j
 @Singleton
 @TargetModule(HarnessModule._440_SECRET_MANAGEMENT_SERVICE)
-public class SecretManagerImpl implements SecretManager, EncryptedSettingAttributes {
+public class SecretManagerImpl implements SecretManager, SecretManagerCore, EncryptedSettingAttributes {
   static final Set<EncryptionType> ENCRYPTION_TYPES_REQUIRING_FILE_DOWNLOAD = EnumSet.of(LOCAL, GCP_KMS, KMS);
 
   @Inject private WingsPersistence wingsPersistence;
@@ -508,6 +509,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
       if (encryptionType == EncryptionType.VAULT && isNotEmpty(encryptedData.getPath())) {
         VaultConfig vaultConfig = (VaultConfig) secretManagerConfigService.getSecretManager(
             accountId, encryptedData.getKmsId(), encryptedData.getEncryptionType());
+        //List<software.wings.beans.dto.SecretChangeLog> secretChangeLogList = vaultService.getVaultSecretChangeLogs(encryptedData, vaultConfig).stream().map(secretChangeLog ->  SecretChangeLog.toSecretChangeLogDto(secretChangeLog)).collect(Collectors.toList());
         secretChangeLogs.addAll(vaultService.getVaultSecretChangeLogs(encryptedData, vaultConfig));
         // Sort the change log by change time in descending order.
         secretChangeLogs.sort(

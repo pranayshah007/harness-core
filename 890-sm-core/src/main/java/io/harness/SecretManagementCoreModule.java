@@ -9,7 +9,7 @@ package io.harness;
 
 import static java.time.Duration.ofSeconds;
 
-import io.harness.beans.MigrateSecretTask;
+import software.wings.beans.MigrateSecretTask;
 import io.harness.config.PublisherConfiguration;
 import io.harness.mongo.queue.QueueFactory;
 import io.harness.persistence.HPersistence;

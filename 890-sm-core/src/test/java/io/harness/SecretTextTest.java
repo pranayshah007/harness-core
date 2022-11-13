@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
-import io.harness.beans.MigrateSecretTask;
+import software.wings.beans.MigrateSecretTask;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretScopeMetadata;
 import io.harness.beans.SecretText;

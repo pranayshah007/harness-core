@@ -20,8 +20,8 @@ import static org.mockito.Mockito.when;
 
 import io.harness.beans.EncryptedData;
 import io.harness.beans.HarnessSecret;
-import io.harness.beans.SecretChangeLog;
-import io.harness.beans.SecretChangeLog.SecretChangeLogKeys;
+import software.wings.beans.SecretChangeLog;
+import software.wings.beans.SecretChangeLog.SecretChangeLogKeys;
 import io.harness.beans.SecretUpdateData;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;

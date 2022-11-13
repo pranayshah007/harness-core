@@ -14,7 +14,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.beans.EncryptedData;
-import io.harness.beans.SecretChangeLog;
+import software.wings.beans.SecretChangeLog;
 import io.harness.beans.SecretText;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.rest.RestResponse;

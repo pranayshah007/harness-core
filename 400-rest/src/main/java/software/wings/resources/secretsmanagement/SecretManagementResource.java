@@ -25,7 +25,7 @@ import io.harness.beans.EncryptedData;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
-import io.harness.beans.SecretChangeLog;
+import software.wings.beans.SecretChangeLog;
 import io.harness.beans.SecretFile;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
@@ -51,6 +51,7 @@ import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.UsageRestrictionsService;
 import software.wings.service.intfc.security.EncryptedSettingAttributes;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.service.intfc.security.SecretManagerCore;
 import software.wings.settings.SettingVariableTypes;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -100,6 +101,7 @@ import retrofit2.http.Body;
 @Slf4j
 public class SecretManagementResource {
   private final SecretManager secretManager;
+  private final SecretManagerCore secretManagerCore;
   private final UsageRestrictionsService usageRestrictionsService;
   private final MainConfiguration configuration;
   private final EncryptedSettingAttributes encryptedSettingAttributes;
@@ -117,7 +119,7 @@ public class SecretManagementResource {
   public RestResponse<List<SecretChangeLog>> getChangeLogs(@QueryParam("accountId") final String accountId,
       @QueryParam("entityId") final String entityId, @QueryParam("type") final SettingVariableTypes variableType)
       throws IllegalAccessException {
-    return new RestResponse<>(secretManager.getChangeLogs(accountId, entityId, variableType));
+    return new RestResponse<>(secretManagerCore.getChangeLogs(accountId, entityId, variableType));
   }
 
   @GET

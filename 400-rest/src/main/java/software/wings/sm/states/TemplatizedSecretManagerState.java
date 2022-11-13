@@ -16,6 +16,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.api.TemplatizedSecretManagerStateExecutionData;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.service.intfc.security.SecretManagerCore;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
@@ -32,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TemplatizedSecretManagerState extends State {
   @Inject private SecretManager secretManager;
+  @Inject private SecretManagerCore secretManagerCore;
   @Attributes(title = "Secret Manager") private String kmsId;
   @Attributes(title = "Run time parameters for secret manager") private String runtimeParametersString;
 
@@ -68,7 +70,7 @@ public class TemplatizedSecretManagerState extends State {
       for (Map.Entry<String, String> entry : runtimeParameters.entrySet()) {
         entry.setValue(context.renderExpression(entry.getValue()));
       }
-      secretManager.configureSecretManagerRuntimeCredentialsForExecution(
+      secretManagerCore.configureSecretManagerRuntimeCredentialsForExecution(
           accountId, renderedKmsId, executionId, runtimeParameters);
       stateData.setKmsId(renderedKmsId);
       stateData.setWorkflowExecutionId(executionId);

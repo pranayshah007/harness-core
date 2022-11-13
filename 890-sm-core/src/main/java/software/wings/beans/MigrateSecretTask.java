@@ -5,10 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.beans;
+package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.beans.SecretManagerConfig;
 import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 

@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
-import io.harness.beans.SecretChangeLog;
 import io.harness.beans.SecretFile;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretMetadata;
@@ -25,7 +24,6 @@ import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionType;
 
 import software.wings.annotation.EncryptableSetting;
-import software.wings.beans.SecretManagerRuntimeParameters;
 import software.wings.security.UsageRestrictions;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 import software.wings.settings.SettingVariableTypes;
@@ -64,8 +62,6 @@ public interface SecretManager extends OwnedByAccount {
 
   Set<SecretSetupUsage> getSecretUsage(String accountId, String secretId);
 
-  List<SecretChangeLog> getChangeLogs(String accountId, String entityId, SettingVariableTypes variableType)
-      throws IllegalAccessException;
 
   Optional<EncryptedDataDetail> encryptedDataDetails(
       String accountId, String fieldName, String refId, String workflowExecutionId);
@@ -162,12 +158,5 @@ public interface SecretManager extends OwnedByAccount {
         .base64Encoded(encryptedData.isBase64Encoded())
         .build();
   }
-
-  SecretManagerRuntimeParameters configureSecretManagerRuntimeCredentialsForExecution(
-      String accountId, String kmsId, String executionId, Map<String, String> runtimeParameters);
-
-  Optional<SecretManagerRuntimeParameters> getSecretManagerRuntimeCredentialsForExecution(
-      String executionId, String secretManagerId);
-
   UsageRestrictions getAllowedUsageScopesToCreateSecret(String accountId, String secretsManagerConfigId);
 }
