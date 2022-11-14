@@ -21,6 +21,7 @@ import io.harness.service.instancesynchandler.EcsInstanceSyncHandler;
 import io.harness.service.instancesynchandler.GitOpsInstanceSyncHandler;
 import io.harness.service.instancesynchandler.K8sInstanceSyncHandler;
 import io.harness.service.instancesynchandler.NativeHelmInstanceSyncHandler;
+import io.harness.service.instancesynchandler.PcfInstanceSyncHandler;
 import io.harness.service.instancesynchandler.PdcInstanceSyncHandler;
 import io.harness.service.instancesynchandler.ServerlessAwsLambdaInstanceSyncHandler;
 
@@ -42,6 +43,7 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
   private final AzureSshWinrmInstanceSyncHandler azureSshWinrmInstanceSyncHandler;
   private final AwsSshWinrmInstanceSyncHandler awsSshWinrmInstanceSyncHandler;
   private final CustomDeploymentInstanceSyncHandler customDeploymentInstanceSyncHandler;
+  private final PcfInstanceSyncHandler pcfInstanceSyncHandler;
   @Override
   public AbstractInstanceSyncHandler getInstanceSyncHandler(final String deploymentType, String infraKind) {
     switch (deploymentType) {
@@ -62,6 +64,8 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
         return getSshWinRmInstanceSyncHandler(infraKind);
       case ServiceSpecType.CUSTOM_DEPLOYMENT:
         return customDeploymentInstanceSyncHandler;
+      case ServiceSpecType.PCF:
+        return pcfInstanceSyncHandler;
       default:
         throw new UnexpectedException("No instance sync handler registered for deploymentType: " + deploymentType);
     }

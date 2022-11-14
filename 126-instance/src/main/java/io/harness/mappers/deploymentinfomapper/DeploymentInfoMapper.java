@@ -17,6 +17,7 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.EcsDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.PcfNGDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.PdcDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.ReferenceK8sPodInfoDTO;
 import io.harness.dtos.deploymentinfo.ServerlessAwsLambdaDeploymentInfoDTO;
@@ -28,6 +29,7 @@ import io.harness.entities.deploymentinfo.DeploymentInfo;
 import io.harness.entities.deploymentinfo.EcsDeploymentInfo;
 import io.harness.entities.deploymentinfo.K8sDeploymentInfo;
 import io.harness.entities.deploymentinfo.NativeHelmDeploymentInfo;
+import io.harness.entities.deploymentinfo.PcfNGDeploymentInfo;
 import io.harness.entities.deploymentinfo.PdcDeploymentInfo;
 import io.harness.entities.deploymentinfo.ReferenceK8sPodInfo;
 import io.harness.entities.deploymentinfo.ServerlessAwsLambdaDeploymentInfo;
@@ -59,6 +61,8 @@ public class DeploymentInfoMapper {
       return AwsSshWinrmDeploymentInfoMapper.toDTO((AwsSshWinrmDeploymentInfo) deploymentInfo);
     } else if (deploymentInfo instanceof CustomDeploymentNGDeploymentInfo) {
       return CustomDeploymentNGDeploymentInfoMapper.toDTO((CustomDeploymentNGDeploymentInfo) deploymentInfo);
+    } else if (deploymentInfo instanceof PcfNGDeploymentInfo) {
+      return PcfNGDeploymentInfoMapper.toDTO((PcfNGDeploymentInfo) deploymentInfo);
     }
     throw new InvalidRequestException("No DeploymentInfoMapper toDTO found for deploymentInfo : {}" + deploymentInfo);
   }
@@ -84,6 +88,8 @@ public class DeploymentInfoMapper {
       return AwsSshWinrmDeploymentInfoMapper.toEntity((AwsSshWinrmDeploymentInfoDTO) deploymentInfoDTO);
     } else if (deploymentInfoDTO instanceof CustomDeploymentNGDeploymentInfoDTO) {
       return CustomDeploymentNGDeploymentInfoMapper.toEntity((CustomDeploymentNGDeploymentInfoDTO) deploymentInfoDTO);
+    } else if (deploymentInfoDTO instanceof PcfNGDeploymentInfoDTO) {
+      return PcfNGDeploymentInfoMapper.toEntity((PcfNGDeploymentInfoDTO) deploymentInfoDTO);
     }
     throw new InvalidRequestException(
         "No DeploymentInfoMapper toEntity found for deploymentInfo : {}" + deploymentInfoDTO);
