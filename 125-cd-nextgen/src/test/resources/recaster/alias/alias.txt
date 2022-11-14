@@ -202,6 +202,7 @@ io.harness.cdng.manifest.steps.ManifestStepParameters
 io.harness.cdng.k8s.K8sRollingOutcome
 io.harness.cdng.k8s.K8sScaleStepInfo
 io.harness.steps.common.steps.stepgroup.StepGroupStepParameters
+io.harness.steps.group.GroupStepParametersV1
 io.harness.cdng.variables.beans.NGVariableOverrideSets$NGVariableOverrideSetsSweepingOutput
 io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters
 io.harness.cdng.k8s.K8sCanaryDeleteStepParameters

@@ -91,6 +91,7 @@ io.harness.logging.CommandExecutionStatus
 io.harness.beans.steps.stepinfo.CleanupStepInfo
 io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails
 io.harness.steps.common.steps.stepgroup.StepGroupStepParameters
+io.harness.steps.group.GroupStepParametersV1
 io.harness.beans.sweepingoutputs.ContainerPortDetails
 io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml
 io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig

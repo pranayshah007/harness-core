@@ -8,6 +8,7 @@
 package io.harness.pms.plan.creation;
 
 import static io.harness.cf.pipeline.FeatureFlagStageFilterJsonCreator.FEATURE_FLAG_SUPPORTED_TYPE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.GROUP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.SPEC;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
@@ -28,12 +29,14 @@ import io.harness.cf.pipeline.FeatureFlagStagePlanCreator;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.EmptyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
+import io.harness.filters.GroupFilterJsonCreator;
 import io.harness.filters.ParallelFilterJsonCreator;
 import io.harness.filters.PipelineFilterJsonCreator;
 import io.harness.filters.StepGroupPmsFilterJsonCreator;
 import io.harness.plancreator.approval.ApprovalStageFilterJsonCreator;
 import io.harness.plancreator.approval.ApprovalStagePlanCreatorV2;
 import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
+import io.harness.plancreator.group.GroupPlanCreatorV1;
 import io.harness.plancreator.pipeline.NGPipelinePlanCreator;
 import io.harness.plancreator.pipeline.PipelinePlanCreatorV1;
 import io.harness.plancreator.stages.StagesPlanCreator;
@@ -159,6 +162,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new SpecNodePlanCreator());
     planCreators.add(new WaitStepPlanCreator());
     planCreators.add(new PipelineStagePlanCreator());
+    planCreators.add(new GroupPlanCreatorV1());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -177,6 +181,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     filterJsonCreators.add(new FeatureFlagStageFilterJsonCreator());
     filterJsonCreators.add(new CustomStageFilterCreator());
     filterJsonCreators.add(new PipelineStageFilterCreator());
+    filterJsonCreators.add(new GroupFilterJsonCreator());
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(ImmutableSet.of(STAGES, STRATEGY, STEPS, SPEC)));
     filterJsonCreators.add(new EmptyFilterJsonCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION)));
     injectorUtils.injectMembers(filterJsonCreators);
@@ -207,7 +212,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new CustomApprovalStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
     variableCreators.add(new PipelineStageVariableCreator());
-    variableCreators.add(new EmptyAnyVariableCreator(ImmutableSet.of(PARALLEL, STEPS, SPEC, STAGES)));
+    variableCreators.add(new EmptyAnyVariableCreator(ImmutableSet.of(GROUP, PARALLEL, STEPS, SPEC, STAGES)));
     variableCreators.add(new EmptyVariableCreator(STAGE, ImmutableSet.of(FEATURE_FLAG_SUPPORTED_TYPE)));
     variableCreators.add(
         new EmptyVariableCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION, BARRIER, RESOURCE_CONSTRAINT, WAIT_STEP)));
