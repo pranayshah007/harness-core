@@ -9,6 +9,7 @@ package software.wings.helpers.ext.jenkins;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -499,5 +500,35 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
         .isInstanceOf(HintException.class)
         .extracting("message")
         .isEqualTo("Failure in fetching environment variables for job ");
+  }
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void constructJobPathDetails() throws URISyntaxException {
+    JenkinsImpl jenkinsImpl = new JenkinsImpl("");
+
+    // default case when called by delegate
+    JenkinsImpl.JobPathDetails jobPathDetails = jenkinsImpl.constructJobPathDetails("project/release/new%2Ftest");
+    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
+    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("new%2Ftest");
+
+    // more than three paths when called by delegate
+    jobPathDetails = jenkinsImpl.constructJobPathDetails("project/release/master");
+    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
+    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("master");
+
+    // default case when called by ui
+    jobPathDetails = jenkinsImpl.constructJobPathDetails("project%2Frelease%2Fnew%252Ftest");
+    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
+    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("new%2Ftest");
+
+    // more than three paths when called by ui
+    jobPathDetails = jenkinsImpl.constructJobPathDetails("project%2Frelease%2Fmaster");
+    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
+    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("master");
   }
 }
