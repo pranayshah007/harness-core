@@ -162,4 +162,5 @@ enum EntityTypeProtoEnum {
   VERACODE = 149;
   ZAP = 150;
   AQUA_TRIVY = 151;
+  ELASTIGROUP_SETUP_STEP = 152;
 }

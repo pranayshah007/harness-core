@@ -230,6 +230,45 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ActionStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uses"
+          ],
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AquaTrivyStepInfo": {
       "allOf": [
         {
@@ -4814,6 +4853,45 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldMapStringString": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ParameterFieldPlatform": {
       "type": "object",
       "properties": {
@@ -4924,7 +5002,8 @@
             {
               "type": "string",
               "enum": [
-                "Amd64"
+                "Amd64",
+                "Arm64"
               ]
             },
             {
@@ -4961,10 +5040,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "connectorRef",
-            "image"
-          ],
           "properties": {
             "connectorRef": {
               "type": "string"
@@ -5049,6 +5124,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "uses": {
+              "type": "string"
             }
           }
         }
@@ -7135,6 +7213,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AwsEcrStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Action"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ActionStepInfo"
               }
             }
           }

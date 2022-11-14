@@ -19,7 +19,6 @@ import static io.harness.errorhandling.NGErrorHelper.DEFAULT_ERROR_SUMMARY;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.git.model.ChangeType.ADD;
 import static io.harness.utils.PageUtils.getPageRequest;
-import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
@@ -77,7 +76,6 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
@@ -107,6 +105,7 @@ import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
+import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ngsettings.SettingIdentifiers;
@@ -160,7 +159,6 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   private final CatalogueHelper catalogueHelper;
   private final ProjectService projectService;
   private final OrganizationService organizationService;
-  EntitySetupUsageClient entitySetupUsageClient;
   ConnectorStatisticsHelper connectorStatisticsHelper;
   NGSettingsClient settingsClient;
   private NGErrorHelper ngErrorHelper;
@@ -173,6 +171,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   GitSyncSdkService gitSyncSdkService;
   OutboxService outboxService;
   YamlGitConfigClient yamlGitConfigClient;
+  EntitySetupUsageService entitySetupUsageService;
 
   @Override
   public Optional<ConnectorResponseDTO> get(
@@ -780,8 +779,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
                                       .build();
     String referredEntityFQN = identifierRef.getFullyQualifiedName();
     try {
-      isEntityReferenced = execute(entitySetupUsageClient.isEntityReferenced(
-          connector.getAccountIdentifier(), referredEntityFQN, EntityType.CONNECTORS));
+      isEntityReferenced = entitySetupUsageService.isEntityReferenced(
+          connector.getAccountIdentifier(), referredEntityFQN, EntityType.CONNECTORS);
     } catch (Exception ex) {
       log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception",
           connector.getIdentifier(), ex);

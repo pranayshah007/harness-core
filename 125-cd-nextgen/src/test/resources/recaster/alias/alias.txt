@@ -546,3 +546,14 @@ io.harness.cdng.common.capacity.Capacity
 io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepNode
 io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepParameters
 io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo
+io.harness.cdng.elastigroup.ElastigroupSetupStepInfo
+io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePassThroughData
+io.harness.cdng.elastigroup.ElastigroupSetupStepParameters
+io.harness.cdng.elastigroup.ElastigroupInstances
+io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData
+io.harness.cdng.elastigroup.ElastigroupCurrentRunningInstances
+io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome
+io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData
+io.harness.cdng.elastigroup.ElastigroupSetupStepNode
+io.harness.cdng.elastigroup.ElastigroupFixedInstances
+io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData

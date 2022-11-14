@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.utils.RequestField;
 
+import software.wings.beans.GitConfig.ProviderType;
 import software.wings.beans.GitConfig.UrlType;
 import software.wings.graphql.schema.type.secrets.QLUsageScope;
 import software.wings.security.PermissionAttribute;
@@ -40,4 +41,5 @@ public class QLGitConnectorInput {
   private RequestField<QLUsageScope> usageScope;
   private RequestField<List<String>> delegateSelectors;
   private RequestField<Boolean> disableUserGitConfig;
+  private RequestField<ProviderType> providerType;
 }

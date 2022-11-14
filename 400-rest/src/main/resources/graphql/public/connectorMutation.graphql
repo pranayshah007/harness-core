@@ -63,6 +63,7 @@ input GitConnectorInput {
   usageScope: UsageScopeInput
   delegateSelectors: [String!]
   disableUserGitConfig: Boolean
+  providerType: ProviderType
 }
 
 input UpdateGitConnectorInput {

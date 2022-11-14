@@ -3349,7 +3349,8 @@
             {
               "type": "string",
               "enum": [
-                "Amd64"
+                "Amd64",
+                "Arm64"
               ]
             },
             {
@@ -3386,10 +3387,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "connectorRef",
-            "image"
-          ],
           "properties": {
             "connectorRef": {
               "type": "string"
@@ -3474,6 +3471,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "uses": {
+              "type": "string"
             }
           }
         }

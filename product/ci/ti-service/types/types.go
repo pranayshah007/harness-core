@@ -191,8 +191,9 @@ type GetTestTimesResp struct {
 }
 
 type File struct {
-	Name   string     `json:"name"`
-	Status FileStatus `json:"status"`
+	Name     string     `json:"name"`
+	Status   FileStatus `json:"status"`
+	Package  string     `json:"package"`
 }
 
 type DownloadLink struct {

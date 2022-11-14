@@ -201,6 +201,7 @@ instrPackages: p1, p2, p3`
 	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil).AnyTimes()
 	mf := filesystem.NewMockFile(ctrl)
 	mf.EXPECT().Write([]byte(expData)).Return(0, nil).AnyTimes()
+	fs.EXPECT().ReadFile(gomock.Any(), gomock.Any()).Return(nil)
 	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil).AnyTimes()
 
 	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
@@ -271,6 +272,7 @@ instrPackages: p1, p2, p3`
 	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil).AnyTimes()
 	mf := filesystem.NewMockFile(ctrl)
 	mf.EXPECT().Write([]byte(expData)).Return(0, nil).AnyTimes()
+	fs.EXPECT().ReadFile(gomock.Any(), gomock.Any()).Return(nil)
 	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil).AnyTimes()
 
 	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
@@ -339,6 +341,7 @@ instrPackages: p1, p2, p3`
 	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil).AnyTimes()
 	mf := filesystem.NewMockFile(ctrl)
 	mf.EXPECT().Write([]byte(expData)).Return(0, nil).AnyTimes()
+	fs.EXPECT().ReadFile(gomock.Any(), gomock.Any()).Return(nil)
 	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil).AnyTimes()
 
 	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
@@ -849,6 +852,7 @@ instrPackages: p1, p2, p3`
 	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil).AnyTimes()
 	mf := filesystem.NewMockFile(ctrl)
 	mf.EXPECT().Write([]byte(expData)).Return(0, nil).AnyTimes()
+	fs.EXPECT().ReadFile(gomock.Any(), gomock.Any()).Return(nil)
 	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil).AnyTimes()
 
 	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
@@ -988,6 +992,7 @@ instrPackages: p1, p2, p3`
 	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil).AnyTimes()
 	mf := filesystem.NewMockFile(ctrl)
 	mf.EXPECT().Write([]byte(expData)).Return(0, nil).AnyTimes()
+	fs.EXPECT().ReadFile(gomock.Any(), gomock.Any()).Return(nil)
 	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil).AnyTimes()
 
 	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
@@ -1098,6 +1103,7 @@ instrPackages: p1, p2, p3`
 	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil)
 	mf := filesystem.NewMockFile(ctrl)
 	mf.EXPECT().Write([]byte(expData)).Return(0, nil)
+	fs.EXPECT().ReadFile(gomock.Any(), gomock.Any()).Return(nil)
 	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil)
 
 	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
@@ -1218,6 +1224,7 @@ instrPackages: p1, p2, p3`
 	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil)
 	mf := filesystem.NewMockFile(ctrl)
 	mf.EXPECT().Write([]byte(expData)).Return(0, nil)
+	fs.EXPECT().ReadFile(gomock.Any(), gomock.Any()).Return(nil)
 	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil)
 
 	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})

@@ -9,6 +9,7 @@ package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.VITALIE;
 
@@ -26,6 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
@@ -361,5 +363,39 @@ public class CommandStepTest extends CategoryTest {
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage(
             "Host information is missing in Command Step. Please make sure the looping strategy (repeat) is provided.");
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithSecurityContextCustomDeployment() throws Exception {
+    final StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                            .spec(commandStepParameters)
+                                                            .timeout(ParameterField.createValueField("30m"))
+                                                            .build();
+    doReturn(ServiceStepOutcome.builder().type(ServiceSpecType.CUSTOM_DEPLOYMENT).build())
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+
+    doReturn(CustomDeploymentInfrastructureOutcome.builder().infrastructureKey(infraKey).build())
+        .when(cdStepHelper)
+        .getInfrastructureOutcome(ambiance);
+
+    List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+
+    CommandTaskResponse commandTaskResponse =
+        CommandTaskResponse.builder().status(CommandExecutionStatus.SUCCESS).unitProgressData(unitProgressData).build();
+
+    StepResponse stepResponse =
+        commandStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> commandTaskResponse);
+
+    assertThat(stepResponse).isNotNull();
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getUnitProgressList()).containsAll(unitProgresses);
+    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+
+    verify(instanceInfoService, times(0))
+        .saveServerInstancesIntoSweepingOutput(eq(ambiance), serverInstanceInfoListCaptor.capture());
   }
 }

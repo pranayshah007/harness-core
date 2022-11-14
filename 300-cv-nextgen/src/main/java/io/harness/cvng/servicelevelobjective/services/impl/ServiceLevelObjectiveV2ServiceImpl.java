@@ -49,7 +49,6 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
-import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOResetRecalculationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
@@ -101,11 +100,10 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private CVNGLogService cvngLogService;
-  @Inject private CompositeSLOService compositeSLOService;
-  @Inject private CompositeSLOResetRecalculationService compositeSLOResetRecalculationService;
   @Inject
   private Map<ServiceLevelObjectiveType, AbstractServiceLevelObjectiveUpdatableEntity>
       serviceLevelObjectiveTypeUpdatableEntityTransformerMap;
+  @Inject private CompositeSLOService compositeSLOService;
 
   @Override
   public ServiceLevelObjectiveV2Response create(
@@ -193,10 +191,11 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       AbstractServiceLevelObjective newCompositeServiceLevelObjective =
           serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.COMPOSITE)
               .getSLOV2(projectParams, serviceLevelObjectiveDTO, true);
-      if (compositeServiceLevelObjective.shouldReset(newCompositeServiceLevelObjective)) {
-        compositeSLOResetRecalculationService.reset(compositeServiceLevelObjective);
-      } else if (compositeServiceLevelObjective.shouldRecalculate(newCompositeServiceLevelObjective)) {
-        compositeSLOResetRecalculationService.recalculate(compositeServiceLevelObjective);
+      if (compositeSLOService.shouldReset(compositeServiceLevelObjective, newCompositeServiceLevelObjective)) {
+        compositeSLOService.reset(compositeServiceLevelObjective);
+      } else if (compositeSLOService.shouldRecalculate(
+                     compositeServiceLevelObjective, newCompositeServiceLevelObjective)) {
+        compositeSLOService.recalculate(compositeServiceLevelObjective);
       }
     }
     serviceLevelObjective =
@@ -286,7 +285,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             projectParams.getProjectIdentifier(), referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
             String.join(",", referencedCompositeSLOIdentifiers)));
       }
-
       serviceLevelIndicatorService.deleteByIdentifier(
           projectParams, ((SimpleServiceLevelObjective) serviceLevelObjectiveV2).getServiceLevelIndicators());
     }
@@ -701,12 +699,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       serviceLevelObjectiveList =
           serviceLevelObjectiveList.stream()
               .filter(slo
-                  -> slo.getNotificationRuleRefs()
-                          .stream()
-                          .filter(notificationRuleRef
-                              -> notificationRuleRef.getNotificationRuleRef().equals(filter.getNotificationRuleRef()))
-                          .count()
-                      != 0)
+                  -> slo.getNotificationRuleRefs().stream().anyMatch(notificationRuleRef
+                      -> notificationRuleRef.getNotificationRuleRef().equals(filter.getNotificationRuleRef())))
               .collect(Collectors.toList());
     }
     if (isNotEmpty(filter.getErrorBudgetRisks())) {

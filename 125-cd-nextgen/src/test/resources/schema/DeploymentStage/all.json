@@ -3769,6 +3769,17 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ElastigroupCurrentRunningInstances": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ElastigroupInstancesSpec"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ElastigroupDeployStepInfo": {
       "allOf": [
         {
@@ -3806,6 +3817,58 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ElastigroupFixedInstances": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ElastigroupInstancesSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "desired": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "max": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "min": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ElastigroupInfrastructure": {
       "allOf": [
         {
@@ -3830,6 +3893,70 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupInstances": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Fixed",
+            "CurrentRunning"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CurrentRunning"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupCurrentRunningInstances"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Fixed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupFixedInstances"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ElastigroupInstancesSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Fixed",
+            "CurrentRunning"
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ElastigroupRollbackStepInfo": {
@@ -3873,6 +4000,62 @@
           "properties": {
             "startupScript": {
               "$ref": "#/definitions/StartupScriptConfiguration"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupSetupStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "instances",
+            "name"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instances": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ElastigroupInstances"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "name": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -10239,6 +10422,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ElastigroupRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ElastigroupSetup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupSetupStepInfo"
               }
             }
           }

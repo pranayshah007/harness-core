@@ -72,4 +72,6 @@ public interface StepSpecTypeConstants {
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
 
   String CHAOS_STEP = "Chaos";
+
+  String ELASTIGROUP_SETUP = "ElastigroupSetup";
 }

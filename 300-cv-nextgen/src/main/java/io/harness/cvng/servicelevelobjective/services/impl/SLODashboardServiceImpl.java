@@ -20,6 +20,7 @@ import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
+import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLODashboardWidgetBuilder;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView.SLOHealthListViewBuilder;
@@ -31,12 +32,14 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Respon
 import io.harness.cvng.servicelevelobjective.beans.UserJourneyDTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
@@ -66,6 +69,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private SLIRecordService sliRecordService;
+  @Inject private CompositeSLORecordService sloRecordService;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject private Clock clock;
@@ -182,21 +186,10 @@ public class SLODashboardServiceImpl implements SLODashboardService {
 
   private SLODashboardWidget getSloDashboardWidget(
       ProjectParams projectParams, ServiceLevelObjectiveV2Response sloResponse, TimeRangeParams filter) {
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
-        (SimpleServiceLevelObjectiveSpec) sloResponse.getServiceLevelObjectiveV2DTO().getSpec();
-    Preconditions.checkState(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().size() == 1,
-        "Only one service level indicator is supported");
-    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
-        simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0);
-    ServiceLevelIndicator serviceLevelIndicator =
-        serviceLevelIndicatorService.getServiceLevelIndicator(projectParams, serviceLevelIndicatorDTO.getIdentifier());
-
     ServiceLevelObjectiveV2DTO slo = sloResponse.getServiceLevelObjectiveV2DTO();
     AbstractServiceLevelObjective serviceLevelObjective =
         serviceLevelObjectiveV2Service.getEntity(projectParams, slo.getIdentifier());
-    MonitoredServiceDTO monitoredService =
-        monitoredServiceService.get(projectParams, simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
-            .getMonitoredServiceDTO();
+
     LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
     TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
     Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
@@ -205,9 +198,57 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     int totalErrorBudgetMinutes =
         serviceLevelObjective.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
 
-    SLODashboardWidget.SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator,
-        timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
-        serviceLevelIndicator.getSliMissingDataType(), serviceLevelIndicator.getVersion(), filter);
+    if (slo.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+          (SimpleServiceLevelObjectiveSpec) sloResponse.getServiceLevelObjectiveV2DTO().getSpec();
+      Preconditions.checkState(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().size() == 1,
+          "Only one service level indicator is supported");
+      ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
+          simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0);
+      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+          projectParams, serviceLevelIndicatorDTO.getIdentifier());
+      MonitoredServiceDTO monitoredService =
+          monitoredServiceService.get(projectParams, simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
+              .getMonitoredServiceDTO();
+
+      SLODashboardWidget.SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator,
+          timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
+          serviceLevelIndicator.getSliMissingDataType(), serviceLevelIndicator.getVersion(), filter);
+
+      return getSloDashboardWidgetBuilder(
+          slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes, currentLocalDate)
+          .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
+          .monitoredServiceName(monitoredService.getName())
+          .environmentIdentifier(monitoredService.getEnvironmentRef())
+          .environmentName(
+              nextGenService
+                  .getEnvironment(serviceLevelObjective.getAccountId(), serviceLevelObjective.getOrgIdentifier(),
+                      serviceLevelObjective.getProjectIdentifier(), monitoredService.getEnvironmentRef())
+                  .getName())
+          .serviceName(nextGenService
+                           .getService(serviceLevelObjective.getAccountId(), serviceLevelObjective.getOrgIdentifier(),
+                               serviceLevelObjective.getProjectIdentifier(), monitoredService.getServiceRef())
+                           .getName())
+          .serviceIdentifier(monitoredService.getServiceRef())
+          .healthSourceIdentifier(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
+          .healthSourceName(getHealthSourceName(monitoredService, simpleServiceLevelObjectiveSpec.getHealthSourceRef()))
+          .type(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).getType())
+          .build();
+    } else {
+      CompositeServiceLevelObjective compositeSLO = (CompositeServiceLevelObjective) serviceLevelObjective;
+      SLODashboardWidget.SLOGraphData sloGraphData =
+          sloRecordService.getGraphData(compositeSLO, timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()),
+              currentTimeMinute, totalErrorBudgetMinutes, compositeSLO.getVersion(), filter);
+
+      return getSloDashboardWidgetBuilder(
+          slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes, currentLocalDate)
+          .build();
+    }
+  }
+
+  private SLODashboardWidgetBuilder getSloDashboardWidgetBuilder(ServiceLevelObjectiveV2DTO slo, TimePeriod timePeriod,
+      SLODashboardWidget.SLOGraphData sloGraphData, AbstractServiceLevelObjective serviceLevelObjective,
+      int totalErrorBudgetMinutes, LocalDateTime currentLocalDate) {
     return SLODashboardWidget.withGraphData(sloGraphData)
         .sloIdentifier(slo.getIdentifier())
         .title(slo.getName())
@@ -216,29 +257,13 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         .currentPeriodStartTime(timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()).toEpochMilli())
         .currentPeriodEndTime(timePeriod.getEndTime(serviceLevelObjective.getZoneOffset()).toEpochMilli())
         .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
-        .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
-        .monitoredServiceName(monitoredService.getName())
-        .environmentIdentifier(monitoredService.getEnvironmentRef())
-        .environmentName(
-            nextGenService
-                .getEnvironment(serviceLevelObjective.getAccountId(), serviceLevelObjective.getOrgIdentifier(),
-                    serviceLevelObjective.getProjectIdentifier(), monitoredService.getEnvironmentRef())
-                .getName())
-        .serviceName(nextGenService
-                         .getService(serviceLevelObjective.getAccountId(), serviceLevelObjective.getOrgIdentifier(),
-                             serviceLevelObjective.getProjectIdentifier(), monitoredService.getServiceRef())
-                         .getName())
-        .serviceIdentifier(monitoredService.getServiceRef())
-        .healthSourceIdentifier(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
-        .healthSourceName(getHealthSourceName(monitoredService, simpleServiceLevelObjectiveSpec.getHealthSourceRef()))
         .tags(slo.getTags())
-        .type(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).getType())
         .totalErrorBudget(totalErrorBudgetMinutes)
         .timeRemainingDays(timePeriod.getRemainingDays(currentLocalDate))
         .burnRate(SLODashboardWidget.BurnRate.builder()
                       .currentRatePercentage(sloGraphData.dailyBurnRate(serviceLevelObjective.getZoneOffset()))
                       .build())
-        .build();
+        .sloType(slo.getType());
   }
 
   @Override
