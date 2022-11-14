@@ -18,6 +18,7 @@ import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.PcfNGInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ReferenceInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
@@ -30,6 +31,7 @@ import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.InstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.entities.instanceinfo.NativeHelmInstanceInfo;
+import io.harness.entities.instanceinfo.PcfNGInstanceInfo;
 import io.harness.entities.instanceinfo.PdcInstanceInfo;
 import io.harness.entities.instanceinfo.ReferenceInstanceInfo;
 import io.harness.entities.instanceinfo.ServerlessAwsLambdaInstanceInfo;
@@ -63,6 +65,8 @@ public class InstanceInfoMapper {
       return AwsSshWinrmInstanceInfoMapper.toDTO((AwsSshWinrmInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof CustomDeploymentInstanceInfo) {
       return CustomDeploymentInstanceInfoMapper.toDTO((CustomDeploymentInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof PcfNGInstanceInfo) {
+      return PcfNGInstanceInfoMapper.toDTO((PcfNGInstanceInfo) instanceInfo);
     }
     throw new InvalidRequestException("No InstanceInfoMapper toDTO found for instanceInfo : {}" + instanceInfo);
   }
@@ -90,6 +94,8 @@ public class InstanceInfoMapper {
       return AwsSshWinrmInstanceInfoMapper.toEntity((AwsSshWinrmInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof CustomDeploymentInstanceInfoDTO) {
       return CustomDeploymentInstanceInfoMapper.toEntity((CustomDeploymentInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof PcfNGInstanceInfoDTO) {
+      return PcfNGInstanceInfoMapper.toEntity((PcfNGInstanceInfoDTO) instanceInfoDTO);
     }
     throw new InvalidRequestException(
         "No InstanceInfoMapper toEntity found for instanceInfoDTO : {}" + instanceInfoDTO);
