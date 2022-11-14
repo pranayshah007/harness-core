@@ -57,7 +57,7 @@ public class PcfValidationHandler implements ConnectorValidationHandler {
       // todo: ask about limit pcf threads FF
       pcfDeploymentManager.getOrganizations(CfRequestConfig.builder()
                                                 .userName(String.valueOf(pcfConfig.getUserName()))
-                                                .password(String.valueOf(pcfConfig.getPasswordRef()))
+                                                .password(String.valueOf(pcfConfig.getPassword()))
                                                 .endpointUrl(pcfConfig.getEndpointUrl())
                                                 .timeOutIntervalInMins(2)
                                                 .build());
