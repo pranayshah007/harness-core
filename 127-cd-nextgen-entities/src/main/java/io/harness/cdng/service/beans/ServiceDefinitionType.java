@@ -67,11 +67,11 @@ public enum ServiceDefinitionType {
           ExecutionStrategyType.DEFAULT),
       ServiceSpecType.ELASTIGROUP),
 
-  @JsonProperty(ServiceSpecType.PCF)
-  PCF(ServiceSpecType.PCF,
+  @JsonProperty(ServiceSpecType.TAS)
+  TAS(ServiceSpecType.TAS,
       Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
           ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.PCF);
+      ServiceSpecType.TAS);
 
   /*
   //Unsupported for now

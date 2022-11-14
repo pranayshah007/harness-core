@@ -83,7 +83,7 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
             ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT));
 
-    assertThat(executionStrategyResponse.get(ServiceDefinitionType.PCF))
+    assertThat(executionStrategyResponse.get(ServiceDefinitionType.TAS))
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
             ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT));
 

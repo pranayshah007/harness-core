@@ -4,7 +4,7 @@ import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.ServiceSpec;
-import io.harness.cdng.visitor.helpers.serviceconfig.CloudFoundryServiceSpecVisitorHelper;
+import io.harness.cdng.visitor.helpers.serviceconfig.TanzuApplicationServiceSpecVisitorHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.yaml.YamlNode;
@@ -24,10 +24,10 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@JsonTypeName(ServiceSpecType.PCF)
-@SimpleVisitorHelper(helperClass = CloudFoundryServiceSpecVisitorHelper.class)
-@TypeAlias("CloudFoundryServiceSpec")
-public class CloudFoundryServiceSpec implements ServiceSpec, Visitable {
+@JsonTypeName(ServiceSpecType.TAS)
+@SimpleVisitorHelper(helperClass = TanzuApplicationServiceSpecVisitorHelper.class)
+@TypeAlias("TanzuApplicationServiceSpec")
+public class TanzuApplicationServiceSpec implements ServiceSpec, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -41,7 +41,7 @@ public class CloudFoundryServiceSpec implements ServiceSpec, Visitable {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
   @Override
   public String getType() {
-    return ServiceSpecType.PCF;
+    return ServiceSpecType.TAS;
   }
 
   @Override
