@@ -10,15 +10,17 @@ package io.harness.delegate.task.spot.elastigroup.deploy;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.spotconnector.SpotCapabilityHelper;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.model.ElastiGroup;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -38,6 +40,12 @@ public class ElastigroupDeployTaskParameters implements TaskParameters, Executio
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return Collections.emptyList();
+    List<ExecutionCapability> capabilities = new ArrayList<>();
+
+    capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+        encryptionDetails, maskingEvaluator));
+    capabilities.addAll(SpotCapabilityHelper.fetchRequiredExecutionCapabilities(spotConnector, maskingEvaluator));
+
+    return capabilities;
   }
 }
