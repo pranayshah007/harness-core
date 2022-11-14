@@ -213,7 +213,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     // verify customer exists
     StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
-      throw new InvalidRequestException("Cannot create subscription. Please finish customer information firstly");
+      createStripeCustomer(accountIdentifier, subscriptionCreateParams.getCustomer());
+      stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     } else {
       updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionCreateParams.getCustomer());
     }
