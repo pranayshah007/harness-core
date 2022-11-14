@@ -41,7 +41,7 @@ func (c *tailCommand) run(*kingpin.ParseContext) error {
 		}
 	}()
 
-	client := client.NewHTTPClient(c.server, c.accountID, c.token, false)
+	client := client.NewHTTPClient(c.server, c.accountID, c.token, false, "")
 	linec, errc := client.Tail(ctx, c.key)
 	for {
 		select {
