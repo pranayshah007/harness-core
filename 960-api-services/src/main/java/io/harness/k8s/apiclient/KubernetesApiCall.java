@@ -12,6 +12,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ExplanationException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.openapi.ApiClient;
@@ -37,6 +38,7 @@ public class KubernetesApiCall {
       Type varReturnType = (new TypeToken<T>() {}).getType();
       return apiClient.<T>execute(call, varReturnType).getData();
     } catch (ApiException e) {
+      e = ExceptionMessageSanitizer.sanitizeException(e);
       if (request != null) {
         String explanation;
         if (e.getCode() == 0) {
@@ -51,6 +53,9 @@ public class KubernetesApiCall {
 
       throw new ExplanationException(
           format("Failed to create a kubernetes request due to error: %s", e.getMessage()), e);
+    } catch (Exception ex) {
+      ex = ExceptionMessageSanitizer.sanitizeException(ex);
+      throw new ExplanationException(format("K8s HTTP API call failed due to error: %s", ex.getMessage()), ex);
     }
   }
 }

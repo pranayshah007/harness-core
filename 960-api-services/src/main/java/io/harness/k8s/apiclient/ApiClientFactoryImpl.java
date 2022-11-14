@@ -78,7 +78,7 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
         clientBuilder.setAuthentication(new GkeTokenAuthentication(kubernetesConfig.getServiceAccountTokenSupplier()));
       } else {
         clientBuilder.setAuthentication(
-            new AccessTokenAuthentication(kubernetesConfig.getServiceAccountTokenSupplier().get()));
+            new AccessTokenAuthentication(kubernetesConfig.getServiceAccountTokenSupplier().get().trim()));
       }
     } else if (kubernetesConfig.getUsername() != null && kubernetesConfig.getPassword() != null) {
       clientBuilder.setAuthentication(new UsernamePasswordAuthentication(
