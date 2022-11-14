@@ -28,7 +28,7 @@ def run_tests(**kwargs):
             size = "medium",
             jvm_flags = [
                 "$(HARNESS_ARGS)",
-                "-Xmx4G",
+                "-Xmx8G",
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
             ],
@@ -146,7 +146,7 @@ EOF""" % code,
             visibility = ["//visibility:public"],
             jvm_flags = [
                 "$(HARNESS_ARGS)",
-                "-Xmx4G",
+                "-Xmx8G",
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
             ],
@@ -219,7 +219,7 @@ def optimized_package_test(combined_tests_target_index, package, index, test_cla
         visibility = ["//visibility:public"],
         jvm_flags = [
             "$(HARNESS_ARGS)",
-            "-Xmx4G",
+            "-Xmx8G",
             "-XX:+HeapDumpOnOutOfMemoryError",
             "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
         ],
