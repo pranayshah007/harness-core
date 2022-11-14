@@ -14,12 +14,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.AccountId;
 import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.grpc.utils.AnyUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
+import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
+import io.harness.perpetualtask.instancesyncv2.DirectK8sReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.serializer.KryoSerializer;
@@ -116,19 +119,21 @@ public class CgInstanceSyncServiceV2 {
           // handle current instances
           List<Instance> deployedInstances = instanceSyncHandler.getDeployedInstances(deploymentSummary);
           if (CollectionUtils.isNotEmpty(deployedInstances)) {
-            handleInstances(deployedInstances, instanceSyncHandler);
+            Instance newInstance = deployedInstances.get(0);
+            List<Instance> instancesInDb = instanceService.getInstancesForAppAndInframapping(
+                newInstance.getAppId(), newInstance.getInfraMappingId());
+
+            // Todo: filter on the basis of containerMetadata logic
+            handleInstances(deployedInstances, instancesInDb, instanceSyncHandler);
           }
         });
   }
 
-  private void handleInstances(List<Instance> instances, CgInstanceSyncV2Handler instanceSyncHandler) {
+  private void handleInstances(
+      List<Instance> instances, List<Instance> instancesInDb, CgInstanceSyncV2Handler instanceSyncHandler) {
     if (CollectionUtils.isEmpty(instances)) {
       return;
     }
-
-    Instance newInstance = instances.get(0);
-    List<Instance> instancesInDb =
-        instanceService.getInstancesForAppAndInframapping(newInstance.getAppId(), newInstance.getInfraMappingId());
 
     List<Instance> instancesToDelete = instanceSyncHandler.difference(instancesInDb, instances);
     Set<String> instanceIdsToDelete = instancesToDelete.parallelStream().map(Instance::getUuid).collect(toSet());
@@ -232,7 +237,7 @@ public class CgInstanceSyncServiceV2 {
       return;
     }
 
-    Map<String, List<InstanceInfo>> instancesPerTask = new HashMap<>();
+    Map<DirectK8sReleaseDetails, List<InstanceInfo>> instancesPerTask = new HashMap<>();
     for (InstanceSyncData instanceSyncData : result.getInstanceDataList()) {
       if (!instanceSyncData.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
         log.error("Instance Sync failed for perpetual task: [{}], for task details: [{}], with error: [{}]",
@@ -240,20 +245,14 @@ public class CgInstanceSyncServiceV2 {
         continue;
       }
 
-      if (!instancesPerTask.containsKey(instanceSyncData.getTaskDetailsId())) {
-        instancesPerTask.put(instanceSyncData.getTaskDetailsId(), new ArrayList<>());
-      }
+      instancesPerTask.put(AnyUtils.unpack(instanceSyncData.getReleaseDetails(), DirectK8sReleaseDetails.class),
+          instanceSyncData.getInstanceDataList()
+              .parallelStream()
+              .map(instance -> (InstanceInfo) kryoSerializer.asObject(instance.toByteArray()))
+              .collect(Collectors.toList()));
 
-      instancesPerTask.get(instanceSyncData.getTaskDetailsId())
-          .addAll(instanceSyncData.getInstanceDataList()
-                      .parallelStream()
-                      .map(instance -> (InstanceInfo) kryoSerializer.asObject(instance.toByteArray()))
-                      .collect(Collectors.toList()));
-    }
-
-    Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
-    for (String taskDetailsId : instancesPerTask.keySet()) {
-      InstanceSyncTaskDetails taskDetails = taskDetailsService.getForId(taskDetailsId);
+      Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
+      InstanceSyncTaskDetails taskDetails = taskDetailsService.getForId(instanceSyncData.getTaskDetailsId());
       SettingAttribute cloudProvider =
           cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
       CgInstanceSyncV2Handler instanceSyncHandler =
@@ -265,9 +264,13 @@ public class CgInstanceSyncServiceV2 {
           instanceService.getInstancesForAppAndInframapping(taskDetails.getAppId(), taskDetails.getInfraMappingId());
 
       List<Instance> instances = instanceSyncHandler.getDeployedInstances(
-          instancesPerTask.get(taskDetailsId), instancesInDb, lastDiscoveredInstance);
-      handleInstances(instances, instanceSyncHandler);
-      taskDetailsService.updateLastRun(taskDetailsId);
+          instancesPerTask.get(AnyUtils.unpack(instanceSyncData.getReleaseDetails(), DirectK8sReleaseDetails.class)),
+          instancesInDb, lastDiscoveredInstance);
+
+      // Todo: filter on the basis of containerMetadata logic
+
+      handleInstances(instances, instancesInDb, instanceSyncHandler);
+      taskDetailsService.updateLastRun(instanceSyncData.getTaskDetailsId());
     }
   }
 
