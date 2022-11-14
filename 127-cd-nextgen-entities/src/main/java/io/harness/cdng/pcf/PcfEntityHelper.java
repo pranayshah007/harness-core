@@ -4,7 +4,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.ng.core.infrastructure.InfrastructureKind.PCF;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.TAS;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -69,7 +69,7 @@ public class PcfEntityHelper {
   public PcfInfraConfig getPcfInfraConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
     ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
     switch (infrastructureOutcome.getKind()) {
-      case PCF:
+      case TAS:
         PcfInfrastructureOutcome pcfInfrastructureOutcome = (PcfInfrastructureOutcome) infrastructureOutcome;
         return PcfInfraConfig.builder()
             .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))

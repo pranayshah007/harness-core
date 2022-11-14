@@ -20,6 +20,6 @@ public class PcfInstanceSyncPerpetualTaskResponse implements InstanceSyncPerpetu
 
   @Override
   public String getDeploymentType() {
-    return ServiceSpecType.PCF;
+    return ServiceSpecType.TAS;
   }
 }
