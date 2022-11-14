@@ -97,6 +97,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               });
             }
           }
+          boolean saveUtilData = false;
           for (Map.Entry<String, List<EC2InstanceRecommendationInfo>> instanceLevelRecommendation :
               instanceLevelRecommendations.entrySet()) {
             if (!instanceLevelRecommendation.getValue().isEmpty()) {
@@ -114,6 +115,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               recommendation.setLastUpdatedTime(startTime);
               recommendation.setTtl(Instant.now().plus(RECOMMENDATION_TTL));
               if (calculateMaxSaving(instanceLevelRecommendation.getValue()) > SAVINGS_THRESHOLD) {
+                saveUtilData = true;
                 // Save the ec2 recommendation to mongo and timescale
                 EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
                 log.debug("EC2Recommendation saved to mongoDB = {}", ec2Recommendation);
@@ -121,11 +123,13 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               }
             }
           }
-          List<AWSEC2Details> instances = extractEC2InstanceDetails(ec2RecommendationResponse);
-          List<Ec2UtilzationData> utilizationData = ec2MetricHelper.getUtilizationMetrics(
-              infraAccCrossArn.getValue(), Date.from(now.minus(1, ChronoUnit.DAYS)), Date.from(now), instances);
-          if (!utilizationData.isEmpty()) {
-            saveUtilDataToTimescaleDB(accountId, utilizationData);
+          if (saveUtilData) {
+            List<AWSEC2Details> instances = extractEC2InstanceDetails(ec2RecommendationResponse);
+            List<Ec2UtilzationData> utilizationData = ec2MetricHelper.getUtilizationMetrics(
+                infraAccCrossArn.getValue(), Date.from(now.minus(1, ChronoUnit.DAYS)), Date.from(now), instances);
+            if (!utilizationData.isEmpty()) {
+              saveUtilDataToTimescaleDB(accountId, utilizationData);
+            }
           }
         }
       }
@@ -359,13 +363,13 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
 
   private Double calculateMaxSaving(List<EC2InstanceRecommendationInfo> recommendations) {
     return recommendations.stream()
-                         .map(rightsizingRecommendation
-                             -> Double.valueOf(rightsizingRecommendation.getRecommendation()
-                                                   .getModifyRecommendationDetail()
-                                                   .getTargetInstances()
-                                                   .get(0)
-                                                   .getEstimatedMonthlySavings()))
-                         .reduce(Double::max)
-                         .orElse(0.0);
+        .map(rightsizingRecommendation
+            -> Double.valueOf(rightsizingRecommendation.getRecommendation()
+                                  .getModifyRecommendationDetail()
+                                  .getTargetInstances()
+                                  .get(0)
+                                  .getEstimatedMonthlySavings()))
+        .reduce(Double::max)
+        .orElse(0.0);
   }
 }

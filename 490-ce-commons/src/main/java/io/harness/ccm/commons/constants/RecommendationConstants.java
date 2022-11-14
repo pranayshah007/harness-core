@@ -1,8 +1,15 @@
 package io.harness.ccm.commons.constants;
 
-import java.time.Duration;
+import static io.harness.annotations.dev.HarnessTeam.CE;
 
-public interface RecommendationConstants {
-  Double SAVINGS_THRESHOLD = 0.0;
-  Duration RECOMMENDATION_TTL = Duration.ofDays(15);
+import io.harness.annotations.dev.OwnedBy;
+
+import java.time.Duration;
+import lombok.experimental.UtilityClass;
+
+@OwnedBy(CE)
+@UtilityClass
+public final class RecommendationConstants {
+  public static final Double SAVINGS_THRESHOLD = 0.0;
+  public static final Duration RECOMMENDATION_TTL = Duration.ofDays(15);
 }

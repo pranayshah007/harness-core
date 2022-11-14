@@ -10,9 +10,9 @@ package io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet;
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.convertToReadableForm;
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.makeResourceMap;
 import static io.harness.ccm.RecommenderUtils.EPSILON;
-
 import static io.harness.ccm.commons.constants.RecommendationConstants.RECOMMENDATION_TTL;
 import static io.harness.ccm.commons.constants.RecommendationConstants.SAVINGS_THRESHOLD;
+
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.CPU;
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.MEMORY;
 
