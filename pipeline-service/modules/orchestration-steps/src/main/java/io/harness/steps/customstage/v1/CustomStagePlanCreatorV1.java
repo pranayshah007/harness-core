@@ -33,14 +33,18 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.customstage.CustomStageSpecParams;
 import io.harness.steps.customstage.CustomStageStep;
+import io.harness.when.beans.StageWhenCondition;
+import io.harness.when.utils.RunInfoUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -117,6 +121,12 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
     CustomStageSpecParams params = CustomStageSpecParams.builder().childNodeID(childrenNodeIds.get(0)).build();
     String name = config.getNodeName();
+    StageWhenCondition whenCondition = null;
+    try {
+      whenCondition = YamlUtils.read(config.getNode().getField("when").getNode().toString(), StageWhenCondition.class);
+    } catch (IOException e) {
+      //
+    }
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, config.getUuid()))
@@ -125,6 +135,7 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
             .group(StepOutcomeGroup.STAGE.name())
             .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, name))
             .skipUnresolvedExpressionsCheck(true)
+            .whenCondition(RunInfoUtils.getRunCondition(whenCondition))
             .stepParameters(StageElementParameters.builder().specConfig(params).build())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
