@@ -18,5 +18,5 @@ import lombok.experimental.FieldDefaults;
 public class CloudFoundryConfig {
   String endpointUrl;
   char[] userName;
-  char[] passwordRef;
+  char[] password;
 }

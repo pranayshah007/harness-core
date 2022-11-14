@@ -37,7 +37,7 @@ public class PcfNgConfigMapper {
       pcfConfig.setEndpointUrl(pcfManualDetailsDTO.getEndpointUrl());
       pcfConfig.setUserName(
           getValueFromPlainTextOrSecretRef(pcfManualDetailsDTO.getUsername(), pcfManualDetailsDTO.getUsernameRef()));
-      pcfConfig.setPasswordRef(getDecryptedValueWithNullCheck(pcfManualDetailsDTO.getPasswordRef()));
+      pcfConfig.setPassword(getDecryptedValueWithNullCheck(pcfManualDetailsDTO.getPasswordRef()));
     } else {
       throw new IllegalStateException("Unexpected Pcf credential type : " + credentialType);
     }

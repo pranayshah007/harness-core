@@ -25,4 +25,5 @@ public interface InfrastructureKind {
   String CUSTOM_DEPLOYMENT = "CustomDeployment";
   String ELASTIGROUP = "Elastigroup";
   String TAS = "TanzuApplicationService";
+  String PCF = "Pcf";
 }
