@@ -15,6 +15,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -43,9 +44,18 @@ public class YamlMapGenerator {
    * refers to the pipeline of this input set
    */
   public JsonNode generateYamlMap(Map<FQN, Object> fqnMap, JsonNode originalYaml, boolean isSanitiseFlow) {
+    return generateYamlMap(fqnMap, originalYaml, isSanitiseFlow, false);
+  }
+
+  public JsonNode generateYamlMap(
+      Map<FQN, Object> fqnMap, JsonNode originalYaml, boolean isSanitiseFlow, boolean keepUuidFields) {
     Set<String> fieldNames = new LinkedHashSet<>();
     originalYaml.fieldNames().forEachRemaining(fieldNames::add);
     String topKey = fieldNames.iterator().next();
+
+    if (keepUuidFields && topKey.equals(YamlNode.UUID_FIELD_NAME) && fieldNames.size() > 1) {
+      topKey = fieldNames.stream().filter(o -> !o.equals(YamlNode.UUID_FIELD_NAME)).findAny().get();
+    }
 
     FQNNode startNode = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(topKey).build();
     FQN currentFQN = FQN.builder().fqnList(Collections.singletonList(startNode)).build();
