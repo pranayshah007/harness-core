@@ -77,10 +77,12 @@ scmConnectionConfig:
   url: localhost:8091
 
 logServiceConfig:
+  internalUrl: http://localhost:8079
   baseUrl: https://qa.harness.io/log-service/
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
+  internalUrl: http://localhost:8078
   baseUrl: http://localhost:8078
   globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
 
@@ -112,8 +114,8 @@ ciExecutionServiceConfig:
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.18
-  liteEngineImage: harness/ci-lite-engine:1.14.18
+  addonImage: harness/ci-addon:1.14.21
+  liteEngineImage: harness/ci-lite-engine:1.14.21
   isLocal: false
   stepConfig:
     # The below config is for K8 steps
