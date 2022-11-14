@@ -557,3 +557,8 @@ io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData
 io.harness.cdng.elastigroup.ElastigroupSetupStepNode
 io.harness.cdng.elastigroup.ElastigroupFixedInstances
 io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData
+io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepInfo
+io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepParameters
+io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepNode
+io.harness.cdng.elastigroup.LoadBalancer
+io.harness.cdng.elastigroup.AwsLoadBalancerConfigYaml
