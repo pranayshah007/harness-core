@@ -163,4 +163,5 @@ enum EntityTypeProtoEnum {
   ZAP = 150;
   AQUA_TRIVY = 151;
   ELASTIGROUP_SETUP_STEP = 152;
+  BITRISE_STEP = 153;
 }

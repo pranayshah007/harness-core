@@ -42,11 +42,6 @@ public interface InstanceService {
   List<InstanceDTO> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceIdentifier, long timestamp);
 
-  List<InstanceDTO> getInstancesDeployedInInterval(String accountIdentifier, long startTimestamp, long endTimeStamp);
-
-  List<InstanceDTO> getInstancesDeployedInInterval(
-      String accountIdentifier, String organizationId, String projectId, long startTimestamp, long endTimeStamp);
-
   List<InstanceDTO> getActiveInstances(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs);
 
@@ -87,4 +82,6 @@ public interface InstanceService {
 
   long countDistinctActiveServicesDeployedInInterval(
       String accountId, String orgId, String projectId, long startTS, long endTS);
+
+  long countDistinctActiveServicesDeployedInInterval(String accountId, long startTS, long endTS);
 }

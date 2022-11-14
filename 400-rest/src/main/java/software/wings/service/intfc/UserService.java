@@ -259,6 +259,8 @@ public interface UserService extends OwnedByAccount {
    */
   Account addAccount(Account account, User user, boolean addUser);
 
+  User getUserByEmail(String email, boolean loadSupportAccounts);
+
   /**
    * Retrieve an user by its email.
    *

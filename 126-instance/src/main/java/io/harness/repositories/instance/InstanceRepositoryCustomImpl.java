@@ -19,6 +19,7 @@ import io.harness.dtos.GitOpsInstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.models.ActiveServiceInstanceInfo;
+import io.harness.models.CountByOrgIdProjectIdAndServiceId;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
@@ -128,43 +129,6 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .gte(timestamp);
     Query query = new Query().addCriteria(criteria);
     return secondaryMongoTemplate.find(query, Instance.class);
-  }
-
-  @Override
-  public List<Instance> getInstancesDeployedInInterval(
-      String accountIdentifier, long startTimestamp, long endTimeStamp) {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                            .is(accountIdentifier)
-                            .and(InstanceKeys.lastDeployedAt)
-                            .gte(startTimestamp)
-                            .lte(endTimeStamp);
-
-    Query query = new Query().addCriteria(criteria);
-    return secondaryMongoTemplate.find(query, Instance.class);
-  }
-
-  @Override
-  public List<Instance> getInstancesDeployedInInterval(
-      String accountIdentifier, String organizationId, String projectId, long startTimestamp, long endTimeStamp) {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                            .is(accountIdentifier)
-                            .and(InstanceKeys.orgIdentifier)
-                            .is(organizationId)
-                            .and(InstanceKeys.projectIdentifier)
-                            .is(projectId)
-                            .and(InstanceKeys.lastDeployedAt)
-                            .gte(startTimestamp)
-                            .lte(endTimeStamp);
-
-    Query query = new Query().addCriteria(criteria);
-    return secondaryMongoTemplate.find(query, Instance.class);
-  }
-
-  @Override
-  public List<Instance> getInstances(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId) {
-    // TODO
-    return null;
   }
 
   /*
@@ -479,6 +443,25 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
     return secondaryMongoTemplate
         .findDistinct(new Query(criteria), InstanceKeys.serviceIdentifier, Instance.class, String.class)
+        .size();
+  }
+
+  @Override
+  public long countDistinctActiveServicesDeployedInInterval(String accountId, long startTS, long endTS) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountId)
+                            .and(InstanceKeys.lastDeployedAt)
+                            .gte(startTS)
+                            .lte(endTS);
+    MatchOperation matchStage = Aggregation.match(criteria);
+    GroupOperation groupByOrgIdProjectIdServiceId =
+        group(InstanceKeys.orgIdentifier, InstanceKeys.projectIdentifier, InstanceKeys.serviceIdentifier)
+            .count()
+            .as(InstanceSyncConstants.COUNT);
+    return secondaryMongoTemplate
+        .aggregate(newAggregation(matchStage, groupByOrgIdProjectIdServiceId), Instance.class,
+            CountByOrgIdProjectIdAndServiceId.class)
+        .getMappedResults()
         .size();
   }
 }

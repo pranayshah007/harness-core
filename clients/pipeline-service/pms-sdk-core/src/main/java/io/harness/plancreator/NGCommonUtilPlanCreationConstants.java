@@ -37,4 +37,5 @@ public class NGCommonUtilPlanCreationConstants {
   public final String ROLLBACK_EXECUTION_NODE_ID_SUFFIX = "_combinedRollback";
   public final String STEP_GROUP = "STEP_GROUP";
   public final String NOOP = "NOOP";
+  public final String GROUP = "GROUP";
 }

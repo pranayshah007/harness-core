@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.contracts.governance.ExpansionPlacementStrategy.APPEND;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
+import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.ModuleType;
@@ -379,21 +380,20 @@ public class PMSPipelineServiceHelper {
     if (EmptyPredicate.isNotEmpty(module)) {
       // Add approval stage criteria to check for the pipelines containing the given module and the approval stage.
       Criteria approvalStageCriteria =
-          Criteria
-              .where(String.format("%s.%s.stageTypes", PipelineEntityKeys.filters, ModuleType.PMS.name().toLowerCase()))
+          Criteria.where(format("%s.%s.stageTypes", PipelineEntityKeys.filters, ModuleType.PMS.name().toLowerCase()))
               .exists(true);
       for (ModuleType moduleType : ModuleType.values()) {
         if (moduleType.isInternal()) {
           continue;
         }
         // This query ensures that only pipelines containing approval stage are visible.
-        approvalStageCriteria.and(String.format("%s.%s", PipelineEntityKeys.filters, moduleType.name().toLowerCase()))
+        approvalStageCriteria.and(format("%s.%s", PipelineEntityKeys.filters, moduleType.name().toLowerCase()))
             .exists(false);
       }
       // Check for pipeline with no filters also - empty pipeline or pipelines with only approval stage
       // criteria = { "$or": [ { "filters": {} } , { "filters.MODULE": { $exists: true } } ] }
       moduleCriteria.orOperator(where(PipelineEntityKeys.filters).is(new Document()),
-          where(String.format("%s.%s", PipelineEntityKeys.filters, module)).exists(true), approvalStageCriteria);
+          where(format("%s.%s", PipelineEntityKeys.filters, module)).exists(true), approvalStageCriteria);
     }
 
     Criteria searchCriteria = new Criteria();
@@ -414,16 +414,25 @@ public class PMSPipelineServiceHelper {
 
   // TODO(Brijesh): Make this async.
   public void sendPipelineSaveTelemetryEvent(PipelineEntity entity, String actionType) {
-    HashMap<String, Object> properties = new HashMap<>();
-    properties.put(PIPELINE_NAME, entity.getName());
-    properties.put(ORG_ID, entity.getOrgIdentifier());
-    properties.put(PROJECT_ID, entity.getProjectIdentifier());
-    properties.put(PIPELINE_SAVE_ACTION_TYPE, actionType);
-    properties.put(PipelineInstrumentationConstants.MODULE_NAME,
-        PipelineEntityUtils.getModuleNameFromPipelineEntity(entity, "cd"));
-    properties.put(PipelineInstrumentationConstants.STAGE_TYPES, PipelineInstrumentationUtils.getStageTypes(entity));
-    telemetryReporter.sendTrackEvent(PIPELINE_SAVE, null, entity.getAccountId(), properties,
-        Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+    try {
+      HashMap<String, Object> properties = new HashMap<>();
+      properties.put(PIPELINE_NAME, entity.getName());
+      properties.put(ORG_ID, entity.getOrgIdentifier());
+      properties.put(PROJECT_ID, entity.getProjectIdentifier());
+      properties.put(PIPELINE_SAVE_ACTION_TYPE, actionType);
+      properties.put(PipelineInstrumentationConstants.MODULE_NAME,
+          PipelineEntityUtils.getModuleNameFromPipelineEntity(entity, "cd"));
+      properties.put(PipelineInstrumentationConstants.STAGE_TYPES, PipelineInstrumentationUtils.getStageTypes(entity));
+      telemetryReporter.sendTrackEvent(PIPELINE_SAVE, null, entity.getAccountId(), properties,
+          Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+    } catch (Exception ex) {
+      log.error(
+          format(
+              "Exception while sending telemetry event for pipeline save. accountId: %s, orgId: %s, projectId: %s, pipelineId: %s",
+              entity.getAccountIdentifier(), entity.getOrgIdentifier(), entity.getProjectIdentifier(),
+              entity.getIdentifier()),
+          ex);
+    }
   }
 
   public static InvalidYamlException buildInvalidYamlException(String errorMessage, String pipelineYaml) {
