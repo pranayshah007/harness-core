@@ -57,6 +57,7 @@ import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.utils.CEViewPreferenceUtils;
+import io.harness.ccm.views.utils.ViewFieldUtils;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.cloud.bigquery.BigQuery;
@@ -271,8 +272,53 @@ public class CEViewServiceImpl implements CEViewService {
       }
     }
 
+    ceView.setViewRules(updateIdentifierNameInViewRules(ceView));
     ceView.setDataSources(new ArrayList<>(viewFieldIdentifierSet));
     ceView.setViewPreferences(CEViewPreferenceUtils.getCEViewPreferences(ceView));
+  }
+
+  private List<ViewRule> updateIdentifierNameInViewRules(CEView ceView) {
+    List<ViewRule> updatedViewRules = new ArrayList<>();
+    if (ceView.getViewRules() != null) {
+      for (ViewRule rule : ceView.getViewRules()) {
+        boolean isBusinessMappingConditionPresent = false;
+        for (ViewCondition condition : rule.getViewConditions()) {
+          ViewIdCondition viewIdCondition = (ViewIdCondition) condition;
+          if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING) {
+            isBusinessMappingConditionPresent = true;
+            break;
+          }
+        }
+
+        if (isBusinessMappingConditionPresent) {
+          updatedViewRules.add(updateIdentifierNameInViewRule(rule));
+        } else {
+          updatedViewRules.add(rule);
+        }
+      }
+    }
+    return updatedViewRules;
+  }
+
+  private ViewRule updateIdentifierNameInViewRule(ViewRule viewRule) {
+    List<ViewCondition> viewConditions = new ArrayList<>();
+    for (ViewCondition condition : viewRule.getViewConditions()) {
+      ViewIdCondition viewIdCondition = (ViewIdCondition) condition;
+      if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING) {
+        ViewField field = viewIdCondition.getViewField();
+        viewConditions.add(ViewIdCondition.builder()
+                               .viewField(ViewField.builder()
+                                              .fieldId(field.getFieldId())
+                                              .fieldName(field.getFieldName())
+                                              .identifier(field.getIdentifier())
+                                              .identifierName(ViewFieldUtils.getBusinessMappingIdentifierName())
+                                              .build())
+                               .viewOperator(viewIdCondition.getViewOperator())
+                               .values(viewIdCondition.getValues())
+                               .build());
+      }
+    }
+    return ViewRule.builder().viewConditions(viewConditions).build();
   }
 
   @Override

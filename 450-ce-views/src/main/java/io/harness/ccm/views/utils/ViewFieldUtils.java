@@ -121,4 +121,8 @@ public class ViewFieldUtils {
   public static String getBusinessMappingUnallocatedCostDefaultName() {
     return "Cost categories default";
   }
+
+  public static String getBusinessMappingIdentifierName() {
+    return "Cost categories";
+  }
 }
