@@ -60,7 +60,6 @@ public class SpotInstanceSyncHandler extends AbstractInstanceSyncHandler {
 
     SpotInstanceInfoDTO spotInstanceInfoDTO = (SpotInstanceInfoDTO) instanceInfoDTO;
     return SpotInfrastructureDetails.builder()
-        .infrastructureKey(spotInstanceInfoDTO.getInfrastructureKey())
         .ec2InstanceId(spotInstanceInfoDTO.getEc2InstanceId())
         .elastigroupId(spotInstanceInfoDTO.getElastigroupId())
         .build();
