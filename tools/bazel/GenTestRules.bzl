@@ -25,7 +25,7 @@ def run_tests(**kwargs):
         native.java_test(
             name = test,
             runtime_deps = ["tests"],
-            size = "medium",
+            size = "large",
             jvm_flags = [
                 "$(HARNESS_ARGS)",
                 "-Xmx4G",
@@ -137,7 +137,7 @@ EOF""" % code,
             name = package + ".tests" + index,
             test_class = package + "." + test_class,
             deps = [":shared_package_tests"] + deps,
-            size = "medium",
+            size = "large",
 
             # inputs
             srcs = code_filepath + [x[0] for x in tests],
@@ -213,7 +213,7 @@ def optimized_package_test(combined_tests_target_index, package, index, test_cla
         name = target_name,
         test_class = package + "." + test_class,
         runtime_deps = [COMBINED_TESTS_TARGET + str(combined_tests_target_index)],
-        size = "medium",
+        size = "large",
 
         #Additional
         visibility = ["//visibility:public"],
