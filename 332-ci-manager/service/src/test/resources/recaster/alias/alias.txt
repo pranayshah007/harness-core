@@ -206,3 +206,5 @@ io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput
 io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput
 io.harness.beans.steps.stepinfo.ActionStepInfo
 io.harness.beans.steps.nodes.ActionStepNode
+io.harness.beans.steps.stepinfo.BitriseStepInfo
+io.harness.beans.steps.nodes.BitriseStepNode
