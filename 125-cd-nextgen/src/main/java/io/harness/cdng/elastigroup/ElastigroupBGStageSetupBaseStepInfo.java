@@ -45,4 +45,8 @@ public class ElastigroupBGStageSetupBaseStepInfo {
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH)
   ElastigroupInstances instances;
+
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.CLOUD_PROVIDER_CONFIGURATION_CLASSPATH)
+  CloudProvider connectedCloudProvider;
 }
