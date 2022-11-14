@@ -32,8 +32,8 @@ public class ElastigroupBGStageSetupStepParameters
     extends ElastigroupBGStageSetupBaseStepInfo implements ElastigroupSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public ElastigroupBGStageSetupStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<String> name, List<LoadBalancer> loadBalancers, ElastigroupInstances instances) {
-    super(delegateSelectors, name, loadBalancers, instances);
+      ParameterField<String> name, List<LoadBalancer> loadBalancers, ElastigroupInstances instances, CloudProvider connectedCloudProvider) {
+    super(delegateSelectors, name, loadBalancers, instances, connectedCloudProvider);
   }
 
   public List<String> getCommandUnits() {
