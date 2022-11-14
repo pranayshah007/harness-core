@@ -16,9 +16,14 @@ import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
 import static io.harness.NGResourceFilterConstants.IDENTIFIER;
 import static io.harness.NGResourceFilterConstants.IDENTIFIERS;
+import static io.harness.NGResourceFilterConstants.PARENT_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.utils.PageUtils.getPageRequest;
+
+import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
@@ -26,6 +31,8 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.OrgIdentifier;
@@ -37,8 +44,11 @@ import io.harness.ng.core.dto.ApiKeyDTO;
 import io.harness.ng.core.dto.ApiKeyFilterDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
+import io.harness.ng.core.dto.JwtVerificationApiKeyDTO;
+import io.harness.ng.core.dto.JwtVerificationApiKeyRequestWrapper;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entities.ApiKey.ApiKeyKeys;
+import io.harness.serializer.JsonUtils;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -52,6 +62,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.InputStream;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -68,6 +79,8 @@ import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+import retrofit2.http.Multipart;
 
 @Api("apikey")
 @Path("apikey")
@@ -261,5 +274,202 @@ public class ApiKeyResource {
     ApiKeyAggregateDTO aggregateDTO = apiKeyService.getApiKeyAggregateDTO(
         accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier, identifier);
     return ResponseDTO.newResponse(aggregateDTO);
+  }
+
+  @Multipart
+  @POST
+  @Path("jwt-verification")
+  @Consumes(MULTIPART_FORM_DATA)
+  @ApiOperation(
+      value = "Create JWT Verification API key at service account level", nickname = "createJwtVerificationApiKey")
+  @Operation(operationId = "createApiKey", summary = "Creates an JWT Verification API key",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the created JWT Verification API key")
+      })
+  public ResponseDTO<JwtVerificationApiKeyDTO>
+  createJwtVerificationApiKey(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = "The certificate file to be uploaded.") @FormDataParam(
+          "file") InputStream uploadedInputStream,
+      @Parameter(description = "Specification of JWT verification api key") @FormDataParam("spec") String spec) {
+    JwtVerificationApiKeyRequestWrapper apiKeyRequestWrapper =
+        JsonUtils.asObject(spec, JwtVerificationApiKeyRequestWrapper.class);
+
+    if (apiKeyRequestWrapper == null || apiKeyRequestWrapper.getJwtVerificationApiKey() == null) {
+      throw new InvalidRequestException(
+          "Invalid request, the spec param does not represent a valid JWT verification key payload string", USER);
+    }
+
+    validateCertificateAndCertificateUrlCreateUpdateJwtKey(
+        uploadedInputStream, apiKeyRequestWrapper.getJwtVerificationApiKey().getCertificateUrl());
+
+    apiKeyRequestWrapper.getJwtVerificationApiKey().setAccountIdentifier(accountIdentifier);
+    apiKeyRequestWrapper.getJwtVerificationApiKey().setOrgIdentifier(orgIdentifier);
+    apiKeyRequestWrapper.getJwtVerificationApiKey().setProjectIdentifier(projectIdentifier);
+
+    apiKeyService.validateParentIdentifier(accountIdentifier, orgIdentifier, projectIdentifier,
+        ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION,
+        apiKeyRequestWrapper.getJwtVerificationApiKey().getParentIdentifier());
+
+    return ResponseDTO.newResponse(apiKeyService.createJwtVerificationApiKey(
+        apiKeyRequestWrapper.getJwtVerificationApiKey(), accountIdentifier, uploadedInputStream));
+  }
+
+  @Multipart
+  @PUT
+  @Path("jwt-verification/{identifier}")
+  @Consumes(MULTIPART_FORM_DATA)
+  @ApiOperation(
+      value = "Update JWT Verification API key at service account level", nickname = "updateJwtVerificationApiKey")
+  @Operation(operationId = "updateJwtVerificationApiKey",
+      summary = "Updates JWT Verification API key with the given ID",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the updated JWT Verification API key")
+      })
+  public ResponseDTO<JwtVerificationApiKeyDTO>
+  updateJwtVerificationApiKey(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = "The certificate file to be uploaded.") @FormDataParam(
+          "file") InputStream uploadedInputStream,
+      @Parameter(description = "Specification of JWT verification api key") @FormDataParam("spec") String spec) {
+    JwtVerificationApiKeyRequestWrapper apiKeyRequestWrapper =
+        JsonUtils.asObject(spec, JwtVerificationApiKeyRequestWrapper.class);
+    if (apiKeyRequestWrapper == null || apiKeyRequestWrapper.getJwtVerificationApiKey() == null) {
+      throw new InvalidRequestException(
+          "Invalid request, the spec param does not represent a valid JWT verification key payload string", USER);
+    }
+
+    validateCertificateAndCertificateUrlCreateUpdateJwtKey(
+        uploadedInputStream, apiKeyRequestWrapper.getJwtVerificationApiKey().getCertificateUrl());
+
+    apiKeyRequestWrapper.getJwtVerificationApiKey().setAccountIdentifier(accountIdentifier);
+    apiKeyRequestWrapper.getJwtVerificationApiKey().setOrgIdentifier(orgIdentifier);
+    apiKeyRequestWrapper.getJwtVerificationApiKey().setProjectIdentifier(projectIdentifier);
+
+    apiKeyService.validateParentIdentifier(accountIdentifier, orgIdentifier, projectIdentifier,
+        ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION,
+        apiKeyRequestWrapper.getJwtVerificationApiKey().getParentIdentifier());
+
+    return ResponseDTO.newResponse(apiKeyService.updateJwtVerificationApiKey(
+        apiKeyRequestWrapper.getJwtVerificationApiKey(), accountIdentifier, uploadedInputStream));
+  }
+
+  @GET
+  @Path("jwt-verification/{identifier}")
+  @ApiOperation(value = "Get JWT Verification API key at service account level", nickname = "getJwtVerificationApiKey")
+  @Operation(operationId = "getJwtVerificationApiKey",
+      summary = "Fetches the JWT Verification API key details corresponding to the provided ID and Scope",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the JWT Verification API key by ID")
+      })
+  public ResponseDTO<JwtVerificationApiKeyDTO>
+  getJwtVerificationApiKey(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                               NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = "Identifier of key's parent Service Account") @NotNull @QueryParam(
+          PARENT_IDENTIFIER) String parentIdentifier,
+      @Parameter(description = "This is the JWT Verification API key ID") @PathParam(
+          IDENTIFIER) @ResourceIdentifier String identifier) {
+    apiKeyService.validateParentIdentifier(accountIdentifier, orgIdentifier, projectIdentifier,
+        ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION, parentIdentifier);
+
+    return ResponseDTO.newResponse(apiKeyService.getJwtVerificationApiKey(
+        accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier, identifier));
+  }
+
+  @DELETE
+  @Path("jwt-verification/{identifier}")
+  @ApiOperation(
+      value = "Delete JWT Verification API key at service account level", nickname = "deleteJwtVerificationApiKey")
+  @Operation(operationId = "deleteJwtVerificationApiKey",
+      summary = "Deletes the JWT Verification API key corresponding to the provided ID",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description =
+                "Returns a boolean value. The value is True if the API Key is successfully deleted, else it is False")
+      })
+  public ResponseDTO<Boolean>
+  deleteJwtVerificationApiKey(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = "Identifier of key's parent Service Account") @NotNull @QueryParam(
+          PARENT_IDENTIFIER) String parentIdentifier,
+      @Parameter(description = "This is the JWT Verification API key ID") @PathParam(
+          IDENTIFIER) @ResourceIdentifier String identifier) {
+    apiKeyService.validateParentIdentifier(accountIdentifier, orgIdentifier, projectIdentifier,
+        ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION, parentIdentifier);
+
+    return ResponseDTO.newResponse(apiKeyService.deleteJwtVerificationApiKey(
+        accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier, identifier));
+  }
+
+  @GET
+  @Path("jwt-verification/aggregate")
+  @ApiOperation(value = "List JWT Verification API keys", nickname = "listJwtVerificationApiKeys")
+  @Operation(operationId = "listJwtVerificationApiKeys",
+      summary = "Fetches the list of JWT Verification API Keys corresponding to the requests filter criteria",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the list of JWT Verification API keys")
+      })
+  public ResponseDTO<PageResponse<JwtVerificationApiKeyDTO>>
+  listJwtVerificationApiKey(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = "Identifier of key's Parent Service Account") @NotNull @QueryParam(
+          PARENT_IDENTIFIER) String parentIdentifier,
+      @Optional @QueryParam(IDENTIFIERS) List<String> identifiers, @BeanParam PageRequest pageRequest,
+      @Parameter(
+          description =
+              "This would be used to filter API keys. Any API key having the specified string in its Name, ID and Tag would be filtered.")
+      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
+    apiKeyService.validateParentIdentifier(accountIdentifier, orgIdentifier, projectIdentifier,
+        ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION, parentIdentifier);
+    if (isEmpty(pageRequest.getSortOrders())) {
+      SortOrder order =
+          SortOrder.Builder.aSortOrder().withField(ApiKeyKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
+      pageRequest.setSortOrders(ImmutableList.of(order));
+    }
+    ApiKeyFilterDTO filterDTO = ApiKeyFilterDTO.builder()
+                                    .accountIdentifier(accountIdentifier)
+                                    .orgIdentifier(orgIdentifier)
+                                    .projectIdentifier(projectIdentifier)
+                                    .parentIdentifier(parentIdentifier)
+                                    .apiKeyType(ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION)
+                                    .searchTerm(searchTerm)
+                                    .identifiers(identifiers)
+                                    .build();
+
+    PageResponse<JwtVerificationApiKeyDTO> responseDTOs =
+        apiKeyService.listJwtVerificationApiKeys(accountIdentifier, getPageRequest(pageRequest), filterDTO);
+    return ResponseDTO.newResponse(responseDTOs);
+  }
+
+  private void validateCertificateAndCertificateUrlCreateUpdateJwtKey(
+      InputStream uploadedInputStream, final String certificateUrl) {
+    if (uploadedInputStream != null && isNotEmpty(certificateUrl))
+      throw new InvalidRequestException(
+          "Both certificate file and certificate endpoint URL cannot be provided together, specify either one of them",
+          WingsException.USER);
   }
 }

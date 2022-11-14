@@ -19,13 +19,16 @@ import lombok.Setter;
 public class ServiceAccountConfig {
   public static final long DEFAULT_API_KEY_LIMIT = 5;
   public static final long DEFAULT_TOKEN_LIMIT = 5;
+  public static final long DEFAULT_JWT_VERIFICATION_API_KEY_LIMIT = 5;
 
   @Getter @Setter private long apiKeyLimit = DEFAULT_API_KEY_LIMIT;
+  @Getter @Setter private long jwtVerificationApiKeyLimit = DEFAULT_JWT_VERIFICATION_API_KEY_LIMIT;
   @Getter @Setter private long tokenLimit = DEFAULT_TOKEN_LIMIT;
 
   @Builder
-  public ServiceAccountConfig(long apiKeyLimit, long tokenLimit) {
+  public ServiceAccountConfig(long apiKeyLimit, long tokenLimit, long jwtVerificationApiKeyLimit) {
     this.apiKeyLimit = apiKeyLimit;
     this.tokenLimit = tokenLimit;
+    this.jwtVerificationApiKeyLimit = jwtVerificationApiKeyLimit;
   }
 }

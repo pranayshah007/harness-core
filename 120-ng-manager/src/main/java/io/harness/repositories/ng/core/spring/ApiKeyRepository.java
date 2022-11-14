@@ -41,4 +41,9 @@ public interface ApiKeyRepository extends PagingAndSortingRepository<ApiKey, Str
       String parentIdentifier);
   long countByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String parentIdentifier);
+  long countByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifierAndApiKeyType(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String parentIdentifier, ApiKeyType apiKeyType);
+  Optional<ApiKey>
+  findByAccountIdentifierAndKeyFieldAndValueFieldAndApiKeyType(
+      String accountIdentifier, String keyField, String valueField, ApiKeyType apiKeyType);
 }

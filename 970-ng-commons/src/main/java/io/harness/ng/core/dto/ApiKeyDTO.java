@@ -18,14 +18,16 @@ import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 import javax.validation.constraints.Size;
-import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.validator.constraints.NotBlank;
 
 @Data
-@Builder
+@SuperBuilder
 @OwnedBy(PL)
 @Schema(name = "ApiKey", description = "This has API Key details defined in Harness.")
+@NoArgsConstructor
 public class ApiKeyDTO {
   @ApiModelProperty(required = true)
   @EntityIdentifier

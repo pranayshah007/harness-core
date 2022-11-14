@@ -30,6 +30,7 @@ public class NGResourceFilterConstants {
   public static final String END_TIME = "endTime";
   public static final String STATUS = "status";
   public static final String NAME = "name";
+  public static final String PARENT_IDENTIFIER = "parentIdentifier";
   public static final String IDENTIFIER = "identifier";
   public static final String IDENTIFIERS = "identifiers";
   public static final String DESCRIPTION = "description";

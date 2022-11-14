@@ -73,6 +73,15 @@ public class ApiKey implements PersistentEntity, UuidAware, NGAccountAccess, NGO
                      Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.PRIMARY).build())
                  .build(),
             CompoundMongoIndex.builder()
+                .name("unique_account_key_value_type_idx")
+                .field(ApiKeyKeys.accountIdentifier)
+                .field(ApiKeyKeys.keyField)
+                .field(ApiKeyKeys.valueField)
+                .field(ApiKeyKeys.apiKeyType)
+                .collation(
+                    Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.PRIMARY).build())
+                .build(),
+            CompoundMongoIndex.builder()
                 .name("list_keys_idx")
                 .field(ApiKeyKeys.accountIdentifier)
                 .field(ApiKeyKeys.orgIdentifier)
@@ -98,4 +107,10 @@ public class ApiKey implements PersistentEntity, UuidAware, NGAccountAccess, NGO
   @NotNull String parentIdentifier;
   ApiKeyType apiKeyType;
   @Builder.Default long defaultTimeToExpireToken = DEFAULT_TTL_FOR_TOKEN;
+
+  private String keyField;
+  private String valueField;
+
+  private String certificate;
+  private String certificateUrl;
 }

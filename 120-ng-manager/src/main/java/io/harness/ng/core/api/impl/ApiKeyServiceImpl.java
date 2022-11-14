@@ -9,9 +9,11 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGEAPIKEY_SERVICEACCOUNT_PERMISSION;
 import static io.harness.ng.core.account.ServiceAccountConfig.DEFAULT_API_KEY_LIMIT;
+import static io.harness.ng.core.account.ServiceAccountConfig.DEFAULT_JWT_VERIFICATION_API_KEY_LIMIT;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
@@ -37,12 +39,14 @@ import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.dto.ApiKeyAggregateDTO;
 import io.harness.ng.core.dto.ApiKeyDTO;
 import io.harness.ng.core.dto.ApiKeyFilterDTO;
+import io.harness.ng.core.dto.JwtVerificationApiKeyDTO;
 import io.harness.ng.core.entities.ApiKey;
 import io.harness.ng.core.entities.ApiKey.ApiKeyKeys;
 import io.harness.ng.core.events.ApiKeyCreateEvent;
 import io.harness.ng.core.events.ApiKeyDeleteEvent;
 import io.harness.ng.core.events.ApiKeyUpdateEvent;
 import io.harness.ng.core.mapper.ApiKeyDTOMapper;
+import io.harness.ng.core.mapper.JwtVerificationApiKeyMapper;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ng.core.spring.ApiKeyRepository;
 import io.harness.security.SourcePrincipalContextBuilder;
@@ -52,6 +56,9 @@ import io.harness.utils.PageUtils;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -59,8 +66,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
+import org.apache.commons.io.IOUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -83,7 +92,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     validateApiKeyRequest(
         apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(), apiKeyDTO.getProjectIdentifier());
     validateApiKeyLimit(apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(),
-        apiKeyDTO.getProjectIdentifier(), apiKeyDTO.getParentIdentifier());
+        apiKeyDTO.getProjectIdentifier(), apiKeyDTO.getParentIdentifier(), apiKeyDTO.getApiKeyType());
     try {
       ApiKey apiKey = ApiKeyDTOMapper.getApiKeyFromDTO(apiKeyDTO);
       validate(apiKey);
@@ -107,15 +116,22 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     }
   }
 
-  private void validateApiKeyLimit(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String parentIdentifier) {
+  private void validateApiKeyLimit(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String parentIdentifier, ApiKeyType keyType) {
     ServiceAccountConfig serviceAccountConfig = accountService.getAccount(accountIdentifier).getServiceAccountConfig();
-    long apiKeyLimit = serviceAccountConfig != null ? serviceAccountConfig.getApiKeyLimit() : DEFAULT_API_KEY_LIMIT;
+    long apiKeyLimit;
+    if (ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION == keyType) {
+      apiKeyLimit = serviceAccountConfig != null ? serviceAccountConfig.getJwtVerificationApiKeyLimit()
+                                                 : DEFAULT_JWT_VERIFICATION_API_KEY_LIMIT;
+    } else {
+      apiKeyLimit = serviceAccountConfig != null ? serviceAccountConfig.getApiKeyLimit() : DEFAULT_API_KEY_LIMIT;
+    }
     long existingAPIKeyCount =
-        apiKeyRepository.countByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
-            accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier);
+        apiKeyRepository.countByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifierAndApiKeyType(
+            accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier, keyType);
     if (existingAPIKeyCount >= apiKeyLimit) {
-      throw new InvalidRequestException(String.format("Maximum limit has reached"));
+      throw new InvalidRequestException(
+          String.format("Maximum limit reached for creating API key of type %s", keyType.name()));
     }
   }
 
@@ -303,6 +319,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         }
         break;
       case SERVICE_ACCOUNT:
+      case SERVICE_ACCOUNT_JWT_VERIFICATION:
         accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
             Resource.of(PlatformResourceTypes.SERVICEACCOUNT, parentIdentifier),
             MANAGEAPIKEY_SERVICEACCOUNT_PERMISSION);
@@ -310,5 +327,131 @@ public class ApiKeyServiceImpl implements ApiKeyService {
       default:
         throw new InvalidArgumentsException(String.format("Invalid api key type: %s", apiKeyType));
     }
+  }
+
+  @Override
+  public JwtVerificationApiKeyDTO createJwtVerificationApiKey(@NotNull JwtVerificationApiKeyDTO apiKeyDTO,
+      @NotNull String accountIdentifier, @NotNull InputStream inputStream) {
+    validateApiKeyRequest(
+        apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(), apiKeyDTO.getProjectIdentifier());
+    validateApiKeyLimit(apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(),
+        apiKeyDTO.getProjectIdentifier(), apiKeyDTO.getParentIdentifier(), ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION);
+    Optional<ApiKey> optionalApiKey =
+        apiKeyRepository.findByAccountIdentifierAndKeyFieldAndValueFieldAndApiKeyType(accountIdentifier, apiKeyDTO.getKeyField(), apiKeyDTO.getValueField(), ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION);
+    Preconditions.checkState(optionalApiKey.isEmpty(),
+        "Api key with same field {}, and value {} is present in scope for account {}",
+        apiKeyDTO.getKeyField(), apiKeyDTO.getValueField(), apiKeyDTO.getAccountIdentifier());
+    try {
+      ApiKey apiKey = JwtVerificationApiKeyMapper.toApiKey(apiKeyDTO);
+      if (null != inputStream) {
+        String fileAsString = IOUtils.toString(inputStream, Charset.defaultCharset());
+        apiKey.setCertificate(fileAsString);
+      }
+      validate(apiKey);
+      return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+        ApiKey savedApiKey = apiKeyRepository.save(apiKey);
+        return JwtVerificationApiKeyMapper.toJwtVerificationApiKeyDTO(savedApiKey);
+        // TODO: @pbarapatre10 add events and audits 'outboxService.save(new ApiKeyCreateEvent(savedDTO));'
+      }));
+    } catch (DuplicateKeyException e) {
+      throw new DuplicateFieldException(
+          String.format("Try using different key name or identifier, [%s] already exists", apiKeyDTO.getIdentifier()));
+    } catch (IOException ioExc) {
+      throw new InvalidRequestException(
+          "Could not read and process supplied certificate file at account: " + accountIdentifier);
+    }
+  }
+
+  @Override
+  public JwtVerificationApiKeyDTO updateJwtVerificationApiKey(
+      JwtVerificationApiKeyDTO apiKeyDTO, String accountIdentifier, InputStream inputStream) {
+    validateApiKeyRequest(
+        apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(), apiKeyDTO.getProjectIdentifier());
+    Optional<ApiKey> optionalApiKey =
+        apiKeyRepository
+            .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndIdentifier(
+                apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(), apiKeyDTO.getProjectIdentifier(),
+                apiKeyDTO.getApiKeyType(), apiKeyDTO.getParentIdentifier(), apiKeyDTO.getIdentifier());
+    Preconditions.checkState(optionalApiKey.isPresent(),
+        "Api key not present in scope for identifier {}: account {}, organization {}, project {}, parentId {}",
+        apiKeyDTO.getIdentifier(), apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(),
+        apiKeyDTO.getProjectIdentifier(), apiKeyDTO.getParentIdentifier());
+    ApiKey existingKey = optionalApiKey.get();
+    ApiKey newKey = JwtVerificationApiKeyMapper.toApiKey(apiKeyDTO);
+    if (inputStream == null && isEmpty(apiKeyDTO.getCertificateUrl()) && isNotEmpty(existingKey.getCertificate())) {
+      newKey.setCertificate(existingKey.getCertificate());
+    } else {
+      try {
+        if (null != inputStream) {
+          String fileAsString = IOUtils.toString(inputStream, Charset.defaultCharset());
+          newKey.setCertificate(fileAsString);
+        }
+      } catch (IOException ioExc) {
+        throw new InvalidRequestException(
+            "Could not read and process supplied certificate file at account: " + accountIdentifier);
+      }
+    }
+    newKey.setUuid(existingKey.getUuid());
+    newKey.setCreatedAt(existingKey.getCreatedAt());
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      ApiKey savedApiKey = apiKeyRepository.save(newKey);
+      return JwtVerificationApiKeyMapper.toJwtVerificationApiKeyDTO(savedApiKey);
+      // TODO: @pbarapatre10 add events and audits 'outboxService.save(new ApiKeyUpdateEvent(existingDTO, savedDTO));'
+    }));
+  }
+
+  @Override
+  public boolean deleteJwtVerificationApiKey(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String parentIdentifier, String identifier) {
+    validateApiKeyRequest(accountIdentifier, orgIdentifier, projectIdentifier);
+    Optional<ApiKey> optionalApiKey =
+        apiKeyRepository
+            .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndIdentifier(
+                accountIdentifier, orgIdentifier, projectIdentifier, ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION,
+                parentIdentifier, identifier);
+    Preconditions.checkState(optionalApiKey.isPresent(),
+        "Api key not present in scope for identifier: {}, account: {}, organization: {}, project: {}, parent: {}",
+        identifier, accountIdentifier, orgIdentifier, parentIdentifier, parentIdentifier);
+    // ApiKeyDTO existingDTO = ApiKeyDTOMapper.getDTOFromApiKey(optionalApiKey.get());
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      long deleted =
+          apiKeyRepository
+              .deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndIdentifier(
+                  accountIdentifier, orgIdentifier, projectIdentifier, ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION,
+                  parentIdentifier, identifier);
+      if (deleted > 0) {
+        // TODO: @pbarapatre10 add events and audits 'outboxService.save(new ApiKeyDeleteEvent(existingDTO));'
+        tokenService.deleteAllByApiKeyIdentifier(accountIdentifier, orgIdentifier, projectIdentifier,
+            ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION, parentIdentifier, identifier);
+        return true;
+      } else {
+        return false;
+      }
+    }));
+  }
+
+  @Override
+  public JwtVerificationApiKeyDTO getJwtVerificationApiKey(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String parentIdentifier, String identifier) {
+    Optional<ApiKey> apiKey =
+        apiKeyRepository
+            .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndIdentifier(
+                accountIdentifier, orgIdentifier, projectIdentifier, ApiKeyType.SERVICE_ACCOUNT_JWT_VERIFICATION,
+                parentIdentifier, identifier);
+    if (apiKey.isEmpty()) {
+      throw new InvalidArgumentsException(String.format(
+          "Api key with identifier %s, doesn't exist in scope: account %s, organization %s, project %s, parent %s",
+          identifier, accountIdentifier, orgIdentifier, parentIdentifier, parentIdentifier));
+    }
+    return JwtVerificationApiKeyMapper.toJwtVerificationApiKeyDTO(apiKey.get());
+  }
+
+  @Override
+  public PageResponse<JwtVerificationApiKeyDTO> listJwtVerificationApiKeys(
+      String accountIdentifier, Pageable pageable, ApiKeyFilterDTO filterDTO) {
+    Criteria criteria =
+        createApiKeyFilterCriteria(Criteria.where(ApiKeyKeys.accountIdentifier).is(accountIdentifier), filterDTO);
+    Page<ApiKey> apiKeys = apiKeyRepository.findAll(criteria, pageable);
+    return PageUtils.getNGPageResponse(apiKeys.map(JwtVerificationApiKeyMapper::toJwtVerificationApiKeyDTO));
   }
 }

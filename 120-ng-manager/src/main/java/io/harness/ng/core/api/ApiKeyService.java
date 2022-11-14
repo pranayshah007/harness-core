@@ -15,8 +15,10 @@ import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.dto.ApiKeyAggregateDTO;
 import io.harness.ng.core.dto.ApiKeyDTO;
 import io.harness.ng.core.dto.ApiKeyFilterDTO;
+import io.harness.ng.core.dto.JwtVerificationApiKeyDTO;
 import io.harness.ng.core.entities.ApiKey;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import org.springframework.data.domain.Pageable;
@@ -46,4 +48,20 @@ public interface ApiKeyService {
 
   void validateParentIdentifier(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier);
+
+  // jwt-verification-key service APIs
+  JwtVerificationApiKeyDTO createJwtVerificationApiKey(
+      JwtVerificationApiKeyDTO apiKeyDTO, String accountIdentifier, InputStream inputStream);
+
+  JwtVerificationApiKeyDTO updateJwtVerificationApiKey(
+      JwtVerificationApiKeyDTO apiKeyDTO, String accountIdentifier, InputStream inputStream);
+
+  boolean deleteJwtVerificationApiKey(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String parentIdentifier, String identifier);
+
+  PageResponse<JwtVerificationApiKeyDTO> listJwtVerificationApiKeys(
+      String accountIdentifier, Pageable pageable, ApiKeyFilterDTO filterDTO);
+
+  JwtVerificationApiKeyDTO getJwtVerificationApiKey(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String parentIdentifier, String identifier);
 }
