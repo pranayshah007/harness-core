@@ -30,6 +30,7 @@ import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome.EcsRollingRollbackDataOutcomeBuilder;
 import io.harness.cdng.ecs.beans.EcsRunTaskManifestsContent;
 import io.harness.cdng.ecs.beans.EcsRunTaskS3FileConfigs;
+import io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
@@ -1222,7 +1223,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
       EcsS3FetchPassThroughData ecsS3FetchPassThroughData) {
     if (ecsS3FetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
-      return null;
+      return handleFailureS3Task(ecsS3FetchResponse);
     }
 
     // mergeManifests Content
@@ -1279,7 +1280,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
       EcsS3FetchPassThroughData ecsS3FetchPassThroughData) {
     if (ecsS3FetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
-      return null;
+      return handleFailureS3Task(ecsS3FetchResponse);
     }
 
     EcsManifestsContent ecsManifestsContent =
@@ -1422,7 +1423,12 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
       EcsS3FetchPassThroughData ecsS3FetchPassThroughData) {
     if (ecsS3FetchRunTaskResponse.getTaskStatus() != TaskStatus.SUCCESS) {
-      return null;
+      EcsS3FetchFailurePassThroughData ecsS3FetchFailurePassThroughData =
+          EcsS3FetchFailurePassThroughData.builder()
+              .errorMsg(ecsS3FetchRunTaskResponse.getErrorMessage())
+              .unitProgressData(ecsS3FetchRunTaskResponse.getUnitProgressData())
+              .build();
+      return TaskChainResponse.builder().passThroughData(ecsS3FetchFailurePassThroughData).chainEnd(true).build();
     }
 
     EcsRunTaskManifestsContent ecsRunTaskManifestsContent = ecsS3FetchPassThroughData.getEcsOtherStoreRunTaskContent();
@@ -1466,7 +1472,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
       EcsS3FetchPassThroughData ecsS3FetchPassThroughData) {
     if (ecsS3FetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
-      return null;
+      return handleFailureS3Task(ecsS3FetchResponse);
     }
     EcsManifestsContent ecsOtherStoreContent = ecsS3FetchPassThroughData.getEcsOtherStoreContents();
 
@@ -1647,6 +1653,15 @@ public class EcsStepCommonHelper extends EcsStepUtils {
             .unitProgressData(ecsGitFetchResponse.getUnitProgressData())
             .build();
     return TaskChainResponse.builder().passThroughData(ecsGitFetchFailurePassThroughData).chainEnd(true).build();
+  }
+
+  private TaskChainResponse handleFailureS3Task(EcsS3FetchResponse ecsS3FetchResponse) {
+    EcsS3FetchFailurePassThroughData ecsS3FetchFailurePassThroughData =
+        EcsS3FetchFailurePassThroughData.builder()
+            .errorMsg(ecsS3FetchResponse.getErrorMessage())
+            .unitProgressData(ecsS3FetchResponse.getUnitProgressData())
+            .build();
+    return TaskChainResponse.builder().passThroughData(ecsS3FetchFailurePassThroughData).build();
   }
 
   private String getRenderedTaskDefinitionFileContent(EcsGitFetchResponse ecsGitFetchResponse, Ambiance ambiance) {
@@ -1873,6 +1888,15 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         .unitProgressList(unitProgressData.getUnitProgresses())
         .status(Status.FAILED)
         .failureInfo(FailureInfo.newBuilder().setErrorMessage(ecsGitFetchFailurePassThroughData.getErrorMsg()).build())
+        .build();
+  }
+
+  public StepResponse handleS3TaskFailure(EcsS3FetchFailurePassThroughData ecsS3FetchFailurePassThroughData) {
+    UnitProgressData unitProgressData = ecsS3FetchFailurePassThroughData.getUnitProgressData();
+    return StepResponse.builder()
+        .unitProgressList(unitProgressData.getUnitProgresses())
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder().setErrorMessage(ecsS3FetchFailurePassThroughData.getErrorMsg()).build())
         .build();
   }
 
