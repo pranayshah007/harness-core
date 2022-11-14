@@ -85,9 +85,7 @@ public class YamlMapGenerator {
             && tempMap.containsKey(YAMLFieldNameConstants.TYPE)) {
           return;
         }
-        if (tempMap.size() == 1
-            && (tempMap.containsKey(YAMLFieldNameConstants.IDENTIFIER)
-                || tempMap.containsKey(YAMLFieldNameConstants.NAME))) {
+        if (tempMap.size() == 1 && tempMap.containsKey(YAMLFieldNameConstants.NAME)) {
           return;
         }
       }
