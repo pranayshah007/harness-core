@@ -480,7 +480,10 @@ public enum FeatureName {
   SPG_DELETE_ENVIRONMENTS_ON_SERVICE_RENAME_GIT_SYNC(
       "On service rename delete stale folders inside environments folders.", HarnessTeam.SPG),
   GITOPS_API_PARAMS_MERGE_PR("Show API parameters in Merge PR step", HarnessTeam.GITOPS),
-  PL_HIDE_LAUNCH_NEXTGEN("FF to hide Launch NextGen button", HarnessTeam.PL);
+  PL_HIDE_LAUNCH_NEXTGEN("FF to hide Launch NextGen button", HarnessTeam.PL),
+  PL_LDAP_PARALLEL_GROUP_SYNC(
+      "Enables User Group sync operation to fetch data from Ldap Server in Parallel. Enable only if Ldap Server can take the load",
+      HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {
