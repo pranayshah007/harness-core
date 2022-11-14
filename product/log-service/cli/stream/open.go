@@ -19,7 +19,7 @@ type openCommand struct {
 }
 
 func (c *openCommand) run(*kingpin.ParseContext) error {
-	client := client.NewHTTPClient(c.server, c.accountID, c.token, false)
+	client := client.NewHTTPClient(c.server, c.accountID, c.token, false, "")
 	return client.Open(nocontext, c.key)
 }
 
