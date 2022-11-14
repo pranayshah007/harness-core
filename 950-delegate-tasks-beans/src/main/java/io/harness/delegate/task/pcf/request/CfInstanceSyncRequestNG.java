@@ -3,7 +3,7 @@ package io.harness.delegate.task.pcf.request;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.task.pcf.response.CfCommandTypeNG;
+import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.response.PcfInfraConfig;
 
 import lombok.Builder;
