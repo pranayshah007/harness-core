@@ -29,7 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
-import io.harness.cdng.creator.plan.rollback.RollbackPlanCreator;
+import io.harness.cdng.creator.plan.rollback.DeploymentStageRollbackPlanCreator;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
@@ -252,10 +252,11 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     YamlField yamlField = YamlUtils.injectUuidInYamlField(yaml);
     PlanCreationContext ctx = PlanCreationContext.builder().build();
     ctx.setCurrentField(yamlField);
-    MockedStatic<RollbackPlanCreator> mockSettings = Mockito.mockStatic(RollbackPlanCreator.class);
+    MockedStatic<DeploymentStageRollbackPlanCreator> mockSettings =
+        Mockito.mockStatic(DeploymentStageRollbackPlanCreator.class);
     PlanCreationResponse dummy =
         PlanCreationResponse.builder().planNode(PlanNode.builder().uuid("uuid").build()).build();
-    when(RollbackPlanCreator.createPlanForRollbackFromStageField(yamlField)).thenReturn(dummy);
+    when(DeploymentStageRollbackPlanCreator.createPlanForRollbackFromStageField(yamlField)).thenReturn(dummy);
     assertThat(deploymentStagePMSPlanCreator.createPlanForRollback(ctx, null)).isEqualTo(dummy);
     mockSettings.close();
   }

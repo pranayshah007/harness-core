@@ -73,6 +73,8 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
   }
 
   protected PlanCreationResponse createPlanForRollback(PlanCreationContext ctx, T config) {
+    // RollbackStagePlanCreator assumes that its child we be a node with uuid config.getUuid() +
+    // NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX
     PlanNode noopRollbackStepsNode =
         PlanNode.builder()
             .uuid(config.getUuid() + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX)

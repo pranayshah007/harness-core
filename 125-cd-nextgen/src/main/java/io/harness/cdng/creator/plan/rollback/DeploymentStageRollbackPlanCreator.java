@@ -34,7 +34,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.CDC)
-public class RollbackPlanCreator {
+public class DeploymentStageRollbackPlanCreator {
   public PlanCreationResponse createPlanForRollbackFromStageField(YamlField stageField) {
     YamlField executionField =
         stageField.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YAMLFieldNameConstants.EXECUTION);

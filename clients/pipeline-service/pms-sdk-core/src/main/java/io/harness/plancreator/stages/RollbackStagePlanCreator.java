@@ -49,7 +49,6 @@ public class RollbackStagePlanCreator {
   }
 
   PlanCreationResponse createPlanForSingleStage(YamlNode stageNode, KryoSerializer kryoSerializer) {
-    // todo: create rollback node for non cd stages
     PlanNode rollbackStagePlanNode =
         PlanNode.builder()
             .uuid(stageNode.getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
