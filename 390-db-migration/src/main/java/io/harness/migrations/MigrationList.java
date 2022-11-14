@@ -41,6 +41,7 @@ import io.harness.migrations.all.AddInstanceStatsCollectionJobToAllAccounts;
 import io.harness.migrations.all.AddIsProductLedToAccount;
 import io.harness.migrations.all.AddLimitVicinityCheckJobToAllAccounts;
 import io.harness.migrations.all.AddLoginSettingsToAccountMigration;
+import io.harness.migrations.all.AddNGFieldToDelegateMigration;
 import io.harness.migrations.all.AddNgFieldToDelegateGroupMigration;
 import io.harness.migrations.all.AddReplCtrlNameToKubeSetupProperties;
 import io.harness.migrations.all.AddRestrictionsToSecretManagerConfig;
@@ -458,6 +459,7 @@ public class MigrationList {
         .add(Pair.of(376, UpdateRebalanceStateToTaskUnAssigned.class))
         .add(Pair.of(377, BaseMigration.class))
         .add(Pair.of(378, SetPropertiesToCloudformationRollbackStackSteps.class))
+        .add(Pair.of(379, AddNGFieldToDelegateMigration.class))
         .build();
   }
 }
