@@ -9,6 +9,8 @@ package io.harness.ccm.graphql.core.budget;
 
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.AlertThreshold;
+import io.harness.ccm.budget.BudgetBreakdown;
+import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetScope;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
@@ -101,6 +103,11 @@ public class BudgetServiceImpl implements BudgetService {
   }
 
   @Override
+  public void updatePerspectiveName(String accountId, String perspectiveId, String perspectiveName) {
+    budgetDao.updatePerspectiveName(accountId, perspectiveId, perspectiveName);
+  }
+
+  @Override
   public List<Budget> list(String accountId) {
     return budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0);
   }
@@ -190,17 +197,19 @@ public class BudgetServiceImpl implements BudgetService {
     if (updateNgBudgetCosts(budget)) {
       return;
     }
+    double actualCost = 0.0D;
+    double forecastCost = 0.0D;
+    double lastMonthCost = 0.0D;
     try {
-      Double actualCost = getActualCostForPerspectiveBudget(budget);
-      Double forecastCost = getForecastCostForPerspectiveBudget(budget);
-      Double lastMonthCost = getLastMonthCostForPerspectiveBudget(budget);
-
-      budget.setActualCost(actualCost);
-      budget.setForecastCost(forecastCost);
-      budget.setLastMonthCost(lastMonthCost);
+      actualCost = getActualCostForPerspectiveBudget(budget);
+      forecastCost = getForecastCostForPerspectiveBudget(budget);
+      lastMonthCost = getLastMonthCostForPerspectiveBudget(budget);
     } catch (Exception e) {
       log.error("Error occurred while updating costs of budget: {}, Exception : {}", budget.getUuid(), e);
     }
+    budget.setActualCost(actualCost);
+    budget.setForecastCost(forecastCost);
+    budget.setLastMonthCost(lastMonthCost);
   }
 
   private double getActualCostForPerspectiveBudget(Budget budget) {
@@ -218,17 +227,39 @@ public class BudgetServiceImpl implements BudgetService {
 
   private boolean updateNgBudgetCosts(Budget budget) {
     try {
-      Double actualCost = budgetCostService.getActualCost(budget);
-      Double forecastCost = budgetCostService.getForecastCost(budget);
-      Double lastPeriodCost = budgetCostService.getLastPeriodCost(budget);
+      if (budget.getPeriod() == BudgetPeriod.YEARLY && budget.getBudgetMonthlyBreakdown() != null
+          && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+        Double[] lastPeriodCost = budgetCostService.getLastYearMonthlyCost(budget);
+        budget.getBudgetMonthlyBreakdown().setYearlyLastPeriodCost(lastPeriodCost);
+        budget.setLastMonthCost(sumOfMonthlyCost(lastPeriodCost));
 
-      budget.setActualCost(actualCost);
-      budget.setForecastCost(forecastCost);
-      budget.setLastMonthCost(lastPeriodCost);
+        Double[] actualCost = budgetCostService.getActualMonthlyCost(budget);
+        budget.getBudgetMonthlyBreakdown().setActualMonthlyCost(actualCost);
+        budget.setActualCost(sumOfMonthlyCost(actualCost));
+
+        Double[] forecastCost = budgetCostService.getForecastMonthlyCost(budget);
+        budget.getBudgetMonthlyBreakdown().setForecastMonthlyCost(forecastCost);
+        budget.setForecastCost(sumOfMonthlyCost(forecastCost));
+      } else {
+        Double actualCost = budgetCostService.getActualCost(budget);
+        Double forecastCost = budgetCostService.getForecastCost(budget);
+        Double lastPeriodCost = budgetCostService.getLastPeriodCost(budget);
+        budget.setActualCost(actualCost);
+        budget.setForecastCost(forecastCost);
+        budget.setLastMonthCost(lastPeriodCost);
+      }
       return true;
     } catch (Exception e) {
       log.error("Error occurred while updating costs of budget: {}, Exception : {}", budget.getUuid(), e);
       return false;
     }
+  }
+
+  private Double sumOfMonthlyCost(Double monthlyCost[]) {
+    Double totalCost = 0.0;
+    if (monthlyCost != null) {
+      totalCost += Arrays.stream(monthlyCost).reduce(0.0, (a, b) -> a + b);
+    }
+    return totalCost;
   }
 }

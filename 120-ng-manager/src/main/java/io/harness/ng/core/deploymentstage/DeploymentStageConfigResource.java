@@ -29,7 +29,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,8 +60,9 @@ public class DeploymentStageConfigResource {
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the Service Reference") },
       hidden = true)
   public ResponseDTO<CDStageMetaDataDTO>
-  getCdDeployStageMetadata(@Parameter(
-      description = "Stage Identifier") @Valid CdDeployStageMetadataRequestDTO requestDTO) throws IOException {
+  getCdDeployStageMetadata(@RequestBody(required = true,
+      description = "Pipeline yaml and stage identifier") @Valid CdDeployStageMetadataRequestDTO requestDTO)
+      throws IOException {
     CDStageMetaDataDTOBuilder CDStageMetaDataDTOBuilder = CDStageMetaDataDTO.builder();
     List<YamlNode> stageYamlNodes = getStageYamlNodes(requestDTO.getPipelineYaml());
     DeploymentStageNode actualStage = getDeploymentStageNode(requestDTO.getStageIdentifier(), stageYamlNodes);

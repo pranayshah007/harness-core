@@ -7,7 +7,7 @@
 
 package io.harness.connector.validator;
 
-import static io.harness.delegate.beans.connector.spotconnector.SpotCredentialType.MANUAL_CREDENTIALS;
+import static io.harness.delegate.beans.connector.spotconnector.SpotCredentialType.PERMANENT_TOKEN;
 import static io.harness.delegate.beans.connector.spotconnector.SpotTaskType.VALIDATE;
 
 import static software.wings.beans.TaskType.SPOT_TASK_NG;
@@ -18,7 +18,7 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
-import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotTaskParams;
 import io.harness.delegate.task.TaskParameters;
 
@@ -29,9 +29,9 @@ public class SpotConnectorValidator extends AbstractCloudProviderConnectorValida
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     SpotConnectorDTO connectorDTO = (SpotConnectorDTO) connectorConfig;
-    final SpotManualConfigSpecDTO spotCredentialDTO =
-        connectorDTO.getCredential().getSpotCredentialType() == MANUAL_CREDENTIALS
-        ? ((SpotManualConfigSpecDTO) connectorDTO.getCredential().getConfig())
+    final SpotPermanentTokenConfigSpecDTO spotCredentialDTO =
+        connectorDTO.getCredential().getSpotCredentialType() == PERMANENT_TOKEN
+        ? ((SpotPermanentTokenConfigSpecDTO) connectorDTO.getCredential().getConfig())
         : null;
     return SpotTaskParams.builder()
         .spotTaskType(VALIDATE)

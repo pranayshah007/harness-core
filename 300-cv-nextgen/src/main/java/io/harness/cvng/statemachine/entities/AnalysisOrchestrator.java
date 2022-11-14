@@ -11,8 +11,10 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.iterator.PersistentRegularIterable;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -20,6 +22,7 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.google.common.collect.ImmutableList;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -43,6 +46,16 @@ import org.mongodb.morphia.annotations.Id;
 @HarnessEntity(exportable = true)
 public class AnalysisOrchestrator
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, PersistentRegularIterable {
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("orchestratorIteratorQueryIdx")
+                 .field(AnalysisOrchestratorKeys.status)
+                 .field(AnalysisOrchestratorKeys.analysisOrchestrationIteration)
+                 .build())
+        .build();
+  }
+
   @Id private String uuid;
   @FdIndex private String verificationTaskId;
   @Builder.Default private List<AnalysisStateMachine> analysisStateMachineQueue = new ArrayList<>();

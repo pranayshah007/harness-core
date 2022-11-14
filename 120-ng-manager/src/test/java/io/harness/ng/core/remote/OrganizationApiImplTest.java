@@ -38,9 +38,9 @@ import io.harness.ng.core.dto.OrganizationFilterDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.rule.Owner;
-import io.harness.spec.server.ng.model.CreateOrganizationRequest;
-import io.harness.spec.server.ng.model.OrganizationResponse;
-import io.harness.spec.server.ng.model.UpdateOrganizationRequest;
+import io.harness.spec.server.ng.v1.model.CreateOrganizationRequest;
+import io.harness.spec.server.ng.v1.model.OrganizationResponse;
+import io.harness.spec.server.ng.v1.model.UpdateOrganizationRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -86,7 +86,7 @@ public class OrganizationApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreate() {
     CreateOrganizationRequest organizationRequest = new CreateOrganizationRequest();
-    io.harness.spec.server.ng.model.Organization org = new io.harness.spec.server.ng.model.Organization();
+    io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
     org.setSlug(slug);
     org.setName(name);
     organizationRequest.setOrg(org);
@@ -110,7 +110,7 @@ public class OrganizationApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateForDefaultOrg() {
     CreateOrganizationRequest organizationRequest = new CreateOrganizationRequest();
-    io.harness.spec.server.ng.model.Organization org = new io.harness.spec.server.ng.model.Organization();
+    io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
     org.setSlug(DEFAULT_ORG_IDENTIFIER);
     org.setName(name);
     organizationRequest.setOrg(org);
@@ -159,7 +159,7 @@ public class OrganizationApiImplTest extends CategoryTest {
     String searchTerm = randomAlphabetic(10);
 
     CreateOrganizationRequest organizationRequest = new CreateOrganizationRequest();
-    io.harness.spec.server.ng.model.Organization org = new io.harness.spec.server.ng.model.Organization();
+    io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
     organizationRequest.setOrg(org);
     org.setSlug(slug);
     org.setName(name);
@@ -190,7 +190,7 @@ public class OrganizationApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdate() {
     UpdateOrganizationRequest request = new UpdateOrganizationRequest();
-    io.harness.spec.server.ng.model.Organization org = new io.harness.spec.server.ng.model.Organization();
+    io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
     org.setSlug(slug);
     org.setName("updated_name");
     request.setOrg(org);
@@ -214,7 +214,7 @@ public class OrganizationApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateForDefaultOrg() {
     UpdateOrganizationRequest request = new UpdateOrganizationRequest();
-    io.harness.spec.server.ng.model.Organization org = new io.harness.spec.server.ng.model.Organization();
+    io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
     org.setSlug(DEFAULT_ORG_IDENTIFIER);
     org.setName("updated_name");
     request.setOrg(org);
@@ -233,7 +233,7 @@ public class OrganizationApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateForInvalidRequest() {
     UpdateOrganizationRequest request = new UpdateOrganizationRequest();
-    io.harness.spec.server.ng.model.Organization org = new io.harness.spec.server.ng.model.Organization();
+    io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
     org.setSlug(DEFAULT_ORG_IDENTIFIER);
     org.setName("updated_name");
     request.setOrg(org);

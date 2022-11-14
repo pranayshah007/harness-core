@@ -49,6 +49,8 @@ public class EnvironmentGroupYaml implements Visitable {
   @YamlSchemaTypes(runtime)
   ParameterField<Boolean> deployToAll;
 
+  @JsonProperty("metadata") EnvironmentGroupMetadata environmentGroupMetadata;
+
   @Override
   public VisitableChildren getChildrenToWalk() {
     VisitableChildren children = VisitableChildren.builder().build();

@@ -8,8 +8,12 @@
 package io.harness.cdng.chaos;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.SkipAutoEvaluation;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
 import lombok.Value;
 
@@ -19,4 +23,5 @@ import lombok.Value;
 public class ChaosStepParameters implements SpecParameters {
   String experimentRef;
   Double expectedResilienceScore;
+  @SkipAutoEvaluation @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> assertion;
 }

@@ -30,6 +30,7 @@ import io.harness.batch.processing.service.intfc.WorkloadRepository;
 import io.harness.batch.processing.tasklet.reader.PublishedMessageReader;
 import io.harness.batch.processing.tasklet.support.HarnessServiceInfoFetcher;
 import io.harness.batch.processing.tasklet.support.HarnessServiceInfoFetcherNG;
+import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
 import io.harness.batch.processing.tasklet.util.K8sResourceUtils;
 import io.harness.batch.processing.writer.constants.EventTypeConstants;
 import io.harness.batch.processing.writer.constants.K8sCCMConstants;
@@ -209,12 +210,19 @@ public class K8sPodInfoTasklet implements Tasklet {
       metaData.put(InstanceMetaDataConstants.PARENT_RESOURCE_MEMORY,
           String.valueOf(prunedInstanceData.getTotalResource().getMemoryMb()));
       String computeType = nodeMetaData.get(InstanceMetaDataConstants.COMPUTE_TYPE);
+      String virtualNode =
+          InstanceMetaDataUtils.getValueForKeyFromInstanceLabel(InstanceMetaDataConstants.VIRTUAL_NODE, nodeMetaData);
       if (null != computeType) {
         metaData.put(InstanceMetaDataConstants.COMPUTE_TYPE, computeType);
         if (K8sCCMConstants.AWS_FARGATE_COMPUTE_TYPE.equals(computeType)) {
           instanceType = InstanceType.K8S_POD_FARGATE;
         }
       }
+      if (null != virtualNode && "AZURE".equals(virtualNode)) {
+        instanceType = InstanceType.K8S_POD_FARGATE;
+        metaData.put(InstanceMetaDataConstants.VIRTUAL_NODE, virtualNode);
+      }
+
       if (null != prunedInstanceData.getCloudProviderInstanceId()) {
         metaData.put(
             InstanceMetaDataConstants.CLOUD_PROVIDER_INSTANCE_ID, prunedInstanceData.getCloudProviderInstanceId());

@@ -92,7 +92,7 @@ public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, W
    * Repo format.
    */
   @NotNull
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "docker, maven, npm, nuget")
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "docker, maven, npm, nuget, raw")
   @Wither
   ParameterField<String> repositoryFormat;
 

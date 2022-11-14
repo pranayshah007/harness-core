@@ -8,7 +8,7 @@
 package io.harness.delegate.beans.connector.spotconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.beans.connector.spotconnector.SpotCredentialType.MANUAL_CREDENTIALS;
+import static io.harness.delegate.beans.connector.spotconnector.SpotCredentialType.PERMANENT_TOKEN;
 import static io.harness.spotinst.model.SpotInstConstants.spotInstHealthUrl;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -30,7 +30,7 @@ public class SpotCapabilityHelper extends ConnectorCapabilityBaseHelper {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     SpotConnectorDTO spotConnectorDTO = (SpotConnectorDTO) connectorConfigDTO;
     SpotCredentialDTO credential = spotConnectorDTO.getCredential();
-    if (credential.getSpotCredentialType() == MANUAL_CREDENTIALS) {
+    if (credential.getSpotCredentialType() == PERMANENT_TOKEN) {
       capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
           spotInstHealthUrl, maskingEvaluator));
     }

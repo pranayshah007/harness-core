@@ -17,7 +17,9 @@ import static io.harness.overviewdashboard.bean.OverviewDashboardRequestType.GET
 import static io.harness.overviewdashboard.bean.OverviewDashboardRequestType.GET_SERVICES_COUNT;
 import static io.harness.rule.OwnerRule.MEET;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyLong;
@@ -39,6 +41,7 @@ import io.harness.dashboards.ServicesDashboardInfo;
 import io.harness.dashboards.SortBy;
 import io.harness.dashboards.TimeBasedDeploymentInfo;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ActiveProjectsCountDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -95,6 +98,9 @@ public class OverviewDashboardServiceImplTest {
   String serviceIdentifier1 = UUIDGenerator.generateUuid();
   String serviceName1 = UUIDGenerator.generateUuid();
   String projectIdentifier1 = UUIDGenerator.generateUuid();
+
+  String projectIdentifier2 = UUIDGenerator.generateUuid();
+
   String projectName1 = UUIDGenerator.generateUuid();
   String orgIdentifier1 = UUIDGenerator.generateUuid();
   String orgName1 = UUIDGenerator.generateUuid();
@@ -110,6 +116,8 @@ public class OverviewDashboardServiceImplTest {
 
   DeploymentsStatsOverview expectedDeploymentsStatsOverview1;
   CountOverview expectedCountOverview1;
+
+  CountOverview expectedCountOverview3;
 
   @InjectMocks OverviewDashboardServiceImpl overviewDashboardService;
   @Mock ParallelRestCallExecutor parallelRestCallExecutor;
@@ -198,8 +206,13 @@ public class OverviewDashboardServiceImplTest {
     CountChangeDetails expectedEnvCountDetails1 = getExpectedCountDetail(10L, 12L);
     CountChangeDetails expectedPipelinesCountDetails1 = getExpectedCountDetail(10L, 12L);
     CountChangeDetails expectedProjectsCountDetails1 = getExpectedCountDetail(1L, 12L);
+    CountChangeDetails expectedProjectsCountDetails3 = getExpectedCountDetail(0L, 0L);
+
     expectedCountOverview1 = getExpectedResponseForGetCountOverview(expectedServiceCountDetails1,
         expectedEnvCountDetails1, expectedPipelinesCountDetails1, expectedProjectsCountDetails1);
+
+    expectedCountOverview3 = getExpectedResponseForGetCountOverview(expectedServiceCountDetails1,
+        expectedEnvCountDetails1, expectedPipelinesCountDetails1, expectedProjectsCountDetails3);
   }
 
   @Test
@@ -228,15 +241,55 @@ public class OverviewDashboardServiceImplTest {
 
     ExecutionResponse<DeploymentsStatsOverview> actualSuccessResponse =
         overviewDashboardService.getDeploymentStatsOverview(
-            accountIdentifier1, userId1, anyLong(), anyLong(), groupBy, sortBy);
+            accountIdentifier1, null, null, userId1, anyLong(), anyLong(), groupBy, sortBy);
     assertThat(actualSuccessResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     assertThat(actualSuccessResponse.getResponse()).isEqualTo(expectedDeploymentsStatsOverview1);
 
     when(parallelRestCallExecutor.executeRestCalls(anyList())).thenReturn(deploymentStatsOverviewRestCallResponseList2);
     ExecutionResponse<DeploymentsStatsOverview> actualFailureResponse =
         overviewDashboardService.getDeploymentStatsOverview(
-            accountIdentifier1, userId1, anyLong(), anyLong(), groupBy, sortBy);
+            accountIdentifier1, null, null, userId1, anyLong(), anyLong(), groupBy, sortBy);
     assertThat(actualFailureResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILURE);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testGetDeploymentStatsOverviewProjectScope() throws Exception {
+    GroupBy groupBy = GroupBy.MONTH;
+    SortBy sortBy = SortBy.DEPLOYMENTS;
+
+    Call<ResponseDTO<DeploymentStatsSummary>> requestDeploymentStatsSummary = Mockito.mock(Call.class);
+    Call<ResponseDTO<ServicesDashboardInfo>> requestServicesDashboardInfo = Mockito.mock(Call.class);
+    Call<ResponseDTO<PipelinesExecutionDashboardInfo>> requestActiveDeploymentStats = Mockito.mock(Call.class);
+
+    when(dashboardRBACService.listAccessibleProject(anyString(), anyString())).thenReturn(listOfAccessibleProjects);
+    when(dashboardRBACService.getMapOfOrganizationIdentifierAndOrganizationName(anyString(), anyList()))
+        .thenReturn(mapOfOrganizationIdentifierAndOrganizationName);
+    doReturn(requestActiveDeploymentStats)
+        .when(cdLandingDashboardResourceClient)
+        .getActiveDeploymentStats(anyString(), any());
+    when(cdLandingDashboardResourceClient.getDeploymentStatsSummary(
+             anyString(), eq(startTime1), eq(endTime1), any(), any()))
+        .thenReturn(requestDeploymentStatsSummary);
+    when(cdLandingDashboardResourceClient.get(anyString(), eq(startTime1), eq(endTime1), any(), any()))
+        .thenReturn(requestServicesDashboardInfo);
+    when(parallelRestCallExecutor.executeRestCalls(anyList())).thenReturn(deploymentStatsOverviewRestCallResponseList1);
+
+    ExecutionResponse<DeploymentsStatsOverview> actualSuccessResponse =
+        overviewDashboardService.getDeploymentStatsOverview(
+            accountIdentifier1, orgIdentifier1, projectIdentifier1, userId1, anyLong(), anyLong(), groupBy, sortBy);
+    assertThat(actualSuccessResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    assertThat(actualSuccessResponse.getResponse()).isEqualTo(expectedDeploymentsStatsOverview1);
+
+    when(parallelRestCallExecutor.executeRestCalls(anyList())).thenReturn(restCallResponseListForCountOverview2);
+    assertThatThrownBy(()
+                           -> overviewDashboardService.getDeploymentStatsOverview(accountIdentifier1, orgIdentifier1,
+                               projectIdentifier2, userId1, anyLong(), anyLong(), groupBy, sortBy))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            format("Project with identifier %s in organization with identifier %s in not accessible to the user",
+                projectIdentifier2, orgIdentifier1));
   }
 
   @Test
@@ -260,14 +313,49 @@ public class OverviewDashboardServiceImplTest {
     when(parallelRestCallExecutor.executeRestCalls(anyList())).thenReturn(restCallResponseListForCountOverview1);
 
     ExecutionResponse<CountOverview> actualSuccessResponse =
-        overviewDashboardService.getCountOverview(accountIdentifier1, userId1, startTime1, endTime1);
+        overviewDashboardService.getCountOverview(accountIdentifier1, null, null, userId1, startTime1, endTime1);
     assertThat(actualSuccessResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     assertThat(actualSuccessResponse.getResponse()).isEqualTo(expectedCountOverview1);
 
     when(parallelRestCallExecutor.executeRestCalls(anyList())).thenReturn(restCallResponseListForCountOverview2);
     ExecutionResponse<CountOverview> actualFailureResponse =
-        overviewDashboardService.getCountOverview(accountIdentifier1, userId1, startTime1, endTime1);
+        overviewDashboardService.getCountOverview(accountIdentifier1, null, null, userId1, startTime1, endTime1);
     assertThat(actualFailureResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILURE);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testGetCountOverviewProjectScope() throws Exception {
+    Call<ResponseDTO<ServicesCount>> requestServicesCount = Mockito.mock(Call.class);
+    Call<ResponseDTO<EnvCount>> requestEnvCount = Mockito.mock(Call.class);
+    Call<ResponseDTO<PipelinesCount>> requestPipelinesCount = Mockito.mock(Call.class);
+    Call<ResponseDTO<ActiveProjectsCountDTO>> requestProjectsCount = Mockito.mock(Call.class);
+
+    when(dashboardRBACService.listAccessibleProject(anyString(), anyString())).thenReturn(listOfAccessibleProjects);
+    when(cdLandingDashboardResourceClient.getServicesCount(anyString(), eq(startTime1), eq(endTime1), any()))
+        .thenReturn(requestServicesCount);
+    when(cdLandingDashboardResourceClient.getEnvCount(anyString(), eq(startTime1), eq(endTime1), any()))
+        .thenReturn(requestEnvCount);
+    when(pmsLandingDashboardResourceClient.getPipelinesCount(anyString(), eq(startTime1), eq(endTime1), any()))
+        .thenReturn(requestPipelinesCount);
+    when(projectClient.getAccessibleProjectsCount(anyString(), eq(startTime1), eq(endTime1)))
+        .thenReturn(requestProjectsCount);
+    when(parallelRestCallExecutor.executeRestCalls(anyList())).thenReturn(restCallResponseListForCountOverview1);
+
+    ExecutionResponse<CountOverview> actualSuccessResponse = overviewDashboardService.getCountOverview(
+        accountIdentifier1, orgIdentifier1, projectIdentifier1, userId1, startTime1, endTime1);
+    assertThat(actualSuccessResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    assertThat(actualSuccessResponse.getResponse()).isEqualTo(expectedCountOverview3);
+
+    when(parallelRestCallExecutor.executeRestCalls(anyList())).thenReturn(restCallResponseListForCountOverview2);
+    assertThatThrownBy(()
+                           -> overviewDashboardService.getCountOverview(
+                               accountIdentifier1, orgIdentifier1, projectIdentifier2, userId1, startTime1, endTime1))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            format("Project with identifier %s in organization with identifier %s in not accessible to the user",
+                projectIdentifier2, orgIdentifier1));
   }
 
   @Test

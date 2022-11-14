@@ -21,6 +21,7 @@ import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.AccountAccess;
@@ -29,6 +30,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -99,6 +101,15 @@ public class PipelineEntity
                  .field(PipelineEntityKeys.repoURL)
                  .field(PipelineEntityKeys.filePath)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_repo_createdAt_idx")
+                 .field(PipelineEntityKeys.accountId)
+                 .field(PipelineEntityKeys.orgIdentifier)
+                 .field(PipelineEntityKeys.projectIdentifier)
+                 .field(PipelineEntityKeys.repo)
+                 .descSortField(PipelineEntityKeys.createdAt)
+                 .build())
+        .add(CompoundMongoIndex.builder().name("accountId_idx").field(PipelineEntityKeys.accountId).build())
         .build();
   }
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
@@ -148,6 +159,9 @@ public class PipelineEntity
   @Wither @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
 
+  // to maintain pipeline version
+  @Setter @NonFinal String harnessVersion;
+
   public String getData() {
     return yaml;
   }
@@ -182,5 +196,12 @@ public class PipelineEntity
       return false;
     }
     return TemplateRefHelper.hasTemplateRefOrCustomDeploymentRef(getData());
+  }
+
+  public String getHarnessVersion() {
+    if (harnessVersion == null || harnessVersion.equals("V0")) {
+      return PipelineVersion.V0;
+    }
+    return harnessVersion;
   }
 }

@@ -250,6 +250,10 @@ public class ModuleLicenseHelper {
             && !ciLicense.getNumberOfCommitters().equals(currentCILicense.getNumberOfCommitters())) {
           currentCILicense.setNumberOfCommitters(ciLicense.getNumberOfCommitters());
         }
+        if (ciLicense.getHostingCredits() != null
+            && !ciLicense.getHostingCredits().equals(currentCILicense.getHostingCredits())) {
+          currentCILicense.setHostingCredits(ciLicense.getHostingCredits());
+        }
         break;
       case STO:
         STOModuleLicense stoLicense = (STOModuleLicense) update;

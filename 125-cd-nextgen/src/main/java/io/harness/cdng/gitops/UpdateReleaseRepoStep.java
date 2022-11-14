@@ -220,18 +220,25 @@ public class UpdateReleaseRepoStep extends TaskExecutableWithRollbackAndRbac<NGG
         // Convert variables from spec parameters
         for (Map.Entry<String, Object> variableEntry : variables.entrySet()) {
           ParameterField p = (ParameterField) variableEntry.getValue();
-          if (p.isExpression()) {
-            if (p.getExpressionValue().contains("<+cluster.name>")) {
-              p.setExpressionValue(p.getExpressionValue().replaceAll("<\\+cluster.name>", cluster.getClusterName()));
+          ParameterField copyParameter = ParameterField.builder()
+                                             .expression(p.isExpression())
+                                             .expressionValue(p.getExpressionValue())
+                                             .value(p.getValue())
+                                             .build();
+          if (copyParameter.isExpression()) {
+            if (copyParameter.getExpressionValue().contains("<+cluster.name>")) {
+              copyParameter.setExpressionValue(
+                  copyParameter.getExpressionValue().replaceAll("<\\+cluster.name>", cluster.getClusterName()));
             }
-            if (p.getExpressionValue().contains("<+env.name>")) {
-              p.setExpressionValue(p.getExpressionValue().replaceAll("<\\+env.name>", cluster.getEnvName()));
+            if (copyParameter.getExpressionValue().contains("<+env.name>")) {
+              copyParameter.setExpressionValue(
+                  copyParameter.getExpressionValue().replaceAll("<\\+env.name>", cluster.getEnvName()));
             }
           }
 
           ExpressionEvaluatorUtils.updateExpressions(
-              p, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
-          flattennedVariables.put(variableEntry.getKey(), p.getValue().toString());
+              copyParameter, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+          flattennedVariables.put(variableEntry.getKey(), copyParameter.getValue().toString());
         }
         filePathsToVariables.put(file, flattennedVariables);
       }

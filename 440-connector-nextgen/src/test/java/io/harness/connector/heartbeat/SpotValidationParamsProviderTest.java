@@ -26,7 +26,7 @@ import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
-import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotValidationParams;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
@@ -86,8 +86,8 @@ public class SpotValidationParamsProviderTest extends CategoryTest {
   private SpotConnectorDTO getConnectorConfigDTO() {
     return SpotConnectorDTO.builder()
         .credential(SpotCredentialDTO.builder()
-                        .spotCredentialType(SpotCredentialType.MANUAL_CREDENTIALS)
-                        .config(SpotManualConfigSpecDTO.builder().build())
+                        .spotCredentialType(SpotCredentialType.PERMANENT_TOKEN)
+                        .config(SpotPermanentTokenConfigSpecDTO.builder().build())
                         .build())
 
         .delegateSelectors(DELEGATE_SELECTORS)

@@ -29,7 +29,17 @@
       "pipelineStageName": "STAGE 3",
       "workflowExecutionId": null,
       "runtimeInputVariables": null,
-      "status": "SUCCESS"
+      "status": "SUCCESS",
+      "inputVariables": [
+        {
+          "name": "var2",
+          "value": ""
+        },
+        {
+          "name": "var1",
+          "value": "23456"
+        }
+      ]
     },
     {
       "pipelineStageElementId": "Be16BYtzRCCrnVlD44i5pA",
@@ -44,7 +54,33 @@
       "pipelineStageName": "STAGE 2",
       "workflowExecutionId": null,
       "runtimeInputVariables": null,
-      "status": "FAILED"
+      "status": "FAILED",
+      "inputVariables": [
+        {
+          "name": "Environment",
+          "value": "448B_IQpS9qQ4axX-yfPnQ"
+        },
+        {
+          "name": "InfraDefinition_KUBERNETES",
+          "value": "vjjZEIoNTiu26ZdtwONe_Q"
+        },
+        {
+          "name": "xxz",
+          "value": ""
+        },
+        {
+          "name": "message",
+          "value": "HELLO WORLD"
+        },
+        {
+          "name": "buildNumber",
+          "value": "12345"
+        },
+        {
+          "name": "ServiceId",
+          "value": "NA2uRPKLTqm9VU3dPENb-g"
+        }
+      ]
     },
     {
       "pipelineStageElementId": "iibzVUjNTlWsv23lQIrkWw",
@@ -52,7 +88,8 @@
       "pipelineStageName": "STAGE 2",
       "workflowExecutionId": null,
       "runtimeInputVariables": null,
-      "status": "QUEUED"
+      "status": "QUEUED",
+      "inputVariables": []
     }
   ],
   "failureDetails":"failureDetails",

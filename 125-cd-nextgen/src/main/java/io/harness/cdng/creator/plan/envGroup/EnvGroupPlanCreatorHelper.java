@@ -83,38 +83,30 @@ public class EnvGroupPlanCreatorHelper {
     Map<String, Environment> envMapping =
         emptyIfNull(environments).stream().collect(Collectors.toMap(Environment::getIdentifier, Function.identity()));
 
+    List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvironments().getValue();
+
     List<EnvironmentPlanCreatorConfig> envConfigs = new ArrayList<>();
-    if (!envGroupYaml.getDeployToAll().getValue()) {
-      List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvironments().getValue();
-      for (EnvironmentYamlV2 envYaml : envV2Yamls) {
-        Environment environment = envMapping.get(envYaml.getEnvironmentRef().getValue());
+    if (envGroupYaml.getDeployToAll().getValue()) {
+      for (Environment env : environments) {
+        if (env == null) {
+          throw new InvalidRequestException(format("Environment %s not found in environment group %s",
+              envGroupYaml.getEnvGroupRef().getValue(), entity.get().getIdentifier()));
+        }
+        EnvironmentYamlV2 envV2Yaml = envV2Yamls.stream()
+                                          .filter(e -> e.getEnvironmentRef().getValue().equals(env.getIdentifier()))
+                                          .findAny()
+                                          .orElse(null);
+
+        createEnvConfigs(envConfigs, envV2Yaml, env);
+      }
+    } else {
+      for (EnvironmentYamlV2 envV2Yaml : envV2Yamls) {
+        Environment environment = envMapping.get(envV2Yaml.getEnvironmentRef().getValue());
         if (environment == null) {
           throw new InvalidRequestException(format("Environment %s not found in environment group %s",
               envGroupYaml.getEnvGroupRef().getValue(), entity.get().getIdentifier()));
         }
-        String originalEnvYaml = environment.getYaml();
-
-        // TODO: need to remove this once we have the migration for old env
-        if (EmptyPredicate.isEmpty(originalEnvYaml)) {
-          try {
-            originalEnvYaml = YamlPipelineUtils.getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
-          } catch (JsonProcessingException e) {
-            throw new InvalidRequestException("Unable to convert environment to yaml");
-          }
-        }
-
-        String mergedEnvYaml = originalEnvYaml;
-        if (isNotEmpty(envYaml.getEnvironmentInputs().getValue())) {
-          mergedEnvYaml = EnvironmentPlanCreatorHelper.mergeEnvironmentInputs(
-              originalEnvYaml, envYaml.getEnvironmentInputs().getValue());
-        }
-        if (!envYaml.getDeployToAll().getValue() && isEmpty(envYaml.getGitOpsClusters().getValue())) {
-          throw new InvalidRequestException(
-              "List of Gitops clusters must be provided because deployToAll is false for env "
-              + environment.getIdentifier());
-        }
-        envConfigs.add(
-            EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(mergedEnvYaml, envYaml, null));
+        createEnvConfigs(envConfigs, envV2Yaml, environment);
       }
     }
 
@@ -127,6 +119,31 @@ public class EnvGroupPlanCreatorHelper {
         .deployToAll(envGroupYaml.getDeployToAll().getValue())
         .environmentPlanCreatorConfigs(envConfigs)
         .build();
+  }
+
+  private static void createEnvConfigs(
+      List<EnvironmentPlanCreatorConfig> envConfigs, EnvironmentYamlV2 envV2Yaml, Environment environment) {
+    String originalEnvYaml = environment.getYaml();
+
+    // TODO: need to remove this once we have the migration for old env
+    if (EmptyPredicate.isEmpty(originalEnvYaml)) {
+      try {
+        originalEnvYaml = YamlPipelineUtils.getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
+      } catch (JsonProcessingException e) {
+        throw new InvalidRequestException("Unable to convert environment to yaml");
+      }
+    }
+
+    String mergedEnvYaml = originalEnvYaml;
+    if (isNotEmpty(envV2Yaml.getEnvironmentInputs().getValue())) {
+      mergedEnvYaml = EnvironmentPlanCreatorHelper.mergeEnvironmentInputs(
+          originalEnvYaml, envV2Yaml.getEnvironmentInputs().getValue());
+    }
+    if (!envV2Yaml.getDeployToAll().getValue() && isEmpty(envV2Yaml.getGitOpsClusters().getValue())) {
+      throw new InvalidRequestException("List of Gitops clusters must be provided because deployToAll is false for env "
+          + environment.getIdentifier());
+    }
+    envConfigs.add(EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(mergedEnvYaml, envV2Yaml, null));
   }
 
   public void addEnvironmentGroupDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,

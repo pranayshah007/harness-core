@@ -634,8 +634,8 @@ public class CanaryWorkflowExecutionAdvisorTest extends CategoryTest {
     ExecutionEvent executionEvent =
         ExecutionEvent.builder().context(new ExecutionContextImpl(stateExecutionInstance)).build();
 
-    ExecutionEventAdvice advice =
-        canaryWorkflowExecutionAdvisor.computeExecutionEventAdvice(null, failureStrategy, executionEvent, null, null);
+    ExecutionEventAdvice advice = canaryWorkflowExecutionAdvisor.computeExecutionEventAdvice(
+        null, failureStrategy, executionEvent, null, null, null);
     assertThat(advice.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.END_EXECUTION);
   }
 
@@ -654,7 +654,7 @@ public class CanaryWorkflowExecutionAdvisorTest extends CategoryTest {
         ExecutionEvent.builder().context(new ExecutionContextImpl(stateExecutionInstance)).build();
 
     ExecutionEventAdvice advice = canaryWorkflowExecutionAdvisor.computeExecutionEventAdvice(
-        null, failureStrategy, executionEvent, null, stateExecutionInstance);
+        null, failureStrategy, executionEvent, null, stateExecutionInstance, null);
     verify(executionService).triggerExecutionInterrupt(any(ExecutionInterrupt.class));
     assertThat(advice.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.ROLLBACK);
   }

@@ -14,7 +14,6 @@ import io.harness.exception.InvalidRequestException;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.service.intfc.ApplicationManifestService;
 
 import com.google.inject.Inject;
 
@@ -25,8 +24,13 @@ public class NgManifestFactory {
   @Inject K8sManifestHelmChartRepoStoreService k8sManifestHelmChartRepoStoreService;
   @Inject ValuesManifestRemoteStoreService valuesManifestRemoteStoreService;
   @Inject ValuesManifestLocalStoreService valuesManifestLocalStoreService;
+  @Inject OpenshiftParamRemoteStoreService openshiftParamRemoteStoreService;
+  @Inject OpenshiftParamLocalStoreService openshiftParamLocalStoreService;
   @Inject K8sManifestLocalStoreService k8sManifestLocalStoreService;
-  @Inject ApplicationManifestService applicationManifestService;
+  @Inject KustomizeSourceRepoStoreService kustomizeSourceRepoStoreService;
+  @Inject OpenshiftSourceRepoStoreService openshiftSourceRepoStoreService;
+
+  private static String ERROR_STRING = "%s storetype is currently not supported for %s appManifestKind";
 
   public NgManifestService getNgManifestService(ApplicationManifest applicationManifest) {
     if (applicationManifest.getKind() == null) {
@@ -46,9 +50,12 @@ public class NgManifestFactory {
             return k8sManifestHelmSourceRepoStoreService;
           case HelmChartRepo:
             return k8sManifestHelmChartRepoStoreService;
+          case KustomizeSourceRepo:
+            return kustomizeSourceRepoStoreService;
+          case OC_TEMPLATES:
+            return openshiftSourceRepoStoreService;
           default:
-            throw new InvalidRequestException(String.format(
-                "%s storetype is currently not supported for %s appManifestKind", storeType, appManifestKind));
+            throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
         }
       case VALUES:
         switch (storeType) {
@@ -57,8 +64,16 @@ public class NgManifestFactory {
           case Local:
             return valuesManifestLocalStoreService;
           default:
-            throw new InvalidRequestException(String.format(
-                "%s storetype is currently not supported for %s appManifestKind", storeType, appManifestKind));
+            throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
+        }
+      case OC_PARAMS:
+        switch (storeType) {
+          case Remote:
+            return openshiftParamRemoteStoreService;
+          case Local:
+            return openshiftParamLocalStoreService;
+          default:
+            throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
         }
       default:
         throw new InvalidRequestException(

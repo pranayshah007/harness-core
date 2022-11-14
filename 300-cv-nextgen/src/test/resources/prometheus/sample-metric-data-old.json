@@ -1,0 +1,34 @@
+[{
+  "metricDetails" : {
+    "__name__" : "up",
+    "beta_kubernetes_io_arch" : "amd64",
+    "beta_kubernetes_io_instance_type" : "n1-standard-2",
+    "beta_kubernetes_io_os" : "linux",
+    "cloud_google_com_gke_boot_disk" : "pd-standard",
+    "cloud_google_com_gke_container_runtime" : "docker",
+    "cloud_google_com_gke_nodepool" : "default-pool",
+    "cloud_google_com_gke_os_distribution" : "cos",
+    "cloud_google_com_machine_family" : "n1",
+    "failure_domain_beta_kubernetes_io_region" : "us-central1",
+    "failure_domain_beta_kubernetes_io_zone" : "us-central1-c",
+    "instance" : "gke-cv-demo-default-pool-ba07a05c-p897",
+    "job" : "kubernetes-nodes",
+    "kubernetes_io_arch" : "amd64",
+    "kubernetes_io_hostname" : "gke-cv-demo-default-pool-ba07a05c-p897",
+    "kubernetes_io_os" : "linux",
+    "node_kubernetes_io_instance_type" : "n1-standard-2",
+    "topology_kubernetes_io_region" : "us-central1",
+    "topology_kubernetes_io_zone" : "us-central1-c"
+  },
+  "data" : [
+    [ 1665068407, "1" ], [ 1665068467, "1" ], [ 1665068527, "1" ],
+    [ 1665068587, "1" ], [ 1665068647, "1" ], [ 1665068707, "1" ],
+    [ 1665068767, "1" ], [ 1665068827, "1" ], [ 1665068887, "1" ],
+    [ 1665068947, "1" ], [ 1665069007, "1" ], [ 1665069067, "1" ],
+    [ 1665069127, "1" ], [ 1665069187, "1" ], [ 1665069247, "1" ],
+    [ 1665069307, "1" ], [ 1665069367, "1" ], [ 1665069427, "1" ],
+    [ 1665069487, "1" ], [ 1665069547, "1" ], [ 1665069607, "1" ],
+    [ 1665069667, "1" ], [ 1665069727, "1" ], [ 1665069787, "1" ],
+    [ 1665069847, "1" ], [ 1665069907, "1" ], [ 1665069967, "1" ]
+  ]
+}]

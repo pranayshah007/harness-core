@@ -257,6 +257,37 @@ public class NGTemplateServiceHelper {
     return criteria;
   }
 
+  public Criteria formCriteriaForRepoListing(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      boolean includeAllTemplatesAccessibleAtScope) {
+    Criteria criteria = new Criteria();
+    criteria.and(TemplateEntityKeys.accountId).is(accountIdentifier);
+
+    Criteria includeAllTemplatesCriteria = null;
+    if (includeAllTemplatesAccessibleAtScope) {
+      includeAllTemplatesCriteria = getCriteriaToReturnAllTemplatesAccessible(orgIdentifier, projectIdentifier);
+    } else {
+      if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+        criteria.and(TemplateEntityKeys.orgIdentifier).is(orgIdentifier);
+        if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+          criteria.and(TemplateEntityKeys.projectIdentifier).is(projectIdentifier);
+        } else {
+          criteria.and(TemplateEntityKeys.projectIdentifier).exists(false);
+        }
+      } else {
+        criteria.and(TemplateEntityKeys.orgIdentifier).exists(false);
+        criteria.and(TemplateEntityKeys.projectIdentifier).exists(false);
+      }
+    }
+    List<Criteria> criteriaList = new ArrayList<>();
+    if (includeAllTemplatesCriteria != null) {
+      criteriaList.add(includeAllTemplatesCriteria);
+    }
+    if (criteriaList.size() != 0) {
+      criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+    }
+    return criteria;
+  }
+
   private void populateFilterUsingIdentifier(Criteria criteria, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull String filterIdentifier, String searchTerm,
       Criteria includeAllTemplatesCriteria) {
@@ -293,6 +324,7 @@ public class NGTemplateServiceHelper {
     if (criteriaList.size() != 0) {
       criteria.andOperator(criteriaList.toArray(new Criteria[0]));
     }
+    addRepoFilter(criteria, templateFilter.getRepoName());
     populateTagsFilter(criteria, templateFilter.getTags());
     populateInFilter(criteria, TemplateEntityKeys.templateEntityType, templateFilter.getTemplateEntityTypes());
     populateInFilter(criteria, TemplateEntityKeys.childType, templateFilter.getChildTypes());
@@ -321,9 +353,16 @@ public class NGTemplateServiceHelper {
     if (criteriaList.size() != 0) {
       criteria.andOperator(criteriaList.toArray(new Criteria[0]));
     }
+    addRepoFilter(criteria, templateFilter.getRepoName());
     populateTagsFilter(criteria, templateFilter.getTags());
     populateInFilter(criteria, TemplateEntityKeys.templateEntityType, templateFilter.getTemplateEntityTypes());
     populateInFilter(criteria, TemplateEntityKeys.childType, templateFilter.getChildTypes());
+  }
+
+  private static void addRepoFilter(Criteria criteria, String repoName) {
+    if (EmptyPredicate.isNotEmpty(repoName)) {
+      criteria.and(TemplateEntityKeys.repo).is(repoName);
+    }
   }
 
   private static Criteria getSearchTermCriteria(String searchTerm) {
@@ -561,34 +600,43 @@ public class NGTemplateServiceHelper {
       VariableMergeServiceResponse variableMergeServiceResponse, String appliedTemplateYaml) {
     try {
       ObjectNode variablesObject =
-          (ObjectNode) YamlUtils.readTree(variableMergeServiceResponse.getYaml()).getNode().getCurrJsonNode();
+              (ObjectNode) YamlUtils.readTree(variableMergeServiceResponse.getYaml()).getNode().getCurrJsonNode();
       ObjectNode templateJson =
-          (ObjectNode) YamlUtils.readTree(appliedTemplateYaml).getNode().getCurrJsonNode().get(TEMPLATE);
+              (ObjectNode) YamlUtils.readTree(appliedTemplateYaml).getNode().getCurrJsonNode().get(TEMPLATE);
       if (templateJson.get(YAMLFieldNameConstants.VARIABLES) == null) {
         return variableMergeServiceResponse;
       }
       JsonNode templateVariablesJson = templateJson.retain(YAMLFieldNameConstants.VARIABLES);
       VariableMergeServiceResponse templateVariableResponse = YamlVariablesUtils.getTemplateVariablesFromYaml(
-          templateVariablesJson.toString(), YAMLFieldNameConstants.VARIABLES);
+              templateVariablesJson.toString(), YAMLFieldNameConstants.VARIABLES);
       variablesObject.setAll(
-          (ObjectNode) YamlUtils.readTree(templateVariableResponse.getYaml()).getNode().getCurrJsonNode());
+              (ObjectNode) YamlUtils.readTree(templateVariableResponse.getYaml()).getNode().getCurrJsonNode());
       templateVariableResponse.getMetadataMap().values().forEach(variableValue
-          -> variableValue.setYamlProperties(YamlProperties.newBuilder()
-                                                 .setVariableName(variableValue.getYamlProperties().getVariableName())
-                                                 .setFqn(variableValue.getYamlProperties().getVariableName())
-                                                 .setLocalName(variableValue.getYamlProperties().getVariableName())
-                                                 .setVisible(variableValue.getYamlProperties().getVisible())
-                                                 .build()));
+              -> variableValue.setYamlProperties(YamlProperties.newBuilder()
+              .setVariableName(variableValue.getYamlProperties().getVariableName())
+              .setFqn(variableValue.getYamlProperties().getVariableName())
+              .setLocalName(variableValue.getYamlProperties().getVariableName())
+              .setVisible(variableValue.getYamlProperties().getVisible())
+              .build()));
       variableMergeServiceResponse.getMetadataMap().putAll(templateVariableResponse.getMetadataMap());
 
       return VariableMergeServiceResponse.builder()
-          .yaml(YamlUtils.write(variablesObject))
-          .errorResponses(variableMergeServiceResponse.getErrorResponses())
-          .metadataMap(variableMergeServiceResponse.getMetadataMap())
-          .serviceExpressionPropertiesList(variableMergeServiceResponse.getServiceExpressionPropertiesList())
-          .build();
+              .yaml(YamlUtils.write(variablesObject))
+              .errorResponses(variableMergeServiceResponse.getErrorResponses())
+              .metadataMap(variableMergeServiceResponse.getMetadataMap())
+              .serviceExpressionPropertiesList(variableMergeServiceResponse.getServiceExpressionPropertiesList())
+              .build();
     } catch (IOException e) {
       throw new InvalidRequestException("Couldn't convert templateYaml to JsonNode");
+    }
+  }
+
+  public String getComment(String operationType, String templateIdentifier, String commitMessage) {
+    if (isNotEmpty(commitMessage)) {
+      return commitMessage;
+    } else {
+      return String.format(
+          "[HARNESS]: Template with template identifier [%s] has been [%s]", templateIdentifier, operationType);
     }
   }
 }

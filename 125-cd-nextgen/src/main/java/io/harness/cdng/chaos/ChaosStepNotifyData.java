@@ -12,8 +12,10 @@ import io.harness.tasks.ResponseData;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 
 @Value
+@FieldNameConstants(innerTypeName = "ChaosStepNotifyDataKeys")
 @Builder
 public class ChaosStepNotifyData implements ResponseData, Outcome {
   String phase;

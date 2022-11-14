@@ -19,7 +19,7 @@ public class FreezeNotifications {
   String name;
   boolean enabled;
 
-  List<FreezeEvent> freezeEvents;
+  List<FreezeEvent> events;
 
   @ApiModelProperty(dataType = "io.harness.freeze.beans.FreezeNotificationChannelWrapper")
   @JsonProperty("notificationMethod")

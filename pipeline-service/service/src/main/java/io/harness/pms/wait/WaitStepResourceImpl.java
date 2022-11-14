@@ -7,9 +7,9 @@
 
 package io.harness.pms.wait;
 
-import static io.harness.audit.ResourceTypeConstants.PIPELINE;
 import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_EXECUTE;
 import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_VIEW;
+import static io.harness.pms.utils.PmsConstants.PIPELINE;
 
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -38,7 +38,7 @@ public class WaitStepResourceImpl implements WaitStepResource {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, orgId, projectId), Resource.of(PIPELINE, pipelineIdentifier), PIPELINE_EXECUTE);
     waitStepService.markAsFailOrSuccess(
-        nodeExecutionId, WaitStepActionMapper.mapWaitStepAction(waitStepRequestDto.getAction()));
+        planExecutionId, nodeExecutionId, WaitStepActionMapper.mapWaitStepAction(waitStepRequestDto.getAction()));
     return ResponseDTO.newResponse(WaitStepResponseDto.builder().status(true).build());
   }
 

@@ -113,9 +113,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
+import javax.validation.Validation;
+import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
 import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
+import ru.vyarus.guice.validator.ValidationModule;
 
 @Slf4j
 @OwnedBy(CDC)
@@ -157,6 +161,7 @@ public class TemplateServiceModule extends AbstractModule {
     install(PrimaryVersionManagerModule.getInstance());
     install(TimeModule.getInstance());
     install(FiltersModule.getInstance());
+    install(new ValidationModule(getValidatorFactory()));
     install(new ProjectClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(new OrganizationClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
@@ -356,5 +361,12 @@ public class TemplateServiceModule extends AbstractModule {
             .build());
     log.info("delegate callback token generated =[{}]", delegateCallbackToken.getToken());
     return delegateCallbackToken;
+  }
+
+  private ValidatorFactory getValidatorFactory() {
+    return Validation.byDefaultProvider()
+        .configure()
+        .parameterNameProvider(new ReflectionParameterNameProvider())
+        .buildValidatorFactory();
   }
 }

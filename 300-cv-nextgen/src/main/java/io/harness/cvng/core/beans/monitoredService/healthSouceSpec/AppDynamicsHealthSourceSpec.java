@@ -11,7 +11,6 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
-import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
@@ -22,6 +21,7 @@ import io.harness.cvng.core.validators.UniqueIdentifierCheck;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,11 +48,12 @@ import org.hibernate.validator.constraints.NotEmpty;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "AppDynamicsHealthSource",
+    description = "This is the AppDynamics Metric Health Source spec entity defined in Harness")
 public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
   @NotNull String feature;
   @NotEmpty String applicationName;
   @NotEmpty String tierName;
-  @Valid Set<TimeSeriesMetricPackDTO> metricPacks;
   @Valid @UniqueIdentifierCheck List<AppDMetricDefinitions> metricDefinitions;
   public List<AppDMetricDefinitions> getMetricDefinitions() {
     if (metricDefinitions == null) {

@@ -49,7 +49,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 import io.harness.steps.matrix.StrategyStep;
 
@@ -78,7 +78,7 @@ import org.mockito.MockitoAnnotations;
 public class RetryExecuteHelperTest extends CategoryTest {
   @InjectMocks private RetryExecutionHelper retryExecuteHelper;
   @Mock private NodeExecutionServiceImpl nodeExecutionService;
-  @Mock private PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
+  @Mock private PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Mock private PMSPipelineService pipelineService;
   @Mock private PMSExecutionService executionService;
   @Mock private PlanExecutionMetadataService planExecutionMetadataService;
@@ -852,7 +852,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
         Collections.singletonList(PipelineExecutionSummaryEntity.builder().build());
 
     // entities are <=1. Checking error message
-    when(pmsExecutionSummaryRespository.fetchPipelineSummaryEntityFromRootParentId(rootExecutionId))
+    when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentId(rootExecutionId))
         .thenReturn(pipelineExecutionSummaryEntities);
     RetryHistoryResponseDto retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId);
     assertThat(retryHistory.getErrorMessage()).isNotNull();
@@ -876,7 +876,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
             .status(ExecutionStatus.ABORTED)
             .build());
 
-    when(pmsExecutionSummaryRespository.fetchPipelineSummaryEntityFromRootParentId(rootExecutionId))
+    when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentId(rootExecutionId))
         .thenReturn(pipelineExecutionSummaryEntities);
     retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId);
     assertThat(retryHistory.getErrorMessage()).isNull();
@@ -893,7 +893,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
         Collections.singletonList(PipelineExecutionSummaryEntity.builder().build());
 
     // entities are <=1. Checking error message
-    when(pmsExecutionSummaryRespository.fetchPipelineSummaryEntityFromRootParentId(rootExecutionId))
+    when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentId(rootExecutionId))
         .thenReturn(pipelineExecutionSummaryEntities);
     RetryLatestExecutionResponseDto retryLatestExecutionResponse =
         retryExecuteHelper.getRetryLatestExecutionId(rootExecutionId);
@@ -918,7 +918,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
             .status(ExecutionStatus.ABORTED)
             .build());
 
-    when(pmsExecutionSummaryRespository.fetchPipelineSummaryEntityFromRootParentId(rootExecutionId))
+    when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentId(rootExecutionId))
         .thenReturn(pipelineExecutionSummaryEntities);
     retryLatestExecutionResponse = retryExecuteHelper.getRetryLatestExecutionId(rootExecutionId);
     assertThat(retryLatestExecutionResponse.getErrorMessage()).isNull();
@@ -929,7 +929,9 @@ public class RetryExecuteHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testValidateRetryWithPipelineDeleted() {
-    doReturn(Optional.empty()).when(pipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.empty())
+        .when(pipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
     assertThat(retryInfo.isResumable()).isFalse();
     assertThat(retryInfo.getErrorMessage())
@@ -942,7 +944,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
   public void testValidateRetryWhenNotTheLatestExecution() {
     doReturn(Optional.of(PipelineEntity.builder().build()))
         .when(pipelineService)
-        .get(accountId, orgId, projectId, pipelineId, false);
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     doReturn(PipelineExecutionSummaryEntity.builder().isLatestExecution(false).build())
         .when(executionService)
         .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecId, false);
@@ -959,7 +961,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
   public void testValidateRetryWhenThirtyDaysHavePassed() {
     doReturn(Optional.of(PipelineEntity.builder().build()))
         .when(pipelineService)
-        .get(accountId, orgId, projectId, pipelineId, false);
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - 60 * DAY_IN_MS)
@@ -977,7 +979,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
   public void testValidateRetryWhenPlanExecutionDoesNotExist() {
     doReturn(Optional.of(PipelineEntity.builder().build()))
         .when(pipelineService)
-        .get(accountId, orgId, projectId, pipelineId, false);
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)
@@ -1000,7 +1002,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(originalYaml).build()))
         .when(pipelineService)
-        .get(accountId, orgId, projectId, pipelineId, false);
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)
@@ -1028,7 +1030,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(originalYaml).build()))
         .when(pipelineService)
-        .get(accountId, orgId, projectId, pipelineId, false);
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)
@@ -1064,7 +1066,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(pipelineYaml).build()))
         .when(pipelineService)
-        .get(accountId, orgId, projectId, pipelineId, false);
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)

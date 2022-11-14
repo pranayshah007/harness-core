@@ -47,6 +47,7 @@ public class GraphLayoutDtoMapperTest extends CategoryTest {
     assertThat(graphLayoutNodeDTO.getName()).isEqualTo("Node name");
     assertThat(graphLayoutNodeDTO.getNodeGroup()).isEqualTo("goodNodes");
     assertThat(graphLayoutNodeDTO.getStatus()).isEqualTo(ExecutionStatus.NOTSTARTED);
+    assertThat(graphLayoutNodeDTO.getIsRollbackStageNode()).isEqualTo(false);
     EdgeLayoutListDTO edgeLayoutList = graphLayoutNodeDTO.getEdgeLayoutList();
     assertThat(edgeLayoutList.getCurrentNodeChildren()).hasSize(1);
     assertThat(edgeLayoutList.getCurrentNodeChildren()).contains("child");

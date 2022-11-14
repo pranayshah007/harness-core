@@ -12,5 +12,8 @@ public enum CVNGPerpetualTaskUnassignedReason {
   NO_DELEGATE_AVAILABLE,
   NO_ELIGIBLE_DELEGATES,
   MULTIPLE_FAILED_PERPETUAL_TASK,
-  VALIDATION_TASK_FAILED;
+  VALIDATION_TASK_FAILED,
+  TASK_EXPIRED, // sync task expired
+  TASK_VALIDATION_FAILED, // sync task validation failed
+  PT_TASK_FAILED; // PT task failed due unexpected reasons
 }

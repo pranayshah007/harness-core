@@ -23,6 +23,7 @@ import static software.wings.beans.security.UserGroup.DEFAULT_PROD_SUPPORT_USER_
 import static software.wings.security.EnvFilter.FilterType.NON_PROD;
 import static software.wings.security.EnvFilter.FilterType.PROD;
 import static software.wings.security.GenericEntityFilter.FilterType.SELECTED;
+import static software.wings.security.PermissionAttribute.PermissionType.ACCESS_NEXTGEN;
 import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.ALL_APP_ENTITIES;
 import static software.wings.security.PermissionAttribute.PermissionType.APP_TEMPLATE;
@@ -389,7 +390,7 @@ public class AuthHandler {
       Map<PermissionType, Map<String, List<Base>>> permissionTypeAppIdEntityMap, Set<String> appIds,
       PermissionType permissionType, Filter entityFilter, Set<Action> actions) {
     final HashSet<Action> fixedEntityActions = Sets.newHashSet(Action.READ, Action.UPDATE, Action.DELETE,
-        Action.EXECUTE_PIPELINE, Action.EXECUTE_WORKFLOW, Action.EXECUTE_WORKFLOW_ROLLBACK);
+        Action.EXECUTE_PIPELINE, Action.EXECUTE_WORKFLOW, Action.EXECUTE_WORKFLOW_ROLLBACK, Action.ABORT_WORKFLOW);
     appIds.forEach(appId -> {
       AppPermissionSummary appPermissionSummary = appPermissionMap.get(appId);
       if (appPermissionSummary == null) {
@@ -581,6 +582,11 @@ public class AuthHandler {
                 finalAppPermissionSummary.getRollbackWorkflowExecutePermissionsForEnvs(), envIdSet);
             finalAppPermissionSummary.setRollbackWorkflowExecutePermissionsForEnvs(updatedEnvIdSet);
           }
+          if (entityActions.contains(Action.ABORT_WORKFLOW)) {
+            Set<String> updatedEnvIdSet = addToExistingEntityIdSet(
+                finalAppPermissionSummary.getAbortWorkflowExecutePermissionsForEnvs(), envIdSet);
+            finalAppPermissionSummary.setAbortWorkflowExecutePermissionsForEnvs(updatedEnvIdSet);
+          }
           break;
         }
         case APP_TEMPLATE: {
@@ -652,7 +658,7 @@ public class AuthHandler {
       Map<PermissionType, Map<String, List<Base>>> permissionTypeAppIdEntityMap, Set<String> appIds,
       PermissionType permissionType, Filter entityFilter, Set<Action> actions) {
     final HashSet<Action> fixedEntityActions = Sets.newHashSet(Action.READ, Action.UPDATE, Action.DELETE,
-        Action.EXECUTE_PIPELINE, Action.EXECUTE_WORKFLOW, Action.EXECUTE_WORKFLOW_ROLLBACK);
+        Action.EXECUTE_PIPELINE, Action.EXECUTE_WORKFLOW, Action.EXECUTE_WORKFLOW_ROLLBACK, Action.ABORT_WORKFLOW);
     appIds.forEach(appId -> {
       AppPermissionSummary appPermissionSummary = appPermissionMap.get(appId);
       if (appPermissionSummary == null) {
@@ -1941,7 +1947,7 @@ public class AuthHandler {
         MANAGE_ALERT_NOTIFICATION_RULES, MANAGE_DELEGATE_PROFILES, MANAGE_CONFIG_AS_CODE, MANAGE_SECRETS,
         MANAGE_SECRET_MANAGERS, MANAGE_AUTHENTICATION_SETTINGS, MANAGE_IP_WHITELIST, MANAGE_DEPLOYMENT_FREEZES,
         MANAGE_PIPELINE_GOVERNANCE_STANDARDS, MANAGE_API_KEYS, MANAGE_CUSTOM_DASHBOARDS, CREATE_CUSTOM_DASHBOARDS,
-        MANAGE_SSH_AND_WINRM, MANAGE_RESTRICTED_ACCESS);
+        MANAGE_SSH_AND_WINRM, MANAGE_RESTRICTED_ACCESS, ACCESS_NEXTGEN);
   }
 
   private Set<Action> getAllActions() {

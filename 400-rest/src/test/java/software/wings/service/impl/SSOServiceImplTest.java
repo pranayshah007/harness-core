@@ -469,5 +469,19 @@ public class SSOServiceImplTest extends WingsBaseTest {
         .isEqualTo(USER_PASSWORD);
     assertThat(loginSettingsAuthMechanismUpdateEvent.getNewAuthMechanismYamlDTO().getAuthenticationMechanism())
         .isEqualTo(SAML);
+
+    ssoService.setAuthenticationMechanism(account.getUuid(), LDAP);
+    outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(AUTHENTICATION_MECHANISM_UPDATED);
+    loginSettingsAuthMechanismUpdateEvent = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+        outboxEvent.getEventData(), LoginSettingsAuthMechanismUpdateEvent.class);
+
+    assertThat(loginSettingsAuthMechanismUpdateEvent.getAccountIdentifier()).isEqualTo(account.getUuid());
+    assertThat(loginSettingsAuthMechanismUpdateEvent.getOldAuthMechanismYamlDTO().getAuthenticationMechanism())
+        .isEqualTo(SAML);
+    assertThat(loginSettingsAuthMechanismUpdateEvent.getNewAuthMechanismYamlDTO().getAuthenticationMechanism())
+        .isEqualTo(LDAP);
   }
 }

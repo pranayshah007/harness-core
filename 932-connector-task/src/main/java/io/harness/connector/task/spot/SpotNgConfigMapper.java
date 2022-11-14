@@ -15,7 +15,7 @@ import io.harness.connector.helper.DecryptionHelper;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
-import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.govern.Switch;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -36,15 +36,15 @@ public class SpotNgConfigMapper {
     SpotCredentialType spotCredentialType = credential.getSpotCredentialType();
     SpotConfig spotConfig = null;
 
-    if (spotCredentialType == SpotCredentialType.MANUAL_CREDENTIALS) {
-      SpotManualConfigSpecDTO config = (SpotManualConfigSpecDTO) credential.getConfig();
-      config = (SpotManualConfigSpecDTO) decryptionHelper.decrypt(config, encryptionDetails);
+    if (spotCredentialType == SpotCredentialType.PERMANENT_TOKEN) {
+      SpotPermanentTokenConfigSpecDTO config = (SpotPermanentTokenConfigSpecDTO) credential.getConfig();
+      config = (SpotPermanentTokenConfigSpecDTO) decryptionHelper.decrypt(config, encryptionDetails);
       spotConfig = SpotConfig.builder()
-                       .spotManualCredential(SpotManualCredential.builder()
-                                                 .accountId(getSecretAsStringFromPlainTextOrSecretRef(
-                                                     config.getAccountId(), config.getAccountIdRef()))
-                                                 .appTokenId(getDecryptedValueWithNullCheck(config.getApiTokenRef()))
-                                                 .build())
+                       .credential(SpotPermanentTokenCredential.builder()
+                                       .spotAccountId(getSecretAsStringFromPlainTextOrSecretRef(
+                                           config.getSpotAccountId(), config.getSpotAccountIdRef()))
+                                       .appTokenId(getDecryptedValueWithNullCheck(config.getApiTokenRef()))
+                                       .build())
                        .build();
     } else {
       Switch.unhandled(spotCredentialType);

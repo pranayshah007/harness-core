@@ -8,26 +8,54 @@
 package io.harness.delegate.task.shell.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.shell.winrm.WinRmUtils.getShellExecutorConfig;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
+import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
+import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
+import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.exception.InvalidRequestException;
+import io.harness.logging.LogLevel;
+import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
+import io.harness.shell.ShellExecutorConfig;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Map;
 
 @OwnedBy(CDP)
 @Singleton
 public class WinRmCleanupCommandHandler implements CommandHandler {
+  private final ShellExecutorFactoryNG shellExecutorFactory;
+
+  @Inject
+  public WinRmCleanupCommandHandler(ShellExecutorFactoryNG shellExecutorFactoryNG) {
+    this.shellExecutorFactory = shellExecutorFactoryNG;
+  }
+
   @Override
   public ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
       Map<String, Object> taskContext) {
+    if (!(parameters instanceof WinrmTaskParameters)) {
+      throw new InvalidRequestException("Invalid task parameters submitted for command task.");
+    }
+
+    if (!(commandUnit instanceof NgCleanupCommandUnit)) {
+      throw new InvalidRequestException("Invalid command unit specified for command task.");
+    }
+
+    ShellExecutorConfig config = getShellExecutorConfig((WinrmTaskParameters) parameters, commandUnit);
+    AbstractScriptExecutor executor =
+        shellExecutorFactory.getExecutor(config, logStreamingTaskClient, commandUnitsProgress, true);
+    executor.getLogCallback().saveExecutionLog("Command completed with ExitCode (0)", LogLevel.INFO, SUCCESS);
     return ExecuteCommandResponse.builder().status(SUCCESS).build();
   }
 }

@@ -9,8 +9,7 @@ package io.harness.instancesyncmonitoring.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.instancesyncmonitoring.model.InstanceSyncMetricContext;
-import io.harness.instancesyncmonitoring.model.InstanceSyncMetricDetails;
+import io.harness.metrics.beans.AccountMetricContext;
 import io.harness.metrics.service.api.MetricService;
 
 import com.google.inject.Inject;
@@ -26,26 +25,27 @@ public class InstanceSyncMonitoringServiceImpl implements InstanceSyncMonitoring
   public static final String NEW_DEPLOYMENT_METRIC_NAME = "instance_sync_new_deployment";
   public static final String PERPETUAL_TASK_METRIC_NAME = "instance_sync_perpetual_task";
   public static final String DURATION_METRIC_PATTERN = "%s_duration";
-  public static final String SUCCESS_STATUS = "Success";
-  public static final String FAILED_STATUS = "Failed";
+  public static final String NG_SUFFIX_PATTERN = "%s_ng";
 
-  public void recordMetrics(
-      InstanceSyncMetricDetails instanceSyncMetricDetails, boolean isNewDeployment, long duration) {
+  public void recordMetrics(String accountId, boolean isNg, boolean isNewDeployment, long duration) {
     String countMetricName = isNewDeployment ? NEW_DEPLOYMENT_METRIC_NAME : PERPETUAL_TASK_METRIC_NAME;
     String durationMetricName = String.format(DURATION_METRIC_PATTERN, countMetricName);
-    recordMetric(instanceSyncMetricDetails, countMetricName);
-    recordMetricDuration(instanceSyncMetricDetails, durationMetricName, Duration.ofMillis(duration));
+    if (isNg) {
+      countMetricName = String.format(NG_SUFFIX_PATTERN, countMetricName);
+      durationMetricName = String.format(NG_SUFFIX_PATTERN, durationMetricName);
+    }
+    recordMetric(accountId, countMetricName);
+    recordMetricDuration(accountId, durationMetricName, Duration.ofMillis(duration));
   }
 
-  private void recordMetric(InstanceSyncMetricDetails instanceSyncMetricDetails, String metricName) {
-    try (InstanceSyncMetricContext ignore = new InstanceSyncMetricContext(instanceSyncMetricDetails)) {
+  private void recordMetric(String accountId, String metricName) {
+    try (AccountMetricContext ignore = new AccountMetricContext(accountId)) {
       metricService.incCounter(metricName);
     }
   }
 
-  private void recordMetricDuration(
-      InstanceSyncMetricDetails instanceSyncMetricDetails, String metricName, Duration duration) {
-    try (InstanceSyncMetricContext ignore = new InstanceSyncMetricContext(instanceSyncMetricDetails)) {
+  private void recordMetricDuration(String accountId, String metricName, Duration duration) {
+    try (AccountMetricContext ignore = new AccountMetricContext(accountId)) {
       metricService.recordDuration(metricName, duration);
     }
   }

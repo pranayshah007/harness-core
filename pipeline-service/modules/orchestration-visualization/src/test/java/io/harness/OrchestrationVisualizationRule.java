@@ -53,7 +53,6 @@ import io.harness.serializer.kryo.OrchestrationVisualizationTestKryoRegistrar;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
-import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -218,7 +217,7 @@ public class OrchestrationVisualizationRule implements MethodRule, InjectorRuleM
     modules.add(VersionModule.getInstance());
     modules.add(TimeModule.getInstance());
     modules.add(TestMongoModule.getInstance());
-    modules.add(new SpringPersistenceTestModule());
+    modules.add(new OrchestrationVisualisationPersistenceTestModule());
     CacheConfigBuilder cacheConfigBuilder =
         CacheConfig.builder().disabledCaches(new HashSet<>()).cacheNamespace("harness-cache");
     if (annotations.stream().anyMatch(annotation -> annotation instanceof Cache)) {

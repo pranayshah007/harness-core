@@ -25,13 +25,13 @@ import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.MergeTemplateInputsInObject;
 import io.harness.template.helpers.TemplateInputsValidator;
@@ -86,7 +86,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   public TemplateMergeResponseDTO applyTemplatesToYaml(
       String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField) {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
-    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId);
+    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     TemplateInputsErrorMetadataDTO errorResponse = templateMergeServiceHelper.validateLinkedTemplateInputsInYaml(
         accountId, orgId, projectId, yamlNode, templateCacheMap);
@@ -105,7 +105,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   public TemplateMergeResponseDTO applyTemplatesToYamlV2(
       String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField) {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
-    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId);
+    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
         templateInputsValidator.validateNestedTemplateInputsForGivenYaml(

@@ -7,6 +7,9 @@
 
 package io.harness.delegate.beans.connector.scm.github;
 
+import io.harness.delegate.beans.connector.scm.github.outcome.GithubCredentialsOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.github.outcome.GithubHttpCredentialsOutcomeDTO;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -41,5 +44,9 @@ public class GithubHttpCredentialsDTO implements GithubCredentialsDTO {
   public GithubHttpCredentialsDTO(GithubHttpAuthenticationType type, GithubHttpCredentialsSpecDTO httpCredentialsSpec) {
     this.type = type;
     this.httpCredentialsSpec = httpCredentialsSpec;
+  }
+  @Override
+  public GithubCredentialsOutcomeDTO toOutcome() {
+    return GithubHttpCredentialsOutcomeDTO.builder().type(this.type).spec(this.httpCredentialsSpec).build();
   }
 }

@@ -11,6 +11,9 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMap
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static java.lang.String.format;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
@@ -26,6 +29,10 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep.VmPluginStepBuilder;
+import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
+import io.harness.delegate.beans.ci.vm.steps.VmRunStep.VmRunStepBuilder;
+import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -36,18 +43,21 @@ import io.harness.yaml.core.timeout.Timeout;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @Singleton
+@Slf4j
 public class VmPluginStepSerializer {
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject ConnectorUtils connectorUtils;
   @Inject HarnessImageUtils harnessImageUtils;
 
-  public VmPluginStep serialize(PluginStepInfo pluginStepInfo, StageInfraDetails stageInfraDetails, String identifier,
+  public VmStepInfo serialize(PluginStepInfo pluginStepInfo, StageInfraDetails stageInfraDetails, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance) {
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Plugin", identifier, pluginStepInfo.getSettings(), false);
@@ -64,12 +74,31 @@ public class VmPluginStepSerializer {
 
     String connectorIdentifier = RunTimeInputHandler.resolveStringParameter(
         "connectorRef", stepName, identifier, pluginStepInfo.getConnectorRef(), false);
-
     String image =
         RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, pluginStepInfo.getImage(), false);
-
+    String uses =
+        RunTimeInputHandler.resolveStringParameter("uses", stepName, identifier, pluginStepInfo.getUses(), false);
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, pluginStepInfo.getDefaultTimeout());
 
+    if (isNotEmpty(image)) {
+      if (isNotEmpty(uses)) {
+        log.warn("Both image and uses are set for plugin step. Ignoring uses field");
+      }
+      return convertContainerStep(
+          ambiance, identifier, image, connectorIdentifier, envVars, timeout, stageInfraDetails, pluginStepInfo);
+    } else if (isNotEmpty(uses)) {
+      if (stageInfraDetails.getType() != StageInfraDetails.Type.DLITE_VM) {
+        throw new CIStageExecutionException(format("uses field is applicable only for cloud builds"));
+      }
+      return convertContainerlessStep(identifier, uses, envVars, timeout, pluginStepInfo);
+    } else {
+      throw new CIStageExecutionException("Either image or uses field needs to be set");
+    }
+  }
+
+  private VmPluginStep convertContainerStep(Ambiance ambiance, String identifier, String image,
+      String connectorIdentifier, Map<String, String> envVars, long timeout, StageInfraDetails stageInfraDetails,
+      PluginStepInfo pluginStepInfo) {
     VmPluginStepBuilder pluginStepBuilder =
         VmPluginStep.builder().image(image).envVariables(envVars).timeoutSecs(timeout);
 
@@ -86,17 +115,36 @@ public class VmPluginStepSerializer {
     } else if (!StringUtils.isEmpty(image) && !StringUtils.isEmpty(connectorIdentifier)) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
+      pluginStepBuilder.image(image);
       pluginStepBuilder.imageConnector(connectorDetails);
     }
 
     if (pluginStepInfo.getReports().getValue() != null) {
       if (pluginStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {
         JUnitTestReport junitTestReport = (JUnitTestReport) pluginStepInfo.getReports().getValue().getSpec();
-        List<String> resolvedReport =
-            RunTimeInputHandler.resolveListParameter("paths", stepName, identifier, junitTestReport.getPaths(), false);
+        List<String> resolvedReport = RunTimeInputHandler.resolveListParameter(
+            "paths", pluginStepInfo.getName(), pluginStepInfo.getIdentifier(), junitTestReport.getPaths(), false);
         pluginStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
       }
     }
     return pluginStepBuilder.build();
+  }
+
+  private VmRunStep convertContainerlessStep(
+      String identifier, String uses, Map<String, String> envVars, long timeout, PluginStepInfo pluginStepInfo) {
+    VmRunStepBuilder stepBuilder = VmRunStep.builder()
+                                       .entrypoint(Arrays.asList("plugin", "-kind", "harness", "-repo"))
+                                       .command(uses)
+                                       .envVariables(envVars)
+                                       .timeoutSecs(timeout);
+    if (pluginStepInfo.getReports().getValue() != null) {
+      if (pluginStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {
+        JUnitTestReport junitTestReport = (JUnitTestReport) pluginStepInfo.getReports().getValue().getSpec();
+        List<String> resolvedReport = RunTimeInputHandler.resolveListParameter(
+            "paths", pluginStepInfo.getName(), identifier, junitTestReport.getPaths(), false);
+        stepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
+      }
+    }
+    return stepBuilder.build();
   }
 }

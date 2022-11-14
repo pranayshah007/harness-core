@@ -34,8 +34,8 @@ public class PipelineDashboardOverviewResourceV2Impl implements PipelineDashboar
   @NGAccessControlCheck(resourceType = "PROJECT", permission = "core_project_view")
   public ResponseDTO<DashboardPipelineHealthInfo> fetchPipelinedHealth(
       @NotNull @AccountIdentifier String accountIdentifier, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ResourceIdentifier String projectIdentifier, @NotNull String pipelineIdentifier,
-      @NotNull String moduleInfo, @NotNull long startInterval, @NotNull long endInterval) {
+      @NotNull @ResourceIdentifier String projectIdentifier, @NotNull String pipelineIdentifier, String moduleInfo,
+      @NotNull long startInterval, @NotNull long endInterval) {
     log.info("Getting pipeline health");
     long previousInterval = startInterval - (endInterval - startInterval + DAY_IN_MS);
 
@@ -47,8 +47,8 @@ public class PipelineDashboardOverviewResourceV2Impl implements PipelineDashboar
   @NGAccessControlCheck(resourceType = "PROJECT", permission = "core_project_view")
   public ResponseDTO<DashboardPipelineExecutionInfo> getPipelineDashboardExecution(
       @NotNull @AccountIdentifier String accountIdentifier, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ResourceIdentifier String projectIdentifier, @NotNull String pipelineIdentifier,
-      @NotNull String moduleInfo, @NotNull long startInterval, @NotNull long endInterval) {
+      @NotNull @ResourceIdentifier String projectIdentifier, @NotNull String pipelineIdentifier, String moduleInfo,
+      @NotNull long startInterval, @NotNull long endInterval) {
     log.info("getting pipeline execution");
     return ResponseDTO.newResponse(pipelineDashboardService.getDashboardPipelineExecutionInfo(accountIdentifier,
         orgIdentifier, projectIdentifier, pipelineIdentifier, startInterval, endInterval, moduleInfo));

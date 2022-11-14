@@ -42,7 +42,7 @@ public class MigrateEnvironmentsToTimeScaleDB implements TimeScaleEntityMigratio
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_ENVIRONMENTS");
       return false;
     }
     int count = 0;
@@ -51,7 +51,7 @@ public class MigrateEnvironmentsToTimeScaleDB implements TimeScaleEntityMigratio
       findOptions_environments.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<Environment> iterator =
-               new HIterator<>(wingsPersistence.createQuery(Environment.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(Environment.class, excludeAuthority)
                                    .field(EnvironmentKeys.accountId)
                                    .equal(accountId)
                                    .fetch(findOptions_environments))) {
@@ -62,10 +62,10 @@ public class MigrateEnvironmentsToTimeScaleDB implements TimeScaleEntityMigratio
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_ENVIRONMENTS", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_ENVIRONMENTS", count);
     }
     return true;
   }

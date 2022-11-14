@@ -421,4 +421,14 @@ public class AlertServiceImpl implements AlertService {
       }
     }
   }
+
+  @Override
+  public void deleteArtifactStreamAlertForAccount(String accountId) {
+    try (HIterator<Alert> alerts = findExistingAlertsOfType(accountId, null, AlertType.ARTIFACT_COLLECTION_FAILED)) {
+      for (Alert alert : alerts) {
+        ArtifactCollectionFailedAlert data = (ArtifactCollectionFailedAlert) alert.getAlertData();
+        wingsPersistence.delete(alert);
+      }
+    }
+  }
 }

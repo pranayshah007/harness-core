@@ -18,7 +18,7 @@ type downloadLinkCommand struct {
 }
 
 func (c *downloadLinkCommand) run(*kingpin.ParseContext) error {
-	client := client.NewHTTPClient(c.server, c.accountID, c.token, false)
+	client := client.NewHTTPClient(c.server, c.accountID, c.token, false, "")
 	link, err := client.DownloadLink(nocontext, c.key)
 	if err != nil {
 		return err

@@ -27,6 +27,7 @@ import io.harness.cdng.ecs.EcsCanaryDeployStepNode;
 import io.harness.cdng.ecs.EcsRollingDeployStepNode;
 import io.harness.cdng.ecs.EcsRollingRollbackStepNode;
 import io.harness.cdng.ecs.EcsRunTaskStepNode;
+import io.harness.cdng.elastigroup.ElastigroupSetupStepNode;
 import io.harness.cdng.gitops.CreatePRStepNode;
 import io.harness.cdng.gitops.MergePRStepNode;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepNode;
@@ -56,6 +57,8 @@ import io.harness.cdng.provision.terraform.TerraformPlanStepNode;
 import io.harness.cdng.provision.terraform.TerraformRollbackStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
+import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepNode;
+import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepNode;
 import io.harness.cdng.ssh.CommandStepNode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -108,6 +111,7 @@ public class CDNGRegistrars {
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(NGCommonModuleRegistrars.morphiaRegistrars)
           .addAll(FileStoreRegistrars.morphiaRegistrars)
+          .addAll(FreezeRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
@@ -540,6 +544,18 @@ public class CDNGRegistrars {
                                            .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ELASTIGROUP_SETUP_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(ElastigroupSetupStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.ECS_ROLLING_DEPLOY_STEP)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
@@ -654,8 +670,32 @@ public class CDNGRegistrars {
                    .availableAtAccountLevel(false)
                    .clazz(ChaosStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                           .namespace(SchemaNamespaceConstants.CHAOS)
+                                           .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(ImmutableList.of(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ELASTIGROUP_DEPLOY_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(ElastigroupDeployStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ELASTIGROUP_ROLLBACK_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(ElastigroupRollbackStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())

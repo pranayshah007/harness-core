@@ -211,7 +211,7 @@ import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialSpecDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
-import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.serializer.KryoRegistrar;
@@ -413,7 +413,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(SpotCredentialDTO.class, 21002);
     kryo.register(SpotCredentialSpecDTO.class, 21003);
     kryo.register(SpotCredentialType.class, 21004);
-    kryo.register(SpotManualConfigSpecDTO.class, 21005);
+    kryo.register(SpotPermanentTokenConfigSpecDTO.class, 21005);
 
     kryo.register(JenkinsAuthCredentialsDTO.class, 29112);
     kryo.register(JenkinsAuthenticationDTO.class, 29113);

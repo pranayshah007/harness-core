@@ -14,9 +14,11 @@ import static software.wings.beans.Service.ServiceKeys;
 
 import static java.util.Arrays.asList;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.SearchFilter;
 import io.harness.beans.SearchFilter.SearchFilterBuilder;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import software.wings.beans.Environment;
@@ -37,19 +39,14 @@ import org.mongodb.morphia.mapping.Mapper;
 @Slf4j
 public class WorkflowExecutionOptimizationHelper {
   @Inject HPersistence hPersistence;
+  @Inject FeatureFlagService featureFlagService;
 
-  public void enforceAppIdFromChildrenEntities(PageRequest<WorkflowExecution> pageRequest) {
-    Set<String> appIds = new HashSet<>();
-    String accountIdFromQuery = null;
-    if (pageRequest.getUriInfo() != null && pageRequest.getUriInfo().getQueryParameters() != null) {
-      accountIdFromQuery = pageRequest.getUriInfo().getQueryParameters().get("accountId").get(0);
-    }
-
-    if (accountIdFromQuery == null) {
+  public void enforceAppIdFromChildrenEntities(PageRequest<WorkflowExecution> pageRequest, String accountId) {
+    if (!featureFlagService.isEnabled(FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING, accountId)) {
       return;
     }
 
-    final String accountId = accountIdFromQuery;
+    Set<String> appIds = new HashSet<>();
 
     PageRequest<WorkflowExecution> dummyPageRequest = populatePageFilters(pageRequest);
     dummyPageRequest.getFilters().forEach(filter -> {

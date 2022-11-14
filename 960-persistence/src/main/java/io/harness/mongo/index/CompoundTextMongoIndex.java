@@ -43,6 +43,16 @@ public class CompoundTextMongoIndex implements MongoIndex {
     BasicDBObject keys = buildBasicDBObject(id);
     BasicDBObject options = buildBasicDBObject();
 
+    if (isNotEmpty(getTextFields())) {
+      for (String field : getTextFields()) {
+        if (field.equals(id)) {
+          throw new IndexManagerInspectException("There is no point of having collection key in a composite index."
+              + "\nIf in the query there is a unique value it will always fetch exactly one item");
+        }
+        keys.append(field, IndexType.TEXT.toIndexValue());
+      }
+    }
+
     if (isNotEmpty(getSortFields())) {
       for (String field : getSortFields()) {
         if (field.equals(id)) {
@@ -57,15 +67,6 @@ public class CompoundTextMongoIndex implements MongoIndex {
       }
     }
 
-    if (isNotEmpty(getTextFields())) {
-      for (String field : getTextFields()) {
-        if (field.equals(id)) {
-          throw new IndexManagerInspectException("There is no point of having collection key in a composite index."
-              + "\nIf in the query there is a unique value it will always fetch exactly one item");
-        }
-        keys.append(field, IndexType.TEXT.toIndexValue());
-      }
-    }
     if (isNotEmpty(getRangeFields())) {
       for (String field : getRangeFields()) {
         if (field.equals(id)) {

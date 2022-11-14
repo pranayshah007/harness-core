@@ -39,4 +39,8 @@ public interface FreezeCRUDService {
       FreezeStatus freezeStatus, String accountId, String orgId, String projectId, List<String> freezeIdentifiers);
 
   FreezeResponseDTO getGlobalFreeze(String accountId, String orgId, String projectId);
+
+  FreezeSummaryResponseDTO getGlobalFreezeSummary(String accountId, String orgId, String projectId);
+
+  List<FreezeResponseDTO> getParentGlobalFreezeSummary(String accountId, String orgId, String projectId);
 }

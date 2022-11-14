@@ -27,10 +27,10 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
-import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -134,45 +134,52 @@ public class PMSPipelineTemplateHelper {
         accountId, orgId, projectId, null, null, null, TemplateReferenceRequestDTO.builder().yaml(yaml).build()));
   }
 
-  public RefreshResponseDTO getRefreshedYaml(String accountId, String orgId, String projectId, String yaml) {
+  public RefreshResponseDTO getRefreshedYaml(
+      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     if (gitEntityInfo != null) {
       return NGRestUtils.getResponse(templateResourceClient.getRefreshedYaml(accountId, orgId, projectId,
           gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
-          gitEntityInfo.getYamlGitConfigId(), true, refreshRequest));
+          gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
+          pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+          pipelineEntity.getProjectIdentifier(), refreshRequest));
     }
 
-    return NGRestUtils.getResponse(
-        templateResourceClient.getRefreshedYaml(accountId, orgId, projectId, null, null, null, refreshRequest));
+    return NGRestUtils.getResponse(templateResourceClient.getRefreshedYaml(
+        accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
   }
 
   public ValidateTemplateInputsResponseDTO validateTemplateInputsForGivenYaml(
-      String accountId, String orgId, String projectId, String yaml) {
+      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     if (gitEntityInfo != null) {
       return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(accountId, orgId,
           projectId, gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
-          gitEntityInfo.getYamlGitConfigId(), true, refreshRequest));
+          gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
+          pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+          pipelineEntity.getProjectIdentifier(), refreshRequest));
     }
 
     return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(
-        accountId, orgId, projectId, null, null, null, refreshRequest));
+        accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
   }
 
   public YamlFullRefreshResponseDTO refreshAllTemplatesForYaml(
-      String accountId, String orgId, String projectId, String yaml) {
+      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     if (gitEntityInfo != null) {
       return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(accountId, orgId, projectId,
           gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
-          gitEntityInfo.getYamlGitConfigId(), true, refreshRequest));
+          gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
+          pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+          pipelineEntity.getProjectIdentifier(), refreshRequest));
     }
 
     return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(
-        accountId, orgId, projectId, null, null, null, refreshRequest));
+        accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
   }
 
   private String getConnectorRef() {

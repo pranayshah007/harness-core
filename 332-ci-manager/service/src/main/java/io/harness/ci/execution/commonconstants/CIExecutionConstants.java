@@ -81,13 +81,13 @@ public class CIExecutionConstants {
 
   public static final String ADDON_VOLUME = "addon";
   public static final String ADDON_VOL_MOUNT_PATH = "/addon";
-  // Lite engine container constants
-  public static final String LITE_ENGINE_CONTAINER_NAME = "lite-engine";
 
   public static final Integer LITE_ENGINE_CONTAINER_MEM = 100;
   public static final Integer DEFAULT_CONTAINER_MEM_POV = 3000;
   public static final Integer LITE_ENGINE_CONTAINER_CPU = 100;
   public static final Integer DEFAULT_CONTAINER_CPU_POV = 1000;
+  public static final Integer MAXIMUM_EXPANSION_LIMIT = 5000;
+  public static final Integer MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT = 100;
 
   // entry point constants
   public static final String PORT_PREFIX = "--port";
@@ -151,6 +151,8 @@ public class CIExecutionConstants {
   // All FFs go here
   public static final String HARNESS_CI_INDIRECT_LOG_UPLOAD_FF = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF";
 
+  public static final String HARNESS_LE_STATUS_REST_ENABLED = "HARNESS_LE_STATUS_REST_ENABLED";
+
   // Deprecated
   public static final List<String> SH_COMMAND = Collections.unmodifiableList(Arrays.asList("sh", "-c", "--"));
   public static final List<String> PWSH_COMMAND = Collections.unmodifiableList(Arrays.asList("pwsh", "-Command"));
@@ -167,4 +169,9 @@ public class CIExecutionConstants {
 
   public static final String MEMORY = "MEMORY";
   public static final String CPU = "CPU";
+
+  // build multiplier values
+  public static final Double MACOS_BUILD_MULTIPLIER = 10.0;
+  public static final Double WINDOWS_BUILD_MULTIPLIER = 2.0;
+  public static final Double DEFAULT_BUILD_MULTIPLIER = 1.0;
 }

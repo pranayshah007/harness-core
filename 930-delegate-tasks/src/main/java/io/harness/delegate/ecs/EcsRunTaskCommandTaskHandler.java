@@ -118,7 +118,7 @@ public class EcsRunTaskCommandTaskHandler extends EcsCommandTaskNGHandler {
 
     List<String> triggeredTaskARNs = triggeredTasks.stream().map(task -> task.taskArn()).collect(Collectors.toList());
 
-    if (ecsRunTaskRequest.isSkipSteadyStateCheck()) {
+    if (!ecsRunTaskRequest.isSkipSteadyStateCheck()) {
       ecsCommandTaskHelper.waitAndDoSteadyStateCheck(triggeredTaskARNs, timeoutInMillis,
           ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getRegion(), ecsInfraConfig.getCluster(),
           runTaskLogCallback);

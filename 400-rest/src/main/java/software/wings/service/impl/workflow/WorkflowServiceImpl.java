@@ -691,7 +691,8 @@ public class WorkflowServiceImpl implements WorkflowService {
                   .build();
 
           List<WorkflowExecution> workflowExecutions =
-              workflowExecutionService.listExecutions(workflowExecutionPageRequest, false, false, false, false, false)
+              workflowExecutionService
+                  .listExecutions(workflowExecutionPageRequest, false, false, false, false, false, true)
                   .getResponse();
 
           workflowExecutions.forEach(we -> we.setStateMachine(null));
@@ -1657,6 +1658,12 @@ public class WorkflowServiceImpl implements WorkflowService {
       }
       if (stateType != null) {
         Map<String, Object> propertiesMap = new HashMap<>();
+        if (step.getType().equals(CLOUD_FORMATION_CREATE_STACK.name())) {
+          propertiesMap.put("customStackName", step.getProperties().get("customStackName"));
+          propertiesMap.put("region", step.getProperties().get("region"));
+          propertiesMap.put("useCustomStackName", step.getProperties().get("useCustomStackName"));
+          propertiesMap.put("awsConfigId", step.getProperties().get("awsConfigId"));
+        }
         propertiesMap.put("provisionerId", step.getProperties().get("provisionerId"));
         propertiesMap.put("timeoutMillis", step.getProperties().get("timeoutMillis"));
         propertiesMap.put("workspace",

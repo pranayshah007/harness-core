@@ -199,7 +199,9 @@ public class AzureClient {
     long currentTimestamp = System.currentTimeMillis();
     return JWT.create()
         .withHeader(headers)
-        .withAudience(format("%s%s/oauth2/v2.0/token", AzureUtils.AUTH_URL, azureConfig.getTenantId()))
+        .withAudience(format("%s%s/oauth2/v2.0/token",
+            AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).activeDirectoryEndpoint(),
+            azureConfig.getTenantId()))
         .withIssuer(azureConfig.getClientId())
         .withIssuedAt(new Date(currentTimestamp))
         .withNotBefore(new Date(currentTimestamp))

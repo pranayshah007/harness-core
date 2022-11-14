@@ -11,16 +11,21 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
+import static lombok.AccessLevel.PACKAGE;
 
+import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.beans.ci.CIExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
+import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.task.citasks.CIExecuteStepTaskHandler;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.product.ci.engine.proto.ExecuteStepRequest;
 import io.harness.product.ci.engine.proto.LiteEngineGrpc;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -28,6 +33,7 @@ import io.grpc.internal.GrpcUtil;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -38,6 +44,9 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
   public static final String DELEGATE_NAMESPACE = "DELEGATE_NAMESPACE";
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
+  @Inject
+  @Getter(value = PACKAGE, onMethod = @__({ @VisibleForTesting }))
+  private DelegateConfiguration delegateConfiguration;
 
   @Override
   public Type getType() {
@@ -66,6 +75,20 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
         namespacedDelegateSvcEndpoint);
     if (isNotEmpty(namespacedDelegateSvcEndpoint)) {
       executeStepRequest = executeStepRequest.toBuilder().setDelegateSvcEndpoint(namespacedDelegateSvcEndpoint).build();
+    }
+
+    String accountKey = delegateConfiguration.getDelegateToken();
+    String managerUrl = delegateConfiguration.getManagerUrl();
+    String delegateID = DelegateAgentCommonVariables.getDelegateId();
+    if (isNotEmpty(managerUrl)) {
+      managerUrl = managerUrl.replace("/api/", "");
+      executeStepRequest = executeStepRequest.toBuilder().setManagerSvcEndpoint(managerUrl).build();
+    }
+    if (isNotEmpty(accountKey)) {
+      executeStepRequest = executeStepRequest.toBuilder().setAccountKey(accountKey).build();
+    }
+    if (isNotEmpty(delegateID)) {
+      executeStepRequest = executeStepRequest.toBuilder().setDelegateId(delegateID).build();
     }
 
     final ExecuteStepRequest finalExecuteStepRequest = executeStepRequest;

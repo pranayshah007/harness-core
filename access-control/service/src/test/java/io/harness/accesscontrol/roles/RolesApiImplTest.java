@@ -41,8 +41,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
-import io.harness.spec.server.accesscontrol.model.CreateRoleRequest;
-import io.harness.spec.server.accesscontrol.model.RolesResponse;
+import io.harness.spec.server.accesscontrol.v1.model.CreateRoleRequest;
+import io.harness.spec.server.accesscontrol.v1.model.RolesResponse;
 
 import java.util.Collections;
 import java.util.List;

@@ -29,6 +29,7 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
+import io.harness.persistence.HIterator;
 import io.harness.queue.QueuePublisher;
 
 import software.wings.api.InstanceEvent;
@@ -64,7 +65,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.mongodb.morphia.Key;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
@@ -292,37 +292,41 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
-  public boolean purgeDeletedUpTo(@NotNull Instant timestamp, @NotNull Account account) {
-    log.info("Purging deleted instance up to {} for account {} with ID {}", timestamp, account.getAccountName(),
-        account.getUuid());
-    Query<Instance> query;
-    do {
-      try {
-        query = wingsPersistence.createQuery(Instance.class)
-                    .filter(InstanceKeys.accountId, account.getUuid())
-                    .filter(InstanceKeys.isDeleted, true)
-                    .field(InstanceKeys.deletedAt)
-                    .lessThan(timestamp.toEpochMilli())
-                    .project(InstanceKeys.uuid, true)
-                    .project(InstanceKeys.deletedAt, true)
-                    .order(InstanceKeys.deletedAt);
-        final List<Instance> instances = query.asList(new FindOptions().limit(500));
-        if (isEmpty(instances)) {
-          break;
-        }
-        final Instance instance = instances.get(instances.size() - 1);
+  public boolean purgeDeletedUpTo(Instant timestamp) {
+    try (HIterator<Account> accounts =
+             new HIterator<>(wingsPersistence.createQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
+      while (accounts.hasNext()) {
+        final Account account = accounts.next();
+        Query<Instance> query;
+        do {
+          try {
+            query = wingsPersistence.createQuery(Instance.class)
+                        .filter(InstanceKeys.accountId, account.getUuid())
+                        .filter(InstanceKeys.isDeleted, true)
+                        .field(InstanceKeys.deletedAt)
+                        .lessThan(timestamp.toEpochMilli())
+                        .project(InstanceKeys.uuid, true)
+                        .project(InstanceKeys.deletedAt, true)
+                        .order(InstanceKeys.deletedAt);
+            final List<Instance> instances = query.asList(new FindOptions().limit(500));
+            if (isEmpty(instances)) {
+              break;
+            }
+            final Instance instance = instances.get(instances.size() - 1);
 
-        final Query<Instance> deleteQuery = wingsPersistence.createQuery(Instance.class)
-                                                .filter(InstanceKeys.accountId, account.getUuid())
-                                                .filter(InstanceKeys.isDeleted, true)
-                                                .field(InstanceKeys.deletedAt)
-                                                .lessThanOrEq(instance.getDeletedAt());
-        wingsPersistence.delete(deleteQuery);
-      } catch (Exception e) {
-        log.error("Failed to delete some instances for account {}", account.getUuid(), e);
-        break;
+            final Query<Instance> deleteQuery = wingsPersistence.createQuery(Instance.class)
+                                                    .filter(InstanceKeys.accountId, account.getUuid())
+                                                    .filter(InstanceKeys.isDeleted, true)
+                                                    .field(InstanceKeys.deletedAt)
+                                                    .lessThanOrEq(instance.getDeletedAt());
+            wingsPersistence.delete(deleteQuery);
+          } catch (Exception e) {
+            log.error("Failed to delete some instances for account {}", account.getUuid(), e);
+            break;
+          }
+        } while (query.count() > 0);
       }
-    } while (query.count() > 0);
+    }
     return true;
   }
 

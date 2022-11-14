@@ -111,19 +111,17 @@ public class PcfRunPluginCommandTaskHandler extends PcfCommandTaskHandler {
               .collect(Collectors.toList()),
           executionLogCallback);
 
-      CfRequestConfig cfRequestConfig =
-          CfRequestConfig.builder()
-              .orgName(pluginCommandRequest.getOrganization())
-              .spaceName(pluginCommandRequest.getSpace())
-              .userName(String.valueOf(pcfConfig.getUsername()))
-              .password(String.valueOf(pcfConfig.getPassword()))
-              .endpointUrl(pcfConfig.getEndpointUrl())
-              .timeOutIntervalInMins(pluginCommandRequest.getTimeoutIntervalInMin())
-              .limitPcfThreads(pluginCommandRequest.isLimitPcfThreads())
-              .cfCliPath(cfCliPath)
-              .cfCliVersion(cfCliVersion)
-              .ignorePcfConnectionContextCache(pluginCommandRequest.isIgnorePcfConnectionContextCache())
-              .build();
+      CfRequestConfig cfRequestConfig = CfRequestConfig.builder()
+                                            .orgName(pluginCommandRequest.getOrganization())
+                                            .spaceName(pluginCommandRequest.getSpace())
+                                            .userName(String.valueOf(pcfConfig.getUsername()))
+                                            .password(String.valueOf(pcfConfig.getPassword()))
+                                            .endpointUrl(pcfConfig.getEndpointUrl())
+                                            .timeOutIntervalInMins(pluginCommandRequest.getTimeoutIntervalInMin())
+                                            .limitPcfThreads(pluginCommandRequest.isLimitPcfThreads())
+                                            .cfCliPath(cfCliPath)
+                                            .cfCliVersion(cfCliVersion)
+                                            .build();
 
       final CfRunPluginScriptRequestData cfRunPluginScriptRequestData = CfRunPluginScriptRequestData.builder()
                                                                             .workingDirectory(workingDirCanonicalPath)

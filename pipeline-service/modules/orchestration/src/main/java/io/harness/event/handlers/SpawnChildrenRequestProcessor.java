@@ -10,6 +10,7 @@ package io.harness.event.handlers;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.OrchestrationPublisherName;
+import io.harness.PipelineSettingsService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrency.ConcurrentChildInstance;
@@ -51,6 +52,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
   @Inject private PmsGraphStepDetailsService nodeExecutionInfoService;
   @Inject private OrchestrationEngine orchestrationEngine;
+  @Inject private PipelineSettingsService pipelineSettingsService;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
 
   @Override
@@ -61,14 +63,15 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       List<String> callbackIds = new ArrayList<>();
       int currentChild = 0;
-      int maxConcurrency = (int) request.getChildren().getMaxConcurrency();
-      // If maxConcurrency is not defined then we will run all children in parallel therefore maxConcurrency should be
-      // number of children
-      if (maxConcurrency == 0) {
-        maxConcurrency = request.getChildren().getChildrenCount();
-      }
       for (int i = 0; i < request.getChildren().getChildrenList().size(); i++) {
         callbackIds.add(generateUuid());
+      }
+      int maxConcurrencyLimit = pipelineSettingsService.getMaxConcurrencyBasedOnEdition(
+          AmbianceUtils.getAccountId(ambiance), callbackIds.size());
+      int maxConcurrency = maxConcurrencyLimit;
+      if (request.getChildren().getMaxConcurrency() > 0
+          && request.getChildren().getMaxConcurrency() < maxConcurrencyLimit) {
+        maxConcurrency = (int) request.getChildren().getMaxConcurrency();
       }
 
       if (callbackIds.isEmpty()) {
@@ -86,16 +89,25 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
 
       for (Child child : request.getChildren().getChildrenList()) {
         String uuid = callbackIds.get(currentChild);
-        if (child.hasStrategyMetadata()) {
-          InitiateMode initiateMode = InitiateMode.CREATE;
-          if (shouldCreateAndStart(maxConcurrency, currentChild)) {
-            initiateMode = InitiateMode.CREATE_AND_START;
-          }
-          createAndStart(ambiance, nodeExecutionId, uuid, child.getChildNodeId(), child.getStrategyMetadata(),
-              maxConcurrency, initiateMode, request.getChildren().getShouldProceedIfFailed());
+        StrategyMetadata strategyMetadata = child.hasStrategyMetadata() ? child.getStrategyMetadata() : null;
+        // If the current child count is less than maxConcurrency then create and start the nodeExecution
+        if (shouldCreateAndStart(maxConcurrency, currentChild)) {
+          initiateNodeHelper.publishEvent(
+              ambiance, child.getChildNodeId(), uuid, strategyMetadata, InitiateMode.CREATE_AND_START);
         } else {
-          initiateNodeHelper.publishEvent(ambiance, child.getChildNodeId(), uuid);
+          // IF the current child count is greater than maxConcurrency then only create the nodeExecution
+          orchestrationEngine.initiateNode(
+              ambiance, child.getChildNodeId(), uuid, null, strategyMetadata, InitiateMode.CREATE);
         }
+        MaxConcurrentChildCallback maxConcurrentChildCallback =
+            MaxConcurrentChildCallback.builder()
+                .parentNodeExecutionId(nodeExecutionId)
+                .ambiance(ambiance)
+                .maxConcurrency(maxConcurrency)
+                .proceedIfFailed(request.getChildren().getShouldProceedIfFailed())
+                .build();
+
+        waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, uuid);
         currentChild++;
       }
 
@@ -113,30 +125,5 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
 
   private boolean shouldCreateAndStart(int maxConcurrency, int currentChild) {
     return currentChild < maxConcurrency;
-  }
-
-  /**
-   * (100, 10)
-   *
-   * @param ambiance
-   * @param parentNodeExecutionId
-   * @param childNodeExecutionId
-   * @param childNodeId
-   * @param strategyMetadata
-   * @param maxConcurrency
-   * @param initiateMode
-   */
-  private void createAndStart(Ambiance ambiance, String parentNodeExecutionId, String childNodeExecutionId,
-      String childNodeId, StrategyMetadata strategyMetadata, int maxConcurrency, InitiateMode initiateMode,
-      Boolean proceedIfFailed) {
-    initiateNodeHelper.publishEvent(ambiance, childNodeId, childNodeExecutionId, strategyMetadata, initiateMode);
-    MaxConcurrentChildCallback maxConcurrentChildCallback = MaxConcurrentChildCallback.builder()
-                                                                .parentNodeExecutionId(parentNodeExecutionId)
-                                                                .ambiance(ambiance)
-                                                                .maxConcurrency(maxConcurrency)
-                                                                .proceedIfFailed(proceedIfFailed)
-                                                                .build();
-
-    waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, childNodeExecutionId);
   }
 }

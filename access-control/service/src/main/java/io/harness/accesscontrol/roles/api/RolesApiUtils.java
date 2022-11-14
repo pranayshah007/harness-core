@@ -21,10 +21,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
-import io.harness.spec.server.accesscontrol.model.CreateRoleRequest;
-import io.harness.spec.server.accesscontrol.model.RoleScope;
-import io.harness.spec.server.accesscontrol.model.RolesResponse;
-import io.harness.spec.server.accesscontrol.model.RolesResponse.AllowedScopeLevelsEnum;
+import io.harness.spec.server.accesscontrol.v1.model.CreateRoleRequest;
+import io.harness.spec.server.accesscontrol.v1.model.RoleScope;
+import io.harness.spec.server.accesscontrol.v1.model.RolesResponse;
+import io.harness.spec.server.accesscontrol.v1.model.RolesResponse.AllowedScopeLevelsEnum;
 
 import com.google.inject.Inject;
 import io.dropwizard.jersey.validation.JerseyViolationException;

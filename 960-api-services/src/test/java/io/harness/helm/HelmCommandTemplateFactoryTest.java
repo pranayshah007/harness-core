@@ -111,11 +111,11 @@ public class HelmCommandTemplateFactoryTest extends CategoryTest {
   }
 
   private void testgetHelmRepoAddChartMeuseumTemplate() {
-    assertThat(HelmCommandTemplateFactory.getHelmCommandTemplate(HelmCliCommandType.REPO_ADD_CHART_MEUSEUM, null))
+    assertThat(HelmCommandTemplateFactory.getHelmCommandTemplate(HelmCliCommandType.REPO_ADD_CHART_MUSEUM, null))
         .isEqualTo(V2Commands.HELM_REPO_ADD_COMMAND_FOR_CHART_MUSEUM);
-    assertThat(HelmCommandTemplateFactory.getHelmCommandTemplate(HelmCliCommandType.REPO_ADD_CHART_MEUSEUM, V2))
+    assertThat(HelmCommandTemplateFactory.getHelmCommandTemplate(HelmCliCommandType.REPO_ADD_CHART_MUSEUM, V2))
         .isEqualTo(V2Commands.HELM_REPO_ADD_COMMAND_FOR_CHART_MUSEUM);
-    assertThat(HelmCommandTemplateFactory.getHelmCommandTemplate(HelmCliCommandType.REPO_ADD_CHART_MEUSEUM, V3))
+    assertThat(HelmCommandTemplateFactory.getHelmCommandTemplate(HelmCliCommandType.REPO_ADD_CHART_MUSEUM, V3))
         .isEqualTo(V3Commands.HELM_REPO_ADD_COMMAND_FOR_CHART_MUSEUM);
   }
 

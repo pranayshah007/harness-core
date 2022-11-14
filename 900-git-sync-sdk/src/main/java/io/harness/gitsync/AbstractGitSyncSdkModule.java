@@ -169,6 +169,6 @@ public abstract class AbstractGitSyncSdkModule extends AbstractModule {
   public Cache<String, Boolean> gitEnabledCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache("gitEnabledCacheSdk", String.class, Boolean.class,
-        AccessedExpiryPolicy.factoryOf(Duration.FIVE_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
+        AccessedExpiryPolicy.factoryOf(Duration.ONE_HOUR), versionInfoManager.getVersionInfo().getBuildNo());
   }
 }

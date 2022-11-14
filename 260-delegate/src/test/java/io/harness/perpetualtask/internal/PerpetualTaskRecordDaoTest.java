@@ -8,6 +8,7 @@
 package io.harness.perpetualtask.internal;
 
 import static io.harness.rule.OwnerRule.HITESH;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.VUK;
 
@@ -130,6 +131,7 @@ public class PerpetualTaskRecordDaoTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testListAssignedTasks() {
     PerpetualTaskRecord taskRecord = getPerpetualTaskRecord();
+    taskRecord.setState(PerpetualTaskState.TASK_ASSIGNED);
     perpetualTaskRecordDao.save(taskRecord);
     List<PerpetualTaskRecord> taskIds = perpetualTaskRecordDao.listAssignedTasks(DELEGATE_ID, ACCOUNT_ID);
     assertThat(taskIds).hasSize(1);
@@ -191,9 +193,30 @@ public class PerpetualTaskRecordDaoTest extends WingsBaseTest {
     PerpetualTaskRecord task = perpetualTaskRecordDao.getTask(taskId);
 
     assertThat(task).isNotNull();
-    assertThat(task.getState()).isEqualTo(PerpetualTaskState.TASK_TO_REBALANCE);
+    assertThat(task.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
     assertThat(task.getDelegateId()).isEqualTo("test-delegate-id1");
     assertThat(task.getClientContext()).isEqualTo(clientContext);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testUpdateTaskNonAssignableToAssignable() {
+    PerpetualTaskClientContext clientContext = getClientContext();
+    PerpetualTaskRecord perpetualTaskRecord = PerpetualTaskRecord.builder()
+                                                  .accountId(ACCOUNT_ID)
+                                                  .perpetualTaskType(PerpetualTaskType.K8S_WATCH)
+                                                  .clientContext(clientContext)
+                                                  .delegateId(DELEGATE_ID)
+                                                  .state(PerpetualTaskState.TASK_NON_ASSIGNABLE)
+                                                  .build();
+
+    String taskId = perpetualTaskRecordDao.save(perpetualTaskRecord);
+    perpetualTaskRecordDao.updateTaskNonAssignableToAssignable(ACCOUNT_ID);
+    PerpetualTaskRecord task = perpetualTaskRecordDao.getTask(taskId);
+
+    assertThat(task).isNotNull();
+    assertThat(task.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
   }
 
   public PerpetualTaskClientContext getClientContext() {

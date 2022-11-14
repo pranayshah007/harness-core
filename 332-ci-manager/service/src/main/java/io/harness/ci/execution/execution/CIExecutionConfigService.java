@@ -72,7 +72,7 @@ public class CIExecutionConfigService {
   }
 
   private void set(String field, String value, CIExecutionConfig executionConfig, Type infra) {
-    if (infra == Type.VM || infra == Type.DOCKER) {
+    if (infra == Type.VM) {
       setVMField(field, value, executionConfig);
     } else if (infra == Type.K8) {
       setK8Field(field, value, executionConfig);

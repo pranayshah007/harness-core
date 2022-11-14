@@ -34,6 +34,8 @@ public class UserEntityReconServiceImpl implements LookerEntityReconService {
   @Inject PersistentLocker persistentLocker;
   @Inject HPersistence persistence;
 
+  private String CREATED_AT = "createdAt";
+
   @Override
   public ReconciliationStatus performReconciliation(
       String accountId, long durationStartTs, long durationEndTs, TimeScaleEntity timeScaleEntity) {
@@ -43,8 +45,16 @@ public class UserEntityReconServiceImpl implements LookerEntityReconService {
 
   public Set<String> getEntityIdsFromMongoDB(String accountId, long durationStartTs, long durationEndTs) {
     Set<String> userIds = new HashSet<>();
-    MorphiaKeyIterator<User> users =
-        persistence.createQuery(User.class).field(UserKeys.accounts).contains(accountId).fetchKeys();
+    MorphiaKeyIterator<User> users = persistence.createQuery(User.class)
+                                         .field(UserKeys.accounts)
+                                         .contains(accountId)
+                                         .field(CREATED_AT)
+                                         .exists()
+                                         .field(CREATED_AT)
+                                         .greaterThanOrEq(durationStartTs)
+                                         .field(CREATED_AT)
+                                         .lessThanOrEq(durationEndTs)
+                                         .fetchKeys();
     users.forEachRemaining(userKey -> userIds.add((String) userKey.getId()));
 
     return userIds;

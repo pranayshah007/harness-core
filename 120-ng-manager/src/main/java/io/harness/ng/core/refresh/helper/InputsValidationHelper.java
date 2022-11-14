@@ -19,16 +19,16 @@ import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.template.refresh.NodeInfo;
+import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
+import io.harness.ng.core.template.refresh.v2.NodeErrorSummary;
+import io.harness.ng.core.template.refresh.v2.ServiceNodeErrorSummary;
 import io.harness.persistence.PersistentEntity;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.template.beans.refresh.NodeInfo;
-import io.harness.template.beans.refresh.v2.InputsValidationResponse;
-import io.harness.template.beans.refresh.v2.NodeErrorSummary;
-import io.harness.template.beans.refresh.v2.ServiceNodeErrorSummary;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -140,7 +140,7 @@ public class InputsValidationHelper {
     JsonNode serviceNode = entityNode.getCurrJsonNode();
     String serviceRef = serviceNode.get(YamlTypes.SERVICE_REF).asText();
     JsonNode serviceInputs = serviceNode.get(YamlTypes.SERVICE_INPUTS);
-    if (NGExpressionUtils.isRuntimeOrExpressionField(serviceRef)) {
+    if (NGExpressionUtils.isRuntimeField(serviceRef)) {
       if (serviceInputs.isObject()
           || (serviceInputs.isValueNode() && !NGExpressionUtils.matchesInputSetPattern(serviceInputs.asText()))) {
         errorNodeSummary.setValid(false);
@@ -148,6 +148,13 @@ public class InputsValidationHelper {
       }
       return;
     }
+
+    // if serviceRef is expression, we cannot validate service inputs. We will allow user to save any input because
+    // there is no way as of now, to provide service inputs in this case
+    if (NGExpressionUtils.isExpressionField(serviceRef)) {
+      return;
+    }
+
     ServiceEntity serviceEntity = entityFetchHelper.getService(
         context.getAccountId(), context.getOrgId(), context.getProjectId(), serviceRef, context.getCacheMap());
 
@@ -160,7 +167,7 @@ public class InputsValidationHelper {
     String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
         serviceYaml, serviceRef, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
     if (EmptyPredicate.isEmpty(serviceRuntimeInputYaml)) {
-      if (serviceInputs != null) {
+      if (EnvironmentRefreshHelper.isNodeNotNullAndNotHaveRuntimeValue(serviceInputs)) {
         errorNodeSummary.setValid(false);
       }
       return;

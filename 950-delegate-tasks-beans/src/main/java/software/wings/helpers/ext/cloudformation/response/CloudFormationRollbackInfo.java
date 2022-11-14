@@ -32,4 +32,6 @@ public class CloudFormationRollbackInfo {
   private boolean skipBasedOnStackStatus;
   private List<String> stackStatusesToMarkAsSuccess;
   private List<NameValuePair> variables;
+  private List<String> capabilities;
+  private String tags;
 }

@@ -157,8 +157,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter private AccountPreferences accountPreferences;
 
-  @FdIndex private Long serviceGuardDataCollectionIteration;
-  @FdIndex private Long serviceGuardDataAnalysisIteration;
+  private Long serviceGuardDataCollectionIteration;
+  private Long serviceGuardDataAnalysisIteration;
   @FdIndex private Long workflowDataCollectionIteration;
   @FdIndex private Long usageMetricsTaskIteration;
   @FdIndex private Long licenseExpiryCheckIteration;
@@ -171,7 +171,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @FdIndex private long delegateTelemetryPublisherIteration;
   @FdIndex private long delegateTaskRebroadcastIteration;
   @FdIndex private Long perpetualTaskRebalanceIteration;
-  @FdIndex private Long instancesPurgeTaskIteration;
 
   // adding this to avoid kryo exception. Its not used anymore, check DEL-5047
   @Deprecated private long delegateTaskFailIteration;
@@ -450,17 +449,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
-    if (AccountKeys.serviceGuardDataCollectionIteration.equals(fieldName)) {
-      this.serviceGuardDataCollectionIteration = nextIteration;
-      return;
-    }
-
-    else if (AccountKeys.serviceGuardDataAnalysisIteration.equals(fieldName)) {
-      this.serviceGuardDataAnalysisIteration = nextIteration;
-      return;
-    }
-
-    else if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
+    if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
       this.workflowDataCollectionIteration = nextIteration;
       return;
     }
@@ -515,25 +504,12 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return;
     }
 
-    else if (AccountKeys.instancesPurgeTaskIteration.equals(fieldName)) {
-      this.instancesPurgeTaskIteration = nextIteration;
-      return;
-    }
-
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
   @Override
   public Long obtainNextIteration(String fieldName) {
-    if (AccountKeys.serviceGuardDataCollectionIteration.equals(fieldName)) {
-      return this.serviceGuardDataCollectionIteration;
-    }
-
-    else if (AccountKeys.serviceGuardDataAnalysisIteration.equals(fieldName)) {
-      return this.serviceGuardDataAnalysisIteration;
-    }
-
-    else if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
+    if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
       return this.workflowDataCollectionIteration;
     }
 
@@ -575,10 +551,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     else if (AccountKeys.perpetualTaskRebalanceIteration.equals(fieldName)) {
       return this.perpetualTaskRebalanceIteration;
-    }
-
-    else if (AccountKeys.instancesPurgeTaskIteration.equals(fieldName)) {
-      return this.instancesPurgeTaskIteration;
     }
 
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
@@ -623,7 +595,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
     private boolean globalDelegateAccount;
-    private boolean smpAccount;
 
     private Builder() {}
 
@@ -801,11 +772,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return this;
     }
 
-    public Builder withSmpAccount(boolean isSmpAccount) {
-      this.smpAccount = isSmpAccount;
-      return this;
-    }
-
     public Builder but() {
       return anAccount()
           .withCompanyName(companyName)
@@ -836,7 +802,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
           .withIsProductLed(isProductLed)
           .withAccountActivelyUsed(accountActivelyUsed)
           .withAccountPreferences(accountPreferences)
-          .withSmpAccount(smpAccount)
           .withServiceAccountConfig(serviceAccountConfig);
     }
 
@@ -875,7 +840,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       account.setAccountPreferences(accountPreferences);
       account.setNextGenEnabled(nextGenEnabled);
       account.setServiceAccountConfig(serviceAccountConfig);
-      account.setSmpAccount(smpAccount);
       return account;
     }
   }

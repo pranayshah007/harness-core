@@ -32,7 +32,7 @@ then
 fi
 
 cp ${HOME}/.bazel-dirs/bin/batch-processing/service/module_deploy.jar batch-processing-capsule.jar
-cp ../../batch-processing/config/batch-processing-config.yml .
+cp ../../batch-processing/service/batch-processing-config.yml .
 cp ../../batch-processing/build/container/Dockerfile-batch-processing-cie-jdk ./Dockerfile-batch-processing-cie-jdk
 cp -r ../../batch-processing/build/container/scripts/ .
 cp ../../batch-processing/build/container/inject-onprem-apm-bins-into-dockerimage.sh ./inject-onprem-apm-bins-into-dockerimage.sh

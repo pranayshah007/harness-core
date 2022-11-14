@@ -12,14 +12,18 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_ASSIGNED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_CREATE;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_DELETE;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_NONASSIGNABLE;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_PAUSE;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_RESET;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_UNASSIGNED;
+import static io.harness.perpetualtask.PerpetualTaskState.TASK_NON_ASSIGNABLE;
+import static io.harness.perpetualtask.PerpetualTaskState.TASK_UNASSIGNED;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.perpetualtask.PerpetualTaskScheduleConfig;
+import io.harness.exception.ExceptionUtils;
 import io.harness.grpc.auth.DelegateAuthServerInterceptor;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.logging.AccountLogContext;
@@ -68,6 +72,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   private final BroadcasterFactory broadcasterFactory;
   private final PerpetualTaskScheduleService perpetualTaskScheduleService;
   private static final int TASK_FAILED_EXECUTION_LIMIT = 5;
+  private static final int MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT = 10;
 
   @Inject private MainConfiguration mainConfiguration;
   @Inject private RemoteObserverInformer remoteObserverInformer;
@@ -170,11 +175,10 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   public boolean resetTask(String accountId, String taskId, PerpetualTaskExecutionBundle taskExecutionBundle) {
     try (AutoLogContext ignore0 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore1 = new PerpetualTaskLogContext(taskId, OVERRIDE_ERROR)) {
-      log.info("Resetting the perpetual task");
-
       PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecordDao.getTask(taskId);
       if (perpetualTaskRecord != null) {
         String perpetualTaskType = perpetualTaskRecord.getPerpetualTaskType();
+        log.info("Resetting the perpetual task {}, type: {}", taskId, perpetualTaskType);
         delegateMetricsService.recordPerpetualTaskMetrics(accountId, perpetualTaskType, PERPETUAL_TASK_RESET);
       }
       return perpetualTaskRecordDao.resetDelegateIdForTask(accountId, taskId, taskExecutionBundle);
@@ -201,7 +205,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
 
       boolean hasDeleted = perpetualTaskRecordDao.remove(accountId, taskId);
       if (hasDeleted) {
-        log.info("Deleted the perpetual task");
+        log.info("Deleted the perpetual task {} ", taskId);
       }
       return hasDeleted;
     }
@@ -211,8 +215,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   public boolean pauseTask(String accountId, String taskId) {
     try (AutoLogContext ignore0 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore1 = new PerpetualTaskLogContext(taskId, OVERRIDE_ERROR)) {
-      log.info("Pausing the perpetual task");
-
+      log.info("Pausing the perpetual task, {}", taskId);
       PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecordDao.getTask(taskId);
       if (perpetualTaskRecord != null) {
         String perpetualTaskType = perpetualTaskRecord.getPerpetualTaskType();
@@ -272,7 +275,15 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
     log.info("Getting perpetual task context for task with id: {}", taskId);
     PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecordDao.getTask(taskId);
 
-    PerpetualTaskExecutionParams params = getTaskParams(perpetualTaskRecord);
+    PerpetualTaskExecutionParams params = null;
+    try {
+      params = getTaskParams(perpetualTaskRecord);
+    } catch (Exception e) {
+      log.error("Error while fetching perpetual task context task params ", e);
+      perpetualTaskRecordDao.updateInvalidStateWithExceptions(
+          perpetualTaskRecord, PerpetualTaskUnassignedReason.PT_TASK_FAILED, ExceptionUtils.getMessage(e));
+      return null;
+    }
 
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder()
                                          .setInterval(Durations.fromSeconds(perpetualTaskRecord.getIntervalSeconds()))
@@ -286,7 +297,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
         .build();
   }
 
-  private PerpetualTaskExecutionParams getTaskParams(PerpetualTaskRecord perpetualTaskRecord) {
+  private PerpetualTaskExecutionParams getTaskParams(PerpetualTaskRecord perpetualTaskRecord) throws Exception {
     Message perpetualTaskParams = null;
 
     if (perpetualTaskRecord.getClientContext().getClientParams() != null) {
@@ -310,6 +321,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
     }
   }
 
+  // TODO: ARPIT remove this method and heartbeat once changes for delegate agent goes in immutable delegate DEL-5026
   @Override
   public boolean triggerCallback(String taskId, long heartbeatMillis, PerpetualTaskResponse perpetualTaskResponse) {
     int responseCode = perpetualTaskResponse.getResponseCode();
@@ -329,6 +341,19 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
     return perpetualTaskRecordDao.saveHeartbeat(taskId, heartbeatMillis, taskFailedExecutionCount);
   }
 
+  public void recordTaskFailure(String taskId, String exceptionMessage) {
+    PerpetualTaskRecord taskRecord = perpetualTaskRecordDao.getTask(taskId);
+    long taskFailedExecutionCount = taskRecord.getFailedExecutionCount();
+    taskFailedExecutionCount++;
+    if (taskFailedExecutionCount >= TASK_FAILED_EXECUTION_LIMIT) {
+      setTaskUnassigned(taskId);
+      updateTaskUnassignedReason(
+          taskId, PerpetualTaskUnassignedReason.MULTIPLE_FAILED_PERPETUAL_TASK, taskRecord.getAssignTryCount());
+      taskFailedExecutionCount = 0;
+    }
+    perpetualTaskRecordDao.saveTaskFailureExceptionAndCount(taskId, exceptionMessage, taskFailedExecutionCount);
+  }
+
   @Override
   public void updateTaskUnassignedReason(String taskId, PerpetualTaskUnassignedReason reason, int assignTryCount) {
     perpetualTaskRecordDao.updateTaskUnassignedReason(taskId, reason, assignTryCount);
@@ -342,27 +367,49 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   }
 
   @Override
+  public void markStateAndNonAssignedReason_OnAssignTryCount(PerpetualTaskRecord perpetualTaskRecord,
+      PerpetualTaskUnassignedReason reason, PerpetualTaskState perpetualTaskState) {
+    if (perpetualTaskRecord.getAssignTryCount() < MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT) {
+      // if count is below max try, then set state as TASK_UNASSIGNED
+      perpetualTaskRecordDao.updateTaskUnassignedReason(
+          perpetualTaskRecord.getUuid(), reason, perpetualTaskRecord.getAssignTryCount());
+      delegateMetricsService.recordPerpetualTaskMetrics(
+          perpetualTaskRecord.getAccountId(), perpetualTaskRecord.getPerpetualTaskType(), PERPETUAL_TASK_UNASSIGNED);
+    } else {
+      // use state passed as a param here. It can be TASK_NON_ASSIGNABLE OR TASK_INVALID
+      perpetualTaskRecordDao.updateTaskStateNonAssignableReason(
+          perpetualTaskRecord.getUuid(), reason, perpetualTaskRecord.getAssignTryCount(), perpetualTaskState);
+      delegateMetricsService.recordPerpetualTaskMetrics(
+          perpetualTaskRecord.getAccountId(), perpetualTaskRecord.getPerpetualTaskType(), PERPETUAL_TASK_NONASSIGNABLE);
+    }
+  }
+
+  @Override
   public void setTaskUnassigned(String taskId) {
     perpetualTaskRecordDao.setTaskUnassigned(taskId);
   }
 
   @Override
   public void onAdded(Delegate delegate) {
-    // TODO: after we have migrated capabilities to reside on agents, implement rebalancing
-    // by moving certain tasks to the new delegate
+    // do nothing
   }
 
   @Override
   public void onDisconnected(String accountId, String delegateId) {
     perpetualTaskRecordDao.markAllTasksOnDelegateForReassignment(accountId, delegateId);
-    perpetualTaskCrudSubject.fireInform(PerpetualTaskCrudObserver::onRebalanceRequired);
-    remoteObserverInformer.sendEvent(ReflectionUtils.getMethod(PerpetualTaskCrudObserver.class, "onRebalanceRequired"),
-        PerpetualTaskServiceImpl.class);
   }
 
   @Override
-  public void onReconnected(String accountId, String delegateId) {
-    // do nothing
+  public void onReconnected(Delegate delegate) {
+    log.info("Delegate reconnected/added for account {} delegateId {}", delegate.getAccountId(), delegate.getUuid());
+    perpetualTaskRecordDao.updateTaskNonAssignableToAssignable(delegate.getAccountId());
+  }
+
+  @Override
+  public void onDelegateTagsUpdated(String accountId) {
+    log.info(
+        "Marking all the {} perpetual tasks as {} for accountId: {}", TASK_NON_ASSIGNABLE, TASK_UNASSIGNED, accountId);
+    perpetualTaskRecordDao.updateTaskNonAssignableToAssignable(accountId);
   }
 
   @VisibleForTesting

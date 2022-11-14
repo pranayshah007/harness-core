@@ -33,6 +33,7 @@ public class ClusterEntityMapper {
         .orgIdentifier(request.getOrgIdentifier())
         .projectIdentifier(request.getProjectIdentifier())
         .clusterRef(getScopedClusterRef(request.getScope(), request.getIdentifier()))
+        .agentIdentifier(request.getAgentIdentifier())
         .envRef(request.getEnvRef())
         .build();
   }
@@ -43,6 +44,7 @@ public class ClusterEntityMapper {
         .map(r
             -> Cluster.builder()
                    .accountId(accountId)
+                   .agentIdentifier(r.getAgentIdentifier())
                    .orgIdentifier(request.getOrgIdentifier())
                    .projectIdentifier(request.getProjectIdentifier())
                    .envRef(request.getEnvRef())
@@ -62,6 +64,7 @@ public class ClusterEntityMapper {
                    .accountId(accountId)
                    .orgIdentifier(orgId)
                    .projectIdentifier(projectId)
+                   .agentIdentifier(r.getAgentIdentifier())
                    .envRef(envRef)
                    .clusterRef(getScopedClusterRef(r.getScopeLevel(), r.getIdentifier()))
                    .build())
@@ -73,6 +76,7 @@ public class ClusterEntityMapper {
     return ClusterResponse.builder()
         .orgIdentifier(cluster.getOrgIdentifier())
         .projectIdentifier(cluster.getProjectIdentifier())
+        .agentIdentifier(cluster.getAgentIdentifier())
         .clusterRef(scopeFromClusterRef.getOriginalRef())
         .scope(scopeFromClusterRef.getScope())
         .envRef(cluster.getEnvRef())
@@ -81,7 +85,7 @@ public class ClusterEntityMapper {
   }
 
   public ClusterResponse writeDTO(Cluster cluster, Map<String, ClusterFromGitops> clusterFromGitops) {
-    String clusterRef = cluster.getClusterRef().toLowerCase();
+    String clusterRef = cluster.getClusterRef();
     ClusterFromGitops gitOpsCluster = clusterFromGitops.getOrDefault(clusterRef, ClusterFromGitops.builder().build());
     final ScopeAndRef scopeFromClusterRef = getScopeFromClusterRef(clusterRef);
 
@@ -92,6 +96,7 @@ public class ClusterEntityMapper {
                 clusterFromGitops.getOrDefault("project." + clusterRef, ClusterFromGitops.builder().build()).getName())
             .orgIdentifier(cluster.getOrgIdentifier())
             .projectIdentifier(cluster.getProjectIdentifier())
+            .agentIdentifier(cluster.getAgentIdentifier())
             .clusterRef(scopeFromClusterRef.getOriginalRef())
             .scope(scopeFromClusterRef.getScope())
             .envRef(cluster.getEnvRef())
@@ -102,6 +107,7 @@ public class ClusterEntityMapper {
             .name(gitOpsCluster.getName())
             .clusterRef(scopeFromClusterRef.getOriginalRef())
             .accountIdentifier(cluster.getAccountId())
+            .agentIdentifier(cluster.getAgentIdentifier())
             .scope(scopeFromClusterRef.getScope())
             .envRef(cluster.getEnvRef())
             .linkedAt(cluster.getCreatedAt())
@@ -111,6 +117,7 @@ public class ClusterEntityMapper {
             .name(gitOpsCluster.getName())
             .orgIdentifier(cluster.getOrgIdentifier())
             .accountIdentifier(cluster.getAccountId())
+            .agentIdentifier(cluster.getAgentIdentifier())
             .clusterRef(scopeFromClusterRef.getOriginalRef())
             .scope(scopeFromClusterRef.getScope())
             .envRef(cluster.getEnvRef())
@@ -124,6 +131,7 @@ public class ClusterEntityMapper {
   public ClusterFromGitops writeDTO(ScopeLevel scopeLevel, io.harness.gitops.models.Cluster cluster) {
     return ClusterFromGitops.builder()
         .identifier(cluster.getIdentifier())
+        .agentIdentifier(cluster.getAgentIdentifier())
         .name(cluster.name())
         .scopeLevel(scopeLevel)
         .build();

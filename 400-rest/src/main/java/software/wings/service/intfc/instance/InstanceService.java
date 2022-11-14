@@ -17,7 +17,6 @@ import io.harness.beans.PageResponse;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
 
-import software.wings.beans.Account;
 import software.wings.beans.infrastructure.instance.ContainerDeploymentInfo;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.ManualSyncJob;
@@ -85,12 +84,11 @@ public interface InstanceService
   boolean delete(Set<String> instanceIdSet);
 
   /**
-   * Purge the instances which were deleted up-to a given timestamp for a given Account
+   * Purge the instances which were deleted up-to a given timestamp
    *
    * @param timestamp   - exclusive
-   * @param account   - Account entity
    */
-  boolean purgeDeletedUpTo(Instant timestamp, Account account);
+  boolean purgeDeletedUpTo(Instant timestamp);
 
   /**
    * Get the container deployment info of all the container services that belong to the same family

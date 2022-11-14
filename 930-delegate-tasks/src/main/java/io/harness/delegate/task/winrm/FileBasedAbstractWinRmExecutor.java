@@ -81,10 +81,7 @@ public abstract class FileBasedAbstractWinRmExecutor {
 
   public FileBasedAbstractWinRmExecutor(LogCallback logCallback, boolean shouldSaveExecutionLogs,
       WinRmSessionConfig config, boolean disableCommandEncoding, boolean winrmScriptCommandSplit) {
-    this.logCallback = logCallback;
-    this.shouldSaveExecutionLogs = shouldSaveExecutionLogs;
-    this.config = config;
-    this.disableCommandEncoding = disableCommandEncoding;
+    this(logCallback, shouldSaveExecutionLogs, config, disableCommandEncoding);
     this.winrmScriptCommandSplit = winrmScriptCommandSplit;
   }
 

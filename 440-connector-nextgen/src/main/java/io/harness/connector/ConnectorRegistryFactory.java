@@ -184,7 +184,7 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.GIT,
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, GitConnectorValidator.class,
             ScmConnectorValidationParamsProvider.class, GitDTOToEntity.class, GitEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            GitValidationHandler.class));
     registrar.put(ConnectorType.APP_DYNAMICS,
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
             CVConnectorParamsProvider.class, AppDynamicsDTOToEntity.class, AppDynamicsEntityToDTO.class,
@@ -213,7 +213,7 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
             CVConnectorParamsProvider.class, DynatraceDTOToEntity.class, DynatraceEntityToDTO.class,
             NotSupportedValidationHandler.class));
-    registrar.put(ConnectorType.ELK,
+    registrar.put(ConnectorType.ELASTICSEARCH,
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
             CVConnectorParamsProvider.class, ELKDTOToEntity.class, ELKEntityToDTO.class,
             NotSupportedValidationHandler.class));

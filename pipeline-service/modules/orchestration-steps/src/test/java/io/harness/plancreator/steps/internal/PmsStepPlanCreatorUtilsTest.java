@@ -51,7 +51,8 @@ public class PmsStepPlanCreatorUtilsTest extends OrchestrationStepsTestBase {
         + "dummyAField: \"dummyA\"\n"
         + "__uuid: \"" + uuid + "\"\n";
     YamlField yamlField = YamlUtils.readTree(yaml);
-    List<AdviserObtainment> list = PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, yamlField);
+    List<AdviserObtainment> list =
+        PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, yamlField, false);
     assertEquals(list.size(), 0);
   }
 
@@ -96,7 +97,7 @@ public class PmsStepPlanCreatorUtilsTest extends OrchestrationStepsTestBase {
 
     YamlField yamlField = YamlUtils.readTree(yaml);
     List<AdviserObtainment> adviserObtainment =
-        PmsStepPlanCreatorUtils.getAdviserObtainmentForFailureStrategy(kryoSerializer, yamlField, false);
+        PmsStepPlanCreatorUtils.getAdviserObtainmentForFailureStrategy(kryoSerializer, yamlField, false, false);
     assertEquals(adviserObtainment.size(), 0);
   }
 

@@ -15,7 +15,6 @@ import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -23,7 +22,6 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
-import io.harness.ng.core.mapper.TagMapper;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -36,6 +34,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -66,7 +65,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public abstract class AbstractServiceLevelObjective
     implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   @NotNull String accountId;
-  @NotNull String orgIdentifier;
+  String orgIdentifier;
   String projectIdentifier;
   @NotNull @Id private String uuid;
   @NotNull String identifier;
@@ -79,9 +78,12 @@ public abstract class AbstractServiceLevelObjective
   private boolean enabled;
   private long lastUpdatedAt;
   private long createdAt;
+  private long startedAt;
   @NotNull private Double sloTargetPercentage;
   @FdIndex private long nextNotificationIteration;
   @FdIndex private long nextVerificationIteration;
+  @FdIndex private long createNextTaskIteration;
+  @FdIndex private long recordMetricIteration;
   @NotNull ServiceLevelObjectiveType type;
 
   public static List<MongoIndex> mongoIndexes() {
@@ -128,7 +130,7 @@ public abstract class AbstractServiceLevelObjective
     long totalErrorBudgetIncrementMinutesFromReset =
         CollectionUtils.emptyIfNull(sloErrorBudgetResets)
             .stream()
-            .mapToLong(sloErrorBudgetResetDTO -> sloErrorBudgetResetDTO.getErrorBudgetIncrementMinutes())
+            .mapToLong(SLOErrorBudgetResetDTO::getErrorBudgetIncrementMinutes)
             .sum();
     return Math.toIntExact(Math.min(getCurrentTimeRange(currentDateTime).totalMinutes(),
         totalErrorBudgetMinutes + totalErrorBudgetIncrementMinutesFromReset));
@@ -141,6 +143,12 @@ public abstract class AbstractServiceLevelObjective
     }
     if (ServiceLevelObjectiveV2Keys.nextVerificationIteration.equals(fieldName)) {
       return this.nextVerificationIteration;
+    }
+    if (ServiceLevelObjectiveV2Keys.createNextTaskIteration.equals(fieldName)) {
+      return this.createNextTaskIteration;
+    }
+    if (ServiceLevelObjectiveV2Keys.recordMetricIteration.equals(fieldName)) {
+      return this.recordMetricIteration;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
@@ -155,23 +163,38 @@ public abstract class AbstractServiceLevelObjective
       this.nextVerificationIteration = nextIteration;
       return;
     }
+    if (ServiceLevelObjectiveV2Keys.createNextTaskIteration.equals(fieldName)) {
+      this.createNextTaskIteration = nextIteration;
+      return;
+    }
+    if (ServiceLevelObjectiveV2Keys.recordMetricIteration.equals(fieldName)) {
+      this.recordMetricIteration = nextIteration;
+      return;
+    }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
-  public abstract static class AbstractServiceLevelObjectiveUpdatableEntity<T extends AbstractServiceLevelObjective, D
-                                                                                extends ServiceLevelObjectiveV2DTO>
-      implements UpdatableEntity<T, D> {
-    protected void setCommonOperations(UpdateOperations<T> updateOperations, D serviceLevelObjectiveDTO) {
-      updateOperations.set(ServiceLevelObjectiveV2Keys.orgIdentifier, serviceLevelObjectiveDTO.getOrgIdentifier())
-          .set(ServiceLevelObjectiveV2Keys.projectIdentifier, serviceLevelObjectiveDTO.getProjectIdentifier())
-          .set(ServiceLevelObjectiveV2Keys.name, serviceLevelObjectiveDTO.getName())
-          .set(ServiceLevelObjectiveV2Keys.tags, TagMapper.convertToList(serviceLevelObjectiveDTO.getTags()))
-          .set(ServiceLevelObjectiveV2Keys.userJourneyIdentifiers, serviceLevelObjectiveDTO.getUserJourneyRefs())
-          .set(ServiceLevelObjectiveV2Keys.type, serviceLevelObjectiveDTO.getType())
-          .set(ServiceLevelObjectiveV2Keys.sloTargetPercentage,
-              serviceLevelObjectiveDTO.getSloTarget().getSloTargetPercentage());
-      if (serviceLevelObjectiveDTO.getDescription() != null) {
-        updateOperations.set(ServiceLevelObjectiveV2Keys.desc, serviceLevelObjectiveDTO.getDescription());
+  public abstract Optional<String> mayBeGetMonitoredServiceIdentifier();
+
+  public abstract static class AbstractServiceLevelObjectiveUpdatableEntity<T extends AbstractServiceLevelObjective>
+      implements UpdatableEntity<T, T> {
+    protected void setCommonOperations(UpdateOperations<T> updateOperations, T abstractServiceLevelObjective) {
+      updateOperations.set(ServiceLevelObjectiveV2Keys.name, abstractServiceLevelObjective.getName())
+          .set(ServiceLevelObjectiveV2Keys.tags, abstractServiceLevelObjective.getTags())
+          .set(ServiceLevelObjectiveV2Keys.userJourneyIdentifiers,
+              abstractServiceLevelObjective.getUserJourneyIdentifiers())
+          .set(ServiceLevelObjectiveV2Keys.type, abstractServiceLevelObjective.getType())
+          .set(ServiceLevelObjectiveV2Keys.sloTargetPercentage, abstractServiceLevelObjective.getSloTargetPercentage());
+      if (abstractServiceLevelObjective.getDesc() != null) {
+        updateOperations.set(ServiceLevelObjectiveV2Keys.desc, abstractServiceLevelObjective.getDesc());
+      }
+      if (abstractServiceLevelObjective.getOrgIdentifier() != null) {
+        updateOperations.set(
+            ServiceLevelObjectiveV2Keys.orgIdentifier, abstractServiceLevelObjective.getOrgIdentifier());
+      }
+      if (abstractServiceLevelObjective.getProjectIdentifier() != null) {
+        updateOperations.set(
+            ServiceLevelObjectiveV2Keys.projectIdentifier, abstractServiceLevelObjective.getProjectIdentifier());
       }
     }
   }

@@ -27,6 +27,7 @@ public class GitBaseRequest {
   private String connectorId;
   @NotEmpty private String accountId;
   private GitRepositoryType repoType;
+  private Boolean disableUserGitConfig;
 
   public boolean useBranch() {
     return isNotEmpty(branch);

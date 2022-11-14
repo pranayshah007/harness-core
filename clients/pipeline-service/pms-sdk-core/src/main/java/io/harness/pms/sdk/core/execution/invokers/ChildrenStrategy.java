@@ -24,6 +24,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseMapper;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 @OwnedBy(PIPELINE)
@@ -55,6 +56,10 @@ public class ChildrenStrategy implements ExecuteStrategy {
   }
 
   private void handleResponse(Ambiance ambiance, ChildrenExecutableResponse response) {
+    if (response.getChildrenCount() == 0) {
+      sdkNodeExecutionService.resumeNodeExecution(ambiance, Collections.emptyMap(), false);
+      return;
+    }
     SpawnChildrenRequest spawnChildrenRequest = SpawnChildrenRequest.newBuilder().setChildren(response).build();
     sdkNodeExecutionService.spawnChildren(ambiance, spawnChildrenRequest);
   }

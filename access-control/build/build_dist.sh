@@ -32,6 +32,8 @@ cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.s
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp ../../access-control/build/container/Dockerfile-accesscontrol-service-cie-jdk ./Dockerfile-cie-jdk
 cp -r ../../access-control/build/container/scripts/ .
+cp ../../access-control/config/jfr/default.jfc .
+cp ../../access-control/config/jfr/profile.jfc .
 java -jar accesscontrol-service-capsule.jar scan-classpath-metadata
 
 cd ../..

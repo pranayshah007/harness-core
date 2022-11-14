@@ -16,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 @OwnedBy(CDP)
 public enum SpotCredentialType {
-  @JsonProperty(SpotConstants.MANUAL_CONFIG) MANUAL_CREDENTIALS(SpotConstants.MANUAL_CONFIG);
+  @JsonProperty(SpotConstants.PERMANENT_TOKEN_CONFIG) PERMANENT_TOKEN(SpotConstants.PERMANENT_TOKEN_CONFIG);
   private final String displayName;
   SpotCredentialType(String displayName) {
     this.displayName = displayName;

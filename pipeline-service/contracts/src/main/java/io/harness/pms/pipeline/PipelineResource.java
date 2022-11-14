@@ -577,4 +577,23 @@ public interface PipelineResource {
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+
+  @GET
+  @Path("/list-repos")
+  @ApiOperation(value = "Gets Repository list", nickname = "getRepositoryList")
+  @Operation(operationId = "getRepositoryList", description = "Gets the list of all repositories",
+      summary = "List Repositories",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns a list of all the repositories of all Pipelines")
+      })
+  @Hidden
+  ResponseDTO<PMSPipelineListRepoResponse>
+  getListRepos(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier);
 }

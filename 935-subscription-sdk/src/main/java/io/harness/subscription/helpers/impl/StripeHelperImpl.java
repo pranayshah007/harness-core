@@ -118,6 +118,17 @@ public class StripeHelperImpl implements StripeHelper {
     if (!Strings.isNullOrEmpty(customerParams.getAccountIdentifier())) {
       paramsBuilder.setMetadata(ImmutableMap.of("accountId", customerParams.getAccountIdentifier()));
     }
+    if (customerParams.getAddress() != null) {
+      AddressDto addressDto = customerParams.getAddress();
+      paramsBuilder.setAddress(CustomerUpdateParams.Address.builder()
+                                   .setLine1(addressDto.getLine1())
+                                   .setLine2(addressDto.getLine2())
+                                   .setCity(addressDto.getCity())
+                                   .setState(addressDto.getState())
+                                   .setPostalCode(addressDto.getPostalCode())
+                                   .setCountry(addressDto.getCountry())
+                                   .build());
+    }
 
     Customer customer = stripeHandler.updateCustomer(customerParams.getCustomerId(), paramsBuilder.build());
     return toCustomerDetailDTO(customer);

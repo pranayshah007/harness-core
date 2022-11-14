@@ -42,6 +42,7 @@ import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.ServiceSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -208,7 +209,7 @@ public class ServiceMigrationService extends NgMigrationService {
 
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
       log.info("Skipping creation of service as it already exists");
       return MigrationImportSummaryDTO.builder()
@@ -235,8 +236,7 @@ public class ServiceMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
-      NgEntityDetail ngEntityDetail) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     Service service = (Service) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, service.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
@@ -247,7 +247,7 @@ public class ServiceMigrationService extends NgMigrationService {
     Set<CgEntityId> manifests =
         graph.get(entityId).stream().filter(cgEntityId -> cgEntityId.getType() == MANIFEST).collect(Collectors.toSet());
     List<ManifestConfigWrapper> manifestConfigWrapperList =
-        manifestMigrationService.getManifests(manifests, inputDTO, entities, graph, migratedEntities);
+        manifestMigrationService.getManifests(manifests, inputDTO, entities, migratedEntities);
 
     ServiceDefinition serviceDefinition = ServiceV2Factory.getService2Mapper(service).getServiceDefinition(
         inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList);

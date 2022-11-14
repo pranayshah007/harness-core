@@ -147,7 +147,6 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
                             .cfCliVersion(cfCommandRequest.getCfCliVersion())
                             .cfHomeDirPath(workingDirectory.getAbsolutePath())
                             .limitPcfThreads(cfCommandSetupRequest.isLimitPcfThreads())
-                            .ignorePcfConnectionContextCache(cfCommandSetupRequest.isIgnorePcfConnectionContextCache())
                             .build();
 
       CfAppAutoscalarRequestData pcfAppAutoscalarRequestData =

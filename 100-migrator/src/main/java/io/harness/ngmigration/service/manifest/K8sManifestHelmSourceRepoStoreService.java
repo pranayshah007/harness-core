@@ -23,6 +23,7 @@ import io.harness.ngmigration.service.entity.ManifestMigrationService;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GitFileConfig;
+import software.wings.beans.Service;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -46,17 +47,26 @@ public class K8sManifestHelmSourceRepoStoreService implements NgManifestService 
             .get(CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build())
             .getNgEntityDetail();
 
+    Service service =
+        (Service) entities
+            .get(
+                CgEntityId.builder().type(NGMigrationEntityType.SERVICE).id(applicationManifest.getServiceId()).build())
+            .getEntity();
     HelmChartManifest helmChartManifest =
         HelmChartManifest.builder()
             .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
             .skipResourceVersioning(
                 ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
+            .helmVersion(service.getHelmVersion())
             .store(ParameterField.createValueField(
                 StoreConfigWrapper.builder()
                     .type(StoreConfigType.GIT)
                     .spec(manifestMigrationService.getGitStore(gitFileConfig, entitySpec, connector))
                     .build()))
             .build();
+
+    helmChartManifest.setCommandFlags(getCommandFlags(applicationManifest));
+
     return ManifestConfigWrapper.builder()
         .manifest(ManifestConfig.builder()
                       .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))

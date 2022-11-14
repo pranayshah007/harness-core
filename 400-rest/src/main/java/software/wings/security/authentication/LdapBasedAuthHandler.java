@@ -21,14 +21,18 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SecretText;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.account.AuthenticationMechanism;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.usermembership.remote.UserMembershipClient;
 
 import software.wings.beans.Account;
 import software.wings.beans.SyncTaskContext;
@@ -46,6 +50,7 @@ import software.wings.service.intfc.security.SecretManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
@@ -58,6 +63,8 @@ public class LdapBasedAuthHandler implements AuthHandler {
   @Inject private AuthenticationUtils authenticationUtils;
   @Inject private SecretManager secretManager;
   @Inject private DelegateProxyFactory delegateProxyFactory;
+  @Inject private FeatureFlagService featureFlagService;
+  @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
   private UserService userService;
   private DomainWhitelistCheckerService domainWhitelistCheckerService;
 
@@ -82,42 +89,91 @@ public class LdapBasedAuthHandler implements AuthHandler {
     }
 
     Account account = authenticationUtils.getDefaultAccount(user);
-    String accountId = user == null ? null : user.getDefaultAccountId();
-    String uuid = user == null ? null : user.getUuid();
+    String accountId = user.getDefaultAccountId();
+    String uuid = user.getUuid();
+    LdapSettings settings = ssoSettingService.getLdapSettingsByAccountId(account.getUuid());
     try (AutoLogContext ignore = new UserLogContext(accountId, uuid, OVERRIDE_ERROR)) {
       log.info("Authenticating via LDAP");
       if (!domainWhitelistCheckerService.isDomainWhitelisted(user, account)) {
         domainWhitelistCheckerService.throwDomainWhitelistFilterException();
       }
-      LdapSettings settings = ssoSettingService.getLdapSettingsByAccountId(account.getUuid());
-      EncryptedDataDetail settingsEncryptedDataDetail = settings.getEncryptedDataDetails(secretManager);
-      SecretText secretText = SecretText.builder()
-                                  .value(password)
-                                  .hideFromListing(true)
-                                  .name(UUID.randomUUID().toString())
-                                  .scopedToAccount(true)
-                                  .kmsId(settings.getAccountId())
-                                  .build();
-      EncryptedData encryptedSecret = secretManager.encryptSecret(settings.getAccountId(), secretText, false);
-      EncryptedDataDetail passwordEncryptedDataDetail =
-          secretManager.getEncryptedDataDetails(settings.getAccountId(), "password", encryptedSecret, null).get();
 
-      SyncTaskContext syncTaskContext = SyncTaskContext.builder()
-                                            .accountId(settings.getAccountId())
-                                            .appId(GLOBAL_APP_ID)
-                                            .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
-                                            .build();
-      LdapResponse authenticationResponse = delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
-                                                .authenticate(LdapSettingsMapper.ldapSettingsDTO(settings),
-                                                    settingsEncryptedDataDetail, username, passwordEncryptedDataDetail);
-      if (authenticationResponse.getStatus() == Status.SUCCESS) {
-        return new AuthenticationResponse(user);
-      }
-      throw new WingsException(INVALID_CREDENTIAL, USER);
+      return doAuthenticationAndGetResponseInternal(username, password, user, settings, false);
+
     } catch (NoAvailableDelegatesException | NoEligibleDelegatesInAccountException e) {
-      throw new InvalidRequestException(
-          "Unable to connect to LDAP server, please try after some time. If the problem persist, please contact your admin");
+      final String ldapConnectionInvalidRequestMsg =
+          "Unable to connect to LDAP server, please try after some time. If the problem persist, please contact your admin";
+      if (!account.isNextGenEnabled()
+          || !featureFlagService.isEnabled(FeatureName.NG_ENABLE_LDAP_CHECK, settings.getAccountId())) {
+        log.warn("NGLDAP: Authentication flow. NG not enabled or feature flag for NGLDAP not enabled on account {}",
+            accountId);
+        throw new InvalidRequestException(ldapConnectionInvalidRequestMsg);
+      }
+      boolean userInNGScope = false;
+      try {
+        userInNGScope =
+            NGRestUtils.getResponse(userMembershipClient.isUserInScope(uuid, settings.getAccountId(), null, null));
+      } catch (Exception exception) {
+        log.error(
+            "NGLDAP: Authentication flow, while making a userMembershipClient call to isUserInScope an exception occurred: ",
+            exception);
+        // don't throw can't connect to NG exception
+        throw new InvalidRequestException(ldapConnectionInvalidRequestMsg);
+      }
+
+      if (!userInNGScope) {
+        log.warn("NGLDAP: Authentication flow. User {} not added to scope in NG for account {}", uuid, accountId);
+        throw new InvalidRequestException(ldapConnectionInvalidRequestMsg);
+      }
+
+      log.info("NGLDAP: Authenticating via LDAP user {}, in NG for account {}", uuid, accountId);
+
+      try {
+        return doAuthenticationAndGetResponseInternal(username, password, user, settings, true);
+      } catch (NoAvailableDelegatesException | NoEligibleDelegatesInAccountException ex) {
+        log.warn("NGLDAP: Authentication flow. No eligible delegates in account {} for user {} authentication",
+            accountId, uuid);
+        throw new InvalidRequestException(ldapConnectionInvalidRequestMsg);
+      }
     }
+  }
+
+  private AuthenticationResponse doAuthenticationAndGetResponseInternal(
+      String username, String password, User user, LdapSettings settings, boolean isNg) {
+    EncryptedDataDetail settingsEncryptedDataDetail = settings.getEncryptedDataDetails(secretManager);
+    SecretText secretText = SecretText.builder()
+                                .value(password)
+                                .hideFromListing(true)
+                                .name(UUID.randomUUID().toString())
+                                .scopedToAccount(true)
+                                .kmsId(settings.getAccountId())
+                                .build();
+    EncryptedData encryptedSecret = secretManager.encryptSecret(settings.getAccountId(), secretText, false);
+    EncryptedDataDetail passwordEncryptedDataDetail =
+        secretManager.getEncryptedDataDetails(settings.getAccountId(), "password", encryptedSecret, null).get();
+
+    SyncTaskContext syncTaskContext;
+    if (isNg) {
+      syncTaskContext = SyncTaskContext.builder()
+                            .accountId(settings.getAccountId())
+                            .appId(GLOBAL_APP_ID)
+                            .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
+                            .ngTask(true)
+                            .build();
+    } else {
+      syncTaskContext = SyncTaskContext.builder()
+                            .accountId(settings.getAccountId())
+                            .appId(GLOBAL_APP_ID)
+                            .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
+                            .build();
+    }
+    LdapResponse authenticationResponse = delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
+                                              .authenticate(LdapSettingsMapper.ldapSettingsDTO(settings),
+                                                  settingsEncryptedDataDetail, username, passwordEncryptedDataDetail);
+    if (authenticationResponse.getStatus() == Status.SUCCESS) {
+      return new AuthenticationResponse(user);
+    }
+    throw new WingsException(INVALID_CREDENTIAL, USER);
   }
 
   @Override

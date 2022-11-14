@@ -73,7 +73,7 @@ public class NexusArtifactTaskHandlerTest extends CategoryTest {
     doReturn(buildDetailsInternal)
         .when(nexusRegistryService)
         .verifyBuildNumber(nexusInternalConfig, REPO_NAME, null, IMAGE_NAME, RepositoryFormat.docker.name(), IMAGE_TAG,
-            null, null, null, null, null);
+            null, null, null, null, null, null);
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild = nexusArtifactService.getLastSuccessfulBuild(sourceAttributes);
     assertThat(lastSuccessfulBuild).isNotNull();
@@ -102,7 +102,7 @@ public class NexusArtifactTaskHandlerTest extends CategoryTest {
     doReturn(buildDetailsInternal)
         .when(nexusRegistryService)
         .getLastSuccessfulBuildFromRegex(nexusInternalConfig, REPO_NAME, null, IMAGE_NAME,
-            RepositoryFormat.docker.name(), IMAGE_TAG_REGEX, null, null, null, null, null);
+            RepositoryFormat.docker.name(), IMAGE_TAG_REGEX, null, null, null, null, null, null);
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild = nexusArtifactService.getLastSuccessfulBuild(sourceAttributes);
     assertThat(lastSuccessfulBuild).isNotNull();
@@ -131,7 +131,7 @@ public class NexusArtifactTaskHandlerTest extends CategoryTest {
     doReturn(Lists.newArrayList(buildDetailsInternal))
         .when(nexusRegistryService)
         .getBuilds(nexusInternalConfig, REPO_NAME, null, IMAGE_NAME, RepositoryFormat.docker.name(),
-            MAX_NO_OF_TAGS_PER_IMAGE, null, null, null, null, null);
+            MAX_NO_OF_TAGS_PER_IMAGE, null, null, null, null, null, null);
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild = nexusArtifactService.getBuilds(sourceAttributes);
     assertThat(lastSuccessfulBuild).isNotNull();

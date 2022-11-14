@@ -18,6 +18,7 @@ import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.microservice.NotifyEngineTarget.GENERAL;
 import static io.harness.validation.Validator.notNullCheck;
 
@@ -46,8 +47,8 @@ import static software.wings.service.impl.yaml.YamlProcessingLogContext.BRANCH_N
 import static software.wings.service.impl.yaml.YamlProcessingLogContext.CHANGESET_ID;
 import static software.wings.service.impl.yaml.YamlProcessingLogContext.GIT_CONNECTOR_ID;
 import static software.wings.service.impl.yaml.YamlProcessingLogContext.WEBHOOK_TOKEN;
-import static software.wings.yaml.gitSync.YamlGitConfig.BRANCH_NAME_KEY;
-import static software.wings.yaml.gitSync.YamlGitConfig.GIT_CONNECTOR_ID_KEY;
+import static software.wings.yaml.gitSync.beans.YamlGitConfig.BRANCH_NAME_KEY;
+import static software.wings.yaml.gitSync.beans.YamlGitConfig.GIT_CONNECTOR_ID_KEY;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -150,9 +151,9 @@ import software.wings.yaml.gitSync.GitSyncWebhook.GitSyncWebhookKeys;
 import software.wings.yaml.gitSync.GitWebhookRequestAttributes;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlChangeSet.Status;
-import software.wings.yaml.gitSync.YamlGitConfig;
-import software.wings.yaml.gitSync.YamlGitConfig.SyncMode;
-import software.wings.yaml.gitSync.YamlGitConfig.YamlGitConfigKeys;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.SyncMode;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.YamlGitConfigKeys;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
@@ -631,7 +632,7 @@ public class YamlGitServiceImpl implements YamlGitService {
     String appId = yamlChangeSet.getAppId();
     String yamlChangeSetId = yamlChangeSet.getUuid();
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-         AppLogContext ignore2 = new AppLogContext(appId, OVERRIDE_ERROR);
+         AppLogContext ignore2 = new AppLogContext(appId, OVERRIDE_NESTS);
          YamlProcessingLogContext ignore3 =
              YamlProcessingLogContext.builder().changeSetId(yamlChangeSetId).build(OVERRIDE_ERROR)) {
       log.info(GIT_YAML_LOG_PREFIX + "Started handling harness -> git change set");
@@ -675,7 +676,7 @@ public class YamlGitServiceImpl implements YamlGitService {
                                                         .gitFileChanges(gitFileChanges)
                                                         .forcePush(true)
                                                         .yamlChangeSetIds(yamlChangeSetIds)
-                                                        .yamlGitConfig(yamlGitConfig)
+                                                        .yamlGitConfig(yamlGitConfig.toDTO())
                                                         .lastProcessedGitCommit(lastProcessedGitCommitId)
                                                         .pushOnlyIfHeadSeen(pushOnlyIfHeadSeen)
                                                         .build()})
@@ -1000,7 +1001,7 @@ public class YamlGitServiceImpl implements YamlGitService {
                                                     GitDiffRequest.builder()
                                                         .lastProcessedCommitId(processedCommit)
                                                         .endCommitId(getEndCommitId(headCommitId, accountId))
-                                                        .yamlGitConfig(yamlGitConfig)
+                                                        .yamlGitConfig(yamlGitConfig.toDTO())
                                                         .build(),
                                                     true /*excludeFilesOutsideSetupFolder */})
                                                 .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
@@ -1039,7 +1040,7 @@ public class YamlGitServiceImpl implements YamlGitService {
                                             .putIfNotNull(WEBHOOK_TOKEN, webhookToken)
                                             .putIfNotNull(CHANGESET_ID, yamlChangeSetId)
                                             .build(),
-        OVERRIDE_ERROR);
+        OVERRIDE_NESTS);
   }
 
   @Override

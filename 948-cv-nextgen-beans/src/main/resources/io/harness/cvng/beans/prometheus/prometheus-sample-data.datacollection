@@ -3,15 +3,4 @@ Var fullQuery = concat(Env:baseUrl, Var:dataQuery, "start=", Env:startTime, "&en
 Var result = sync-call(url=Var:fullQuery, header=Env:commonHeaders)
 print Var:fullQuery
 print Var:result
-Var responseList = []
-Var resultList = extract(Var:result, $.data.result)
-foreach metric in Var:resultList {
-  Var metricMap = {}
-  Var metricDetails = extract(Var:metric,$.metric)
-  Var data = extract(Var:metric,$.values)
-  Var:metricMap.put("metricDetails", Var:metricDetails)
-  Var:metricMap.put("data", Var:data)
-  Var:responseList.append(Var:metricMap)
-}
-
-return Var:responseList
+return Var:result

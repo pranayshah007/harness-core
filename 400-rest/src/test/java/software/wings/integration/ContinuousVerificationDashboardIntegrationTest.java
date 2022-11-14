@@ -12,10 +12,8 @@ import static io.harness.rule.OwnerRule.SRIRAM;
 
 import static org.apache.cxf.ws.addressing.ContextUtils.generateUUID;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.DeprecatedIntegrationTests;
@@ -335,7 +333,6 @@ public class ContinuousVerificationDashboardIntegrationTest extends IntegrationT
   @Ignore("skipping the integration test")
   public void getAllCVRecordsHarnessAccount() {
     saveExecutions();
-    when(featureFlagService.isEnabled(FeatureName.GLOBAL_CV_DASH, accountId)).thenReturn(true);
     long now = System.currentTimeMillis();
 
     long before = now - TimeUnit.MINUTES.toMillis(1), after = now + TimeUnit.MINUTES.toMillis(5);
@@ -367,7 +364,6 @@ public class ContinuousVerificationDashboardIntegrationTest extends IntegrationT
   @Ignore("skipping the integration test")
   public void getAllCVRecordsNonHarnessAccount() {
     saveExecutions();
-    when(featureFlagService.isEnabled(FeatureName.GLOBAL_CV_DASH, "badAccount")).thenReturn(false);
     long now = System.currentTimeMillis();
 
     long before = now - TimeUnit.MINUTES.toMillis(1), after = now + TimeUnit.MINUTES.toMillis(5);

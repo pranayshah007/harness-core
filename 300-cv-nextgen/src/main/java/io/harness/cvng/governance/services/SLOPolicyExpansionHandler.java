@@ -12,6 +12,7 @@ import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.SERVICE_CONFIG_KE
 import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.STAGE_KEY;
 import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.USE_FROM_STAGE_KEY;
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
+import static io.harness.cvng.governance.beans.ExpansionKeysConstants.ENVIRONMENT;
 import static io.harness.cvng.governance.beans.ExpansionKeysConstants.ENVIRONMENT_REF;
 import static io.harness.cvng.governance.beans.ExpansionKeysConstants.INFRASTRUCTURE;
 
@@ -56,13 +57,13 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
     ProjectParams projectParams =
         ProjectParams.builder().accountIdentifier(accountId).projectIdentifier(projectId).orgIdentifier(orgId).build();
     String serviceRef = fetchServiceIdentifier(fieldValue, metadata);
-    if (Objects.isNull(serviceRef)) {
+    String environmentRef = fetchEnvironmentIdentifier(fieldValue);
+    if (Objects.isNull(serviceRef) || Objects.isNull(environmentRef)) {
       return ExpansionResponse.builder()
           .success(false)
           .errorMessage("Invalid yaml. Service config or service config reference from other stage not found.")
           .build();
     }
-    String environmentRef = fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT_REF).asText();
     ServiceEnvironmentParams serviceEnvironmentParams = builderWithProjectParams(projectParams)
                                                             .serviceIdentifier(serviceRef)
                                                             .environmentIdentifier(environmentRef)
@@ -123,8 +124,19 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
             CVNGStepUtils.findStageByIdentifier(propagateFromPipeline, useFromStageIdentifier);
         return CVNGStepUtils.getServiceRefNode(propagateFromStage).asText();
       } catch (IOException e) {
-        throw new IllegalStateException(e);
+        log.error(e + "pipeline: " + metadata.getYaml());
+        return null;
       }
+    }
+  }
+
+  private String fetchEnvironmentIdentifier(JsonNode fieldValue) {
+    if (Objects.nonNull(fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT_REF).asText())) {
+      return fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT_REF).asText();
+    } else if (Objects.nonNull(fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT).asText())) {
+      return fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT).asText();
+    } else {
+      return null;
     }
   }
 }

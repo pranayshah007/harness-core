@@ -10,9 +10,9 @@ package io.harness.template.services;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
-import io.harness.template.beans.refresh.YamlDiffResponseDTO;
-import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.YamlDiffResponseDTO;
+import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 
 @OwnedBy(CDC)
 public interface TemplateRefreshService {

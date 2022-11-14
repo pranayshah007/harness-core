@@ -101,24 +101,27 @@ public class WinrmHostConnectionCapabilityCheck implements CapabilityCheck {
     String password = org.jooq.tools.StringUtils.EMPTY;
     String keyTabFilePath = org.jooq.tools.StringUtils.EMPTY;
 
-    switch (kerberosWinRmConfigDTO.getTgtGenerationMethod()) {
-      case Password:
-        TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosWinRmConfigDTO.getSpec();
-        TGTPasswordSpecDTO passwordSpecDTO =
-            (TGTPasswordSpecDTO) secretDecryptionService.decrypt(tgtPasswordSpecDTO, encryptionDetails);
+    if (kerberosWinRmConfigDTO.getTgtGenerationMethod() != null) { // skip no TGT
+      switch (kerberosWinRmConfigDTO.getTgtGenerationMethod()) {
+        case Password:
+          TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosWinRmConfigDTO.getSpec();
+          TGTPasswordSpecDTO passwordSpecDTO =
+              (TGTPasswordSpecDTO) secretDecryptionService.decrypt(tgtPasswordSpecDTO, encryptionDetails);
 
-        password = String.valueOf(passwordSpecDTO.getPassword().getDecryptedValue());
-        break;
+          password = String.valueOf(passwordSpecDTO.getPassword().getDecryptedValue());
+          break;
 
-      case KeyTabFilePath:
-        TGTKeyTabFilePathSpecDTO tgtKeyTabFilePathSpecDTO = (TGTKeyTabFilePathSpecDTO) kerberosWinRmConfigDTO.getSpec();
-        isUseKeyTab = true;
-        keyTabFilePath = tgtKeyTabFilePathSpecDTO.getKeyPath();
-        break;
+        case KeyTabFilePath:
+          TGTKeyTabFilePathSpecDTO tgtKeyTabFilePathSpecDTO =
+              (TGTKeyTabFilePathSpecDTO) kerberosWinRmConfigDTO.getSpec();
+          isUseKeyTab = true;
+          keyTabFilePath = tgtKeyTabFilePathSpecDTO.getKeyPath();
+          break;
 
-      default:
-        throw new IllegalArgumentException(
-            "Invalid TgtGenerationMethod provided:" + kerberosWinRmConfigDTO.getTgtGenerationMethod());
+        default:
+          throw new IllegalArgumentException(
+              "Invalid TgtGenerationMethod provided:" + kerberosWinRmConfigDTO.getTgtGenerationMethod());
+      }
     }
 
     return WinRmSessionConfig.builder()

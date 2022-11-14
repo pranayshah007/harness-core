@@ -7,6 +7,9 @@
 
 package io.harness.delegate.beans.connector.scm.gitlab;
 
+import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabCredentialsOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabHttpCredentialsOutcomeDTO;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -40,5 +43,10 @@ public class GitlabHttpCredentialsDTO implements GitlabCredentialsDTO {
   public GitlabHttpCredentialsDTO(GitlabHttpAuthenticationType type, GitlabHttpCredentialsSpecDTO httpCredentialsSpec) {
     this.type = type;
     this.httpCredentialsSpec = httpCredentialsSpec;
+  }
+
+  @Override
+  public GitlabCredentialsOutcomeDTO toOutcome() {
+    return GitlabHttpCredentialsOutcomeDTO.builder().type(this.type).spec(this.httpCredentialsSpec).build();
   }
 }

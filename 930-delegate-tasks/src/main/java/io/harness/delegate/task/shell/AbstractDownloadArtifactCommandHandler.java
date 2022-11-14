@@ -10,6 +10,7 @@ package io.harness.delegate.task.shell;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_DOWNLOAD_ARTIFACT_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_DOWNLOAD_ARTIFACT_PATH_SPECIFIED_EXPLANATION;
@@ -27,7 +28,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
-import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
@@ -46,7 +46,6 @@ import io.harness.logging.LogCallback;
 import io.harness.shell.BaseScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptType;
-import io.harness.ssh.FileSourceType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -63,14 +62,8 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
   public ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
       Map<String, Object> taskContext) {
-    if (!(commandUnit instanceof NgDownloadArtifactCommandUnit) && !(commandUnit instanceof CopyCommandUnit)) {
+    if (!(commandUnit instanceof NgDownloadArtifactCommandUnit)) {
       throw new InvalidRequestException("Invalid command unit specified for command task.");
-    }
-
-    if (commandUnit instanceof NgDownloadArtifactCommandUnit) {
-      if (!FileSourceType.ARTIFACT.equals(((NgDownloadArtifactCommandUnit) commandUnit).getSourceType())) {
-        throw new InvalidRequestException("Invalid source type specified for command unit.");
-      }
     }
 
     BaseScriptExecutor executor =
@@ -100,7 +93,7 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
 
     if (artifactDelegateConfig instanceof CustomArtifactDelegateConfig) {
       throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
-          DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT,
+          DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION,
           new WinRmCommandExecutionException(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT));
     }
 
@@ -110,7 +103,8 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
 
     logCallback.saveExecutionLog(format("Begin execution of command: %s", commandUnit.getName()), INFO);
     logCallback.saveExecutionLog("Downloading artifact from " + getArtifactType(artifactDelegateConfig) + " to "
-            + commandUnit.getDestinationPath() + "\\" + getArtifactFileName(artifactDelegateConfig),
+            + commandUnit.getDestinationPath() + ((ScriptType.BASH == getScriptType()) ? "/" : "\\")
+            + getArtifactFileName(artifactDelegateConfig),
         INFO);
 
     if (isEmpty(commandUnit.getDestinationPath())) {
@@ -164,8 +158,8 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
     if (artifactDelegateConfig instanceof NexusArtifactDelegateConfig) {
       NexusArtifactDelegateConfig nexusArtifactDelegateConfig = (NexusArtifactDelegateConfig) artifactDelegateConfig;
       NexusVersion nexusVersion = getNexusVersion(nexusArtifactDelegateConfig);
-      return getNexusArtifactFileName(nexusVersion, nexusArtifactDelegateConfig.getRepositoryFormat(),
-          nexusArtifactDelegateConfig.getArtifactUrl());
+      return getNexusArtifactFileName(
+          nexusVersion, nexusArtifactDelegateConfig.getRepositoryFormat(), nexusArtifactDelegateConfig.getMetadata());
     }
 
     return ArtifactoryUtils.getArtifactFileName(artifactDelegateConfig.getArtifactPath());

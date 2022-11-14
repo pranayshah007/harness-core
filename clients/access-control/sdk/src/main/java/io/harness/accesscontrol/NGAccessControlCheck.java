@@ -15,6 +15,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/***
+ * This annotation expects [@ResourceIdentifier, @ProjectIdentifier, @OrgIdentifier, @AccountIdentifier] or
+ * @BeanParam annotation on method arguments to build resource SCOPE
+ */
 @OwnedBy(HarnessTeam.PL)
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})

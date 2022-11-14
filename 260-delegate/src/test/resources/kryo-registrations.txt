@@ -207,8 +207,6 @@
 2012:com.google.api.services.monitoring.v3.model.Distribution
 2013:com.google.api.services.monitoring.v3.model.BucketOptions
 2014:com.google.api.services.monitoring.v3.model.Exponential
-2015:com.mongodb.BasicDBList
-2016:com.mongodb.BasicDBObject
 3001:io.harness.exception.VerificationOperationException
 3002:io.harness.exception.ServiceNowException
 3003:io.harness.encryption.SecretRefData
@@ -965,6 +963,8 @@
 7492:io.harness.k8s.model.response.CEK8sDelegatePrerequisite.Rule
 7501:software.wings.helpers.ext.ecs.request.EcsRunTaskDeployRequest
 7502:software.wings.helpers.ext.ecs.response.EcsRunTaskDeployResponse
+7510:io.harness.jira.JiraFieldSchema
+
 8030:io.harness.delegate.beans.storeconfig.FetchType
 8035:software.wings.service.impl.azure.manager.AzureVMSSCommandRequest
 8058:software.wings.helpers.ext.helm.request.HelmChartCollectionParams
@@ -1122,6 +1122,9 @@
 9122:io.harness.cvng.beans.elk.ELKIndexCollectionRequest
 9123:io.harness.cvng.beans.elk.ELKSampleDataCollectionRequest
 9124:io.harness.cvng.beans.ELKDataCollectionInfo
+9130:io.harness.cvng.beans.aws.AwsDataCollectionRequest
+9131:io.harness.cvng.beans.AwsPrometheusDataCollectionInfo
+9132:io.harness.cvng.beans.AwsPrometheusDataCollectionInfo.MetricCollectionInfo
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
 9709:io.harness.jira.JiraIssueTypeNG
@@ -1152,6 +1155,7 @@
 19002:io.harness.delegate.beans.TaskData
 19003:io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability
 19004:io.harness.delegate.beans.executioncapability.CapabilityType
+19005:io.harness.delegate.beans.TaskDataV2
 19007:io.harness.delegate.beans.executioncapability.ProcessExecutorCapability
 19008:io.harness.delegate.beans.executioncapability.AwsRegionCapability
 19009:io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability
@@ -1596,10 +1600,12 @@
 21002:io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO
 21003:io.harness.delegate.beans.connector.spotconnector.SpotCredentialSpecDTO
 21004:io.harness.delegate.beans.connector.spotconnector.SpotCredentialType
-21005:io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO
+21005:io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO
 21006:io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse
 21007:io.harness.delegate.beans.connector.spotconnector.SpotTaskParams
 21008:io.harness.delegate.beans.connector.spotconnector.SpotTaskType
+21009:io.harness.delegate.beans.connector.spotconnector.SpotValidationParams
+21010:io.harness.delegate.beans.connector.spotconnector.SpotDelegateTaskResponse
 22001:io.harness.ng.core.common.beans.NGTag
 22004:io.harness.ng.core.common.beans.KeyValuePair
 22005:io.harness.ng.core.ResourceScope
@@ -1778,8 +1784,13 @@
 55427:io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse
 55428:io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse
 55429:io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig
+55430:io.harness.delegate.task.azure.artifact.JenkinsAzureArtifactRequestDetails
+55431:io.harness.delegate.task.azure.artifact.AzureDevOpsArtifactRequestDetails
 55435:io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability
+55436:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest
+55437:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
+55499:io.harness.beans.SerializationFormat
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
 55503:io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo
@@ -1799,6 +1810,11 @@
 57502:io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest
 57503:io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse
 57504:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCapabilityHelper
+60011:io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest
+60012:io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse
+60013:io.harness.delegate.task.artifacts.ami.AMITag
+60014:io.harness.delegate.task.artifacts.ami.AMIFilter
+60015:io.harness.delegate.task.ssh.EmptyHostDelegateConfig
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
 71102:software.wings.beans.Log
@@ -1822,6 +1838,10 @@
 73989:io.harness.delegate.NoEligibleDelegatesInAccountException
 73990:io.harness.delegate.beans.NoAvailableDelegatesException
 73991:io.harness.delegate.beans.NoDelegatesException
+73992:io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails
+73993:io.harness.delegate.task.helm.HelmFetchChartVersionRequestNG
+73994:io.harness.delegate.beans.helm.HelmChartVersionDetails
+73995:io.harness.delegate.task.helm.HelmFetchChartVersionResponse
 80302:software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds
 80303:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile
 80304:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo
@@ -1832,6 +1852,7 @@
 80310:software.wings.helpers.ext.azure.devops.AzureDevopsProjects
 80311:io.harness.artifactory.ArtifactoryImagePath
 80312:io.harness.ngtriggers.WebhookSecretData
+81001:io.harness.ami.AMITagsResponse
 83071:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest
 83072:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse
 83073:software.wings.service.impl.aws.model.AwsEC2Instance
@@ -2292,6 +2313,11 @@
 573542:io.harness.delegate.task.ecs.request.EcsRunTaskRequest
 573543:io.harness.delegate.task.ecs.response.EcsRunTaskResponse
 573544:io.harness.delegate.beans.ecs.EcsRunTaskResult
+573545:io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest
+573546:io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse
+573547:io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest
+573548:io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse
+573549:io.harness.delegate.beans.elastigroup.ElastigroupSetupResult
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO
@@ -2346,6 +2372,9 @@
 955014:io.harness.beans.HookEventType
 955015:io.harness.beans.gitsync.GitFilePathDetails
 955016:io.harness.beans.response.GitFileResponse
+955017:io.harness.beans.response.ListFilesInCommitResponse
+955018:io.harness.beans.FileGitDetails
+955019:io.harness.beans.ContentType
 970001:io.harness.request.RequestContextData
 970002:io.harness.request.RequestContext
 970003:io.harness.gitsync.interceptor.GitSyncBranchContext
@@ -2392,6 +2421,10 @@
 980035:io.harness.exception.ngexception.AzureARMTaskException
 980036:io.harness.delegate.beans.DelegateTaskExpiredException
 980037:io.harness.exception.ngexception.AzureBPTaskException
+980100:software.wings.beans.infrastructure.instance.info.K8sPodInfo
+980101:software.wings.beans.infrastructure.instance.info.K8sContainerInfo
+1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
+9000312:software.wings.helpers.ext.nexus.NexusRepositories
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
 9800001:io.harness.beans.RecasterMap
@@ -2401,6 +2434,8 @@
 9800005:io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig
 9800006:io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig
 9800007:io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig
+9800008:io.harness.delegate.task.terraform.InlineTerraformBackendConfigFileInfo
+9800009:io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO

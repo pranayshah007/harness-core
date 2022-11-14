@@ -24,6 +24,7 @@ import software.wings.utils.RepositoryFormat;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -39,7 +40,7 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
   @Override
   public List<BuildDetailsInternal> getBuilds(NexusRequest nexusConfig, String repositoryName, String port,
       String artifactName, String repositoryFormat, int maxNumberOfBuilds, String groupId, String artifactId,
-      String extension, String classifier, String packageName) {
+      String extension, String classifier, String packageName, String group) {
     List<BuildDetailsInternal> buildDetails;
     if (RepositoryFormat.docker.name().equalsIgnoreCase(repositoryFormat)) {
       buildDetails =
@@ -53,6 +54,9 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
     } else if (RepositoryFormat.npm.name().equalsIgnoreCase(repositoryFormat)
         || RepositoryFormat.nuget.name().equalsIgnoreCase(repositoryFormat)) {
       buildDetails = nexusClient.getArtifactsVersions(nexusConfig, repositoryFormat, repositoryName, packageName);
+      return buildDetails;
+    } else if (RepositoryFormat.raw.name().equalsIgnoreCase(repositoryFormat)) {
+      buildDetails = nexusClient.getPackageNames(nexusConfig, repositoryName, group);
       return buildDetails;
     } else {
       throw NestedExceptionUtils.hintWithExplanationException("Please check your artifact YAML configuration.",
@@ -79,7 +83,7 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(NexusRequest nexusConfig, String repository, String port,
       String artifactName, String repositoryFormat, String tagRegex, String groupId, String artifactId,
-      String extension, String classifier, String packageName) {
+      String extension, String classifier, String packageName, String group) {
     try {
       Pattern.compile(tagRegex);
     } catch (PatternSyntaxException e) {
@@ -90,7 +94,7 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
     }
 
     List<BuildDetailsInternal> builds = getBuilds(nexusConfig, repository, port, artifactName, repositoryFormat,
-        MAX_NUMBER_OF_BUILDS, groupId, artifactId, extension, classifier, packageName);
+        MAX_NUMBER_OF_BUILDS, groupId, artifactId, extension, classifier, packageName, group);
     builds = builds.stream()
                  .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
                  .sorted(new BuildDetailsInternalComparatorDescending())
@@ -111,12 +115,12 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
   @Override
   public BuildDetailsInternal verifyBuildNumber(NexusRequest nexusConfig, String repository, String port,
       String artifactName, String repositoryFormat, String tag, String groupId, String artifactId, String extension,
-      String classifier, String packageName) {
+      String classifier, String packageName, String group) {
     if (RepositoryFormat.docker.name().equalsIgnoreCase(repositoryFormat)) {
       return getBuildNumber(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
     } else {
       return getBuildNumber(nexusConfig, repository, port, artifactName, repositoryFormat, tag, groupId, artifactId,
-          extension, classifier, packageName);
+          extension, classifier, packageName, group);
     }
   }
 
@@ -125,11 +129,16 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
     return nexusClient.isRunning(nexusConfig);
   }
 
+  @Override
+  public Map<String, String> getRepository(NexusRequest nexusConfig, String repositoryFormat) {
+    return nexusClient.getRepositories(nexusConfig, repositoryFormat);
+  }
+
   private BuildDetailsInternal getBuildNumber(NexusRequest nexusConfig, String repository, String port,
       String artifactName, String repositoryFormat, String tag, String groupId, String artifactId, String extension,
-      String classifier, String packageName) {
+      String classifier, String packageName, String group) {
     List<BuildDetailsInternal> builds = getBuilds(nexusConfig, repository, port, artifactName, repositoryFormat,
-        MAX_NUMBER_OF_BUILDS, groupId, artifactId, extension, classifier, packageName);
+        MAX_NUMBER_OF_BUILDS, groupId, artifactId, extension, classifier, packageName, group);
     builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
 
     if (builds.size() == 1) {
@@ -159,6 +168,23 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
         String.format(
             "Found multiple artifacts for tag [%s] in Nexus repository [%s] for %s artifact [%s] in registry [%s].",
             tag, repository, repositoryFormat, artifactName, nexusConfig.getNexusUrl()),
+        new NexusRegistryException(String.format("Found multiple artifact tags ('%s'), but expected only one.", tag)));
+  }
+
+  public BuildDetailsInternal getPackageNames(
+      NexusRequest nexusConfig, String repository, String packageName, String tag) {
+    List<BuildDetailsInternal> builds = nexusClient.getPackageNames(nexusConfig, repository, packageName);
+    builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
+
+    if (builds.size() == 1) {
+      return builds.get(0);
+    }
+
+    throw NestedExceptionUtils.hintWithExplanationException(
+        "Please check your Nexus repository for artifacts with same tag.",
+        String.format(
+            "Found multiple artifacts for tag [%s] in Nexus repository [%s] for %s packageName [%s] in registry [%s].",
+            tag, repository, packageName, nexusConfig.getNexusUrl()),
         new NexusRegistryException(String.format("Found multiple artifact tags ('%s'), but expected only one.", tag)));
   }
 }

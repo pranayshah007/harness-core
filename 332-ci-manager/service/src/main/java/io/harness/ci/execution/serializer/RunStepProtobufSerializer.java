@@ -20,6 +20,7 @@ import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.Report;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
 @OwnedBy(CI)
 public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStepInfo> {
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+  @Inject private CIFeatureFlagService featureFlagService;
 
   public UnitStep serializeStepWithStepParameters(RunStepInfo runStepInfo, Integer port, String callbackId,
       String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout, String accountId,
@@ -54,8 +56,8 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
       throw new CIStageExecutionException("Port can not be null");
     }
 
-    String gitSafeCMD =
-        SerializerUtils.getSafeGitDirectoryCmd(RunTimeInputHandler.resolveShellType(runStepInfo.getShell()));
+    String gitSafeCMD = SerializerUtils.getSafeGitDirectoryCmd(
+        RunTimeInputHandler.resolveShellType(runStepInfo.getShell()), accountId, featureFlagService);
 
     RunStep.Builder runStepBuilder = RunStep.newBuilder();
     runStepBuilder.setCommand(gitSafeCMD

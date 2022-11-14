@@ -19,6 +19,7 @@ public interface PmsEngineExpressionService {
     return renderExpression(ambiance, expression, false);
   }
   String renderExpression(Ambiance ambiance, String expression, boolean skipUnresolvedExpressionsCheck);
+  String renderExpression(Ambiance ambiance, String expression, ExpressionMode expressionMode);
 
   String evaluateExpression(Ambiance ambiance, String expression);
   String evaluateExpression(Ambiance ambiance, String expression, ExpressionMode expressionMode);

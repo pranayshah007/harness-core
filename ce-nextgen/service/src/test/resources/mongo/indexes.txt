@@ -20,6 +20,7 @@ ceReportSchedule {"name": "account_enabled_type", "background": true} {"accountI
 ceView {"name": "accountId_folderId", "background": true} {"accountId": 1, "folderId": 1}
 ceViewFolder {"name": "accountId", "background": true} {"accountId": 1}
 clusterRecords {"name": "accountId_k8sBaseConnectorRefIdentifier", "unique": true} {"accountId": 1, "k8sBaseConnectorRefIdentifier": 1}
+ec2Recommendation {"name": "unique_accountId_awsAccountId_instanceId", "unique": true} {"accountId": 1, "awsAccountId": 1, "instanceId": 1}
 ecsPartialRecommendationHistogram {"name": "unique_accountId_clusterId_serviceArn_date", "unique": true} {"accountId": 1, "clusterId": 1, "serviceArn": 1, "date": 1}
 ecsService {"name": "accountId_serviceArn", "background": true} {"accountId": 1, "serviceArn": 1}
 ecsService {"name": "unique_accountId_clusterId_serviceArn", "unique": true} {"accountId": 1, "clusterId": 1, "serviceArn": 1}

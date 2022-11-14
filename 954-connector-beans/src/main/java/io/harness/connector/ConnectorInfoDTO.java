@@ -85,4 +85,17 @@ public class ConnectorInfoDTO {
     this.connectorType = connectorType;
     this.connectorConfig = connectorConfig;
   }
+
+  public ConnectorInfoOutcomeDTO toOutcome() {
+    return ConnectorInfoOutcomeDTO.builder()
+        .identifier(this.identifier)
+        .name(this.name)
+        .description(this.description)
+        .orgIdentifier(this.orgIdentifier)
+        .projectIdentifier(this.projectIdentifier)
+        .tags(this.tags)
+        .connectorType(this.connectorType)
+        .connectorConfigOutcome(this.connectorConfig.toOutcome())
+        .build();
+  }
 }

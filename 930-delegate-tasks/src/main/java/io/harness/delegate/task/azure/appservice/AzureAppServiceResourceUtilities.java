@@ -34,8 +34,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDP)
@@ -84,6 +86,44 @@ public class AzureAppServiceResourceUtilities {
       List<AzureAppServiceConnectionString> connectionStrings) {
     return connectionStrings.stream().collect(
         Collectors.toMap(AzureAppServiceConnectionString::getName, Function.identity()));
+  }
+
+  @Nullable
+  public Map<String, AzureAppServiceApplicationSetting> getAppSettingsToRemove(
+      @Nullable Set<String> prevExecutionAppSettingsNames,
+      Map<String, AzureAppServiceApplicationSetting> userAddedAppSettings) {
+    if (prevExecutionAppSettingsNames == null || userAddedAppSettings == null) {
+      return null;
+    }
+
+    return prevExecutionAppSettingsNames.stream()
+        .filter(name -> !userAddedAppSettings.containsKey(name))
+        // Value is not required to remove settings
+        .map(name -> AzureAppServiceApplicationSetting.builder().name(name).build())
+        .collect(Collectors.toMap(AzureAppServiceApplicationSetting::getName, Function.identity()));
+  }
+
+  @Nullable
+  public Map<String, AzureAppServiceConnectionString> getConnStringsToRemove(
+      @Nullable Set<String> prevExecutionConnStringsNames,
+      Map<String, AzureAppServiceConnectionString> userAddedConnStrings) {
+    if (prevExecutionConnStringsNames == null || userAddedConnStrings == null) {
+      return null;
+    }
+    return prevExecutionConnStringsNames.stream()
+        .filter(name -> !userAddedConnStrings.containsKey(name))
+        // Value is not required to remove settings
+        .map(name -> AzureAppServiceConnectionString.builder().name(name).build())
+        .collect(Collectors.toMap(AzureAppServiceConnectionString::getName, Function.identity()));
+  }
+
+  public Map<String, AzureAppServiceApplicationSetting> getAppSettingsToRemove(
+      Map<String, AzureAppServiceApplicationSetting> existingAppSettingsOnSlot,
+      Map<String, AzureAppServiceApplicationSetting> appSettingsToAdd) {
+    return existingAppSettingsOnSlot.entrySet()
+        .stream()
+        .filter(entry -> !appSettingsToAdd.containsKey(entry.getKey()))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   public void validateSlotShiftTrafficParameters(String webAppName, String deploymentSlot, double trafficPercent) {

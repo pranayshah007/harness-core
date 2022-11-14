@@ -18,6 +18,8 @@ type Store interface {
 
 	UnAck(ctx context.Context, request UnAckRequest) (*UnAckResponse, error)
 
+	Register(ctx context.Context, request RegisterTopicMetadata) error
+
 	// TODO : more apis
 	// CheckStatus(taskId string) Status (QUEUED | PROCESSING | FAILED | ....)
 }

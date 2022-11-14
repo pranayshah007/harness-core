@@ -18,7 +18,6 @@ import java.util.List;
 @OwnedBy(HarnessTeam.PIPELINE)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public interface OrchestrationEventLogRepositoryCustom {
-  List<OrchestrationEventLog> findUnprocessedEvents(String planExecutionId, long lastUpdatedAt);
-  void deleteLogsForGivenPlanExecutionId(String planExecutionId);
+  List<OrchestrationEventLog> findUnprocessedEvents(String planExecutionId, long lastUpdatedAt, int thresholdLog);
   boolean checkIfAnyUnprocessedEvents(String planExecutionId, long lastUpdatedAt);
 }

@@ -45,6 +45,7 @@ import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ng.core.spring.TokenRepository;
 import io.harness.serviceaccount.ServiceAccountDTO;
+import io.harness.token.TokenValidationHelper;
 import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
@@ -79,7 +80,7 @@ public class TokenServiceImpl implements TokenService {
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
   @Inject private NgUserService ngUserService;
   @Inject private AccountService accountService;
-
+  @Inject private TokenValidationHelper tokenValidationHelper;
   private static final String deliminator = ".";
 
   @Override
@@ -325,5 +326,14 @@ public class TokenServiceImpl implements TokenService {
     return tokenRepository
         .deleteAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndApiKeyIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier, apiKeyIdentifier);
+  }
+
+  @Override
+  public TokenDTO validateToken(String accountIdentifier, String apiKey) {
+    String tokenId = tokenValidationHelper.parseApiKeyToken(apiKey);
+    TokenDTO tokenDTO = getToken(tokenId, true);
+    tokenValidationHelper.validateToken(tokenDTO, accountIdentifier, tokenId, apiKey);
+    tokenDTO.setEncodedPassword(null);
+    return tokenDTO;
   }
 }

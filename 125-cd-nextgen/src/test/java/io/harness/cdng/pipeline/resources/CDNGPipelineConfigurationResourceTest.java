@@ -52,7 +52,7 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
         cdngPipelineConfigurationResource.getExecutionStrategyList().getData();
 
     assertThat(executionStrategyResponse).isNotNull();
-    assertThat(executionStrategyResponse.keySet().size()).isEqualTo(8);
+    assertThat(executionStrategyResponse.keySet().size()).isEqualTo(9);
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.KUBERNETES))
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN,
@@ -103,7 +103,7 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
         cdngPipelineConfigurationResource.getServiceDefinitionTypes(null).getData();
 
     assertThat(serviceDefinitionTypes).isNotNull();
-    assertThat(serviceDefinitionTypes.size()).isEqualTo(8);
+    assertThat(serviceDefinitionTypes.size()).isEqualTo(9);
   }
 
   @Test

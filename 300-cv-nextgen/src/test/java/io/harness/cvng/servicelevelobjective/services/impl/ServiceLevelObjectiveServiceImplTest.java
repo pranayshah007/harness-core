@@ -57,7 +57,6 @@ import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetB
 import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetRemainingPercentageCondition;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
-import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
@@ -140,7 +139,6 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   @Mock FakeNotificationClient notificationClient;
   @Inject private SLIRecordServiceImpl sliRecordService;
   @Inject private OutboxService outboxService;
-  @Inject CVServiceOutboxEventHandler cvServiceOutboxEventHandler;
   String accountId;
   String orgIdentifier;
   String projectIdentifier;
@@ -234,6 +232,18 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreate_WithoutTagsSuccess() {
+    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+    sloDTO.setTags(new HashMap<>());
+    createMonitoredService();
+    ServiceLevelObjectiveResponse serviceLevelObjectiveResponse =
+        serviceLevelObjectiveService.create(projectParams, sloDTO);
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO()).isEqualTo(sloDTO);
+  }
+
+  @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testCreate_validateSLOHealthIndicatorCreationTest() {
@@ -244,18 +254,6 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     SLOHealthIndicator sloHealthIndicator =
         sloHealthIndicatorService.getBySLOIdentifier(projectParams, sloDTO.getIdentifier());
     assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(100.0);
-  }
-
-  @Test
-  @Owner(developers = DEEPAK_CHHIKARA)
-  @Category(UnitTests.class)
-  public void testCreate_WithoutTagsSuccess() {
-    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
-    sloDTO.setTags(new HashMap<>());
-    createMonitoredService();
-    ServiceLevelObjectiveResponse serviceLevelObjectiveResponse =
-        serviceLevelObjectiveService.create(projectParams, sloDTO);
-    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO()).isEqualTo(sloDTO);
   }
 
   @Test
@@ -1125,25 +1123,6 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = KAPIL)
-  @Category(UnitTests.class)
-  public void testCreate_withIncorrectNotificationRule() {
-    NotificationRuleDTO notificationRuleDTO =
-        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
-    NotificationRuleResponse notificationRuleResponseOne =
-        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
-    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
-    sloDTO.setNotificationRuleRefs(
-        Arrays.asList(NotificationRuleRefDTO.builder()
-                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
-                          .enabled(true)
-                          .build()));
-    createMonitoredService();
-    assertThatThrownBy(() -> serviceLevelObjectiveService.create(projectParams, sloDTO))
-        .hasMessage("NotificationRule with identifier rule is of type MONITORED_SERVICE and cannot be added into SLO");
-  }
-
-  @Test
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
   public void testCreate_ServiceLevelObjectiveCreateAuditEvent() {
@@ -1217,11 +1196,12 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveService mockServiceLevelObjectiveService = spy(serviceLevelObjectiveService);
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByProjectIdentifier(ServiceLevelObjective.class,
         projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier());
-    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(2)).deleteSLOV1(any(), any());
   }
 
   @Test
@@ -1232,11 +1212,12 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveService mockServiceLevelObjectiveService = spy(serviceLevelObjectiveService);
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByOrgIdentifier(
         ServiceLevelObjective.class, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier());
-    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(2)).deleteSLOV1(any(), any());
   }
 
   @Test
@@ -1247,11 +1228,12 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     ServiceLevelObjectiveService mockServiceLevelObjectiveService = spy(serviceLevelObjectiveService);
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO = createSLOBuilder();
     sloDTO.setIdentifier("secondSLO");
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(
         ServiceLevelObjective.class, projectParams.getAccountIdentifier());
-    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(2)).deleteSLOV1(any(), any());
   }
 
   private void createSLIRecords(String sliId) {

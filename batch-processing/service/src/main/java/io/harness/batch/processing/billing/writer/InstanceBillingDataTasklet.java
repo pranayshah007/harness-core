@@ -310,13 +310,14 @@ public class InstanceBillingDataTasklet implements Tasklet {
     }
   }
 
-  private boolean validInstanceForBilling(InstanceData instanceData) {
+  public boolean validInstanceForBilling(InstanceData instanceData) {
     String computeType = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
         InstanceMetaDataConstants.COMPUTE_TYPE, instanceData.getMetaData());
     boolean validInstance = true;
     if ((instanceData.getInstanceType() == null)
         || (instanceData.getInstanceType() == K8S_NODE
-            && K8sCCMConstants.AWS_FARGATE_COMPUTE_TYPE.equals(computeType))) {
+            && (K8sCCMConstants.AWS_FARGATE_COMPUTE_TYPE.equals(computeType)
+                || InstanceMetaDataUtils.isAzureVirtualNode(instanceData)))) {
       validInstance = false;
     }
     return validInstance;
@@ -329,6 +330,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
     InstanceType instanceType = instanceData.getInstanceType();
     String computeType = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
         InstanceMetaDataConstants.COMPUTE_TYPE, instanceData.getMetaData());
+
     if (instanceData.getInstanceType() == K8S_POD && K8sCCMConstants.AWS_FARGATE_COMPUTE_TYPE.equals(computeType)) {
       instanceType = InstanceType.K8S_POD_FARGATE;
       instanceData.setInstanceType(instanceType);

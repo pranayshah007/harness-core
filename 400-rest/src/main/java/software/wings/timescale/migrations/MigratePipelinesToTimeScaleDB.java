@@ -50,7 +50,7 @@ public class MigratePipelinesToTimeScaleDB implements TimeScaleEntityMigrationIn
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_PIPELINES");
       return false;
     }
     int count = 0;
@@ -58,10 +58,11 @@ public class MigratePipelinesToTimeScaleDB implements TimeScaleEntityMigrationIn
       FindOptions findOptions_pipelines = new FindOptions();
       findOptions_pipelines.readPreference(ReadPreference.secondaryPreferred());
 
-      try (HIterator<Pipeline> iterator = new HIterator<>(wingsPersistence.createQuery(Pipeline.class, excludeAuthority)
-                                                              .field(PipelineKeys.accountId)
-                                                              .equal(accountId)
-                                                              .fetch(findOptions_pipelines))) {
+      try (HIterator<Pipeline> iterator =
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(Pipeline.class, excludeAuthority)
+                                   .field(PipelineKeys.accountId)
+                                   .equal(accountId)
+                                   .fetch(findOptions_pipelines))) {
         while (iterator.hasNext()) {
           Pipeline pipeline = iterator.next();
           saveToTimeScale(pipeline);
@@ -69,10 +70,10 @@ public class MigratePipelinesToTimeScaleDB implements TimeScaleEntityMigrationIn
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_PIPELINES", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_PIPELINES", count);
     }
     return true;
   }

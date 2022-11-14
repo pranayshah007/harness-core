@@ -116,7 +116,7 @@ public class CloudWatchMetricsHealthSourceSpecTest extends CvNextGenTestBase {
                                             .connectorRef(connectorIdentifier)
                                             .feature(feature)
                                             .metricDefinitions(metricDefinitions)
-                                            .metricThresholds(new HashSet<>(metricThresholds))
+                                            .metricPacks(new HashSet<>(metricThresholds))
                                             .build();
   }
 

@@ -344,7 +344,7 @@ public class StatusUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPlanAllowedStartSet() {
     assertThat(StatusUtils.planAllowedStartSet(Status.INTERVENTION_WAITING))
-        .containsExactlyInAnyOrder(RUNNING, PAUSING, PAUSED);
+        .containsExactlyInAnyOrder(RUNNING, PAUSING, PAUSED, WAIT_STEP_RUNNING);
     assertThat(StatusUtils.planAllowedStartSet(Status.PAUSED))
         .containsExactlyInAnyOrder(QUEUED, RUNNING, PAUSING, INTERVENTION_WAITING);
     assertThat(StatusUtils.planAllowedStartSet(Status.SUCCEEDED))

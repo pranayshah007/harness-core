@@ -53,7 +53,7 @@ func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*sto
 		return &store.EnqueueResponse{}, err
 	}
 
-	allSubTopicsKey := utils.GetStoreAllSubTopicsFromTopicKey(request.Topic)
+	allSubTopicsKey := utils.GetAllSubTopicsFromTopicKey(request.Topic)
 	subTopicQueueKey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic)
 
 	// add subtopic in subtopics set
@@ -85,7 +85,7 @@ func (s *Store) Dequeue(ctx context.Context, request store.DequeueRequest) ([]*s
 		return nil, err
 	}
 	// Get all subtopics for given topic request
-	subtopics, err := s.AllSubTopicsForGivenTopic(ctx, &request)
+	subtopics, err := s.AllSubTopicsForGivenTopic(ctx, request.Topic)
 	// if no subtopics for given topic, then return empty result
 	if err == redis.Nil {
 		return nil, nil
@@ -98,7 +98,8 @@ func (s *Store) Dequeue(ctx context.Context, request store.DequeueRequest) ([]*s
 
 	selectedTopic := subtopics[index]
 	s.Logger.Debug().Msgf("selected subTopic is %s", selectedTopic)
-	return s.ReadFromStream(ctx, utils.GetSubTopicStreamQueueKey(request.Topic, selectedTopic), request.BatchSize, request.Topic, request.ConsumerName, request.MaxWaitDuration)
+
+	return s.ReadFromStream(ctx, utils.GetSubTopicStreamQueueKey(request.Topic, selectedTopic), request.BatchSize, utils.GetConsumerGroupKeyForTopic(request.Topic), request.ConsumerName, request.MaxWaitDuration)
 }
 
 // ReadFromStream helper method to read from subTopic Streams
@@ -108,6 +109,7 @@ func (s *Store) ReadFromStream(ctx context.Context, streamKey string, batchSize 
 	// else return new Messages
 
 	s.Logger.Debug().Msgf("Reading from stream %s for batchSize of %d from groupName %s and Consumer %s", streamKey, batchSize, groupName, consumerName)
+
 	pendingRequest := &PendingEntriesRequest{
 		Stream:   streamKey,
 		Group:    groupName,
@@ -309,9 +311,14 @@ func MapXMessageToResponse(queueKey string, msgs []redis.XMessage) []*store.Dequ
 func (s *Store) Ack(ctx context.Context, request store.AckRequest) (*store.AckResponse, error) {
 
 	ids := []string{request.ItemID}
-	topickey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic)
-	_, err := s.Client.XAck(ctx, topickey, request.ConsumerName, ids...).Result()
-	if err != nil {
+	topicKey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic)
+
+	// acknowledging the processed method
+	if _, err := s.Client.XAck(ctx, topicKey, request.ConsumerName, ids...).Result(); err != nil {
+		return &store.AckResponse{}, &store.AckErrorResponse{ErrorMessage: err.Error()}
+	}
+	//deleting the method from queue
+	if _, err := s.Client.XDel(ctx, topicKey, ids...).Result(); err != nil {
 		return &store.AckResponse{}, &store.AckErrorResponse{ErrorMessage: err.Error()}
 	}
 	return &store.AckResponse{ItemID: request.ItemID}, nil
@@ -320,7 +327,7 @@ func (s *Store) Ack(ctx context.Context, request store.AckRequest) (*store.AckRe
 
 // UnAck Method will add a specific topic to blockList processing list
 func (s *Store) UnAck(ctx context.Context, request store.UnAckRequest) (*store.UnAckResponse, error) {
-	blockedKey := utils.GetStoreAllBlockedSubTopicsFromTopicKey(request.Topic, request.SubTopic)
+	blockedKey := utils.GetAllBlockedSubTopicsFromTopicKey(request.Topic, request.SubTopic)
 	result, err := s.Client.Set(ctx, blockedKey, true, request.RetryAfterTimeDuration).Result()
 	if err != nil {
 		return &store.UnAckResponse{}, &store.UnAckErrorResponse{ErrorMessage: err.Error()}
@@ -362,18 +369,19 @@ func (s *Store) GetKey(ctx context.Context, key string, v any) error {
 }
 
 // AllSubTopicsForGivenTopic helper method to fetch all subTopics for a given topic
-func (s *Store) AllSubTopicsForGivenTopic(ctx context.Context, request *store.DequeueRequest) ([]string, error) {
-	allQueuesTopicKey := utils.GetStoreAllSubTopicsFromTopicKey(request.Topic)
+func (s *Store) AllSubTopicsForGivenTopic(ctx context.Context, topic string) ([]string, error) {
+	allQueuesTopicKey := utils.GetAllSubTopicsFromTopicKey(topic)
 	allTopicsResult, err := s.Client.SMembers(ctx, allQueuesTopicKey).Result()
 	if err != nil || err == redis.Nil {
 		return nil, err
 	}
 
-	nLogger := s.Logger.With().Str("AllQueuesTopicKey", allQueuesTopicKey).
-		Str("ConsumerName", request.ConsumerName).
-		Int("batchSize", request.BatchSize).Logger()
+	// todo: initialize logger in other place
+	//nLogger := s.Logger.With().Str("AllQueuesTopicKey", allQueuesTopicKey).
+	//	Str("ConsumerName", request.ConsumerName).
+	//	Int("batchSize", request.BatchSize).Logger()
 
-	nLogger.Debug().Msgf("Length of AllQueues list : %d", len(allTopicsResult))
+	s.Logger.Debug().Msgf("Length of subtopics is: %d", len(allTopicsResult))
 	return allTopicsResult, nil
 }
 
@@ -424,4 +432,32 @@ func ValidateEnqueueRequest(request *store.EnqueueRequest) error {
 	}
 	return nil
 
+}
+
+// Register method to add a consumer group to stream and add topic Metadata
+func (s *Store) Register(ctx context.Context, request store.RegisterTopicMetadata) error {
+	subtopics, err := s.AllSubTopicsForGivenTopic(ctx, request.Topic)
+
+	if err != nil || err == redis.Nil {
+		return err
+	}
+
+	//todo: register stream metadata
+
+	err = s.SetKey(ctx, utils.GetTopicMetadataKey(request.Topic), request)
+	if err != nil {
+		return err
+	}
+
+	for _, subtopic := range subtopics {
+		_, err = s.Client.XGroupCreate(
+			ctx,
+			utils.GetSubTopicStreamQueueKey(request.Topic, subtopic),
+			utils.GetConsumerGroupKeyForTopic(request.Topic),
+			"0",
+		).Result()
+		fmt.Errorf("failed to add consumer group for topic %s in the stream %s",
+			request.Topic, utils.GetSubTopicStreamQueueKey(request.Topic, subtopic))
+	}
+	return nil
 }

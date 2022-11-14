@@ -228,8 +228,7 @@ public class PcfDataFetchCommandTaskHandlerTest extends CategoryTest {
     assertThat(cfRequestConfig.getPassword()).isEqualTo(String.valueOf(cfCommandRequest.getPcfConfig().getPassword()));
     assertThat(cfRequestConfig.isLimitPcfThreads()).isEqualTo(cfCommandRequest.isLimitPcfThreads());
     assertThat(cfRequestConfig.isLimitPcfThreads()).isEqualTo(cfCommandRequest.isLimitPcfThreads());
-    assertThat(cfRequestConfig.isIgnorePcfConnectionContextCache())
-        .isEqualTo(cfCommandRequest.isIgnorePcfConnectionContextCache());
+
     assertThat(cfRequestConfig.getTimeOutIntervalInMins()).isEqualTo(cfCommandRequest.getTimeoutIntervalInMin());
   }
 
@@ -238,7 +237,6 @@ public class PcfDataFetchCommandTaskHandlerTest extends CategoryTest {
         .applicationNamePrefix(APP_NAME)
         .actionType(actionType)
         .limitPcfThreads(false)
-        .ignorePcfConnectionContextCache(false)
         .timeoutIntervalInMin(1)
         .organization(ORGANIZATION)
         .space(SPACE)

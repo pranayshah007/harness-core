@@ -64,6 +64,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.when.utils.RunInfoUtils;
@@ -91,10 +92,14 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private CILicenseService ciLicenseService;
+  @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, IntegrationStageNode stageNode) {
+    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
+    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
+        accountExecutionMetadataRepository, ciLicenseService, planCreationContextValue.getAccountIdentifier());
     log.info("Received plan creation request for integration stageV2 {}", stageNode.getIdentifier());
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();

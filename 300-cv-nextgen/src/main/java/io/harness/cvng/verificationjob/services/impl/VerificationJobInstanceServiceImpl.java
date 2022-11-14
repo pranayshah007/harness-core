@@ -360,6 +360,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
     switch (verificationJobInstance.getResolvedJob().getType()) {
       case CANARY:
       case BLUE_GREEN:
+      case AUTO:
         return verificationJobInstanceAnalysisService.getCanaryBlueGreenAdditionalInfo(
             accountId, verificationJobInstance);
       case TEST:
@@ -382,12 +383,14 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
       case RUNNING:
         return ActivityVerificationStatus.IN_PROGRESS;
       case SUCCESS:
-        Optional<Risk> risk = getLatestRisk(verificationJobInstance);
-        if (risk.isPresent()) {
-          if (risk.get().isLessThanEq(Risk.OBSERVE)) {
-            return ActivityVerificationStatus.VERIFICATION_PASSED;
-          } else {
+        Optional<Risk> optionalRisk = getLatestRisk(verificationJobInstance);
+        if (optionalRisk.isPresent()) {
+          Risk risk = optionalRisk.get();
+          if (risk.isGreaterThan(Risk.OBSERVE)
+              || verificationJobInstance.getResolvedJob().isFailOnNoAnalysis() && risk.isLessThanEq(Risk.NO_ANALYSIS)) {
             return ActivityVerificationStatus.VERIFICATION_FAILED;
+          } else {
+            return ActivityVerificationStatus.VERIFICATION_PASSED;
           }
         }
         return ActivityVerificationStatus.IN_PROGRESS;

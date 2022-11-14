@@ -23,6 +23,7 @@ import io.harness.cdng.ecs.EcsCanaryDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingRollbackStepInfo;
 import io.harness.cdng.ecs.EcsRunTaskStepInfo;
+import io.harness.cdng.elastigroup.ElastigroupSetupStepInfo;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
@@ -52,6 +53,8 @@ import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
+import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo;
+import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
@@ -78,7 +81,8 @@ import io.swagger.annotations.ApiModel;
         EcsCanaryDeployStepInfo.class, EcsCanaryDeleteStepInfo.class, EcsBlueGreenCreateServiceStepInfo.class,
         EcsBlueGreenSwapTargetGroupsStepInfo.class, EcsBlueGreenRollbackStepInfo.class,
         FetchInstanceScriptStepInfo.class, ShellScriptProvisionStepInfo.class, UpdateReleaseRepoStepInfo.class,
-        EcsRunTaskStepInfo.class})
+        EcsRunTaskStepInfo.class, ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class,
+        ElastigroupSetupStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

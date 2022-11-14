@@ -21,6 +21,8 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -43,11 +45,13 @@ import org.springframework.data.annotation.TypeAlias;
 public class MergePRStepInfo extends MergePRBaseStepInfo implements CDStepInfo, Visitable {
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
+  List<NGVariable> variables;
 
   @Builder(builderMethodName = "infoBuilder")
-  public MergePRStepInfo(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<Boolean> deleteSourceBranch) {
+  public MergePRStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Boolean> deleteSourceBranch, List<NGVariable> variables) {
     super(delegateSelectors, deleteSourceBranch);
+    this.variables = variables;
   }
 
   @Override
@@ -70,6 +74,7 @@ public class MergePRStepInfo extends MergePRBaseStepInfo implements CDStepInfo, 
     return MergePRStepParams.infoBuilder()
         .delegateSelectors(getDelegateSelectors())
         .deleteSourceBranch(getDeleteSourceBranch())
+        .variables(NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(variables))
         .build();
   }
 }

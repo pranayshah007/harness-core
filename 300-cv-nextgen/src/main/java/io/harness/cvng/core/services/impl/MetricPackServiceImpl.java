@@ -119,7 +119,10 @@ public class MetricPackServiceImpl implements MetricPackService {
   public static final String SPLUNK_METRIC_HEALTH_DSL;
   private static final URL CLOUDWATCH_METRICS_DSL_PATH =
       MetricPackServiceImpl.class.getResource("/cloudwatch/dsl/cloudwatch-metrics.datacollection");
+  private static final URL AWS_PROMETHEUS_DSL_PATH =
+      MetricPackServiceImpl.class.getResource("/prometheus/aws/dsl/metric-collection.datacollection");
   public static final String CLOUDWATCH_METRICS_DSL;
+  public static final String AWS_PROMETHEUS_DSL;
   static {
     String appDPeformancePackDsl = null;
     String appDqualityPackDsl = null;
@@ -134,6 +137,7 @@ public class MetricPackServiceImpl implements MetricPackService {
     String dynatraceMetricPackDsl = null;
     String splunkMetricDsl = null;
     String cloudWatchMetricsDsl = null;
+    String awsPrometheusDsl = null;
     try {
       appDPeformancePackDsl = Resources.toString(APPDYNAMICS_PERFORMANCE_PACK_DSL_PATH, Charsets.UTF_8);
       appDqualityPackDsl = Resources.toString(APPDYNAMICS_QUALITY_PACK_DSL_PATH, Charsets.UTF_8);
@@ -148,6 +152,7 @@ public class MetricPackServiceImpl implements MetricPackService {
       dynatraceMetricPackDsl = Resources.toString(DYNATRACE_METRIC_PACK_DSL_PATH, Charsets.UTF_8);
       splunkMetricDsl = Resources.toString(SPLUNK_METRIC_HEALTH_DSL_PATH, Charsets.UTF_8);
       cloudWatchMetricsDsl = Resources.toString(CLOUDWATCH_METRICS_DSL_PATH, Charsets.UTF_8);
+      awsPrometheusDsl = Resources.toString(AWS_PROMETHEUS_DSL_PATH, Charsets.UTF_8);
     } catch (Exception e) {
       // TODO: this should throw an exception but we risk delegate not starting up. We can remove this log term and
       // throw and exception once things stabilize
@@ -166,6 +171,7 @@ public class MetricPackServiceImpl implements MetricPackService {
     CUSTOM_HEALTH_DSL = customHealthDsl;
     SPLUNK_METRIC_HEALTH_DSL = splunkMetricDsl;
     CLOUDWATCH_METRICS_DSL = cloudWatchMetricsDsl;
+    AWS_PROMETHEUS_DSL = awsPrometheusDsl;
   }
 
   @Inject private HPersistence hPersistence;
@@ -276,6 +282,9 @@ public class MetricPackServiceImpl implements MetricPackService {
         break;
       case CLOUDWATCH_METRICS:
         yamlFileNames.addAll(CLOUDWATCH_METRICS_METRICPACK_FILES);
+        break;
+      case AWS_PROMETHEUS:
+        yamlFileNames.addAll(PROMETHEUS_METRICPACK_FILES);
         break;
       default:
         unhandled(dataSourceType);
@@ -414,6 +423,9 @@ public class MetricPackServiceImpl implements MetricPackService {
         break;
       case CLOUDWATCH_METRICS:
         metricPack.setDataCollectionDsl(CLOUDWATCH_METRICS_DSL);
+        break;
+      case AWS_PROMETHEUS:
+        metricPack.setDataCollectionDsl(AWS_PROMETHEUS_DSL);
         break;
       default:
         throw new IllegalArgumentException("Invalid type " + dataSourceType);

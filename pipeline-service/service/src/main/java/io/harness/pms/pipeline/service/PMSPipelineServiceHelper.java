@@ -65,6 +65,7 @@ import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineEntityUtils;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YAMLMetadataFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -75,6 +76,7 @@ import io.harness.telemetry.TelemetryReporter;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -143,7 +145,18 @@ public class PMSPipelineServiceHelper {
     return criteria;
   }
 
-  public PipelineEntity updatePipelineInfo(PipelineEntity pipelineEntity) throws IOException {
+  public PipelineEntity updatePipelineInfo(PipelineEntity pipelineEntity, String pipelineVersion) throws IOException {
+    switch (pipelineVersion) {
+      case PipelineVersion.V1:
+        return pipelineEntity;
+      case PipelineVersion.V0:
+        return updatePipelineInfoInternal(pipelineEntity);
+      default:
+        throw new IllegalStateException("version not supported");
+    }
+  }
+
+  private PipelineEntity updatePipelineInfoInternal(PipelineEntity pipelineEntity) throws IOException {
     FilterCreatorMergeServiceResponse filtersAndStageCount = filterCreatorMergeService.getPipelineInfo(pipelineEntity);
     PipelineEntity newEntity = pipelineEntity.withStageCount(filtersAndStageCount.getStageCount())
                                    .withStageNames(filtersAndStageCount.getStageNames());
@@ -195,6 +208,9 @@ public class PMSPipelineServiceHelper {
     if (pipelineFilter.getModuleProperties() != null) {
       ModuleInfoFilterUtils.processNode(
           JsonUtils.readTree(pipelineFilter.getModuleProperties().toJson()), "filters", criteria);
+    }
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getRepoName())) {
+      criteria.and(PipelineEntityKeys.repo).is(pipelineFilter.getRepoName());
     }
   }
 
@@ -434,12 +450,26 @@ public class PMSPipelineServiceHelper {
   }
 
   public static void checkAndThrowMismatchInImportedPipelineMetadata(String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline) {
+      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline,
+      String pipelineVersion) {
     if (EmptyPredicate.isEmpty(importedPipeline)) {
       String errorMessage = PipelineCRUDErrorResponse.errorMessageForEmptyYamlOnGit(
           orgIdentifier, projectIdentifier, pipelineIdentifier, GitAwareContextHelper.getBranchInRequest());
       throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
     }
+    // TODO (prashant) : Check with the team
+    switch (pipelineVersion) {
+      case PipelineVersion.V1:
+        return;
+      default:
+        checkAndThrowMismatchInImportedPipelineMetadataInternal(
+            orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineImportRequest, importedPipeline);
+    }
+  }
+
+  @VisibleForTesting
+  static void checkAndThrowMismatchInImportedPipelineMetadataInternal(String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline) {
     YamlField pipelineYamlField;
     try {
       pipelineYamlField = YamlUtils.readTree(importedPipeline);
@@ -476,13 +506,6 @@ public class PMSPipelineServiceHelper {
         pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.PROJECT_IDENTIFIER);
     if (!projectIdentifier.equals(projectIdentifierFromGit)) {
       changedFields.put(YAMLMetadataFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifierFromGit);
-    }
-
-    String descriptionFromGit = pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.DESCRIPTION);
-    if (!(EmptyPredicate.isEmpty(pipelineImportRequest.getPipelineDescription())
-            && EmptyPredicate.isEmpty(descriptionFromGit))
-        && !pipelineImportRequest.getPipelineDescription().equals(descriptionFromGit)) {
-      changedFields.put(YAMLMetadataFieldNameConstants.DESCRIPTION, descriptionFromGit);
     }
 
     if (!changedFields.isEmpty()) {
@@ -538,5 +561,16 @@ public class PMSPipelineServiceHelper {
         .filePath(scmGitMetaData.getFilePath())
         .repoName(scmGitMetaData.getRepoName())
         .build();
+  }
+
+  public static Criteria buildCriteriaForRepoListing(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+
+    criteria.and(PipelineEntityKeys.accountId).is(accountIdentifier);
+    criteria.and(PipelineEntityKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(PipelineEntityKeys.projectIdentifier).is(projectIdentifier);
+
+    return criteria;
   }
 }

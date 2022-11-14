@@ -45,7 +45,7 @@ public class MigrateUsersToTimeScaleDB implements TimeScaleEntityMigrationInterf
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_USERS");
       return false;
     }
     int count = 0;
@@ -53,10 +53,11 @@ public class MigrateUsersToTimeScaleDB implements TimeScaleEntityMigrationInterf
       FindOptions findOptions_users = new FindOptions();
       findOptions_users.readPreference(ReadPreference.secondaryPreferred());
 
-      try (HIterator<User> iterator = new HIterator<>(wingsPersistence.createQuery(User.class, excludeAuthority)
-                                                          .field(UserKeys.accounts)
-                                                          .contains(accountId)
-                                                          .fetch(findOptions_users))) {
+      try (
+          HIterator<User> iterator = new HIterator<>(wingsPersistence.createAnalyticsQuery(User.class, excludeAuthority)
+                                                         .field(UserKeys.accounts)
+                                                         .contains(accountId)
+                                                         .fetch(findOptions_users))) {
         while (iterator.hasNext()) {
           User user = iterator.next();
           saveToTimeScale(user);
@@ -64,10 +65,10 @@ public class MigrateUsersToTimeScaleDB implements TimeScaleEntityMigrationInterf
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_USERS", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_USERS", count);
     }
     return true;
   }

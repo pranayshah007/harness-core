@@ -24,6 +24,8 @@ import io.harness.cache.HarnessCacheManager;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.cistatus.service.GithubService;
+import io.harness.cistatus.service.GithubServiceImpl;
 import io.harness.client.DelegateSelectionLogHttpClientModule;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.datastructures.DistributedBackend;
@@ -163,7 +165,7 @@ import io.harness.serializer.NGTriggerRegistrars;
 import io.harness.serializer.OrchestrationStepsModuleRegistrars;
 import io.harness.serializer.PipelineServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
-import io.harness.spec.server.pipeline.PipelinesApi;
+import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
@@ -286,6 +288,10 @@ public class PipelineServiceModule extends AbstractModule {
             .useFeatureFlagService(true)
             .orchestrationRedisEventsConfig(configuration.getOrchestrationRedisEventsConfig())
             .orchestrationLogConfiguration(configuration.getOrchestrationLogConfiguration())
+            .orchestrationRestrictionConfiguration(configuration.getOrchestrationRestrictionConfiguration())
+            .licenseClientServiceSecret(configuration.getNgManagerServiceSecret())
+            .licenseClientConfig(configuration.getNgManagerServiceHttpClientConfig())
+            .licenseClientId(PIPELINE_SERVICE.getServiceId())
             .build()));
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),
@@ -425,6 +431,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PipelineDashboardService.class).to(PipelineDashboardServiceImpl.class);
     bind(ServiceNowApprovalHelperService.class).to(ServiceNowApprovalHelperServiceImpl.class);
     bind(ServiceNowStepHelperService.class).to(ServiceNowStepHelperServiceImpl.class);
+    bind(GithubService.class).to(GithubServiceImpl.class);
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));

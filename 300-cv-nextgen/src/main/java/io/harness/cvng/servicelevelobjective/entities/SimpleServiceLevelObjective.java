@@ -8,10 +8,10 @@ package io.harness.cvng.servicelevelobjective.entities;
 
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
+import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
@@ -32,18 +32,24 @@ public class SimpleServiceLevelObjective extends AbstractServiceLevelObjective {
   List<String> serviceLevelIndicators;
   ServiceLevelIndicatorType serviceLevelIndicatorType;
 
+  @Override
+  public Optional<String> mayBeGetMonitoredServiceIdentifier() {
+    return Optional.ofNullable(monitoredServiceIdentifier);
+  }
+
   public static class SimpleServiceLevelObjectiveUpdatableEntity
-      extends AbstractServiceLevelObjectiveUpdatableEntity<SimpleServiceLevelObjective, ServiceLevelObjectiveV2DTO> {
+      extends AbstractServiceLevelObjectiveUpdatableEntity<SimpleServiceLevelObjective> {
     @Override
     public void setUpdateOperations(UpdateOperations<SimpleServiceLevelObjective> updateOperations,
-        ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO) {
-      setCommonOperations(updateOperations, serviceLevelObjectiveV2DTO);
+        SimpleServiceLevelObjective simpleServiceLevelObjective) {
+      setCommonOperations(updateOperations, simpleServiceLevelObjective);
       updateOperations
-          .set(SimpleServiceLevelObjectiveKeys.healthSourceIdentifier, serviceLevelObjectiveV2DTO.getHealthSourceRef())
+          .set(SimpleServiceLevelObjectiveKeys.healthSourceIdentifier,
+              simpleServiceLevelObjective.getHealthSourceIdentifier())
           .set(SimpleServiceLevelObjectiveKeys.monitoredServiceIdentifier,
-              serviceLevelObjectiveV2DTO.getMonitoredServiceRef())
+              simpleServiceLevelObjective.getMonitoredServiceIdentifier())
           .set(SimpleServiceLevelObjectiveKeys.serviceLevelIndicatorType,
-              serviceLevelObjectiveV2DTO.getServiceLevelIndicatorType());
+              simpleServiceLevelObjective.getServiceLevelIndicatorType());
     }
   }
 }

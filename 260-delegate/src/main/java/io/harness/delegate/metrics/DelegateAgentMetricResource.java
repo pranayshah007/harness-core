@@ -23,6 +23,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Api("metrics")
@@ -30,8 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Slf4j
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class DelegateAgentMetricResource {
-  @Inject private HarnessMetricRegistry metricRegistry;
+  private final HarnessMetricRegistry metricRegistry;
 
   @GET
   @Timed

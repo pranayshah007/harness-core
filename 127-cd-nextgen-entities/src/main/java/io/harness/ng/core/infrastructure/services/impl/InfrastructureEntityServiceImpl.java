@@ -33,6 +33,8 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.outbox.api.OutboxService;
+import io.harness.persistence.HIterator;
+import io.harness.persistence.HPersistence;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -52,6 +54,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +87,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   private final OutboxService outboxService;
   @Inject CustomDeploymentEntitySetupHelper customDeploymentEntitySetupHelper;
   @Inject private InfrastructureEntitySetupUsageHelper infrastructureEntitySetupUsageHelper;
+
+  @Inject private HPersistence hPersistence;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Infrastructure [%s] under Environment [%s] Project[%s], Organization [%s] in Account [%s] already exists";
@@ -208,12 +213,28 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           return result;
         }));
     infrastructureEntitySetupUsageHelper.updateSetupUsages(upsertedInfra);
+    if (requestInfra.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
+      customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(requestInfra);
+    }
     return upsertedInfra;
   }
 
   @Override
   public Page<InfrastructureEntity> list(@NotNull Criteria criteria, @NotNull Pageable pageable) {
     return infrastructureRepository.findAll(criteria, pageable);
+  }
+
+  @Override
+  public HIterator<InfrastructureEntity> listIterator(String accountId, String orgIdentifier, String projectIdentifier,
+      String envIdentifier, Collection<String> identifiers) {
+    return new HIterator<>(hPersistence.createQuery(InfrastructureEntity.class)
+                               .filter(InfrastructureEntityKeys.accountId, accountId)
+                               .filter(InfrastructureEntityKeys.orgIdentifier, orgIdentifier)
+                               .filter(InfrastructureEntityKeys.projectIdentifier, projectIdentifier)
+                               .filter(InfrastructureEntityKeys.envIdentifier, envIdentifier)
+                               .field(InfrastructureEntityKeys.identifier)
+                               .in(identifiers)
+                               .fetch());
   }
 
   @Override
@@ -273,8 +294,25 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
     Criteria criteria =
         getInfrastructureEqualityCriteriaForEnv(accountId, orgIdentifier, projectIdentifier, envIdentifier);
-    DeleteResult deleteResult = infrastructureRepository.delete(criteria);
-    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0;
+
+    List<InfrastructureEntity> infrastructureEntityListForEnvIdentifier =
+        getAllInfrastructureFromEnvIdentifier(accountId, orgIdentifier, projectIdentifier, envIdentifier);
+
+    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      DeleteResult deleteResult = infrastructureRepository.delete(criteria);
+
+      if (deleteResult.wasAcknowledged()) {
+        for (InfrastructureEntity infra : infrastructureEntityListForEnvIdentifier) {
+          infrastructureEntitySetupUsageHelper.deleteSetupUsages(infra);
+        }
+      } else {
+        log.error(
+            String.format("Infrastructures under Environment [%s], Project[%s], Organization [%s] couldn't be deleted.",
+                envIdentifier, projectIdentifier, orgIdentifier));
+      }
+
+      return deleteResult.wasAcknowledged();
+    }));
   }
 
   @Override
@@ -284,8 +322,23 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     checkArgument(isNotEmpty(projectIdentifier), "project id must be present");
 
     Criteria criteria = getInfrastructureEqualityCriteriaForProject(accountId, orgIdentifier, projectIdentifier);
-    DeleteResult deleteResult = infrastructureRepository.delete(criteria);
-    return deleteResult.wasAcknowledged();
+    List<InfrastructureEntity> infrastructureEntityListForProjectIdentifier =
+        getAllInfrastructureFromProjectIdentifier(accountId, orgIdentifier, projectIdentifier);
+
+    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      DeleteResult deleteResult = infrastructureRepository.delete(criteria);
+
+      if (deleteResult.wasAcknowledged()) {
+        for (InfrastructureEntity infra : infrastructureEntityListForProjectIdentifier) {
+          infrastructureEntitySetupUsageHelper.deleteSetupUsages(infra);
+        }
+      } else {
+        log.error(String.format("Infrastructures under Project[%s], Organization [%s] couldn't be deleted.",
+            projectIdentifier, orgIdentifier));
+      }
+
+      return deleteResult.wasAcknowledged();
+    }));
   }
 
   private void setObsoleteAsFalse(InfrastructureEntity requestInfra) {
@@ -343,13 +396,6 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   }
 
   @Override
-  public InfrastructureEntity find(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String envIdentifier, String infraIdentifier) {
-    return infrastructureRepository.find(
-        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier);
-  }
-
-  @Override
   public List<InfrastructureEntity> getAllInfrastructureFromIdentifierList(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, List<String> infraIdentifierList) {
     return infrastructureRepository.findAllFromInfraIdentifierList(
@@ -361,6 +407,11 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier) {
     return infrastructureRepository.findAllFromEnvIdentifier(
         accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
+  }
+  @Override
+  public List<InfrastructureEntity> getAllInfrastructureFromProjectIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return infrastructureRepository.findAllFromProjectIdentifier(accountIdentifier, orgIdentifier, projectIdentifier);
   }
   @Override
   public String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,

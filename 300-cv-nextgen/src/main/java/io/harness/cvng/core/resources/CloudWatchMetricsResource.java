@@ -56,9 +56,10 @@ public class CloudWatchMetricsResource {
   @ExceptionMetered
   @ApiOperation(value = "get sample data for given query", nickname = "getSampleDataForQuery")
   public ResponseDTO<Map> getSampleDataForQuery(@NotNull @BeanParam ProjectParams projectParams,
-      @QueryParam("connectorIdentifier") @NotBlank String connectorIdentifier,
-      @QueryParam("requestGuid") @NotBlank String requestGuid, @QueryParam("region") @NotBlank String region,
-      @QueryParam("expression") @NotBlank String expression, @QueryParam("metricName") String metricName,
+      @QueryParam("connectorIdentifier") @NotNull @NotBlank String connectorIdentifier,
+      @QueryParam("requestGuid") @NotNull @NotBlank String requestGuid,
+      @QueryParam("region") @NotNull @NotBlank String region,
+      @QueryParam("expression") @NotNull @NotBlank String expression, @QueryParam("metricName") String metricName,
       @QueryParam("metricIdentifier") String metricIdentifier) {
     return ResponseDTO.newResponse(cloudWatchService.fetchSampleData(
         projectParams, connectorIdentifier, requestGuid, expression, region, metricName, metricIdentifier));

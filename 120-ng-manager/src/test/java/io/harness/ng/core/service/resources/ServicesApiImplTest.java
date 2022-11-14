@@ -36,9 +36,9 @@ import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rule.Owner;
-import io.harness.spec.server.ng.model.Service;
-import io.harness.spec.server.ng.model.ServiceRequest;
-import io.harness.spec.server.ng.model.ServiceResponse;
+import io.harness.spec.server.ng.v1.model.Service;
+import io.harness.spec.server.ng.v1.model.ServiceRequest;
+import io.harness.spec.server.ng.v1.model.ServiceResponse;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -147,8 +147,8 @@ public class ServicesApiImplTest extends CategoryTest {
         .thenReturn(true);
     when(serviceEntityService.update(any())).thenReturn(entity);
     when(serviceResourceApiUtils.getServiceEntity(any(), any(), any(), any())).thenReturn(entity);
-    io.harness.spec.server.ng.model.ServiceRequest serviceRequest =
-        new io.harness.spec.server.ng.model.ServiceRequest();
+    io.harness.spec.server.ng.v1.model.ServiceRequest serviceRequest =
+        new io.harness.spec.server.ng.v1.model.ServiceRequest();
     serviceRequest.setSlug(slug);
     serviceRequest.setName(name);
     serviceRequest.setDescription(description);
@@ -166,8 +166,8 @@ public class ServicesApiImplTest extends CategoryTest {
         .thenReturn(true);
     when(serviceEntityService.create(any())).thenReturn(entity);
     when(serviceResourceApiUtils.getServiceEntity(any(), any(), any(), any())).thenReturn(entity);
-    io.harness.spec.server.ng.model.ServiceRequest serviceRequest =
-        new io.harness.spec.server.ng.model.ServiceRequest();
+    io.harness.spec.server.ng.v1.model.ServiceRequest serviceRequest =
+        new io.harness.spec.server.ng.v1.model.ServiceRequest();
     serviceRequest.setSlug(slug);
     serviceRequest.setName(name);
     serviceRequest.setDescription(description);

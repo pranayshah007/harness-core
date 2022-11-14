@@ -7,7 +7,10 @@
 
 package io.harness.batch.processing.tasklet.util;
 
+import static io.harness.ccm.commons.beans.InstanceType.K8S_NODE;
+
 import io.harness.batch.processing.writer.constants.K8sCCMConstants;
+import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.billing.InstanceCategory;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
@@ -20,6 +23,7 @@ import javax.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 @Slf4j
@@ -31,6 +35,17 @@ public class InstanceMetaDataUtils {
 
   public static String getValueForKeyFromInstanceMetaData(@NotNull String metaDataKey, InstanceData instanceData) {
     return getValueForKeyFromInstanceMetaData(metaDataKey, instanceData.getMetaData());
+  }
+
+  public static String getValueForKeyFromInstanceLabel(@NotNull String labelKey, InstanceData instanceData) {
+    return getValueForKeyFromInstanceLabel(labelKey, instanceData.getLabels());
+  }
+
+  public static String getValueForKeyFromInstanceLabel(@NotNull String labelKey, Map<String, String> labels) {
+    if (null != labels && labels.containsKey(labelKey)) {
+      return labels.get(labelKey);
+    }
+    return null;
   }
 
   public static String getValueForKeyFromInstanceMetaData(@NotNull String metaDataKey, Map<String, String> metaData) {
@@ -145,5 +160,25 @@ public class InstanceMetaDataUtils {
     }
 
     return instanceCategory;
+  }
+
+  public static boolean isAzureVirtualNode(InstanceData instanceData) {
+    String type = InstanceMetaDataUtils.getValueForKeyFromInstanceLabel(
+        InstanceMetaDataConstants.TYPE_LABEL, instanceData.getLabels());
+    String instanceName = instanceData.getInstanceName();
+
+    return isAzureVirtualNode(type, instanceName, instanceData.getInstanceType());
+  }
+
+  public static boolean isAzureVirtualNode(String type, String instanceName, InstanceType instanceType) {
+    return instanceType == K8S_NODE && K8sCCMConstants.VIRTUAL_KUBELET.equalsIgnoreCase(type)
+        && StringUtils.isNotBlank(instanceName)
+        && instanceName.contains(InstanceMetaDataConstants.AKS_VIRTUAL_NODE_ACI_INSTANCE_NAME);
+  }
+
+  public static boolean isParentAzureVirtualNode(String nodeName, String cloudProvider) {
+    return StringUtils.isNotBlank(nodeName)
+        && nodeName.contains(InstanceMetaDataConstants.AKS_VIRTUAL_NODE_ACI_INSTANCE_NAME)
+        && StringUtils.isNotBlank(cloudProvider) && cloudProvider.equals(CloudProvider.ON_PREM);
   }
 }

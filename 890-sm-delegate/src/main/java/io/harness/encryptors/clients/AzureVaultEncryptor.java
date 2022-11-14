@@ -180,8 +180,13 @@ public class AzureVaultEncryptor implements VaultEncryptor {
                                         .encryptedValue(secretBundle.id().toCharArray())
                                         .encryptionKey(fullSecretName)
                                         .build();
-    if (existingRecord != null && !existingRecord.getEncryptionKey().equals(fullSecretName)) {
-      deleteSecret(accountId, existingRecord, azureVaultConfig);
+
+    try {
+      if (existingRecord != null && !existingRecord.getEncryptionKey().equals(fullSecretName)) {
+        deleteSecret(accountId, existingRecord, azureVaultConfig);
+      }
+    } catch (Exception e) {
+      log.error("Delete secret failed in upsert secret call with the following error {}", e.getMessage());
     }
     log.info("Done saving secret {} into Azure Secrets Manager for {} in {} ms", fullSecretName,
         azureVaultConfig.getName(), System.currentTimeMillis() - startTime);

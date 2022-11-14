@@ -18,7 +18,16 @@ public abstract class InfrastructureOutcomeAbstract implements InfrastructureOut
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   public String infraIdentifier;
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) public String infraName;
+
+  /***
+   * Deprecating this field after introducing more intuitive field name which is with par with other entity's
+   * expressions like <+env.name> and <+service.name><
+   */
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  @Deprecated
+  public String infraName;
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) public String name;
   @ApiModelProperty(hidden = true) public Boolean skipInstances;
 
   private Connector connector;

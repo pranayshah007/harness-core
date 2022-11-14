@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -72,6 +73,10 @@ public class InfrastructureValidator {
 
       case InfrastructureKind.ECS:
         validateEcsInfrastructure((EcsInfrastructure) infrastructure);
+        break;
+
+      case InfrastructureKind.ELASTIGROUP:
+        validateElastigroupInfrastructure((ElastigroupInfrastructure) infrastructure);
         break;
 
       case InfrastructureKind.CUSTOM_DEPLOYMENT:
@@ -219,6 +224,16 @@ public class InfrastructureValidator {
     }
     if (!hasValueOrExpression(infrastructure.getRegion())) {
       throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
+    }
+  }
+
+  private void validateElastigroupInfrastructure(ElastigroupInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+    }
+
+    if (null == infrastructure.getConfiguration()) {
+      throw new InvalidArgumentsException(Pair.of("configuration", "cannot be empty"));
     }
   }
 

@@ -18,8 +18,8 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.JiraClientException;
@@ -28,7 +28,9 @@ import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
 import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
+import io.harness.jira.JiraInstanceData;
 import io.harness.jira.JiraInternalConfig;
+import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueNG;
 import io.harness.jira.JiraUserData;
 import io.harness.logging.CommandExecutionStatus;
@@ -239,6 +241,9 @@ public class JiraTask extends AbstractDelegateRunnableTask {
 
   private DelegateResponseData getCreateMetadata(JiraTaskParameters parameters) {
     URI uri = null;
+    if (parameters.isUseNewMeta() && checkJiraServer(parameters)) {
+      return convertNewMetadataServer(parameters);
+    }
     try {
       log.info("Getting decrypted jira client configs for GET_CREATE_METADATA");
       JiraClient jiraClient = getJiraClient(parameters);
@@ -288,6 +293,46 @@ public class JiraTask extends AbstractDelegateRunnableTask {
               uri == null ? uriString : uri);
       log.error(errorMessage, e);
       return JiraExecutionData.builder().errorMessage(errorMessage).executionStatus(ExecutionStatus.FAILED).build();
+    }
+  }
+
+  private DelegateResponseData convertNewMetadataServer(JiraTaskParameters parameters) {
+    try {
+      io.harness.jira.JiraClient jira = getNGJiraClient(parameters);
+      JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG =
+          jira.getIssueCreateMetadata(parameters.getProject(), parameters.getIssueType(),
+              parameters.getCreatemetaExpandParam(), false, false, parameters.isUseNewMeta(), true);
+      JiraCreateMetaResponse jiraCreateMetaResponse = new JiraCreateMetaResponse(jiraIssueCreateMetadataNG);
+      if (parameters.getIssueType() != null) {
+        JSONArray resolutions = jira.getResolution();
+        insertResolutionsInCreateMeta(resolutions, jiraCreateMetaResponse);
+      }
+      return JiraExecutionData.builder()
+          .executionStatus(ExecutionStatus.SUCCESS)
+          .createMetadata(jiraCreateMetaResponse)
+          .build();
+    } catch (JiraClientException e) {
+      return JiraExecutionData.builder()
+          .executionStatus(ExecutionStatus.FAILED)
+          .errorMessage(
+              "Unable to fetch createMetadata. " + ExceptionUtils.getMessage(e) + " " + extractResponseMessage(e))
+          .jiraServerResponse(extractResponseMessage(e))
+          .build();
+    }
+  }
+
+  private boolean checkJiraServer(JiraTaskParameters parameters) {
+    try {
+      io.harness.jira.JiraClient jira = getNGJiraClient(parameters);
+      JiraInstanceData jiraInstanceData = jira.getInstanceData();
+      if (jiraInstanceData.deploymentType == JiraInstanceData.JiraDeploymentType.SERVER) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (JiraClientException e) {
+      log.error("Unable to fetch jira Instance", e);
+      return false;
     }
   }
 
@@ -594,7 +639,11 @@ public class JiraTask extends AbstractDelegateRunnableTask {
           throw new InvalidRequestException(
               "Found " + userDataList.size() + " jira users with this query. Should be exactly 1.");
         }
-        userTypeFields.put(userField.getKey(), userDataList.get(0).getAccountId());
+        if (userDataList.get(0).getAccountId().startsWith("JIRAUSER")) {
+          userTypeFields.put(userField.getKey(), userDataList.get(0).getName());
+        } else {
+          userTypeFields.put(userField.getKey(), userDataList.get(0).getAccountId());
+        }
       }
     }
   }
@@ -691,7 +740,8 @@ public class JiraTask extends AbstractDelegateRunnableTask {
 
     try {
       Map<String, String> fields = extractFieldsFromCGParameters(parameters, userTypeFields);
-      JiraIssueNG issue = jira.createIssue(parameters.getProject(), parameters.getIssueType(), fields, false, false);
+      JiraIssueNG issue = jira.createIssue(
+          parameters.getProject(), parameters.getIssueType(), fields, false, parameters.isUseNewMeta(), true);
       log.info("Script execution finished with status SUCCESS");
 
       return JiraExecutionData.builder()

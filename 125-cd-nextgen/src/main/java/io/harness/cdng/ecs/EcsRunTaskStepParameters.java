@@ -33,8 +33,8 @@ public class EcsRunTaskStepParameters extends EcsRunTaskBaseStepInfo implements 
   @Builder(builderMethodName = "infoBuilder")
   public EcsRunTaskStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<StoreConfigWrapper> taskDefinition, ParameterField<StoreConfigWrapper> runTaskRequestDefinition,
-      ParameterField<Boolean> skiSteadyStateCheck) {
-    super(delegateSelectors, taskDefinition, runTaskRequestDefinition, skiSteadyStateCheck);
+      ParameterField<Boolean> skipSteadyStateCheck) {
+    super(delegateSelectors, taskDefinition, runTaskRequestDefinition, skipSteadyStateCheck);
   }
 
   public List<String> getCommandUnits() {

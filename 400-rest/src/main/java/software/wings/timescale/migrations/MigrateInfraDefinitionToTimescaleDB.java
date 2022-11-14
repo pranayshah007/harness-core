@@ -55,7 +55,7 @@ public class MigrateInfraDefinitionToTimescaleDB implements TimeScaleEntityMigra
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_INFRA_DEFINITION");
       return false;
     }
     int count = 0;
@@ -64,7 +64,7 @@ public class MigrateInfraDefinitionToTimescaleDB implements TimeScaleEntityMigra
       findOptions_infra_definitions.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<InfrastructureDefinition> iterator =
-               new HIterator<>(wingsPersistence.createQuery(InfrastructureDefinition.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(InfrastructureDefinition.class, excludeAuthority)
                                    .field(InfrastructureDefinitionKeys.accountId)
                                    .equal(accountId)
                                    .fetch(findOptions_infra_definitions))) {
@@ -75,10 +75,10 @@ public class MigrateInfraDefinitionToTimescaleDB implements TimeScaleEntityMigra
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_INFRA_DEFINITION", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_INFRA_DEFINITION", count);
     }
     return true;
   }

@@ -20,7 +20,7 @@ filegroup(
 )
 
 ########################################################################################################
-####################################################  Go Starts Here    ####################################################
+####################################################  Go Starts Here    ################################
 ########################################################################################################
 
 # Refer for a list of all gazelle directives: http://www.lib4dev.in/info/bazelbuild/bazel-gazelle/112655189
@@ -28,7 +28,7 @@ filegroup(
 # gazelle:exclude  vendor
 # gazelle:exclude  build
 # gazelle:exclude  */target
-# gazelle:exclude {990-commons-test,970-grpc,970-api-services-beans,959-timeout-engine,953-git-sync-commons,959-timeout-engine,950-timeout-engine,950-delegate-tasks-beans,950-wait-engine,867-polling-contracts,22-ng-delegate-service-beans,24-manager-delegate-service-beans,24-ng-manager-service-beans,954-pms-contracts,400-rest,460-capability,160-stress-tester}
+# gazelle:exclude {990-commons-test,970-grpc,970-api-services-beans,959-timeout-engine,953-git-sync-commons,959-timeout-engine,950-timeout-engine,950-delegate-tasks-beans,950-wait-engine,867-polling-contracts,22-ng-delegate-service-beans,24-manager-delegate-service-beans,24-ng-manager-service-beans,954-pms-contracts,400-rest,160-stress-tester}
 
 # gazelle:exclude .git/
 # gazelle:exclude pkg/
@@ -80,7 +80,7 @@ go_path(
 )
 
 ########################################################################################################
-####################################################  JAVA Starts Here    ####################################################
+####################################################  JAVA Starts Here    ##############################
 ########################################################################################################
 
 java_plugin(

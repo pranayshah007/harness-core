@@ -27,9 +27,9 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.security.SecurityContextBuilder;
-import io.harness.spec.server.ng.OrgSecretApi;
-import io.harness.spec.server.ng.model.SecretRequest;
-import io.harness.spec.server.ng.model.SecretResponse;
+import io.harness.spec.server.ng.v1.OrgSecretApi;
+import io.harness.spec.server.ng.v1.model.SecretRequest;
+import io.harness.spec.server.ng.v1.model.SecretResponse;
 
 import com.google.inject.Inject;
 import java.io.InputStream;

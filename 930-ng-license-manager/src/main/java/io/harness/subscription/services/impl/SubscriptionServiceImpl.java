@@ -32,6 +32,7 @@ import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.entities.StripeCustomer;
 import io.harness.subscription.entities.SubscriptionDetail;
+import io.harness.subscription.enums.PaymentFrequency;
 import io.harness.subscription.handlers.StripeEventHandler;
 import io.harness.subscription.helpers.StripeHelper;
 import io.harness.subscription.params.BillingParams;
@@ -66,6 +67,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   private final Map<String, StripeEventHandler> eventHandlers;
 
+  private static final String EDITION_CHECK_FAILED =
+      "Cannot create a subscription of %s edition. An active subscription of %s edition already exists.";
   private static final String QUANTITY_GREATER_THAN_MAX =
       "Quantity requested is greater than maximum quantity allowed.";
   private static final double RECOMMENDATION_MULTIPLIER = 1.2d;
@@ -171,6 +174,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionDTO.getCustomer());
     }
 
+    checkEdition(accountIdentifier, subscriptionDTO.getEdition());
+
     // Not allowed for creation if active subscriptionId exists
     SubscriptionDetail subscriptionDetail =
         subscriptionDetailRepository.findByAccountIdentifierAndModuleType(accountIdentifier, ModuleType.valueOf("CF"));
@@ -205,7 +210,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     subscriptionItems.add(ItemParams.builder().priceId(mauPriceId.getId()).quantity(1L).build());
 
     if (subscriptionDTO.isPremiumSupport()) {
-      if (subscriptionDTO.isMonthly()) {
+      if (subscriptionDTO.getPaymentFreq().equalsIgnoreCase(PaymentFrequency.MONTHLY.toString())) {
         throw new InvalidArgumentsException("Cannot subscribe to premium support with a monthly renewal rate.");
       }
       val mauSupportPriceId = stripeHelper.getPrice(ModuleType.CF, "MAU_SUPPORT", subscriptionDTO.getEdition(),
@@ -249,6 +254,17 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                           .build());
 
     return subscription;
+  }
+
+  private void checkEdition(String accountId, String edition) {
+    List<ModuleLicense> licenses = licenseRepository.findByAccountIdentifier(accountId);
+    String editionToCheck =
+        edition.equalsIgnoreCase(Edition.TEAM.toString()) ? Edition.ENTERPRISE.toString() : Edition.TEAM.toString();
+    if (licenses.stream()
+            .filter(l -> l.isActive())
+            .anyMatch(l -> l.getEdition().toString().equalsIgnoreCase(editionToCheck))) {
+      throw new InvalidRequestException(String.format(EDITION_CHECK_FAILED, edition, editionToCheck));
+    }
   }
 
   @Override
@@ -427,6 +443,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     if (!Strings.isNullOrEmpty(customerDTO.getCompanyName())) {
       builder.name(customerDTO.getCompanyName());
     }
+
+    if (customerDTO.getAddress() != null) {
+      builder.address(customerDTO.getAddress());
+    }
+
     CustomerDetailDTO customerDetailDTO = stripeHelper.updateCustomer(builder.build());
 
     // Update customer information at local After succeed

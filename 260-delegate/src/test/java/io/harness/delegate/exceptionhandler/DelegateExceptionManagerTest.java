@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.exceptionhandler.core.DelegateExceptionManager;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.ExceptionUtils;

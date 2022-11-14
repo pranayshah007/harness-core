@@ -182,12 +182,7 @@ public class ContainerDeploymentDelegateHelper {
     return kubernetesConfig;
   }
 
-  public boolean useK8sSteadyStateCheck(
-      boolean isK8sSteadyStateCheckEnabled, ContainerServiceParams containerServiceParams, LogCallback logCallback) {
-    if (!isK8sSteadyStateCheckEnabled) {
-      return false;
-    }
-
+  public boolean useK8sSteadyStateCheck(ContainerServiceParams containerServiceParams, LogCallback logCallback) {
     KubernetesConfig kubernetesConfig = getKubernetesConfig(containerServiceParams);
     String versionAsString = kubernetesContainerService.getVersionAsString(kubernetesConfig);
 

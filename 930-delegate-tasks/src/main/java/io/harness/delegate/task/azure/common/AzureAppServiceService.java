@@ -231,6 +231,7 @@ public class AzureAppServiceService {
             AzureAppServiceConfigurationDTOMapper.getAzureAppServiceConnStringDTOs(connSettingsNeedBeDeletedInRollback))
         .connStringsToAdd(AzureAppServiceConfigurationDTOMapper.getAzureAppServiceConnStringDTOs(
             connSettingsNeedBeUpdatedInRollback));
+
     logCallback.saveExecutionLog(String.format("Saved existing Connection strings for slot - [%s]", slotName));
   }
 

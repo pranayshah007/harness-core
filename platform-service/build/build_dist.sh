@@ -34,6 +34,8 @@ cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.s
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp ../../platform-service/build/container/Dockerfile-platform-service-cie-jdk ./Dockerfile-cie-jdk
 cp -r ../../platform-service/build/container/scripts/ .
+cp ../../platform-service/config/jfr/default.jfc .
+cp ../../platform-service/config/jfr/profile.jfc .
 
 java -jar platform-service-capsule.jar scan-classpath-metadata
 

@@ -8,12 +8,15 @@
 package io.harness.pms.sdk.core.pipeline.variables;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.SHALINI;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.plancreator.steps.StepGroupElementConfig;
+import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
@@ -103,5 +106,35 @@ public class StepGroupVariableCreatorTest extends CategoryTest {
     // step dependency should be present
     String uuidForStepInsideSG = "VgWSDz31S3eZdAtFvTHHoA";
     assertThat(variablesForChildrenNodesV2.containsKey(uuidForStepInsideSG)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetFieldClass() {
+    assertEquals(stepGroupVariableCreator.getFieldClass(), StepGroupElementConfig.class);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetStepGroupExtraProperties() {
+    YamlExtraProperties yamlExtraProperties =
+        stepGroupVariableCreator.getStepGroupExtraProperties("fqnPrefix", "localNamePrefix");
+    assertEquals(yamlExtraProperties.getPropertiesList().size(), 2);
+    assertThat(yamlExtraProperties.getPropertiesList())
+        .contains(YamlProperties.newBuilder()
+                      .setFqn("fqnPrefix"
+                          + ".endTs")
+                      .setLocalName("localNamePrefix"
+                          + ".endTs")
+                      .build());
+    assertThat(yamlExtraProperties.getPropertiesList())
+        .contains(YamlProperties.newBuilder()
+                      .setFqn("fqnPrefix"
+                          + ".startTs")
+                      .setLocalName("localNamePrefix"
+                          + ".startTs")
+                      .build());
   }
 }

@@ -21,6 +21,7 @@ import io.harness.batch.processing.pricing.service.support.GCPCustomInstanceDeta
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.batch.processing.service.intfc.InstanceResourceService;
 import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
+import io.harness.batch.processing.tasklet.util.K8sResourceUtils;
 import io.harness.batch.processing.writer.constants.K8sCCMConstants;
 import io.harness.ccm.cluster.entities.PricingProfile;
 import io.harness.ccm.commons.beans.InstanceType;
@@ -80,6 +81,8 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
     String instanceFamily = instanceMetaData.get(InstanceMetaDataConstants.INSTANCE_FAMILY);
     String computeType = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
         InstanceMetaDataConstants.COMPUTE_TYPE, instanceMetaData);
+    String virtualNode = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
+        InstanceMetaDataConstants.VIRTUAL_NODE, instanceMetaData);
     String region = instanceMetaData.get(InstanceMetaDataConstants.REGION);
     PricingData customVMPricing = getCustomVMPricing(
         instanceData, startTime, endTime, parentInstanceActiveSecond, instanceFamily, region, cloudProvider);
@@ -92,6 +95,8 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
       } else if (cloudProvider == CloudProvider.AWS && K8sCCMConstants.AWS_FARGATE_COMPUTE_TYPE.equals(computeType)) {
         return ecsFargateInstancePricingStrategy.getPricePerHour(
             instanceData, startTime, endTime, instanceActiveSeconds, parentInstanceActiveSecond);
+      } else if (cloudProvider == CloudProvider.AZURE && "AZURE".equals(virtualNode)) {
+        return getAzureVMPricingData(instanceData);
       }
 
       ProductDetails vmComputePricingInfo =
@@ -106,6 +111,26 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
           .build();
     }
     return customVMPricing;
+  }
+
+  private PricingData getAzureVMPricingData(InstanceData instanceData) {
+    Double cpuUnits = instanceData.getTotalResource().getCpuUnits();
+    Double memoryMb = instanceData.getTotalResource().getMemoryMb();
+
+    if (null != instanceData.getPricingResource()) {
+      cpuUnits = instanceData.getPricingResource().getCpuUnits();
+      memoryMb = instanceData.getPricingResource().getMemoryMb();
+    }
+
+    double cpuPricePerHour = K8sResourceUtils.getAzureVMVCpu(cpuUnits) * 0.04656;
+    double memoryPricePerHour = K8sResourceUtils.getAzureVMMemoryGb(memoryMb) * 0.00511;
+    return PricingData.builder()
+        .pricePerHour(cpuPricePerHour + memoryPricePerHour)
+        .cpuPricePerHour(cpuPricePerHour)
+        .memoryPricePerHour(memoryPricePerHour)
+        .cpuUnit(instanceData.getTotalResource().getCpuUnits())
+        .memoryMb(instanceData.getTotalResource().getMemoryMb())
+        .build();
   }
 
   private PricingData getUserCustomInstancePricingData(InstanceData instanceData, InstanceCategory instanceCategory) {

@@ -489,8 +489,8 @@ public class NGTriggerElementMapper {
         .payload(payload);
   }
 
-  public NGTriggerDetailsResponseDTO toNGTriggerDetailsResponseDTO(
-      NGTriggerEntity ngTriggerEntity, boolean includeYaml, boolean throwExceptionIfYamlConversionFails) {
+  public NGTriggerDetailsResponseDTO toNGTriggerDetailsResponseDTO(NGTriggerEntity ngTriggerEntity, boolean includeYaml,
+      boolean throwExceptionIfYamlConversionFails, boolean isPipelineInputOutdated) {
     String webhookUrl = EMPTY;
     if (ngTriggerEntity.getType() == WEBHOOK) {
       WebhookMetadata webhookMetadata = ngTriggerEntity.getMetadata().getWebhook();
@@ -514,6 +514,7 @@ public class NGTriggerElementMapper {
             .tags(TagMapper.convertToMap(ngTriggerEntity.getTags()))
             .enabled(ngTriggerEntity.getEnabled() == null || ngTriggerEntity.getEnabled())
             .triggerStatus(ngTriggerEntity.getTriggerStatus())
+            .isPipelineInputOutdated(isPipelineInputOutdated)
             .webhookUrl(webhookUrl);
 
     // Webhook Details

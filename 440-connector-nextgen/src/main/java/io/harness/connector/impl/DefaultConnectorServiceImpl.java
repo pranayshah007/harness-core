@@ -10,6 +10,7 @@ package io.harness.connector.impl;
 import static io.harness.NGConstants.CONNECTOR_HEARTBEAT_LOG_PREFIX;
 import static io.harness.NGConstants.CONNECTOR_STRING;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
+import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.connector.ConnectivityStatus.FAILURE;
 import static io.harness.connector.ConnectivityStatus.UNKNOWN;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -18,8 +19,8 @@ import static io.harness.errorhandling.NGErrorHelper.DEFAULT_ERROR_SUMMARY;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.git.model.ChangeType.ADD;
 import static io.harness.utils.PageUtils.getPageRequest;
-import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -29,6 +30,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.EntityType;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -74,7 +76,6 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
@@ -101,16 +102,19 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
-import io.harness.ng.core.accountsetting.dto.AccountSettingType;
-import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
+import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.perpetualtask.PerpetualTaskId;
+import io.harness.remote.client.CGRestUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.IdentifierRefHelper;
@@ -155,18 +159,19 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   private final CatalogueHelper catalogueHelper;
   private final ProjectService projectService;
   private final OrganizationService organizationService;
-  EntitySetupUsageClient entitySetupUsageClient;
   ConnectorStatisticsHelper connectorStatisticsHelper;
-  NGAccountSettingService accountSettingService;
+  NGSettingsClient settingsClient;
   private NGErrorHelper ngErrorHelper;
   private ConnectorErrorMessagesHelper connectorErrorMessagesHelper;
   private SecretRefInputValidationHelper secretRefInputValidationHelper;
   ConnectorHeartbeatService connectorHeartbeatService;
   private final HarnessManagedConnectorHelper harnessManagedConnectorHelper;
   private final ConnectorEntityReferenceHelper connectorEntityReferenceHelper;
+  private final AccountClient accountClient;
   GitSyncSdkService gitSyncSdkService;
   OutboxService outboxService;
   YamlGitConfigClient yamlGitConfigClient;
+  EntitySetupUsageService entitySetupUsageService;
 
   @Override
   public Optional<ConnectorResponseDTO> get(
@@ -226,8 +231,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
       String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
       Boolean getDistinctFromBranches) {
-    boolean isBuiltInSMDisabled =
-        accountSettingService.getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
+    Boolean isBuiltInSMDisabled = isBuiltInSMDisabled(accountIdentifier);
 
     Criteria criteria =
         filterService.createCriteriaFromConnectorListQueryParams(accountIdentifier, orgIdentifier, projectIdentifier,
@@ -351,9 +355,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
       ConnectorCategory sourceCategory) {
-    /** Settings are only available at Account Scope for now **/
-    boolean isBuiltInSMDisabled =
-        accountSettingService.getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
+    Boolean isBuiltInSMDisabled = isBuiltInSMDisabled(accountIdentifier);
+
     Criteria criteria = filterService.createCriteriaFromConnectorFilter(accountIdentifier, orgIdentifier,
         projectIdentifier, searchTerm, type, category, sourceCategory, isBuiltInSMDisabled);
     Pageable pageable = getPageRequest(
@@ -715,13 +718,14 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public boolean delete(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
-    return delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ChangeType.DELETE);
+  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorIdentifier, boolean forceDelete) {
+    return delete(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ChangeType.DELETE, forceDelete);
   }
 
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorIdentifier, ChangeType changeType) {
+      String connectorIdentifier, ChangeType changeType, boolean forceDelete) {
     Optional<Connector> existingConnectorOptional =
         getInternal(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
     if (!existingConnectorOptional.isPresent()) {
@@ -730,9 +734,21 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
     Connector existingConnector = existingConnectorOptional.get();
     ConnectorResponseDTO connectorDTO = connectorMapper.writeDTO(existingConnector);
-    checkThatTheConnectorIsNotUsedByOthers(existingConnector);
-    connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
-        connectorDTO.getConnector(), accountIdentifier);
+    if (!forceDelete) {
+      checkThatTheConnectorIsNotUsedByOthers(existingConnector);
+    }
+    try {
+      connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
+          connectorDTO.getConnector(), accountIdentifier);
+    } catch (Exception e) {
+      if (forceDelete) {
+        log.warn(
+            "Exception occured while deleting references of connector {} with accountId {}, orgId {}, projectId {} - {} ",
+            connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier, e);
+      } else {
+        throw e;
+      }
+    }
     existingConnector.setDeleted(true);
     Supplier<OutboxEvent> supplier = null;
     if (!gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
@@ -763,8 +779,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
                                       .build();
     String referredEntityFQN = identifierRef.getFullyQualifiedName();
     try {
-      isEntityReferenced = execute(entitySetupUsageClient.isEntityReferenced(
-          connector.getAccountIdentifier(), referredEntityFQN, EntityType.CONNECTORS));
+      isEntityReferenced = entitySetupUsageService.isEntityReferenced(
+          connector.getAccountIdentifier(), referredEntityFQN, EntityType.CONNECTORS);
     } catch (Exception ex) {
       log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception",
           connector.getIdentifier(), ex);
@@ -1159,5 +1175,19 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     log.info("ccmk8sConnectors count elements: {} pages: {}", ccmk8sConnectors.getTotalElements(),
         ccmk8sConnectors.getTotalPages());
     return getCcmK8sResponseList(accountIdentifier, orgIdentifier, projectIdentifier, k8sConnectors, ccmk8sConnectors);
+  }
+
+  private Boolean isBuiltInSMDisabled(String accountIdentifier) {
+    Boolean isBuiltInSMDisabled = false;
+    boolean isNgSettingsEnabled =
+        CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
+    if (isNgSettingsEnabled) {
+      isBuiltInSMDisabled = parseBoolean(
+          NGRestUtils
+              .getResponse(settingsClient.getSetting(
+                  SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+              .getValue());
+    }
+    return isBuiltInSMDisabled;
   }
 }

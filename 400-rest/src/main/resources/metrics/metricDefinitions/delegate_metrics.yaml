@@ -42,12 +42,15 @@ metrics:
     metricDefinition: Unassigned Perpetual tasks
     type: LastValue
     unit: count
-  - metricName: perpetual_tasks_to_rebalance_num
-    metricDefinition: Perpetual tasks to rebalance
-    type: LastValue
-    unit: count
   - metricName: perpetual_tasks_paused_num
     metricDefinition: Perpetual tasks paused
     type: LastValue
     unit: count
-
+  - metricName: perpetual_tasks_non_assignable_num
+    metricDefinition: Perpetual tasks in non assignable state
+    type: LastValue
+    unit: count
+  - metricName: perpetual_invalid_tasks
+    metricDefinition: Perpetual tasks in invalid state
+    type: LastValue
+    unit: count

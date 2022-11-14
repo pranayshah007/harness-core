@@ -19,7 +19,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.refresh.service.EntityRefreshService;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
-import io.harness.template.beans.refresh.v2.InputsValidationResponse;
+import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;

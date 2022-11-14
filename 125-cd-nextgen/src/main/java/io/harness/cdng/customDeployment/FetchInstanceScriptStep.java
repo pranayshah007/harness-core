@@ -9,6 +9,7 @@ package io.harness.cdng.customDeployment;
 
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
+import static software.wings.beans.TaskType.FETCH_INSTANCE_SCRIPT_TASK_NG;
 import static software.wings.sm.states.customdeploymentng.InstanceMapperUtils.getHostnameFieldName;
 
 import static java.lang.String.format;
@@ -22,16 +23,18 @@ import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
-import io.harness.data.structure.CollectionUtils;
+import io.harness.cdng.instance.outcome.HostOutcome;
+import io.harness.cdng.instance.outcome.InstanceOutcome;
+import io.harness.cdng.instance.outcome.InstancesOutcome;
+import io.harness.cdng.ssh.output.HostsOutput;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo;
-import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNG;
+import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest;
+import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
-import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
-import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
-import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.eraro.ErrorCode;
@@ -55,12 +58,12 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
-import io.harness.shell.ScriptType;
-import io.harness.shell.ShellExecutionData;
+import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -76,6 +79,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -83,7 +87,7 @@ import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<ShellScriptTaskResponseNG> {
+public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<FetchInstanceScriptTaskNGResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.FETCH_INSTANCE_SCRIPT.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -98,6 +102,7 @@ public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<S
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private EngineExpressionService engineExpressionService;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   static Function<InstanceMapperUtils.HostProperties, CustomDeploymentServerInstanceInfo> instanceElementMapper =
       hostProperties -> {
@@ -110,9 +115,9 @@ public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<S
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_DEPLOYMENT_TEMPLATE)) {
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_SVC_ENV_REDESIGN)) {
       throw new AccessDeniedException(
-          "Custom Deployment Template NG is not enabled for this account. Please contact harness customer care.",
+          "NG_SVC_ENV_REDESIGN FF is not enabled for this account. Please contact harness customer care.",
           ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
   }
@@ -151,48 +156,46 @@ public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<S
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     FetchInstanceScriptStepParameters stepSpec = (FetchInstanceScriptStepParameters) stepParameters.getSpec();
-    ShellScriptTaskParametersNGBuilder taskParametersNGBuilder = ShellScriptTaskParametersNG.builder();
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
 
     CustomDeploymentInfrastructureOutcome infrastructureOutcome =
         (CustomDeploymentInfrastructureOutcome) cdStepHelper.getInfrastructureOutcome(ambiance);
 
-    TaskParameters taskParameters = taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
-                                        .environmentVariables(new HashMap<>())
-                                        .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
-                                        .script(getResolvedFetchInstanceScript(ambiance, infrastructureOutcome))
-                                        .executeOnDelegate(true)
-                                        .scriptType(ScriptType.BASH)
-                                        .workingDirectory(WORKING_DIRECTORY)
-                                        .outputVars(Collections.singletonList(OUTPUT_PATH_KEY))
-                                        .build();
+    FetchInstanceScriptTaskNGRequest taskParameters =
+        FetchInstanceScriptTaskNGRequest.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
+            .scriptBody(getResolvedFetchInstanceScript(ambiance, infrastructureOutcome))
+            .variables(new HashMap<>())
+            .outputPathKey(OUTPUT_PATH_KEY)
+            .timeoutInMillis(CDStepHelper.getTimeoutInMillis(stepParameters))
+            .build();
 
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
-                                  .taskType(TaskType.SHELL_SCRIPT_TASK_NG.name())
+                                  .taskType(TaskType.FETCH_INSTANCE_SCRIPT_TASK_NG.name())
                                   .parameters(new Object[] {taskParameters})
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
-            StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
-        null, null, TaskSelectorYaml.toTaskSelector(stepSpec.getDelegateSelectors()),
-        stepHelper.getEnvironmentType(ambiance));
+        Collections.singletonList(FetchInstanceScriptTaskNG.COMMAND_UNIT),
+        FETCH_INSTANCE_SCRIPT_TASK_NG.getDisplayName(),
+        TaskSelectorYaml.toTaskSelector(stepSpec.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
   }
 
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<ShellScriptTaskResponseNG> responseDataSupplier) throws Exception {
+      ThrowingSupplier<FetchInstanceScriptTaskNGResponse> responseDataSupplier) throws Exception {
     try {
-      ShellScriptTaskResponseNG response;
+      FetchInstanceScriptTaskNGResponse response;
       try {
         response = responseDataSupplier.get();
       } catch (Exception ex) {
         log.error("Error while processing Fetch Instance script task response: {}", ExceptionUtils.getMessage(ex), ex);
         throw ex;
       }
-      if (response.getStatus() != SUCCESS) {
+      if (response.getCommandExecutionStatus() != SUCCESS) {
         return StepResponse.builder()
             .unitProgressList(response.getUnitProgressData().getUnitProgresses())
             .status(Status.FAILED)
@@ -203,28 +206,49 @@ public class FetchInstanceScriptStep extends TaskExecutableWithRollbackAndRbac<S
                                         .unitProgressList(response.getUnitProgressData().getUnitProgresses())
                                         .status(Status.SUCCEEDED);
       List<CustomDeploymentServerInstanceInfo> instanceElements = new ArrayList<>();
-      if (response.getExecuteCommandResponse().getCommandExecutionData() instanceof ShellExecutionData) {
-        Map<String, String> output =
-            ((ShellExecutionData) response.getExecuteCommandResponse().getCommandExecutionData())
-                .getSweepingOutputEnvVariables();
-        CustomDeploymentInfrastructureOutcome infrastructureOutcome =
-            (CustomDeploymentInfrastructureOutcome) cdStepHelper.getInfrastructureOutcome(ambiance);
-        instanceElements =
-            InstanceMapperUtils.mapJsonToInstanceElements(INSTANCE_NAME, infrastructureOutcome.getInstanceAttributes(),
-                infrastructureOutcome.getInstancesListPath(), output.get(OUTPUT_PATH_KEY), instanceElementMapper);
-        instanceElements.forEach(serverInstanceInfo -> {
-          serverInstanceInfo.setInstanceFetchScript(getResolvedFetchInstanceScript(ambiance, infrastructureOutcome));
-          serverInstanceInfo.setInfrastructureKey(infrastructureOutcome.getInfrastructureKey());
-        });
-        validateInstanceElements(instanceElements, infrastructureOutcome);
-      }
+      CustomDeploymentInfrastructureOutcome infrastructureOutcome =
+          (CustomDeploymentInfrastructureOutcome) cdStepHelper.getInfrastructureOutcome(ambiance);
+      instanceElements =
+          InstanceMapperUtils.mapJsonToInstanceElements(INSTANCE_NAME, infrastructureOutcome.getInstanceAttributes(),
+              infrastructureOutcome.getInstancesListPath(), response.getOutput(), instanceElementMapper);
+      instanceElements.forEach(serverInstanceInfo -> {
+        serverInstanceInfo.setInstanceFetchScript(getResolvedFetchInstanceScript(ambiance, infrastructureOutcome));
+        serverInstanceInfo.setInfrastructureKey(infrastructureOutcome.getInfrastructureKey());
+      });
+      validateInstanceElements(instanceElements, infrastructureOutcome);
       StepResponse.StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
           instanceElements.stream().map(element -> (ServerInstanceInfo) element).collect(Collectors.toList()));
-
+      InstancesOutcome instancesOutcome = buildInstancesOutcome(instanceElements);
+      executionSweepingOutputService.consume(
+          ambiance, OutputExpressionConstants.INSTANCES, instancesOutcome, StepCategory.STAGE.name());
+      Set<String> instances = getInstances(instanceElements);
+      executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
+          HostsOutput.builder().hosts(instances).build(), StepCategory.STAGE.name());
       return builder.stepOutcome(stepOutcome).build();
     } finally {
       closeLogStream(ambiance);
     }
+  }
+
+  private Set<String> getInstances(List<CustomDeploymentServerInstanceInfo> instanceElements) {
+    return instanceElements.stream()
+        .map(CustomDeploymentServerInstanceInfo::getInstanceName)
+        .collect(Collectors.toSet());
+  }
+
+  private InstancesOutcome buildInstancesOutcome(List<CustomDeploymentServerInstanceInfo> instanceElements) {
+    List<InstanceOutcome> instanceOutcomeList = new ArrayList<>();
+    for (CustomDeploymentServerInstanceInfo instance : instanceElements) {
+      instanceOutcomeList.add(InstanceOutcome.builder()
+                                  .hostName(instance.getInstanceName())
+                                  .name(instance.getInstanceName())
+                                  .host(HostOutcome.builder()
+                                            .instanceName(instance.getInstanceName())
+                                            .properties(instance.getProperties())
+                                            .build())
+                                  .build());
+    }
+    return InstancesOutcome.builder().instances(instanceOutcomeList).build();
   }
 
   private void closeLogStream(Ambiance ambiance) {

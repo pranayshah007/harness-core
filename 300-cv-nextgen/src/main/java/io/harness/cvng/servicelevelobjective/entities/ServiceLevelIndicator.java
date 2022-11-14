@@ -93,6 +93,18 @@ public abstract class ServiceLevelIndicator
 
   public abstract boolean shouldReAnalysis(ServiceLevelIndicator serviceLevelIndicator);
 
+  public boolean shouldRecalculateReferencedCompositeSLOs(ServiceLevelIndicator serviceLevelIndicator) {
+    try {
+      if (this.shouldReAnalysis(serviceLevelIndicator)) {
+        return true;
+      }
+      Preconditions.checkArgument(this.getSliMissingDataType().equals(serviceLevelIndicator.getSliMissingDataType()));
+      return false;
+    } catch (IllegalArgumentException ex) {
+      return true;
+    }
+  }
+
   protected boolean isCoreUpdatable(ServiceLevelIndicator serviceLevelIndicator) {
     try {
       Preconditions.checkNotNull(serviceLevelIndicator);
@@ -100,9 +112,7 @@ public abstract class ServiceLevelIndicator
           this.getHealthSourceIdentifier().equals(serviceLevelIndicator.getHealthSourceIdentifier()));
       Preconditions.checkArgument(
           this.getMonitoredServiceIdentifier().equals(serviceLevelIndicator.getMonitoredServiceIdentifier()));
-      Preconditions.checkArgument(this.getSliMissingDataType() == serviceLevelIndicator.getSliMissingDataType());
       Preconditions.checkArgument(this.getSLIMetricType() == serviceLevelIndicator.getSLIMetricType());
-      Preconditions.checkArgument(this.getType() == serviceLevelIndicator.getType());
       return true;
     } catch (Exception ex) {
       return false;

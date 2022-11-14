@@ -112,6 +112,9 @@ public class TemplateEntity
   @Wither @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
 
+  // icon support for templates
+  @Wither @Setter @NonFinal String icon;
+
   @Override
   public String getAccountIdentifier() {
     return accountId;
@@ -191,6 +194,13 @@ public class TemplateEntity
                  .field(TemplateEntityKeys.accountId)
                  .field(TemplateEntityKeys.repoURL)
                  .field(TemplateEntityKeys.filePath)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_repo")
+                 .field(TemplateEntityKeys.accountId)
+                 .field(TemplateEntityKeys.orgIdentifier)
+                 .field(TemplateEntityKeys.projectIdentifier)
+                 .field(TemplateEntityKeys.repo)
                  .build())
         .build();
   }

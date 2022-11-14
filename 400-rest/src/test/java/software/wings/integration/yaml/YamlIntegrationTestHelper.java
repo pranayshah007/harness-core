@@ -64,8 +64,8 @@ import software.wings.service.intfc.yaml.YamlGitService;
 import software.wings.settings.SettingValue;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.utils.ArtifactType;
-import software.wings.yaml.gitSync.YamlGitConfig;
-import software.wings.yaml.gitSync.YamlGitConfig.SyncMode;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.SyncMode;
 
 import com.google.inject.Singleton;
 import java.util.List;

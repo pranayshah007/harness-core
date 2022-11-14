@@ -45,6 +45,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -263,6 +264,7 @@ public class AccountServiceTest extends WingsBaseTest {
                 CgServiceUsage.builder().name("svc1").serviceId("svcId").instanceCount(1).licensesUsed(1).build()))
             .build();
     when(cgCdLicenseUsageService.getActiveServiceLicenseUsage(anyString())).thenReturn(cgActiveServicesUsageInfo);
+    when(cgCdLicenseUsageService.getActiveServiceInTimePeriod(anyString(), anyInt())).thenReturn(5);
     Account account = setUpDataForTestingSetAccountStatusInternal(AccountType.PAID);
     when(featureFlagService.isEnabled(FeatureName.CG_LICENSE_USAGE, account.getUuid())).thenReturn(true);
 
@@ -273,6 +275,7 @@ public class AccountServiceTest extends WingsBaseTest {
     assertThat(details.isCreatedFromNG()).isEqualTo(false);
     assertThat(details.getLicenseInfo().getAccountType()).isEqualTo(AccountType.PAID);
     assertThat(details.getActiveServicesUsageInfo()).isSameAs(cgActiveServicesUsageInfo);
+    assertThat(details.getActiveServiceCount()).isEqualTo(5);
   }
 
   @Test
@@ -1104,31 +1107,9 @@ public class AccountServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testAccountIteration() throws IllegalAccessException {
     final Account account = anAccount().withCompanyName(generateUuid()).build();
-    long serviceGuardDataCollectionIteration = random.nextLong();
-    FieldUtils.writeField(
-        account, AccountKeys.serviceGuardDataCollectionIteration, serviceGuardDataCollectionIteration, true);
-    long serviceGuardDataAnalysisIteration = random.nextLong();
-    FieldUtils.writeField(
-        account, AccountKeys.serviceGuardDataAnalysisIteration, serviceGuardDataAnalysisIteration, true);
+
     long workflowDataCollectionIteration = random.nextLong();
     FieldUtils.writeField(account, AccountKeys.workflowDataCollectionIteration, workflowDataCollectionIteration, true);
-
-    assertThat(account.obtainNextIteration(AccountKeys.serviceGuardDataCollectionIteration))
-        .isEqualTo(serviceGuardDataCollectionIteration);
-    assertThat(account.obtainNextIteration(AccountKeys.serviceGuardDataAnalysisIteration))
-        .isEqualTo(serviceGuardDataAnalysisIteration);
-    assertThat(account.obtainNextIteration(AccountKeys.workflowDataCollectionIteration))
-        .isEqualTo(workflowDataCollectionIteration);
-
-    serviceGuardDataCollectionIteration = random.nextLong();
-    account.updateNextIteration(AccountKeys.serviceGuardDataCollectionIteration, serviceGuardDataCollectionIteration);
-    assertThat(account.obtainNextIteration(AccountKeys.serviceGuardDataCollectionIteration))
-        .isEqualTo(serviceGuardDataCollectionIteration);
-
-    serviceGuardDataAnalysisIteration = random.nextLong();
-    account.updateNextIteration(AccountKeys.serviceGuardDataAnalysisIteration, serviceGuardDataAnalysisIteration);
-    assertThat(account.obtainNextIteration(AccountKeys.serviceGuardDataAnalysisIteration))
-        .isEqualTo(serviceGuardDataAnalysisIteration);
 
     workflowDataCollectionIteration = random.nextLong();
     account.updateNextIteration(AccountKeys.workflowDataCollectionIteration, workflowDataCollectionIteration);

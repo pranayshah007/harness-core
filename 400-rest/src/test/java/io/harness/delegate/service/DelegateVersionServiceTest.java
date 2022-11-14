@@ -117,9 +117,9 @@ public class DelegateVersionServiceTest {
 
   @Test
   @Category(UnitTests.class)
-  public void whenDelegateImageTagRingOverrideAndImmutableButNotK8SThenUseDefault() {
+  public void whenDelegateImageTagRingOverrideAndImmutableButNotK8SThenUseRingImage() {
     mockDelegateOverrides(null, true, false, true);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, DOCKER);
+    assertOverrides(HARNESS_DELEGATE_RING_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, DOCKER);
   }
 
   @Test
@@ -182,9 +182,9 @@ public class DelegateVersionServiceTest {
 
   @Test
   @Category(UnitTests.class)
-  public void whenUpgraderImageTagRingOverrideAndImmutableButNotK8SThenUseDefault() {
+  public void whenUpgraderImageTagRingOverrideAndImmutableButNotK8SThenUseRingImage() {
     mockUpgraderOverrides(null, true, false, true);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, DOCKER);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, HARNESS_UPGRADER_RING_IMAGE, emptyList(), null, DOCKER);
   }
 
   @Test

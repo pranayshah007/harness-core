@@ -37,10 +37,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
+@Slf4j
 public class ConnectorPreflightHandler {
   private static final int PAGE = 0;
   private static final int SIZE = 100;
@@ -77,12 +80,11 @@ public class ConnectorPreflightHandler {
       existingIdentifiers.add(refIdentifier);
       scopeToConnectorIdentifiers.put(refScope, existingIdentifiers);
     }
-    List<ConnectorResponseDTO> connectorResponseDTO =
+    List<ConnectorResponseDTO> connectorResponsesDTO =
         getConnectorResponses(accountIdentifier, orgIdentifier, projectIdentifier, scopeToConnectorIdentifiers);
 
-    // filtering connectorResponseDTO to get only the actually referred connectors in Yaml, as currently NG Manager is
-    // fetching connectorResponses of all the connectors having same identifier
-    List<ConnectorResponseDTO> finalResponse = filterConnectorResponse(connectorResponseDTO, connectorUsages);
+    List<ConnectorResponseDTO> finalResponse = filterConnectorResponse(connectorResponsesDTO, connectorUsages);
+
     return getConnectorCheckResponse(fqnToObjectMapMergedYaml, finalResponse, connectorIdentifierToFqn);
   }
 
@@ -90,16 +92,52 @@ public class ConnectorPreflightHandler {
   List<ConnectorResponseDTO> filterConnectorResponse(
       List<ConnectorResponseDTO> connectorResponseDTO, List<EntityDetail> connectorUsages) {
     List<ConnectorResponseDTO> filteredConnectorResponse = new ArrayList<>();
+
     for (ConnectorResponseDTO responseDTO : connectorResponseDTO) {
-      if (connectorUsages.stream().anyMatch(connectorUse
-              -> connectorUse.getEntityRef().getBranch().equals(responseDTO.getGitDetails().getBranch())
-                  && connectorUse.getEntityRef().getRepoIdentifier().equals(
-                      responseDTO.getGitDetails().getRepoIdentifier())
-                  && connectorUse.getEntityRef().getIdentifier().equals(responseDTO.getConnector().getIdentifier()))) {
+      if (isInlineConnectorOrNewGitFlowIsEnabled(responseDTO)) {
+        // will come here if the Connector is for a Pipeline which is Inline or has New-Git-Flow enabled
+        if (responseDTO.getConnector() != null && !EmptyPredicate.isEmpty(responseDTO.getConnector().getIdentifier())) {
+          log.info(
+              "Preflight will be run on connector with identifier: {}, this connector is either Inline Pipeline or New-Git-Experience IsEnabled.",
+              responseDTO.getConnector().getIdentifier());
+        } else {
+          log.info("Connector is either null or empty. Hence rejected for Preflight checks");
+        }
         filteredConnectorResponse.add(responseDTO);
+      } else {
+        // will come here if Old-Git-flow is enabled and our connector is made for a remote Pipeline
+        for (EntityDetail connectorUse : connectorUsages) {
+          if (ifResponseHasAConnectorUsage(responseDTO, connectorUse)) {
+            log.info("Preflight will be run on connector with identifier: {}, repoIdentifier: {} and branch: {}.",
+                responseDTO.getConnector().getIdentifier(), responseDTO.getGitDetails().getRepoIdentifier(),
+                responseDTO.getGitDetails().getBranch());
+            filteredConnectorResponse.add(responseDTO);
+          } else {
+            log.info("Rejecting Connector with Identifier: {}, repoIdentifier: {} and branch: {} for preflight checks.",
+                responseDTO.getConnector().getIdentifier(), responseDTO.getGitDetails().getRepoIdentifier(),
+                responseDTO.getGitDetails().getBranch());
+          }
+        }
       }
     }
+
     return filteredConnectorResponse;
+  }
+
+  private boolean ifResponseHasAConnectorUsage(ConnectorResponseDTO responseDTO, EntityDetail connectorUse) {
+    return Objects.equals(responseDTO.getGitDetails().getBranch(), connectorUse.getEntityRef().getBranch())
+        && Objects.equals(
+            responseDTO.getGitDetails().getRepoIdentifier(), connectorUse.getEntityRef().getRepoIdentifier())
+        && Objects.equals(responseDTO.getConnector().getIdentifier(), connectorUse.getEntityRef().getIdentifier());
+  }
+
+  /**
+   * Checks whether the connectorResponse is for a connector which is for an inline pipeline OR for a pipeline that has
+   * New-Git_experience enabled.
+   */
+  private boolean isInlineConnectorOrNewGitFlowIsEnabled(ConnectorResponseDTO responseDTO) {
+    return responseDTO.getGitDetails() == null || EmptyPredicate.isEmpty(responseDTO.getGitDetails().getBranch())
+        || EmptyPredicate.isEmpty(responseDTO.getGitDetails().getRepoIdentifier());
   }
 
   public List<ConnectorResponseDTO> getConnectorResponses(String accountIdentifier, String orgIdentifier,

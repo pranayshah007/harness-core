@@ -72,15 +72,15 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class PmsStepPlanCreatorUtils {
   public List<AdviserObtainment> getAdviserObtainmentFromMetaData(
-      KryoSerializer kryoSerializer, YamlField currentField) {
+      KryoSerializer kryoSerializer, YamlField currentField, boolean isPipelineStage) {
     boolean isStepInsideRollback = false;
     if (YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null) {
       isStepInsideRollback = true;
     }
 
     // Adding adviser obtainment list from the failure strategy.
-    List<AdviserObtainment> adviserObtainmentList =
-        new ArrayList<>(getAdviserObtainmentForFailureStrategy(kryoSerializer, currentField, isStepInsideRollback));
+    List<AdviserObtainment> adviserObtainmentList = new ArrayList<>(
+        getAdviserObtainmentForFailureStrategy(kryoSerializer, currentField, isStepInsideRollback, isPipelineStage));
 
     /*
      * Adding OnSuccess adviser if step is inside rollback section else adding NextStep adviser for when condition to
@@ -142,12 +142,13 @@ public class PmsStepPlanCreatorUtils {
 
   @VisibleForTesting
   List<AdviserObtainment> getAdviserObtainmentForFailureStrategy(
-      KryoSerializer kryoSerializer, YamlField currentField, boolean isStepInsideRollback) {
+      KryoSerializer kryoSerializer, YamlField currentField, boolean isStepInsideRollback, boolean isPipelineStage) {
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>();
     List<FailureStrategyConfig> stageFailureStrategies =
         getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
     List<FailureStrategyConfig> stepGroupFailureStrategies =
         getFieldFailureStrategies(currentField, STEP_GROUP, isStepInsideRollback);
+
     List<FailureStrategyConfig> stepFailureStrategies = getFailureStrategies(currentField.getNode());
 
     Map<FailureStrategyActionConfig, Collection<FailureType>> actionMap;
@@ -157,13 +158,26 @@ public class PmsStepPlanCreatorUtils {
     actionMap = FailureStrategiesUtils.priorityMergeFailureStrategies(
         stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
 
+    return getAdviserObtainments(
+        kryoSerializer, currentField, isStepInsideRollback, adviserObtainmentList, actionMap, isPipelineStage);
+  }
+
+  private List<AdviserObtainment> getAdviserObtainments(KryoSerializer kryoSerializer, YamlField currentField,
+      boolean isStepInsideRollback, List<AdviserObtainment> adviserObtainmentList,
+      Map<FailureStrategyActionConfig, Collection<FailureType>> actionMap, boolean isPipelineStage) {
     for (Map.Entry<FailureStrategyActionConfig, Collection<FailureType>> entry : actionMap.entrySet()) {
       FailureStrategyActionConfig action = entry.getKey();
       Set<FailureType> failureTypes = new HashSet<>(entry.getValue());
       NGFailureActionType actionType = action.getType();
 
       String nextNodeUuid = null;
-      YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
+      YamlField siblingField;
+      if (isPipelineStage) {
+        siblingField = GenericPlanCreatorUtils.obtainNextSiblingFieldAtStageLevel(currentField);
+      } else {
+        siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
+      }
+
       // Check if step is in parallel section then dont have nextNodeUUid set.
       if (siblingField != null && !GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
           && !StrategyUtils.isWrappedUnderStrategy(currentField)) {
@@ -177,74 +191,81 @@ public class PmsStepPlanCreatorUtils {
         }
       }
 
-      switch (actionType) {
-        case IGNORE:
-          adviserObtainmentList.add(
-              adviserObtainmentBuilder.setType(IgnoreAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(IgnoreAdviserParameters.builder()
-                                                                                .applicableFailureTypes(failureTypes)
-                                                                                .nextNodeId(nextNodeUuid)
-                                                                                .build())))
-                  .build());
-          break;
-        case RETRY:
-          RetryFailureActionConfig retryAction = (RetryFailureActionConfig) action;
-          FailureStrategiesUtils.validateRetryFailureAction(retryAction);
-          ParameterField<Integer> retryCount = retryAction.getSpecConfig().getRetryCount();
-          FailureStrategyActionConfig actionUnderRetry = retryAction.getSpecConfig().getOnRetryFailure().getAction();
-          adviserObtainmentList.add(getRetryAdviserObtainment(kryoSerializer, failureTypes, nextNodeUuid,
-              adviserObtainmentBuilder, retryAction, retryCount, actionUnderRetry, currentField));
-          break;
-        case MARK_AS_SUCCESS:
-          adviserObtainmentList.add(
-              adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkSuccessAdviserParameters.builder()
-                                                                                .applicableFailureTypes(failureTypes)
-                                                                                .nextNodeId(nextNodeUuid)
-                                                                                .build())))
-                  .build());
-
-          break;
-        case ABORT:
-          adviserObtainmentList.add(
-              adviserObtainmentBuilder.setType(OnAbortAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                      OnAbortAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
-                  .build());
-          break;
-        case STAGE_ROLLBACK:
-          OnFailRollbackParameters rollbackParameters =
-              getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
-          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
-                                        .build());
-          break;
-        case MANUAL_INTERVENTION:
-          ManualInterventionFailureActionConfig actionConfig = (ManualInterventionFailureActionConfig) action;
-          FailureStrategiesUtils.validateManualInterventionFailureAction(actionConfig);
-          FailureStrategyActionConfig actionUnderManualIntervention =
-              actionConfig.getSpecConfig().getOnTimeout().getAction();
-          adviserObtainmentList.add(getManualInterventionAdviserObtainment(
-              kryoSerializer, failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
-          break;
-        case PROCEED_WITH_DEFAULT_VALUES:
-          adviserObtainmentList.add(
-              adviserObtainmentBuilder.setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                      ProceedWithDefaultAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
-                  .build());
-          break;
-        case PIPELINE_ROLLBACK:
-          rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
-          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
-                                        .build());
-          break;
-        default:
-          Switch.unhandled(actionType);
-      }
+      adviserForActionType(kryoSerializer, currentField, adviserObtainmentList, action, failureTypes, actionType,
+          nextNodeUuid, adviserObtainmentBuilder);
     }
     return adviserObtainmentList;
+  }
+
+  private void adviserForActionType(KryoSerializer kryoSerializer, YamlField currentField,
+      List<AdviserObtainment> adviserObtainmentList, FailureStrategyActionConfig action, Set<FailureType> failureTypes,
+      NGFailureActionType actionType, String nextNodeUuid, AdviserObtainment.Builder adviserObtainmentBuilder) {
+    switch (actionType) {
+      case IGNORE:
+        adviserObtainmentList.add(
+            adviserObtainmentBuilder.setType(IgnoreAdviser.ADVISER_TYPE)
+                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(IgnoreAdviserParameters.builder()
+                                                                              .applicableFailureTypes(failureTypes)
+                                                                              .nextNodeId(nextNodeUuid)
+                                                                              .build())))
+                .build());
+        break;
+      case RETRY:
+        RetryFailureActionConfig retryAction = (RetryFailureActionConfig) action;
+        FailureStrategiesUtils.validateRetryFailureAction(retryAction);
+        ParameterField<Integer> retryCount = retryAction.getSpecConfig().getRetryCount();
+        FailureStrategyActionConfig actionUnderRetry = retryAction.getSpecConfig().getOnRetryFailure().getAction();
+        adviserObtainmentList.add(getRetryAdviserObtainment(kryoSerializer, failureTypes, nextNodeUuid,
+            adviserObtainmentBuilder, retryAction, retryCount, actionUnderRetry, currentField));
+        break;
+      case MARK_AS_SUCCESS:
+        adviserObtainmentList.add(
+            adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
+                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkSuccessAdviserParameters.builder()
+                                                                              .applicableFailureTypes(failureTypes)
+                                                                              .nextNodeId(nextNodeUuid)
+                                                                              .build())))
+                .build());
+
+        break;
+      case ABORT:
+        adviserObtainmentList.add(
+            adviserObtainmentBuilder.setType(OnAbortAdviser.ADVISER_TYPE)
+                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                    OnAbortAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
+                .build());
+        break;
+      case STAGE_ROLLBACK:
+        OnFailRollbackParameters rollbackParameters =
+            getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
+        adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
+                                      .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                      .build());
+        break;
+      case MANUAL_INTERVENTION:
+        ManualInterventionFailureActionConfig actionConfig = (ManualInterventionFailureActionConfig) action;
+        FailureStrategiesUtils.validateManualInterventionFailureAction(actionConfig);
+        FailureStrategyActionConfig actionUnderManualIntervention =
+            actionConfig.getSpecConfig().getOnTimeout().getAction();
+        adviserObtainmentList.add(getManualInterventionAdviserObtainment(
+            kryoSerializer, failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
+        break;
+      case PROCEED_WITH_DEFAULT_VALUES:
+        adviserObtainmentList.add(
+            adviserObtainmentBuilder.setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE)
+                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                    ProceedWithDefaultAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
+                .build());
+        break;
+      case PIPELINE_ROLLBACK:
+        rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
+        adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
+                                      .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                      .build());
+        break;
+      default:
+        Switch.unhandled(actionType);
+    }
   }
 
   public String getName(AbstractStepNode stepElement) {

@@ -7,6 +7,8 @@
 
 package io.harness.cvng.metrics.beans;
 
+import io.harness.metrics.beans.AccountMetricContext;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

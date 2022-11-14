@@ -16,7 +16,6 @@ import io.harness.event.client.impl.tailer.TailerModule;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
-import io.harness.grpc.server.Connector;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
@@ -85,8 +84,7 @@ public class EventServiceRule implements MethodRule, InjectorRuleMixin, MongoRul
       }
     });
 
-    modules.add(new EventServiceModule(
-        EventServiceConfig.builder().connector(new Connector(port, true, "cert.pem", "key.pem")).build()));
+    modules.add(new EventServiceModule(new EventServiceConfig()));
 
     modules.add(TestMongoModule.getInstance());
     return modules;

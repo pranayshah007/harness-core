@@ -46,15 +46,12 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.beans.SortOrder.OrderType;
-import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.event.handler.marketo.MarketoConfig;
 import io.harness.event.handler.segment.SegmentConfig;
 import io.harness.event.model.Event;
 import io.harness.event.model.EventData;
 import io.harness.event.model.EventType;
 import io.harness.event.publisher.EventPublisher;
-import io.harness.service.intfc.DelegateCache;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountEvent;
@@ -80,7 +77,6 @@ import software.wings.service.impl.analysis.ContinuousVerificationService;
 import software.wings.service.impl.newrelic.LearningEngineAnalysisTask;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
-import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.SSOSettingService;
 import software.wings.service.intfc.UserGroupService;
@@ -122,8 +118,6 @@ public class EventPublishHelper {
   @Inject private AccountService accountService;
   @Inject private UserService userService;
   @Inject private SSOSettingService ssoSettingService;
-  @Inject private DelegateCache delegateCache;
-  @Inject private DelegateService delegateService;
   @Inject private WhitelistService whitelistService;
   @Inject private UserGroupService userGroupService;
   @Inject private CVConfigurationService cvConfigurationService;
@@ -448,54 +442,6 @@ public class EventPublishHelper {
   private void publishEvent(EventType eventType, Map<String, String> properties) {
     eventPublisher.publishEvent(
         Event.builder().eventType(eventType).eventData(EventData.builder().properties(properties).build()).build());
-  }
-
-  public void publishInstalledDelegateEvent(String accountId, String delegateId) {
-    if (!checkIfMarketoOrSegmentIsEnabled()) {
-      return;
-    }
-
-    executorService.submit(() -> {
-      if (!shouldPublishEventForAccount(accountId)) {
-        return;
-      }
-
-      if (!isFirstDelegateInAccount(delegateId, accountId)) {
-        return;
-      }
-
-      Map<String, String> properties = new HashMap<>();
-      properties.put(ACCOUNT_ID, accountId);
-      publishEvent(EventType.FIRST_DELEGATE_REGISTERED, properties);
-      publishDelegateInstalledAccountEvent(
-          accountId, AccountEvent.builder().accountEventType(AccountEventType.DELEGATE_INSTALLED).build());
-    });
-  }
-
-  private boolean isFirstDelegateInAccount(String delegateId, String accountId) {
-    Delegate delegate = delegateCache.get(accountId, delegateId, false);
-    if (delegate != null && delegate.isSampleDelegate()) {
-      return false;
-    }
-
-    PageRequest<Delegate> pageRequest = aPageRequest()
-                                            .addFilter(DelegateKeys.accountId, Operator.EQ, accountId)
-                                            .addFilter(DelegateKeys.sampleDelegate, Operator.EQ, false)
-                                            .addOrder(DelegateKeys.createdAt, OrderType.ASC)
-                                            .addFieldsIncluded(DelegateKeys.uuid)
-                                            .withLimit("1")
-                                            .build();
-    PageResponse<Delegate> pageResponse = delegateService.list(pageRequest);
-    List<Delegate> delegates = pageResponse.getResponse();
-    if (isEmpty(delegates)) {
-      return false;
-    }
-
-    if (delegateId.equals(delegates.get(0).getUuid())) {
-      return true;
-    }
-
-    return false;
   }
 
   public void publishWorkflowCreatedEvent(Workflow workflow, String accountId) {
@@ -1022,23 +968,6 @@ public class EventPublishHelper {
       if (isNotEmpty(accountEvent.getCategory())) {
         properties.put(CATEGORY, accountEvent.getCategory());
       }
-      publishEvent(EventType.CUSTOM, properties);
-    });
-  }
-
-  public void publishDelegateInstalledAccountEvent(String accountId, AccountEvent accountEvent) {
-    if (!checkIfMarketoOrSegmentIsEnabled()) {
-      return;
-    }
-    executorService.submit(() -> {
-      if (!shouldPublishAccountEventForAccount(accountId, accountEvent, true, true)) {
-        return;
-      }
-      accountService.updateAccountEvents(accountId, accountEvent);
-      Map<String, String> properties = new HashMap<>();
-      properties.put(ACCOUNT_ID, accountId);
-      properties.put(ACCOUNT_EVENT, String.valueOf(true));
-      properties.put(CUSTOM_EVENT_NAME, accountEvent.getCustomMsg());
       publishEvent(EventType.CUSTOM, properties);
     });
   }

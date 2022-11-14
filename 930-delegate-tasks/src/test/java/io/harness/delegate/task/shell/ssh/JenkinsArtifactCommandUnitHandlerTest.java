@@ -8,11 +8,14 @@
 package io.harness.delegate.task.shell.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.rule.OwnerRule.VLAD;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -24,8 +27,10 @@ import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
+import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.HintException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -102,6 +107,47 @@ public class JenkinsArtifactCommandUnitHandlerTest extends CategoryTest {
     assertThat(resultText).isEqualTo(fileContent);
   }
 
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void shouldDownloadFromRemoteRepoReturnsNull() throws IOException {
+    SshExecutorFactoryContext context = SshExecutorFactoryContext.builder()
+                                            .artifactDelegateConfig(AwsS3ArtifactDelegateConfig.builder().build())
+                                            .build();
+    InputStream result = handler.downloadFromRemoteRepo(context, logCallback);
+    assertThat(result).isNull();
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void shouldDownloadFromRemoteRepoFails() throws IOException, URISyntaxException {
+    SshExecutorFactoryContext context = getContext();
+    when(jenkins.downloadArtifact(any(), any(), any())).thenThrow(new URISyntaxException("oops", ""));
+    assertThatThrownBy(() -> handler.downloadFromRemoteRepo(context, logCallback)).isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetArtifactSize() throws IOException, URISyntaxException {
+    SshExecutorFactoryContext context = getContext();
+    doReturn(50L).when(jenkins).getFileSize(anyString(), anyString(), anyString());
+    Long result = handler.getArtifactSize(context, logCallback);
+    assertThat(result).isEqualTo(50L);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetArtifactSizeReturnsZero() {
+    SshExecutorFactoryContext context = SshExecutorFactoryContext.builder()
+                                            .artifactDelegateConfig(AwsS3ArtifactDelegateConfig.builder().build())
+                                            .build();
+    Long result = handler.getArtifactSize(context, logCallback);
+    assertThat(result).isEqualTo(0L);
+  }
+
   private SshExecutorFactoryContext getContext() {
     JenkinsUserNamePasswordDTO creds =
         JenkinsUserNamePasswordDTO.builder()
@@ -121,6 +167,7 @@ public class JenkinsArtifactCommandUnitHandlerTest extends CategoryTest {
         .artifactDelegateConfig(JenkinsArtifactDelegateConfig.builder()
                                     .artifactPath("/path/to/artifact")
                                     .jobName("test")
+                                    .build("123")
                                     .identifier("testIdentifier")
                                     .encryptedDataDetails(Collections.emptyList())
                                     .connectorDTO(connectorInfoDTO)

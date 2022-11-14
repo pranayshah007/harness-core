@@ -8,12 +8,15 @@
 package io.harness.connector.impl;
 
 import static io.harness.NGCommonEntityConstants.MONGODB_ID;
+import static io.harness.beans.FeatureName.NG_SETTINGS;
 
+import static java.lang.Boolean.parseBoolean;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.facet;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
+import io.harness.account.AccountClient;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector.GcpKmsConnectorKeys;
 import io.harness.connector.stats.ConnectorStatistics;
@@ -22,8 +25,10 @@ import io.harness.connector.stats.ConnectorStatusStats.ConnectorStatusStatsKeys;
 import io.harness.connector.stats.ConnectorTypeStats.ConnectorTypeStatsKeys;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.ng.core.accountsetting.dto.AccountSettingType;
-import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.remote.client.CGRestUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 
 import com.google.inject.Inject;
@@ -45,7 +50,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class ConnectorStatisticsHelper {
   ConnectorRepository connectorRepository;
-  NGAccountSettingService accountSettingService;
+  NGSettingsClient settingsClient;
+  AccountClient accountClient;
 
   public ConnectorStatistics getStats(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = createCriteriaObjectForConnectorScope(accountIdentifier, orgIdentifier, projectIdentifier);
@@ -74,8 +80,9 @@ public class ConnectorStatisticsHelper {
             .and(ConnectorKeys.projectIdentifier)
             .in(projectIdentifier)
             .orOperator(where(ConnectorKeys.deleted).exists(false), where(ConnectorKeys.deleted).is(false));
-    boolean isBuiltInSMDisabled =
-        accountSettingService.getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
+
+    Boolean isBuiltInSMDisabled = isBuiltInSMDisabled(accountIdentifier);
+
     if (isBuiltInSMDisabled) {
       criteria.and(GcpKmsConnectorKeys.harnessManaged).ne(true);
     }
@@ -92,5 +99,19 @@ public class ConnectorStatisticsHelper {
       return new Criteria().andOperator(criteriaList.toArray(new Criteria[criteriaList.size()]));
     }
     return criteria;
+  }
+
+  private Boolean isBuiltInSMDisabled(String accountIdentifier) {
+    Boolean isBuiltInSMDisabled = false;
+    boolean isNgSettingsEnabled =
+        CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
+    if (isNgSettingsEnabled) {
+      isBuiltInSMDisabled = parseBoolean(
+          NGRestUtils
+              .getResponse(settingsClient.getSetting(
+                  SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+              .getValue());
+    }
+    return isBuiltInSMDisabled;
   }
 }

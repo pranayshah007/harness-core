@@ -11,6 +11,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -36,6 +37,7 @@ import org.mongodb.morphia.annotations.Entity;
       @JsonSubTypes.Type(value = ServerlessAwsLambdaInfrastructure.class, name = "serverless-aws-lambda"),
       @JsonSubTypes.Type(value = AzureWebAppInfrastructure.class, name = "azure-webapp"),
       @JsonSubTypes.Type(value = EcsInfrastructure.class, name = "ECS"),
+      @JsonSubTypes.Type(value = ElastigroupInfrastructure.class, name = "Elastigroup"),
       @JsonSubTypes.Type(value = CustomDeploymentInfrastructure.class, name = "custom-deployment")
 })
 @StoreIn(DbAliases.NG_MANAGER)

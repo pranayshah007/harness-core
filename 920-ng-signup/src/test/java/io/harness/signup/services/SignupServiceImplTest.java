@@ -71,6 +71,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -96,6 +97,7 @@ public class SignupServiceImplTest extends CategoryTest {
   @Mock LicenseService licenseService;
   @Mock VersionInfoManager versionInfoManager;
   @Mock FeatureFlagService featureFlagService;
+  @Mock ScheduledExecutorService scheduledExecutorService;
 
   private static final String TOKEN = "token";
   private static final String EMAIL = "test@test.com";
@@ -111,7 +113,7 @@ public class SignupServiceImplTest extends CategoryTest {
     initMocks(this);
     signupServiceImpl = new SignupServiceImpl(accountService, userClient, signupValidator, reCaptchaVerifier,
         telemetryReporter, signupNotificationHelper, verificationTokenRepository, executorService, accessControlClient,
-        licenseService, versionInfoManager, featureFlagService);
+        licenseService, versionInfoManager, featureFlagService, scheduledExecutorService);
   }
 
   @Test
@@ -184,7 +186,7 @@ public class SignupServiceImplTest extends CategoryTest {
                 .edition("TEAM")
                 .build())));
 
-    when(userClient.completeSignupInvite(any(), any())).thenReturn(completeSignupInviteCall);
+    when(userClient.completeSignupInvite(any())).thenReturn(completeSignupInviteCall);
 
     SignupVerificationToken verificationToken =
 
@@ -192,7 +194,7 @@ public class SignupServiceImplTest extends CategoryTest {
     when(verificationTokenRepository.findByToken(TOKEN)).thenReturn(Optional.of(verificationToken));
     when(accessControlClient.hasAccess(any(), any(), any())).thenReturn(true);
     when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
-    UserInfo userInfo = signupServiceImpl.completeSignupInvite(TOKEN, null);
+    UserInfo userInfo = signupServiceImpl.completeSignupInvite(TOKEN, null, null);
 
     verify(telemetryReporter, times(1)).sendIdentifyEvent(eq(EMAIL), any(), any());
     verify(telemetryReporter, times(1))
@@ -214,7 +216,7 @@ public class SignupServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCompleteSignupInviteWithInvalidToken() throws IOException {
     when(verificationTokenRepository.findByToken(TOKEN)).thenReturn(Optional.ofNullable(null));
-    signupServiceImpl.completeSignupInvite(TOKEN, null);
+    signupServiceImpl.completeSignupInvite(TOKEN, null, null);
   }
 
   @Test
@@ -247,7 +249,7 @@ public class SignupServiceImplTest extends CategoryTest {
     when(accessControlClient.hasAccess(any(), any(), any())).thenReturn(true);
     when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
 
-    UserInfo returnedUser = signupServiceImpl.oAuthSignup(oAuthSignupDTO, null);
+    UserInfo returnedUser = signupServiceImpl.oAuthSignup(oAuthSignupDTO);
 
     verify(telemetryReporter, times(1)).sendIdentifyEvent(eq(EMAIL), any(), any());
     verify(telemetryReporter, times(1))
@@ -303,7 +305,7 @@ public class SignupServiceImplTest extends CategoryTest {
         .when(signupValidator)
         .validateEmail(oAuthSignupDTO.getEmail());
     try {
-      signupServiceImpl.oAuthSignup(oAuthSignupDTO, null);
+      signupServiceImpl.oAuthSignup(oAuthSignupDTO);
     } catch (SignupException e) {
       verify(telemetryReporter, times(2))
           .sendTrackEvent(

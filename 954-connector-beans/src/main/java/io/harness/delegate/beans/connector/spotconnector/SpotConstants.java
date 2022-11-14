@@ -12,6 +12,6 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.DX)
 public class SpotConstants {
-  public static final String MANUAL_CONFIG = "ManualConfig";
+  public static final String PERMANENT_TOKEN_CONFIG = "PermanentTokenConfig";
   public static final String INVALID_CREDS = "Invalid Credentials";
 }

@@ -12,8 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
-import io.harness.beans.FeatureName;
-
 import software.wings.beans.ApmMetricCollectionInfo;
 import software.wings.metrics.MetricType;
 import software.wings.service.impl.analysis.DataCollectionInfoV2;
@@ -40,16 +38,6 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = false)
 public class APMCVServiceConfiguration extends CVConfiguration {
   private List<ApmMetricCollectionInfo> metricCollectionInfos;
-
-  @Override
-  public boolean isCVTaskBasedCollectionFeatureFlagged() {
-    return true;
-  }
-
-  @Override
-  public FeatureName getCVTaskBasedCollectionFeatureFlag() {
-    return FeatureName.CUSTOM_APM_24_X_7_CV_TASK;
-  }
 
   @Override
   public CVConfiguration deepCopy() {

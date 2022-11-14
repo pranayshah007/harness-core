@@ -61,9 +61,6 @@ public class JiraIssueCreateMetadataNGFields {
       } catch (InvalidArgumentsException ignored) {
         return;
       }
-      if (jiraFieldNG.getKey().equals(REPORTER_FIELD)) {
-        return;
-      }
       this.fields.put(jiraFieldNG.getName(), jiraFieldNG);
     });
   }

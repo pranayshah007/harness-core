@@ -8,6 +8,8 @@
 package io.harness.cvng.servicelevelobjective.services.api;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphData;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
@@ -23,5 +25,7 @@ public interface SLOHealthIndicatorService {
       ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers);
   void upsert(ServiceLevelIndicator serviceLevelIndicator);
   void upsert(ServiceLevelObjective serviceLevelObjective);
+  void upsert(AbstractServiceLevelObjective serviceLevelObjective);
   void delete(ProjectParams projectParams, String serviceLevelObjectiveIdentifier);
+  SLOGraphData getGraphData(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective);
 }

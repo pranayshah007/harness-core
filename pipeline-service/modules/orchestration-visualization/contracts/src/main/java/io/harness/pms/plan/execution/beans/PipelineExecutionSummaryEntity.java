@@ -36,6 +36,7 @@ import io.harness.persistence.UuidAware;
 import io.harness.pms.contracts.execution.ExecutionErrorInfo;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 
@@ -84,6 +85,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
     handler = "PipelineExecutionSummaryEntityCD")
 @ChangeDataCapture(table = "service_infra_info", dataStore = "pms-harness", fields = {},
     handler = "PipelineExecutionSummaryEntityServiceAndInfra")
+@ChangeDataCapture(table = "stage_execution_summary_ci", dataStore = "pms-harness", fields = {},
+    handler = "PipelineExecutionSummaryEntityCIStage")
 public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
   public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;
@@ -112,6 +115,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   @Builder.Default Map<String, org.bson.Document> moduleInfo = new HashMap<>();
   @Setter @NonFinal @Builder.Default Map<String, GraphLayoutNodeDTO> layoutNodeMap = new HashMap<>();
+  String firstRollbackStageGraphId;
   List<String> modules;
   Set<String> executedModules;
   String startingNodeId;
@@ -155,6 +159,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   }
 
   RetryExecutionMetadata retryExecutionMetadata;
+  PipelineStageInfo parentStageInfo;
   Boolean isLatestExecution;
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
   @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
@@ -180,11 +185,13 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .field(PlanExecutionSummaryKeys.planExecutionId)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_organizationId_projectId_pipelineId")
+                 .name("accountId_organizationId_projectId_pipelineId_branch_repo")
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.orgIdentifier)
                  .field(PlanExecutionSummaryKeys.projectIdentifier)
                  .field(PlanExecutionSummaryKeys.pipelineIdentifier)
+                 .field(PlanExecutionSummaryKeys.entityGitDetailsBranch)
+                 .field(PlanExecutionSummaryKeys.entityGitDetailsRepoName)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_organizationId_projectId_createdAt_idx")
@@ -220,6 +227,45 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .field(PlanExecutionSummaryKeys.rootExecutionId)
                  .descSortField(PlanExecutionSummaryKeys.createdAt)
                  .build())
+        // Sort queries are added for list page
+        // New Index having all filters index without repo and branch
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_startTs_pipelineIds_status_modules_range_idx")
+                 .field(PlanExecutionSummaryKeys.accountId)
+                 .field(PlanExecutionSummaryKeys.orgIdentifier)
+                 .field(PlanExecutionSummaryKeys.projectIdentifier)
+                 .descSortField(PlanExecutionSummaryKeys.startTs)
+                 // In pipeline Identifier list
+                 .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
+                 .ascRangeField(PlanExecutionSummaryKeys.status)
+                 .ascRangeField(PlanExecutionSummaryKeys.modules)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_name_startTs_pipelineIds_status_modules_range_idx")
+                 .field(PlanExecutionSummaryKeys.accountId)
+                 .field(PlanExecutionSummaryKeys.orgIdentifier)
+                 .field(PlanExecutionSummaryKeys.projectIdentifier)
+                 .descSortField(PlanExecutionSummaryKeys.name)
+                 // For range in startTs
+                 .ascRangeField(PlanExecutionSummaryKeys.startTs)
+                 // In pipeline Identifier list
+                 .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
+                 .ascRangeField(PlanExecutionSummaryKeys.status)
+                 .ascRangeField(PlanExecutionSummaryKeys.modules)
+                 .build())
+
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_status_startTs_pipelineIds_modules_range_idx")
+                 .field(PlanExecutionSummaryKeys.accountId)
+                 .field(PlanExecutionSummaryKeys.orgIdentifier)
+                 .field(PlanExecutionSummaryKeys.projectIdentifier)
+                 .descSortField(PlanExecutionSummaryKeys.status)
+                 // For range in startTs
+                 .ascRangeField(PlanExecutionSummaryKeys.startTs)
+                 // In pipeline Identifier list
+                 .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
+                 .ascRangeField(PlanExecutionSummaryKeys.modules)
+                 .build())
         .build();
   }
 
@@ -233,6 +279,16 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         + "rootExecutionId";
     public String parentExecutionId = PlanExecutionSummaryKeys.retryExecutionMetadata + "."
         + "parentExecutionId";
+    public String entityGitDetailsRepoName = PlanExecutionSummaryKeys.entityGitDetails + "."
+        + "repoName";
+    public String entityGitDetailsRepoIdentifier = PlanExecutionSummaryKeys.entityGitDetails + "."
+        + "repoIdentifier";
+    public String entityGitDetailsBranch = PlanExecutionSummaryKeys.entityGitDetails + "."
+        + "branch";
+    public String tagsKey = PlanExecutionSummaryKeys.tags + "."
+        + "key";
+    public String tagsValue = PlanExecutionSummaryKeys.tags + "."
+        + "value";
   }
 
   public boolean isStagesExecutionAllowed() {

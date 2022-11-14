@@ -78,8 +78,8 @@ public class ValidateAndMergeHelper {
 
     String pipelineYaml;
     try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-      Optional<PipelineEntity> pipelineEntity =
-          pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+      Optional<PipelineEntity> pipelineEntity = pmsPipelineService.getAndValidatePipeline(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
       if (pipelineEntity.isPresent()) {
         pipelineYaml = pipelineEntity.get().getYaml();
       } else {
@@ -98,12 +98,12 @@ public class ValidateAndMergeHelper {
       GitSyncBranchContext branchContext =
           GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().branch(baseBranch).build()).build();
       try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
-        optionalPipelineEntity =
-            pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
       }
     } else {
-      optionalPipelineEntity =
-          pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+      optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     }
     if (optionalPipelineEntity.isPresent()) {
       StoreType storeTypeInContext = GitAwareContextHelper.getGitRequestParamsInfo().getStoreType();
@@ -120,8 +120,8 @@ public class ValidateAndMergeHelper {
 
   public InputSetTemplateResponseDTOPMS getInputSetTemplateResponseDTO(String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, List<String> stageIdentifiers) {
-    Optional<PipelineEntity> optionalPipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     if (optionalPipelineEntity.isPresent()) {
       String template;
       List<String> replacedExpressions = null;
@@ -165,8 +165,8 @@ public class ValidateAndMergeHelper {
 
   public String getPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<String> stageIdentifiers) {
-    Optional<PipelineEntity> optionalPipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     if (optionalPipelineEntity.isPresent()) {
       String pipelineYaml = optionalPipelineEntity.get().getYaml();
       if (EmptyPredicate.isEmpty(stageIdentifiers)) {

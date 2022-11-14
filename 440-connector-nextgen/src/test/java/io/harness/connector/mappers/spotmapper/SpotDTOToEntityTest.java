@@ -14,12 +14,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.entities.embedded.spotconnector.SpotConfig;
-import io.harness.connector.entities.embedded.spotconnector.SpotManualCredential;
+import io.harness.connector.entities.embedded.spotconnector.SpotPermanentTokenCredential;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
-import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO;
-import io.harness.delegate.beans.connector.spotconnector.SpotManualConfigSpecDTO.SpotManualConfigSpecDTOBuilder;
+import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO.SpotPermanentTokenConfigSpecDTOBuilder;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
@@ -57,32 +57,33 @@ public class SpotDTOToEntityTest extends CategoryTest {
 
   private void validate(SpotConfig spotConfig, boolean isAccountIdRef) {
     assertThat(spotConfig).isNotNull();
-    assertThat(spotConfig.getCredentialType()).isEqualTo(SpotCredentialType.MANUAL_CREDENTIALS);
-    assertThat(spotConfig.getCredential()).isInstanceOf(SpotManualCredential.class);
-    SpotManualCredential credential = (SpotManualCredential) spotConfig.getCredential();
+    assertThat(spotConfig.getCredentialType()).isEqualTo(SpotCredentialType.PERMANENT_TOKEN);
+    assertThat(spotConfig.getCredential()).isInstanceOf(SpotPermanentTokenCredential.class);
+    SpotPermanentTokenCredential credential = (SpotPermanentTokenCredential) spotConfig.getCredential();
     if (isAccountIdRef) {
-      assertThat(credential.getAccountIdRef()).isEqualTo(accountIdRefDecrypted);
+      assertThat(credential.getSpotAccountIdRef()).isEqualTo(accountIdRefDecrypted);
     } else {
-      assertThat(credential.getAccountId()).isEqualTo(accountId);
-      assertThat(credential.getAccountIdRef()).isNull();
+      assertThat(credential.getSpotAccountId()).isEqualTo(accountId);
+      assertThat(credential.getSpotAccountIdRef()).isNull();
     }
     assertThat(credential.getApiTokenRef()).isEqualTo(apiTokenRefDecrypted);
   }
 
   private SpotConnectorDTO getConnectorConfigDTO(boolean isAccountIdRef) {
-    SpotManualConfigSpecDTOBuilder manualConfigBuilder = SpotManualConfigSpecDTO.builder();
+    SpotPermanentTokenConfigSpecDTOBuilder manualConfigBuilder = SpotPermanentTokenConfigSpecDTO.builder();
     if (isAccountIdRef) {
-      manualConfigBuilder.accountIdRef(SecretRefData.builder().identifier(accountIdRef).scope(Scope.ACCOUNT).build());
+      manualConfigBuilder.spotAccountIdRef(
+          SecretRefData.builder().identifier(accountIdRef).scope(Scope.ACCOUNT).build());
     } else {
-      manualConfigBuilder.accountId(accountId);
+      manualConfigBuilder.spotAccountId(accountId);
     }
-    SpotManualConfigSpecDTO manualConfig =
+    SpotPermanentTokenConfigSpecDTO manualConfig =
         manualConfigBuilder.apiTokenRef(SecretRefData.builder().identifier(apiTokenRef).scope(Scope.ACCOUNT).build())
             .build();
 
     return SpotConnectorDTO.builder()
         .credential(SpotCredentialDTO.builder()
-                        .spotCredentialType(SpotCredentialType.MANUAL_CREDENTIALS)
+                        .spotCredentialType(SpotCredentialType.PERMANENT_TOKEN)
                         .config(manualConfig)
                         .build())
         .build();

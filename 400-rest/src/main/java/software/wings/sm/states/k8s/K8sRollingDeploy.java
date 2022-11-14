@@ -9,6 +9,7 @@ package software.wings.sm.states.k8s;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 import static io.harness.beans.FeatureName.PRUNE_KUBERNETES_RESOURCES;
 import static io.harness.beans.FeatureName.SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING;
@@ -123,7 +124,7 @@ public class K8sRollingDeploy extends AbstractK8sState {
       return k8sStateHelper.getInvalidInfraDefFailedResponse();
     }
 
-    if (k8sStateHelper.isExportManifestsEnabled(context.getAccountId()) && inheritManifests) {
+    if (inheritManifests) {
       Activity activity = createK8sActivity(
           context, commandName(), stateType(), activityService, commandUnitList(false, context.getAccountId()));
       return executeK8sTask(context, activity.getUuid());
@@ -159,17 +160,15 @@ public class K8sRollingDeploy extends AbstractK8sState {
 
     K8sRollingDeployTaskParametersBuilder builder = K8sRollingDeployTaskParameters.builder();
 
-    if (k8sStateHelper.isExportManifestsEnabled(context.getAccountId())) {
-      builder.exportManifests(exportManifests);
-      if (inheritManifests) {
-        List<KubernetesResource> kubernetesResources =
-            k8sStateHelper.getResourcesFromSweepingOutput(context, getStateType());
-        if (isEmpty(kubernetesResources)) {
-          throw new InvalidRequestException("No kubernetes resources found to inherit", USER);
-        }
-        builder.inheritManifests(inheritManifests);
-        builder.kubernetesResources(kubernetesResources);
+    builder.exportManifests(exportManifests);
+    if (inheritManifests) {
+      List<KubernetesResource> kubernetesResources =
+          k8sStateHelper.getResourcesFromSweepingOutput(context, getStateType());
+      if (isEmpty(kubernetesResources)) {
+        throw new InvalidRequestException("No kubernetes resources found to inherit", USER);
       }
+      builder.inheritManifests(inheritManifests);
+      builder.kubernetesResources(kubernetesResources);
     }
 
     K8sTaskParameters k8sTaskParameters =
@@ -225,8 +224,7 @@ public class K8sRollingDeploy extends AbstractK8sState {
     K8sRollingDeployResponse k8sRollingDeployResponse =
         (K8sRollingDeployResponse) executionResponse.getK8sTaskResponse();
 
-    if (k8sStateHelper.isExportManifestsEnabled(context.getAccountId())
-        && k8sRollingDeployResponse.getResources() != null) {
+    if (k8sRollingDeployResponse.getResources() != null) {
       k8sStateHelper.saveResourcesToSweepingOutput(context, k8sRollingDeployResponse.getResources(), getStateType());
       stateExecutionData.setExportManifests(true);
       return ExecutionResponse.builder()
@@ -247,6 +245,9 @@ public class K8sRollingDeploy extends AbstractK8sState {
 
     stateExecutionData.setNewInstanceStatusSummaries(
         fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
+    if (featureFlagService.isEnabled(INSTANCE_SYNC_V2_CG, context.getAccountId())) {
+      stateExecutionData.setPodsList(newPods);
+    }
 
     K8sElement k8sElement = k8sStateHelper.fetchK8sElement(context);
     if (k8sElement == null) {

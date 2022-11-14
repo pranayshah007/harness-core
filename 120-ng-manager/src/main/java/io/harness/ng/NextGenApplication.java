@@ -50,6 +50,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
+import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.entities.Connector;
@@ -69,7 +70,9 @@ import io.harness.enforcement.executions.DeploymentsPerMonthRestrictionUsageImpl
 import io.harness.enforcement.executions.InitialDeploymentRestrictionUsageImpl;
 import io.harness.enforcement.services.FeatureRestrictionLoader;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.exception.MongoExecutionTimeoutExceptionMapper;
 import io.harness.ff.FeatureFlagConfig;
+import io.harness.freeze.FreezeNotificationTemplateRegistrar;
 import io.harness.gitsync.AbstractGitSyncModule;
 import io.harness.gitsync.AbstractGitSyncSdkModule;
 import io.harness.gitsync.GitSdkConfiguration;
@@ -85,7 +88,9 @@ import io.harness.gitsync.server.GitSyncServiceConfiguration;
 import io.harness.govern.ProviderModule;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
+import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
 import io.harness.licensing.migrations.LicenseManagerMigrationProvider;
+import io.harness.licensing.services.LicenseService;
 import io.harness.logstreaming.LogStreamingModule;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
@@ -186,6 +191,7 @@ import io.harness.telemetry.TelemetryReporter;
 import io.harness.telemetry.filter.APIAuthTelemetryFilter;
 import io.harness.telemetry.filter.APIAuthTelemetryResponseFilter;
 import io.harness.telemetry.filter.APIErrorsTelemetrySenderFilter;
+import io.harness.telemetry.filter.TerraformTelemetryFilter;
 import io.harness.telemetry.service.CdTelemetryRecordsJob;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
@@ -240,6 +246,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -267,7 +274,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      log.info("Shutdown hook, entering maintenance...");
+      log.warn("Shutdown hook, entering maintenance...");
       MaintenanceController.forceMaintenance(true);
     }));
     new NextGenApplication().run(args);
@@ -426,6 +433,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerIterators(appConfig.getNgIteratorsConfig(), injector);
     registerJobs(injector);
     registerQueueListeners(injector);
+    registerNotificationTemplates(injector);
     registerPmsSdkEvents(appConfig, injector);
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);
@@ -454,6 +462,25 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     } else {
       log.info("NextGenApplication DEPLOY_VERSION is not COMMUNITY");
     }
+    if (shouldCheckForSMPLicense()) {
+      log.info("Applying smp license");
+      LicenseService licenseService = injector.getInstance(LicenseService.class);
+      String license = System.getenv("SMP_LICENSE");
+      SMPEncLicenseDTO encLicenseDTO = SMPEncLicenseDTO.builder().encryptedLicense(license).decrypt(true).build();
+      licenseService.applySMPLicense(encLicenseDTO);
+    }
+  }
+
+  // ToDo-SMP: enable for future releases only for now (add condition on release tag)
+  private boolean shouldCheckForSMPLicense() {
+    return DeployMode.isOnPrem(System.getenv(DeployMode.DEPLOY_MODE))
+        && Boolean.parseBoolean(System.getenv("ENABLE_SMP_LICENSING"));
+  }
+
+  private void registerNotificationTemplates(Injector injector) {
+    ExecutorService executorService =
+        injector.getInstance(Key.get(ExecutorService.class, Names.named("freezeTemplateRegistrationExecutorService")));
+    executorService.submit(injector.getInstance(FreezeNotificationTemplateRegistrar.class));
   }
 
   private void initializeNGMonitoring(NextGenConfiguration appConfig, Injector injector) {
@@ -787,6 +814,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.jersey().register(WingsExceptionMapperV2.class);
     environment.jersey().register(GenericExceptionMapperV2.class);
     environment.jersey().register(NotSupportedExceptionMapper.class);
+    environment.jersey().register(MongoExecutionTimeoutExceptionMapper.class);
   }
 
   private void registerJerseyFeatures(Environment environment) {
@@ -854,6 +882,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       NextGenConfiguration configuration, Environment environment, Injector injector) {
     if (configuration.getSegmentConfiguration() != null && configuration.getSegmentConfiguration().isEnabled()) {
       registerAPIAuthTelemetryFilter(environment, injector);
+      registerTerraformTelemetryFilter(environment, injector);
       registerAPIAuthTelemetryResponseFilter(environment, injector);
       registerAPIErrorsTelemetrySenderFilter(environment, injector);
     }
@@ -887,6 +916,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private void registerAPIAuthTelemetryFilter(Environment environment, Injector injector) {
     TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
     environment.jersey().register(new APIAuthTelemetryFilter(telemetryReporter));
+  }
+
+  private void registerTerraformTelemetryFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new TerraformTelemetryFilter(telemetryReporter));
   }
 
   private void registerAPIAuthTelemetryResponseFilter(Environment environment, Injector injector) {

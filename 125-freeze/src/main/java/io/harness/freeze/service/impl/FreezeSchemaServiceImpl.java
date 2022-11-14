@@ -16,6 +16,7 @@ import io.harness.exception.JsonSchemaException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.freeze.entity.FreezeConfigEntity;
+import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeSchemaService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.schema.YamlSchemaProvider;
@@ -47,6 +48,9 @@ public class FreezeSchemaServiceImpl implements FreezeSchemaService {
   public JsonNode getFreezeSchema(
       String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope) {
     try {
+      if (scope == null) {
+        scope = NGFreezeDtoMapper.getScopeFromFreezeDto(orgIdentifier, projectIdentifier);
+      }
       return yamlSchemaProvider.getYamlSchema(EntityType.FREEZE, orgIdentifier, projectIdentifier, scope);
     } catch (Exception e) {
       log.error("[Freeze] Failed to get freeze yaml schema", e);

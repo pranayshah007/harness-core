@@ -8,6 +8,7 @@
 package io.harness.cdng.infra.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.ELASTIGROUP_CONFIGURATION_OUTPUT;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -24,6 +25,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
@@ -35,10 +37,15 @@ import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
+import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.output.HostsOutput;
+import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
+import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.ParameterFieldHelper;
@@ -87,10 +94,7 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
-import io.harness.steps.shellscript.HostsOutput;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -149,7 +153,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     boolean skipInstances = ParameterFieldHelper.getBooleanParameterFieldValue(stepParameters.getSkipInstances());
 
     validateResources(ambiance, infraSpec);
-
+    setInfraIdentifierAndName(infraSpec, infrastructureConfig);
     resolver.updateExpressions(ambiance, infraSpec);
 
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, LOG_SUFFIX);
@@ -227,7 +231,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     final InfrastructureOutcome infrastructureOutcome = stepSweepingOutput.getInfrastructureOutcome();
 
-    Optional<InstancesOutcome> instancesOutcomeOpt = publishInfraDelegateConfigOutput(logCallback, serviceOutcome,
+    Optional<InstancesOutcome> instancesOutcomeOpt = publishInfraOutput(logCallback, serviceOutcome,
         infrastructureOutcome, ambiance, environmentOutcome, stepSweepingOutput.isSkipInstances());
 
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
@@ -282,12 +286,21 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
   }
 
+  public void setInfraIdentifierAndName(Infrastructure infraSpec, InfrastructureConfig infrastructureConfig) {
+    if (infraSpec instanceof InfrastructureDetailsAbstract) {
+      ((InfrastructureDetailsAbstract) infraSpec)
+          .setInfraIdentifier(infrastructureConfig.getInfrastructureDefinitionConfig().getIdentifier());
+      ((InfrastructureDetailsAbstract) infraSpec)
+          .setInfraName(infrastructureConfig.getInfrastructureDefinitionConfig().getName());
+    }
+  }
+
   private void executeSync(
       Ambiance ambiance, InfrastructureConfig infrastructure, NGLogCallback logCallback, boolean skipInstances) {
     final Infrastructure spec = infrastructure.getInfrastructureDefinitionConfig().getSpec();
-    validateConnector(spec, ambiance);
+    validateConnector(spec, ambiance, logCallback);
     saveExecutionLog(logCallback, "Fetching environment information...");
-    validateInfrastructure(spec, ambiance);
+    validateInfrastructure(spec, ambiance, logCallback);
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
@@ -307,6 +320,18 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
             .addRcStep(!infrastructure.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments())
             .build(),
         StepCategory.STAGE.name());
+
+    publishOutput(spec, ambiance);
+  }
+
+  private void publishOutput(Infrastructure infrastructure, Ambiance ambiance) {
+    if (InfrastructureKind.ELASTIGROUP.equals(infrastructure.getKind())) {
+      executionSweepingOutputService.consume(ambiance, ELASTIGROUP_CONFIGURATION_OUTPUT,
+          ElastigroupConfigurationOutput.builder()
+              .storeConfig(((ElastigroupInfrastructure) infrastructure).getConfiguration().getStore().getSpec())
+              .build(),
+          StepCategory.STAGE.name());
+    }
   }
 
   private boolean isTaskStep(String infraKind) {
@@ -342,13 +367,15 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     return InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
   }
 
-  private Optional<InstancesOutcome> publishInfraDelegateConfigOutput(NGLogCallback logCallback,
-      ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome, Ambiance ambiance,
-      EnvironmentOutcome environmentOutcome, boolean skipInstances) {
+  private Optional<InstancesOutcome> publishInfraOutput(NGLogCallback logCallback, ServiceStepOutcome serviceOutcome,
+      InfrastructureOutcome infrastructureOutcome, Ambiance ambiance, EnvironmentOutcome environmentOutcome,
+      boolean skipInstances) {
     if (serviceOutcome.getType() == null) {
       throw new InvalidRequestException("service type cannot be null");
     }
-    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))
+        || ServiceSpecType.CUSTOM_DEPLOYMENT.toLowerCase(Locale.ROOT)
+               .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
       ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
           ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
       return Optional.ofNullable(publishSshInfraDelegateConfigOutput(
@@ -365,16 +392,20 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome
         || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome) {
-      K8sInfraDelegateConfig k8sInfraDelegateConfig =
-          cdStepHelper.getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
-
-      K8sInfraDelegateConfigOutput k8sInfraDelegateConfigOutput =
-          K8sInfraDelegateConfigOutput.builder().k8sInfraDelegateConfig(k8sInfraDelegateConfig).build();
-      executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
-          k8sInfraDelegateConfigOutput, StepCategory.STAGE.name());
+      publishK8sInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
     }
 
     return Optional.empty();
+  }
+
+  private void publishK8sInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig =
+        cdStepHelper.getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
+
+    K8sInfraDelegateConfigOutput k8sInfraDelegateConfigOutput =
+        K8sInfraDelegateConfigOutput.builder().k8sInfraDelegateConfig(k8sInfraDelegateConfig).build();
+    executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
+        k8sInfraDelegateConfigOutput, StepCategory.STAGE.name());
   }
 
   private InstancesOutcome publishSshInfraDelegateConfigOutput(Ambiance ambiance, NGLogCallback logCallback,
@@ -386,6 +417,11 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
         SshInfraDelegateConfigOutput.builder().sshInfraDelegateConfig(sshInfraDelegateConfig).build();
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
         sshInfraDelegateConfigOutput, StepCategory.STAGE.name());
+
+    if (InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureOutcome.getKind())) {
+      return InstancesOutcome.builder().instances(Collections.emptyList()).build();
+    }
+
     Set<String> hosts = sshInfraDelegateConfig.getHosts();
     if (EmptyPredicate.isEmpty(hosts)) {
       saveExecutionLogSafely(logCallback,

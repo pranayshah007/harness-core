@@ -257,7 +257,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     assertThat(delegateGroupListing.getDelegateGroupDetails().get(0).getGroupVersion()).isEqualTo("22.09.76614");
     assertThat(delegateGroupListing.getDelegateGroupDetails().get(0).getAutoUpgrade())
         .isEqualTo(AutoUpgrade.SYNCHRONIZING);
-    assertThat(delegateGroupListing.getDelegateGroupDetails().get(1).getAutoUpgrade()).isEqualTo(AutoUpgrade.ON);
+    assertThat(delegateGroupListing.getDelegateGroupDetails().get(1).getAutoUpgrade()).isEqualTo(AutoUpgrade.OFF);
   }
 
   @Test(expected = InvalidRequestException.class)

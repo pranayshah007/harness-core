@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
+import net.sf.json.JSONArray;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -49,8 +50,8 @@ public interface JiraRestClient {
   Call<JiraIssueCreateMetadataNGIssueTypes> getIssueCreateMetadataIssueTypes(@Path("projectKey") String projectKey);
 
   @GET("issue/createmeta/{projectKey}/issuetypes/{issueTypeId}")
-  Call<JiraIssueCreateMetadataNGFields> getIssueCreateMetadataFields(
-      @Path("projectKey") String projectKey, @Path("issueTypeId") String issueTypeId);
+  Call<JiraIssueCreateMetadataNGFields> getIssueCreateMetadataFields(@Path("projectKey") String projectKey,
+      @Path("issueTypeId") String issueTypeId, @Query("maxResults") Integer maxResults);
 
   @GET("issue/{issueKey}/editmeta")
   Call<JiraIssueUpdateMetadataNG> getIssueUpdateMetadata(@Path("issueKey") String issueKey);
@@ -64,6 +65,8 @@ public interface JiraRestClient {
 
   @PUT("issue/{issueKey}")
   Call<Void> updateIssue(@Path("issueKey") String issueKey, @Body JiraUpdateIssueRequestNG updateIssueRequest);
+
+  @GET("resolution") Call<JSONArray> getResolution();
 
   @POST("issue/{issueKey}/comment")
   Call<Void> addIssueComment(

@@ -12,8 +12,10 @@ import static io.harness.rule.OwnerRule.INDER;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -287,6 +289,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     // delete operations
     boolean delete = infrastructureEntityService.forceDeleteAllInEnv(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER");
     assertThat(delete).isTrue();
+    verify(infrastructureEntitySetupUsageHelper, times(2)).deleteSetupUsages(any());
 
     // 1 infra remains
     Criteria criteriaAllInProject = CoreCriteriaUtils.createCriteriaForGetList(ACCOUNT_ID, ORG_ID, PROJECT_ID);
@@ -296,6 +299,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     boolean deleteProject = infrastructureEntityService.forceDeleteAllInProject(ACCOUNT_ID, ORG_ID, PROJECT_ID);
     assertThat(deleteProject).isTrue();
+    verify(infrastructureEntitySetupUsageHelper, times(3)).deleteSetupUsages(any());
 
     listPostDeletion = infrastructureEntityService.list(criteriaAllInProject, pageRequest);
     assertThat(listPostDeletion.getContent()).isNotNull();

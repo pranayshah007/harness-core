@@ -42,9 +42,9 @@ import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.rule.Owner;
-import io.harness.spec.server.ng.model.CreateProjectRequest;
-import io.harness.spec.server.ng.model.ProjectResponse;
-import io.harness.spec.server.ng.model.UpdateProjectRequest;
+import io.harness.spec.server.ng.v1.model.CreateProjectRequest;
+import io.harness.spec.server.ng.v1.model.ProjectResponse;
+import io.harness.spec.server.ng.v1.model.UpdateProjectRequest;
 
 import java.util.Collections;
 import java.util.List;
@@ -97,7 +97,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testOrgScopedProjectCreate() {
     CreateProjectRequest request = new CreateProjectRequest();
-    io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
+    io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
     proj.setSlug(slug);
     proj.setName(name);
     proj.setOrg(org);
@@ -124,7 +124,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testProjectCreateForOrgMisMatch() {
     CreateProjectRequest request = new CreateProjectRequest();
-    io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
+    io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
     proj.setSlug(slug);
     proj.setName(name);
     proj.setOrg(org);
@@ -184,7 +184,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
                 .build());
 
     Response response = orgProjectApi.getOrgScopedProjects(org, Collections.singletonList(slug), true,
-        io.harness.spec.server.ng.model.ModuleType.CD.name(), searchTerm, page, limit, account, null, null);
+        io.harness.spec.server.ng.v1.model.ModuleType.CD.name(), searchTerm, page, limit, account, null, null);
 
     verify(projectService, times(1)).listPermittedProjects(eq(account), any(), argumentCaptor.capture());
     ProjectFilterDTO projectFilterDTO = argumentCaptor.getValue();
@@ -204,7 +204,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateOrgScopedProject() {
     UpdateProjectRequest request = new UpdateProjectRequest();
-    io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
+    io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
     proj.setSlug(slug);
     proj.setName("updated_name");
     proj.setOrg(org);
@@ -231,7 +231,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateOrgScopedProjectOrgMisMatch() {
     UpdateProjectRequest request = new UpdateProjectRequest();
-    io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
+    io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
     proj.setSlug(slug);
     proj.setName("updated_name");
     proj.setOrg(org);
@@ -250,7 +250,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateOrgScopedProjectSlugMisMatch() {
     UpdateProjectRequest request = new UpdateProjectRequest();
-    io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
+    io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
     proj.setSlug(slug);
     proj.setName("updated_name");
     proj.setOrg(org);

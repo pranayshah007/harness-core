@@ -7,12 +7,17 @@
 
 package software.wings.resources;
 
+import io.harness.beans.EnvironmentType;
 import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
+import io.harness.logging.AccountLogContext;
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.AutoLogContext.OverrideBehavior;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.stats.DeploymentStatistics;
 import software.wings.beans.stats.ServiceInstanceStatistics;
+import software.wings.beans.stats.TopConsumer;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.StatisticsService;
@@ -22,6 +27,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -67,8 +73,10 @@ public class StatisticsResource {
     DeploymentStatistics deploymentStatisticsNew =
         statisticsService.getDeploymentStatisticsNew(accountId, appIds, numOfDays);
     if (finalDeploymentStatistics != null && !finalDeploymentStatistics.equals(deploymentStatisticsNew)) {
-      log.error("DEBUG LOG: old way deployment stats: [{}], new way deployment stats:[{}]", finalDeploymentStatistics,
-          deploymentStatisticsNew);
+      try (AutoLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_NESTS)) {
+        log.error("DEBUG LOG: old way deployment stats: [{}], new way deployment stats:[{}]", finalDeploymentStatistics,
+            deploymentStatisticsNew);
+      }
     }
   }
 
@@ -94,9 +102,24 @@ public class StatisticsResource {
       String accountId, Integer numOfDays, List<String> appIds, ServiceInstanceStatistics finalDeploymentStatistics) {
     ServiceInstanceStatistics serviceInstanceStatistics =
         statisticsService.getServiceInstanceStatisticsNew(accountId, appIds, numOfDays);
-    if (finalDeploymentStatistics != null && !finalDeploymentStatistics.equals(serviceInstanceStatistics)) {
-      log.error("DEBUG LOG: old way service-instance stats: [{}], new way service-instance stats:[{}]",
-          finalDeploymentStatistics, serviceInstanceStatistics);
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_NESTS)) {
+      if (finalDeploymentStatistics != null && !finalDeploymentStatistics.equals(serviceInstanceStatistics)) {
+        serviceInstanceStatistics.getStatsMap().get(EnvironmentType.ALL).forEach(s -> {
+          Optional<TopConsumer> first = finalDeploymentStatistics.getStatsMap()
+                                            .get(EnvironmentType.ALL)
+                                            .stream()
+                                            .filter(t -> t.equals(s))
+                                            .findFirst();
+          if (!first.isPresent()) {
+            log.error("DEBUG LOG: first unmatching {}", s);
+          }
+        });
+        if (finalDeploymentStatistics.getStatsMap().get(EnvironmentType.ALL).size()
+            != serviceInstanceStatistics.getStatsMap().get(EnvironmentType.ALL).size()) {
+          log.error("DEBUG LOG: size doesnt match: oldway {}, new way{}", finalDeploymentStatistics,
+              serviceInstanceStatistics);
+        }
+      }
     }
   }
 }

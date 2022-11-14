@@ -13,7 +13,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@JsonSubTypes({ @JsonSubTypes.Type(value = SpotManualConfigSpecDTO.class, name = SpotConstants.MANUAL_CONFIG) })
+@JsonSubTypes(
+    { @JsonSubTypes.Type(value = SpotPermanentTokenConfigSpecDTO.class, name = SpotConstants.PERMANENT_TOKEN_CONFIG) })
 @ApiModel("SpotCredentialSpec")
 @Schema(name = "SpotCredentialSpec", description = "This contains Spot connector credential spec")
 public interface SpotCredentialSpecDTO extends DecryptableEntity {}

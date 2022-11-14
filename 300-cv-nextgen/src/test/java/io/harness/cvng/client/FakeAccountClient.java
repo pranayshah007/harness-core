@@ -17,6 +17,7 @@ import io.harness.rest.RestResponse;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import okhttp3.Request;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -85,6 +86,11 @@ public class FakeAccountClient implements AccountClient {
   }
 
   @Override
+  public Call<RestResponse<Set<String>>> featureFlagEnabledAccounts(String featureName) {
+    throw new UnsupportedOperationException("mocked method - provide impl when required");
+  }
+
+  @Override
   public Call<RestResponse<Boolean>> isNextGenEnabled(String accountId) {
     throw new UnsupportedOperationException("mocked method - provide impl when required");
   }
@@ -137,6 +143,11 @@ public class FakeAccountClient implements AccountClient {
 
   @Override
   public Call<RestResponse<Boolean>> checkAutoInviteAcceptanceEnabledForAccount(String accountId) {
+    throw new UnsupportedOperationException("mocked method - provide impl when required");
+  }
+
+  @Override
+  public Call<RestResponse<Boolean>> checkPLNoEmailForSamlAccountInvitesEnabledForAccount(String accountId) {
     throw new UnsupportedOperationException("mocked method - provide impl when required");
   }
 

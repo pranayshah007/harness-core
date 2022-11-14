@@ -98,7 +98,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       return super.findAndModify(query, update, options, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logMongoExecutionTimeoutException(query, collectionName, ex);
+        logAndThrowMongoExecutionTimeoutException(query, collectionName, ex);
       }
       throw ex;
     }
@@ -130,7 +130,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       list = super.find(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logMongoExecutionTimeoutException(query, collectionName, ex);
+        logAndThrowMongoExecutionTimeoutException(query, collectionName, ex);
       }
       throw ex;
     }
@@ -157,7 +157,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       return super.findOne(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logMongoExecutionTimeoutException(query, collectionName, ex);
+        logAndThrowMongoExecutionTimeoutException(query, collectionName, ex);
       }
       throw ex;
     }
@@ -175,7 +175,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       list = super.findDistinct(query, field, collectionName, entityClass, resultClass);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logMongoExecutionTimeoutException(query, collectionName, ex);
+        logAndThrowMongoExecutionTimeoutException(query, collectionName, ex);
       }
       throw ex;
     }
@@ -198,7 +198,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       return super.findAndReplace(query, replacement, options, entityType, collectionName, resultType);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logMongoExecutionTimeoutException(query, collectionName, ex);
+        logAndThrowMongoExecutionTimeoutException(query, collectionName, ex);
       }
       throw ex;
     }
@@ -214,7 +214,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       return super.findAndRemove(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logMongoExecutionTimeoutException(query, collectionName, ex);
+        logAndThrowMongoExecutionTimeoutException(query, collectionName, ex);
       }
       throw ex;
     }
@@ -231,7 +231,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       list = super.findAllAndRemove(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logMongoExecutionTimeoutException(query, collectionName, ex);
+        logAndThrowMongoExecutionTimeoutException(query, collectionName, ex);
       }
       throw ex;
     }
@@ -254,7 +254,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       return super.mapReduce(query, inputCollectionName, mapFunction, reduceFunction, mapReduceOptions, entityClass);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logMongoExecutionTimeoutException(query, inputCollectionName, ex);
+        logAndThrowMongoExecutionTimeoutException(query, inputCollectionName, ex);
       }
       throw ex;
     }
@@ -269,6 +269,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       if (isMongoExecutionTimeoutException(ex)) {
         log.error("count operation for collection [{}] exceeded max time limit of [{}] ms with error {}.",
             collectionName, maxOperationInMillis, ex);
+        throw(MongoExecutionTimeoutException) ex.getCause();
       }
       throw ex;
     }
@@ -284,7 +285,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       return super.stream(query, entityType, collectionName);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logMongoExecutionTimeoutException(query, collectionName, ex);
+        logAndThrowMongoExecutionTimeoutException(query, collectionName, ex);
       }
       throw ex;
     }
@@ -299,7 +300,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       super.executeQuery(query, collectionName, dch);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
-        logMongoExecutionTimeoutException(query, collectionName, ex);
+        logAndThrowMongoExecutionTimeoutException(query, collectionName, ex);
       }
       throw ex;
     }
@@ -336,8 +337,10 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     return list.size() > 1000;
   }
 
-  private void logMongoExecutionTimeoutException(Query query, String collectionName, Exception ex) {
+  private void logAndThrowMongoExecutionTimeoutException(Query query, String collectionName, Exception ex)
+      throws MongoExecutionTimeoutException {
     log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, collectionName, maxOperationInMillis, ex);
+    throw(MongoExecutionTimeoutException) ex.getCause();
   }
 
   private boolean isMongoExecutionTimeoutException(Exception ex) {

@@ -38,11 +38,10 @@ public class CfInfraMappingDataRequest extends CfCommandRequest {
       PcfCommandType pcfCommandType, String organization, String space, CfInternalConfig pcfConfig,
       String workflowExecutionId, Integer timeoutIntervalInMin, String host, String domain, String path, Integer port,
       boolean useRandomPort, boolean tcpRoute, String applicationNamePrefix, ActionType actionType,
-      boolean useCLIForPcfAppCreation, boolean limitPcfThreads, boolean ignorePcfConnectionContextCache,
-      CfCliVersion cfCliVersion) {
+      boolean useCLIForPcfAppCreation, boolean limitPcfThreads, CfCliVersion cfCliVersion) {
     super(accountId, appId, commandName, activityId, pcfCommandType, organization, space, pcfConfig,
         workflowExecutionId, timeoutIntervalInMin, useCLIForPcfAppCreation, false, false, limitPcfThreads,
-        ignorePcfConnectionContextCache, cfCliVersion);
+        cfCliVersion);
     this.pcfConfig = pcfConfig;
     this.host = host;
     this.domain = domain;

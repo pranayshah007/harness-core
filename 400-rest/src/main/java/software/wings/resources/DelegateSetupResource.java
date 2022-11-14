@@ -44,6 +44,7 @@ import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
 import io.harness.delegate.task.DelegateLogContext;
+import io.harness.delegate.utilities.DelegateDeleteResponse;
 import io.harness.k8s.KubernetesConvention;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -588,12 +589,12 @@ public class DelegateSetupResource {
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   @AuthRule(permissionType = MANAGE_DELEGATES)
-  public RestResponse<Void> delete(
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
+  public RestResponse<DelegateDeleteResponse> delete(
       @PathParam("delegateId") @NotEmpty String delegateId, @QueryParam("accountId") @NotEmpty String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      delegateService.delete(accountId, delegateId);
-      return new RestResponse<>();
+      return new RestResponse<>(delegateService.delete(accountId, delegateId));
     }
   }
   @DELETE

@@ -80,11 +80,4 @@ else
 fi
 
 
-curr_branch_name=$(git branch --show-current)
-git checkout develop
-git pull
-git checkout -b test_merge_conflict
-git merge  $curr_branch_name
-git checkout develop
-git branch -D test_merge_conflict
-git checkout $curr_branch_name
+

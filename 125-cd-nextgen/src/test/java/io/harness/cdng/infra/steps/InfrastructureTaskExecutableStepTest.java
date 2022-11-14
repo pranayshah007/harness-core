@@ -53,6 +53,9 @@ import io.harness.cdng.instance.InstanceOutcomeHelper;
 import io.harness.cdng.instance.outcome.InstanceOutcome;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.output.HostsOutput;
+import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
+import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -95,9 +98,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.environment.EnvironmentOutcome;
-import io.harness.steps.shellscript.HostsOutput;
-import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import io.harness.yaml.infra.HostConnectionTypeKind;
@@ -708,19 +708,20 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
 
     assertThatCode(()
                        -> infrastructureStep.validateConnector(
-                           K8sGcpInfrastructure.builder().connectorRef(gcpSaConnectorRefs.get(0)).build(), ambiance))
+                           K8sGcpInfrastructure.builder().connectorRef(gcpSaConnectorRefs.get(0)).build(), ambiance,
+                           mockLogCallback))
         .doesNotThrowAnyException();
 
-    assertThatCode(
-        ()
-            -> infrastructureStep.validateConnector(
-                K8sGcpInfrastructure.builder().connectorRef(gcpDelegateConnectorRefs.get(0)).build(), ambiance))
+    assertThatCode(()
+                       -> infrastructureStep.validateConnector(
+                           K8sGcpInfrastructure.builder().connectorRef(gcpDelegateConnectorRefs.get(0)).build(),
+                           ambiance, mockLogCallback))
         .doesNotThrowAnyException();
   }
 
   private void assertConnectorValidationMessage(Infrastructure infrastructure, String message) {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
-    assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
+    assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance, mockLogCallback))
         .hasMessageContaining(message);
   }
 

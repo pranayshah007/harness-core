@@ -197,11 +197,6 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
     final ParameterField<Boolean> deployToAll = env.getDeployToAll();
     if (!gitOpsEnabled) {
-      if (deployToAll.isExpression() || deployToAll.getValue() == Boolean.TRUE) {
-        throw new InvalidYamlRuntimeException(
-            "Deploy to all environments is not supported yet. Please select a specific infrastructure and try again");
-      }
-
       if (ParameterField.isNull(env.getInfrastructureDefinition())
           && ParameterField.isNull(env.getInfrastructureDefinitions())) {
         throw new InvalidYamlRuntimeException(format(

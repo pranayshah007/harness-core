@@ -21,7 +21,7 @@ type pushCommand struct {
 }
 
 func (c *pushCommand) run(*kingpin.ParseContext) error {
-	client := client.NewHTTPClient(c.server, c.accountID, c.token, false)
+	client := client.NewHTTPClient(c.server, c.accountID, c.token, false, "")
 	return client.Write(nocontext, c.key, []*stream.Line{c.line})
 }
 

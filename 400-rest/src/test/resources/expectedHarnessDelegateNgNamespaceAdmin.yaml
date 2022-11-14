@@ -74,7 +74,6 @@ spec:
         name: harness-delegate-instance
         resources:
           limits:
-            cpu: "0.5"
             memory: "2048Mi"
           requests:
             cpu: "0.5"

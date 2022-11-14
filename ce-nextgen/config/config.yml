@@ -157,6 +157,8 @@ awsGovCloudConfig:
   awsRegionName: us-gov-west-1
   awsConnectorTemplate: https://continuous-efficiency-templates.s3.amazonaws.com/templateOptimOnly.yaml
 
+awsGovCloudCftUrl: https://continuous-efficiency-prod.s3.us-east-2.amazonaws.com/setup/ngv1/AWSGovCFT.yaml
+
 hostname: ${HOSTNAME:-localhost}
 basePathPrefix: ${BASE_PATH_PREFIX:-""}
 

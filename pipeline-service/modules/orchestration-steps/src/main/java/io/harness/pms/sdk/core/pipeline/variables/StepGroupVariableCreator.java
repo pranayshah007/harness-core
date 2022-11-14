@@ -24,6 +24,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import java.util.Collections;
 import java.util.HashMap;
@@ -162,7 +163,8 @@ public class StepGroupVariableCreator extends ChildrenVariableCreator<StepGroupE
         .build();
   }
 
-  private YamlExtraProperties getStepGroupExtraProperties(String fqnPrefix, String localNamePrefix) {
+  @VisibleForTesting
+  YamlExtraProperties getStepGroupExtraProperties(String fqnPrefix, String localNamePrefix) {
     YamlProperties startTsProperty =
         YamlProperties.newBuilder().setFqn(fqnPrefix + ".startTs").setLocalName(localNamePrefix + ".startTs").build();
     YamlProperties endTsProperty =

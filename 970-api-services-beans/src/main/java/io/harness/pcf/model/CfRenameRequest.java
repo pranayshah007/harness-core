@@ -26,8 +26,7 @@ public class CfRenameRequest extends CfRequestConfig {
         requestConfig.getServiceVariables(), requestConfig.getSafeDisplayServiceVariables(),
         requestConfig.getTimeOutIntervalInMins(), requestConfig.isUseCFCLI(), requestConfig.getCfCliPath(),
         requestConfig.getCfCliVersion(), requestConfig.getCfHomeDirPath(), requestConfig.isLoggedin(),
-        requestConfig.isLimitPcfThreads(), requestConfig.isIgnorePcfConnectionContextCache(),
-        requestConfig.isUseNumbering());
+        requestConfig.isLimitPcfThreads(), requestConfig.isUseNumbering());
     this.guid = guid;
     this.name = name;
     this.newName = newName;

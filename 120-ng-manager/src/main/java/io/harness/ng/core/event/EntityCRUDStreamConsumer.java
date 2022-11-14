@@ -14,6 +14,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.GIT_SYNC_ENTIT
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.FILE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GITOPS_CLUSTER_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
@@ -69,7 +70,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(GIT_SYNC_ENTITY_STREAM + ENTITY_CRUD) MessageListener gitSyncProjectCleanup,
       @Named(GITOPS_CLUSTER_ENTITY + ENTITY_CRUD) MessageListener gitopsClusterCleanupProcessor,
       @Named(TEMPLATE_ENTITY + ENTITY_CRUD) MessageListener customDeploymentEntityCRUDStreamEventListener,
-      QueueController queueController) {
+      @Named(FILE_ENTITY + ENTITY_CRUD) MessageListener fileEntityCRUDStreamListener, QueueController queueController) {
     this.redisConsumer = redisConsumer;
     this.queueController = queueController;
     messageListenersList = new ArrayList<>();
@@ -84,6 +85,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
     messageListenersList.add(userMembershipReconciliationMessageProcessor);
     messageListenersList.add(gitopsClusterCleanupProcessor);
     messageListenersList.add(customDeploymentEntityCRUDStreamEventListener);
+    messageListenersList.add(fileEntityCRUDStreamListener);
     processorMap = new HashMap<>();
     processorMap.put(SETUP_USAGE_ENTITY, setupUsageChangeEventMessageProcessor);
   }

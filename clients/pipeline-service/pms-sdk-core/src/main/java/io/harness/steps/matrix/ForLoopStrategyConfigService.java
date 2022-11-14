@@ -9,6 +9,7 @@ package io.harness.steps.matrix;
 
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.HarnessForConfig;
 import io.harness.plancreator.strategy.RepeatUnit;
 import io.harness.plancreator.strategy.StrategyConfig;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 public class ForLoopStrategyConfigService implements StrategyConfigService {
@@ -217,10 +219,17 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     }
   }
   @Override
-  public StrategyInfo expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
+  public StrategyInfo expandJsonNode(
+      StrategyConfig strategyConfig, JsonNode jsonNode, Optional<Integer> maxExpansionLimit) {
     HarnessForConfig harnessForConfig = strategyConfig.getRepeat();
     List<JsonNode> jsonNodes = new ArrayList<>();
     if (!ParameterField.isBlank(harnessForConfig.getTimes())) {
+      if (maxExpansionLimit.isPresent()) {
+        Integer iterationCount = harnessForConfig.getTimes().getValue();
+        if (iterationCount > maxExpansionLimit.get()) {
+          throw new InvalidYamlException("Iteration count is beyond the supported limit of " + maxExpansionLimit.get());
+        }
+      }
       for (int i = 0; i < harnessForConfig.getTimes().getValue(); i++) {
         JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StrategyUtils.replaceExpressions(
             jsonNode.deepCopy().toString(), new HashMap<>(), i, harnessForConfig.getTimes().getValue(), null)));

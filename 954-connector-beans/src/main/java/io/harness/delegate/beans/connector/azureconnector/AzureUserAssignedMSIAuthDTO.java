@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.azureconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureUserAssignedMSIAuthOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
@@ -25,4 +26,8 @@ import lombok.Value;
 @Schema(name = "AzureUserAssignedMSIAuth", description = "This contains azure UserAssigned MSI auth details")
 public class AzureUserAssignedMSIAuthDTO extends AzureAuthCredentialDTO {
   @Schema(description = "Client Id of the ManagedIdentity resource") @NotNull String clientId;
+  @Override
+  public AzureUserAssignedMSIAuthOutcomeDTO toOutcome() {
+    return AzureUserAssignedMSIAuthOutcomeDTO.builder().clientId(this.clientId).build();
+  }
 }

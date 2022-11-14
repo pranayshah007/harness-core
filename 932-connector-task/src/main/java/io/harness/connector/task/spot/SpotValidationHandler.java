@@ -67,7 +67,7 @@ public class SpotValidationHandler implements ConnectorValidationHandler {
     ConnectorValidationResultBuilder builder = ConnectorValidationResult.builder();
     try {
       spotInstHelperServiceDelegate.listAllElstiGroups(
-          spotConfig.getSpotManualCredential().getAppTokenId(), spotConfig.getSpotManualCredential().getAccountId());
+          spotConfig.getCredential().getAppTokenId(), spotConfig.getCredential().getSpotAccountId());
       builder.status(ConnectivityStatus.SUCCESS);
     } catch (Exception e) {
       builder.status(ConnectivityStatus.FAILURE);

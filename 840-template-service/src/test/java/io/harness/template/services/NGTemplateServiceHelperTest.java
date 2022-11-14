@@ -8,6 +8,7 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +59,8 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   private final String PROJ_IDENTIFIER = "projId";
   private final String TEMPLATE_IDENTIFIER = "template1";
   private final String TEMPLATE_VERSION_LABEL = "version1";
+
+  private final String REPO_NAME = "testRepo";
 
   @Before
   public void setUp() {
@@ -181,6 +184,17 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFilterByRepo() {
+    TemplateFilterPropertiesDTO filterPropertiesDTO = TemplateFilterPropertiesDTO.builder().repoName(REPO_NAME).build();
+    Criteria criteria = templateServiceHelper.formCriteria(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "", filterPropertiesDTO, false, TEMPLATE_IDENTIFIER, false);
+    Document criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.get(TemplateEntityKeys.repo)).isEqualTo(REPO_NAME);
+  }
+
+  @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testFormCriteriaUsingFilterDto() {
@@ -219,5 +233,32 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
     assertThat(((Document) ((List<?>) ((Document) ((List<?>) criteriaObject.get("$and")).get(2)).get("$or")).get(5))
                    .get("tags.value"))
         .isNotNull();
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFormCriteriaForRepoListing() {
+    // Project scope
+    Criteria criteria =
+        templateServiceHelper.formCriteriaForRepoListing(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    Document criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.get(TemplateEntityKeys.accountId)).isEqualTo(ACCOUNT_ID);
+    assertThat(criteriaObject.get(TemplateEntityKeys.orgIdentifier)).isEqualTo(ORG_IDENTIFIER);
+    assertThat(criteriaObject.get(TemplateEntityKeys.projectIdentifier)).isEqualTo(PROJ_IDENTIFIER);
+
+    // Org scope
+    criteria = templateServiceHelper.formCriteriaForRepoListing(ACCOUNT_ID, ORG_IDENTIFIER, "", false);
+    criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.get(TemplateEntityKeys.accountId)).isEqualTo(ACCOUNT_ID);
+    assertThat(criteriaObject.get(TemplateEntityKeys.orgIdentifier)).isEqualTo(ORG_IDENTIFIER);
+    assertThat(((Document) (criteriaObject.get("projectIdentifier"))).get("$exists").equals(false));
+
+    // Account scope
+    criteria = templateServiceHelper.formCriteriaForRepoListing(ACCOUNT_ID, "", "", false);
+    criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.get(TemplateEntityKeys.accountId)).isEqualTo(ACCOUNT_ID);
+    assertThat(((Document) (criteriaObject.get("orgIdentifier"))).get("$exists").equals(false));
+    assertThat(((Document) (criteriaObject.get("projectIdentifier"))).get("$exists").equals(false));
   }
 }

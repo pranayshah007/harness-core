@@ -23,6 +23,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,7 @@ public class CIAccountExecutionMetadataRepositoryCustomImpl implements CIAccount
   private static final String LOCK_NAME_PREFIX = "CI_ACCOUNT_EXECUTION_INFO_";
   private final MongoTemplate mongoTemplate;
   private final PersistentLocker persistentLocker;
+  private static final String LOCK_NAME_PREFIX_DAILY = "CI_ACCOUNT_EXECUTION_INFO_DAILY_";
 
   @Override
   public void updateAccountExecutionMetadata(String accountId, Long startTS) {
@@ -68,6 +71,60 @@ public class CIAccountExecutionMetadataRepositoryCustomImpl implements CIAccount
       if (currentCount > 2500) {
         updateCIMonthlyBuilds(accountExecutionMetadata, startTS);
       }
+      mongoTemplate.save(accountExecutionMetadata);
+    }
+  }
+
+  @Override
+  public void updateCIDailyBuilds(String accountId, Long startTS) {
+    Criteria criteria = Criteria.where(CIAccountExecutionMetadataKeys.accountId).is(accountId);
+    Query query = new Query(criteria);
+    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLock(
+             LOCK_NAME_PREFIX_DAILY + accountId, Duration.ofSeconds(20), Duration.ofSeconds(10))) {
+      if (lock == null) {
+        throw new InvalidRequestException("Could not acquire lock");
+      }
+      CIAccountExecutionMetadata accountExecutionMetadata =
+          mongoTemplate.findOne(query, CIAccountExecutionMetadata.class);
+      // If there is no entry, then create an entry in the db for the given account
+      LocalDate startDate = Instant.ofEpochMilli(startTS).atZone(ZoneId.systemDefault()).toLocalDate();
+      if (accountExecutionMetadata == null) {
+        Map<String, Long> countPerDay = new HashMap<>();
+        countPerDay.put(YearMonth.of(startDate.getYear(), startDate.getMonth()) + "-" + startDate.getDayOfMonth(), 1L);
+        CIAccountExecutionMetadata newAccountExecutionMetadata =
+            CIAccountExecutionMetadata.builder()
+                .accountId(accountId)
+                .executionCount(1L)
+                .accountExecutionInfo(AccountExecutionInfo.builder().countPerDay(countPerDay).build())
+                .build();
+        mongoTemplate.save(newAccountExecutionMetadata);
+        lock.release();
+        return;
+      }
+
+      AccountExecutionInfo accountExecutionInfo;
+      if (accountExecutionMetadata.getAccountExecutionInfo() != null) {
+        accountExecutionInfo = accountExecutionMetadata.getAccountExecutionInfo();
+      } else {
+        accountExecutionInfo = AccountExecutionInfo.builder().build();
+        accountExecutionMetadata.setAccountExecutionInfo(accountExecutionInfo);
+      }
+
+      Long countOfDay;
+      if (accountExecutionInfo.getCountPerDay() != null) {
+        countOfDay = accountExecutionInfo.getCountPerDay().getOrDefault(
+            YearMonth.of(startDate.getYear(), startDate.getMonth()).toString() + "-" + startDate.getDayOfMonth(), 0L);
+        countOfDay = countOfDay + 1;
+        accountExecutionInfo.getCountPerDay().put(
+            YearMonth.of(startDate.getYear(), startDate.getMonth()) + "-" + startDate.getDayOfMonth(), countOfDay);
+        accountExecutionMetadata.setAccountExecutionInfo(accountExecutionInfo);
+      } else {
+        Map<String, Long> countPerDay = new HashMap<>();
+        countPerDay.put(YearMonth.of(startDate.getYear(), startDate.getMonth()) + "-" + startDate.getDayOfMonth(), 1L);
+        accountExecutionInfo.setCountPerDay(countPerDay);
+        accountExecutionMetadata.setAccountExecutionInfo(accountExecutionInfo);
+      }
+
       mongoTemplate.save(accountExecutionMetadata);
     }
   }

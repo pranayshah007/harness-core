@@ -47,7 +47,7 @@ public class MigrateWorkflowsToTimeScaleDB implements TimeScaleEntityMigrationIn
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_WORKFLOWS");
       return false;
     }
     int count = 0;
@@ -55,10 +55,11 @@ public class MigrateWorkflowsToTimeScaleDB implements TimeScaleEntityMigrationIn
       FindOptions findOptions_workflows = new FindOptions();
       findOptions_workflows.readPreference(ReadPreference.secondaryPreferred());
 
-      try (HIterator<Workflow> iterator = new HIterator<>(wingsPersistence.createQuery(Workflow.class, excludeAuthority)
-                                                              .field(WorkflowKeys.accountId)
-                                                              .equal(accountId)
-                                                              .fetch(findOptions_workflows))) {
+      try (HIterator<Workflow> iterator =
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(Workflow.class, excludeAuthority)
+                                   .field(WorkflowKeys.accountId)
+                                   .equal(accountId)
+                                   .fetch(findOptions_workflows))) {
         while (iterator.hasNext()) {
           Workflow workflow = iterator.next();
           saveToTimeScale(workflow);
@@ -66,10 +67,10 @@ public class MigrateWorkflowsToTimeScaleDB implements TimeScaleEntityMigrationIn
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_WORKFLOWS", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_WORKFLOWS", count);
     }
     return true;
   }

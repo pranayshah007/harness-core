@@ -90,6 +90,7 @@ public interface Constants {
   String MANIFEST_REF = "manifestRef";
   String DOCKER_REGISTRY = "DockerRegistry";
   String NEXUS3_REGISTRY = "Nexus3Registry";
+  String NEXUS2_REGISTRY = "Nexus2Registry";
   String ARTIFACTORY_REGISTRY = "ArtifactoryRegistry";
   String GCR = "Gcr";
   String ECR = "Ecr";
@@ -100,13 +101,15 @@ public interface Constants {
   String CUSTOM_ARTIFACT = "CustomArtifact";
   String GOOGLE_ARTIFACT_REGISTRY = "GoogleArtifactRegistry";
   String GITHUB_PACKAGES = "GithubPackageRegistry";
+  String AZURE_ARTIFACTS = "AzureArtifacts";
+  String AMI = "AmazonMachineImage";
 
   String MANIFEST_VERSION = "<+trigger.manifest.version>";
   String ARTIFACT_VERSION = "<+trigger.artifact.build>";
   String TRIGGER_CATEGORY = "Category of this Trigger.";
   String TRIGGER_TYPE_LIST_BY_CATEGORY = "List of Trigger types corresponding to a specific category.";
   String TRIGGER_CATALOGUE_LIST = "List of Trigger category and Trigger types corresponding to a specific category.";
-  String CD_TRIGGERS_MANDATE_GITHUB_AUTHENTICATION = "mandate_webhook_secrets_for_github_triggers_CD";
-  String CI_TRIGGERS_MANDATE_GITHUB_AUTHENTICATION = "mandate_webhook_secrets_for_github_triggers_CI";
+  String TRIGGERS_MANDATE_GITHUB_AUTHENTICATION = "mandate_webhook_secrets_for_github_triggers";
   String MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE = "true";
+  String PIPELINE_INPUTS_VALIDATION_ERROR = "PipelineInputsErrorMetadataV2";
 }

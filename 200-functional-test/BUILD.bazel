@@ -69,7 +69,6 @@ java_library(
         "//960-persistence:supporter-test",
         "//970-grpc:module",
         "//990-commons-test:module",
-        "@maven//:com_bertramlabs_plugins_hcl4j",
         "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
         "@maven//:com_google_guava_guava",
         "@maven//:com_icegreen_greenmail",

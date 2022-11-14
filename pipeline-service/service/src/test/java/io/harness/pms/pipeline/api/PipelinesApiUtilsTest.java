@@ -26,11 +26,11 @@ import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.rule.Owner;
-import io.harness.spec.server.pipeline.model.GitDetails;
-import io.harness.spec.server.pipeline.model.PipelineGetResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineListResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineListResponseBody.StoreTypeEnum;
-import io.harness.spec.server.pipeline.model.YAMLSchemaErrorWrapper;
+import io.harness.spec.server.pipeline.v1.model.GitDetails;
+import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody.StoreTypeEnum;
+import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,7 +57,7 @@ public class PipelinesApiUtilsTest extends CategoryTest {
                                             .repoName("repoName")
                                             .build();
     GitDetails gitDetails = PipelinesApiUtils.getGitDetails(entityGitDetails);
-    assertEquals("objectId", gitDetails.getEntityIdentifier());
+    assertEquals("objectId", gitDetails.getObjectId());
     assertEquals("branch", gitDetails.getBranchName());
     assertEquals("commitId", gitDetails.getCommitId());
     assertEquals("filePath", gitDetails.getFilePath());
@@ -95,10 +95,17 @@ public class PipelinesApiUtilsTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testGetResponseBody() {
-    PipelineEntity pipelineEntity =
-        PipelineEntity.builder().yaml("yaml").createdAt(123456L).lastUpdatedAt(987654L).build();
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .yaml("yaml")
+                                        .identifier(slug)
+                                        .orgIdentifier("org")
+                                        .createdAt(123456L)
+                                        .lastUpdatedAt(987654L)
+                                        .build();
     PipelineGetResponseBody responseBody = PipelinesApiUtils.getGetResponseBody(pipelineEntity);
     assertEquals("yaml", responseBody.getPipelineYaml());
+    assertEquals(slug, responseBody.getSlug());
+    assertEquals("org", responseBody.getOrg());
     assertEquals(123456L, responseBody.getCreated().longValue());
     assertEquals(987654L, responseBody.getUpdated().longValue());
   }

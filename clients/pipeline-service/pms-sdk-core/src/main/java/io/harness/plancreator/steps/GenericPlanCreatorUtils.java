@@ -15,6 +15,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.exception.InvalidRequestException;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.commons.RepairActionCode;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -78,6 +79,10 @@ public class GenericPlanCreatorUtils {
         currentField.getName(), Arrays.asList(STEP, PARALLEL, STEP_GROUP));
   }
 
+  public YamlField obtainNextSiblingFieldAtStageLevel(YamlField currentField) {
+    return currentField.getNode().nextSiblingFromParentArray(currentField.getName(), Arrays.asList(STAGE, PARALLEL));
+  }
+
   public RepairActionCode toRepairAction(FailureStrategyActionConfig action) {
     switch (action.getType()) {
       case IGNORE:
@@ -101,6 +106,6 @@ public class GenericPlanCreatorUtils {
 
   public static String getRollbackStageNodeId(YamlField currentField) {
     String stageNodeId = getStageOrParallelNodeId(currentField);
-    return stageNodeId + "_rollbackStage";
+    return stageNodeId + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX;
   }
 }

@@ -43,7 +43,8 @@ public class ExecutionInfoKeyMapper {
           .infraIdentifier(infraIdentifier)
           .serviceIdentifier(serviceOutcome.getIdentifier())
           .build();
-    } else if (InfrastructureKind.AZURE_WEB_APP.equals(infrastructureKind)) {
+    } else if (InfrastructureKind.AZURE_WEB_APP.equals(infrastructureKind)
+        || InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind)) {
       return ExecutionInfoKey.builder()
           .scope(getScope(ambiance))
           .envIdentifier(environmentOutcome.getIdentifier())

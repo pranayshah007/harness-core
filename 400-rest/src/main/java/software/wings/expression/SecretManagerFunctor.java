@@ -48,6 +48,7 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
@@ -75,10 +76,10 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   private final ExecutorService expressionEvaluatorExecutor;
   private final boolean evaluateSync;
 
-  @Default private Map<String, String> evaluatedSecrets = new HashMap<>();
-  @Default private Map<String, String> evaluatedDelegateSecrets = new HashMap<>();
+  @Default private Map<String, String> evaluatedSecrets = new ConcurrentHashMap<>();
+  @Default private Map<String, String> evaluatedDelegateSecrets = new ConcurrentHashMap<>();
   @Default private Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
-  @Default private Map<String, SecretDetail> secretDetails = new HashMap<>();
+  @Default private Map<String, SecretDetail> secretDetails = new ConcurrentHashMap<>();
 
   DelegateMetricsService delegateMetricsService;
 
@@ -243,7 +244,13 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
     EncryptedDataDetail encryptedDataDetail = nonLocalEncryptedDetails.get(0);
 
     String encryptionConfigUuid = encryptedDataDetail.getEncryptionConfig().getUuid();
+
     encryptionConfigs.put(encryptionConfigUuid, encryptedDataDetail.getEncryptionConfig());
+    if (isEmpty(encryptionConfigUuid)) {
+      log.warn("Got encryptionConfigUuid as null, name: {}, isGlobalKms {}, type: {}",
+          encryptedDataDetail.getEncryptionConfig().getName(), encryptedDataDetail.getEncryptionConfig().isGlobalKms(),
+          encryptedDataDetail.getEncryptionConfig().getType());
+    }
 
     SecretDetail secretDetail = SecretDetail.builder()
                                     .configUuid(encryptionConfigUuid)

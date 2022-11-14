@@ -28,6 +28,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +59,14 @@ public class AzureArtifactsTaskHandler extends DelegateArtifactTaskHandler<Azure
     List<BuildDetails> builds = azureArtifactsRegistryService.listPackageVersions(azureArtifactsInternalConfig,
         attributesRequest.getPackageType(), attributesRequest.getPackageName(), attributesRequest.getVersionRegex(),
         attributesRequest.getFeed(), attributesRequest.getProject());
+
+    String versionRegex = attributesRequest.getVersionRegex();
+
+    Pattern pattern = Pattern.compile(versionRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+
+    builds = builds.stream()
+                 .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
+                 .collect(Collectors.toList());
 
     return ArtifactTaskExecutionResponse.builder().buildDetails(builds).build();
   }

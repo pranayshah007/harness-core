@@ -45,6 +45,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
@@ -83,7 +85,7 @@ public class NexusArtifactCommandUnitHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
-  public void shouldDownloadFromRemoteRepoAuthUserPassword() throws IOException {
+  public void testDownloadFromRemoteRepoAuthUserPassword() throws IOException {
     InputStream nexusArtifact = new ByteArrayInputStream("nexusArtifactContent".getBytes(Charset.defaultCharset()));
     SshExecutorFactoryContext context = getSshExecutorFactoryContext(NexusAuthType.USER_PASSWORD);
     when(nexusService.downloadArtifactByUrl(any(NexusRequest.class), any(String.class), any(String.class)))
@@ -194,12 +196,15 @@ public class NexusArtifactCommandUnitHandlerTest extends CategoryTest {
                                          .build();
     ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder().connectorConfig(connectorDTO).connectorType(ConnectorType.NEXUS).build();
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("url", ARTIFACT_URL);
 
     NexusArtifactDelegateConfig nexusArtifactDelegateConfig = NexusArtifactDelegateConfig.builder()
                                                                   .artifactUrl(ARTIFACT_URL)
                                                                   .identifier("identifier")
                                                                   .isCertValidationRequired(false)
                                                                   .connectorDTO(connectorInfoDTO)
+                                                                  .metadata(metadata)
                                                                   .encryptedDataDetails(Collections.emptyList())
                                                                   .build();
     return SshExecutorFactoryContext.builder().artifactDelegateConfig(nexusArtifactDelegateConfig).build();

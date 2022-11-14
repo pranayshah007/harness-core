@@ -28,6 +28,7 @@ import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
+import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.rest.RestResponse;
@@ -41,6 +42,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -98,7 +100,6 @@ public interface NGTriggerResource {
         dataType = "io.harness.ngtriggers.beans.config.NGTriggerConfigV2", paramType = "body")
   })
   @ApiOperation(value = "Create Trigger", nickname = "createTrigger")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   ResponseDTO<NGTriggerResponseDTO>
   create(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
@@ -142,7 +143,6 @@ public interface NGTriggerResource {
         dataType = "io.harness.ngtriggers.beans.config.NGTriggerConfigV2", paramType = "body")
   })
   @ApiOperation(value = "Update a trigger by identifier", nickname = "updateTrigger")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   ResponseDTO<NGTriggerResponseDTO>
   update(@HeaderParam(IF_MATCH) String ifMatch,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -155,6 +155,7 @@ public interface NGTriggerResource {
       @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError);
 
   @PUT
+  @Hidden
   @Path("{triggerIdentifier}/status")
   @Operation(operationId = "updateTriggerStatus",
       summary = "Activates or deactivate trigger for pipeline with target pipeline identifier.",
@@ -265,4 +266,18 @@ public interface NGTriggerResource {
   ResponseDTO<NGTriggerCatalogDTO>
   getTriggerCatalog(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+
+  @GET
+  @Path("{triggerIdentifier}/validatePipelineInputs")
+  @ApiOperation(hidden = true, value = "This validates whether yaml of trigger is valid or not",
+      nickname = "validatePipelineInputs")
+  @Hidden
+  ResponseDTO<ValidatePipelineInputsResponseDTO>
+  validatePipelineInputs(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
+          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
+      @PathParam("triggerIdentifier") String triggerIdentifier);
 }

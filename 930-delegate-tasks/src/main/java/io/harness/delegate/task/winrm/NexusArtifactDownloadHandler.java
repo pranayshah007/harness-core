@@ -42,8 +42,8 @@ public class NexusArtifactDownloadHandler implements ArtifactDownloadHandler {
     NexusVersion nexusVersion = getNexusVersion(nexusArtifactDelegateConfig);
     NexusRequest nexusRequest = nexusMapper.toNexusRequest(nexusArtifactDelegateConfig);
     String artifactUrl = nexusArtifactDelegateConfig.getArtifactUrl();
-    String artifactName =
-        getNexusArtifactFileName(nexusVersion, nexusArtifactDelegateConfig.getRepositoryFormat(), artifactUrl);
+    String artifactName = getNexusArtifactFileName(
+        nexusVersion, nexusArtifactDelegateConfig.getRepositoryFormat(), nexusArtifactDelegateConfig.getMetadata());
 
     if (ScriptType.BASH == scriptType) {
       return generateBashCommandScript(nexusRequest, artifactUrl, artifactName, destinationPath);

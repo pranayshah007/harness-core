@@ -25,6 +25,7 @@ import static software.wings.app.ManagerCacheRegistrar.AUTH_TOKEN_CACHE;
 import static software.wings.app.ManagerCacheRegistrar.PRIMARY_CACHE_PREFIX;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
+import static software.wings.security.PermissionAttribute.Action.ABORT_WORKFLOW;
 import static software.wings.security.PermissionAttribute.Action.CREATE;
 import static software.wings.security.PermissionAttribute.Action.DELETE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_PIPELINE;
@@ -761,7 +762,7 @@ public class AuthServiceImpl implements AuthService {
                                       .appFilter(AppFilter.builder().filterType(AppFilter.FilterType.ALL).build())
                                       .permissionType(PermissionType.ALL_APP_ENTITIES)
                                       .actions(Sets.newHashSet(READ, UPDATE, DELETE, CREATE, EXECUTE_PIPELINE,
-                                          EXECUTE_WORKFLOW, EXECUTE_WORKFLOW_ROLLBACK))
+                                          EXECUTE_WORKFLOW, EXECUTE_WORKFLOW_ROLLBACK, ABORT_WORKFLOW))
                                       .build();
 
     AccountPermissions accountPermissions =
@@ -1081,6 +1082,26 @@ public class AuthServiceImpl implements AuthService {
         || !rollbackWorkflowExecutePermissionsForEnvs.contains(envId)) {
       throw new InvalidRequestException(
           "User doesn't have rights to rollback Workflow in this Environment", ErrorCode.ACCESS_DENIED, USER);
+    }
+  }
+
+  @Override
+  public void checkIfUserAllowedToAbortWorkflowToEnv(String appId, String envId) {
+    if (isEmpty(envId)) {
+      return;
+    }
+    User user = UserThreadLocal.get();
+    if (user == null) {
+      throw new InvalidRequestException("User not found", USER);
+    }
+    Set<String> abortWorkflowExecutePermissionsForEnvs = user.getUserRequestContext()
+                                                             .getUserPermissionInfo()
+                                                             .getAppPermissionMapInternal()
+                                                             .get(appId)
+                                                             .getAbortWorkflowExecutePermissionsForEnvs();
+    if (isEmpty(abortWorkflowExecutePermissionsForEnvs) || !abortWorkflowExecutePermissionsForEnvs.contains(envId)) {
+      throw new InvalidRequestException(
+          "User doesn't have rights to abort Workflow in this Environment", ErrorCode.ACCESS_DENIED, USER);
     }
   }
 

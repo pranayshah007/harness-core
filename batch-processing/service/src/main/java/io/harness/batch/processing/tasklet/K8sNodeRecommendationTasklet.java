@@ -74,14 +74,17 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
 
       OffsetDateTime startTime = toOffsetDateTime(jobConstants.getJobStartTime()).minusDays(6);
       OffsetDateTime endTime = toOffsetDateTime(jobConstants.getJobEndTime());
+      JobConstants jobConstants7Days = JobConstants.builder()
+                                           .accountId(accountId)
+                                           .jobStartTime(startTime.toEpochSecond() * 1000)
+                                           .jobEndTime(endTime.toEpochSecond() * 1000)
+                                           .build();
       TotalResourceUsage totalResourceUsage =
           k8sRecommendationDAO.aggregateTotalResourceRequirement(accountId, nodePoolId, startTime, endTime);
-
-      log.info("TotalResourceUsage for 7 days {}:{} is {} between {} and {}", accountId, nodePoolId, totalResourceUsage,
-          startTime, endTime);
+      logTotalResourceUsage(jobConstants7Days, nodePoolId, totalResourceUsage);
 
       try {
-        calculateAndSaveRecommendation(jobConstants, nodePoolId, totalResourceUsage);
+        calculateAndSaveRecommendation(jobConstants7Days, nodePoolId, totalResourceUsage);
       } catch (InvalidRequestException
               ex) { // This an acceptable exception in the sense that the next recommendation job should proceed.
         log.warn("Not generating recommendation for: {} with TRU: {}", nodePoolId, totalResourceUsage, ex);
@@ -94,9 +97,15 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
   private void createTotalResourceUsageAndInsert(@NonNull JobConstants jobConstants, @NonNull NodePoolId nodePoolId) {
     TotalResourceUsage totalResourceUsage =
         k8sRecommendationDAO.maxResourceOfAllTimeBucketsForANodePool(jobConstants, nodePoolId);
-    log.info("TotalResourceUsage for 1 day {}:{} is {} between {} and {}", jobConstants.getAccountId(), nodePoolId,
-        totalResourceUsage, jobConstants.getJobStartTime(), jobConstants.getJobEndTime());
+    logTotalResourceUsage(jobConstants, nodePoolId, totalResourceUsage);
     k8sRecommendationDAO.insertNodePoolAggregated(jobConstants, nodePoolId, totalResourceUsage);
+  }
+
+  private void logTotalResourceUsage(@NonNull JobConstants jobConstants, @NonNull NodePoolId nodePoolId,
+      @NonNull TotalResourceUsage totalResourceUsage) {
+    log.info("TotalResourceUsage for {}:{} is {} between {} and {}", jobConstants.getAccountId(), nodePoolId,
+        totalResourceUsage, toOffsetDateTime(jobConstants.getJobStartTime()),
+        toOffsetDateTime(jobConstants.getJobEndTime()));
   }
 
   private void calculateAndSaveRecommendation(@NonNull JobConstants jobConstants, @NonNull NodePoolId nodePoolId,

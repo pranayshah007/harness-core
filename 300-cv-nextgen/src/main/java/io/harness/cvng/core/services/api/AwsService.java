@@ -7,8 +7,13 @@
 
 package io.harness.cvng.core.services.api;
 
+import io.harness.cvng.core.beans.aws.AwsPrometheusWorkspaceDTO;
+import io.harness.cvng.core.beans.params.ProjectParams;
+
 import java.util.List;
 
 public interface AwsService {
   List<String> fetchRegions();
+  List<AwsPrometheusWorkspaceDTO> fetchAllWorkspaces(
+      ProjectParams projectParams, String connectorIdentifier, String region, String tracingId);
 }
