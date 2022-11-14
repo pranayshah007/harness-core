@@ -33,8 +33,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
-import javax.validation.constraints.NotEmpty;
-
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
@@ -54,7 +52,7 @@ public class ElastigroupBGStageSetupStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public ElastigroupBGStageSetupStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                         ParameterField<String> name, List<LoadBalancer> loadBalancers, ElastigroupInstances instances) {
+      ParameterField<String> name, List<LoadBalancer> loadBalancers, ElastigroupInstances instances) {
     super(delegateSelectors, name, loadBalancers, instances);
   }
 

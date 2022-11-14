@@ -7,7 +7,6 @@
 
 package io.harness.cdng.elastigroup;
 
-import com.hazelcast.org.snakeyaml.engine.v2.api.Load;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,8 +22,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
-import javax.validation.constraints.NotEmpty;
-
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
@@ -35,8 +32,7 @@ public class ElastigroupBGStageSetupStepParameters
     extends ElastigroupBGStageSetupBaseStepInfo implements ElastigroupSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public ElastigroupBGStageSetupStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                               ParameterField<String> name, List<LoadBalancer> loadBalancers,
-                                               ElastigroupInstances instances) {
+      ParameterField<String> name, List<LoadBalancer> loadBalancers, ElastigroupInstances instances) {
     super(delegateSelectors, name, loadBalancers, instances);
   }
 

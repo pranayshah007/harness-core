@@ -10,7 +10,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum LoadBalancerType {
-  @JsonProperty(LoadBalancerKind.AWS_LOAD_BALANCER_CONFIG) AWS_LOAD_BALANCER_CONFIG(LoadBalancerKind.AWS_LOAD_BALANCER_CONFIG);
+  @JsonProperty(LoadBalancerKind.AWS_LOAD_BALANCER_CONFIG)
+  AWS_LOAD_BALANCER_CONFIG(LoadBalancerKind.AWS_LOAD_BALANCER_CONFIG);
 
   private final String displayName;
 

@@ -7,7 +7,12 @@
 
 package io.harness.cdng.elastigroup;
 
-import com.google.inject.Inject;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
@@ -47,18 +52,17 @@ import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
-import lombok.extern.slf4j.Slf4j;
+
 import software.wings.beans.TaskType;
 import software.wings.utils.ServiceVersionConvention;
 
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class ElastigroupBGStageSetupStep extends TaskChainExecutableWithRollbackAndRbac implements ElastigroupStepExecutor {
+public class ElastigroupBGStageSetupStep
+    extends TaskChainExecutableWithRollbackAndRbac implements ElastigroupStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.ELASTIGROUP_BG_STAGE_SETUP.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -90,13 +94,14 @@ public class ElastigroupBGStageSetupStep extends TaskChainExecutableWithRollback
         : elastigroupSetupStepParametersName.getValue();
 
     elastigroupNamePrefix = isBlank(elastigroupNamePrefix)
-        ? Misc.normalizeExpression(ServiceVersionConvention.getPrefix(
-            elastigroupBGStageSetupStepParameters.getName().getValue(), infrastructureOutcome.getEnvironment().getName()))
+        ? Misc.normalizeExpression(
+            ServiceVersionConvention.getPrefix(elastigroupBGStageSetupStepParameters.getName().getValue(),
+                infrastructureOutcome.getEnvironment().getName()))
         : Misc.normalizeExpression(elastigroupNamePrefix);
 
     ElastiGroup elastiGroupOriginalConfig = null;
-        generateOriginalConfigFromJson(elastigroupStepExecutorParams.getElastigroupParameters(),
-                elastigroupBGStageSetupStepParameters.getInstances(), ambiance);
+    generateOriginalConfigFromJson(elastigroupStepExecutorParams.getElastigroupParameters(),
+        elastigroupBGStageSetupStepParameters.getInstances(), ambiance);
 
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         ElastigroupSetupCommandRequest.builder()
@@ -115,7 +120,7 @@ public class ElastigroupBGStageSetupStep extends TaskChainExecutableWithRollback
             .currentRunningInstanceCount(
                 fetchCurrentRunningCountForSetupRequest(elastigroupBGStageSetupStepParameters.getInstances()))
             .useCurrentRunningInstanceCount(ElastigroupInstancesType.CURRENT_RUNNING.equals(
-                    elastigroupBGStageSetupStepParameters.getInstances().getType()))
+                elastigroupBGStageSetupStepParameters.getInstances().getType()))
             .elastigroupOriginalConfig(elastiGroupOriginalConfig)
             .build();
 
