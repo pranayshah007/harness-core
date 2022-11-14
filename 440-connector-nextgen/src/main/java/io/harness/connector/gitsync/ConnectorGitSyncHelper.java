@@ -133,7 +133,7 @@ public class ConnectorGitSyncHelper extends AbstractGitSdkEntityHandler<Connecto
   @Override
   public boolean delete(EntityReference entityReference) {
     return connectorService.delete(entityReference.getAccountIdentifier(), entityReference.getOrgIdentifier(),
-        entityReference.getProjectIdentifier(), entityReference.getIdentifier());
+        entityReference.getProjectIdentifier(), entityReference.getIdentifier(), false);
   }
 
   @Override

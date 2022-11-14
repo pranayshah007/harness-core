@@ -148,27 +148,6 @@ public class InstanceServiceImpl implements InstanceService {
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp));
   }
 
-  @Override
-  public List<InstanceDTO> getInstancesDeployedInInterval(
-      String accountIdentifier, long startTimestamp, long endTimeStamp) {
-    return InstanceMapper.toDTO(
-        instanceRepository.getInstancesDeployedInInterval(accountIdentifier, startTimestamp, endTimeStamp));
-  }
-
-  @Override
-  public List<InstanceDTO> getInstancesDeployedInInterval(
-      String accountIdentifier, String organizationId, String projectId, long startTimestamp, long endTimeStamp) {
-    return InstanceMapper.toDTO(instanceRepository.getInstancesDeployedInInterval(
-        accountIdentifier, organizationId, projectId, startTimestamp, endTimeStamp));
-  }
-
-  @Override
-  public List<InstanceDTO> getInstances(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId) {
-    return InstanceMapper.toDTO(
-        instanceRepository.getInstances(accountIdentifier, orgIdentifier, projectIdentifier, infrastructureMappingId));
-  }
-
   /*
     Returns list of active instances for given account+org+project at given timestamp
   */
@@ -237,6 +216,7 @@ public class InstanceServiceImpl implements InstanceService {
   /*
     Returns aggregated result containing total {limit} instances for given buildIds
    */
+
   @Override
   public AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
@@ -244,18 +224,17 @@ public class InstanceServiceImpl implements InstanceService {
     return instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, buildIds, timestampInMs, limit);
   }
-
   /*
     Returns breakup of active instances by envType at a given timestamp for specified accountIdentifier,
     projectIdentifier, orgIdentifier and serviceIds
   */
+
   @Override
   public AggregationResults<CountByServiceIdAndEnvType> getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs) {
     return instanceRepository.getActiveServiceInstanceCountBreakdown(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, timestampInMs);
   }
-
   @Override
   public void updateInfrastructureMapping(List<String> instanceIds, String infrastructureMappingId) {
     for (String instanceId : instanceIds) {
@@ -268,6 +247,29 @@ public class InstanceServiceImpl implements InstanceService {
         softDeleteById(instanceId);
       }
     }
+  }
+
+  @Override
+  public long countServiceInstancesDeployedInInterval(String accountId, long startTS, long endTS) {
+    return instanceRepository.countServiceInstancesDeployedInInterval(accountId, startTS, endTS);
+  }
+
+  @Override
+  public long countServiceInstancesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS) {
+    return instanceRepository.countServiceInstancesDeployedInInterval(accountId, orgId, projectId, startTS, endTS);
+  }
+
+  @Override
+  public long countDistinctActiveServicesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS) {
+    return instanceRepository.countDistinctActiveServicesDeployedInInterval(
+        accountId, orgId, projectId, startTS, endTS);
+  }
+
+  @Override
+  public long countDistinctActiveServicesDeployedInInterval(String accountId, long startTS, long endTS) {
+    return instanceRepository.countDistinctActiveServicesDeployedInInterval(accountId, startTS, endTS);
   }
 
   // ----------------------------------- PRIVATE METHODS -------------------------------------

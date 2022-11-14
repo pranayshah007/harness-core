@@ -602,6 +602,7 @@ import software.wings.yaml.gitSync.GitFileProcessingSummary;
 import software.wings.yaml.gitSync.GitSyncMetadata;
 import software.wings.yaml.gitSync.GitSyncWebhook;
 import software.wings.yaml.gitSync.YamlChangeSet;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import java.security.Principal;
 import java.util.Set;
@@ -856,6 +857,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ArtifactView.class);
     set.add(LookerEntityReconRecord.class);
     set.add(InstanceSyncTaskDetails.class);
+    set.add(YamlGitConfig.class);
   }
 
   @Override

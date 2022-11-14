@@ -18,7 +18,6 @@ import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.rule.Owner;
 
 import java.util.Map;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -26,7 +25,6 @@ public class EventProtoToEntityHelperTest extends CategoryTest {
   @Test
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
-  @Ignore("CI-6025: TI team to follow up")
   public void testGetEntityTypeProtoEnumToRestEnumMap() {
     final Map<EntityTypeProtoEnum, EntityType> entityTypeProtoEnumToRestEnumMap =
         EventProtoToEntityHelper.getEntityTypeProtoEnumToRestEnumMap();

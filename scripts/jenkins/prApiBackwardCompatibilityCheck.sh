@@ -22,7 +22,7 @@ CI_MANAGER_T=0
 bazel build ${BAZEL_ARGS} -- //332-ci-manager/app:module_deploy.jar || CI_MANAGER_T=$?
 echo "BUILD CE_NEXTGEN"
 CE_NEXTGEN_T=0
-bazel build ${BAZEL_ARGS} -- //ce-nextgen:module_deploy.jar || CE_NEXTGEN_T=$?
+bazel build ${BAZEL_ARGS} -- //ce-nextgen/service:module_deploy.jar || CE_NEXTGEN_T=$?
 echo "BUILD PIPELINE_SERVICE"
 PIPELINE_SERVICE_T=0
 bazel build ${BAZEL_ARGS} -- //pipeline-service/service:module_deploy.jar || PIPELINE_SERVICE_T=$?
@@ -75,13 +75,13 @@ fi
 if [ $CE_NEXTGEN_T -eq 0 ]
 then
     echo "====Generating CE-NextGen Target-Branch Api Spec===="
-    java -jar bazel-bin/ce-nextgen/module_deploy.jar generate-openapi-spec target/340_target.json || CE_NEXTGEN_T=$?
+    java -jar bazel-bin/ce-nextgen/service/module_deploy.jar generate-openapi-spec target/340_target.json || CE_NEXTGEN_T=$?
 fi
 
 if [ $PIPELINE_SERVICE_T -eq 0 ]
 then
     echo "====Generating Pipeline-Service Target-Branch Api Spec===="
-    java -jar bazel-bin/pipeline-service/service:module_deploy.jar generate-openapi-spec target/pipeline_target.json || PIPELINE_SERVICE_T=$?
+    java -jar bazel-bin/pipeline-service/service/module_deploy.jar generate-openapi-spec target/pipeline_target.json || PIPELINE_SERVICE_T=$?
 fi
 
 if [ $TEMPLATE_SERVICE_T -eq 0 ]
@@ -148,7 +148,7 @@ if [ $CE_NEXTGEN_T -eq 0 ]
 then
     echo "BUILD CE_NEXTGEN"
     CE_NEXTGEN_S=0
-    bazel build ${BAZEL_ARGS} -- //ce-nextgen:module_deploy.jar || CE_NEXTGEN_S=$?
+    bazel build ${BAZEL_ARGS} -- //ce-nextgen/service:module_deploy.jar || CE_NEXTGEN_S=$?
 else
     CE_NEXTGEN_S=1
 fi
@@ -234,13 +234,13 @@ fi
 if [ $CE_NEXTGEN_S -eq 0 ]
 then
     echo "====Generating CE-NextGen Source-Branch Api Spec===="
-    java -jar bazel-bin/ce-nextgen/module_deploy.jar generate-openapi-spec target/340_source.json || CE_NEXTGEN_S=$?
+    java -jar bazel-bin/ce-nextgen/service/module_deploy.jar generate-openapi-spec target/340_source.json || CE_NEXTGEN_S=$?
 fi
 
 if [ $PIPELINE_SERVICE_S -eq 0 ]
 then
     echo "====Generating Pipeline-Service Source-Branch Api Spec===="
-    java -jar bazel-bin/pipeline-service/service:module_deploy.jar generate-openapi-spec target/pipeline_source.json || PIPELINE_SERVICE_S=$?
+    java -jar bazel-bin/pipeline-service/service/module_deploy.jar generate-openapi-spec target/pipeline_source.json || PIPELINE_SERVICE_S=$?
 fi
 
 if [ $TEMPLATE_SERVICE_S -eq 0 ]

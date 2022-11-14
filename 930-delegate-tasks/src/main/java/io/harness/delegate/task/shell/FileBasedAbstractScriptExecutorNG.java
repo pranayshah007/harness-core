@@ -105,8 +105,10 @@ public abstract class FileBasedAbstractScriptExecutorNG implements FileBasedScri
 
       @Override
       public void downloadToStream(OutputStream outputStream) throws IOException {
-        try (ByteArrayInputStream bis =
-                 new ByteArrayInputStream(configFileParameters.getFileContent().getBytes(StandardCharsets.UTF_8));) {
+        byte[] fileContent = isBlank(configFileParameters.getFileContent())
+            ? new byte[0]
+            : configFileParameters.getFileContent().getBytes(StandardCharsets.UTF_8);
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(fileContent)) {
           IOUtils.copy(bis, outputStream);
         }
       }

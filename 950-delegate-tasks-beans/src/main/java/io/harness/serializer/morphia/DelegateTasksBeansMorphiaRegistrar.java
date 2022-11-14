@@ -104,7 +104,6 @@ import software.wings.helpers.ext.helm.response.HelmInstallCommandResponse;
 import software.wings.sm.states.JenkinsExecutionResponse;
 import software.wings.sm.states.KubernetesSteadyStateCheckResponse;
 import software.wings.sm.states.KubernetesSwapServiceSelectorsResponse;
-import software.wings.yaml.gitSync.YamlGitConfig;
 
 import java.util.Set;
 
@@ -118,7 +117,6 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ExecutionCapabilityDemander.class);
     set.add(ExecutionCapability.class);
     set.add(SettingAttribute.class);
-    set.add(YamlGitConfig.class);
     set.add(ArtifactSourceable.class);
   }
 

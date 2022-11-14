@@ -43,6 +43,7 @@ import io.harness.ci.plan.creator.step.CIStepFilterJsonCreatorV2;
 import io.harness.ci.plancreator.ActionStepPlanCreator;
 import io.harness.ci.plancreator.ArtifactoryUploadStepPlanCreator;
 import io.harness.ci.plancreator.BackgroundStepPlanCreator;
+import io.harness.ci.plancreator.BitriseStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushACRStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushECRStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushGCRStepPlanCreator;
@@ -122,6 +123,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new GitCloneStepPlanCreator());
     planCreators.add(new InitializeStepPlanCreator());
     planCreators.add(new ActionStepPlanCreator());
+    planCreators.add(new BitriseStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }

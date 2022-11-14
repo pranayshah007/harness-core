@@ -73,7 +73,8 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
       recommendationRequest.withNextPageToken(nextPageToken);
       GetRightsizingRecommendationResult recommendationResult =
           getRecommendations(request.getAwsCrossAccountAttributes(), recommendationRequest);
-      if (Objects.nonNull(recommendationResult)) {
+      if (Objects.nonNull(recommendationResult)
+          && Objects.nonNull(recommendationResult.getRightsizingRecommendations())) {
         recommendationsResult.addAll(recommendationResult.getRightsizingRecommendations());
       }
       nextPageToken = recommendationResult.getNextPageToken();
@@ -88,7 +89,7 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
              new CloseableAmazonWebServiceClient(getAWSCostExplorerClient(awsCrossAccountAttributes))) {
       return closeableAWSCostExplorerClient.getClient().getRightsizingRecommendation(request);
     } catch (Exception ex) {
-      log.error("Exception from getRightsizingRecommendation api: ", ex);
+      log.info("Exception from getRightsizingRecommendation api: ", ex);
     }
     return new GetRightsizingRecommendationResult();
   }

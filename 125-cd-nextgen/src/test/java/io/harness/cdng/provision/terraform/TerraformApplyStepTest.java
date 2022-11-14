@@ -342,8 +342,14 @@ public class TerraformApplyStepTest extends CategoryTest {
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
-    TerraformInheritOutput inheritOutput =
-        TerraformInheritOutput.builder().backendConfig("back-content").workspace("w1").planName("plan").build();
+    TerraformBackendConfigFileConfig backendConfigFileConfig =
+        TerraformInlineBackendConfigFileConfig.builder().backendConfigFileContent("test-backend-config").build();
+    TerraformInheritOutput inheritOutput = TerraformInheritOutput.builder()
+                                               .backendConfig("back-content")
+                                               .backendConfigurationFileConfig(backendConfigFileConfig)
+                                               .workspace("w1")
+                                               .planName("plan")
+                                               .build();
     doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
     TaskRequest taskRequest = terraformApplyStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     assertThat(taskRequest).isNotNull();

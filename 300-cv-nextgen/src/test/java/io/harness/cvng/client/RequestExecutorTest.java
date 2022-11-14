@@ -7,6 +7,7 @@
 
 package io.harness.cvng.client;
 
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 
@@ -25,6 +26,7 @@ import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 
 import java.io.IOException;
+import javax.ws.rs.BadRequestException;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
 import okhttp3.Request;
@@ -204,6 +206,32 @@ public class RequestExecutorTest extends CategoryTest {
         "Response code: 400, Message: Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \"error\": {    \"code\": 400,    \"message\": \"Unsupportedresourcetype: k8s_containers\",    \"status\": \"INVALID_ARGUMENT\"  }}, Error: {\"metaData\":null,\"resource\":null,\"responseMessages\":[{\"code\":\"UNKNOWN_ERROR\",\"level\":\"ERROR\",\"message\":\"Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \\\"error\\\": {    \\\"code\\\": 400,    \\\"message\\\": \\\"Unsupportedresourcetype: k8s_containers\\\",    \\\"status\\\": \\\"INVALID_ARGUMENT\\\"  }}\",\"exception\":null,\"failureTypes\":null}]}";
     assertThatThrownBy(() -> requestExecutor.execute(call))
         .isInstanceOf(ServiceCallException.class)
+        .hasMessage(errorMsg);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testExecute_with400Error() throws IOException {
+    Request request = new Request.Builder().url("http://example.com/test").build();
+    Call<String> call = mock(Call.class);
+    when(call.clone()).thenReturn(call);
+    when(call.request()).thenReturn(request);
+    String errorBody =
+        "{\"status\":\"FAILURE\",\"code\":\"RESOURCE_NOT_FOUND_EXCEPTION\",\"message\":\"Connector with identifier [elkConnec] in project [tester], org [default] not found\",\"correlationId\":\"1c7a4b08-eacd-433e-8d38-907096ba9e0d\",\"errors\":null}";
+    Response<?> response = Response.error(ResponseBody.create(MediaType.parse("application/json"), errorBody),
+        new okhttp3.Response.Builder()
+            .message("message")
+            .code(400)
+            .protocol(Protocol.HTTP_1_1)
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build());
+    when(call.execute()).thenReturn((Response<String>) response);
+
+    String errorMsg = "Connector with identifier [elkConnec] in project [tester], org [default] not found";
+
+    assertThatThrownBy(() -> requestExecutor.execute(call))
+        .isInstanceOf(BadRequestException.class)
         .hasMessage(errorMsg);
   }
 }

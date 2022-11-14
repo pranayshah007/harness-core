@@ -69,7 +69,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -119,11 +118,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
   @Override
-  public PipelineCRUDResult create(PipelineEntity pipelineEntity) {
+  public PipelineCRUDResult validateAndCreatePipeline(PipelineEntity pipelineEntity) {
     checkAndThrowIfLimitReached(pipelineEntity.getAccountIdentifier());
     if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
       log.info("Creating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
-      return createWithoutValidations(pipelineEntity);
+      return createPipeline(pipelineEntity);
     }
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
@@ -136,7 +135,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       PipelineEntity entityWithUpdatedInfo =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
       PipelineEntity createdEntity;
-      PipelineCRUDResult pipelineCRUDResult = createWithoutValidations(entityWithUpdatedInfo);
+      PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(createdEntity).build();
     } catch (IOException ex) {
@@ -145,8 +144,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
   }
 
-  @Override
-  public PipelineCRUDResult createWithoutValidations(PipelineEntity pipelineEntity) {
+  private PipelineCRUDResult createPipeline(PipelineEntity pipelineEntity) {
     checkAndThrowIfLimitReached(pipelineEntity.getAccountIdentifier());
     PipelineEntity createdEntity;
     try {
@@ -177,7 +175,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
   }
   @Override
-  public PipelineSaveResponse clone(ClonePipelineDTO clonePipelineDTO, String accountId) {
+  public PipelineSaveResponse validateAndClonePipeline(ClonePipelineDTO clonePipelineDTO, String accountId) {
     checkAndThrowIfLimitReached(accountId);
     PipelineEntity sourcePipelineEntity = getSourcePipelineEntity(clonePipelineDTO, accountId);
 
@@ -189,7 +187,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         PMSPipelineDtoMapper.toPipelineEntity(accountId, clonePipelineDTO.getDestinationConfig().getOrgIdentifier(),
             clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), destYaml);
 
-    PipelineCRUDResult pipelineCRUDResult = create(destPipelineEntity);
+    PipelineCRUDResult pipelineCRUDResult = validateAndCreatePipeline(destPipelineEntity);
     GovernanceMetadata destGovernanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (destGovernanceMetadata.getDeny()) {
       return PipelineSaveResponse.builder().governanceMetadata(destGovernanceMetadata).build();
@@ -205,7 +203,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @NotNull
   private PipelineEntity getSourcePipelineEntity(ClonePipelineDTO clonePipelineDTO, String accountId) {
     Optional<PipelineEntity> sourcePipelineEntity =
-        get(accountId, clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
+        getAndValidatePipeline(accountId, clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
             clonePipelineDTO.getSourceConfig().getProjectIdentifier(),
             clonePipelineDTO.getSourceConfig().getPipelineIdentifier(), false);
 
@@ -224,10 +222,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public Optional<PipelineEntity> get(
+  public Optional<PipelineEntity> getAndValidatePipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted) {
-    Optional<PipelineEntity> optionalPipelineEntity = getPipelineWithoutPerformingValidations(
-        accountId, orgIdentifier, projectIdentifier, identifier, deleted, false);
+    Optional<PipelineEntity> optionalPipelineEntity =
+        getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false);
     if (!optionalPipelineEntity.isPresent()) {
       throw new EntityNotFoundException(
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
@@ -251,8 +249,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public Optional<PipelineEntity> getPipelineWithoutPerformingValidations(String accountId, String orgIdentifier,
-      String projectIdentifier, String identifier, boolean deleted, boolean getMetadataOnlyIfApplicable) {
+  public Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnlyIfApplicable) {
     Optional<PipelineEntity> optionalPipelineEntity;
     try {
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
@@ -278,7 +276,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public PipelineCRUDResult updatePipelineYaml(PipelineEntity pipelineEntity, ChangeType changeType) {
+  public PipelineCRUDResult validateAndUpdatePipeline(PipelineEntity pipelineEntity, ChangeType changeType) {
     if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
       log.info("Updating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
       PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
@@ -340,7 +338,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
     Optional<PipelineEntity> optionalPipelineEntity;
     try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(null, false)) {
-      optionalPipelineEntity = get(accountId, orgId, projectId, pipelineId, false);
+      optionalPipelineEntity = getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     }
     if (!optionalPipelineEntity.isPresent()) {
       throw new InvalidRequestException(
@@ -416,7 +414,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public boolean markEntityInvalid(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, String invalidYaml) {
     Optional<PipelineEntity> optionalPipelineEntity =
-        get(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
+        getAndValidatePipeline(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
     if (!optionalPipelineEntity.isPresent()) {
       log.warn(String.format(
           "Marking pipeline [%s] as invalid failed as it does not exist or has been deleted", identifier));
@@ -602,7 +600,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public String fetchExpandedPipelineJSON(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
     Optional<PipelineEntity> pipelineEntityOptional =
-        get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        getAndValidatePipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     if (!pipelineEntityOptional.isPresent()) {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
           orgIdentifier, projectIdentifier, pipelineIdentifier));
@@ -655,7 +653,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       log.error(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
       throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
     }
-    return PMSPipelineListRepoResponse.builder().repositories(new HashSet<>(uniqueRepos)).build();
+    return PMSPipelineListRepoResponse.builder().repositories(uniqueRepos).build();
   }
 
   private void checkAndThrowIfLimitReached(String accountId) {

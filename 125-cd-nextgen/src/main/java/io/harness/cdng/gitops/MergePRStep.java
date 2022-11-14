@@ -14,8 +14,10 @@ import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -64,6 +66,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.GITOPS)
@@ -76,6 +79,7 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
   @Inject private GitOpsStepHelper gitOpsStepHelper;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ScmGitProviderHelper scmGitProviderHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_MERGE_PR.getYamlType())
@@ -155,6 +159,12 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
+    Map<String, Object> apiParamOptions = null;
+
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.GITOPS_API_PARAMS_MERGE_PR)) {
+      apiParamOptions = gitOpsSpecParams.getVariables().getValue();
+    }
+
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRefFromEntityIdentifiers(connectorInfoDTO.getIdentifier(), accountId,
             connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier());
@@ -194,6 +204,7 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
                 .sha(sha)
                 .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
                     MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .apiParamOptions(emptyIfNull(apiParamOptions))
                 .build();
         break;
       case GITLAB:

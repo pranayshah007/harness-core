@@ -64,7 +64,6 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
   @Autowired private EC2RecommendationDAO ec2RecommendationDAO;
   @Autowired private CEAWSConfigHelper ceawsConfigHelper;
 
-  private static final String TERMINATE = "TERMINATE";
   private static final String MODIFY = "Modify";
 
   @Override

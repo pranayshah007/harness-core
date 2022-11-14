@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -61,7 +60,6 @@ public class InternalReferredEntityExtractorTest extends CategoryTest {
   @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
-  @Ignore("CI-6025: TI team to follow up")
   public void testExtractInternalEntities() {
     String dummy = "dummy";
     List<EntityDetail> entityDetailList = new ArrayList<>();
@@ -89,34 +87,8 @@ public class InternalReferredEntityExtractorTest extends CategoryTest {
                 "accountId/conn-dummy3", "accountId/conn-dummy4"),
             EntityType.CONNECTORS, EntityType.SECRETS);
 
-    Mockito.verify(entitySetupUsageClient)
-        .listAllReferredUsagesBatch(ACCOUNT_ID,
-            Arrays.asList("accountId/svc-dummy0", "accountId/svc-dummy1", "accountId/svc-dummy2",
-                "accountId/svc-dummy3", "accountId/svc-dummy4"),
-            EntityType.SERVICE, EntityType.CONNECTORS);
-
-    Mockito.verify(entitySetupUsageClient)
-        .listAllReferredUsagesBatch(ACCOUNT_ID,
-            Arrays.asList("accountId/ORG/PROJ/ENV/infra-dummy0/", "accountId/ORG/PROJ/ENV/infra-dummy1/",
-                "accountId/ORG/PROJ/ENV/infra-dummy2/", "accountId/ORG/PROJ/ENV/infra-dummy3/",
-                "accountId/ORG/PROJ/ENV/infra-dummy4/"),
-            EntityType.INFRASTRUCTURE, EntityType.CONNECTORS);
-
     Mockito.doReturn(true).when(ngFeatureFlagHelperService).isEnabled(eq(ACCOUNT_ID), any());
     internalReferredEntityExtractor.extractInternalEntities(ACCOUNT_ID, entityDetailList);
-
-    Mockito.verify(entitySetupUsageClient, Mockito.times(2))
-        .listAllReferredUsagesBatch(ACCOUNT_ID,
-            Arrays.asList("accountId/svc-dummy0", "accountId/svc-dummy1", "accountId/svc-dummy2",
-                "accountId/svc-dummy3", "accountId/svc-dummy4"),
-            EntityType.SERVICE, EntityType.CONNECTORS);
-
-    Mockito.verify(entitySetupUsageClient, Mockito.times(2))
-        .listAllReferredUsagesBatch(ACCOUNT_ID,
-            Arrays.asList("accountId/ORG/PROJ/ENV/infra-dummy0/", "accountId/ORG/PROJ/ENV/infra-dummy1/",
-                "accountId/ORG/PROJ/ENV/infra-dummy2/", "accountId/ORG/PROJ/ENV/infra-dummy3/",
-                "accountId/ORG/PROJ/ENV/infra-dummy4/"),
-            EntityType.INFRASTRUCTURE, EntityType.CONNECTORS);
 
     Mockito.verify(entitySetupUsageClient, Mockito.times(1))
         .listAllReferredUsagesBatch(ACCOUNT_ID,

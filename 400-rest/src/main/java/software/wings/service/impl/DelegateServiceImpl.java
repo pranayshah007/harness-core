@@ -861,12 +861,13 @@ public class DelegateServiceImpl implements DelegateService {
           final long upgraderLastUpdated = delegateGroupMap.getOrDefault(entry.getKey(), 0L);
           final String version =
               isNotEmpty(entry.getValue()) ? entry.getValue().stream().findAny().get().getVersion() : null;
+          final String delegateType = entry.getValue().get(0).getDelegateType();
           return DelegateScalingGroup.builder()
               .groupName(entry.getKey())
               .upgraderLastUpdated(delegateGroupMap.getOrDefault(entry.getKey(), 0L))
               .immutable(isImmutable)
-              .autoUpgrade(
-                  delegateSetupService.setAutoUpgrade(upgraderLastUpdated, isImmutable, delegateCreationTime, version))
+              .autoUpgrade(delegateSetupService.setAutoUpgrade(
+                  upgraderLastUpdated, isImmutable, delegateCreationTime, version, delegateType))
               .delegateGroupExpirationTime(setDelegateScalingGroupExpiration(entry.getValue()))
               .delegates(buildInnerDelegates(accountId, entry.getValue(), activeDelegateConnections, true))
               .build();
@@ -3261,7 +3262,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   private boolean isImmutableDelegate(final String accountId, final String delegateType) {
     return featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, accountId)
-        && (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType));
+        && (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType) || DOCKER.equals(delegateType));
   }
 
   @Override

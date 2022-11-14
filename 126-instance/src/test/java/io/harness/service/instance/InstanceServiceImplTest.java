@@ -181,43 +181,6 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void getInstancesDeployedInIntervalTest() {
-    String accountIdentifier = "Acc";
-    long startTimestamp = 123L;
-    long endTimestamp = 123L;
-    InstanceInfo instanceInfo = K8sInstanceInfo.builder().build();
-    Instance instance =
-        Instance.builder().instanceInfo(instanceInfo).deletedAt(234L).createdAt(123L).lastModifiedAt(3245L).build();
-    when(instanceRepository.getInstancesDeployedInInterval(accountIdentifier, startTimestamp, endTimestamp))
-        .thenReturn(Arrays.asList(instance));
-    List<InstanceDTO> instanceDTOList =
-        instanceService.getInstancesDeployedInInterval(accountIdentifier, startTimestamp, endTimestamp);
-    assertThat(instanceDTOList.size()).isEqualTo(1);
-    assertThat(instanceDTOList.get(0).getCreatedAt()).isEqualTo(123L);
-  }
-
-  @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
-  @Category(UnitTests.class)
-  public void getInstancesTest() {
-    String accountIdentifier = "Acc";
-    String orgIdentifier = "org";
-    String projectIdentifier = "pro";
-    String infrastructureMappingId = "infraMappingId";
-    InstanceInfo instanceInfo = K8sInstanceInfo.builder().build();
-    Instance instance =
-        Instance.builder().instanceInfo(instanceInfo).deletedAt(234L).createdAt(123L).lastModifiedAt(3245L).build();
-    when(instanceRepository.getInstances(accountIdentifier, orgIdentifier, projectIdentifier, infrastructureMappingId))
-        .thenReturn(Arrays.asList(instance));
-    List<InstanceDTO> instanceDTOList =
-        instanceService.getInstances(accountIdentifier, orgIdentifier, projectIdentifier, infrastructureMappingId);
-    assertThat(instanceDTOList.size()).isEqualTo(1);
-    assertThat(instanceDTOList.get(0).getCreatedAt()).isEqualTo(123L);
-  }
-
-  @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
-  @Category(UnitTests.class)
   public void getActiveInstancesTest() {
     String accountIdentifier = "Acc";
     String orgIdentifier = "org";

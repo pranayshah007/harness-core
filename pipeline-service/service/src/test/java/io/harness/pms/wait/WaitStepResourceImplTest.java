@@ -16,6 +16,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -83,7 +84,12 @@ public class WaitStepResourceImplTest extends CategoryTest {
     ResponseDTO<WaitStepResponseDto> responseDTO =
         waitStepResourceImpl.markAsFailOrSuccess(accountId, orgId, projectId, nodeExecutionId, waitStepRequestDto);
     assertTrue(responseDTO.getData().isStatus());
-    verify(waitStepService, times(1)).markAsFailOrSuccess(nodeExecutionId, WaitStepAction.MARK_AS_SUCCESS);
+    when(nodeExecutionService.get(nodeExecutionId))
+        .thenReturn(NodeExecution.builder()
+                        .ambiance(Ambiance.newBuilder().setPlanExecutionId("planExecutionId").build())
+                        .build());
+    verify(waitStepService, times(1))
+        .markAsFailOrSuccess("planExecutionId", nodeExecutionId, WaitStepAction.MARK_AS_SUCCESS);
   }
 
   @Test

@@ -3637,6 +3637,39 @@ public class DelegateServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void testDownloadNgImmutableDockerDelegateShouldReturnComposeFile() throws IOException {
+    when(accountService.get(ACCOUNT_ID))
+        .thenReturn(anAccount().withAccountKey(TOKEN_VALUE).withUuid(ACCOUNT_ID).build());
+    when(delegateVersionService.getDelegateImageTag(ACCOUNT_ID, DOCKER)).thenReturn(DELEGATE_IMAGE_TAG);
+    when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, DOCKER)).thenReturn(UPGRADER_IMAGE_TAG);
+    when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.KUBERNETES);
+    featureTestHelper.enableFeatureFlag(USE_IMMUTABLE_DELEGATE);
+
+    DelegateSetupDetails setupDetails = DelegateSetupDetails.builder()
+                                            .orgIdentifier("9S5HMP0xROugl3_QgO62rQO")
+                                            .projectIdentifier("9S5HMP0xROugl3_QgO62rQP")
+                                            .name("harness-delegate")
+                                            .identifier("_delegateGroupId1")
+                                            .description("desc")
+                                            .delegateType(DelegateType.DOCKER)
+                                            .tokenName(TOKEN_NAME)
+                                            .build();
+
+    File file =
+        delegateService.downloadNgDocker("https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, setupDetails);
+
+    String fileContent = new String(FileUtils.readFileToByteArray(file));
+    String expected =
+        CharStreams
+            .toString(new InputStreamReader(getClass().getResourceAsStream("/expectedImmutableDockerCompose.yaml")))
+            .replaceAll("8888", "" + port);
+
+    assertThat(fileContent).isEqualTo(expected);
+  }
+
+  @Test
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
   public void testDownloadNgDockerDelegateShouldThrowException_missingDetails() {

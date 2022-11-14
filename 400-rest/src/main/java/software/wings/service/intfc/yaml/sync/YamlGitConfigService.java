@@ -9,7 +9,7 @@ package software.wings.service.intfc.yaml.sync;
 
 import software.wings.service.intfc.ownership.OwnedByAccount;
 import software.wings.service.intfc.ownership.OwnedByApplication;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import java.util.List;
 import java.util.Set;

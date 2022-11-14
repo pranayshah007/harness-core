@@ -105,17 +105,17 @@ public class ScmGitWebhookHelper {
           .build();
     } else if (scmConnector instanceof BitbucketConnectorDTO
         && GitClientHelper.isBitBucketSAAS(scmConnector.getUrl())) {
-      final List<BitbucketCloudWebhookEvent> bitbucketCloudWebhookEvents = (existingWebhook != null)
-          ? existingWebhook.getNativeEvents().getBitbucketCloud().getEventsList()
-          : Collections.emptyList();
+      Set<BitbucketCloudWebhookEvent> bitbucketCloudWebhookEvents = new HashSet<>();
+      if (existingNativeEventsList != null) {
+        existingNativeEventsList.forEach(
+            nativeEvents -> bitbucketCloudWebhookEvents.addAll(nativeEvents.getBitbucketCloud().getEventsList()));
+      }
+      bitbucketCloudWebhookEvents.addAll(gitWebhookDetails.getHookEventType().bitbucketCloudWebhookEvents);
       return createWebhookRequestBuilder.setName("HarnessWebhook")
           .setNativeEvents(
               NativeEvents.newBuilder()
-                  .setBitbucketCloud(BitbucketCloudWebhookEvents.newBuilder()
-                                         .addAllEvents(ListUtils.union(
-                                             gitWebhookDetails.getHookEventType().bitbucketCloudWebhookEvents,
-                                             bitbucketCloudWebhookEvents))
-                                         .build())
+                  .setBitbucketCloud(
+                      BitbucketCloudWebhookEvents.newBuilder().addAllEvents(bitbucketCloudWebhookEvents).build())
                   .build())
           .build();
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
@@ -132,17 +132,17 @@ public class ScmGitWebhookHelper {
           .build();
     } else if (scmConnector instanceof BitbucketConnectorDTO
         && !GitClientHelper.isBitBucketSAAS(scmConnector.getUrl())) {
-      final List<BitbucketServerWebhookEvent> bitbucketServerWebhookEvents = (existingWebhook != null)
-          ? existingWebhook.getNativeEvents().getBitbucketServer().getEventsList()
-          : Collections.emptyList();
+      Set<BitbucketServerWebhookEvent> bitbucketServerWebhookEvents = new HashSet<>();
+      if (existingNativeEventsList != null) {
+        existingNativeEventsList.forEach(
+            nativeEvents -> bitbucketServerWebhookEvents.addAll(nativeEvents.getBitbucketServer().getEventsList()));
+      }
+      bitbucketServerWebhookEvents.addAll(gitWebhookDetails.getHookEventType().bitbucketServerWebhookEvents);
       return createWebhookRequestBuilder
           .setNativeEvents(
               NativeEvents.newBuilder()
-                  .setBitbucketServer(BitbucketServerWebhookEvents.newBuilder()
-                                          .addAllEvents(ListUtils.union(
-                                              gitWebhookDetails.getHookEventType().bitbucketServerWebhookEvents,
-                                              bitbucketServerWebhookEvents))
-                                          .build())
+                  .setBitbucketServer(
+                      BitbucketServerWebhookEvents.newBuilder().addAllEvents(bitbucketServerWebhookEvents).build())
                   .build())
           .build();
     } else {

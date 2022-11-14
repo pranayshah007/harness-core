@@ -63,6 +63,7 @@ import io.kubernetes.client.util.Watch;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -235,7 +236,8 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
     when(k8sConnectorHelper.getKubernetesConfig(any(ConnectorDetails.class))).thenReturn(kubernetesConfig);
     when(cik8JavaClientHandler.createRegistrySecret(any(), any(), any(), any())).thenReturn(imgSecret);
     when(secretVolumesHelper.checkSecretVolumesConfigured()).thenReturn(false);
-    when(secretSpecBuilder.decryptCustomSecretVariables(getSecretVariableDetails())).thenReturn(getCustomVarSecret());
+    when(secretSpecBuilder.decryptCustomSecretVariables(getSecretVariableDetails(), Collections.emptyMap()))
+        .thenReturn(getCustomVarSecret());
     when(secretSpecBuilder.decryptConnectorSecretVariables(publishArtifactEncryptedValues))
         .thenReturn(getPublishArtifactSecrets());
     when(podSpecBuilder.createSpec((PodParams) cik8InitializeTaskParams.getCik8PodParams())).thenReturn(podBuilder);
@@ -278,7 +280,8 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
         .thenReturn(gitSecretData);
     when(cik8JavaClientHandler.createRegistrySecret(coreV1Api, namespace, secretName, imageDetailsWithConnector))
         .thenReturn(imgSecret);
-    when(secretSpecBuilder.decryptCustomSecretVariables(getSecretVariableDetails())).thenReturn(getCustomVarSecret());
+    when(secretSpecBuilder.decryptCustomSecretVariables(getSecretVariableDetails(), Collections.emptyMap()))
+        .thenReturn(getCustomVarSecret());
     when(secretSpecBuilder.decryptConnectorSecretVariables(publishArtifactConnectors))
         .thenReturn(getPublishArtifactSecrets());
 

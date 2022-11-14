@@ -115,6 +115,7 @@ public interface EntityTypeConstants {
   String BUILD_AND_PUSH_ACR = "BuildAndPushACR";
   String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
   String ACTION_STEP = "Action";
+  String BITRISE_STEP = "Bitrise";
 
   String TERRAFORM_APPLY = "TerraformApply";
   String TERRAFORM_PLAN = "TerraformPlan";
@@ -168,4 +169,5 @@ public interface EntityTypeConstants {
   String CHAOS_STEP = "Chaos";
   String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
+  String ELASTIGROUP_SETUP = "ElastigroupSetup";
 }

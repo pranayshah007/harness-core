@@ -13,6 +13,7 @@ import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.ExecutionStatus.WAITING;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.shouldPerformReconciliation;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.RUSHABH;
 
@@ -35,6 +36,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.event.reconciliation.DetectionStatus;
@@ -51,6 +53,11 @@ import software.wings.beans.CountsByStatuses;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionBuilder;
 import software.wings.search.entities.deployment.DeploymentExecutionEntity;
+import software.wings.search.entities.deployment.DeploymentStepExecutionEntity;
+import software.wings.search.entities.executionInterrupt.ExecutionInterruptEntity;
+import software.wings.sm.ExecutionInterrupt;
+import software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder;
+import software.wings.sm.StateExecutionInstance;
 
 import com.google.inject.Inject;
 import java.sql.Array;
@@ -69,11 +76,17 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class DeploymentReconServiceImplTest extends WingsBaseTest {
   @Mock TimeScaleDBService timeScaleDBService;
   @Inject @InjectMocks DeploymentReconServiceImpl deploymentReconService;
+  @Inject @InjectMocks DeploymentStepReconServiceImpl deploymentStepReconService;
+  @Inject @InjectMocks ExecutionInterruptReconServiceImpl executionInterruptReconService;
   @Inject DeploymentReconRecordRepository deploymentReconRecordRepository;
   @Inject private HPersistence persistence;
   @Inject DeploymentExecutionEntity deploymentExecutionEntity;
+  @Inject DeploymentStepExecutionEntity deploymentStepExecutionEntity;
+  @Inject ExecutionInterruptEntity executionInterruptEntity;
 
   String sourceEntityClass = WorkflowExecution.class.getCanonicalName();
+  String stateExecutionInstanceSourceEntityClass = StateExecutionInstance.class.getCanonicalName();
+  String executionInterruptSourceEntityClass = ExecutionInterrupt.class.getCanonicalName();
 
   final Connection mockConnection = mock(Connection.class);
   final Statement mockStatement = mock(Statement.class);
@@ -138,6 +151,20 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
     persistence.save(workflowExecutionBuilder.uuid("DATA0").status(SUCCESS).build());
   }
 
+  private void activateStatusMismatchStateExecutionInstance(ResultSet resultSet, long timeStamp) throws Exception {
+    doAnswer((Answer<Boolean>) invocation -> getAnswerStatusMismatch()).when(resultSet).next();
+
+    final StateExecutionInstance.Builder stateExecutionInstanceBuilder =
+        StateExecutionInstance.Builder.aStateExecutionInstance()
+            .accountId(ACCOUNT_ID)
+            .appId(APP_ID)
+            .startTs(2L)
+            .endTs(timeStamp)
+            .createdAt(timeStamp);
+
+    persistence.save(stateExecutionInstanceBuilder.uuid("DATA0").status(SUCCESS).build());
+  }
+
   private void activateMissingRecords(long timeStamp) {
     CountsByStatuses countsByStatuses = aCountsByStatuses().build();
 
@@ -164,6 +191,46 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
 
     persistence.save(workflowExecutionBuilder.uuid(generateUuid()).status(PAUSED).build());
     persistence.save(workflowExecutionBuilder.uuid(generateUuid()).status(WAITING).build());
+  }
+
+  private void activateMissingRecordsStateExecutionInstance(long timeStamp) {
+    final StateExecutionInstance.Builder stateExecutionInstanceBuilder =
+        StateExecutionInstance.Builder.aStateExecutionInstance()
+            .accountId(ACCOUNT_ID)
+            .appId(APP_ID)
+            .startTs(2L)
+            .endTs(timeStamp)
+            .createdAt(timeStamp);
+
+    persistence.save(stateExecutionInstanceBuilder.uuid(generateUuid()).status(SUCCESS).build());
+    persistence.save(stateExecutionInstanceBuilder.uuid(generateUuid()).status(ExecutionStatus.ERROR).build());
+    persistence.save(stateExecutionInstanceBuilder.uuid(generateUuid()).status(ExecutionStatus.FAILED).build());
+    persistence.save(stateExecutionInstanceBuilder.uuid(generateUuid()).status(ExecutionStatus.ABORTED).build());
+
+    persistence.save(stateExecutionInstanceBuilder.uuid(generateUuid()).status(RUNNING).build());
+
+    persistence.save(stateExecutionInstanceBuilder.uuid(generateUuid()).status(PAUSED).build());
+    persistence.save(stateExecutionInstanceBuilder.uuid(generateUuid()).status(WAITING).build());
+  }
+
+  private void activateMissingRecordsExecutionInterrupt() {
+    final ExecutionInterruptBuilder executionInterruptBuilder =
+        ExecutionInterruptBuilder.anExecutionInterrupt()
+            .accountId(ACCOUNT_ID)
+            .appId(APP_ID)
+            .createdAt(2l)
+            .executionUuid("abc")
+            .executionInterruptType(ExecutionInterruptType.IGNORE);
+
+    persistence.save(executionInterruptBuilder.uuid(generateUuid()).build());
+    persistence.save(executionInterruptBuilder.uuid(generateUuid()).build());
+    persistence.save(executionInterruptBuilder.uuid(generateUuid()).build());
+    persistence.save(executionInterruptBuilder.uuid(generateUuid()).build());
+
+    persistence.save(executionInterruptBuilder.uuid(generateUuid()).build());
+
+    persistence.save(executionInterruptBuilder.uuid(generateUuid()).build());
+    persistence.save(executionInterruptBuilder.uuid(generateUuid()).build());
   }
 
   public void deactivateMissingRecords(ResultSet resultSet) throws Exception {
@@ -218,6 +285,60 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testAllOKStateExecutionInstance() {
+    try {
+      final long durationStartTs = System.currentTimeMillis() - 2000000;
+      final long durationEndTs = System.currentTimeMillis();
+      deploymentStepReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentStepExecutionEntity);
+      DeploymentReconRecord latestRecord = deploymentReconRecordRepository.getLatestDeploymentReconRecord(
+          ACCOUNT_ID, stateExecutionInstanceSourceEntityClass);
+      assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
+      assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
+      assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
+      assertThat(latestRecord.getDetectionStatus()).isEqualTo(DetectionStatus.SUCCESS);
+      assertThat(latestRecord.getReconcilationAction()).isEqualTo(ReconcilationAction.NONE);
+      assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
+
+      ReconciliationStatus status = deploymentStepReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentStepExecutionEntity);
+      assertThat(status).isEqualTo(ReconciliationStatus.SUCCESS);
+
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testAllOKExecutionInterrupt() {
+    try {
+      final long durationStartTs = System.currentTimeMillis() - 2000000;
+      final long durationEndTs = System.currentTimeMillis();
+      executionInterruptReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, executionInterruptEntity);
+      DeploymentReconRecord latestRecord = deploymentReconRecordRepository.getLatestDeploymentReconRecord(
+          ACCOUNT_ID, executionInterruptSourceEntityClass);
+      assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
+      assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
+      assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
+      assertThat(latestRecord.getDetectionStatus()).isEqualTo(DetectionStatus.SUCCESS);
+      assertThat(latestRecord.getReconcilationAction()).isEqualTo(ReconcilationAction.NONE);
+      assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
+
+      ReconciliationStatus status = executionInterruptReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, executionInterruptEntity);
+      assertThat(status).isEqualTo(ReconciliationStatus.SUCCESS);
+
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
+  }
+
+  @Test
   @Owner(developers = RUSHABH)
   @Category(UnitTests.class)
   public void testMissingRecords() throws Exception {
@@ -227,6 +348,44 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
     deploymentReconService.performReconciliation(ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
     DeploymentReconRecord latestRecord =
         deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, sourceEntityClass);
+    assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
+    assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
+    assertThat(latestRecord.getDetectionStatus()).isEqualTo(DetectionStatus.MISSING_RECORDS_DETECTED);
+    assertThat(latestRecord.getReconcilationAction()).isEqualTo(ReconcilationAction.ADD_MISSING_RECORDS);
+    assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testMissingRecordsStateExecutionInstance() throws Exception {
+    final long durationStartTs = System.currentTimeMillis() - 2000000;
+    final long durationEndTs = System.currentTimeMillis();
+    activateMissingRecordsStateExecutionInstance(durationEndTs - 1000L);
+    deploymentStepReconService.performReconciliation(
+        ACCOUNT_ID, durationStartTs, durationEndTs, deploymentStepExecutionEntity);
+    DeploymentReconRecord latestRecord = deploymentReconRecordRepository.getLatestDeploymentReconRecord(
+        ACCOUNT_ID, stateExecutionInstanceSourceEntityClass);
+    assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
+    assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
+    assertThat(latestRecord.getDetectionStatus()).isEqualTo(DetectionStatus.MISSING_RECORDS_DETECTED);
+    assertThat(latestRecord.getReconcilationAction()).isEqualTo(ReconcilationAction.ADD_MISSING_RECORDS);
+    assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testMissingRecordsExecutionInterrupt() throws Exception {
+    activateMissingRecordsExecutionInterrupt();
+    final long durationEndTs = System.currentTimeMillis();
+    final long durationStartTs = durationEndTs - 2000000l;
+    executionInterruptReconService.performReconciliation(
+        ACCOUNT_ID, durationStartTs, durationEndTs, executionInterruptEntity);
+    DeploymentReconRecord latestRecord =
+        deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, executionInterruptSourceEntityClass);
     assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
     assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
@@ -257,6 +416,50 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testMissingRecordsDuplicatesFoundStateExecutionInstance() throws Exception {
+    activateDuplicatesFound(resultSet1);
+    final long durationStartTs = System.currentTimeMillis() - 2000000;
+    final long durationEndTs = System.currentTimeMillis();
+    activateMissingRecordsStateExecutionInstance(durationEndTs - 1300);
+    deploymentStepReconService.performReconciliation(
+        ACCOUNT_ID, durationStartTs, durationEndTs, deploymentStepExecutionEntity);
+    DeploymentReconRecord latestRecord = deploymentReconRecordRepository.getLatestDeploymentReconRecord(
+        ACCOUNT_ID, stateExecutionInstanceSourceEntityClass);
+    assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
+    assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
+    assertThat(latestRecord.getDetectionStatus())
+        .isEqualTo(DetectionStatus.DUPLICATE_DETECTED_MISSING_RECORDS_DETECTED);
+    assertThat(latestRecord.getReconcilationAction())
+        .isEqualTo(ReconcilationAction.DUPLICATE_REMOVAL_ADD_MISSING_RECORDS);
+    assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testMissingRecordsDuplicatesFoundExecutionInterrupt() throws Exception {
+    activateDuplicatesFound(resultSet1);
+    activateMissingRecordsExecutionInterrupt();
+    final long durationStartTs = System.currentTimeMillis() - 2000000;
+    final long durationEndTs = System.currentTimeMillis();
+    executionInterruptReconService.performReconciliation(
+        ACCOUNT_ID, durationStartTs, durationEndTs, executionInterruptEntity);
+    DeploymentReconRecord latestRecord =
+        deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, executionInterruptSourceEntityClass);
+    assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
+    assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
+    assertThat(latestRecord.getDetectionStatus())
+        .isEqualTo(DetectionStatus.DUPLICATE_DETECTED_MISSING_RECORDS_DETECTED);
+    assertThat(latestRecord.getReconcilationAction())
+        .isEqualTo(ReconcilationAction.DUPLICATE_REMOVAL_ADD_MISSING_RECORDS);
+    assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
+  }
+
+  @Test
   @Owner(developers = RUSHABH)
   @Category(UnitTests.class)
   public void testDuplicatesDetected() {
@@ -270,6 +473,58 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
           ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
       DeploymentReconRecord latestRecord =
           deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, sourceEntityClass);
+      assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
+      assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
+      assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
+      assertThat(latestRecord.getDetectionStatus()).isEqualTo(DetectionStatus.DUPLICATE_DETECTED);
+      assertThat(latestRecord.getReconcilationAction()).isEqualTo(ReconcilationAction.DUPLICATE_REMOVAL);
+      assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
+
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testDuplicatesDetectedStateExecutionInstance() {
+    try {
+      activateDuplicatesFound(resultSet1);
+      when(resultSet1.getString(anyInt())).thenReturn("DATA" + duplicatesCount[0]);
+
+      final long durationStartTs = System.currentTimeMillis() - 2000000;
+      final long durationEndTs = System.currentTimeMillis();
+      deploymentStepReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentStepExecutionEntity);
+      DeploymentReconRecord latestRecord = deploymentReconRecordRepository.getLatestDeploymentReconRecord(
+          ACCOUNT_ID, stateExecutionInstanceSourceEntityClass);
+      assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
+      assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
+      assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
+      assertThat(latestRecord.getDetectionStatus()).isEqualTo(DetectionStatus.DUPLICATE_DETECTED);
+      assertThat(latestRecord.getReconcilationAction()).isEqualTo(ReconcilationAction.DUPLICATE_REMOVAL);
+      assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
+
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testDuplicatesDetectedExecutionInterrupt() {
+    try {
+      activateDuplicatesFound(resultSet1);
+      when(resultSet1.getString(anyInt())).thenReturn("DATA" + duplicatesCount[0]);
+
+      final long durationStartTs = System.currentTimeMillis() - 2000000;
+      final long durationEndTs = System.currentTimeMillis();
+      executionInterruptReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, executionInterruptEntity);
+      DeploymentReconRecord latestRecord = deploymentReconRecordRepository.getLatestDeploymentReconRecord(
+          ACCOUNT_ID, executionInterruptSourceEntityClass);
       assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
       assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
       assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
@@ -355,6 +610,35 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testStatusMismatchDetectedStateExecutionInstance() {
+    try {
+      final long durationStartTs = System.currentTimeMillis() - 2000000;
+      final long durationEndTs = System.currentTimeMillis();
+
+      deactivateDuplicatesFound(resultSet1);
+      deactivateMissingRecords(resultSet2);
+      activateStatusMismatchStateExecutionInstance(resultSet3, durationEndTs - 1300);
+      doReturn("DATA" + statusMismatchCount[0]).when(resultSet3).getString(anyInt());
+
+      deploymentStepReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentStepExecutionEntity);
+      DeploymentReconRecord latestRecord = deploymentReconRecordRepository.getLatestDeploymentReconRecord(
+          ACCOUNT_ID, stateExecutionInstanceSourceEntityClass);
+      assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
+      assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
+      assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
+      assertThat(latestRecord.getDetectionStatus()).isEqualTo(DetectionStatus.STATUS_MISMATCH_DETECTED);
+      assertThat(latestRecord.getReconcilationAction()).isEqualTo(ReconcilationAction.STATUS_RECONCILIATION);
+      assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
+
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
+  }
+
+  @Test
   @Owner(developers = MILOS)
   @Category(UnitTests.class)
   public void testMissingRecordsStatusMismatchDetected() {
@@ -370,6 +654,36 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
           ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
       DeploymentReconRecord latestRecord =
           deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, sourceEntityClass);
+      assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
+      assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
+      assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
+      assertThat(latestRecord.getDetectionStatus())
+          .isEqualTo(DetectionStatus.MISSING_RECORDS_DETECTED_STATUS_MISMATCH_DETECTED);
+      assertThat(latestRecord.getReconcilationAction())
+          .isEqualTo(ReconcilationAction.ADD_MISSING_RECORDS_STATUS_RECONCILIATION);
+      assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
+
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testMissingRecordsStatusMismatchDetectedStateExecutionInstance() {
+    try {
+      final long durationStartTs = System.currentTimeMillis() - 2000000;
+      final long durationEndTs = System.currentTimeMillis();
+
+      deactivateDuplicatesFound(resultSet1);
+      activateStatusMismatchStateExecutionInstance(resultSet4, durationEndTs - 1300);
+      doReturn("DATA" + statusMismatchCount[0]).when(resultSet4).getString(anyInt());
+
+      deploymentStepReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentStepExecutionEntity);
+      DeploymentReconRecord latestRecord = deploymentReconRecordRepository.getLatestDeploymentReconRecord(
+          ACCOUNT_ID, stateExecutionInstanceSourceEntityClass);
       assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
       assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
       assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
@@ -417,6 +731,38 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testDuplicatesStatusMismatchDetectedStateExecutionInstance() {
+    try {
+      final long durationStartTs = System.currentTimeMillis() - 2000000;
+      final long durationEndTs = System.currentTimeMillis();
+
+      activateDuplicatesFound(resultSet1);
+      deactivateMissingRecords(resultSet2);
+      activateStatusMismatchStateExecutionInstance(resultSet3, durationEndTs - 1300);
+      doReturn("DATA" + duplicatesCount[0]).when(resultSet1).getString(any());
+      doReturn("DATA" + statusMismatchCount[0]).when(resultSet3).getString(anyInt());
+
+      deploymentStepReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentStepExecutionEntity);
+      DeploymentReconRecord latestRecord = deploymentReconRecordRepository.getLatestDeploymentReconRecord(
+          ACCOUNT_ID, stateExecutionInstanceSourceEntityClass);
+      assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
+      assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
+      assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
+      assertThat(latestRecord.getDetectionStatus())
+          .isEqualTo(DetectionStatus.DUPLICATE_DETECTED_STATUS_MISMATCH_DETECTED);
+      assertThat(latestRecord.getReconcilationAction())
+          .isEqualTo(ReconcilationAction.DUPLICATE_REMOVAL_STATUS_RECONCILIATION);
+      assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
+
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
+  }
+
+  @Test
   @Owner(developers = MILOS)
   @Category(UnitTests.class)
   public void testAllDetected() {
@@ -433,6 +779,37 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
           ACCOUNT_ID, durationStartTs, durationEndTs, deploymentExecutionEntity);
       DeploymentReconRecord latestRecord =
           deploymentReconRecordRepository.getLatestDeploymentReconRecord(ACCOUNT_ID, sourceEntityClass);
+      assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
+      assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
+      assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);
+      assertThat(latestRecord.getDetectionStatus())
+          .isEqualTo(DetectionStatus.DUPLICATE_DETECTED_MISSING_RECORDS_DETECTED_STATUS_MISMATCH_DETECTED);
+      assertThat(latestRecord.getReconcilationAction())
+          .isEqualTo(ReconcilationAction.DUPLICATE_REMOVAL_ADD_MISSING_RECORDS_STATUS_RECONCILIATION);
+      assertThat(latestRecord.getReconciliationStatus()).isEqualTo(ReconciliationStatus.SUCCESS);
+
+    } catch (Exception e) {
+      fail(e.getMessage());
+    }
+  }
+
+  @Test
+  @Owner(developers = MILOS)
+  @Category(UnitTests.class)
+  public void testAllDetectedStateExecutionInstance() {
+    try {
+      final long durationStartTs = System.currentTimeMillis() - 2000000;
+      final long durationEndTs = System.currentTimeMillis();
+
+      activateDuplicatesFound(resultSet1);
+      activateStatusMismatchStateExecutionInstance(resultSet4, durationEndTs - 1300);
+      doReturn("DATA" + duplicatesCount[0]).when(resultSet1).getString(any());
+      doReturn("DATA" + statusMismatchCount[0]).when(resultSet4).getString(anyInt());
+
+      deploymentStepReconService.performReconciliation(
+          ACCOUNT_ID, durationStartTs, durationEndTs, deploymentStepExecutionEntity);
+      DeploymentReconRecord latestRecord = deploymentReconRecordRepository.getLatestDeploymentReconRecord(
+          ACCOUNT_ID, stateExecutionInstanceSourceEntityClass);
       assertThat(latestRecord.getAccountId()).isEqualTo(ACCOUNT_ID);
       assertThat(latestRecord.getDurationStartTs()).isEqualTo(durationStartTs);
       assertThat(latestRecord.getDurationEndTs()).isEqualTo(durationEndTs);

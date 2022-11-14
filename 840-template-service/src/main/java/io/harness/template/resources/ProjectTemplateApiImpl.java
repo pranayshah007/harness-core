@@ -38,8 +38,9 @@ public class ProjectTemplateApiImpl implements ProjectTemplateApi {
       TemplateCreateRequestBody templateCreateRequestBody, @AccountIdentifier String account) {
     GitCreateDetails gitCreateDetails = templateCreateRequestBody.getGitDetails();
     String templateYaml = templateCreateRequestBody.getTemplateYaml();
-    return templateResourceApiUtils.createTemplate(account, org, project, gitCreateDetails, templateYaml,
-        templateCreateRequestBody.isIsStable(), templateCreateRequestBody.getComments());
+    Boolean isStable = Boolean.TRUE.equals(templateCreateRequestBody.isIsStable());
+    return templateResourceApiUtils.createTemplate(
+        account, org, project, gitCreateDetails, templateYaml, isStable, templateCreateRequestBody.getComments());
   }
 
   @Override

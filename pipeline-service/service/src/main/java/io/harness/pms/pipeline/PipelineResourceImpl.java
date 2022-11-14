@@ -106,7 +106,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
 
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.create(pipelineEntity);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(pipelineEntity);
 
     PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
     PipelineEntity createdEntity = pipelineCRUDResult.getPipelineEntity();
@@ -124,7 +124,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
 
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.create(pipelineEntity);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(pipelineEntity);
 
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
@@ -143,7 +143,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       GitEntityCreateInfoDTO gitEntityCreateInfo, @NotNull ClonePipelineDTO clonePipelineDTO) {
     pipelineCloneHelper.checkAccess(clonePipelineDTO, accountId);
 
-    PipelineSaveResponse pipelineSaveResponse = pmsPipelineService.clone(clonePipelineDTO, accountId);
+    PipelineSaveResponse pipelineSaveResponse =
+        pmsPipelineService.validateAndClonePipeline(clonePipelineDTO, accountId);
 
     return ResponseDTO.newResponse(pipelineSaveResponse);
   }
@@ -190,7 +191,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
 
     Optional<PipelineEntity> pipelineEntity;
     try {
-      pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
+      pipelineEntity = pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     } catch (PolicyEvaluationFailureException pe) {
       return ResponseDTO.newResponse(
           PMSPipelineResponseDTO.builder()
@@ -253,7 +254,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
         accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion);
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.updatePipelineYaml(withVersion, ChangeType.MODIFY);
+    PipelineCRUDResult pipelineCRUDResult =
+        pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY);
     PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
     PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
     return ResponseDTO.newResponse(updatedEntity.getVersion().toString(), updatedEntity.getIdentifier());
@@ -269,7 +271,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
         accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion);
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.updatePipelineYaml(withVersion, ChangeType.MODIFY);
+    PipelineCRUDResult pipelineCRUDResult =
+        pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY);
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
       return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(governanceMetadata).build());
@@ -332,7 +335,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
             pipelineId, projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity;
-    pipelineEntity = pmsPipelineService.getPipelineWithoutPerformingValidations(
+    pipelineEntity = pmsPipelineService.getPipeline(
         accountId, orgId, projectId, pipelineId, false, Boolean.TRUE.equals(getMetadataOnly));
 
     PMSPipelineSummaryResponseDTO pipelineSummary = PMSPipelineDtoMapper.preparePipelineSummary(
@@ -437,7 +440,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<String> validatePipelineByIdentifier(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
       @ResourceIdentifier String pipelineId) {
-    Optional<PipelineEntity> entityOptional = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
+    Optional<PipelineEntity> entityOptional =
+        pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     if (entityOptional.isPresent()) {
       PipelineEntity pipelineEntity = entityOptional.get();
       log.info(String.format("Validating the pipeline with identifier %s in project %s, org %s, account %s",
@@ -459,7 +463,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         String.format("Retrieving templates resolved pipeline with identifier %s in project %s, org %s, account %s",
             pipelineId, projectId, orgId, accountId));
 
-    Optional<PipelineEntity> pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
+    Optional<PipelineEntity> pipelineEntity =
+        pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
 
     if (!pipelineEntity.isPresent()) {
       throw new EntityNotFoundException(

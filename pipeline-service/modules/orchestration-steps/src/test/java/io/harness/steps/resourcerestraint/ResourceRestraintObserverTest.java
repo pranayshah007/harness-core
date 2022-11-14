@@ -12,7 +12,6 @@ import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -22,13 +21,12 @@ import io.harness.OrchestrationStepsTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
+import io.harness.springdata.TransactionHelper;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import java.util.List;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -38,11 +36,11 @@ import org.mockito.Mock;
 public class ResourceRestraintObserverTest extends OrchestrationStepsTestBase {
   @Mock ResourceRestraintInstanceService restraintInstanceService;
   @Inject @InjectMocks ResourceRestraintObserver observer;
+  @Inject TransactionHelper transactionHelper;
 
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  @Ignore("CI-6025: TI team to follow up")
   public void shouldTestOnEnd() {
     String planExecutionId = generateUuid();
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build();
@@ -57,10 +55,6 @@ public class ResourceRestraintObserverTest extends OrchestrationStepsTestBase {
 
     ArgumentCaptor<ResourceRestraintInstance> instanceCaptor = ArgumentCaptor.forClass(ResourceRestraintInstance.class);
 
-    verify(restraintInstanceService, times(2)).processRestraint(instanceCaptor.capture());
-
-    List<ResourceRestraintInstance> values = instanceCaptor.getAllValues();
-    assertThat(values).hasSize(2);
-    assertThat(values).containsExactlyInAnyOrder(activeRc, blockedRc);
+    verify(restraintInstanceService, times(1)).findAllActiveAndBlockedByReleaseEntityId(eq(planExecutionId));
   }
 }

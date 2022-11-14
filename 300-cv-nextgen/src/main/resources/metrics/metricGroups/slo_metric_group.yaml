@@ -1,0 +1,6 @@
+name: SLO Metric Group
+identifier: slo_metric_group
+labels:
+  - accountId
+  - verificationTaskId
+  - sliUuid

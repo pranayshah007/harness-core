@@ -153,6 +153,16 @@ paths:
           in: query
           name: template_applied
           description: 'If true, returns Pipeline YAML with Templates applied on it.'
+        - schema:
+            type: string
+          in: query
+          name: connector_ref
+          description: Identifier of the Harness Connector used for CRUD operations on the Entity (for Git Experience).
+        - schema:
+            type: string
+          in: query
+          name: repo_name
+          description: Name of the repository (for Git Experience).
       tags:
         - Pipelines
       responses:
@@ -193,10 +203,17 @@ paths:
               schema:
                 type: object
                 properties: {}
+              examples:
+                example-resp:
+                  value: {}
             application/yaml:
               schema:
                 type: object
                 properties: {}
+              examples:
+                example-resp:
+                  value: |
+                    {}
 components:
   schemas:
     GitDetails:
@@ -393,7 +410,7 @@ components:
               started: 1234567890
               ended: 1234567890
               run_number: 5
-          store_type: INLINE
+          store_type: REMOTE
           connector_ref: example_connector
           valid: true
           git_details:
@@ -607,7 +624,7 @@ components:
             commit_message: Added Harness Git Experience
             base_branch: old_branch
             connector_ref: git_connector
-            store_type: INLINE
+            store_type: REMOTE
             repo_name: example_repository
       properties:
         pipeline_yaml:
@@ -832,6 +849,15 @@ components:
         id: 36li0g4pug41q
       type: object
       description: Contains parameters related to creating an Entity for Git Experience.
+      x-examples:
+        example-create-git:
+          branch_name: branch
+          file_path: /folder/file.json
+          commit_message: Added Harness Git Experience
+          base_branch: old_branch
+          connector_ref: git_connector
+          store_type: REMOTE
+          repo_name: example_repository
       properties:
         branch_name:
           type: string
@@ -857,21 +883,22 @@ components:
         repo_name:
           type: string
           description: Name of the repository.
-      x-examples:
-        example-create-git:
-          branch_name: branch
-          file_path: /folder/file.json
-          commit_message: Added Harness Git Experience
-          base_branch: old_branch
-          connector_ref: git_connector
-          store_type: INLINE
-          repo_name: example_repository
     GitUpdateDetails:
       title: Update Git Details
       x-stoplight:
         id: cko6b02f6trvt
       type: object
       description: Contains parameters related to updating an Entity for Git Experience.
+      x-examples:
+        example-update-git:
+          branch_name: branch
+          commit_message: Added Harness Git Experience
+          last_object_id: abcdXYZ
+          base_branch: old_branch
+          last_commit_id: abcdXYZ
+          connector_ref: git_connector
+          store_type: REMOTE
+          repo_name: example_repository
       properties:
         branch_name:
           type: string
@@ -888,13 +915,18 @@ components:
         last_commit_id:
           type: string
           description: Last commit identifier.
-      x-examples:
-        example-update-git:
-          branch_name: branch
-          commit_message: Added Harness Git Experience
-          last_object_id: abcdXYZ
-          base_branch: old_branch
-          last_commit_id: abcdXYZ
+        connector_ref:
+          type: string
+          description: Identifier of the Harness Connector used for CRUD operations on the Entity.
+        store_type:
+          type: string
+          enum:
+            - INLINE
+            - REMOTE
+          description: Specifies whether the Entity is to be stored in Git or not.
+        repo_name:
+          type: string
+          description: Name of the repository.
     PipelineUpdateRequestBody:
       title: Pipeline Update Request Body
       x-stoplight:
@@ -1002,6 +1034,9 @@ components:
             last_object_id: abcdXYZ
             base_branch: old_branch
             last_commit_id: abcdXYZ
+            connector_ref: git_connector
+            store_type: REMOTE
+            repo_name: example_repository
       properties:
         pipeline_yaml:
           type: string
@@ -1280,7 +1315,7 @@ components:
                       started: 1234567890
                       ended: 1234567890
                       run_number: 5
-                  store_type: INLINE
+                  store_type: REMOTE
                   connector_ref: example_connector
                   valid: true
                   git_details:
@@ -1337,7 +1372,7 @@ components:
                       started: 1234567890
                       ended: 1234567890
                       run_number: 5
-                  store_type: INLINE
+                  store_type: REMOTE
                   connector_ref: example_connector
                   valid: true
                   git_details:
@@ -1464,7 +1499,7 @@ components:
                   commit_message: Added Harness Git Experience
                   base_branch: old_branch
                   connector_ref: git_connector
-                  store_type: INLINE
+                  store_type: REMOTE
                   repo_name: example_repository
         application/yaml:
           schema:
@@ -1485,7 +1520,7 @@ components:
                   commit_message: Added Harness Git Experience
                   base_branch: old_branch
                   connector_ref: git_connector
-                  store_type: INLINE
+                  store_type: REMOTE
                   repo_name: example_repository
       description: Pipeline request body
       required: true
@@ -1596,6 +1631,9 @@ components:
                   last_object_id: abcdXYZ
                   base_branch: old_branch
                   last_commit_id: abcdXYZ
+                  connector_ref: git_connector
+                  store_type: REMOTE
+                  repo_name: example_repository
         application/yaml:
           schema:
             $ref: '#/components/schemas/PipelineUpdateRequestBody'
@@ -1615,5 +1653,8 @@ components:
                   last_object_id: abcdXYZ
                   base_branch: old_branch
                   last_commit_id: abcdXYZ
+                  connector_ref: git_connector
+                  store_type: REMOTE
+                  repo_name: example_repository
       description: Pipeline request body
       required: true

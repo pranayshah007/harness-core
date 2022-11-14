@@ -2313,6 +2313,11 @@
 573542:io.harness.delegate.task.ecs.request.EcsRunTaskRequest
 573543:io.harness.delegate.task.ecs.response.EcsRunTaskResponse
 573544:io.harness.delegate.beans.ecs.EcsRunTaskResult
+573545:io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest
+573546:io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse
+573547:io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest
+573548:io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse
+573549:io.harness.delegate.beans.elastigroup.ElastigroupSetupResult
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO
@@ -2429,6 +2434,8 @@
 9800005:io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig
 9800006:io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig
 9800007:io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig
+9800008:io.harness.delegate.task.terraform.InlineTerraformBackendConfigFileInfo
+9800009:io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
@@ -2436,4 +2443,3 @@
 10000103:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType
 10000109:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO
 10000111:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
-

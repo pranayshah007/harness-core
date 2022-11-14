@@ -10,6 +10,8 @@ package io.harness.cvng.statemachine.services.api;
 import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.metrics.CVNGMetricsUtils;
+import io.harness.cvng.metrics.beans.SLOMetricContext;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
@@ -24,8 +26,11 @@ import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.S
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.SLIMetricAnalysisState;
+import io.harness.metrics.service.api.MetricService;
 
 import com.google.inject.Inject;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +54,10 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
 
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
 
+  @Inject private MetricService metricService;
+
+  @Inject private Clock clock;
+
   @Override
   public AnalysisState execute(SLIMetricAnalysisState analysisState) {
     Instant startTime = analysisState.getInputs().getStartTime();
@@ -69,6 +78,10 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
         sliRecordList, serviceLevelIndicator.getUuid(), verificationTaskId, serviceLevelIndicator.getVersion());
     sloHealthIndicatorService.upsert(serviceLevelIndicator);
     analysisState.setStatus(AnalysisStatus.SUCCESS);
+    try (SLOMetricContext sloMetricContext = new SLOMetricContext(serviceLevelIndicator)) {
+      metricService.recordDuration(
+          CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC, Duration.between(clock.instant(), endTime));
+    }
     return analysisState;
   }
 

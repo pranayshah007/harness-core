@@ -63,7 +63,8 @@ public class ExecutionInfoUpdateEventHandler implements PlanStatusUpdateObserver
       String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
       String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
       String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
-      Optional<PipelineEntity> pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
+      Optional<PipelineEntity> pipelineEntity =
+          pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
       if (!pipelineEntity.isPresent()) {
         return;
       }

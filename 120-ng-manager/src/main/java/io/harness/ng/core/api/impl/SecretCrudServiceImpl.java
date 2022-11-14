@@ -385,7 +385,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
             Resource.of(SECRET_RESOURCE_TYPE, null), SECRET_VIEW_PERMISSION)) {
       allMatchingSecrets = ngSecretService.getPermitted(allMatchingSecrets);
     }
-    return ngSecretService.list(allMatchingSecrets, page, size).map(this::getResponseWrapper);
+    return ngSecretService.getPaginatedResult(allMatchingSecrets, page, size).map(this::getResponseWrapper);
   }
 
   @VisibleForTesting

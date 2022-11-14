@@ -63,6 +63,13 @@ enum UrlType {
   ACCOUNT
 }
 
+enum ProviderType {
+  GITHUB
+  GITLAB
+  GIT
+  BITBUCKET
+}
+
 interface Connector {
   id: String
   name: String
@@ -187,7 +194,7 @@ type GitConnector implements Connector {
   description: String
   createdAt: DateTime
   createdBy: User
-
+  providerType: ProviderType
   userName: String
   URL: String
   urlType: UrlType

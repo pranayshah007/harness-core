@@ -162,7 +162,7 @@ public class TriggerExecutionHelper {
       ByteString gitSyncBranchContextByteString;
       if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
           && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
-        pipelineEntityToExecute = pmsPipelineService.get(ngTriggerEntity.getAccountId(),
+        pipelineEntityToExecute = pmsPipelineService.getAndValidatePipeline(ngTriggerEntity.getAccountId(),
             ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false);
         if (!pipelineEntityToExecute.isPresent()) {
           throw new TriggerException("Unable to continue trigger execution. Pipeline with identifier: "
@@ -199,7 +199,7 @@ public class TriggerExecutionHelper {
 
         try (PmsGitSyncBranchContextGuard ignore =
                  pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(gitSyncBranchContextByteString, false)) {
-          pipelineEntityToExecute = pmsPipelineService.get(ngTriggerEntity.getAccountId(),
+          pipelineEntityToExecute = pmsPipelineService.getAndValidatePipeline(ngTriggerEntity.getAccountId(),
               ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false);
         }
 
