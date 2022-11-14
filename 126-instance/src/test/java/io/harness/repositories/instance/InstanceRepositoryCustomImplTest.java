@@ -163,52 +163,6 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void getInstancesDeployedInIntervalTest() {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                            .is(ACCOUNT_ID)
-                            .and(InstanceKeys.lastDeployedAt)
-                            .gte(START_TIMESTAMP)
-                            .lte(END_TIMESTAMP);
-    Instance instance = Instance.builder().build();
-    Query query = new Query().addCriteria(criteria);
-    when(secondaryMongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
-    assertThat(instanceRepositoryCustom.getInstancesDeployedInInterval(ACCOUNT_ID, START_TIMESTAMP, END_TIMESTAMP))
-        .isEqualTo(Arrays.asList(instance));
-  }
-
-  @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
-  @Category(UnitTests.class)
-  public void getInstancesDeployedInIntervalWithOtherParameterTest() {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                            .is(ACCOUNT_ID)
-                            .and(InstanceKeys.orgIdentifier)
-                            .is(ORGANIZATION_ID)
-                            .and(InstanceKeys.projectIdentifier)
-                            .is(PROJECT_ID)
-                            .and(InstanceKeys.lastDeployedAt)
-                            .gte(START_TIMESTAMP)
-                            .lte(END_TIMESTAMP);
-    Instance instance = Instance.builder().build();
-    Query query = new Query().addCriteria(criteria);
-    when(secondaryMongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
-    assertThat(instanceRepositoryCustom.getInstancesDeployedInInterval(
-                   ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, START_TIMESTAMP, END_TIMESTAMP))
-        .isEqualTo(Arrays.asList(instance));
-  }
-
-  @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
-  @Category(UnitTests.class)
-  public void getInstancesTest() {
-    assertThat(
-        instanceRepositoryCustom.getInstances(ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, INFRASTRUCTURE_MAPPING_ID))
-        .isNull();
-  }
-
-  @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
-  @Category(UnitTests.class)
   public void getActiveInstancesTest() {
     Criteria filterNotDeleted = Criteria.where(InstanceKeys.accountIdentifier)
                                     .is(ACCOUNT_ID)
