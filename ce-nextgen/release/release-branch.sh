@@ -91,6 +91,7 @@ sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_F
 
 git add ${VERSION_FILE}
 git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
+git pull origin develop
 git push origin develop
 print_err "$?" "Pushing build.properties to develop branch failed"
 
