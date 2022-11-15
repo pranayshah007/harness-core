@@ -11,6 +11,14 @@
 
 set -e
 
+trap 'report_error' ERR
+
+function report_error(){
+    echo 'please re-trigger this stage after resolving the issue.'
+    echo 'to trigger this specific stage comment "trigger ss" in your github PR'
+    exit 1
+}
+
 function usage() {
   echo "This scripts runs sonar scan to generate reports for vulnerabilities \
   on files in a PR."
@@ -47,6 +55,11 @@ PR_SRCS_FILE="pr_srcs.txt"
 PR_TEST_INCLUSION_FILE="pr_test_inclusions.txt"
 SONAR_CONFIG_FILE='sonar-project.properties'
 
+BAZEL_ARGS="--announce_rc --keep_going --show_timestamps --verbose_failures --remote_max_connections=1000 --remote_retries=1"
+
+# This script is required to generate the test util bzl file in root directory.
+scripts/bazel/generate_credentials.sh
+
 create_empty_files "$PR_MODULES_JAVAC_FILE $PR_SRCS_FILE $PR_TEST_INCLUSION_FILE $PR_MODULES_LIB_FILE"
 
 while getopts ":hb:c:" opt; do
@@ -71,6 +84,16 @@ check_cmd_status "$?" "Failed to get diff between commits."
 PR_MODULES=$($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' ')
 check_cmd_status "$?" "Failed to get modules from commits."
 #echo "PR_MODULES: $PR_MODULES"
+
+BAZEL_COMPILE_MODULES=$($GIT_DIFF | awk -F/ '{print "//"$1"/..."}' | tr '\r\n' ' ')
+check_cmd_status "$?" "Failed to get bazel compile modules from commits."
+#echo "BAZEL_COMPILE_MODULES: $BAZEL_COMPILE_MODULES"
+
+ls -lrta ${JAVA_CLASSES_PATH}
+
+# Running Bazel Build
+bazel build ${BAZEL_ARGS} -- ${BAZEL_COMPILE_MODULES} -//product/... -//commons/...
+check_cmd_status "$?" "Failed to build harness core modules."
 
 for file in $($GIT_DIFF | tr '\r\n' ' ')
   do
