@@ -15,8 +15,10 @@ import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
+import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
@@ -65,6 +67,7 @@ import io.harness.utils.PageUtils;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -82,6 +85,7 @@ import javax.ws.rs.NotFoundException;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -104,6 +108,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   private Map<ServiceLevelObjectiveType, AbstractServiceLevelObjectiveUpdatableEntity>
       serviceLevelObjectiveTypeUpdatableEntityTransformerMap;
   @Inject private CompositeSLOService compositeSLOService;
+  @Inject private SideKickService sideKickService;
 
   @Override
   public ServiceLevelObjectiveV2Response create(
@@ -295,6 +300,15 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .stream()
             .map(NotificationRuleRef::getNotificationRuleRef)
             .collect(Collectors.toList()));
+    if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.COMPOSITE)) {
+      String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
+          serviceLevelObjectiveV2.getAccountId(), serviceLevelObjectiveV2.getUuid());
+      if (StringUtils.isNotBlank(verificationTaskId)) {
+        sideKickService.schedule(
+            VerificationTaskCleanupSideKickData.builder().verificationTaskId(verificationTaskId).build(),
+            clock.instant().plus(Duration.ofMinutes(15)));
+      }
+    }
     return hPersistence.delete(serviceLevelObjectiveV2);
   }
 

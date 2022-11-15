@@ -33,6 +33,7 @@ import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
 import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
@@ -107,6 +108,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Inject NotificationRuleService notificationRuleService;
   @Inject HPersistence hPersistence;
   @Mock CompositeSLOServiceImpl compositeSLOService;
+  @Mock SideKickService sideKickService;
 
   private BuilderFactory builderFactory;
   ProjectParams projectParams;
@@ -129,6 +131,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(serviceLevelObjectiveV2Service, "compositeSLOService", compositeSLOService, true);
     FieldUtils.writeField(serviceLevelIndicatorService, "compositeSLOService", compositeSLOService, true);
     FieldUtils.writeField(compositeSLOService, "hPersistence", hPersistence, true);
+    FieldUtils.writeField(serviceLevelObjectiveV2Service, "sideKickService", sideKickService, true);
     when(compositeSLOService.isReferencedInCompositeSLO(any(), any())).thenCallRealMethod();
     when(compositeSLOService.getReferencedCompositeSLOs(any(), any())).thenCallRealMethod();
     when(compositeSLOService.shouldReset(any(), any())).thenCallRealMethod();
@@ -421,6 +424,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testDelete_CompositeSLOSuccess() {
     boolean isDeleted = serviceLevelObjectiveV2Service.delete(projectParams, compositeSLODTO.getIdentifier());
+    verify(sideKickService, times(1)).schedule(any(), any());
     assertThat(isDeleted).isEqualTo(true);
   }
 
