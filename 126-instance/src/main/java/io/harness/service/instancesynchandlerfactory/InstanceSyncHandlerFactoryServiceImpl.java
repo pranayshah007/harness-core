@@ -64,7 +64,7 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
         return getSshWinRmInstanceSyncHandler(infraKind);
       case ServiceSpecType.CUSTOM_DEPLOYMENT:
         return customDeploymentInstanceSyncHandler;
-      case ServiceSpecType.PCF:
+      case ServiceSpecType.TAS:
         return pcfInstanceSyncHandler;
       default:
         throw new UnexpectedException("No instance sync handler registered for deploymentType: " + deploymentType);
