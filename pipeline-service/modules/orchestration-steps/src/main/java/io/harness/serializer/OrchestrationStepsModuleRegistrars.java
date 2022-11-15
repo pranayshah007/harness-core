@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cf.pipeline.FeatureFlagStageNode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.plancreator.pipeline.PipelineConfig;
@@ -412,7 +411,6 @@ public class OrchestrationStepsModuleRegistrars {
                                           .namespace(SchemaNamespaceConstants.PMS)
                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS, ModuleType.CI))
                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                                          .featureFlags(Collections.singletonList(FeatureName.WAIT_STEP.toString()))
                                           .build())
                   .build())
           .build();
