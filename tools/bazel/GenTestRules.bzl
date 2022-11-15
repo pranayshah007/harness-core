@@ -31,7 +31,6 @@ def run_tests(**kwargs):
                 "-Xmx4G",
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
-                "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn",
             ],
             env = {"JAVA_HOME": "$(JAVABASE)"},
             toolchains = ["@bazel_tools//tools/jdk:current_host_java_runtime"],
@@ -150,7 +149,6 @@ EOF""" % code,
                 "-Xmx4G",
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
-                "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn",
             ],
             env = {"JAVA_HOME": "$(JAVABASE)"},
             toolchains = ["@bazel_tools//tools/jdk:current_host_java_runtime"],
@@ -224,7 +222,6 @@ def optimized_package_test(combined_tests_target_index, package, index, test_cla
             "-Xmx4G",
             "-XX:+HeapDumpOnOutOfMemoryError",
             "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
-            "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn",
         ],
     )
     return [target_name]
