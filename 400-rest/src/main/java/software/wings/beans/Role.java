@@ -18,7 +18,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
@@ -47,12 +46,17 @@ public class Role extends Base implements AccountAccess {
                  .field(RoleKeys.roleType)
                  .field(RoleKeys.accountId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_roleType_1")
+                 .field(RoleKeys.accountId)
+                 .field(RoleKeys.roleType)
+                 .build())
         .build();
   }
 
   @NotEmpty private String name;
   private String description;
-  @NotEmpty @FdIndex private String accountId;
+  @NotEmpty private String accountId;
 
   private String appName;
 
