@@ -170,4 +170,5 @@ public interface EntityTypeConstants {
   String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
   String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
+  String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
 }

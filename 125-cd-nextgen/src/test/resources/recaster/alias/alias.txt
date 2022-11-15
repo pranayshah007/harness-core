@@ -562,3 +562,6 @@ io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepParameters
 io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepNode
 io.harness.cdng.elastigroup.LoadBalancer
 io.harness.cdng.elastigroup.AwsLoadBalancerConfigYaml
+io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo
+io.harness.cdng.elastigroup.ElastigroupSwapRouteStepParameters
+io.harness.cdng.elastigroup.ElastigroupSwapRouteStepNode

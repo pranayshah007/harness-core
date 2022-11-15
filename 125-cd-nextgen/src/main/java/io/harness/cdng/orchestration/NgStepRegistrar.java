@@ -40,6 +40,7 @@ import io.harness.cdng.ecs.EcsRunTaskStep;
 import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
 import io.harness.cdng.elastigroup.ElastigroupSetupStep;
+import io.harness.cdng.elastigroup.ElastigroupSwapRouteStep;
 import io.harness.cdng.gitops.CreatePRStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
@@ -202,6 +203,7 @@ public class NgStepRegistrar {
     engineSteps.put(ElastigroupRollbackStep.STEP_TYPE, ElastigroupRollbackStep.class);
     engineSteps.put(ElastigroupSetupStep.STEP_TYPE, ElastigroupSetupStep.class);
     engineSteps.put(ElastigroupBGStageSetupStep.STEP_TYPE, ElastigroupBGStageSetupStep.class);
+    engineSteps.put(ElastigroupSwapRouteStep.STEP_TYPE, ElastigroupSwapRouteStep.class);
 
     return engineSteps;
   }
