@@ -61,6 +61,8 @@ import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.steps.ManifestStepParameters;
+import io.harness.cdng.pcf.PcfCanaryAppSetupStepInfo;
+import io.harness.cdng.pcf.PcfCanaryAppSetupStepParameters;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.RollbackNode;
@@ -197,5 +199,8 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(ElastigroupDeployStepInfo.class, 12617);
     kryo.register(ElastigroupRollbackStepInfo.class, 12618);
     kryo.register(ElastigroupSetupStepInfo.class, 12619);
+
+    kryo.register(PcfCanaryAppSetupStepInfo.class, 12620);
+    kryo.register(PcfCanaryAppSetupStepParameters.class, 12621);
   }
 }

@@ -39,6 +39,7 @@ import io.harness.cdng.k8s.K8sDeleteStepInfo;
 import io.harness.cdng.k8s.K8sRollingRollbackStepInfo;
 import io.harness.cdng.k8s.K8sRollingStepInfo;
 import io.harness.cdng.k8s.K8sScaleStepInfo;
+import io.harness.cdng.pcf.PcfCanaryAppSetupStepInfo;
 import io.harness.cdng.pipeline.steps.CdStepParametersUtils;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepInfo;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepInfo;
@@ -80,9 +81,9 @@ import io.swagger.annotations.ApiModel;
         AzureARMRollbackStepInfo.class, EcsRollingDeployStepInfo.class, EcsRollingRollbackStepInfo.class,
         EcsCanaryDeployStepInfo.class, EcsCanaryDeleteStepInfo.class, EcsBlueGreenCreateServiceStepInfo.class,
         EcsBlueGreenSwapTargetGroupsStepInfo.class, EcsBlueGreenRollbackStepInfo.class,
-        FetchInstanceScriptStepInfo.class, ShellScriptProvisionStepInfo.class, UpdateReleaseRepoStepInfo.class,
-        EcsRunTaskStepInfo.class, ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class,
-        ElastigroupSetupStepInfo.class})
+        FetchInstanceScriptStepInfo.class, PcfCanaryAppSetupStepInfo.class, ShellScriptProvisionStepInfo.class,
+        UpdateReleaseRepoStepInfo.class, EcsRunTaskStepInfo.class, ElastigroupDeployStepInfo.class,
+        ElastigroupRollbackStepInfo.class, ElastigroupSetupStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

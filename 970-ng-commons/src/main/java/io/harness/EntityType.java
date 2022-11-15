@@ -425,7 +425,10 @@ public enum EntityType {
   ELASTIGROUP_SETUP_STEP(
       ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SETUP, IdentifierRef.class, EntityYamlRootNames.ELASTIGROUP_SETUP),
   @JsonProperty(EntityTypeConstants.BITRISE_STEP)
-  BITRISE_STEP(ModuleType.CI, EntityTypeConstants.BITRISE_STEP, IdentifierRef.class, EntityYamlRootNames.BITRISE_STEP);
+  BITRISE_STEP(ModuleType.CI, EntityTypeConstants.BITRISE_STEP, IdentifierRef.class, EntityYamlRootNames.BITRISE_STEP),
+  @JsonProperty(EntityTypeConstants.PCF_CANARY_APP_SETUP_STEP)
+  PCF_CANARY_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.PCF_CANARY_APP_SETUP_STEP, IdentifierRef.class,
+      EntityYamlRootNames.PCF_CANARY_APP_SETUP_STEP);
 
   private final ModuleType moduleType;
   String yamlName;
