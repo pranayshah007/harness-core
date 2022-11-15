@@ -157,13 +157,15 @@ public class NodeStartHelper {
 
   private void resolveInputs(Ambiance ambiance, PlanNode planNode) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    log.info("Starting to Resolve step Inputs");
-    Object resolvedInputs =
-        pmsEngineExpressionService.resolve(ambiance, planNode.getStepInputs(), planNode.getExpressionMode());
-    PmsStepParameters parameterInputs =
-        PmsStepParameters.parse(OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedInputs));
-    pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, ambiance.getPlanExecutionId(), parameterInputs);
-    log.info("Resolved step Inputs");
+    if (planNode.getStepInputs() != null) {
+      log.info("Starting to Resolve step Inputs");
+      Object resolvedInputs =
+          pmsEngineExpressionService.resolve(ambiance, planNode.getStepInputs(), planNode.getExpressionMode());
+      PmsStepParameters parameterInputs =
+          PmsStepParameters.parse(OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedInputs));
+      pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, ambiance.getPlanExecutionId(), parameterInputs);
+      log.info("Resolved step Inputs");
+    }
   }
 
   @VisibleForTesting
