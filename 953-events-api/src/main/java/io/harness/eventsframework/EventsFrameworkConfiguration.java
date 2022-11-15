@@ -26,4 +26,5 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class EventsFrameworkConfiguration {
   @JsonProperty("redis") @ConfigSecret RedisConfig redisConfig;
+//Comment
 }
