@@ -20,6 +20,7 @@ RUN microdnf update \
 COPY ci-addon_/ci-addon /usr/local/bin/ci-addon-linux
 COPY java-agent.jar /usr/local/bin/
 COPY split_tests /usr/local/bin/
+USER root
 RUN chmod +x /usr/local/bin/ci-addon-linux \
     && chmod +x /usr/local/bin/split_tests
 
