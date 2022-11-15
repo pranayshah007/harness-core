@@ -14,6 +14,7 @@ import static io.harness.logging.LogLevel.INFO;
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DELETE_NEW_ELASTI_GROUP;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
@@ -219,5 +220,24 @@ public class ElastigroupDeployTaskHelper {
           elastigroup.getName(), elastigroup.getId(), min, max, target, capacity.getMinimum(), capacity.getMaximum(),
           capacity.getTarget()));
     }
+  }
+
+  public void deleteElastigroup(ElastiGroup elastigroup, String spotInstToken, String spotInstAccountId,
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
+    final LogCallback logCallback =
+        getLogCallback(logStreamingTaskClient, DELETE_NEW_ELASTI_GROUP, commandUnitsProgress);
+
+    if (elastigroup == null) {
+      logCallback.saveExecutionLog("No Elastigroup eligible for deletion.", INFO, SUCCESS);
+      return;
+    }
+
+    logCallback.saveExecutionLog(
+        format("Sending request to Spotinst to delete newly created Elastigroup: [%s], Id: [%s]", elastigroup.getName(),
+            elastigroup.getId()));
+    spotInstHelperServiceDelegate.deleteElastiGroup(spotInstToken, spotInstAccountId, elastigroup.getId());
+    logCallback.saveExecutionLog(
+        format("Elastigroup: [%s], Id: [%s] deleted successfully", elastigroup.getName(), elastigroup.getId()), INFO,
+        SUCCESS);
   }
 }
