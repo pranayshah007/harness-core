@@ -108,13 +108,17 @@ for module in $PR_MODULES
      || echo "$module is not present in the bazel modules list"
   done
 
+echo "---------------------"
+cat $PR_MODULES_JAVAC_FILE
+echo "---------------------"
+
 if [ ! -s $PR_MODULES_JAVAC_FILE ]; then
   echo "INFO: No need to run Sonar Scan."; exit 0
 fi
 
 # Running Bazel Build
 echo "INFO: BAZEL COMMAND: bazel build ${BAZEL_ARGS} -- ${BAZEL_COMPILE_MODULES[@]} -//product/... -//commons/..."
-bazel build ${BAZEL_ARGS} -- ${BAZEL_COMPILE_MODULES[@]} -//product/... -//commons/...
+bazel build ${BAZEL_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" -//product/... -//commons/...
 check_cmd_status "$?" "Failed to build harness core modules."
 
 ls -lrta ${JAVA_CLASSES_PATH}
