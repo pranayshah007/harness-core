@@ -33,7 +33,7 @@ public class PcfInstanceSyncHandler extends AbstractInstanceSyncHandler {
 
   @Override
   public String getInfrastructureKind() {
-    return InfrastructureKind.PCF;
+    return InfrastructureKind.TAS;
   }
 
   @Override
