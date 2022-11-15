@@ -29,7 +29,10 @@ type EnqueueRequest struct {
 	SubTopic     string `json:"subTopic"`
 	Payload      []byte `json:"payload"`
 	ProducerName string `json:"producerName"`
+	Priority     string // LOW/MEDIUM/HIGH
 }
+
+// hsqs:PIPELINE:LOW:ACCOUNT_ID:QUEUE change enqueue accordingly
 
 // EnqueueResponse Response object for Enqueuing messages
 type EnqueueResponse struct {
@@ -53,6 +56,7 @@ type DequeueRequest struct {
 	BatchSize       int           `json:"batchSize"`
 	ConsumerName    string        `json:"consumerName"`
 	MaxWaitDuration time.Duration `json:"maxWaitDuration"`
+	Priority        string        // ["HIGH", "MEDIUM", "LOW"]
 }
 
 // DequeueResponse Response object for Dequeuing messages

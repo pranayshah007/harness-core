@@ -53,8 +53,8 @@ func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*sto
 		return &store.EnqueueResponse{}, err
 	}
 
-	allSubTopicsKey := utils.GetAllSubTopicsFromTopicKey(request.Topic)
-	subTopicQueueKey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic)
+	allSubTopicsKey := utils.GetAllSubTopicsFromTopicKey(request.Topic, request.Priority)
+	subTopicQueueKey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic, request.Priority)
 
 	// add subtopic in subtopics set
 	_, err = s.Client.SAdd(ctx, allSubTopicsKey, request.SubTopic).Result()
@@ -91,6 +91,12 @@ func (s *Store) Dequeue(ctx context.Context, request store.DequeueRequest) ([]*s
 		return nil, nil
 	}
 
+	priority := "LOW"
+
+	if len(request.Priority) > 0 {
+		priority = request.Priority
+	}
+
 	// TODO Exclude subtopics which are blacklisted (due to unack)
 
 	// Select a random subtopic to get items from the subtopic
@@ -99,7 +105,7 @@ func (s *Store) Dequeue(ctx context.Context, request store.DequeueRequest) ([]*s
 	selectedTopic := subtopics[index]
 	s.Logger.Debug().Msgf("selected subTopic is %s", selectedTopic)
 
-	return s.ReadFromStream(ctx, utils.GetSubTopicStreamQueueKey(request.Topic, selectedTopic), request.BatchSize, utils.GetConsumerGroupKeyForTopic(request.Topic), request.ConsumerName, request.MaxWaitDuration)
+	return s.ReadFromStream(ctx, utils.GetSubTopicStreamQueueKey(request.Topic, selectedTopic, priority), request.BatchSize, utils.GetConsumerGroupKeyForTopic(request.Topic, priority), request.ConsumerName, request.MaxWaitDuration)
 }
 
 // ReadFromStream helper method to read from subTopic Streams
@@ -311,7 +317,7 @@ func MapXMessageToResponse(queueKey string, msgs []redis.XMessage) []*store.Dequ
 func (s *Store) Ack(ctx context.Context, request store.AckRequest) (*store.AckResponse, error) {
 
 	ids := []string{request.ItemID}
-	topicKey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic)
+	topicKey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic, "LOW")
 
 	// acknowledging the processed method
 	if _, err := s.Client.XAck(ctx, topicKey, request.ConsumerName, ids...).Result(); err != nil {
@@ -327,7 +333,7 @@ func (s *Store) Ack(ctx context.Context, request store.AckRequest) (*store.AckRe
 
 // UnAck Method will add a specific topic to blockList processing list
 func (s *Store) UnAck(ctx context.Context, request store.UnAckRequest) (*store.UnAckResponse, error) {
-	blockedKey := utils.GetAllBlockedSubTopicsFromTopicKey(request.Topic, request.SubTopic)
+	blockedKey := utils.GetAllBlockedSubTopicsFromTopicKey(request.Topic, request.SubTopic, "LOW")
 	result, err := s.Client.Set(ctx, blockedKey, true, request.RetryAfterTimeDuration).Result()
 	if err != nil {
 		return &store.UnAckResponse{}, &store.UnAckErrorResponse{ErrorMessage: err.Error()}
@@ -370,7 +376,7 @@ func (s *Store) GetKey(ctx context.Context, key string, v any) error {
 
 // AllSubTopicsForGivenTopic helper method to fetch all subTopics for a given topic
 func (s *Store) AllSubTopicsForGivenTopic(ctx context.Context, topic string) ([]string, error) {
-	allQueuesTopicKey := utils.GetAllSubTopicsFromTopicKey(topic)
+	allQueuesTopicKey := utils.GetAllSubTopicsFromTopicKey(topic, "LOW")
 	allTopicsResult, err := s.Client.SMembers(ctx, allQueuesTopicKey).Result()
 	if err != nil || err == redis.Nil {
 		return nil, err
@@ -452,12 +458,12 @@ func (s *Store) Register(ctx context.Context, request store.RegisterTopicMetadat
 	for _, subtopic := range subtopics {
 		_, err = s.Client.XGroupCreate(
 			ctx,
-			utils.GetSubTopicStreamQueueKey(request.Topic, subtopic),
-			utils.GetConsumerGroupKeyForTopic(request.Topic),
+			utils.GetSubTopicStreamQueueKey(request.Topic, subtopic, "LOW"),
+			utils.GetConsumerGroupKeyForTopic(request.Topic, "LOW"),
 			"0",
 		).Result()
 		fmt.Errorf("failed to add consumer group for topic %s in the stream %s",
-			request.Topic, utils.GetSubTopicStreamQueueKey(request.Topic, subtopic))
+			request.Topic, utils.GetSubTopicStreamQueueKey(request.Topic, subtopic, "LOW"))
 	}
 	return nil
 }

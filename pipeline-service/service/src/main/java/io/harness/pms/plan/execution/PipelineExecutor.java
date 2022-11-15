@@ -14,6 +14,7 @@ import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PIP
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PROJECT_IDENTIFIER;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
 import io.harness.exception.InvalidRequestException;
@@ -23,6 +24,8 @@ import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
+import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.model.EnqueueRequest;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
@@ -32,6 +35,7 @@ import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.dto.RunStageRequestDTO;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -58,6 +62,10 @@ public class PipelineExecutor {
   RetryExecutionHelper retryExecutionHelper;
   PMSPipelineTemplateHelper pipelineTemplateHelper;
   PipelineTelemetryHelper pipelineTelemetryHelper;
+
+  PmsFeatureFlagHelper pmsFeatureFlagHelper;
+
+  HsqsServiceClient hsqsServiceClient;
 
   public PlanExecutionResponseDto runPipelineWithInputSetPipelineYaml(@NotNull String accountId,
       @NotNull String orgIdentifier, @NotNull String projectIdentifier, @NotNull String pipelineIdentifier,
@@ -120,10 +128,18 @@ public class PipelineExecutor {
     ExecArgs execArgs = getExecArgs(originalExecutionId, moduleType, runtimeInputYaml, stagesToRun, expressionValues,
         notifyOnlyUser, pipelineEntity);
 
+    if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.PIPELINE_EXECUTION_QUEUING)) {
+      hsqsServiceClient.enqueue(EnqueueRequest.builder().build(), "auth_string");
+
+      return PlanExecutionResponseDto.builder()
+          .gitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity))
+          .build();
+    }
+
     return getPlanExecutionResponseDto(accountId, orgIdentifier, projectIdentifier, useV2, pipelineEntity, execArgs);
   }
 
-  private PlanExecutionResponseDto getPlanExecutionResponseDto(String accountId, String orgIdentifier,
+  public PlanExecutionResponseDto getPlanExecutionResponseDto(String accountId, String orgIdentifier,
       String projectIdentifier, boolean useV2, PipelineEntity pipelineEntity, ExecArgs execArgs) {
     PlanExecution planExecution;
     if (useV2) {
