@@ -25,12 +25,13 @@ def run_tests(**kwargs):
         native.java_test(
             name = test,
             runtime_deps = ["tests"],
-            size = "enormous",
+            size = "large",
             jvm_flags = [
                 "$(HARNESS_ARGS)",
                 "-Xmx4G",
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
+                "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn",
             ],
             env = {"JAVA_HOME": "$(JAVABASE)"},
             toolchains = ["@bazel_tools//tools/jdk:current_host_java_runtime"],
@@ -137,7 +138,7 @@ EOF""" % code,
             name = package + ".tests" + index,
             test_class = package + "." + test_class,
             deps = [":shared_package_tests"] + deps,
-            size = "enormous",
+            size = "large",
 
             # inputs
             srcs = code_filepath + [x[0] for x in tests],
@@ -149,6 +150,7 @@ EOF""" % code,
                 "-Xmx4G",
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
+                "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn",
             ],
             env = {"JAVA_HOME": "$(JAVABASE)"},
             toolchains = ["@bazel_tools//tools/jdk:current_host_java_runtime"],
@@ -213,7 +215,7 @@ def optimized_package_test(combined_tests_target_index, package, index, test_cla
         name = target_name,
         test_class = package + "." + test_class,
         runtime_deps = [COMBINED_TESTS_TARGET + str(combined_tests_target_index)],
-        size = "enormous",
+        size = "large",
 
         #Additional
         visibility = ["//visibility:public"],
@@ -222,6 +224,7 @@ def optimized_package_test(combined_tests_target_index, package, index, test_cla
             "-Xmx4G",
             "-XX:+HeapDumpOnOutOfMemoryError",
             "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
+            "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn",
         ],
     )
     return [target_name]
