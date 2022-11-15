@@ -10,6 +10,7 @@ package io.harness.ccm.views.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
 import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
@@ -57,7 +58,6 @@ import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.utils.CEViewPreferenceUtils;
-import io.harness.ccm.views.utils.ViewFieldUtils;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.cloud.bigquery.BigQuery;
@@ -265,8 +265,8 @@ public class CEViewServiceImpl implements CEViewService {
             }
             viewFieldIdentifierSet.add(ViewFieldIdentifier.CUSTOM);
           }
-          if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING) {
-            viewFieldIdentifierSet.add(ViewFieldIdentifier.BUSINESS_MAPPING);
+          if (viewIdCondition.getViewField().getIdentifier() == BUSINESS_MAPPING) {
+            viewFieldIdentifierSet.add(BUSINESS_MAPPING);
           }
         }
       }
@@ -284,7 +284,7 @@ public class CEViewServiceImpl implements CEViewService {
         boolean isBusinessMappingConditionPresent = false;
         for (ViewCondition condition : rule.getViewConditions()) {
           ViewIdCondition viewIdCondition = (ViewIdCondition) condition;
-          if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING) {
+          if (viewIdCondition.getViewField().getIdentifier() == BUSINESS_MAPPING) {
             isBusinessMappingConditionPresent = true;
             break;
           }
@@ -304,14 +304,14 @@ public class CEViewServiceImpl implements CEViewService {
     List<ViewCondition> viewConditions = new ArrayList<>();
     for (ViewCondition condition : viewRule.getViewConditions()) {
       ViewIdCondition viewIdCondition = (ViewIdCondition) condition;
-      if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING) {
+      if (viewIdCondition.getViewField().getIdentifier() == BUSINESS_MAPPING) {
         ViewField field = viewIdCondition.getViewField();
         viewConditions.add(ViewIdCondition.builder()
                                .viewField(ViewField.builder()
                                               .fieldId(field.getFieldId())
                                               .fieldName(field.getFieldName())
                                               .identifier(field.getIdentifier())
-                                              .identifierName(ViewFieldUtils.getBusinessMappingIdentifierName())
+                                              .identifierName(BUSINESS_MAPPING.getDisplayName())
                                               .build())
                                .viewOperator(viewIdCondition.getViewOperator())
                                .values(viewIdCondition.getValues())
