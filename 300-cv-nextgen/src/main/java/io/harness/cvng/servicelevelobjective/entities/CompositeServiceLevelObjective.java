@@ -6,6 +6,7 @@
  */
 package io.harness.cvng.servicelevelobjective.entities;
 
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsRefDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -34,12 +35,23 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
 
   @Data
   @Builder
+  @FieldNameConstants(innerTypeName = "CompositeServiceLevelObjectiveDetailsKeys")
+  @EqualsAndHashCode()
   public static class ServiceLevelObjectivesDetail {
     String accountId;
     String orgIdentifier;
     String projectIdentifier;
     String serviceLevelObjectiveRef;
-    Double weightagePercentage;
+    @FieldNameConstants.Exclude Double weightagePercentage;
+
+    public ServiceLevelObjectiveDetailsRefDTO getServiceLevelObjectiveDetailsRefDTO() {
+      return ServiceLevelObjectiveDetailsRefDTO.builder()
+          .accountId(accountId)
+          .orgIdentifier(orgIdentifier)
+          .projectIdentifier(projectIdentifier)
+          .serviceLevelObjectiveRef(serviceLevelObjectiveRef)
+          .build();
+    }
   }
 
   @Override

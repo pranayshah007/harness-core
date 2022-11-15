@@ -9,6 +9,7 @@ package io.harness.migrations;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.migrations.accountpermission.AddAccessNextGenPermissionMigration;
 import io.harness.migrations.all.AccountNextGenEnabledMigration;
 import io.harness.migrations.all.AddAccountIdToActivityCollection;
 import io.harness.migrations.all.AddAccountIdToBarrierInstanceCollection;
@@ -407,6 +408,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(236, CorrectingQuartzTriggerFrequency.class))
         .add(Pair.of(237, DisableArtifactCollectionForInactiveAccount.class))
         .add(Pair.of(238, AddMisfireInstructionToQuartz.class))
+        .add(Pair.of(239, AddAccessNextGenPermissionMigration.class))
         .build();
   }
 }

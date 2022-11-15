@@ -546,6 +546,11 @@ public class PermissionAttribute {
     /**
      * Manage Restricted Access
      */
-    MANAGE_RESTRICTED_ACCESS;
+    MANAGE_RESTRICTED_ACCESS,
+
+    /**
+     * Manage Try NextGen Access
+     */
+    ACCESS_NEXTGEN;
   }
 }

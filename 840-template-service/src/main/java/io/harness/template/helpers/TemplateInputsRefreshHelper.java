@@ -24,6 +24,7 @@ import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -150,8 +151,9 @@ public class TemplateInputsRefreshHelper {
     JsonNode templateInputs = TemplateNodeValue.get(TEMPLATE_INPUTS);
 
     // Template YAML corresponding to the TemplateRef and Version Label
-    TemplateEntity templateEntity = templateMergeServiceHelper.getLinkedTemplateEntity(
+    TemplateEntityGetResponse templateEntityGetResponse = templateMergeServiceHelper.getLinkedTemplateEntity(
         accountId, orgId, projectId, TemplateNodeValue, templateCacheMap);
+    TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     String templateYaml = templateEntity.getYaml();
 
     // Generate the Template Spec from the Template YAML

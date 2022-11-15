@@ -8,7 +8,6 @@
 package io.harness.ci.stateutils.buildstate.providers;
 
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_CI_INDIRECT_LOG_UPLOAD_FF;
-import static io.harness.ci.commonconstants.CIExecutionConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.LOG_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.LOG_SERVICE_TOKEN_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SETUP_ADDON_CONTAINER_NAME;
@@ -18,6 +17,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_SETUP_ADDO
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_TOKEN_VARIABLE;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.delegate.beans.ci.pod.CICommonConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 
 import static org.assertj.core.api.Assertions.assertThat;

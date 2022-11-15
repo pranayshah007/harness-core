@@ -363,21 +363,13 @@ public class NGVaultServiceImpl implements NGVaultService {
   private boolean isProcessAppRoleInputValid(ConnectorDTO connectorDTO, String accountIdentifier) {
     if (connectorDTO.getConnectorInfo() == null
         || connectorDTO.getConnectorInfo().getConnectorType() != ConnectorType.VAULT) {
-      log.error("App role processing needs VAULT ConnectorType, but found: '%s'. Account: '%s', ConnectorDTO: '%s'",
-          connectorDTO.getConnectorInfo().getConnectorType(), accountIdentifier, connectorDTO.toString());
       return false;
     }
 
     ConnectorInfoDTO connectorInfo = connectorDTO.getConnectorInfo();
     VaultConnectorDTO vaultConnectorDTO = (VaultConnectorDTO) connectorInfo.getConnectorConfig();
 
-    if (vaultConnectorDTO.getAccessType() != AccessType.APP_ROLE) {
-      log.error("Vault connector should have APP_ROLE access type, but found: '%s'. Account: '%s', ConnectorDTO: '%s'",
-          vaultConnectorDTO.getAccessType(), accountIdentifier, connectorDTO);
-      return false;
-    }
-
-    return true;
+    return vaultConnectorDTO.getAccessType() == AccessType.APP_ROLE;
   }
 
   private SecretManagerMetadataDTO getHashicorpVaultMetadata(String accountIdentifier,

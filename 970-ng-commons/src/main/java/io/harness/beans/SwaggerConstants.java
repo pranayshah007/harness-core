@@ -32,4 +32,6 @@ public interface SwaggerConstants {
   String INFRASTRUCTURE_DEFINITION_YAML_HOST_FILTER_CLASSPATH = "io.harness.cdng.infra.beans.host.HostFilter";
   String INFRASTRUCTURE_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH =
       "io.harness.cdng.elastigroup.ElastigroupConfiguration";
+  String INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH =
+      "io.harness.cdng.elastigroup.ElastigroupInstances";
 }

@@ -10,6 +10,7 @@ barrierSpecParameters
 io.harness.advisers.rollback.OnFailRollbackOutput
 io.harness.steps.jira.update.JiraUpdateSpecParameters
 io.harness.steps.common.steps.stepgroup.StepGroupStepParameters
+io.harness.steps.group.GroupStepParametersV1
 io.harness.plancreator.execution.ExecutionElementConfig
 io.harness.steps.cf.FlagConfigurationStepParameters
 io.harness.steps.http.HttpStepParameters

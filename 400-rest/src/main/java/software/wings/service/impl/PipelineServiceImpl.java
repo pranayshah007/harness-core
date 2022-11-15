@@ -221,7 +221,7 @@ public class PipelineServiceImpl implements PipelineService {
                 .build();
         try {
           List<WorkflowExecution> workflowExecutions =
-              workflowExecutionService.listExecutions(innerPageRequest, false, false, false, false, false)
+              workflowExecutionService.listExecutions(innerPageRequest, false, false, false, false, false, true)
                   .getResponse();
           pipeline.setWorkflowExecutions(workflowExecutions);
         } catch (Exception e) {

@@ -81,6 +81,7 @@ import org.mockito.MockitoAnnotations;
 public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Mock GitSyncConnectorHelper gitSyncConnectorHelper;
   @Mock ScmOrchestratorService scmOrchestratorService;
+  @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Mock ConnectorService connectorService;
   ScmFacilitatorServiceImpl scmFacilitatorService;
@@ -103,8 +104,6 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   PageRequest pageRequest;
   Scope scope;
   ScmConnector scmConnector;
-  @Mock GitClientHelper gitClientHelper;
-  @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Before
   public void setup() throws Exception {
@@ -295,6 +294,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any()))
         .thenReturn(fileContent)
         .thenReturn(getLatestCommitOnFileResponse);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
     ScmGetFileResponseDTO scmGetFileResponseDTO = scmFacilitatorService.getFileByBranch(
         ScmGetFileByBranchRequestDTO.builder().scope(getDefaultScope()).branchName(branch).build());
     assertThat(scmGetFileResponseDTO.getBlobId()).isEqualTo(blobId);
@@ -306,7 +306,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void testGetFileByBranchWhenSCMAPIfails() {
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
     FileContent fileContent = FileContent.newBuilder().setStatus(400).build();
     GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = GetLatestCommitOnFileResponse.newBuilder().build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any()))
@@ -323,7 +323,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void testGetFileByBranchWhenGetLatestCommitOnFileSCMAPIfails() {
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
     FileContent fileContent = FileContent.newBuilder().setStatus(200).build();
     GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
         GetLatestCommitOnFileResponse.newBuilder().setError(error).build();
@@ -343,7 +343,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void testGetFileByCommitIdWhenSCMAPIsucceeds() {
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
     FileContent fileContent =
         FileContent.newBuilder().setContent(content).setBlobId(blobId).setCommitId(commitId).setPath(filePath).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(fileContent);
@@ -358,7 +358,6 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void testGetFileByCommitIdWhenSCMAPIfails() {
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     FileContent fileContent = FileContent.newBuilder().setStatus(400).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(fileContent);
     assertThatThrownBy(

@@ -15,6 +15,7 @@ import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hin
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.provision.TerraformConstants.TERRAFORM_BACKEND_CONFIGS_FILE_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_VARIABLES_FILE_NAME;
+import static io.harness.provision.TerraformConstants.TF_BACKEND_CONFIG_DIR;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_DIR;
 
 import static software.wings.beans.LogHelper.color;
@@ -25,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.task.terraform.TerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
@@ -121,17 +123,26 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
         taskParameters.getVarFileInfos(), scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory);
 
+    String tfBackendConfigDirectory = Paths.get(baseDir, TF_BACKEND_CONFIG_DIR).toString();
+
     File tfOutputsFile = Paths.get(scriptDirectory, format(TERRAFORM_VARIABLES_FILE_NAME, "output")).toFile();
+    String backendConfigFile = taskParameters.getBackendConfig() != null
+        ? TerraformHelperUtils.createFileFromStringContent(
+            taskParameters.getBackendConfig(), scriptDirectory, TERRAFORM_BACKEND_CONFIGS_FILE_NAME)
+        : taskParameters.getBackendConfig();
+    TerraformBackendConfigFileInfo configFileInfo = null;
+    if (taskParameters.getBackendConfigFileInfo() != null) {
+      configFileInfo = taskParameters.getBackendConfigFileInfo();
+      backendConfigFile = terraformBaseHelper.checkoutRemoteBackendConfigFileAndConvertToFilePath(
+          configFileInfo, scriptDirectory, logCallback, taskParameters.getAccountId(), tfBackendConfigDirectory);
+    }
 
     try (PlanJsonLogOutputStream planJsonLogOutputStream =
              new PlanJsonLogOutputStream(taskParameters.isSaveTerraformStateJson());
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       TerraformExecuteStepRequest terraformExecuteStepRequest =
           TerraformExecuteStepRequest.builder()
-              .tfBackendConfigsFile(taskParameters.getBackendConfig() != null
-                      ? TerraformHelperUtils.createFileFromStringContent(
-                          taskParameters.getBackendConfig(), scriptDirectory, TERRAFORM_BACKEND_CONFIGS_FILE_NAME)
-                      : taskParameters.getBackendConfig())
+              .tfBackendConfigsFile(backendConfigFile)
               .tfOutputsFile(tfOutputsFile.getAbsolutePath())
               .tfVarFilePaths(varFilePaths)
               .workspace(taskParameters.getWorkspace())
@@ -164,6 +175,16 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
       if (isNotEmpty(taskParameters.getVarFileInfos())) {
         terraformBaseHelper.addVarFilesCommitIdsToMap(
             taskParameters.getAccountId(), taskParameters.getVarFileInfos(), commitIdToFetchedFilesMap);
+      }
+
+      if (taskParameters.getBackendConfigFileInfo() != null) {
+        terraformBaseHelper.addVarFilesCommitIdsToMap(
+            taskParameters.getAccountId(), taskParameters.getVarFileInfos(), commitIdToFetchedFilesMap);
+      }
+
+      if (configFileInfo != null) {
+        terraformBaseHelper.addBackendFileCommitIdsToMap(
+            taskParameters.getAccountId(), taskParameters.getBackendConfigFileInfo(), commitIdToFetchedFilesMap);
       }
 
       File tfStateFile = TerraformHelperUtils.getTerraformStateFile(scriptDirectory, taskParameters.getWorkspace());

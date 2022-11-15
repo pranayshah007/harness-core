@@ -55,10 +55,11 @@ public interface ConnectorCrudService {
 
   ConnectorResponseDTO update(ConnectorDTO connectorRequestDTO, String accountIdentifier, ChangeType gitChangeType);
 
-  boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier);
+  boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier,
+      boolean forceDelete);
 
   boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier,
-      ChangeType changeType);
+      ChangeType changeType, boolean forceDelete);
 
   ConnectorCatalogueResponseDTO getConnectorCatalogue(String accountIdentifier);
 

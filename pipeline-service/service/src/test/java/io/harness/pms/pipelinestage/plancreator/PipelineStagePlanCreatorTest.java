@@ -124,7 +124,7 @@ public class PipelineStagePlanCreatorTest {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(yamlField).build()))
         .when(pmsPipelineService)
-        .getPipelineWithoutPerformingValidations("acc", "org", "project", "childPipeline", false, false);
+        .getPipeline("acc", "org", "project", "childPipeline", false, false);
 
     PipelineStageNode pipelineStageNode = YamlUtils.read(yamlField, PipelineStageNode.class);
     PlanCreationResponse response =

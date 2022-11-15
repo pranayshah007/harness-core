@@ -56,6 +56,7 @@ public interface YamlTypes {
   String COMMAND = StepSpecTypeConstants.COMMAND;
 
   String ELASTIGROUP_DEPLOY = StepSpecTypeConstants.ELASTIGROUP_DEPLOY;
+  String ELASTIGROUP_ROLLBACK = StepSpecTypeConstants.ELASTIGROUP_ROLLBACK;
 
   String ECS_ROLLING_DEPLOY = StepSpecTypeConstants.ECS_ROLLING_DEPLOY;
   String ECS_ROLLING_ROLLBACK = StepSpecTypeConstants.ECS_ROLLING_ROLLBACK;
@@ -150,8 +151,8 @@ public interface YamlTypes {
   String JENKINS_BUILD = StepSpecTypeConstants.JENKINS_BUILD;
   String STARTUP_COMMAND = "startupCommand";
 
-  String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
   String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
+  String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
 
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";
@@ -165,4 +166,5 @@ public interface YamlTypes {
   String PIPELINE = "pipeline";
   String PARALLEL_STAGE = "parallel";
   String STAGES = "stages";
+  String ELASTIGROUP_SETUP = StepSpecTypeConstants.ELASTIGROUP_SETUP;
 }

@@ -20,8 +20,6 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO.AwsConne
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
-import io.harness.delegate.beans.connector.awsconnector.AwsIRSASpecDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsInheritFromDelegateSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.encryption.SecretRefData;
@@ -38,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AWSConnectorImpl implements BaseConnector {
@@ -58,33 +57,32 @@ public class AWSConnectorImpl implements BaseConnector {
   public ConnectorConfigDTO getConfigDTO(
       SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     AwsConfig clusterConfig = (AwsConfig) settingAttribute.getValue();
-    AwsConnectorDTOBuilder builder = builder().delegateSelectors(Collections.singleton(clusterConfig.getTag()));
+    AwsConnectorDTOBuilder builder = builder();
     AwsCredentialDTO awsCredentialDTO;
 
     if (clusterConfig.isUseEc2IamCredentials()) {
       awsCredentialDTO = getEc2IamCredentials(clusterConfig);
-    }
-
-    else if (clusterConfig.isUseIRSA()) {
+    } else if (clusterConfig.isUseIRSA()) {
       awsCredentialDTO = getIrsaCredentials(clusterConfig);
-    }
-
-    else {
+    } else {
       awsCredentialDTO = getManualCredentials(clusterConfig, migratedEntities);
     }
 
-    return builder.credential(awsCredentialDTO).build();
+    if (StringUtils.isNotBlank(clusterConfig.getTag())) {
+      builder.delegateSelectors(Collections.singleton(clusterConfig.getTag()));
+    }
+
+    return builder.executeOnDelegate(true).credential(awsCredentialDTO).build();
   }
 
   private AwsCredentialDTO getEc2IamCredentials(AwsConfig clusterConfig) {
-    return getAwsCredentialDTO(INHERIT_FROM_DELEGATE, AwsInheritFromDelegateSpecDTO.builder().build(),
-        clusterConfig.getDefaultRegion(), clusterConfig.getCrossAccountAttributes(),
-        clusterConfig.isAssumeCrossAccountRole());
+    return getAwsCredentialDTO(INHERIT_FROM_DELEGATE, null, clusterConfig.getDefaultRegion(),
+        clusterConfig.getCrossAccountAttributes(), clusterConfig.isAssumeCrossAccountRole());
   }
 
   private AwsCredentialDTO getIrsaCredentials(AwsConfig clusterConfig) {
-    return getAwsCredentialDTO(IRSA, AwsIRSASpecDTO.builder().build(), clusterConfig.getDefaultRegion(),
-        clusterConfig.getCrossAccountAttributes(), clusterConfig.isAssumeCrossAccountRole());
+    return getAwsCredentialDTO(IRSA, null, clusterConfig.getDefaultRegion(), clusterConfig.getCrossAccountAttributes(),
+        clusterConfig.isAssumeCrossAccountRole());
   }
 
   private AwsCredentialDTO getManualCredentials(AwsConfig clusterConfig, Map<CgEntityId, NGYamlFile> migratedEntities) {

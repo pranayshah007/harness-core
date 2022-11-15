@@ -15,8 +15,6 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.entitysetupusageclient.EntitySetupUsageHelper;
-import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
@@ -44,8 +42,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class ConnectorEntityReferenceHelper {
-  EntitySetupUsageHelper entityReferenceHelper;
-  EntitySetupUsageClient entitySetupUsageClient;
   Producer eventProducer;
   IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   SecretRefInputValidationHelper secretRefInputValidationHelper;
@@ -58,13 +54,9 @@ public class ConnectorEntityReferenceHelper {
       "The entity reference was not updated for the connector [{}] using the secret [{}] with the exception[{}]";
 
   @Inject
-  public ConnectorEntityReferenceHelper(EntitySetupUsageHelper entityReferenceHelper,
-      EntitySetupUsageClient entitySetupUsageClient,
-      @Named(EventsFrameworkConstants.SETUP_USAGE) Producer eventProducer,
+  public ConnectorEntityReferenceHelper(@Named(EventsFrameworkConstants.SETUP_USAGE) Producer eventProducer,
       IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper,
       SecretRefInputValidationHelper secretRefInputValidationHelper) {
-    this.entityReferenceHelper = entityReferenceHelper;
-    this.entitySetupUsageClient = entitySetupUsageClient;
     this.eventProducer = eventProducer;
     this.secretRefInputValidationHelper = secretRefInputValidationHelper;
     this.identifierRefProtoDTOHelper = identifierRefProtoDTOHelper;

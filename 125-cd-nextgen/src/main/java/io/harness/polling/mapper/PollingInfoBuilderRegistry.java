@@ -10,6 +10,7 @@ package io.harness.polling.mapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.polling.contracts.Type;
+import io.harness.polling.mapper.artifact.AMIArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.AcrArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.ArtifactoryRegistryArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.AzureArtifactsInfoBuilder;
@@ -20,6 +21,7 @@ import io.harness.polling.mapper.artifact.GarArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.GcrArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.GithubPackagesArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.JenkinsArtifactInfoBuilder;
+import io.harness.polling.mapper.artifact.Nexus2RegistryArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.NexusRegistryArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.S3ArtifactInfoBuilder;
 import io.harness.polling.mapper.gitpolling.GitPollingInfoBuilder;
@@ -58,7 +60,9 @@ public class PollingInfoBuilderRegistry {
     registeredPollingInfoBuilders.put(Type.CUSTOM_ARTIFACT, CustomArtifactInfoBuilder.class);
     registeredPollingInfoBuilders.put(Type.GOOGLE_ARTIFACT_REGISTRY, GarArtifactInfoBuilder.class);
     registeredPollingInfoBuilders.put(Type.GITHUB_PACKAGES, GithubPackagesArtifactInfoBuilder.class);
+    registeredPollingInfoBuilders.put(Type.NEXUS2, Nexus2RegistryArtifactInfoBuilder.class);
     registeredPollingInfoBuilders.put(Type.AZURE_ARTIFACTS, AzureArtifactsInfoBuilder.class);
+    registeredPollingInfoBuilders.put(Type.AMI, AMIArtifactInfoBuilder.class);
   }
 
   public Optional<PollingInfoBuilder> getPollingInfoBuilder(Type type) {

@@ -38,8 +38,6 @@ public class InternalReferredEntityExtractor {
 
   public Map<EntityType, EntityType> getReferredByEntityTypeToReferredEntityTypeMap(String accountId) {
     Map<EntityType, EntityType> referredByEntityTypeToReferredEntityTypeMap = new HashMap<>();
-    referredByEntityTypeToReferredEntityTypeMap.put(EntityType.SERVICE, EntityType.CONNECTORS);
-    referredByEntityTypeToReferredEntityTypeMap.put(EntityType.INFRASTRUCTURE, EntityType.CONNECTORS);
 
     if (!ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_CONNECTOR_ENCRYPTION_PRIVILEGED_CALL)) {
       referredByEntityTypeToReferredEntityTypeMap.put(EntityType.CONNECTORS, EntityType.SECRETS);

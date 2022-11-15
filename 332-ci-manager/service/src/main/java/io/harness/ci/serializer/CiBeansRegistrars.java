@@ -13,8 +13,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.nodes.ActionStepNode;
 import io.harness.beans.steps.nodes.ArtifactoryUploadNode;
 import io.harness.beans.steps.nodes.BackgroundStepNode;
+import io.harness.beans.steps.nodes.BitriseStepNode;
 import io.harness.beans.steps.nodes.BuildAndPushACRNode;
 import io.harness.beans.steps.nodes.BuildAndPushDockerNode;
 import io.harness.beans.steps.nodes.BuildAndPushECRNode;
@@ -307,6 +309,28 @@ public class CiBeansRegistrars {
                                            .build())
                    .availableAtAccountLevel(false)
                    .clazz(GitCloneStepNode.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ACTION_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .modulesSupported(Collections.singletonList(ModuleType.CI))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .availableAtAccountLevel(false)
+                   .clazz(ActionStepNode.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.BITRISE_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .modulesSupported(Collections.singletonList(ModuleType.CI))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .availableAtAccountLevel(false)
+                   .clazz(BitriseStepNode.class)
                    .build())
           .build();
 }

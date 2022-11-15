@@ -264,10 +264,6 @@ public class ConnectorMigrationService extends NgMigrationService {
     }
   }
 
-  private List<NGYamlFile> generateSSHConfigFiles() {
-    return Collections.emptyList();
-  }
-
   @Override
   protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
     try {

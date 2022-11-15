@@ -23,6 +23,7 @@ import io.harness.ngsettings.services.impl.SettingsServiceImpl;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.rule.InjectorRuleMixin;
+import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NGSettingRegistrar;
 import io.harness.springdata.HTransactionTemplate;
 import io.harness.testlib.module.MongoRuleMixin;
@@ -85,6 +86,11 @@ public class NgSettingRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
+      Set<Class<? extends KryoRegistrar>> kryoRegistrars() {
+        return getKryoRegistrars();
+      }
+      @Provides
+      @Singleton
       TransactionTemplate getTransactionTemplate(MongoTransactionManager mongoTransactionManager) {
         return new HTransactionTemplate(mongoTransactionManager, false);
       }
@@ -132,5 +138,9 @@ public class NgSettingRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
   @Override
   public Statement apply(Statement statement, FrameworkMethod frameworkMethod, Object target) {
     return applyInjector(log, statement, frameworkMethod, target);
+  }
+
+  protected Set<Class<? extends KryoRegistrar>> getKryoRegistrars() {
+    return ImmutableSet.<Class<? extends KryoRegistrar>>builder().build();
   }
 }

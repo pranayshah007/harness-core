@@ -78,7 +78,7 @@ public interface ScmServiceClient {
   FindFilesInBranchResponse findFilesInBranch(
       ScmConnector scmConnector, String branch, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
-  FindFilesInCommitResponse findFilesInCommit(
+  FindFilesInCommitResponse listFilesInCommit(
       ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
   ListFilesInCommitResponse listFilesInCommit(
@@ -103,6 +103,9 @@ public interface ScmServiceClient {
       ScmConnector scmConnector, long prNumber, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
   FileContentBatchResponse listFiles(
+      ScmConnector connector, Set<String> foldersList, String branch, SCMGrpc.SCMBlockingStub scmBlockingStub);
+
+  FileContentBatchResponse listFilesV2(
       ScmConnector connector, Set<String> foldersList, String branch, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
   FileContentBatchResponse listFoldersFilesByCommitId(

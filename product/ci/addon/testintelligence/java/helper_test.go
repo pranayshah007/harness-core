@@ -41,9 +41,8 @@ func TestDetectJavaPkgs(t *testing.T) {
 	}
 
 	l, err := DetectPkgs(log.Sugar(), filesystem.NewOSFileSystem(log.Sugar()))
-	assert.Contains(t, l, "com.google.test.test")
 	assert.Contains(t, l, "xyz")
 	assert.Contains(t, l, "test1.test1")
-	assert.Len(t, l, 3)
+	assert.Len(t, l, 2)
 	assert.Nil(t, err)
 }

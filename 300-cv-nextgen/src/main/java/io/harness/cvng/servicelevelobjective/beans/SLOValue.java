@@ -15,12 +15,12 @@ import lombok.Value;
 public class SLOValue {
   double goodCount;
   double badCount;
-  double total;
   public double sloPercentage() {
+    double total = goodCount + badCount;
     if (total <= 0.0) {
       return 100.0;
     } else {
-      return (goodCount * 100.0) / (goodCount + badCount);
+      return (goodCount * 100.0) / total;
     }
   }
 }

@@ -7,11 +7,14 @@
 
 package io.harness.cdng.customDeployment;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.SOURABH;
 
-import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
+import static software.wings.beans.TaskType.FETCH_INSTANCE_SCRIPT_TASK_NG;
 
+import static java.time.Duration.ofMinutes;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,8 +43,10 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
-import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
+import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest;
+import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse;
+import io.harness.encryption.Scope;
+import io.harness.encryption.SecretRefData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.logstreaming.ILogStreamingStepClient;
@@ -51,20 +56,17 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.shell.ExecuteCommandResponse;
-import io.harness.shell.ScriptType;
-import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,13 +89,16 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
   @Captor private ArgumentCaptor<List<ServerInstanceInfo>> serverInstanceInfoListCaptor;
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+
+  @Mock private EngineExpressionService engineExpressionService;
   @InjectMocks private FetchInstanceScriptStep fetchInstanceScriptStep;
 
   private FetchInstanceScriptStepParameters parameters =
       FetchInstanceScriptStepParameters.infoBuilder()
           .delegateSelectors(ParameterField.createValueField(List.of(new TaskSelectorYaml("selector-1"))))
           .build();
-  private final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(parameters).build();
+  private final StepElementParameters stepElementParameters =
+      StepElementParameters.builder().spec(parameters).timeout(ParameterField.createValueField("10m")).build();
 
   private final StepInputPackage stepInputPackage = StepInputPackage.builder().build();
   private final CustomDeploymentInfrastructureOutcome infrastructure =
@@ -132,27 +137,86 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
   public void testObtainTaskAfterRbac() {
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
     Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(
-             any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any(), any()))
+    when(StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskRequest taskRequest =
         fetchInstanceScriptStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     assertThat(taskRequest).isNotNull();
-    log.info("{}", taskRequest);
 
-    ShellScriptTaskParametersNG requestParameters =
-        (ShellScriptTaskParametersNG) taskDataArgumentCaptor.getValue().getParameters()[0];
-    log.info("{}", taskDataArgumentCaptor.getValue());
+    FetchInstanceScriptTaskNGRequest requestParameters =
+        (FetchInstanceScriptTaskNGRequest) taskDataArgumentCaptor.getValue().getParameters()[0];
 
-    assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(SHELL_SCRIPT_TASK_NG.toString());
-    assertThat(requestParameters.getScript()).isEqualTo(infrastructure.getInstanceFetchScript());
-    assertThat(requestParameters.isExecuteOnDelegate()).isEqualTo(true);
-    assertThat(requestParameters.getOutputVars())
-        .isEqualTo(Collections.singletonList(FetchInstanceScriptStep.OUTPUT_PATH_KEY));
+    assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(FETCH_INSTANCE_SCRIPT_TASK_NG.toString());
+    assertThat(requestParameters.getScriptBody()).isEqualTo(infrastructure.getInstanceFetchScript());
+    assertThat(requestParameters.getOutputPathKey()).isEqualTo(FetchInstanceScriptStep.OUTPUT_PATH_KEY);
     assertThat(requestParameters.getAccountId()).isEqualTo("account");
-    assertThat(requestParameters.getWorkingDirectory()).isEqualTo("/tmp");
-    assertThat(requestParameters.getScriptType()).isEqualTo(ScriptType.BASH);
+    assertThat(requestParameters.getTimeoutInMillis()).isEqualTo(ofMinutes(10).toMillis());
+  }
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacForAllScopesSecret() {
+    String script = "echo <+infra.variables.sec1>\n"
+        + "echo <+infra.variables.sec2>\n"
+        + "echo <+infra.variables.sec3>\n"
+        + "\n"
+        + "echo '{\"a\":[{\"ip\":\"1.1\"}, {\"ip\":\"2.2\"}]}' > $INSTANCE_OUTPUT_PATH";
+
+    Map<String, String> setupAbstractions = new HashMap<>();
+    setupAbstractions.put(SetupAbstractionKeys.accountId, "account");
+    setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org");
+    setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project");
+
+    Ambiance ambiance1 = Ambiance.newBuilder()
+                             .putAllSetupAbstractions(setupAbstractions)
+                             .setStageExecutionId("stageExecutionId")
+                             .build();
+
+    SecretRefData accountLevelSecret = SecretRefData.builder()
+                                           .scope(Scope.ACCOUNT)
+                                           .identifier("secret1")
+                                           .decryptedValue(generateUuid().toCharArray())
+                                           .build();
+
+    SecretRefData orgLevelSecret = SecretRefData.builder()
+                                       .scope(Scope.ORG)
+                                       .identifier("secret2")
+                                       .decryptedValue(generateUuid().toCharArray())
+                                       .build();
+
+    SecretRefData projectLevelSecret = SecretRefData.builder()
+                                           .scope(Scope.PROJECT)
+                                           .identifier("secret3")
+                                           .decryptedValue(generateUuid().toCharArray())
+                                           .build();
+
+    Map<String, Object> variables = new HashMap<>();
+    variables.put("sec1", accountLevelSecret);
+    variables.put("sec2", orgLevelSecret);
+    variables.put("sec3", projectLevelSecret);
+
+    CustomDeploymentInfrastructureOutcome infrastructureOutcome =
+        CustomDeploymentInfrastructureOutcome.builder().variables(variables).instanceFetchScript(script).build();
+
+    doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance1);
+
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    Mockito.mockStatic(StepUtils.class);
+    when(StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+
+    TaskRequest taskRequest =
+        fetchInstanceScriptStep.obtainTaskAfterRbac(ambiance1, stepElementParameters, stepInputPackage);
+    assertThat(taskRequest).isNotNull();
+
+    FetchInstanceScriptTaskNGRequest requestParameters =
+        (FetchInstanceScriptTaskNGRequest) taskDataArgumentCaptor.getValue().getParameters()[0];
+
+    assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(FETCH_INSTANCE_SCRIPT_TASK_NG.toString());
+    assertThat(requestParameters.getOutputPathKey()).isEqualTo(FetchInstanceScriptStep.OUTPUT_PATH_KEY);
+    assertThat(requestParameters.getAccountId()).isEqualTo("account");
+    assertThat(requestParameters.getTimeoutInMillis()).isEqualTo(ofMinutes(10).toMillis());
   }
 
   @Test
@@ -203,23 +267,17 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
   public void testHandleResponseWithSecurityContext() throws Exception {
     List<UnitProgress> unitProgresses = singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
-    Map<String, String> map = new HashMap<>();
-    map.put("INSTANCE_OUTPUT_PATH",
-        "{\"hosts\":[{ \"host\": 1, \"artifactBuildNo\": \"artifact1\" }, { \"host\": \"instance2\", \"artifactBuildNo\": \"artifact2\" } ] }");
 
-    ShellScriptTaskResponseNG shellScriptTaskResponseNG =
-        ShellScriptTaskResponseNG.builder()
-            .status(CommandExecutionStatus.SUCCESS)
+    FetchInstanceScriptTaskNGResponse fetchInstanceScriptTaskNGResponse =
+        FetchInstanceScriptTaskNGResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .unitProgressData(unitProgressData)
-            .executeCommandResponse(
-                ExecuteCommandResponse.builder()
-                    .status(CommandExecutionStatus.SUCCESS)
-                    .commandExecutionData(ShellExecutionData.builder().sweepingOutputEnvVariables(map).build())
-                    .build())
+            .output(
+                "{\"hosts\":[{ \"host\": 1, \"artifactBuildNo\": \"artifact1\" }, { \"host\": \"instance2\", \"artifactBuildNo\": \"artifact2\" } ] }")
             .build();
     doReturn("").when(executionSweepingOutputService).consume(any(), any(), any(), any());
     StepResponse stepResponse = fetchInstanceScriptStep.handleTaskResultWithSecurityContext(
-        ambiance, stepElementParameters, () -> shellScriptTaskResponseNG);
+        ambiance, stepElementParameters, () -> fetchInstanceScriptTaskNGResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
 
@@ -251,12 +309,11 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
     List<UnitProgress> unitProgresses = singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
 
-    ShellScriptTaskResponseNG shellScriptTaskResponseNG =
-        ShellScriptTaskResponseNG.builder()
-            .status(CommandExecutionStatus.FAILURE)
+    FetchInstanceScriptTaskNGResponse shellScriptTaskResponseNG =
+        FetchInstanceScriptTaskNGResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.FAILURE)
             .unitProgressData(unitProgressData)
             .errorMessage("Shell Script execution failed. Please check execution logs.")
-            .executeCommandResponse(ExecuteCommandResponse.builder().status(CommandExecutionStatus.FAILURE).build())
             .build();
 
     StepResponse stepResponse = fetchInstanceScriptStep.handleTaskResultWithSecurityContext(
@@ -266,29 +323,24 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
     assertThat(stepResponse.getFailureInfo().getErrorMessage())
         .isEqualTo("Shell Script execution failed. Please check execution logs.");
   }
+
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void testHandleResponseWithSecurityContextForInstanceOutcome() throws Exception {
     List<UnitProgress> unitProgresses = singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
-    Map<String, String> map = new HashMap<>();
-    map.put("INSTANCE_OUTPUT_PATH",
-        "{\"hosts\":[{ \"host\": \"instance1\", \"artifactBuildNo\": \"artifact1\" }, { \"host\": \"instance2\", \"artifactBuildNo\": \"artifact2\" } ] }");
 
-    ShellScriptTaskResponseNG shellScriptTaskResponseNG =
-        ShellScriptTaskResponseNG.builder()
-            .status(CommandExecutionStatus.SUCCESS)
+    FetchInstanceScriptTaskNGResponse fetchInstanceScriptTaskNGResponse =
+        FetchInstanceScriptTaskNGResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .unitProgressData(unitProgressData)
-            .executeCommandResponse(
-                ExecuteCommandResponse.builder()
-                    .status(CommandExecutionStatus.SUCCESS)
-                    .commandExecutionData(ShellExecutionData.builder().sweepingOutputEnvVariables(map).build())
-                    .build())
+            .output(
+                "{\"hosts\":[{ \"host\": \"instance1\", \"artifactBuildNo\": \"artifact1\" }, { \"host\": \"instance2\", \"artifactBuildNo\": \"artifact2\" } ] }")
             .build();
     doReturn("").when(executionSweepingOutputService).consume(any(), any(), any(), any());
     StepResponse stepResponse = fetchInstanceScriptStep.handleTaskResultWithSecurityContext(
-        ambiance, stepElementParameters, () -> shellScriptTaskResponseNG);
+        ambiance, stepElementParameters, () -> fetchInstanceScriptTaskNGResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
 

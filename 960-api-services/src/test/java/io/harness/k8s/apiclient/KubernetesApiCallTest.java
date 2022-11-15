@@ -8,6 +8,7 @@
 package io.harness.k8s.apiclient;
 
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -123,5 +124,23 @@ public class KubernetesApiCallTest extends CategoryTest {
               "HTTP API call %s %s failed with error code %d", REQUEST_METHOD, REQUEST_URL, RESPONSE_CODE));
       return true;
     });
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testK8sApiCallWithNonAPIException() throws ApiException {
+    doReturn(request).when(call).request();
+    doThrow(new java.lang.IllegalArgumentException("Unexpected char 0x0a at 973 in authorization value: Bearer abc\n"))
+        .when(apiClient)
+        .execute(any(Call.class), any(Type.class));
+    KubernetesApiCall.ApiCallSupplier apiCallSupplier = mock(KubernetesApiCall.ApiCallSupplier.class);
+    doReturn(call).when(apiCallSupplier).get();
+
+    Supplier<Void> versionApiCall = () -> {
+      KubernetesApiCall.call(apiClient, apiCallSupplier);
+      return null;
+    };
+    assertThatThrownBy(versionApiCall::get).isInstanceOf(ExplanationException.class);
   }
 }

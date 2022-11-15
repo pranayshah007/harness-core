@@ -18,8 +18,8 @@ import io.harness.resourcegroup.framework.v3.mapper.ResourceGroupApiUtils;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.spec.server.platform.FilterResourceGroupsApi;
-import io.harness.spec.server.platform.model.ResourceGroupFilterRequestBody;
+import io.harness.spec.server.resourcegroup.v1.FilterResourceGroupsApi;
+import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupFilterRequestBody;
 
 import com.google.inject.Inject;
 import java.util.stream.Collectors;

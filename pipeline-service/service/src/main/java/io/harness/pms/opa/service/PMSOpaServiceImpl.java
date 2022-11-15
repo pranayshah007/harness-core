@@ -46,8 +46,8 @@ public class PMSOpaServiceImpl implements PMSOpaService {
   public PipelineOpaEvaluationContext getPipelineContext(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier, String inputSetPipelineYaml,
       @NotNull String action) throws IOException {
-    Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> pipelineEntity = pmsPipelineService.getAndValidatePipeline(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     if (!pipelineEntity.isPresent()) {
       throw new InvalidRequestException(String.format("The given pipeline id [%s] does not exist", pipelineIdentifier));
     }

@@ -7,6 +7,7 @@ package file
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -59,10 +60,10 @@ func FindFile(ctx context.Context, fileRequest *pb.GetFileRequest, log *zap.Suga
 	commitID := string(content.Sha)
 	// If the caller has provided a ref than we return that ref as the commitId
 	if fileRequest.GetRef() != "" {
-	    commitID = fileRequest.GetRef()
+		commitID = fileRequest.GetRef()
 	}
 
-    // If the caller has provided a branch then we fetch latest commit of the branch
+	// If the caller has provided a branch then we fetch latest commit of the branch
 	if commitID == "" {
 		// If the sha is not returned then we fetch the latest sha of the file
 		request := &pb.GetLatestCommitOnFileRequest{
@@ -84,9 +85,14 @@ func FindFile(ctx context.Context, fileRequest *pb.GetFileRequest, log *zap.Suga
 		}
 		commitID = response.GetCommitId()
 	}
+	//Check if base64 encoding required
+	fileContent := string(content.Data)
+	if fileRequest.GetBase64Encoding() {
+		fileContent = base64.StdEncoding.EncodeToString(content.Data)
+	}
 
 	out = &pb.FileContent{
-		Content:  string(content.Data),
+		Content:  fileContent,
 		CommitId: commitID,
 		BlobId:   content.BlobID,
 		Status:   int32(response.Status),
@@ -405,7 +411,7 @@ func FindFilesInCommit(ctx context.Context, fileRequest *pb.FindFilesInCommitReq
 	out = &pb.FindFilesInCommitResponse{
 		File: convertContentList(files),
 		Pagination: &pb.PageResponse{
-			Next: int32(response.Page.Next),
+			Next:    int32(response.Page.Next),
 			NextUrl: response.Page.NextURL,
 		},
 	}

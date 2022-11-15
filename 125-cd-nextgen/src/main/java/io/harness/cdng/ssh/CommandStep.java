@@ -16,6 +16,7 @@ import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
@@ -63,6 +64,7 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -158,12 +160,32 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
 
     String serviceType = serviceOutcome.getType();
-    if (!(serviceType.equals(ServiceSpecType.SSH) || serviceType.equals(ServiceSpecType.WINRM))) {
+    if (!(serviceType.equals(ServiceSpecType.SSH) || serviceType.equals(ServiceSpecType.WINRM)
+            || serviceType.equals(ServiceSpecType.CUSTOM_DEPLOYMENT))) {
       throw new InvalidArgumentsException("Invalid service outcome found " + serviceOutcome);
     }
 
     InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
 
+    Optional<ServerInstanceInfo> serverInstanceInfo = getServerInstanceInfo(infrastructure, serviceType, host);
+
+    if (CommandExecutionStatus.SUCCESS.equals(taskResponse.getStatus())) {
+      serverInstanceInfo.ifPresent(instanceInfo
+          -> instanceInfoService.saveServerInstancesIntoSweepingOutput(
+              ambiance, Collections.singletonList(instanceInfo)));
+
+      CommandStepOutcome commandStepOutcome = getCommandStepOutcome(taskResponse, executeCommandStepParameters, host);
+      stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
+                                          .name(OutcomeExpressionConstants.OUTPUT)
+                                          .outcome(commandStepOutcome)
+                                          .build());
+    }
+
+    return stepResponseBuilder.build();
+  }
+
+  private Optional<ServerInstanceInfo> getServerInstanceInfo(
+      InfrastructureOutcome infrastructure, String serviceType, String host) {
     ServerInstanceInfo serverInstanceInfo;
     if (infrastructure instanceof PdcInfrastructureOutcome) {
       serverInstanceInfo =
@@ -174,23 +196,13 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
     } else if (infrastructure instanceof SshWinRmAwsInfrastructureOutcome) {
       serverInstanceInfo = AwsSshWinrmToServiceInstanceInfoMapper.toServerInstanceInfo(
           serviceType, host, infrastructure.getInfrastructureKey());
+    } else if (infrastructure instanceof CustomDeploymentInfrastructureOutcome) {
+      return Optional.empty();
     } else {
       throw new InvalidArgumentsException(
           "Invalid infrastructure outcome found " + infrastructure.getClass().getSimpleName());
     }
-
-    if (CommandExecutionStatus.SUCCESS.equals(taskResponse.getStatus())) {
-      instanceInfoService.saveServerInstancesIntoSweepingOutput(
-          ambiance, Collections.singletonList(serverInstanceInfo));
-
-      CommandStepOutcome commandStepOutcome = getCommandStepOutcome(taskResponse, executeCommandStepParameters, host);
-      stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
-                                          .name(OutcomeExpressionConstants.OUTPUT)
-                                          .outcome(commandStepOutcome)
-                                          .build());
-    }
-
-    return stepResponseBuilder.build();
+    return Optional.of(serverInstanceInfo);
   }
 
   private void validateStepParameters(CommandStepParameters executeCommandStepParameters) {

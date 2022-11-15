@@ -7,6 +7,7 @@
 
 package software.wings.graphql.datafetcher.connector.types;
 
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.PARDHA;
 import static io.harness.rule.OwnerRule.TMACARI;
 
@@ -32,6 +33,7 @@ import io.harness.rule.Owner;
 import io.harness.utils.RequestField;
 
 import software.wings.beans.GitConfig;
+import software.wings.beans.GitConfig.ProviderType;
 import software.wings.beans.SettingAttribute;
 import software.wings.graphql.datafetcher.connector.ConnectorsController;
 import software.wings.graphql.datafetcher.secrets.UsageScopeController;
@@ -89,6 +91,8 @@ public class GitConnectorTest extends CategoryTest {
             .sshSettingId(RequestField.ofNullable(SSH))
             .usageScope(RequestField.ofNullable(QLUsageScope.builder().build()))
             .passwordSecretId(RequestField.ofNull())
+            .providerType(RequestField.ofNull())
+            .disableUserGitConfig(RequestField.ofNull())
             .build();
 
     SettingAttribute settingAttribute = gitConnector.getSettingAttribute(
@@ -121,6 +125,8 @@ public class GitConnectorTest extends CategoryTest {
             .delegateSelectors(RequestField.ofNull())
             .sshSettingId(RequestField.ofNull())
             .passwordSecretId(RequestField.ofNullable(PASSWORD))
+            .disableUserGitConfig(RequestField.ofNull())
+            .providerType(RequestField.ofNull())
             .build();
 
     SettingAttribute settingAttribute = gitConnector.getSettingAttribute(
@@ -152,6 +158,8 @@ public class GitConnectorTest extends CategoryTest {
             .delegateSelectors(RequestField.ofNullable(Collections.singletonList("primary")))
             .sshSettingId(RequestField.ofNull())
             .passwordSecretId(RequestField.ofNullable(PASSWORD))
+            .disableUserGitConfig(RequestField.ofNull())
+            .providerType(RequestField.ofNull())
             .build();
 
     SettingAttribute settingAttribute = gitConnector.getSettingAttribute(
@@ -160,5 +168,41 @@ public class GitConnectorTest extends CategoryTest {
     assertThat(((GitConfig) settingAttribute.getValue()).getEncryptedPassword()).isEqualTo(PASSWORD);
     assertThat(((GitConfig) settingAttribute.getValue()).getDelegateSelectors())
         .isEqualTo(Collections.singletonList("primary"));
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testGetSettingAttributeWithProviderType() {
+    SettingAttribute setting = SettingAttribute.Builder.aSettingAttribute().build();
+    doReturn(setting).when(settingsService).getByAccount(any(), any());
+    doReturn(new EncryptedData()).when(secretManager).getSecretById(ACCOUNT_ID, PASSWORD);
+    doReturn(QLGitConnector.builder()).when(connectorsController).getConnectorBuilder(any());
+    doReturn(QLGitConnector.builder()).when(connectorsController).populateConnector(any(), any());
+
+    QLGitConnectorInput qlGitConnectorInput =
+        getQlGitConnectorInputBuilder()
+            .branch(RequestField.ofNullable(BRANCH))
+            .generateWebhookUrl(RequestField.ofNullable(true))
+            .urlType(RequestField.ofNullable(GitConfig.UrlType.REPO))
+            .customCommitDetails(RequestField.ofNullable(QLCustomCommitDetailsInput.builder()
+                                                             .authorName(RequestField.ofNullable(AUTHOR))
+                                                             .authorEmailId(RequestField.ofNullable(EMAIL))
+                                                             .commitMessage(RequestField.ofNullable(MESSAGE))
+                                                             .build()))
+            .delegateSelectors(RequestField.ofNullable(Collections.singletonList("primary")))
+            .sshSettingId(RequestField.ofNull())
+            .passwordSecretId(RequestField.ofNullable(PASSWORD))
+            .disableUserGitConfig(RequestField.ofNull())
+            .providerType(RequestField.ofNullable(ProviderType.GITLAB))
+            .build();
+
+    SettingAttribute settingAttribute = gitConnector.getSettingAttribute(
+        QLConnectorInput.builder().gitConnector(qlGitConnectorInput).build(), ACCOUNT_ID);
+
+    assertThat(((GitConfig) settingAttribute.getValue()).getEncryptedPassword()).isEqualTo(PASSWORD);
+    assertThat(((GitConfig) settingAttribute.getValue()).getDelegateSelectors())
+        .isEqualTo(Collections.singletonList("primary"));
+    assertThat(((GitConfig) settingAttribute.getValue()).getProviderType()).isEqualTo(ProviderType.GITLAB);
   }
 }

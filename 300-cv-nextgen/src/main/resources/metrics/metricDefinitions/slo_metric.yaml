@@ -1,0 +1,18 @@
+name: SLO duration metric
+identifier: slo_duration_metric
+metricGroup: slo_metric_group
+metrics:
+  - metricName: slo_data_analysis_metric
+    metricDefinition: Time taken to analyis the record for the slo
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m]
+    unit: "ms"
+  - metricName: recalculation_failure
+    metricDefinition: Failures in recalculating the new SLO configuration
+    type: Count
+    unit: "1"
+  - metricName: calculation_failure
+    metricDefinition: Failures in calculating the existing SLO configuration
+    type: Count
+    unit: "1"
+

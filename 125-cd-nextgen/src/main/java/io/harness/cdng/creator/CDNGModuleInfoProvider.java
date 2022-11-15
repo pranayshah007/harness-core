@@ -31,6 +31,7 @@ import io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary.ArtifactsSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary.ArtifactsSummary.ArtifactsSummaryBuilder;
+import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.cdng.service.steps.ServiceConfigStep;
 import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
@@ -143,6 +144,10 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
 
   private boolean isGitopsNodeAndCompleted(StepType stepType, Status status) {
     return Objects.equals(stepType, GitopsClustersStep.STEP_TYPE) && StatusUtils.isFinalStatus(status);
+  }
+
+  private boolean isRollbackNodeAndCompleted(StepType stepType, Status status) {
+    return Objects.equals(stepType, RollbackOptionalChildChainStep.STEP_TYPE) && StatusUtils.isFinalStatus(status);
   }
 
   @Override
@@ -274,6 +279,9 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                              .build());
         }
       }
+    } else if (isRollbackNodeAndCompleted(stepType, event.getStatus())) {
+      long startTs = AmbianceUtils.getCurrentLevelStartTs(event.getAmbiance());
+      cdStageModuleInfoBuilder.rollbackDuration(System.currentTimeMillis() - startTs);
     }
     return cdStageModuleInfoBuilder.build();
   }
@@ -283,6 +291,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     StepType stepType = AmbianceUtils.getCurrentStepType(event.getAmbiance());
     return isServiceNodeAndCompleted(stepType, event.getStatus())
         || isInfrastructureNodeAndCompleted(stepType, event.getStatus())
-        || isGitopsNodeAndCompleted(stepType, event.getStatus());
+        || isGitopsNodeAndCompleted(stepType, event.getStatus())
+        || isRollbackNodeAndCompleted(stepType, event.getStatus());
   }
 }

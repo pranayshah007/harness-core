@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.batch.processing.cloudevents.aws.ec2.service.impl;
 
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
@@ -66,7 +73,8 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
       recommendationRequest.withNextPageToken(nextPageToken);
       GetRightsizingRecommendationResult recommendationResult =
           getRecommendations(request.getAwsCrossAccountAttributes(), recommendationRequest);
-      if (Objects.nonNull(recommendationResult)) {
+      if (Objects.nonNull(recommendationResult)
+          && Objects.nonNull(recommendationResult.getRightsizingRecommendations())) {
         recommendationsResult.addAll(recommendationResult.getRightsizingRecommendations());
       }
       nextPageToken = recommendationResult.getNextPageToken();
@@ -81,7 +89,7 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
              new CloseableAmazonWebServiceClient(getAWSCostExplorerClient(awsCrossAccountAttributes))) {
       return closeableAWSCostExplorerClient.getClient().getRightsizingRecommendation(request);
     } catch (Exception ex) {
-      log.error("Exception from getRightsizingRecommendation api: ", ex);
+      log.info("Exception from getRightsizingRecommendation api: ", ex);
     }
     return new GetRightsizingRecommendationResult();
   }

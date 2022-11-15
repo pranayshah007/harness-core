@@ -131,7 +131,9 @@ public class SshCommandStepHelper extends CDStepHelper {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
     InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
     Map<String, String> mergedEnvVariables = getMergedEnvVariablesMap(ambiance, commandStepParameters, infrastructure);
-    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))
+        || ServiceSpecType.CUSTOM_DEPLOYMENT.toLowerCase(Locale.ROOT)
+               .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
       return buildSshCommandTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
     } else if (ServiceSpecType.WINRM.toLowerCase(Locale.ROOT)
                    .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {

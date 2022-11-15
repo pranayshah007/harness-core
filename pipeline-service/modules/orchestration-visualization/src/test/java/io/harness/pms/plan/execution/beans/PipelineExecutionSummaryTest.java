@@ -14,14 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.OrchestrationVisualizationTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
-import io.harness.mongo.index.MongoIndex;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PipelineExecutionSummaryEntityBuilder;
 import io.harness.rule.Owner;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -110,15 +107,5 @@ public class PipelineExecutionSummaryTest extends OrchestrationVisualizationTest
     // allowStageExecution is false
     entity = entityBuilder.allowStagesExecution(false).build();
     assertThat(entity.isStagesExecutionAllowed()).isFalse();
-  }
-
-  @Test
-  @Owner(developers = PRASHANTSHARMA)
-  @Category(UnitTests.class)
-  public void shouldTestMongoIndexes() {
-    List<MongoIndex> mongoIndices = PipelineExecutionSummaryEntity.mongoIndexes();
-
-    assertThat(mongoIndices.size()).isEqualTo(11);
-    assertThat(mongoIndices.stream().map(MongoIndex::getName).collect(Collectors.toSet()).size()).isEqualTo(11);
   }
 }

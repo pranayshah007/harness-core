@@ -25,6 +25,7 @@ import io.harness.execution.InitiateNodeHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
+import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.execution.events.SdkResponseEventType;
 import io.harness.pms.contracts.execution.events.SpawnChildrenRequest;
@@ -90,7 +91,9 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
     ArgumentCaptor<String> nodeIdCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> runtimeIdCaptor = ArgumentCaptor.forClass(String.class);
 
-    verify(initiateNodeHelper, times(2)).publishEvent(eq(ambiance), nodeIdCaptor.capture(), runtimeIdCaptor.capture());
+    verify(initiateNodeHelper, times(2))
+        .publishEvent(eq(ambiance), nodeIdCaptor.capture(), runtimeIdCaptor.capture(), eq(null),
+            eq(InitiateMode.CREATE_AND_START));
 
     List<String> nodeIds = nodeIdCaptor.getAllValues();
     assertThat(nodeIds).hasSize(2);
@@ -101,10 +104,11 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
 
     ArgumentCaptor<EngineResumeCallback> callbackCaptor = ArgumentCaptor.forClass(EngineResumeCallback.class);
     ArgumentCaptor<String> exIdCaptor = ArgumentCaptor.forClass(String.class);
-    verify(waitNotifyEngine).waitForAllOn(any(), callbackCaptor.capture(), exIdCaptor.capture());
+    verify(waitNotifyEngine, times(3)).waitForAllOn(any(), callbackCaptor.capture(), exIdCaptor.capture());
 
     assertThat(callbackCaptor.getValue().getAmbiance()).isEqualTo(ambiance);
-    assertThat(exIdCaptor.getAllValues()).containsExactlyInAnyOrder(runtimeIds.get(0), runtimeIds.get(1));
+    assertThat(exIdCaptor.getAllValues())
+        .containsExactlyInAnyOrder(runtimeIds.get(0), runtimeIds.get(1), runtimeIds.get(0), runtimeIds.get(1));
 
     verify(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
   }

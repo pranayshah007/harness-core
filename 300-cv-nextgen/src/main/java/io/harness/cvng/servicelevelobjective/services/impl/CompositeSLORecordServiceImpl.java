@@ -267,8 +267,8 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
         .asList();
   }
 
-  @VisibleForTesting
-  List<CompositeSLORecord> getSLORecords(String sloId, Instant startTimeStamp, Instant endTimeStamp) {
+  @Override
+  public List<CompositeSLORecord> getSLORecords(String sloId, Instant startTimeStamp, Instant endTimeStamp) {
     return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
         .filter(CompositeSLORecordKeys.sloId, sloId)
         .field(CompositeSLORecordKeys.timestamp)

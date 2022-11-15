@@ -37,10 +37,10 @@ import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.spec.server.ng.ProjectConnectorApi;
-import io.harness.spec.server.ng.model.ConnectorRequest;
-import io.harness.spec.server.ng.model.ConnectorResponse;
-import io.harness.spec.server.ng.model.ConnectorTestConnectionResponse;
+import io.harness.spec.server.connector.v1.ProjectConnectorApi;
+import io.harness.spec.server.connector.v1.model.ConnectorRequest;
+import io.harness.spec.server.connector.v1.model.ConnectorResponse;
+import io.harness.spec.server.connector.v1.model.ConnectorTestConnectionResponse;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -88,7 +88,7 @@ public class ProjectConnectorApiImpl implements ProjectConnectorApi {
     if (!connectorResponseDTO.isPresent()) {
       throw new NotFoundException(String.format("Connector with identifier [%s] not found", connector));
     }
-    boolean deleted = connectorService.delete(account, org, project, connector);
+    boolean deleted = connectorService.delete(account, org, project, connector, false);
 
     if (!deleted) {
       throw new InvalidRequestException(String.format("Connector with slug [%s] could not be deleted", connector));

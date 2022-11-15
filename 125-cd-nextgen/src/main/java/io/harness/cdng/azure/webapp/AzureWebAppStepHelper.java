@@ -17,12 +17,14 @@ import static io.harness.delegate.beans.connector.docker.DockerAuthType.ANONYMOU
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_ARTIFACTS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.AMAZONS3;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.AZURE_ARTIFACTS;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.NEXUS3_REGISTRY;
 
@@ -41,6 +43,7 @@ import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
@@ -82,6 +85,7 @@ import io.harness.delegate.task.azure.artifact.AwsS3AzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig.AzureContainerArtifactConfigBuilder;
+import io.harness.delegate.task.azure.artifact.AzureDevOpsArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig.AzurePackageArtifactConfigBuilder;
 import io.harness.delegate.task.azure.artifact.JenkinsAzureArtifactRequestDetails;
@@ -316,6 +320,7 @@ public class AzureWebAppStepHelper {
       case ARTIFACTORY_REGISTRY_NAME:
       case AMAZON_S3_NAME:
       case JENKINS_NAME:
+      case AZURE_ARTIFACTS_NAME:
         if (isPackageArtifactType(artifactOutcome)) {
           return getAzurePackageArtifactConfig(ambiance, artifactOutcome);
         } else {
@@ -365,6 +370,8 @@ public class AzureWebAppStepHelper {
         return !RepositoryFormat.docker.name().equals(nexusArtifactOutcome.getRepositoryFormat());
       case JENKINS_NAME:
         return artifactOutcome instanceof JenkinsArtifactOutcome;
+      case AZURE_ARTIFACTS_NAME:
+        return artifactOutcome instanceof AzureArtifactsOutcome;
       default:
         return false;
     }
@@ -507,6 +514,27 @@ public class AzureWebAppStepHelper {
                                                   .build());
         connectorInfoDTO = cdStepHelper.getConnector(jenkinsArtifactOutcome.getConnectorRef(), ambiance);
         break;
+      case AZURE_ARTIFACTS_NAME:
+        if (!cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.AZURE_WEBAPP_NG_AZURE_DEVOPS_ARTIFACTS)) {
+          throw new AccessDeniedException("The Azure DevOps artifact source in NG is not enabled for this account."
+                  + " Please contact harness customer care.",
+              ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+        }
+        AzureArtifactsOutcome azureArtifactsOutcome = (AzureArtifactsOutcome) artifactOutcome;
+        artifactConfigBuilder.sourceType(AZURE_ARTIFACTS);
+        artifactConfigBuilder.artifactDetails(AzureDevOpsArtifactRequestDetails.builder()
+                                                  .packageType(azureArtifactsOutcome.getPackageType())
+                                                  .packageName(azureArtifactsOutcome.getPackageName())
+                                                  .project(azureArtifactsOutcome.getProject())
+                                                  .feed(azureArtifactsOutcome.getFeed())
+                                                  .scope(azureArtifactsOutcome.getScope())
+                                                  .version(azureArtifactsOutcome.getVersion())
+                                                  .identifier(azureArtifactsOutcome.getIdentifier())
+                                                  .versionRegex(azureArtifactsOutcome.getVersionRegex())
+                                                  .build());
+        connectorInfoDTO = cdStepHelper.getConnector(azureArtifactsOutcome.getConnectorRef(), ambiance);
+        break;
       default:
         throw new InvalidArgumentsException(
             Pair.of("artifacts", format("Unsupported artifact type %s", artifactOutcome.getArtifactType())));
@@ -585,6 +613,7 @@ public class AzureWebAppStepHelper {
     switch (artifactOutcome.getArtifactType()) {
       case NEXUS3_REGISTRY_NAME:
       case JENKINS_NAME:
+      case AZURE_ARTIFACTS_NAME:
         return isPackageArtifactType(artifactOutcome) ? TaskType.AZURE_WEB_APP_TASK_NG_V2.name()
                                                       : TaskType.AZURE_WEB_APP_TASK_NG.name();
       default:

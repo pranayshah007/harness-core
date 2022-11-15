@@ -53,10 +53,11 @@ public class MigrateUsersToTimeScaleDB implements TimeScaleEntityMigrationInterf
       FindOptions findOptions_users = new FindOptions();
       findOptions_users.readPreference(ReadPreference.secondaryPreferred());
 
-      try (HIterator<User> iterator = new HIterator<>(wingsPersistence.createQuery(User.class, excludeAuthority)
-                                                          .field(UserKeys.accounts)
-                                                          .contains(accountId)
-                                                          .fetch(findOptions_users))) {
+      try (
+          HIterator<User> iterator = new HIterator<>(wingsPersistence.createAnalyticsQuery(User.class, excludeAuthority)
+                                                         .field(UserKeys.accounts)
+                                                         .contains(accountId)
+                                                         .fetch(findOptions_users))) {
         while (iterator.hasNext()) {
           User user = iterator.next();
           saveToTimeScale(user);

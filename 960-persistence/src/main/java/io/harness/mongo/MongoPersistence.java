@@ -86,6 +86,11 @@ public class MongoPersistence implements HPersistence {
   }
 
   @Override
+  public <T> PageResponse<T> queryAnalytics(Class<T> cls, PageRequest<T> req) {
+    return queryAnalytics(cls, req, allChecks);
+  }
+
+  @Override
   public <T> PageResponse<T> query(Class<T> cls, PageRequest<T> req, Set<QueryChecks> queryChecks) {
     AdvancedDatastore advancedDatastore = getDatastore(cls);
     Query<T> query = advancedDatastore.createQuery(cls);
@@ -100,6 +105,16 @@ public class MongoPersistence implements HPersistence {
     AdvancedDatastore advancedDatastore = getDatastore(cls);
     Query<T> query = advancedDatastore.createQuery(cls);
     query.useReadPreference(ReadPreference.secondaryPreferred());
+
+    ((HQuery) query).setQueryChecks(queryChecks);
+    Mapper mapper = ((DatastoreImpl) advancedDatastore).getMapper();
+
+    return PageController.queryPageRequest(advancedDatastore, query, mapper, cls, req);
+  }
+
+  public <T> PageResponse<T> queryAnalytics(Class<T> cls, PageRequest<T> req, Set<QueryChecks> queryChecks) {
+    AdvancedDatastore advancedDatastore = getDefaultAnalyticsDatastore(cls);
+    Query<T> query = advancedDatastore.createQuery(cls);
 
     ((HQuery) query).setQueryChecks(queryChecks);
     Mapper mapper = ((DatastoreImpl) advancedDatastore).getMapper();
@@ -209,8 +224,16 @@ public class MongoPersistence implements HPersistence {
     return getDatastore(cls).createQuery(cls);
   }
 
+  @Override
   public <T extends PersistentEntity> Query<T> createAnalyticsQuery(Class<T> cls) {
     return getDefaultAnalyticsDatastore(cls).createQuery(cls);
+  }
+
+  @Override
+  public <T extends PersistentEntity> Query<T> createAnalyticsQuery(Class<T> cls, Set<QueryChecks> queryChecks) {
+    Query<T> query = getDefaultAnalyticsDatastore(cls).createQuery(cls);
+    ((HQuery) query).setQueryChecks(queryChecks);
+    return query;
   }
 
   @Override
@@ -483,8 +506,8 @@ public class MongoPersistence implements HPersistence {
       setMaxTimeInOptions(datastore, findAndModifyOptions);
       return HPersistence.retry(() -> datastore.findAndModify(query, updateOperations, findAndModifyOptions));
     } catch (MongoExecutionTimeoutException ex) {
-      log.error(
-          "findAndModify query exceeded max time limit for entityClass {} with error {}", query.getEntityClass(), ex);
+      log.error("findAndModify query {} exceeded max time limit for entityClass {} with error {}", query,
+          query.getEntityClass(), ex);
       throw ex;
     }
   }
@@ -497,7 +520,7 @@ public class MongoPersistence implements HPersistence {
       setMaxTimeInOptions(datastore, findAndModifyOptions);
       return HPersistence.retry(() -> datastore.findAndModify(query, updateOperations, findAndModifyOptions));
     } catch (MongoExecutionTimeoutException ex) {
-      log.error("findAndModifySystemData query exceeded max time limit for entityClass {} with error {}",
+      log.error("findAndModifySystemData query {} exceeded max time limit for entityClass {} with error {}", query,
           query.getEntityClass(), ex);
       throw ex;
     }
@@ -510,8 +533,8 @@ public class MongoPersistence implements HPersistence {
       setMaxTimeInOptions(datastore, findAndModifyOptions);
       return HPersistence.retry(() -> datastore.findAndDelete(query, findAndModifyOptions));
     } catch (MongoExecutionTimeoutException ex) {
-      log.error(
-          "findAndDelete query exceeded max time limit for entityClass {} with error {}", query.getEntityClass(), ex);
+      log.error("findAndDelete query {} exceeded max time limit for entityClass {} with error {}", query,
+          query.getEntityClass(), ex);
       throw ex;
     }
   }

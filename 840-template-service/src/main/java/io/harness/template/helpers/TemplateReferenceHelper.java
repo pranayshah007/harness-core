@@ -112,7 +112,7 @@ public class TemplateReferenceHelper {
       String accountId, String orgId, String projectId, String yaml, boolean shouldModifyFqn) {
     List<EntityDetailProtoDTO> referredEntities = new ArrayList<>();
     YamlConfig yamlConfig = new YamlConfig(yaml);
-    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId);
+    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<FQN, Object> fqnToValueMap = yamlConfig.getFqnToValueMap();
     Set<FQN> fqnSet = new LinkedHashSet<>(yamlConfig.getFqnToValueMap().keySet());
     Map<String, Object> fqnStringToValueMap = new HashMap<>();

@@ -127,31 +127,6 @@
             },
             "region": {
               "type": "string",
-              "enum": [
-                "us-east-1",
-                "us-east-2",
-                "us-west-1",
-                "us-west-2",
-                "af-south-1",
-                "ap-east-1",
-                "ap-south-east-3",
-                "ap-south-east-2",
-                "ap-south-east-1",
-                "ap-south-1",
-                "ap-northeast-3",
-                "ap-north-east-2",
-                "ap-north-east-1",
-                "ca-central-1",
-                "eu-central-1",
-                "eu-west-1",
-                "eu-west-2",
-                "eu-west-3",
-                "eu-south-1",
-                "eu-north-1",
-                "me-south-1",
-                "me-central-1",
-                "sa-east-1"
-              ],
               "minLength": 1
             },
             "tags": {
@@ -2377,7 +2352,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2775,7 +2750,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(.*<\\+.+>.*|^<\\+input>.*)|^$)"
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(<\\+.+>.*)|^$)"
                 }
               ]
             }
@@ -3767,6 +3742,17 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ElastigroupCurrentRunningInstances": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ElastigroupInstancesSpec"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ElastigroupDeployStepInfo": {
       "allOf": [
         {
@@ -3804,6 +3790,58 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ElastigroupFixedInstances": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ElastigroupInstancesSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "desired": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "max": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "min": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ElastigroupInfrastructure": {
       "allOf": [
         {
@@ -3830,6 +3868,101 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ElastigroupInstances": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Fixed",
+            "CurrentRunning"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CurrentRunning"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupCurrentRunningInstances"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Fixed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupFixedInstances"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ElastigroupInstancesSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Fixed",
+            "CurrentRunning"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ElastigroupServiceSpec": {
       "allOf": [
         {
@@ -3840,6 +3973,53 @@
           "properties": {
             "startupScript": {
               "$ref": "#/definitions/StartupScriptConfiguration"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupSetupStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "instances",
+            "name"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instances": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ElastigroupInstances"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "name": {
+              "type": "string"
             }
           }
         }
@@ -3988,7 +4168,7 @@
             },
             {
               "type": "string",
-              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -4049,22 +4229,10 @@
             },
             {
               "type": "string",
-              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ExcludeConfig": {
-      "type": "object",
-      "properties": {
-        "exclude": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4687,7 +4855,7 @@
             },
             {
               "type": "string",
-              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -4702,7 +4870,7 @@
             },
             {
               "type": "string",
-              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -4716,7 +4884,7 @@
             },
             {
               "type": "string",
-              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -4730,7 +4898,7 @@
             },
             {
               "type": "string",
-              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -4744,7 +4912,7 @@
             },
             {
               "type": "string",
-              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -4758,7 +4926,7 @@
             },
             {
               "type": "string",
-              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -5009,7 +5177,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -5119,7 +5287,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -5198,7 +5366,7 @@
             },
             {
               "type": "string",
-              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -6798,51 +6966,8 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "MatrixConfig": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/MatrixConfigInterface"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "exclude": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldListExcludeConfig"
-                },
-                {
-                  "type": "array"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "maxConcurrency": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32",
-                  "minimum": 0
-                },
-                {
-                  "type": "string",
-                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
-                  "minLength": 1
-                }
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "MatrixConfigInterface": {
       "type": "object",
-      "discriminator": "type",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "MergePRStepInfo": {
@@ -6880,6 +7005,22 @@
                   "type": "string"
                 }
               ]
+            },
+            "variables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
             }
           }
         }
@@ -7422,7 +7563,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -7438,7 +7579,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(.*<\\+.+>.*|^<\\+input>.*))"
+                  "pattern": "((^[+-]?[0-9]*\\.?[0-9]+$)|(<\\+.+>.*))"
                 }
               ]
             }
@@ -7829,45 +7970,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ParameterFieldListExcludeConfig": {
-      "type": "object",
-      "properties": {
-        "defaultValue": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ExcludeConfig"
-          }
-        },
-        "executionInput": {
-          "type": "boolean"
-        },
-        "expression": {
-          "type": "boolean"
-        },
-        "expressionValue": {
-          "type": "string"
-        },
-        "inputSetValidator": {
-          "$ref": "#/definitions/InputSetValidator"
-        },
-        "jsonResponseField": {
-          "type": "boolean"
-        },
-        "responseField": {
-          "type": "string"
-        },
-        "typeString": {
-          "type": "boolean"
-        },
-        "value": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ExcludeConfig"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "ParameterFieldMapStringString": {
       "type": "object",
       "properties": {
@@ -8049,7 +8151,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -8507,6 +8609,25 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "RemoteTerraformBackendConfigSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerraformBackendConfigSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "store"
+          ],
+          "properties": {
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "RemoteTerraformVarFileSpec": {
       "allOf": [
         {
@@ -8720,7 +8841,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -9196,7 +9317,7 @@
             },
             {
               "type": "string",
-              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -9252,7 +9373,7 @@
             },
             {
               "type": "string",
-              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -9386,9 +9507,7 @@
     "SidecarArtifact": {
       "type": "object",
       "required": [
-        "identifier",
-        "spec",
-        "type"
+        "identifier"
       ],
       "properties": {
         "identifier": {
@@ -9646,6 +9765,20 @@
               }
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "template"
+              ]
+            },
+            {
+              "required": [
+                "spec"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -10253,6 +10386,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ElastigroupDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ElastigroupRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ElastigroupSetup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupSetupStepInfo"
               }
             }
           }
@@ -11039,11 +11204,7 @@
       "type": "object",
       "properties": {
         "matrix": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/MatrixConfig"
-            }
-          ]
+          "$ref": "#/definitions/MatrixConfigInterface"
         },
         "parallelism": {
           "oneOf": [
@@ -11054,7 +11215,7 @@
             },
             {
               "type": "string",
-              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -11102,7 +11263,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -11231,12 +11392,33 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Remote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/RemoteTerraformBackendConfigSpec"
+              }
+            }
+          }
         }
       ]
     },
     "TerraformBackendConfigSpec": {
       "type": "object",
       "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TerraformConfigFilesWrapper": {

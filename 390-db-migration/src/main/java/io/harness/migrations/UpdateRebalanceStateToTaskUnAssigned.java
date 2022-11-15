@@ -21,12 +21,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class UpdateRebalanceStateToTaskUnAssigned implements Migration {
   @Inject private HPersistence persistence;
 
   @Override
   public void migrate() {
+    log.info("Starting migration of task state from rebalance to unassigned");
     List<String> ptsToUpdate = new ArrayList<>();
 
     try (HIterator<PerpetualTaskRecord> iterator =
@@ -43,6 +46,7 @@ public class UpdateRebalanceStateToTaskUnAssigned implements Migration {
                   .set(PerpetualTaskRecordKeys.assignAfterMs,
                       System.currentTimeMillis()
                           + TimeUnit.MINUTES.toMillis(FibonacciBackOff.getFibonacciElement(new Random().nextInt(10)))));
+          log.info("State changed to task unassigned for PT's {}", ptsToUpdate);
           ptsToUpdate.clear();
         }
       }
@@ -54,7 +58,9 @@ public class UpdateRebalanceStateToTaskUnAssigned implements Migration {
                 .set(PerpetualTaskRecordKeys.assignAfterMs,
                     System.currentTimeMillis()
                         + TimeUnit.MINUTES.toMillis(FibonacciBackOff.getFibonacciElement(new Random().nextInt(10)))));
+        log.info("State changed to task_unssigned for PT's {}", ptsToUpdate);
       }
     }
+    log.info("finished migration");
   }
 }

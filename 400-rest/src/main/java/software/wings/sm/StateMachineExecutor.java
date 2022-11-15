@@ -89,6 +89,7 @@ import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.eraro.ErrorCode;
+import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
@@ -240,6 +241,7 @@ public class StateMachineExecutor implements StateInspectionListener {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private WorkflowExecutionUpdate workflowExecutionUpdate;
+  @Inject private UsageMetricsEventPublisher usageMetricsEventPublisher;
   /**
    * Execute.
    *
@@ -400,6 +402,12 @@ public class StateMachineExecutor implements StateInspectionListener {
 
     stateExecutionInstance.setExpiryTs(Long.MAX_VALUE);
     wingsPersistence.save(stateExecutionInstance);
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+    }
     return stateExecutionInstance;
   }
 
@@ -1108,6 +1116,7 @@ public class StateMachineExecutor implements StateInspectionListener {
       StateExecutionInstance parentInstance = context.getStateExecutionInstance();
       List<StateExecutionInstance> childFailedEnvInstances =
           wingsPersistence.createQuery(StateExecutionInstance.class)
+              .filter(StateExecutionInstanceKeys.appId, context.getAppId())
               .filter(StateExecutionInstanceKeys.parentInstanceId, parentInstance.getUuid())
               .filter(StateExecutionInstanceKeys.status, FAILED)
               .filter(StateExecutionInstanceKeys.stateType, ENV_STATE.getType())
@@ -1125,6 +1134,7 @@ public class StateMachineExecutor implements StateInspectionListener {
 
       List<StateExecutionInstance> rollbackInstances =
           wingsPersistence.createQuery(StateExecutionInstance.class)
+              .filter(StateExecutionInstanceKeys.appId, context.getAppId())
               .field(StateExecutionInstanceKeys.executionUuid)
               .in(failedWorkflowExecutionIdsSet)
               .filter(StateExecutionInstanceKeys.rollback, true)
@@ -1207,6 +1217,15 @@ public class StateMachineExecutor implements StateInspectionListener {
           stateExecutionInstance.getUuid(), status);
     }
 
+    if (updateResult != null) {
+      try {
+        usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+            stateExecutionInstance.getAccountId(), stateExecutionInstance);
+      } catch (Exception e) {
+        log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+      }
+    }
+
     final StateStatusUpdateInfo arg =
         StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance, false);
     statusUpdateSubject.fireInform(StateStatusUpdate::stateExecutionStatusUpdated, arg);
@@ -1244,6 +1263,15 @@ public class StateMachineExecutor implements StateInspectionListener {
       log.error("StateExecutionInstance status could not be updated - "
               + "stateExecutionInstance: {},  status: {}",
           stateExecutionInstance.getUuid(), status);
+    }
+
+    if (updateResult != null) {
+      try {
+        usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+            stateExecutionInstance.getAccountId(), stateExecutionInstance);
+      } catch (Exception e) {
+        log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+      }
     }
 
     final StateStatusUpdateInfo arg =
@@ -1536,6 +1564,9 @@ public class StateMachineExecutor implements StateInspectionListener {
 
   private boolean isPipelineRollback(StateExecutionInstance stateExecutionInstance, StateMachine sm) {
     State state = sm.getState(null, stateExecutionInstance.getStateName());
+    if (state == null) {
+      return false;
+    }
     return POSSIBLE_ROLLBACK_STATE_TYPES.contains(stateExecutionInstance.getStateType()) && state.isRollback()
         && state.getParentId() == null;
   }
@@ -1923,6 +1954,13 @@ public class StateMachineExecutor implements StateInspectionListener {
           stateExecutionInstance.getUuid(), status, existingExecutionStatus);
       return false;
     }
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+    }
+
     final StateStatusUpdateInfo arg = StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance,
         reason != null
             && (RESUME_ALL == reason.getExecutionInterruptType()
@@ -2055,6 +2093,13 @@ public class StateMachineExecutor implements StateInspectionListener {
           stateExecutionInstance.getUuid(), stateExecutionData.toString(), status, errorMsg);
 
       return false;
+    }
+
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
     }
 
     final StateStatusUpdateInfo arg = StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance,
@@ -2364,6 +2409,14 @@ public class StateMachineExecutor implements StateInspectionListener {
     if (updateResult == null || updateResult.getWriteResult() == null || updateResult.getWriteResult().getN() != 1) {
       throw new WingsException(ErrorCode.RETRY_FAILED).addParam("displayName", stateExecutionInstance.getDisplayName());
     }
+
+    try {
+      usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+          stateExecutionInstance.getAccountId(), stateExecutionInstance);
+    } catch (Exception e) {
+      log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+    }
+
     final StateStatusUpdateInfo arg =
         StateStatusUpdateInfo.buildFromStateExecutionInstance(stateExecutionInstance, false);
     statusUpdateSubject.fireInform(StateStatusUpdate::stateExecutionStatusUpdated, arg);
@@ -2420,6 +2473,20 @@ public class StateMachineExecutor implements StateInspectionListener {
           workflowExecutionInterrupt.getAppId(), workflowExecutionInterrupt.getExecutionUuid());
       return false;
     }
+
+    if (updateResult != null) {
+      List<StateExecutionInstance> stateExecutionInstances =
+          getAllStateExecutionInstancesHavingTheseIds(leafInstanceIds);
+      for (StateExecutionInstance stateExecutionInstance : stateExecutionInstances) {
+        try {
+          usageMetricsEventPublisher.publishDeploymentStepTimeSeriesEvent(
+              stateExecutionInstance.getAccountId(), stateExecutionInstance);
+        } catch (Exception e) {
+          log.error("Failed to publish deployment step event [{}] , [{}]", stateExecutionInstance, e);
+        }
+      }
+    }
+
     return true;
   }
 
@@ -2463,6 +2530,16 @@ public class StateMachineExecutor implements StateInspectionListener {
 
     // Mark aborting
     return allInstanceIds;
+  }
+
+  private List<StateExecutionInstance> getAllStateExecutionInstancesHavingTheseIds(
+      List<String> stateExecutionInstanceIds) {
+    return wingsPersistence.createQuery(StateExecutionInstance.class)
+        .field(ID_KEY)
+        .exists()
+        .field(ID_KEY)
+        .in(stateExecutionInstanceIds)
+        .asList();
   }
 
   private StateExecutionInstance getStateExecutionInstance(

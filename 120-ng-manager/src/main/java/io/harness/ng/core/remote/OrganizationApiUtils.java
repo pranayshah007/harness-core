@@ -23,9 +23,9 @@ import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.entities.Organization;
-import io.harness.spec.server.ng.model.CreateOrganizationRequest;
-import io.harness.spec.server.ng.model.OrganizationResponse;
-import io.harness.spec.server.ng.model.UpdateOrganizationRequest;
+import io.harness.spec.server.ng.v1.model.CreateOrganizationRequest;
+import io.harness.spec.server.ng.v1.model.OrganizationResponse;
+import io.harness.spec.server.ng.v1.model.UpdateOrganizationRequest;
 import io.harness.utils.PageUtils;
 
 import com.google.common.collect.ImmutableList;
@@ -85,7 +85,7 @@ public class OrganizationApiUtils {
 
   public OrganizationResponse getOrganizationResponse(Organization organization) {
     OrganizationResponse organizationResponse = new OrganizationResponse();
-    io.harness.spec.server.ng.model.Organization org = new io.harness.spec.server.ng.model.Organization();
+    io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
     org.setSlug(organization.getIdentifier());
     org.setName(organization.getName());
     org.setDescription(organization.getDescription());

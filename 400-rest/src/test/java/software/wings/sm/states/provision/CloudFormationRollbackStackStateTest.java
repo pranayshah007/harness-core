@@ -41,6 +41,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,6 +49,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.ff.FeatureFlagService;
@@ -67,6 +69,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.infrastructure.CloudFormationRollbackConfig;
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.cloudformation.CloudFormationCompletionFlag;
+import software.wings.helpers.ext.cloudformation.CloudFormationRollbackCompletionFlag;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCommandRequest;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCreateStackRequest;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationDeleteStackRequest;
@@ -205,9 +208,11 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
     doReturn(CUSTOM_STACK_NAME).when(mockContext).renderExpression(CUSTOM_STACK_NAME);
     doReturn("region").when(mockContext).renderExpression("region");
     doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
-    doReturn(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
-        .when(sweepingOutputService)
-        .findSweepingOutput(any());
+    when(sweepingOutputService.find(any()))
+        .thenReturn(SweepingOutputInstance.builder()
+                        .value(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
+                        .build())
+        .thenReturn(null);
     ExecutionResponse response = state.execute(mockContext);
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
@@ -236,9 +241,11 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testExecuteInternalWithSavedElement() {
     doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
-    doReturn(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
-        .when(sweepingOutputService)
-        .findSweepingOutput(any());
+    when(sweepingOutputService.find(any()))
+        .thenReturn(SweepingOutputInstance.builder()
+                        .value(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
+                        .build())
+        .thenReturn(null);
     ExecutionResponse response = state.executeInternal(mockContext, ACTIVITY_ID);
     ScriptStateExecutionData stateExecutionData = (ScriptStateExecutionData) response.getStateExecutionData();
     assertThat(stateExecutionData.getActivityId()).isEqualTo(ACTIVITY_ID);
@@ -251,9 +258,11 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
   public void testExecuteInternalTypeCreateBody() {
     //   no variables and create type is of type create body
     doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
-    doReturn(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
-        .when(sweepingOutputService)
-        .findSweepingOutput(any());
+    when(sweepingOutputService.find(any()))
+        .thenReturn(SweepingOutputInstance.builder()
+                        .value(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
+                        .build())
+        .thenReturn(null);
     cloudFormationRollbackConfig.setVariables(null);
     cloudFormationRollbackConfig.setBody("body");
     cloudFormationRollbackConfig.setCreateType(CLOUDFORMATION_STACK_CREATE_BODY);
@@ -285,9 +294,11 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
     state.provisionerId = PROVISIONER_ID;
     state.setAwsConfigId(AWS_CONFIG_ID);
     doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
-    doReturn(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
-        .when(sweepingOutputService)
-        .findSweepingOutput(any());
+    when(sweepingOutputService.find(any()))
+        .thenReturn(SweepingOutputInstance.builder()
+                        .value(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
+                        .build())
+        .thenReturn(null);
     ExecutionResponse response = state.executeInternal(mockContext, ACTIVITY_ID);
     ScriptStateExecutionData stateExecutionData = (ScriptStateExecutionData) response.getStateExecutionData();
     assertThat(stateExecutionData.getActivityId()).isEqualTo(ACTIVITY_ID);
@@ -312,9 +323,122 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
 
     state.provisionerId = PROVISIONER_ID;
     doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
-    doReturn(null).when(sweepingOutputService).findSweepingOutput(any());
     ExecutionResponse response = state.executeInternal(mockContext, ACTIVITY_ID);
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SKIPPED);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testExecuteInternalWhenRollBackWithCustomStackNameSkipped() {
+    Application application = new Application();
+    application.setAccountId(ACCOUNT_ID);
+    doReturn(true).when(featureFlagService).isEnabled(eq(CF_ROLLBACK_CUSTOM_STACK_NAME), anyString());
+    when(mockContext.getApp()).thenReturn(application);
+    when(mockContext.getWorkflowExecutionId()).thenReturn(WORKFLOW_EXECUTION_ID);
+    CloudFormationRollbackInfoElement stackElement = CloudFormationRollbackInfoElement.builder()
+                                                         .stackExisted(false)
+                                                         .provisionerId(PROVISIONER_ID)
+                                                         .awsConfigId("awsConfigId")
+                                                         .build();
+    doReturn(singletonList(stackElement)).when(mockContext).getContextElementList(any());
+    state.setRegion("region");
+    state.provisionerId = PROVISIONER_ID;
+    state.setAwsConfigId(AWS_CONFIG_ID);
+    state.setUseCustomStackName(true);
+    state.setCustomStackName(CUSTOM_STACK_NAME);
+    doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
+    ArgumentCaptor<SweepingOutputInquiry> captor = ArgumentCaptor.forClass(SweepingOutputInquiry.class);
+
+    ExecutionResponse response = state.executeInternal(mockContext, ACTIVITY_ID);
+
+    verify(sweepingOutputService, times(1)).find(captor.capture());
+    assertThat(captor.getValue().getName())
+        .isEqualTo("CloudFormationCompletionFlag awsConfigId-PROVISIONER_ID-customStackName-region");
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SKIPPED);
+    assertThat(response.getErrorMessage()).isEqualTo("Skipping rollback");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testExecuteInternalWhenRollBackWithCustomStackNameSkippedBecauseRollbackDoneInAPreviousStep() {
+    Application application = new Application();
+    application.setAccountId(ACCOUNT_ID);
+    doReturn(true).when(featureFlagService).isEnabled(eq(CF_ROLLBACK_CUSTOM_STACK_NAME), anyString());
+    when(mockContext.getApp()).thenReturn(application);
+    when(mockContext.getWorkflowExecutionId()).thenReturn(WORKFLOW_EXECUTION_ID);
+    CloudFormationRollbackInfoElement stackElement = CloudFormationRollbackInfoElement.builder()
+                                                         .stackExisted(false)
+                                                         .provisionerId(PROVISIONER_ID)
+                                                         .awsConfigId("awsConfigId")
+                                                         .build();
+    doReturn(singletonList(stackElement)).when(mockContext).getContextElementList(any());
+    state.setRegion("region");
+    state.provisionerId = PROVISIONER_ID;
+    state.setAwsConfigId(AWS_CONFIG_ID);
+    state.setUseCustomStackName(true);
+    state.setCustomStackName(CUSTOM_STACK_NAME);
+    doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
+    when(sweepingOutputService.find(any()))
+        .thenReturn(SweepingOutputInstance.builder()
+                        .value(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
+                        .build())
+        .thenReturn(SweepingOutputInstance.builder()
+                        .value(CloudFormationRollbackCompletionFlag.builder().rollbackCompleted(true).build())
+                        .build());
+    ArgumentCaptor<SweepingOutputInquiry> captor = ArgumentCaptor.forClass(SweepingOutputInquiry.class);
+
+    ExecutionResponse response = state.executeInternal(mockContext, ACTIVITY_ID);
+
+    verify(sweepingOutputService, times(2)).find(captor.capture());
+    assertThat(captor.getAllValues().get(0).getName())
+        .isEqualTo("CloudFormationCompletionFlag awsConfigId-PROVISIONER_ID-customStackName-region");
+    assertThat(captor.getAllValues().get(1).getName())
+        .isEqualTo("CloudFormationRollbackCompletionFlag awsConfigId-PROVISIONER_ID-customStackName-region");
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SKIPPED);
+    assertThat(response.getErrorMessage()).isEqualTo("Rollback done in a previous step, skipping");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testExecuteInternalWhenRollBackWithoutCustomStackNameSkippedBecauseRollbackDoneInAPreviousStep() {
+    Application application = new Application();
+    application.setAccountId(ACCOUNT_ID);
+    doReturn(true).when(featureFlagService).isEnabled(eq(CF_ROLLBACK_CUSTOM_STACK_NAME), anyString());
+    when(mockContext.getApp()).thenReturn(application);
+    when(mockContext.getWorkflowExecutionId()).thenReturn(WORKFLOW_EXECUTION_ID);
+    CloudFormationRollbackInfoElement stackElement = CloudFormationRollbackInfoElement.builder()
+                                                         .stackExisted(false)
+                                                         .provisionerId(PROVISIONER_ID)
+                                                         .awsConfigId("awsConfigId")
+                                                         .build();
+    doReturn(singletonList(stackElement)).when(mockContext).getContextElementList(any());
+    state.setRegion("region");
+    state.provisionerId = PROVISIONER_ID;
+    state.setAwsConfigId(AWS_CONFIG_ID);
+    state.setUseCustomStackName(false);
+    state.setCustomStackName(CUSTOM_STACK_NAME);
+    doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
+    when(sweepingOutputService.find(any()))
+        .thenReturn(SweepingOutputInstance.builder()
+                        .value(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
+                        .build())
+        .thenReturn(SweepingOutputInstance.builder()
+                        .value(CloudFormationRollbackCompletionFlag.builder().rollbackCompleted(true).build())
+                        .build());
+    ArgumentCaptor<SweepingOutputInquiry> captor = ArgumentCaptor.forClass(SweepingOutputInquiry.class);
+
+    ExecutionResponse response = state.executeInternal(mockContext, ACTIVITY_ID);
+
+    verify(sweepingOutputService, times(2)).find(captor.capture());
+    assertThat(captor.getAllValues().get(0).getName())
+        .isEqualTo("CloudFormationCompletionFlag awsConfigId-PROVISIONER_ID");
+    assertThat(captor.getAllValues().get(1).getName())
+        .isEqualTo("CloudFormationRollbackCompletionFlag awsConfigId-PROVISIONER_ID");
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SKIPPED);
+    assertThat(response.getErrorMessage()).isEqualTo("Rollback done in a previous step, skipping");
   }
 
   @Test
@@ -343,11 +467,53 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
                                                          .build();
     doReturn(singletonList(stackElement)).when(mockContext).getContextElementList(any());
     doReturn(CUSTOM_STACK_NAME).when(mockContext).renderExpression(eq(CUSTOM_STACK_NAME));
+    doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
+    doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(any());
+    when(sweepingOutputService.find(any())).thenReturn(null);
     CloudFormationCreateStackResponse commandResponse = CloudFormationCreateStackResponse.builder().build();
+    ArgumentCaptor<SweepingOutputInstance> captor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
     state.setProvisionerId(PROVISIONER_ID);
     state.setAwsConfigId(AWS_CONFIG_ID);
     List<CloudFormationElement> cloudFormationElementList = state.handleResponse(commandResponse, mockContext);
     assertThat(cloudFormationElementList).isEqualTo(emptyList());
+    verify(sweepingOutputService).save(captor.capture());
+    assertThat(captor.getValue().getName())
+        .isEqualTo("CloudFormationRollbackCompletionFlag awsConfigId-PROVISIONER_ID");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testHandleResponseStackDidNotExistCustomStackName() {
+    CloudFormationRollbackInfoElement stackElement = CloudFormationRollbackInfoElement.builder()
+                                                         .stackExisted(false)
+                                                         .customStackName(CUSTOM_STACK_NAME)
+                                                         .region("region")
+                                                         .awsConfigId(AWS_CONFIG_ID)
+                                                         .provisionerId(PROVISIONER_ID)
+                                                         .build();
+    doReturn(true).when(featureFlagService).isEnabled(eq(CF_ROLLBACK_CUSTOM_STACK_NAME), anyString());
+    doReturn(singletonList(stackElement)).when(mockContext).getContextElementList(any());
+    doReturn(CUSTOM_STACK_NAME).when(mockContext).renderExpression(eq(CUSTOM_STACK_NAME));
+    doReturn("region").when(mockContext).renderExpression(eq("region"));
+    doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
+    doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(any());
+    when(sweepingOutputService.find(any())).thenReturn(null);
+    CloudFormationCreateStackResponse commandResponse = CloudFormationCreateStackResponse.builder().build();
+    ArgumentCaptor<SweepingOutputInstance> captor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
+    state.setProvisionerId(PROVISIONER_ID);
+    state.setAwsConfigId(AWS_CONFIG_ID);
+    state.setCustomStackName(CUSTOM_STACK_NAME);
+    state.setUseCustomStackName(true);
+    state.setRegion("region");
+
+    List<CloudFormationElement> cloudFormationElementList = state.handleResponse(commandResponse, mockContext);
+
+    verify(mockWingsPersistence, times(1)).delete(any(Query.class));
+    assertThat(cloudFormationElementList).isEqualTo(emptyList());
+    verify(sweepingOutputService, times(1)).save(captor.capture());
+    assertThat(captor.getValue().getName())
+        .isEqualTo("CloudFormationRollbackCompletionFlag awsConfigId-PROVISIONER_ID-customStackName-region");
   }
 
   @Test
@@ -376,6 +542,9 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
     Query query = mock(Query.class);
     doReturn(query).when(mockWingsPersistence).createQuery(any());
     doReturn(query).when(query).filter(any(), any());
+    doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
+    doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(any());
+    when(sweepingOutputService.find(any())).thenReturn(null);
     state.setProvisionerId(PROVISIONER_ID);
     state.setAwsConfigId(AWS_CONFIG_ID);
     state.setUseCustomStackName(true);
@@ -449,6 +618,9 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
             .build());
     WorkflowStandardParams mockParams = mock(WorkflowStandardParams.class);
     doReturn(mockParams).when(mockContext).fetchWorkflowStandardParamsFromContext();
+    doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
+    doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(any());
+    when(sweepingOutputService.find(any())).thenReturn(null);
     Environment env = anEnvironment().appId(APP_ID).uuid(ENV_ID).name(ENV_NAME).build();
     doReturn(env).when(workflowStandardParamsExtensionService).fetchRequiredEnv(mockParams);
     state.setProvisionerId(PROVISIONER_ID);

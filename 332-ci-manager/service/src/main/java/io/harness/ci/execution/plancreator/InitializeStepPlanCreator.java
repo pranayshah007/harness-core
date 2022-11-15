@@ -12,6 +12,7 @@ import io.harness.beans.steps.nodes.InitializeStepNode;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.YamlField;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -25,6 +26,11 @@ public class InitializeStepPlanCreator extends CIPMSStepPlanCreatorV2<Initialize
   @Override
   public Class<InitializeStepNode> getFieldClass() {
     return InitializeStepNode.class;
+  }
+
+  @Override
+  public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
+    return "";
   }
 
   @Override

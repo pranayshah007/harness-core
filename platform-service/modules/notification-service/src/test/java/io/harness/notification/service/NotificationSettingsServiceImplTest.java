@@ -9,6 +9,7 @@ package io.harness.notification.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 
@@ -245,6 +246,54 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     List<String> emails = notificationSettingsService.getNotificationSettings(
         NotificationChannelType.EMAIL, userGroupDTOList, ACCOUNT_ID);
     assertEquals(Arrays.asList(EMAIL_ID_1), emails);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testEmailNotificationWhenSendAllBooleanIsTrue() {
+    List<String> userIds = Arrays.asList(USER_ID_1);
+    List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build());
+    when(CGRestUtils.getResponse(any())).thenReturn(userInfoList);
+    List<UserGroupDTO> userGroupDTOList = new ArrayList<>();
+    EmailConfigDTO emailConfigDTO = EmailConfigDTO.builder().groupEmail(EMAIL_ID_2).sendEmailToAllUsers(true).build();
+    userGroupDTOList.add(
+        UserGroupDTO.builder().notificationConfigs(Arrays.asList(emailConfigDTO)).users(userIds).build());
+    List<String> emails = notificationSettingsService.getNotificationSettings(
+        NotificationChannelType.EMAIL, userGroupDTOList, ACCOUNT_ID);
+    assertEquals(Arrays.asList(EMAIL_ID_1, EMAIL_ID_2), emails);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testEmailNotificationWhenSendAllBooleanIsEmpty() {
+    List<String> userIds = Arrays.asList(USER_ID_1);
+    List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build());
+    when(CGRestUtils.getResponse(any())).thenReturn(userInfoList);
+    List<UserGroupDTO> userGroupDTOList = new ArrayList<>();
+    EmailConfigDTO emailConfigDTO = EmailConfigDTO.builder().groupEmail(EMAIL_ID_2).build();
+    userGroupDTOList.add(
+        UserGroupDTO.builder().notificationConfigs(Arrays.asList(emailConfigDTO)).users(userIds).build());
+    List<String> emails = notificationSettingsService.getNotificationSettings(
+        NotificationChannelType.EMAIL, userGroupDTOList, ACCOUNT_ID);
+    assertEquals(Arrays.asList(EMAIL_ID_1, EMAIL_ID_2), emails);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testEmailNotificationWhenSendAllBooleanIsFalse() {
+    List<String> userIds = Arrays.asList(USER_ID_1);
+    List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build());
+    when(CGRestUtils.getResponse(any())).thenReturn(userInfoList);
+    List<UserGroupDTO> userGroupDTOList = new ArrayList<>();
+    EmailConfigDTO emailConfigDTO = EmailConfigDTO.builder().sendEmailToAllUsers(false).groupEmail(EMAIL_ID_2).build();
+    userGroupDTOList.add(
+        UserGroupDTO.builder().notificationConfigs(Arrays.asList(emailConfigDTO)).users(userIds).build());
+    List<String> emails = notificationSettingsService.getNotificationSettings(
+        NotificationChannelType.EMAIL, userGroupDTOList, ACCOUNT_ID);
+    assertEquals(Arrays.asList(EMAIL_ID_2), emails);
   }
 
   @Test

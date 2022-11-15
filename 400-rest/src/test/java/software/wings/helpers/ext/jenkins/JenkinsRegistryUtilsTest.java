@@ -92,6 +92,7 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
   private String rootUrl;
   private JenkinsInternalConfig jenkinsInternalConfig;
   @Inject private JenkinsRegistryUtils jenkinsRegistryUtils;
+  private Jenkins jenkins;
 
   @Before
   public void setup() throws URISyntaxException {
@@ -109,11 +110,13 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
   /**
    * Should get job from jenkins.
    *
+   * @throws URISyntaxException the URI syntax exception
+   * @throws IOException        Signals that an I/O exception has occurred.
    */
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void shouldGetJobFromJenkins() {
+  public void shouldGetJobFromJenkins() throws IOException {
     assertThat(jenkinsRegistryUtils.getJobWithDetails(jenkinsInternalConfig, "scheduler")).isNotNull();
   }
 
@@ -498,20 +501,32 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
         .extracting("message")
         .isEqualTo("Failure in fetching environment variables for job ");
   }
-
   @Test
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
   public void constructJobPathDetails() throws URISyntaxException {
-    // default case
-    JenkinsRegistryUtils.JobPathDetails jobPathDetails =
-        jenkinsRegistryUtils.constructJobPathDetails("project/release/new%2Ftest");
+    JenkinsImpl jenkinsImpl = new JenkinsImpl("");
+
+    // default case when called by delegate
+    JenkinsImpl.JobPathDetails jobPathDetails = jenkinsImpl.constructJobPathDetails("project/release/new%2Ftest");
     assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
     assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
     assertThat(jobPathDetails.getChildJobName()).isEqualTo("new%2Ftest");
 
-    // more than three paths
-    jobPathDetails = jenkinsRegistryUtils.constructJobPathDetails("project/release/master");
+    // more than three paths when called by delegate
+    jobPathDetails = jenkinsImpl.constructJobPathDetails("project/release/master");
+    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
+    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("master");
+
+    // default case when called by ui
+    jobPathDetails = jenkinsImpl.constructJobPathDetails("project%2Frelease%2Fnew%252Ftest");
+    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
+    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("new%2Ftest");
+
+    // more than three paths when called by ui
+    jobPathDetails = jenkinsImpl.constructJobPathDetails("project%2Frelease%2Fmaster");
     assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
     assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
     assertThat(jobPathDetails.getChildJobName()).isEqualTo("master");

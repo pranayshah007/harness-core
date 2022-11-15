@@ -670,14 +670,26 @@ public class JenkinsTest extends WingsBaseTest {
   public void constructJobPathDetails() throws URISyntaxException {
     JenkinsImpl jenkinsImpl = new JenkinsImpl("");
 
-    // default case
+    // default case when called by delegate
     JenkinsImpl.JobPathDetails jobPathDetails = jenkinsImpl.constructJobPathDetails("project/release/new%2Ftest");
     assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
     assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
     assertThat(jobPathDetails.getChildJobName()).isEqualTo("new%2Ftest");
 
-    // more than three paths
+    // more than three paths when called by delegate
     jobPathDetails = jenkinsImpl.constructJobPathDetails("project/release/master");
+    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
+    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("master");
+
+    // default case when called by ui
+    jobPathDetails = jenkinsImpl.constructJobPathDetails("project%2Frelease%2Fnew%252Ftest");
+    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
+    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("new%2Ftest");
+
+    // more than three paths when called by ui
+    jobPathDetails = jenkinsImpl.constructJobPathDetails("project%2Frelease%2Fmaster");
     assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
     assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
     assertThat(jobPathDetails.getChildJobName()).isEqualTo("master");

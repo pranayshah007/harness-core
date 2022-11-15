@@ -92,6 +92,7 @@ public class GitSyncServiceImplTest extends WingsBaseTest {
                                           .urlType(GitConfig.UrlType.REPO)
                                           .authenticationScheme(AuthenticationScheme.HTTP_PASSWORD)
                                           .branch("branchName")
+                                          .disableUserGitConfig(false)
                                           .build())
                            .build();
     gitConnectorId = persistence.save(settingAttribute);
@@ -131,26 +132,29 @@ public class GitSyncServiceImplTest extends WingsBaseTest {
   public void test_fetchRepositories() {
     String applicationName = "app";
     String accountName = "account";
-    final YamlGitConfig yamlGitConfig = YamlGitConfig.builder()
-                                            .accountId(accountId)
-                                            .branchName("branchName")
-                                            .enabled(true)
-                                            .entityId(uuid)
-                                            .entityType(EntityType.APPLICATION)
-                                            .gitConnectorId(gitConnectorId)
-                                            .entityName(applicationName)
-                                            .build();
-    final YamlGitConfig yamlGitConfig1 = YamlGitConfig.builder()
-                                             .accountId(accountId)
-                                             .branchName(branchName1)
-                                             .enabled(true)
-                                             .entityId(uuid)
-                                             .entityType(EntityType.ACCOUNT)
-                                             .entityName(accountName)
-                                             .gitConnectorId(gitConnectorId)
-                                             .build();
+    final software.wings.yaml.gitSync.beans.YamlGitConfig yamlGitConfig =
+        software.wings.yaml.gitSync.beans.YamlGitConfig.builder()
+            .accountId(accountId)
+            .branchName("branchName")
+            .enabled(true)
+            .entityId(uuid)
+            .entityType(EntityType.APPLICATION)
+            .gitConnectorId(gitConnectorId)
+            .entityName(applicationName)
+            .build();
+    final software.wings.yaml.gitSync.beans.YamlGitConfig yamlGitConfig1 =
+        software.wings.yaml.gitSync.beans.YamlGitConfig.builder()
+            .accountId(accountId)
+            .branchName(branchName1)
+            .enabled(true)
+            .entityId(uuid)
+            .entityType(EntityType.ACCOUNT)
+            .entityName(accountName)
+            .gitConnectorId(gitConnectorId)
+            .build();
 
-    List<YamlGitConfig> yamlGitChangeSets = new ArrayList<>(Arrays.asList(yamlGitConfig, yamlGitConfig1));
+    List<software.wings.yaml.gitSync.beans.YamlGitConfig> yamlGitChangeSets =
+        new ArrayList<>(Arrays.asList(yamlGitConfig, yamlGitConfig1));
     when(yamlGitConfigService.getYamlGitConfigAccessibleToUserWithEntityName(accountId)).thenReturn(yamlGitChangeSets);
     List<GitDetail> gitDetails = gitSyncService.fetchRepositoriesAccessibleToUser(accountId);
     assertThat(gitDetails.size()).isEqualTo(2);

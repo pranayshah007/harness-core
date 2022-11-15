@@ -298,9 +298,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   private void executeSync(
       Ambiance ambiance, InfrastructureConfig infrastructure, NGLogCallback logCallback, boolean skipInstances) {
     final Infrastructure spec = infrastructure.getInfrastructureDefinitionConfig().getSpec();
-    validateConnector(spec, ambiance);
+    validateConnector(spec, ambiance, logCallback);
     saveExecutionLog(logCallback, "Fetching environment information...");
-    validateInfrastructure(spec, ambiance);
+    validateInfrastructure(spec, ambiance, logCallback);
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
@@ -373,7 +373,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     if (serviceOutcome.getType() == null) {
       throw new InvalidRequestException("service type cannot be null");
     }
-    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))
+        || ServiceSpecType.CUSTOM_DEPLOYMENT.toLowerCase(Locale.ROOT)
+               .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
       ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
           ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
       return Optional.ofNullable(publishSshInfraDelegateConfigOutput(
@@ -415,6 +417,11 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
         SshInfraDelegateConfigOutput.builder().sshInfraDelegateConfig(sshInfraDelegateConfig).build();
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
         sshInfraDelegateConfigOutput, StepCategory.STAGE.name());
+
+    if (InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureOutcome.getKind())) {
+      return InstancesOutcome.builder().instances(Collections.emptyList()).build();
+    }
+
     Set<String> hosts = sshInfraDelegateConfig.getHosts();
     if (EmptyPredicate.isEmpty(hosts)) {
       saveExecutionLogSafely(logCallback,

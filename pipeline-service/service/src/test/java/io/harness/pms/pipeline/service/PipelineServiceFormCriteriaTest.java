@@ -117,7 +117,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
         .validatePipelineYaml(any());
     when(pipelineSettingsService.getMaxPipelineCreationCount(any())).thenReturn(Long.MAX_VALUE);
 
-    pmsPipelineService.create(pipelineEntity);
+    pmsPipelineService.validateAndCreatePipeline(pipelineEntity);
 
     Criteria criteria = pmsPipelineServiceHelper.formCriteria(
         accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, false, "cd", "my");
