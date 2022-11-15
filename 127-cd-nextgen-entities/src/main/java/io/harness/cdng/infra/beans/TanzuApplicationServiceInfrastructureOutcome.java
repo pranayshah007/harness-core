@@ -12,20 +12,21 @@ import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
-@OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@JsonTypeName(InfrastructureKind.PCF)
-@TypeAlias("cdng.infra.beans.PcfInfrastructureOutcome")
-@RecasterAlias("io.harness.cdng.infra.beans.PcfInfrastructureOutcome")
-public class PcfInfrastructureOutcome extends InfrastructureOutcomeAbstract {
+@JsonTypeName(InfrastructureKind.TAS)
+@TypeAlias("cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome")
+@OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome")
+public class TanzuApplicationServiceInfrastructureOutcome extends InfrastructureOutcomeAbstract {
   String connectorRef;
   String organization;
   String space;
-  @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
+  @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
+
   @Override
   public String getKind() {
-    return InfrastructureKind.PCF;
+    return InfrastructureKind.TAS;
   }
 }

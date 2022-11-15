@@ -3,7 +3,7 @@ package io.harness.service.instancesynchandler;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.infra.beans.PcfInfrastructureOutcome;
+import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.PcfNGServerInstanceInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
@@ -73,7 +73,7 @@ public class PcfInstanceSyncHandler extends AbstractInstanceSyncHandler {
     if (isEmpty(serverInstanceInfoList)) {
       throw new InvalidArgumentsException("Parameter serverInstanceInfoList cannot be null or empty");
     }
-    if (!(infrastructureOutcome instanceof PcfInfrastructureOutcome)) {
+    if (!(infrastructureOutcome instanceof TanzuApplicationServiceInfrastructureOutcome)) {
       throw new InvalidArgumentsException(
           Pair.of("infrastructureOutcome", "Must be instance of CustomDeploymentInfrastructureOutcome"));
     }

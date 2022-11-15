@@ -24,6 +24,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -137,6 +138,13 @@ public class InfrastructurePlanCreatorHelper {
         ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
         elastigroupInfrastructure.setInfraName(infraName);
         elastigroupInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.TAS:
+        TanzuApplicationServiceInfrastructure tanzuApplicationServiceInfrastructure =
+            (TanzuApplicationServiceInfrastructure) infrastructure;
+        tanzuApplicationServiceInfrastructure.setInfraName(infraName);
+        tanzuApplicationServiceInfrastructure.setInfraIdentifier(infraIdentifier);
         return;
 
       default:
