@@ -207,4 +207,9 @@ public class FakeAccountClient implements AccountClient {
       }
     };
   }
+
+  @Override
+  public Call<RestResponse<Boolean>> isImmutableDelegateEnabled(String accountId) {
+    throw new UnsupportedOperationException("mocked method - provide impl when required");
+  }
 }

@@ -492,10 +492,6 @@ public class AccountServiceImpl implements AccountService {
     } else if (account.isCreatedFromNG()) {
       updateNextGenEnabled(account.getUuid(), true);
     }
-
-    //    if (!DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-    //      featureFlagService.enableAccount(FeatureName.USE_IMMUTABLE_DELEGATE, account.getUuid());
-    //    }
   }
 
   List<Role> createDefaultRoles(Account account) {
@@ -2020,6 +2016,12 @@ public class AccountServiceImpl implements AccountService {
   public boolean isAccountActivelyUsed(String accountId) {
     Account account = getFromCacheWithFallback(accountId);
     return account.isAccountActivelyUsed();
+  }
+
+  @Override
+  public boolean isImmutableDelegateEnabled(String accountId) {
+    Account account = getFromCacheWithFallback(accountId);
+    return account != null && account.isImmutableDelegateEnabled();
   }
 
   @Override
