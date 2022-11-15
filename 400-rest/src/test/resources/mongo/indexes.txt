@@ -605,6 +605,7 @@ resourceLookup {"name": "resourceId_1", "background": true} {"resourceId": 1}
 resourceLookup {"name": "resourceIndex_1", "background": true} {"accountId": 1, "resourceType": 1, "appId": 1, "resourceName": 1}
 resourceLookup {"name": "resourceIndex_3", "background": true} {"accountId": 1, "resourceName": 1, "resourceType": 1}
 resourceLookup {"name": "tagsNameResourceLookupIndex", "background": true} {"accountId": 1, "tags.name": 1}
+roles {"name": "accountId_1", "background": true} {"accountId": 1}
 roles {"name": "appId_1", "background": true} {"appId": 1}
 roles {"name": "createdAt_1", "background": true} {"createdAt": 1}
 roles {"name": "roleType_accountId_1", "background": true} {"roleType": 1, "accountId": 1}

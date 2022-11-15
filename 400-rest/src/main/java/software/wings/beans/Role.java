@@ -18,6 +18,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
@@ -51,7 +52,7 @@ public class Role extends Base implements AccountAccess {
 
   @NotEmpty private String name;
   private String description;
-  @NotEmpty private String accountId;
+  @NotEmpty @FdIndex private String accountId;
 
   private String appName;
 
