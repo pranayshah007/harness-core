@@ -631,8 +631,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
     if (serviceLevelObjective == null) {
       throw new InvalidRequestException(String.format(
-          "[SLOV2 Not Found] SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
-          identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present", identifier,
+          projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
     return serviceLevelObjective;

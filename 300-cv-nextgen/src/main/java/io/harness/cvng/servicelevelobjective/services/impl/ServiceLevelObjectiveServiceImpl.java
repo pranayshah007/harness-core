@@ -179,14 +179,11 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
           serviceLevelObjectiveDTO.getIdentifier(), projectParams.getAccountIdentifier(),
           projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
     }
-    try {
-      ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
-          serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
-              .getSLOV2DTO(serviceLevelObjectiveDTO);
-      serviceLevelObjectiveV2Service.update(projectParams, identifier, serviceLevelObjectiveV2DTO);
-    } catch (Exception e) {
-      log.error("[SLO Data Mismatch]: SLOV2 not updated", e);
-    }
+
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
+        serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE)
+            .getSLOV2DTO(serviceLevelObjectiveDTO);
+    serviceLevelObjectiveV2Service.update(projectParams, identifier, serviceLevelObjectiveV2DTO);
     ServiceLevelObjectiveDTO existingServiceLevelObjective =
         serviceLevelObjectiveToServiceLevelObjectiveDTO(serviceLevelObjective);
     validate(serviceLevelObjectiveDTO, projectParams);
@@ -208,11 +205,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
 
   @Override
   public boolean delete(ProjectParams projectParams, String identifier) {
-    try {
-      serviceLevelObjectiveV2Service.delete(projectParams, identifier);
-    } catch (Exception e) {
-      log.error("[SLO Data Mismatch]: SLOV2 not deleted", e);
-    }
+    serviceLevelObjectiveV2Service.delete(projectParams, identifier);
     return deleteSLOV1(projectParams, identifier);
   }
 
