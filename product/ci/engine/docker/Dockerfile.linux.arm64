@@ -14,7 +14,8 @@ RUN microdnf update \
     && microdnf clean all
 
 COPY engine_/engine /usr/local/bin/ci-lite-engine
-RUN chmod +x /usr/local/bin/ci-lite-engine
+USER root
+RUN sudo chmod +x /usr/local/bin/ci-lite-engine
 
 RUN groupadd harness && adduser -g harness -s /bin/sh -u 1000 harness
 USER harness:harness
