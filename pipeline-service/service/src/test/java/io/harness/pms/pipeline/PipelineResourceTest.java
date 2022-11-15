@@ -607,7 +607,7 @@ public class PipelineResourceTest extends CategoryTest {
         .when(pmsPipelineService)
         .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
     pipelineResource.validatePipelineByIdentifier(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER);
-    verify(pmsPipelineServiceHelper, times(1)).validatePipelineYaml(entity, false);
+    verify(pmsPipelineServiceHelper, times(0)).validatePipelineYaml(entity, false);
   }
 
   @Test

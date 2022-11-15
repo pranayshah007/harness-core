@@ -202,13 +202,13 @@ public class ExecutionHelperTest extends CategoryTest {
   public void testFetchPipelineEntity() {
     doReturn(Optional.of(pipelineEntity))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     PipelineEntity fetchedPipelineEntity = executionHelper.fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
     assertThat(fetchedPipelineEntity).isEqualTo(fetchedPipelineEntity);
 
     doReturn(Optional.empty())
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     assertThatThrownBy(() -> executionHelper.fetchPipelineEntity(accountId, orgId, projectId, pipelineId))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Pipeline with the given ID: pipelineId does not exist or has been deleted");

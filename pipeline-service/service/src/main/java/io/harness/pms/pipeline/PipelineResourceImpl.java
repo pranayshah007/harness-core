@@ -440,18 +440,15 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<String> validatePipelineByIdentifier(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
       @ResourceIdentifier String pipelineId) {
+    log.info(String.format("Validating the pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
+        projectId, orgId, accountId));
     Optional<PipelineEntity> entityOptional =
         pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
-    if (entityOptional.isPresent()) {
-      PipelineEntity pipelineEntity = entityOptional.get();
-      log.info(String.format("Validating the pipeline with identifier %s in project %s, org %s, account %s",
-          pipelineEntity.getIdentifier(), projectId, orgId, accountId));
-      pipelineServiceHelper.validatePipelineYaml(pipelineEntity, false);
-      return ResponseDTO.newResponse(pipelineEntity.getIdentifier());
-    } else {
+    if (entityOptional.isEmpty()) {
       throw new EntityNotFoundException(
           String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId));
     }
+    return ResponseDTO.newResponse(pipelineId);
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
@@ -466,7 +463,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     Optional<PipelineEntity> pipelineEntity =
         pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
 
-    if (!pipelineEntity.isPresent()) {
+    if (pipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
           String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId));
     }

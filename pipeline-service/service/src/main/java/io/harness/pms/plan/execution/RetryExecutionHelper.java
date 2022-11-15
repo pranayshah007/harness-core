@@ -102,18 +102,15 @@ public class RetryExecutionHelper {
   }
 
   public boolean isFailedStatus(ExecutionStatus status) {
-    if (status.equals(ExecutionStatus.ABORTED) || status.equals(ExecutionStatus.FAILED)
+    return status.equals(ExecutionStatus.ABORTED) || status.equals(ExecutionStatus.FAILED)
         || status.equals(ExecutionStatus.EXPIRED) || status.equals(ExecutionStatus.APPROVAL_REJECTED)
-        || status.equals(ExecutionStatus.APPROVALREJECTED)) {
-      return true;
-    }
-    return false;
+        || status.equals(ExecutionStatus.APPROVALREJECTED);
   }
 
   public RetryInfo validateRetry(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId) {
-    Optional<PipelineEntity> updatedPipelineEntity = pmsPipelineService.getAndValidatePipeline(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> updatedPipelineEntity =
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
 
     if (!updatedPipelineEntity.isPresent()) {
       return RetryInfo.builder()

@@ -203,11 +203,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @NotNull
   private PipelineEntity getSourcePipelineEntity(ClonePipelineDTO clonePipelineDTO, String accountId) {
     Optional<PipelineEntity> sourcePipelineEntity =
-        getAndValidatePipeline(accountId, clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
+        getPipeline(accountId, clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
             clonePipelineDTO.getSourceConfig().getProjectIdentifier(),
-            clonePipelineDTO.getSourceConfig().getPipelineIdentifier(), false);
+            clonePipelineDTO.getSourceConfig().getPipelineIdentifier(), false, false);
 
-    if (!sourcePipelineEntity.isPresent()) {
+    if (sourcePipelineEntity.isEmpty()) {
       log.error(String.format("Pipeline with id [%s] in org [%s] in project [%s] is not present or deleted",
           clonePipelineDTO.getSourceConfig().getPipelineIdentifier(),
           clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
@@ -226,7 +226,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted) {
     Optional<PipelineEntity> optionalPipelineEntity =
         getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false);
-    if (!optionalPipelineEntity.isPresent()) {
+    if (optionalPipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
     }
@@ -268,7 +268,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       throw new InvalidRequestException(
           String.format("Error while retrieving pipeline [%s]: %s", identifier, ExceptionUtils.getMessage(e)));
     }
-    if (!optionalPipelineEntity.isPresent()) {
+    if (optionalPipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
     }
@@ -313,7 +313,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     Optional<PipelineEntity> optionalOriginalEntity =
         pmsPipelineRepository.findForOldGitSync(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
             pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), true);
-    if (!optionalOriginalEntity.isPresent()) {
+    if (optionalOriginalEntity.isEmpty()) {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
           pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier()));
     }
@@ -338,9 +338,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
     Optional<PipelineEntity> optionalPipelineEntity;
     try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(null, false)) {
+      // Get and validate pipeline only for old git exp full sync
       optionalPipelineEntity = getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     }
-    if (!optionalPipelineEntity.isPresent()) {
+    if (optionalPipelineEntity.isEmpty()) {
       throw new InvalidRequestException(
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgId, projectId, pipelineId));
     }
@@ -414,8 +415,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public boolean markEntityInvalid(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, String invalidYaml) {
     Optional<PipelineEntity> optionalPipelineEntity =
-        getAndValidatePipeline(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
-    if (!optionalPipelineEntity.isPresent()) {
+        getPipeline(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false, false);
+    if (optionalPipelineEntity.isEmpty()) {
       log.warn(String.format(
           "Marking pipeline [%s] as invalid failed as it does not exist or has been deleted", identifier));
       return false;
@@ -600,8 +601,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public String fetchExpandedPipelineJSON(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
     Optional<PipelineEntity> pipelineEntityOptional =
-        getAndValidatePipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
-    if (!pipelineEntityOptional.isPresent()) {
+        getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
+    if (pipelineEntityOptional.isEmpty()) {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
           orgIdentifier, projectIdentifier, pipelineIdentifier));
     }
