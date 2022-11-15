@@ -30,7 +30,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
-import com.microsoft.azure.management.appservice.DeploymentSlot;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
