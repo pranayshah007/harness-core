@@ -1839,7 +1839,8 @@
                 "enum": [
                   "BILLING",
                   "OPTIMIZATION",
-                  "VISIBILITY"
+                  "VISIBILITY",
+                  "GOVERNANCE"
                 ]
               },
               "minLength": 1
@@ -1874,7 +1875,8 @@
                 "enum": [
                   "BILLING",
                   "OPTIMIZATION",
-                  "VISIBILITY"
+                  "VISIBILITY",
+                  "GOVERNANCE"
                 ]
               },
               "minLength": 1
@@ -1911,7 +1913,8 @@
                 "enum": [
                   "BILLING",
                   "OPTIMIZATION",
-                  "VISIBILITY"
+                  "VISIBILITY",
+                  "GOVERNANCE"
                 ]
               },
               "minLength": 1
@@ -3149,7 +3152,8 @@
                 "enum": [
                   "BILLING",
                   "OPTIMIZATION",
-                  "VISIBILITY"
+                  "VISIBILITY",
+                  "GOVERNANCE"
                 ]
               },
               "minLength": 1

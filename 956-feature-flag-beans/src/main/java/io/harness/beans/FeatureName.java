@@ -239,6 +239,7 @@ public enum FeatureName {
   CCM_COMMORCH("Commitment Orchestration", HarnessTeam.CE),
   CCM_SUNSETTING_CG("Sunsetting CCM CG Features", HarnessTeam.CE),
   RECOMMENDATION_EFFICIENCY_VIEW_UI("Enable efficiency view instead cost view in Recommendation", HarnessTeam.CE),
+  CLOUD_COST_GOVERNANCE_UI("Cloud Cost governance UI", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   NG_EXECUTION_INPUT,
   HELM_CHART_VERSION_STRICT_MATCH,
