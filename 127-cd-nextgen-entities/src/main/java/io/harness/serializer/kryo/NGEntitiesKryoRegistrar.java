@@ -147,6 +147,7 @@ import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.SshServiceSpec;
 import io.harness.cdng.service.beans.StageOverridesConfig;
+import io.harness.cdng.service.beans.TanzuApplicationServiceSpec;
 import io.harness.cdng.service.beans.WinRmServiceSpec;
 import io.harness.cdng.variables.beans.NGVariableOverrideSetWrapper;
 import io.harness.cdng.variables.beans.NGVariableOverrideSets;
@@ -325,5 +326,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(ServerlessAwsLambdaInfrastructure.class, 12579);
     kryo.register(NexusRegistryRawConfig.class, 1400171);
     kryo.register(ElastigroupServiceSpec.class, 140011);
+    kryo.register(TanzuApplicationServiceSpec.class, 140050);
   }
 }

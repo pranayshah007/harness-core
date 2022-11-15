@@ -247,6 +247,9 @@ io.harness.cdng.service.beans.CustomDeploymentServiceSpec
 io.harness.cdng.infra.beans.CustomDeploymentInfraMapping
 io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure
 io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome
+io.harness.cdng.infra.beans.TanzuApplicationServiceInfraMapping
+io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure
+io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome
 io.harness.cdng.creator.plan.stage.DeploymentStageNode
 io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig
 io.harness.cdng.artifact.NexusArtifactSummary
