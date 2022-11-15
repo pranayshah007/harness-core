@@ -46,6 +46,9 @@ backgroundScheduler:
   threadCount: ${CRONS_THREAD_COUNT:-25}
   clustered: true #backgroundScheduler
   #mongoUri: mongodb://localhost:27017/background_scheduler
+  batchTriggerAcquisitionMaxCount: ${BATCH_TRIGGER_MAX_COUNT:-1}
+  misfireThreshold: ${MISFIRE_THRESHOLD:-60000}
+  maxMisfiresToHandleAtATime: ${MAX_MISFIRES_AT_A_TIME:-20}
 
 serviceScheduler:
   #schedulerName: automation_service_scheduler
@@ -56,6 +59,9 @@ serviceScheduler:
   threadCount: ${CRONS_THREAD_COUNT:-25}
   enabled: true
   #mongoUri: mongodb://localhost:27017/service_scheduler
+  batchTriggerAcquisitionMaxCount: ${BATCH_TRIGGER_MAX_COUNT:-1}
+  misfireThreshold: ${MISFIRE_THRESHOLD:-60000}
+  maxMisfiresToHandleAtATime: ${MAX_MISFIRES_AT_A_TIME:-20}
 
 enableIterators: ${ENABLE_ITERATORS:-true}
 iteratorConfigPath: ${ITERATOR_CONFIG_PATH:-""}

@@ -21,6 +21,11 @@ public class SchedulerConfig {
   @JsonProperty(defaultValue = "scheduler") private String instanceId = "scheduler";
   @JsonProperty(defaultValue = "quartz") private String tablePrefix = "quartz";
   @JsonProperty(defaultValue = "false") private boolean isClustered;
+  @JsonProperty(defaultValue = "1") private String batchTriggerAcquisitionMaxCount;
+
+  @JsonProperty(defaultValue = "60000") private String misfireThreshold;
+
+  @JsonProperty(defaultValue = "20") private String maxMisfiresToHandleAtATime;
 
   private String mongoUri;
   @JsonProperty(defaultValue = "30000") private String mongoOptionWriteConcernTimeoutMillis = "30000";
@@ -111,5 +116,17 @@ public class SchedulerConfig {
 
   public void setMongoOptionWriteConcernTimeoutMillis(String mongoOptionWriteConcernTimeoutMillis) {
     this.mongoOptionWriteConcernTimeoutMillis = mongoOptionWriteConcernTimeoutMillis;
+  }
+
+  public String getBatchTriggerAcquisitionMaxCount() {
+    return batchTriggerAcquisitionMaxCount;
+  }
+
+  public String getMisfireThreshold() {
+    return misfireThreshold;
+  }
+
+  public String getMaxMisfiresToHandleAtATime() {
+    return maxMisfiresToHandleAtATime;
   }
 }
