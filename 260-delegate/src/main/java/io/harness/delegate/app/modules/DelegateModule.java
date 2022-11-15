@@ -260,6 +260,7 @@ import io.harness.delegate.task.ecs.EcsCommandTaskNG;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsGitFetchRunTask;
 import io.harness.delegate.task.ecs.EcsGitFetchTask;
+import io.harness.delegate.task.elastigroup.ElastigroupBGStageSetupCommandTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupParametersFetchTask;
 import io.harness.delegate.task.elastigroup.ElastigroupSetupCommandTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupStartupScriptFetchRunTask;
@@ -1946,6 +1947,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG).toInstance(ElastigroupStartupScriptFetchRunTask.class);
     mapBinder.addBinding(TaskType.ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG).toInstance(ElastigroupParametersFetchTask.class);
     mapBinder.addBinding(TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG).toInstance(ElastigroupSetupCommandTaskNG.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG).toInstance(ElastigroupBGStageSetupCommandTaskNG.class);
   }
 
   private void registerSecretManagementBindings() {
