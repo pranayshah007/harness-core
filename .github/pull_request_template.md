@@ -36,6 +36,7 @@
 - FunctionalTest1: `trigger ft1`
 - FunctionalTest2: `trigger ft2`
 - CodeBaseHash: `trigger codebasehash`
+- CodeFormatCheckstyle: `trigger checkstylecodeformat`
 - Trigger all Checks: `trigger smartchecks`
 </details>
 
