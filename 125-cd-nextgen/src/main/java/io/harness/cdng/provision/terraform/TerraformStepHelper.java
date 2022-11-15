@@ -13,19 +13,24 @@ import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 import static io.harness.provision.TerraformConstants.TF_DESTROY_NAME_PREFIX;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
+import io.harness.beans.SecretManagerConfig;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.k8s.K8sStepHelper;
@@ -42,6 +47,7 @@ import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.pipeline.executions.TerraformSecretCleanupTaskNotifyCallback;
 import io.harness.cdng.provision.terraform.TerraformConfig.TerraformConfigBuilder;
 import io.harness.cdng.provision.terraform.TerraformConfig.TerraformConfigKeys;
 import io.harness.cdng.provision.terraform.TerraformInheritOutput.TerraformInheritOutputBuilder;
@@ -73,6 +79,7 @@ import io.harness.delegate.task.terraform.RemoteTerraformVarFileInfo.RemoteTerra
 import io.harness.delegate.task.terraform.TerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
+import io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskParameters;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -96,10 +103,15 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.validation.Validator;
 import io.harness.validator.NGRegexValidatorConstants;
+import io.harness.waiter.WaitNotifyEngine;
+
+import software.wings.beans.TaskType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -108,7 +120,9 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -145,6 +159,8 @@ public class TerraformStepHelper {
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject public TerraformConfigDAL terraformConfigDAL;
+  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject private WaitNotifyEngine waitNotifyEngine;
 
   @Inject private FileStoreService fileStoreService;
 
@@ -407,8 +423,8 @@ public class TerraformStepHelper {
     return outputName;
   }
 
-  public void saveTerraformPlanExecutionDetails(
-      Ambiance ambiance, TerraformTaskNGResponse response, String provisionerIdentifier) {
+  public void saveTerraformPlanExecutionDetails(Ambiance ambiance, TerraformTaskNGResponse response,
+      String provisionerIdentifier, TerraformPlanStepParameters planStepParameters) {
     if (isEmpty(response.getTfPlanJsonFileId())) {
       return;
     }
@@ -427,27 +443,14 @@ public class TerraformStepHelper {
             .provisionerId(provisionerIdentifier)
             .tfPlanJsonFieldId(response.getTfPlanJsonFileId())
             .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .encryptedTfPlan(List.of(response.getEncryptedTfPlan()))
+            .encryptionConfig(getEncryptionConfig(ambiance, planStepParameters))
             .build();
 
     terraformPlanExectionDetailsService.save(terraformPlanExecutionDetails);
   }
 
-  public void cleanupTfPlanJson(Ambiance ambiance) {
-    String planExecutionId = ambiance.getPlanExecutionId();
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-
-    TFPlanExecutionDetailsKey tfPlanExecutionDetailsKey =
-        TFPlanExecutionDetailsKey.builder()
-            .scope(
-                Scope.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build())
-            .pipelineExecutionId(planExecutionId)
-            .build();
-
-    List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList =
-        terraformPlanExectionDetailsService.listAllPipelineTFPlanExecutionDetails(tfPlanExecutionDetailsKey);
-
+  public void cleanupTfPlanJson(List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList) {
     for (TerraformPlanExecutionDetails terraformPlanExecutionDetails : terraformPlanExecutionDetailsList) {
       if (isNotEmpty(terraformPlanExecutionDetails.getTfPlanJsonFieldId())
           && isNotEmpty(terraformPlanExecutionDetails.getTfPlanFileBucket())) {
@@ -465,11 +468,66 @@ public class TerraformStepHelper {
         }
       }
     }
-    boolean deleteSuccess =
-        terraformPlanExectionDetailsService.deleteAllTerraformPlanExecutionDetails(tfPlanExecutionDetailsKey);
-    if (!deleteSuccess) {
-      log.warn("Unable to delete the TerraformPlanExecutionDetails");
+  }
+
+  public TFPlanExecutionDetailsKey createTFPlanExecutionDetailsKey(Ambiance ambiance) {
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    return TFPlanExecutionDetailsKey.builder()
+        .scope(Scope.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build())
+        .pipelineExecutionId(planExecutionId)
+        .build();
+  }
+
+  public List<TerraformPlanExecutionDetails> getAllPipelineTFPlanExecutionDetails(
+      TFPlanExecutionDetailsKey tfPlanExecutionDetailsKey) {
+    return terraformPlanExectionDetailsService.listAllPipelineTFPlanExecutionDetails(tfPlanExecutionDetailsKey);
+  }
+
+  public Map<EncryptionConfig, List<EncryptedRecordData>> getEncryptedTfPlanWithConfig(
+      List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList) {
+    Map<EncryptionConfig, List<EncryptedRecordData>> map = new HashMap<>();
+
+    for (TerraformPlanExecutionDetails executionDetails : terraformPlanExecutionDetailsList) {
+      if (executionDetails.getEncryptionConfig() != null) {
+        if (!map.isEmpty()) {
+          boolean isGrouped = false;
+          for (Map.Entry<EncryptionConfig, List<EncryptedRecordData>> entry : map.entrySet()) {
+            if (executionDetails.getEncryptionConfig() instanceof SecretManagerConfig) {
+              SecretManagerConfig secretManagerConfig = (SecretManagerConfig) executionDetails.getEncryptionConfig();
+              String identifier = secretManagerConfig.getIdentifier();
+              String projIdentifier = secretManagerConfig.getProjectIdentifier();
+              String accIdentifier = secretManagerConfig.getAccountIdentifier();
+              String orgIdentifier = secretManagerConfig.getOrgIdentifier();
+
+              if (!isBlank(identifier) && !isBlank(projIdentifier) && !isBlank(accIdentifier)
+                  && !isBlank(orgIdentifier)) {
+                if (identifier.equals(((SecretManagerConfig) entry.getKey()).getNgMetadata().getIdentifier())
+                    && projIdentifier.equals(
+                        ((SecretManagerConfig) entry.getKey()).getNgMetadata().getProjectIdentifier())
+                    && accIdentifier.equals(
+                        ((SecretManagerConfig) entry.getKey()).getNgMetadata().getAccountIdentifier())
+                    && orgIdentifier.equals(
+                        ((SecretManagerConfig) entry.getKey()).getNgMetadata().getOrgIdentifier())) {
+                  entry.getValue().add(executionDetails.getEncryptedTfPlan().get(0));
+                  isGrouped = true;
+                }
+              }
+            }
+          }
+          if (!isGrouped) {
+            map.put(executionDetails.getEncryptionConfig(),
+                new ArrayList<>(Arrays.asList(executionDetails.getEncryptedTfPlan().get(0))));
+          }
+        } else {
+          map.put(executionDetails.getEncryptionConfig(),
+              new ArrayList<>(Arrays.asList(executionDetails.getEncryptedTfPlan().get(0))));
+        }
+      }
     }
+    return map;
   }
 
   public String getTerraformPlanName(TerraformPlanCommand terraformPlanCommand, Ambiance ambiance, String provisionId) {
@@ -991,5 +1049,45 @@ public class TerraformStepHelper {
       }
     }
     return fileInfo;
+  }
+
+  public void cleanupAllTerraformPlanExecutionDetails(TFPlanExecutionDetailsKey tfPlanExecutionDetailsKey) {
+    boolean deleteSuccess =
+        terraformPlanExectionDetailsService.deleteAllTerraformPlanExecutionDetails(tfPlanExecutionDetailsKey);
+    if (!deleteSuccess) {
+      log.warn("Unable to delete the TerraformPlanExecutionDetails");
+    }
+  }
+
+  public void cleanupTerraformVaultSecret(
+      Ambiance ambiance, List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList, String pipelineId) {
+    Map<EncryptionConfig, List<EncryptedRecordData>> encryptedTfPlanWithConfig =
+        getEncryptedTfPlanWithConfig(terraformPlanExecutionDetailsList);
+    encryptedTfPlanWithConfig.forEach((encryptionConfig, listEncryptedPlan) -> {
+      runCleanupTerraformSecretTask(ambiance, encryptionConfig, listEncryptedPlan, pipelineId);
+    });
+  }
+
+  private void runCleanupTerraformSecretTask(Ambiance ambiance, EncryptionConfig encryptionConfig,
+      List<EncryptedRecordData> encryptedRecordDataList, String cleanupSecretUuid) {
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .taskParameters(TerraformSecretCleanupTaskParameters.builder()
+                                .encryptedRecordDataList(encryptedRecordDataList)
+                                .encryptionConfig(encryptionConfig)
+                                .cleanupUuid(cleanupSecretUuid)
+                                .build())
+            .taskType(TaskType.TERRAFORM_SECRET_CLEANUP_TASK_NG.name())
+            .executionTimeout(Duration.ofMinutes(10))
+            .taskSetupAbstraction(SetupAbstractionKeys.ng, "true")
+            .logStreamingAbstractions(new LinkedHashMap<>() {
+              { put(SetupAbstractionKeys.accountId, AmbianceUtils.getAccountId(ambiance)); }
+            })
+            .build();
+
+    String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+    log.info("Task Successfully queued with taskId: {}", taskId);
+    waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION, new TerraformSecretCleanupTaskNotifyCallback(), taskId);
   }
 }
