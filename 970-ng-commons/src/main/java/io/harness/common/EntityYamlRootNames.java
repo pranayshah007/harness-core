@@ -180,4 +180,5 @@ public class EntityYamlRootNames {
   public static final String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   public static final String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   public static final String ELASTIGROUP_SETUP = "ElastigroupSetup";
+  public static final String PCF_CANARY_APP_SETUP_STEP = "PcfCanaryAppSetup";
 }

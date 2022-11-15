@@ -60,6 +60,8 @@ public interface StepSpecTypeConstants {
   String DEPLOYMENT_TYPE_CUSTOM_DEPLOYMENT = "CustomDeployment";
   String CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT = "FetchInstanceScript";
 
+  String PCF_CANARY_APP_SETUP = "PcfCanaryAppSetup";
+
   String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
   String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";

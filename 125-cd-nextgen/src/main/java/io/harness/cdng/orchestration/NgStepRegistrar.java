@@ -63,6 +63,7 @@ import io.harness.cdng.k8s.K8sScaleStep;
 import io.harness.cdng.manifest.steps.ManifestStep;
 import io.harness.cdng.manifest.steps.ManifestsStep;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
+import io.harness.cdng.pcf.PcfCanaryAppSetupStep;
 import io.harness.cdng.pipeline.steps.DeploymentStageStep;
 import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerStep;
 import io.harness.cdng.pipeline.steps.NGSectionStep;
@@ -191,6 +192,7 @@ public class NgStepRegistrar {
     engineSteps.put(AzureCreateBPStep.STEP_TYPE, AzureCreateBPStep.class);
     engineSteps.put(AzureARMRollbackStep.STEP_TYPE, AzureARMRollbackStep.class);
     engineSteps.put(FetchInstanceScriptStep.STEP_TYPE, FetchInstanceScriptStep.class);
+    engineSteps.put(PcfCanaryAppSetupStep.STEP_TYPE, PcfCanaryAppSetupStep.class);
     engineSteps.put(ShellScriptProvisionStep.STEP_TYPE, ShellScriptProvisionStep.class);
 
     // Chaos

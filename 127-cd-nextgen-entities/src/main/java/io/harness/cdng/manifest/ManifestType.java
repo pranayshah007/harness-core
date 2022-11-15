@@ -19,6 +19,8 @@ import java.util.Set;
 public interface ManifestType {
   Set<String> K8S_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(
       ManifestType.K8Manifest, ManifestType.HelmChart, ManifestType.Kustomize, ManifestType.OpenshiftTemplate);
+  Set<String> PCF_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(
+      ManifestType.K8Manifest, ManifestType.HelmChart, ManifestType.Kustomize, ManifestType.OpenshiftTemplate);
   Set<String> HELM_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.HelmChart);
   Set<String> ECS_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition,

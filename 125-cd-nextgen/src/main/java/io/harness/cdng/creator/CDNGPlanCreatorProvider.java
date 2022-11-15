@@ -111,6 +111,7 @@ import io.harness.cdng.creator.plan.steps.K8sDeleteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sRollingStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sScaleStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.PcfCanaryAppSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ShellScriptProvisionStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformDestroyStepPlanCreator;
@@ -158,6 +159,7 @@ import io.harness.cdng.creator.variables.K8sDeleteStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sRollingStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
+import io.harness.cdng.creator.variables.PcfCanaryAppSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.StepGroupVariableCreator;
@@ -224,6 +226,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String SHELL_SCRIPT_PROVISIONER_STEM_METADATA = "Shell Script Provisioner";
 
   private static final String CUSTOM = "Custom Deployment";
+  private static final String TAS = "TAS";
   private static final String COMMANDS = "Commands";
   private static final String ELASTIGROUP = "Elastigroup";
 
@@ -287,6 +290,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new K8sCanaryDeleteStepPlanCreator());
     planCreators.add(new TerraformApplyStepPlanCreator());
     planCreators.add(new FetchInstanceScriptStepPlanCreator());
+    planCreators.add(new PcfCanaryAppSetupStepPlanCreator());
     planCreators.add(new TerraformPlanStepPlanCreator());
     planCreators.add(new TerraformDestroyStepPlanCreator());
     planCreators.add(new TerraformRollbackStepPlanCreator());
@@ -420,6 +424,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AzureWebAppSwapSlotStepVariableCreator());
     variableCreators.add(new AzureWebAppRollbackStepVariableCreator());
     variableCreators.add(new FetchInstanceScriptStepVariableCreator());
+    variableCreators.add(new PcfCanaryAppSetupStepVariableCreator());
     variableCreators.add(new JenkinsBuildStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
     // ECS
@@ -808,6 +813,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
+    StepInfo pcfCanaryAppSetup =
+        StepInfo.newBuilder()
+            .setName(StepSpecTypeConstants.PCF_CANARY_APP_SETUP)
+            .setType(StepSpecTypeConstants.PCF_CANARY_APP_SETUP)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+            .setFeatureFlag(FeatureName.PCF_NG.name())
+            .build();
+
     StepInfo shellScriptProvision = StepInfo.newBuilder()
                                         .setName("Shell Script Provision")
                                         .setType(StepSpecTypeConstants.SHELL_SCRIPT_PROVISION)
@@ -892,6 +905,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(azureCreateBPResources);
     stepInfos.add(azureARMRollback);
     stepInfos.add(fetchInstanceScript);
+    stepInfos.add(pcfCanaryAppSetup);
     stepInfos.add(ecsBlueGreenCreateService);
     stepInfos.add(ecsBlueGreenSwapTargetGroups);
     stepInfos.add(ecsBlueGreenRollback);

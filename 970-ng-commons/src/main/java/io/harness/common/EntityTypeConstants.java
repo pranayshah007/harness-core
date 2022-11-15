@@ -60,6 +60,8 @@ public interface EntityTypeConstants {
   String K8S_DELETE = "K8sDelete";
   String K8S_BG_SWAP_SERVICES = "K8sBGSwapServices";
   String K8S_CANARY_DELETE = "K8sCanaryDelete";
+
+  String PCF_CANARY_APP_SETUP_STEP = "PcfCanaryAppSetup";
   String RUN_STEP = "Run";
   String BACKGROUND_STEP = "Background";
   String RUN_TEST = "RunTests";
