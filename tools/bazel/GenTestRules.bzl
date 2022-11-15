@@ -1,7 +1,7 @@
 load("//:test-util.bzl", "DISTRIBUTE_TESTING_WORKER", "DISTRIBUTE_TESTING_WORKERS", "OPTIMIZED_PACKAGE_TESTS")
 
 MAX_COMPILE_TESTS = 512
-MAX_EXECUTION_TESTS = 20
+MAX_EXECUTION_TESTS = 100
 SUITE_CODE_FILEPATH = "code_filepath"
 SUITE_PACKAGE_NAME = "package_name"
 SUITE_INDEX = "index"
@@ -25,7 +25,7 @@ def run_tests(**kwargs):
         native.java_test(
             name = test,
             runtime_deps = ["tests"],
-            size = "large",
+            size = "medium",
             jvm_flags = [
                 "$(HARNESS_ARGS)",
                 "-Xmx4G",
@@ -138,7 +138,7 @@ EOF""" % code,
             name = package + ".tests" + index,
             test_class = package + "." + test_class,
             deps = [":shared_package_tests"] + deps,
-            size = "large",
+            size = "medium",
 
             # inputs
             srcs = code_filepath + [x[0] for x in tests],
@@ -215,7 +215,7 @@ def optimized_package_test(combined_tests_target_index, package, index, test_cla
         name = target_name,
         test_class = package + "." + test_class,
         runtime_deps = [COMBINED_TESTS_TARGET + str(combined_tests_target_index)],
-        size = "large",
+        size = "medium",
 
         #Additional
         visibility = ["//visibility:public"],
