@@ -56,6 +56,7 @@ import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 import io.harness.pms.pipeline.StepPalleteInfo;
 import io.harness.pms.pipeline.StepPalleteModuleInfo;
+import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
@@ -99,6 +100,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
   @Inject private final PmsSdkInstanceService pmsSdkInstanceService;
   @Inject private final PMSPipelineServiceHelper pmsPipelineServiceHelper;
+
+  @Inject private final PipelineGovernanceService pipelineGovernanceService;
   @Inject private final PMSPipelineServiceStepHelper pmsPipelineServiceStepHelper;
   @Inject private final GitSyncSdkService gitSyncSdkService;
   @Inject private final CommonStepInfo commonStepInfo;
@@ -607,7 +610,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
           orgIdentifier, projectIdentifier, pipelineIdentifier));
     }
 
-    return pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(
+    return pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
         accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml(), false);
   }
 

@@ -54,6 +54,7 @@ import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
@@ -77,6 +78,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -94,6 +96,8 @@ public class ExecutionHelperTest extends CategoryTest {
   @Mock PMSPipelineService pmsPipelineService;
   @Mock PipelineMetadataService pipelineMetadataService;
   @Mock PMSPipelineServiceHelper pmsPipelineServiceHelper;
+
+  @Mock PipelineGovernanceService pipelineGovernanceService;
   @Mock TriggeredByHelper triggeredByHelper;
   @Mock PlanExecutionService planExecutionService;
   @Mock PrincipalInfoHelper principalInfoHelper;
@@ -169,6 +173,7 @@ public class ExecutionHelperTest extends CategoryTest {
   TriggeredBy triggeredBy;
   ExecutionTriggerInfo executionTriggerInfo;
   ExecutionPrincipalInfo executionPrincipalInfo;
+  MockedStatic<UUIDGenerator> aStatic;
 
   @Before
   public void setUp() {
@@ -194,6 +199,13 @@ public class ExecutionHelperTest extends CategoryTest {
         ExecutionTriggerInfo.newBuilder().setTriggeredBy(triggeredBy).setTriggerType(MANUAL).setIsRerun(false).build();
     executionPrincipalInfo = ExecutionPrincipalInfo.newBuilder().build();
     doNothing().when(pipelineEnforcementService).validateExecutionEnforcementsBasedOnStage(anyString(), any());
+    aStatic = Mockito.mockStatic(UUIDGenerator.class);
+    aStatic.when(UUIDGenerator::generateUuid).thenReturn(generatedExecutionId);
+  }
+
+  @After
+  public void afterMethod() {
+    aStatic.close();
   }
 
   @Test
@@ -285,7 +297,7 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getYaml()).isEqualTo(mergedPipelineYaml);
     assertThat(planExecutionMetadata.getStagesExecutionMetadata().isStagesExecution()).isEqualTo(false);
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYaml));
-    verify(pmsPipelineServiceHelper, times(1))
+    verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYaml, true);
 
     buildExecutionMetadataVerifications(pipelineEntity);
@@ -319,7 +331,7 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getYaml()).isEqualTo(mergedPipelineYaml);
     assertThat(planExecutionMetadata.getStagesExecutionMetadata().isStagesExecution()).isEqualTo(false);
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYaml));
-    verify(pmsPipelineServiceHelper, times(1))
+    verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYaml, true);
 
     buildExecutionMetadataVerifications(inlinePipeline);
@@ -353,7 +365,7 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(planExecutionMetadata.getYaml()).isEqualTo(mergedPipelineYaml);
     assertThat(planExecutionMetadata.getStagesExecutionMetadata().isStagesExecution()).isEqualTo(false);
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYaml));
-    verify(pmsPipelineServiceHelper, times(1))
+    verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYaml, true);
 
     buildExecutionMetadataVerifications(remotePipeline);
@@ -395,7 +407,7 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(pipelineRbacServiceImpl, times(0))
         .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, pipelineYaml);
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
-    verify(pmsPipelineServiceHelper, times(1))
+    verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYaml, true);
   }
 
@@ -430,7 +442,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .isEqualTo(Collections.singletonList("s2"));
     assertThat(planExecutionMetadata.getStagesExecutionMetadata().getExpressionValues()).isNull();
     assertThat(planExecutionMetadata.getProcessedYaml()).isEqualTo(YamlUtils.injectUuid(mergedPipelineYamlForS2));
-    verify(pmsPipelineServiceHelper, times(1))
+    verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2, true);
 
     buildExecutionMetadataVerifications(pipelineEntity);
@@ -479,14 +491,11 @@ public class ExecutionHelperTest extends CategoryTest {
         .extractAndValidateStaticallyReferredEntities(
             accountId, orgId, projectId, pipelineId, pipelineYamlWithExpressions);
     verify(planExecutionMetadataService, times(0)).findByPlanExecutionId(anyString());
-    verify(pmsPipelineServiceHelper, times(1))
+    verify(pipelineGovernanceService, times(1))
         .fetchExpandedPipelineJSONFromYaml(accountId, orgId, projectId, mergedPipelineYamlForS2WithExpression, true);
   }
 
   private void buildExecutionArgsMocks() {
-    MockedStatic<UUIDGenerator> aStatic = Mockito.mockStatic(UUIDGenerator.class);
-    aStatic.when(UUIDGenerator::generateUuid).thenReturn(generatedExecutionId);
-
     doReturn(executionPrincipalInfo).when(principalInfoHelper).getPrincipalInfoFromSecurityContext();
     doReturn(394).when(pipelineMetadataService).incrementRunSequence(any());
     doReturn(null).when(pmsGitSyncHelper).getGitSyncBranchContextBytesThreadLocal(pipelineEntity, null, null);
