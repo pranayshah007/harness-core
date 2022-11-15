@@ -17,7 +17,6 @@ import lombok.Value;
 @Value
 @Builder
 public class SpotInfrastructureDetails extends InfrastructureDetails {
-  String infrastructureKey;
   String ec2InstanceId;
   String elastigroupId;
 }
