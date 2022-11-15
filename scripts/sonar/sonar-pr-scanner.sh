@@ -113,7 +113,7 @@ if [ ! -s $PR_MODULES_JAVAC_FILE ]; then
 fi
 
 # Running Bazel Build
-bazel build ${BAZEL_ARGS} -- ${BAZEL_COMPILE_MODULES} -//product/... -//commons/...
+bazel build ${BAZEL_ARGS} -- ${BAZEL_COMPILE_MODULES[@]} -//product/... -//commons/...
 check_cmd_status "$?" "Failed to build harness core modules."
 
 ls -lrta ${JAVA_CLASSES_PATH}
