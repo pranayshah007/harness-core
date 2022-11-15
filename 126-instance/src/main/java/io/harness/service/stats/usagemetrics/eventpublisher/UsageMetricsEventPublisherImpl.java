@@ -11,14 +11,16 @@ import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.dtos.InstanceDTO;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.instancestatstimeseriesevent.DataPoint;
 import io.harness.eventsframework.schemas.instancestatstimeseriesevent.TimeseriesBatchEventInfo;
+import io.harness.mappers.InstanceMapper;
 import io.harness.models.constants.TimescaleConstants;
+import io.harness.ng.core.entities.Project;
+import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -44,47 +46,49 @@ public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublishe
   }
 
   @Override
-  public void publishInstanceStatsTimeSeries(String accountId, long timestamp, List<InstanceDTO> instances) {
-    if (EmptyPredicate.isEmpty(instances)) {
+  public void publishInstanceStatsTimeSeries(
+      Project project, long timestamp, List<InstanceCountByServiceAndEnv> instancesByServiceAndEnv) {
+    if (instancesByServiceAndEnv.isEmpty()) {
       return;
     }
 
     try {
-      List<DataPoint> dataPoints = collectInstanceStats(instances);
+      List<DataPoint> dataPoints = collectInstanceStats(instancesByServiceAndEnv);
       TimeseriesBatchEventInfo eventInfo = TimeseriesBatchEventInfo.newBuilder()
-                                               .setAccountId(accountId)
+                                               .setAccountId(project.getAccountIdentifier())
                                                .setTimestamp(timestamp)
                                                .addAllDataPointList(dataPoints)
                                                .build();
 
       eventProducer.send(Message.newBuilder()
-                             .putAllMetadata(ImmutableMap.of(
-                                 ACCOUNT_ID, accountId, EventsFrameworkMetadataConstants.ENTITY_TYPE, INSTANCE_STATS))
+                             .putAllMetadata(ImmutableMap.of(ACCOUNT_ID, project.getAccountIdentifier(),
+                                 EventsFrameworkMetadataConstants.ENTITY_TYPE, INSTANCE_STATS))
                              .setData(eventInfo.toByteString())
                              .build());
       Map<String, String> dataMap = dataPoints.get(0).getDataMap();
       log.info("Event sent for service: {} (account: {}, org: {}, project: {})",
-          dataMap.get(TimescaleConstants.SERVICE_ID.getKey()), accountId,
-          dataMap.get(TimescaleConstants.ORG_ID.getKey()), dataMap.get(TimescaleConstants.PROJECT_ID.getKey()));
+          dataMap.get(TimescaleConstants.SERVICE_ID.getKey()), project, dataMap.get(TimescaleConstants.ORG_ID.getKey()),
+          dataMap.get(TimescaleConstants.PROJECT_ID.getKey()));
     } catch (Exception ex) {
-      log.error("Error publishing instance stats for services of account {}", accountId, ex);
+      log.error("Error publishing instance stats for services of account {}", project, ex);
     }
   }
 
-  private List<DataPoint> collectInstanceStats(List<InstanceDTO> instances) {
+  private List<DataPoint> collectInstanceStats(List<InstanceCountByServiceAndEnv> envInstanceCounts) {
     List<DataPoint> dataPointList = new ArrayList<>();
-    if (EmptyPredicate.isEmpty(instances)) {
-      return dataPointList;
-    }
 
-    try {
-      int size = instances.size();
-      InstanceDTO instance = instances.get(0);
-      Map<String, String> data = populateInstanceData(instance, size);
-      log.info("Adding instance record {} to the list", data);
-      dataPointList.add(DataPoint.newBuilder().putAllData(data).build());
-    } catch (Exception e) {
-      log.error("Error adding instance record for service", e);
+    for (InstanceCountByServiceAndEnv instanceCountByServiceAndEnv : envInstanceCounts) {
+      if (instanceCountByServiceAndEnv.getCount() > 0) {
+        try {
+          int size = instanceCountByServiceAndEnv.getCount();
+          InstanceDTO instance = InstanceMapper.toDTO(instanceCountByServiceAndEnv.getFirstDocument());
+          Map<String, String> data = populateInstanceData(instance, size);
+          log.info("Adding instance record {} to the list", data);
+          dataPointList.add(DataPoint.newBuilder().putAllData(data).build());
+        } catch (Exception e) {
+          log.error("Error adding instance record for service", e);
+        }
+      }
     }
     return dataPointList;
   }

@@ -14,6 +14,8 @@ import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
+import io.harness.ng.core.entities.Project;
+import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,8 +41,7 @@ public interface InstanceService {
 
   Optional<InstanceDTO> findAndReplace(InstanceDTO instanceDTO);
 
-  List<InstanceDTO> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceIdentifier, long timestamp);
+  List<InstanceCountByServiceAndEnv> getActiveInstancesByServiceAndEnv(Project project, long timestamp);
 
   List<InstanceDTO> getActiveInstances(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs);
