@@ -32,6 +32,7 @@ import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.customDeployment.CustomDeploymentExecutionDetails;
+import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
@@ -46,6 +47,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.rule.Owner;
@@ -75,6 +77,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 public class StageExecutionHelperTest extends CategoryTest {
   private static final String ENV_IDENTIFIER = "envIdentifier";
   private static final String INFRA_IDENTIFIER = "infraIdentifier";
+
+  private static final String DEPLOYMENT_IDENTIFIER = "deploymentId";
   private static final String SERVICE_IDENTIFIER = "serviceIdentifier";
   private static final String INFRA_KIND = InfrastructureKind.PDC;
   private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
@@ -85,6 +89,8 @@ public class StageExecutionHelperTest extends CategoryTest {
   @Mock private CDStepHelper cdStepHelper;
   @Mock private InstanceDeploymentInfoService instanceDeploymentInfoService;
   @Mock private StageExecutionInfoService stageExecutionInfoService;
+
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @InjectMocks private StageExecutionHelper stageExecutionHelper;
 
@@ -344,5 +350,73 @@ public class StageExecutionHelperTest extends CategoryTest {
     assertThat(rollbackOutCome.getTag()).isEqualTo(tag);
     assertThat(rollbackOutCome.getConnectorRef()).isEqualTo(connectorRef);
     assertThat(rollbackOutCome.isPrimaryArtifact()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testSaveExecutionAndPublishExecutionInfoKey() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER)
+                            .setStageExecutionId(EXECUTION_ID)
+                            .build();
+
+    ExecutionInfoKey executionInfoKey = ExecutionInfoKey.builder()
+                                            .scope(Scope.builder().build())
+                                            .deploymentIdentifier(DEPLOYMENT_IDENTIFIER)
+                                            .envIdentifier(ENV_IDENTIFIER)
+                                            .infraIdentifier(INFRA_IDENTIFIER)
+                                            .serviceIdentifier(SERVICE_IDENTIFIER)
+
+                                            .build();
+
+    String connectorRef = "artifactoryConnector";
+    String repositoryName = "Harness-internal";
+    String artifactPath = "animation/v1/test.war";
+
+    ArtifactoryArtifactOutcome artifactOutcome = ArtifactoryArtifactOutcome.builder()
+                                                     .connectorRef(connectorRef)
+                                                     .artifactPath(artifactPath)
+                                                     .repositoryName(repositoryName)
+                                                     .primaryArtifact(true)
+                                                     .build();
+    when(cdStepHelper.resolveArtifactsOutcome(ambiance)).thenReturn(Optional.of(artifactOutcome));
+
+    ArgumentCaptor<StageExecutionInfo> executionInfoArgumentCaptor = ArgumentCaptor.forClass(StageExecutionInfo.class);
+
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
+        ambiance, executionInfoKey, InfrastructureKind.CUSTOM_DEPLOYMENT);
+
+    verify(stageExecutionInfoService, times(1)).save(executionInfoArgumentCaptor.capture());
+    StageExecutionInfo stageExecutionInfo = executionInfoArgumentCaptor.getValue();
+    assertThat(stageExecutionInfo).isNotNull();
+    assertThat(stageExecutionInfo.getEnvIdentifier()).isEqualTo(ENV_IDENTIFIER);
+    assertThat(stageExecutionInfo.getInfraIdentifier()).isEqualTo(INFRA_IDENTIFIER);
+    assertThat(stageExecutionInfo.getServiceIdentifier()).isEqualTo(SERVICE_IDENTIFIER);
+    assertThat(stageExecutionInfo.getStageExecutionId()).isEqualTo(EXECUTION_ID);
+    assertThat(stageExecutionInfo.getDeploymentIdentifier()).isEqualTo(DEPLOYMENT_IDENTIFIER);
+
+    assertThat(stageExecutionInfo.getExecutionDetails()).isNotNull();
+    ExecutionDetails executionDetails = stageExecutionInfo.getExecutionDetails();
+    assertThat(executionDetails).isNotNull();
+    assertThat(executionDetails).isInstanceOf(CustomDeploymentExecutionDetails.class);
+    CustomDeploymentExecutionDetails customDeploymentExecutionDetails =
+        (CustomDeploymentExecutionDetails) executionDetails;
+
+    assertThat(customDeploymentExecutionDetails.getArtifactsOutcome().size()).isEqualTo(1);
+
+    assertThat(customDeploymentExecutionDetails.getArtifactsOutcome().get(0))
+        .isInstanceOf(ArtifactoryArtifactOutcome.class);
+    ArtifactoryArtifactOutcome saveExecutionArtifact =
+        (ArtifactoryArtifactOutcome) customDeploymentExecutionDetails.getArtifactsOutcome().get(0);
+    assertThat(saveExecutionArtifact.getConnectorRef()).isEqualTo(connectorRef);
+    assertThat(saveExecutionArtifact.getRepositoryName()).isEqualTo(repositoryName);
+    assertThat(saveExecutionArtifact.getArtifactPath()).isEqualTo(artifactPath);
+    assertThat(saveExecutionArtifact.isPrimaryArtifact()).isEqualTo(true);
+
+    assertThat(stageExecutionHelper.shouldSaveStageExecutionInfo(null)).isFalse();
+    assertThat(stageExecutionHelper.shouldSaveStageExecutionInfo("CustomDeployment")).isTrue();
   }
 }
