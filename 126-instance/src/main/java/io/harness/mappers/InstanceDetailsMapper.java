@@ -90,7 +90,7 @@ public class InstanceDetailsMapper {
     } else if (instanceDTO.getInstanceInfoDTO() instanceof CustomDeploymentInstanceInfoDTO) {
       return ServiceSpecType.CUSTOM_DEPLOYMENT;
     } else if (instanceDTO.getInstanceInfoDTO() instanceof PcfNGInstanceInfoDTO) {
-      return ServiceSpecType.PCF;
+      return ServiceSpecType.TAS;
     }
     return null;
   }

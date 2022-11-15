@@ -22,7 +22,7 @@ public class PcfNGDeploymentInfoDTO extends DeploymentInfoDTO {
   private String applicationGuid;
   @Override
   public String getType() {
-    return ServiceSpecType.PCF;
+    return ServiceSpecType.TAS;
   }
 
   @Override
