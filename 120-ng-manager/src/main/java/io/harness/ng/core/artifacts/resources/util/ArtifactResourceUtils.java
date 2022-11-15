@@ -17,6 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusConstant;
@@ -25,6 +26,8 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
+import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusResponseDTO;
@@ -83,6 +86,7 @@ public class ArtifactResourceUtils {
   @Inject EnvironmentService environmentService;
   @Inject NexusResourceService nexusResourceService;
   @Inject GARResourceService garResourceService;
+  @Inject ArtifactoryResourceService artifactoryResourceService;
 
   // Checks whether field is fixed value or not, if empty then also we return false for fixed value.
   public static boolean isFieldFixedValue(String fieldValue) {
@@ -453,5 +457,37 @@ public class ArtifactResourceUtils {
 
     return garResourceService.getBuildDetails(connectorRef, resolvedRegion, resolvedRepositoryName, resolvedProject,
         resolvedPackage, version, versionRegex, orgIdentifier, projectIdentifier);
+  }
+
+  public ArtifactoryImagePathsDTO getArtifactoryImagePath(String repositoryType, String artifactoryConnectorIdentifier,
+      String accountId, String orgIdentifier, String projectIdentifier, String repository, String fqnPath,
+      String runtimeInputYaml, String pipelineIdentifier, String serviceRef, GitEntityFindInfoDTO gitEntityBasicInfo) {
+    if (StringUtils.isNotBlank(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
+      ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+          (ArtifactoryRegistryArtifactConfig) artifactSpecFromService;
+
+      if (StringUtils.isBlank(artifactoryConnectorIdentifier)) {
+        artifactoryConnectorIdentifier =
+            artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
+      }
+
+      if (StringUtils.isBlank(repository)) {
+        repository = artifactoryRegistryArtifactConfig.getRepository().fetchFinalValue().toString();
+      }
+    }
+
+    // resolving connectorRef
+    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
+        artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    // resolving Repository
+    String resolvedRepository = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, repository, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    return artifactoryResourceService.getImagePaths(
+        repositoryType, connectorRef, orgIdentifier, projectIdentifier, resolvedRepository);
   }
 }
