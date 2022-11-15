@@ -709,6 +709,8 @@ import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequ
 import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskParameters;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskResponse;
+import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskParameters;
+import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskResponse;
 import io.harness.delegate.task.spotinst.request.SpotInstDeployTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstGetElastigroupJsonParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstListElastigroupInstancesParameters;
@@ -1330,6 +1332,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(SpotDelegateTaskResponse.class, 21010);
     kryo.register(ElastigroupDeployTaskParameters.class, 21011);
     kryo.register(ElastigroupDeployTaskResponse.class, 21012);
+    kryo.register(ElastigroupRollbackTaskParameters.class, 21013);
+    kryo.register(ElastigroupRollbackTaskResponse.class, 21014);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);

@@ -1,0 +1,192 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ */
+
+package io.harness.cdng.spot.elastigroup.rollback;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.spotinst.model.SpotInstConstants.DELETE_NEW_ELASTI_GROUP;
+import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
+
+import static java.util.Collections.emptyList;
+
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.elastigroup.ElastigroupEntityHelper;
+import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskParameters;
+import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskResponse;
+import io.harness.eraro.Level;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.SkipRollbackException;
+import io.harness.logging.UnitProgress;
+import io.harness.logging.UnitStatus;
+import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.spotinst.model.ElastiGroup;
+import io.harness.steps.StepUtils;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+
+@Singleton
+@OwnedBy(CDP)
+@Slf4j
+public class ElastigroupRollbackStepHelper extends CDStepHelper {
+  @Inject private ElastigroupEntityHelper entityHelper;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+
+  public ElastigroupRollbackTaskParameters getElastigroupRollbackTaskParameters(
+      ElastigroupRollbackStepParameters elastigroupRollbackStepParameters, Ambiance ambiance,
+      StepElementParameters stepElementParameters) {
+    InfrastructureOutcome infrastructureOutcome = getInfrastructureOutcome(ambiance);
+
+    ElastigroupSetupDataOutcome elastigroupSetupOutcome = getElastigroupSetupOutcome(ambiance);
+
+    ElastiGroup newElastigroup = calculateNewForUpsize(elastigroupSetupOutcome.getNewElastiGroupOriginalConfig());
+    ElastiGroup oldElastigroup = calculateOldForDownsize(elastigroupSetupOutcome.getOldElastiGroupOriginalConfig());
+
+    return ElastigroupRollbackTaskParameters.builder()
+        .spotConnector(getSpotConnector(ambiance, infrastructureOutcome))
+        .encryptionDetails(getEncryptionDetails(ambiance, infrastructureOutcome))
+        .newElastigroup(newElastigroup)
+        .oldElastigroup(oldElastigroup)
+        .timeout(getTimeoutInMin(stepElementParameters))
+        .build();
+  }
+
+  private ElastiGroup calculateNewForUpsize(ElastiGroup setupElastigroup) {
+    final ElastiGroup result = setupElastigroup.clone();
+
+    result.getCapacity().setTarget(0);
+    result.getCapacity().setMinimum(0);
+    result.getCapacity().setMaximum(0);
+
+    return result;
+  }
+
+  private ElastiGroup calculateOldForDownsize(ElastiGroup setupElastigroup) {
+    if (setupElastigroup == null) {
+      return null;
+    }
+
+    return setupElastigroup.clone();
+  }
+
+  public ElastigroupSetupDataOutcome getElastigroupSetupOutcome(Ambiance ambiance) {
+    OptionalSweepingOutput optionalSetupDataOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME));
+    if (!optionalSetupDataOutput.isFound()) {
+      throw new SkipRollbackException("Elastigroup step setup outcome not found, hence skipping rollback");
+    }
+    return (ElastigroupSetupDataOutcome) optionalSetupDataOutput.getOutput();
+  }
+
+  private List<EncryptedDataDetail> getEncryptionDetails(
+      Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
+    ConnectorInfoDTO connectorInfoDto =
+        entityHelper.getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), AmbianceUtils.getNgAccess(ambiance));
+    return entityHelper.getEncryptionDataDetails(connectorInfoDto, AmbianceUtils.getNgAccess(ambiance));
+  }
+
+  private SpotConnectorDTO getSpotConnector(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
+    ConnectorInfoDTO connectorDTO =
+        entityHelper.getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), AmbianceUtils.getNgAccess(ambiance));
+    return (SpotConnectorDTO) connectorDTO.getConnectorConfig();
+  }
+
+  public List<String> getExecutionUnits() {
+    return Arrays.asList(UP_SCALE_COMMAND_UNIT, UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DOWN_SCALE_COMMAND_UNIT,
+        DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DELETE_NEW_ELASTI_GROUP);
+  }
+
+  public StepResponse handleTaskFailure(Ambiance ambiance, StepElementParameters stepElementParameters, Exception e)
+      throws Exception {
+    log.error("Error in elastigroup step: {}", e.getMessage(), e);
+
+    // Trying to figure out if exception is coming from command task or it is an exception from delegate service.
+    // In the second case we need to close log stream and provide unit progress data as part of response
+    if (ExceptionUtils.cause(TaskNGDataException.class, e) != null) {
+      throw e;
+    }
+    List<UnitProgress> executionUnits =
+        getExecutionUnits()
+            .stream()
+            .map(unit -> UnitProgress.newBuilder().setUnitName(unit).setStatus(UnitStatus.RUNNING).build())
+            .collect(Collectors.toList());
+
+    UnitProgressData currentUnitProgressData = UnitProgressData.builder().unitProgresses(executionUnits).build();
+    UnitProgressData unitProgressData =
+        completeUnitProgressData(currentUnitProgressData, ambiance, ExceptionUtils.getMessage(e));
+    FailureData failureData = FailureData.newBuilder()
+                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                  .setLevel(Level.ERROR.name())
+                                  .setCode(GENERAL_ERROR.name())
+                                  .setMessage(emptyIfNull(ExceptionUtils.getMessage(e)))
+                                  .build();
+
+    return StepResponse.builder()
+        .unitProgressList(unitProgressData.getUnitProgresses())
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder()
+                         .addAllFailureTypes(failureData.getFailureTypesList())
+                         .setErrorMessage(failureData.getMessage())
+                         .addFailureData(failureData)
+                         .build())
+        .build();
+  }
+
+  public StepResponse handleTaskResult(
+      Ambiance ambiance, StepElementParameters stepParameters, ElastigroupRollbackTaskResponse taskResponse) {
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+
+    List<UnitProgress> unitProgresses = taskResponse.getUnitProgressData() == null
+        ? emptyList()
+        : taskResponse.getUnitProgressData().getUnitProgresses();
+    stepResponseBuilder.unitProgressList(unitProgresses);
+
+    stepResponseBuilder.status(StepUtils.getStepStatus(taskResponse.getStatus()));
+
+    if (isNotEmpty(taskResponse.getErrorMessage())) {
+      FailureInfo.Builder failureInfoBuilder = FailureInfo.newBuilder();
+      failureInfoBuilder.addFailureData(FailureData.newBuilder()
+                                            .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                            .setLevel(Level.ERROR.name())
+                                            .setCode(GENERAL_ERROR.name())
+                                            .setMessage(taskResponse.getErrorMessage()));
+      stepResponseBuilder.failureInfo(failureInfoBuilder.build());
+    }
+
+    return stepResponseBuilder.build();
+  }
+}
