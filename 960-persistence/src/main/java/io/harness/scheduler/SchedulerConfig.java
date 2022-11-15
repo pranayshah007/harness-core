@@ -22,9 +22,7 @@ public class SchedulerConfig {
   @JsonProperty(defaultValue = "quartz") private String tablePrefix = "quartz";
   @JsonProperty(defaultValue = "false") private boolean isClustered;
   @JsonProperty(defaultValue = "1") private String batchTriggerAcquisitionMaxCount;
-
   @JsonProperty(defaultValue = "60000") private String misfireThreshold;
-
   @JsonProperty(defaultValue = "20") private String maxMisfiresToHandleAtATime;
 
   private String mongoUri;
