@@ -93,6 +93,7 @@ git add ${VERSION_FILE}
 git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
 git pull origin develop
 #revert this line
+#this also
 git push origin develop
 print_err "$?" "Pushing build.properties to develop branch failed"
 
