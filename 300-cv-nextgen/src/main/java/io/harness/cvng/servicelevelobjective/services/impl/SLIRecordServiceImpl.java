@@ -17,6 +17,7 @@ import io.harness.cvng.core.entities.EntityDisableTime;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.EntityDisabledTimeService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLIValue;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.Point;
@@ -178,7 +179,10 @@ public class SLIRecordServiceImpl implements SLIRecordService {
     List<Point> sliTread = new ArrayList<>();
     List<Point> errorBudgetBurndown = new ArrayList<>();
     double errorBudgetRemainingPercentage = 100;
+    double sliStatusPercentage = 0;
     int errorBudgetRemaining = totalErrorBudgetMinutes;
+    int badCountTillRangeEndTime = 0;
+    int badCountTillRangeStartTime = 0;
     boolean isReCalculatingSLI = false;
     boolean isCalculatingSLI = false;
     if (!sliRecords.isEmpty()) {
@@ -220,6 +224,14 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         }
         sliValue = sliMissingDataType.calculateSLIValue(
             goodCountFromStart, badCountFromStart, minutesFromStart, disabledMinutesFromStart);
+
+        if (sliRecord.getTimestamp().equals(DateTimeUtils.roundDownTo1MinBoundary(filter.getStartTime()))) {
+          badCountTillRangeStartTime = sliValue.getBadCount();
+        }
+        if (sliRecord.getTimestamp().compareTo(DateTimeUtils.roundDownTo1MinBoundary(filter.getEndTime())) <= 0) {
+          badCountTillRangeEndTime = sliValue.getBadCount();
+        }
+
         sliTread.add(Point.builder()
                          .timestamp(sliRecord.getTimestamp().toEpochMilli())
                          .value(sliValue.sliPercentage())
@@ -234,6 +246,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         currentSLIRecord++;
       }
       errorBudgetRemainingPercentage = errorBudgetBurndown.get(errorBudgetBurndown.size() - 1).getValue();
+      sliStatusPercentage = sliTread.get(sliTread.size() - 1).getValue();
       errorBudgetRemaining = totalErrorBudgetMinutes - sliValue.getBadCount();
     } else {
       isCalculatingSLI = true;
@@ -258,6 +271,8 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .isRecalculatingSLI(isReCalculatingSLI)
         .isCalculatingSLI(isCalculatingSLI)
         .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
+        .errorBudgetBurned(badCountTillRangeEndTime - badCountTillRangeStartTime)
+        .sliStatusPercentage(sliStatusPercentage)
         .build();
   }
 

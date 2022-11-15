@@ -84,6 +84,8 @@ public class SLODashboardWidget {
     List<Point> sloPerformanceTrend;
     boolean isRecalculatingSLI;
     boolean isCalculatingSLI;
+    int errorBudgetBurned;
+    double sliStatusPercentage;
     public double errorBudgetSpentPercentage() {
       return 100 - errorBudgetRemainingPercentage;
     }

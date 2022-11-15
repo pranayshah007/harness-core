@@ -436,6 +436,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                                  .stream()
                                  .map(ServiceLevelObjectivesDetail::getServiceLevelObjectiveRef)
                                  .collect(Collectors.toList());
+      serviceLevelObjectivesDetailList = compositeSLO.getServiceLevelObjectivesDetails();
     }
     return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(), serviceLevelObjectivesDetailList,
         Filter.builder()
@@ -745,7 +746,18 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     Map<SimpleSLODetails, AbstractServiceLevelObjective> simpleSLODetailsToAbstractServiceLevelObjectiveMap =
         serviceLevelObjectiveList.stream().collect(
             Collectors.toMap(slo -> SimpleSLODetails.getSimpleSLODetailsBuilder(slo).build(), slo -> slo));
-    return serviceLevelObjectivesDetailList.stream()
+
+    List<SimpleSLODetails> sloDetailsList =
+        serviceLevelObjectivesDetailList.stream()
+            .map(sloDetail
+                -> SimpleSLODetails.builder()
+                       .accountId(sloDetail.getAccountId())
+                       .orgIdentifier(sloDetail.getOrgIdentifier())
+                       .projectIdentifier(sloDetail.getProjectIdentifier())
+                       .serviceLevelObjectiveRef(sloDetail.getServiceLevelObjectiveRef())
+                       .build())
+            .collect(Collectors.toList());
+    return sloDetailsList.stream()
         .filter(sloDetail -> simpleSLODetailsToAbstractServiceLevelObjectiveMap.containsKey(sloDetail))
         .map(sloDetail -> simpleSLODetailsToAbstractServiceLevelObjectiveMap.get(sloDetail))
         .collect(Collectors.toList());
