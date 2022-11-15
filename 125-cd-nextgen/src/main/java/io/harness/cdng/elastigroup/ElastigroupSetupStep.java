@@ -253,7 +253,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     }
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME,
-        elastigroupSetupDataOutcome, StepCategory.STEP.name());
+        elastigroupSetupDataOutcome, StepCategory.STAGE.name());
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
             .stepOutcome(StepResponse.StepOutcome.builder()
