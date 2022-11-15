@@ -61,6 +61,7 @@ import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.ScopeSelector;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
+import io.harness.ng.core.dto.UserInfo;
 import io.harness.ng.core.entities.NotificationSettingConfig;
 import io.harness.ng.core.events.UserGroupCreateEvent;
 import io.harness.ng.core.events.UserGroupDeleteEvent;
@@ -254,6 +255,30 @@ public class UserGroupServiceImpl implements UserGroupService {
     if (!savedUserGroup.getName().equals(toBeSavedUserGroup.getName())) {
       throw new InvalidRequestException(errorMessage);
     }
+  }
+
+  @Override
+  public List<UserInfo> getUserMetaData(List<String> uuids) {
+    return ngUserService.getUserMetadata(uuids)
+        .stream()
+        .map(user -> UserInfo.builder().id(user.getUuid()).email(user.getEmail()).build())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<String> getUserIds(List<String> emails) {
+    return ngUserService.getUserMetadataByEmails(emails)
+        .stream()
+        .map(userMetadataDTO -> userMetadataDTO.getUuid())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<String> getUserEmails(List<String> uuids) {
+    return ngUserService.getUserMetadata(uuids)
+        .stream()
+        .map(userMetadataDTO -> userMetadataDTO.getEmail())
+        .collect(Collectors.toList());
   }
 
   @Override
