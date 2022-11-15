@@ -220,13 +220,6 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
       changedFields.put(YAMLMetadataFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifierFromGit);
     }
 
-    String descriptionFromGit = templateInnerField.getNode().getStringValue(YAMLFieldNameConstants.DESCRIPTION);
-    if (!(EmptyPredicate.isEmpty(templateImportRequest.getTemplateDescription())
-            && EmptyPredicate.isEmpty(descriptionFromGit))
-        && !templateImportRequest.getTemplateDescription().equals(descriptionFromGit)) {
-      changedFields.put(YAMLMetadataFieldNameConstants.DESCRIPTION, descriptionFromGit);
-    }
-
     String templateVersionFromGit =
         templateInnerField.getNode().getStringValue(YAMLFieldNameConstants.TEMPLATE_VERSION);
     if (!(EmptyPredicate.isEmpty(templateImportRequest.getTemplateVersion())
