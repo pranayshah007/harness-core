@@ -44,6 +44,12 @@ function clean_temp_files() {
    done
 }
 
+function get_info_from_file(){
+  local_filename=$1
+  cat $local_filename | sort -u | tr '\r\n' ',' | rev | cut -c2- | rev
+  check_cmd_status "$?" "Unable to find file to extract info for sonar file."
+}
+
 JAVA_CLASSES_PATH="/tmp/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin"
 JAVA_SRCS="src"
 JAVA_TEST_SRCS='src/test/**/*.java'
@@ -54,6 +60,7 @@ PR_MODULES_LIB_FILE="pr_lib_list.txt"
 PR_SRCS_FILE="pr_srcs.txt"
 PR_TEST_INCLUSION_FILE="pr_test_inclusions.txt"
 SONAR_CONFIG_FILE='sonar-project.properties'
+BAZEL_COMPILE_MODULES=()
 
 BAZEL_ARGS="--announce_rc --keep_going --show_timestamps --verbose_failures --remote_max_connections=1000 --remote_retries=1"
 
@@ -85,16 +92,6 @@ PR_MODULES=$($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' ')
 check_cmd_status "$?" "Failed to get modules from commits."
 #echo "PR_MODULES: $PR_MODULES"
 
-BAZEL_COMPILE_MODULES=$($GIT_DIFF | awk -F/ '{print "//"$1"/..."}' | tr '\r\n' ' ')
-check_cmd_status "$?" "Failed to get bazel compile modules from commits."
-#echo "BAZEL_COMPILE_MODULES: $BAZEL_COMPILE_MODULES"
-
-ls -lrta ${JAVA_CLASSES_PATH}
-
-# Running Bazel Build
-bazel build ${BAZEL_ARGS} -- ${BAZEL_COMPILE_MODULES} -//product/... -//commons/...
-check_cmd_status "$?" "Failed to build harness core modules."
-
 for file in $($GIT_DIFF | tr '\r\n' ' ')
   do
     grep -w 'src' <<< $file | sed 's|src|:|' | awk -F: '{print $1}' | sed 's|$|src|' >> $PR_SRCS_FILE
@@ -107,6 +104,7 @@ for module in $PR_MODULES
      && echo "${JAVA_CLASSES_PATH}/${module}/${JAVA_SRC_CLASS}" >> $PR_MODULES_JAVAC_FILE \
      && echo "${JAVA_CLASSES_PATH}/${module}/${JAVA_LIBS}" >> $PR_MODULES_LIB_FILE \
      && echo "${module}/${JAVA_TEST_SRCS}" >> $PR_TEST_INCLUSION_FILE \
+     && BAZEL_COMPILE_MODULES+=("//${module}/...") \
      || echo "$module is not present in the bazel modules list"
   done
 
@@ -114,10 +112,16 @@ if [ ! -s $PR_MODULES_JAVAC_FILE ]; then
   echo "INFO: No need to run Sonar Scan."; exit 0
 fi
 
-export SONAR_JAVAC_FILES=$(cat $PR_MODULES_JAVAC_FILE | tr '\r\n' ',' | rev | cut -c2- | rev)
-export SONAR_LIBS_FILES=$(cat $PR_MODULES_LIB_FILE | tr '\r\n' ',' | rev | cut -c2- | rev)
-export SONAR_SRCS=$(cat $PR_SRCS_FILE | sort -u | tr '\r\n' ',' | rev | cut -c2- | rev)
-export SONAR_TEST_INCLUSIONS=$(cat $PR_TEST_INCLUSION_FILE | tr '\r\n' ',' | rev | cut -c2- | rev)
+# Running Bazel Build
+bazel build ${BAZEL_ARGS} -- ${BAZEL_COMPILE_MODULES} -//product/... -//commons/...
+check_cmd_status "$?" "Failed to build harness core modules."
+
+ls -lrta ${JAVA_CLASSES_PATH}
+
+export SONAR_JAVAC_FILES=$(get_info_from_file $PR_MODULES_JAVAC_FILE)
+export SONAR_LIBS_FILES=$(get_info_from_file $PR_MODULES_LIB_FILE)
+export SONAR_SRCS=$(get_info_from_file $PR_SRCS_FILE)
+export SONAR_TEST_INCLUSIONS=$(get_info_from_file $PR_TEST_INCLUSION_FILE)
 
 echo "sonar.sources=$SONAR_SRCS" >> ${SONAR_CONFIG_FILE}
 echo "sonar.tests=$SONAR_SRCS" >> ${SONAR_CONFIG_FILE}
