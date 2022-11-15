@@ -50,6 +50,12 @@ function get_info_from_file(){
   check_cmd_status "$?" "Unable to find file to extract info for sonar file."
 }
 
+function get_javac_path(){
+  local_modulename=$1
+  find $local_modulename -type d -name "_javac" | sort -u | tr '\r\n' ',' | rev | cut -c2- | rev
+  check_cmd_status "$?" "Unable to find the javac path."
+}
+
 JAVA_CLASSES_PATH="/tmp/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin"
 JAVA_SRCS="src"
 JAVA_TEST_SRCS='src/test/**/*.java'
@@ -101,7 +107,7 @@ for module in $PR_MODULES
   do
      [ -d ${module} ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
      && echo "$module is present in the bazel modules list." \
-     && echo "${JAVA_CLASSES_PATH}/${module}/${JAVA_SRC_CLASS}" >> $PR_MODULES_JAVAC_FILE \
+     && get_javac_path ${module} >> $PR_MODULES_JAVAC_FILE \
      && echo "${JAVA_CLASSES_PATH}/${module}/${JAVA_LIBS}" >> $PR_MODULES_LIB_FILE \
      && echo "${module}/${JAVA_TEST_SRCS}" >> $PR_TEST_INCLUSION_FILE \
      && BAZEL_COMPILE_MODULES+=("//${module}/...") \
