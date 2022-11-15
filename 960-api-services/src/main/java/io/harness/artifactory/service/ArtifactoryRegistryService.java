@@ -14,6 +14,7 @@ import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 
 import java.util.List;
+import java.util.Map;
 
 @OwnedBy(CDP)
 public interface ArtifactoryRegistryService {
@@ -64,4 +65,17 @@ public interface ArtifactoryRegistryService {
    * @return boolean validate
    */
   boolean validateCredentials(ArtifactoryConfigRequest toArtifactoryInternalConfig);
+
+  /**
+   * Fetching labels for docker artifactory
+   *
+   * @param artifactoryConfig the artifactory config
+   * @param imageName the image name of docker
+   * @param repositoryName the repository name
+   * @return list of paired labels.
+
+   */
+
+  List<Map<String, String>> getLabels(
+      ArtifactoryConfigRequest artifactoryConfig, String imageName, String repositoryName, String buildNos);
 }
