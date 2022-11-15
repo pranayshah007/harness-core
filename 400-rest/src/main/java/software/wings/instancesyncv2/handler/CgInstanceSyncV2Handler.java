@@ -9,6 +9,7 @@ package software.wings.instancesyncv2.handler;
 
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 
 import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
@@ -19,6 +20,7 @@ import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface CgInstanceSyncV2Handler {
@@ -27,7 +29,7 @@ public interface CgInstanceSyncV2Handler {
   InstanceSyncTaskDetails prepareTaskDetails(
       DeploymentSummary deploymentSummary, String cloudProviderId, String perpetualTaskId);
 
-  Set<CgReleaseIdentifiers> buildReleaseIdentifiers(DeploymentInfo deploymentInfo);
+  Set<CgReleaseIdentifiers> buildReleaseIdentifiers(DeploymentSummary deploymentSummary);
 
   Set<CgReleaseIdentifiers> mergeReleaseIdentifiers(
       Set<CgReleaseIdentifiers> releaseIdentifiers, Set<CgReleaseIdentifiers> buildReleaseIdentifiers);
@@ -41,7 +43,11 @@ public interface CgInstanceSyncV2Handler {
   List<Instance> difference(List<Instance> list1, List<Instance> list2);
 
   List<Instance> getDeployedInstances(
-      List<InstanceInfo> instanceInfos, List<Instance> instancesInDb, Instance lastDiscoveredInstance);
+      List<InstanceInfo> instanceInfos, List<Instance> instancesInDb, DeploymentSummary deploymentSummary);
 
   List<Instance> instancesToUpdate(List<Instance> instances, List<Instance> instancesInDb);
+
+  List<Instance> fetchInstancesFromDb(CgReleaseIdentifiers cgReleaseIdentifiers, String appId, String InfraMappingId);
+
+  Map<CgReleaseIdentifiers, InstanceSyncData> getCgReleaseIdentifiersList(List<InstanceSyncData> instanceSyncData);
 }

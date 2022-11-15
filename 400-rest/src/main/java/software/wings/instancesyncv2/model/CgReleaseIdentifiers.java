@@ -7,4 +7,6 @@
 
 package software.wings.instancesyncv2.model;
 
-public interface CgReleaseIdentifiers {}
+public interface CgReleaseIdentifiers {
+  String getLastDeploymentSummaryId();
+}

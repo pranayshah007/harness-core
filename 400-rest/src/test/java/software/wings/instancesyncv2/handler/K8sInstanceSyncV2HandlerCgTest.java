@@ -159,7 +159,9 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
                                         .namespace("namespace")
                                         .clusterName("clusterName")
                                         .build();
-    Set<CgReleaseIdentifiers> releaseIdentifiers = k8sInstanceSyncV2HandlerCg.buildReleaseIdentifiers(deploymentInfo);
+    DeploymentSummary deploymentSummary = DeploymentSummary.builder().deploymentInfo(deploymentInfo).build();
+    Set<CgReleaseIdentifiers> releaseIdentifiers =
+        k8sInstanceSyncV2HandlerCg.buildReleaseIdentifiers(deploymentSummary);
     assertThat(releaseIdentifiers).isNotNull();
     assertThat(releaseIdentifiers.stream().findAny().get().getClass()).isEqualTo(CgK8sReleaseIdentifier.class);
 
@@ -170,7 +172,7 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
                          .containerInfoList(
                              new ArrayList<>(Arrays.asList(ContainerInfo.builder().containerId("containerId").build())))
                          .build();
-    Set<CgReleaseIdentifiers> newIdentifiers = k8sInstanceSyncV2HandlerCg.buildReleaseIdentifiers(deploymentInfo);
+    Set<CgReleaseIdentifiers> newIdentifiers = k8sInstanceSyncV2HandlerCg.buildReleaseIdentifiers(deploymentSummary);
     assertThat(newIdentifiers).isNotNull();
     CgK8sReleaseIdentifier identifier = (CgK8sReleaseIdentifier) newIdentifiers.stream().findFirst().get();
     assertThat(identifier.getReleaseName()).isEqualTo("releaseName");
