@@ -1661,7 +1661,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
             .errorMsg(ecsS3FetchResponse.getErrorMessage())
             .unitProgressData(ecsS3FetchResponse.getUnitProgressData())
             .build();
-    return TaskChainResponse.builder().passThroughData(ecsS3FetchFailurePassThroughData).build();
+    return TaskChainResponse.builder().passThroughData(ecsS3FetchFailurePassThroughData).chainEnd(true).build();
   }
 
   private String getRenderedTaskDefinitionFileContent(EcsGitFetchResponse ecsGitFetchResponse, Ambiance ambiance) {

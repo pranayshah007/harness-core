@@ -48,15 +48,15 @@ import software.wings.service.impl.AwsApiHelperService;
 
 import com.amazonaws.services.s3.model.S3Object;
 import com.google.inject.Inject;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.IOUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -220,8 +220,6 @@ public class EcsS3FetchCommandTaskHandler {
       throws IOException {
     S3Object object = awsApiHelperService.getObjectFromS3(awsConfig, region, bucketName, key);
     InputStream inputStream = object.getObjectContent();
-    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-    String message = org.apache.commons.io.IOUtils.toString(reader);
-    return message;
+    return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
   }
 }
