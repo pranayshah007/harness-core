@@ -16,6 +16,7 @@ import io.harness.expression.Expression;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.spotinst.model.ElastiGroup;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
@@ -24,7 +25,7 @@ import java.util.List;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
-@Value
+@Data
 @Builder
 @OwnedBy(CDP)
 public class ElastigroupBGStageSetupCommandRequest

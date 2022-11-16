@@ -13,16 +13,21 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
+import io.harness.delegate.task.aws.AwsLoadBalancerDetails;
+import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.spotinst.model.ElastiGroup;
 
 import lombok.Builder;
+import lombok.Data;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
-@Value
+import java.util.List;
+
+@Data
 @Builder
 @OwnedBy(CDP)
 public class ElastigroupSetupCommandRequest
@@ -40,6 +45,8 @@ public class ElastigroupSetupCommandRequest
   String image;
   boolean blueGreen;
   ResizeStrategy resizeStrategy;
+  List<LoadBalancerDetailsForBGDeployment> awsLoadBalancerConfigs;
+  String awsRegion;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) SpotInstConfig spotInstConfig;
 }

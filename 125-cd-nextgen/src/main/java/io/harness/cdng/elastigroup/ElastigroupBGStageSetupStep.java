@@ -27,6 +27,7 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
@@ -58,6 +59,9 @@ import software.wings.utils.ServiceVersionConvention;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -103,9 +107,13 @@ public class ElastigroupBGStageSetupStep
     generateOriginalConfigFromJson(elastigroupStepExecutorParams.getElastigroupParameters(),
         elastigroupBGStageSetupStepParameters.getInstances(), ambiance);
 
+    List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments = elastigroupStepCommonHelper.addLoadBalancerConfigAfterExpressionEvaluation(elastigroupBGStageSetupStepParameters.getLoadBalancers().stream().map(
+            loadBalancer -> (AwsLoadBalancerConfigYaml) loadBalancer.getSpec()
+    ).collect(Collectors.toList()), ambiance);
+
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         ElastigroupSetupCommandRequest.builder()
-            .blueGreen(false)
+            .blueGreen(true)
             .elastigroupNamePrefix(elastigroupNamePrefix)
             .accountId(accountId)
             .spotInstConfig(spotInstConfig)
@@ -122,6 +130,7 @@ public class ElastigroupBGStageSetupStep
             .useCurrentRunningInstanceCount(ElastigroupInstancesType.CURRENT_RUNNING.equals(
                 elastigroupBGStageSetupStepParameters.getInstances().getType()))
             .elastigroupOriginalConfig(elastiGroupOriginalConfig)
+                .awsLoadBalancerConfigs(loadBalancerDetailsForBGDeployments)
             .build();
 
     return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSetupCommandRequest, ambiance,
@@ -227,9 +236,9 @@ public class ElastigroupBGStageSetupStep
     }
 
     elastigroupSetupDataOutcome.getNewElastiGroupOriginalConfig().setName(
-        elastigroupSetupResult.getNewElastiGroup().getName());
+            elastigroupSetupResult.getNewElastiGroup().getName());
     elastigroupSetupDataOutcome.getNewElastiGroupOriginalConfig().setId(
-        elastigroupSetupResult.getNewElastiGroup().getId());
+            elastigroupSetupResult.getNewElastiGroup().getId());
 
     if (elastigroupSetupResult.isUseCurrentRunningInstanceCount()) {
       int min = DEFAULT_ELASTIGROUP_MIN_INSTANCES;

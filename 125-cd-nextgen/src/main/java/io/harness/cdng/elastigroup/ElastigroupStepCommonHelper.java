@@ -10,6 +10,7 @@ package io.harness.cdng.elastigroup;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.spotinst.model.SpotInstConstants.GROUP_CONFIG_ELEMENT;
@@ -19,6 +20,7 @@ import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -45,6 +47,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupParametersFetchRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest;
@@ -88,6 +91,7 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import org.jetbrains.annotations.NotNull;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 import software.wings.beans.TaskType;
@@ -97,10 +101,15 @@ import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import software.wings.sm.ExecutionContext;
 
 @Slf4j
 public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
@@ -633,5 +642,43 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     CommandUnitsProgress commandUnitsProgress =
         CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressMap).build();
     return UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
+  }
+
+  @VisibleForTesting
+  List<LoadBalancerDetailsForBGDeployment> addLoadBalancerConfigAfterExpressionEvaluation(
+          List<AwsLoadBalancerConfigYaml> awsLoadBalancerConfigs, Ambiance ambiance) {
+    List<LoadBalancerDetailsForBGDeployment> loadBalancerConfigs = new ArrayList<>();
+
+    Map<String, LoadBalancerDetailsForBGDeployment> lbMap = new HashMap<>();
+    // Use a map with key as <lbName + prodPort + stagePort>, and value as actual LbConfig.
+    // This will get rid of any duplicate config.
+    if (isNotEmpty(awsLoadBalancerConfigs)) {
+      awsLoadBalancerConfigs.forEach(awsLoadBalancerConfig -> {
+        lbMap.put(getLBKey(awsLoadBalancerConfig),
+                LoadBalancerDetailsForBGDeployment.builder()
+                        .loadBalancerArn(renderExpression(ambiance, awsLoadBalancerConfig.getLoadBalancerArn().getValue()))
+                        .prodListenerPort(renderExpression(ambiance, awsLoadBalancerConfig.getProdListenerPort().getValue()))
+                        .stageListenerPort(renderExpression(ambiance, awsLoadBalancerConfig.getStageListenerPort().getValue()))
+                        .useSpecificRules(false)
+                        .prodRuleArn(renderExpression(ambiance, awsLoadBalancerConfig.getProdListenerRuleArn().getValue()))
+                        .stageRuleArn(renderExpression(ambiance, awsLoadBalancerConfig.getStageListenerRuleArn().getValue()))
+                        .build());
+      });
+
+      loadBalancerConfigs.addAll(lbMap.values());
+    }
+
+    return loadBalancerConfigs;
+  }
+
+  @NotNull
+  private String getLBKey(AwsLoadBalancerConfigYaml awsLoadBalancerConfig) {
+    return new StringBuilder(128)
+            .append(awsLoadBalancerConfig.getLoadBalancerName())
+            .append('_')
+            .append(awsLoadBalancerConfig.getProdListenerPort())
+            .append('_')
+            .append(awsLoadBalancerConfig.getStageListenerPort())
+            .toString();
   }
 }
