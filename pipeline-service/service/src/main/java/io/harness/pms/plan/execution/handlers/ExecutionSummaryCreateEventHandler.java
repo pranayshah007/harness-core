@@ -45,10 +45,8 @@ import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -101,7 +99,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     String pipelineId = metadata.getPipelineIdentifier();
     Optional<PipelineEntity> pipelineEntity =
         pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
-    if (!pipelineEntity.isPresent()) {
+    if (pipelineEntity.isEmpty()) {
       return;
     }
 
@@ -122,7 +120,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     recentExecutionsInfoHelper.onExecutionStart(accountId, orgId, projectId, pipelineId, planExecution);
 
     updateExecutionInfoInPipelineEntity(
-        accountId, orgId, projectId, pipelineId, pipelineEntity.get().getExecutionSummaryInfo(), planExecutionId);
+        accountId, orgId, projectId, pipelineId, pipelineEntity.get().getExecutionSummaryInfo(), planExecution);
     Plan plan = planService.fetchPlan(ambiance.getPlanId());
     Map<String, GraphLayoutNode> layoutNodeMap = plan.getGraphLayoutInfo().getLayoutNodesMap();
     String startingNodeId = plan.getGraphLayoutInfo().getStartingNodeId();
@@ -196,23 +194,13 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
   }
 
   private void updateExecutionInfoInPipelineEntity(String accountId, String orgId, String projectId, String pipelineId,
-      ExecutionSummaryInfo executionSummaryInfo, String planExecutionId) {
+      ExecutionSummaryInfo executionSummaryInfo, PlanExecution planExecution) {
     if (executionSummaryInfo == null) {
       executionSummaryInfo = ExecutionSummaryInfo.builder().build();
     }
-    executionSummaryInfo.setLastExecutionStatus(ExecutionStatus.RUNNING);
-    Map<String, Integer> deploymentsMap = executionSummaryInfo.getDeployments();
-    Date todaysDate = new Date();
-    SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-    String strDate = formatter.format(todaysDate);
-    if (deploymentsMap.containsKey(strDate)) {
-      deploymentsMap.put(strDate, deploymentsMap.get(strDate) + 1);
-    } else {
-      deploymentsMap.put(strDate, 1);
-    }
-    executionSummaryInfo.setDeployments(deploymentsMap);
-    executionSummaryInfo.setLastExecutionTs(todaysDate.getTime());
-    executionSummaryInfo.setLastExecutionId(planExecutionId);
+    // To keep both recentExecutionsInfo and ExecutionSummaryInfo having same value
+    executionSummaryInfo.setLastExecutionTs(planExecution.getCreatedAt());
+    executionSummaryInfo.setLastExecutionId(planExecution.getUuid());
     pmsPipelineService.saveExecutionInfo(accountId, orgId, projectId, pipelineId, executionSummaryInfo);
   }
 }

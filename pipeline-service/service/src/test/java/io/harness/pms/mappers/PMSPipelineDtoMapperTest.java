@@ -9,10 +9,8 @@ package io.harness.pms.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
-import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
-import static java.time.LocalDate.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -33,7 +31,6 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.execution.ExecutionStatus;
-import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -43,14 +40,9 @@ import io.harness.pms.pipeline.RecentExecutionInfoDTO;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.rule.Owner;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -116,42 +108,6 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(() -> PMSPipelineDtoMapper.toPipelineEntity(null, notAYaml))
         .isInstanceOf(InvalidRequestException.class);
-  }
-
-  @Test
-  @Owner(developers = PRASHANTSHARMA)
-  @Category(UnitTests.class)
-  public void testGetDeploymentsAndErrors() {
-    Map<String, Integer> deploymentMap = new HashMap<>();
-    Map<String, Integer> numberOfErrorMap = new HashMap<>();
-    LocalDate todayDate = now();
-    DateTimeFormatter formatters = DateTimeFormatter.ofPattern("dd/MM/uuuu");
-    for (int i = 0; i < 10; i++) {
-      LocalDate variableDate = todayDate.minusDays(i);
-      deploymentMap.put(variableDate.format(formatters), i + 10);
-      numberOfErrorMap.put(variableDate.format(formatters), i);
-    }
-    List<Integer> deploymentList = new ArrayList<>();
-    List<Integer> numberOfErrorsList = new ArrayList<>();
-    for (int i = 6; i >= 0; i--) {
-      LocalDate variableDate = todayDate.minusDays(i);
-      deploymentList.add(deploymentMap.get(variableDate.format(formatters)));
-      numberOfErrorsList.add(numberOfErrorMap.get(variableDate.format(formatters)));
-    }
-    PipelineEntity pipelineEntity =
-        PipelineEntity.builder()
-            .accountId("acc")
-            .orgIdentifier("org")
-            .projectIdentifier("pro")
-            .executionSummaryInfo(
-                ExecutionSummaryInfo.builder().deployments(deploymentMap).numOfErrors(numberOfErrorMap).build())
-            .build();
-
-    PMSPipelineSummaryResponseDTO pmsPipelineSummaryResponseDTO =
-        PMSPipelineDtoMapper.preparePipelineSummary(pipelineEntity, false);
-
-    assertThat(deploymentList).isEqualTo(pmsPipelineSummaryResponseDTO.getExecutionSummaryInfo().getDeployments());
-    assertThat(numberOfErrorsList).isEqualTo(pmsPipelineSummaryResponseDTO.getExecutionSummaryInfo().getNumOfErrors());
   }
 
   @Test

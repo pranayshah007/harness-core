@@ -56,13 +56,15 @@ public class RecentExecutionsInfoHelper {
   public void onExecutionStart(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PlanExecution planExecution) {
     ExecutionMetadata executionMetadata = planExecution.getMetadata();
-    RecentExecutionInfo newExecutionInfo = RecentExecutionInfo.builder()
-                                               .executionTriggerInfo(executionMetadata.getTriggerInfo())
-                                               .planExecutionId(planExecution.getUuid())
-                                               .status(Status.RUNNING)
-                                               .startTs(planExecution.getStartTs())
-                                               .runSequence(executionMetadata.getRunSequence())
-                                               .build();
+    RecentExecutionInfo newExecutionInfo =
+        RecentExecutionInfo.builder()
+            .executionTriggerInfo(executionMetadata.getTriggerInfo())
+            .planExecutionId(planExecution.getUuid())
+            .status(Status.RUNNING)
+            // CreatedAt as planExecution could be in queue state, thus startTs may not be filled
+            .startTs(planExecution.getCreatedAt())
+            .runSequence(executionMetadata.getRunSequence())
+            .build();
     Informant0<List<RecentExecutionInfo>> subject = (List<RecentExecutionInfo> recentExecutionInfoList) -> {
       if (recentExecutionInfoList == null) {
         recentExecutionInfoList = new LinkedList<>();

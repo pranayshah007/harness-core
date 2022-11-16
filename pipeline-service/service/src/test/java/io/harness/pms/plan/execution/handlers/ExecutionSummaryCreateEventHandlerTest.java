@@ -47,9 +47,6 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -101,16 +98,15 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
             .build();
     PlanExecution planExecution =
         PlanExecution.builder()
+            .uuid(planExecutionId)
             .metadata(ExecutionMetadata.newBuilder().setRunSequence(1).setPipelineIdentifier("pipelineId").build())
+            .createdAt(1L)
             .build();
 
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .uuid(generateUuid())
                                         .yaml("pipeline :\n  identifier: pipelineId")
-                                        .executionSummaryInfo(ExecutionSummaryInfo.builder()
-                                                                  .lastExecutionStatus(ExecutionStatus.RUNNING)
-                                                                  .numOfErrors(new HashMap<>())
-                                                                  .build())
+                                        .executionSummaryInfo(ExecutionSummaryInfo.builder().build())
                                         .build();
 
     ArgumentCaptor<ExecutionSummaryInfo> executionSummaryInfoArgumentCaptor =
@@ -145,10 +141,6 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
         OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(planExecutionMetadata).build());
 
     ExecutionSummaryInfo executionSummaryInfo = executionSummaryInfoArgumentCaptor.getValue();
-    assertThat(executionSummaryInfo.getLastExecutionStatus()).isEqualTo(ExecutionStatus.RUNNING);
-    assertThat(executionSummaryInfo.getNumOfErrors()).isEmpty();
-    assertThat(executionSummaryInfo.getDeployments()).isNotEmpty();
-    assertThat(executionSummaryInfo.getDeployments().get(getFormattedDate())).isEqualTo(1);
     assertThat(executionSummaryInfo.getLastExecutionId()).isEqualTo(ambiance.getPlanExecutionId());
 
     PipelineExecutionSummaryEntity capturedEntity = pipelineExecutionSummaryEntityArgumentCaptor.getValue();
@@ -172,11 +164,5 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     assertThat(capturedEntity.getConnectorRef()).isNull();
 
     verify(notificationHelper, times(1)).sendNotification(ambiance, PipelineEventType.PIPELINE_START, null, null);
-  }
-
-  private String getFormattedDate() {
-    Date date = new Date();
-    SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-    return formatter.format(date);
   }
 }

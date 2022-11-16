@@ -29,7 +29,6 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.execution.ExecutionStatus;
-import io.harness.pms.pipeline.ExecutionSummaryInfoDTO;
 import io.harness.pms.pipeline.ExecutorInfoDTO;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
@@ -45,9 +44,6 @@ import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -261,7 +257,6 @@ public class PMSPipelineDtoMapper {
         .tags(TagMapper.convertToMap(pipelineEntity.getTags()))
         .version(pipelineEntity.getVersion())
         .numOfStages(pipelineEntity.getStageCount())
-        .executionSummaryInfo(getExecutionSummaryInfoDTO(pipelineEntity))
         .lastUpdatedAt(pipelineEntity.getLastUpdatedAt())
         .createdAt(pipelineEntity.getCreatedAt())
         .modules(pipelineEntity.getFilters().keySet())
@@ -325,53 +320,6 @@ public class PMSPipelineDtoMapper {
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage());
     }
-  }
-
-  private ExecutionSummaryInfoDTO getExecutionSummaryInfoDTO(PipelineEntity pipelineEntity) {
-    return ExecutionSummaryInfoDTO.builder()
-        .deployments(getNumberOfDeployments(pipelineEntity))
-        .numOfErrors(getNumberOfErrorsLast7Days(pipelineEntity))
-        .lastExecutionStatus(pipelineEntity.getExecutionSummaryInfo() != null
-                ? pipelineEntity.getExecutionSummaryInfo().getLastExecutionStatus()
-                : null)
-        .lastExecutionTs(pipelineEntity.getExecutionSummaryInfo() != null
-                ? pipelineEntity.getExecutionSummaryInfo().getLastExecutionTs()
-                : null)
-        .lastExecutionId(pipelineEntity.getExecutionSummaryInfo() != null
-                ? pipelineEntity.getExecutionSummaryInfo().getLastExecutionId()
-                : null)
-        .build();
-  }
-
-  private List<Integer> getNumberOfErrorsLast7Days(PipelineEntity pipeline) {
-    if (pipeline.getExecutionSummaryInfo() == null) {
-      return new ArrayList<>();
-    }
-    Calendar cal = Calendar.getInstance();
-    cal.add(Calendar.DAY_OF_YEAR, -7);
-    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-    List<Integer> errors = new ArrayList<>();
-    for (int i = 0; i < 7; i++) {
-      cal.add(Calendar.DAY_OF_YEAR, 1);
-      errors.add(pipeline.getExecutionSummaryInfo().getNumOfErrors().getOrDefault(sdf.format(cal.getTime()), 0));
-    }
-    return errors;
-  }
-
-  private List<Integer> getNumberOfDeployments(PipelineEntity pipeline) {
-    if (pipeline.getExecutionSummaryInfo() == null) {
-      return new ArrayList<>();
-    }
-    Calendar cal = Calendar.getInstance();
-    cal.add(Calendar.DAY_OF_YEAR, -7);
-    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-    List<Integer> numberOfDeployments = new ArrayList<>();
-    for (int i = 0; i < 7; i++) {
-      cal.add(Calendar.DAY_OF_YEAR, 1);
-      numberOfDeployments.add(
-          pipeline.getExecutionSummaryInfo().getDeployments().getOrDefault(sdf.format(cal.getTime()), 0));
-    }
-    return numberOfDeployments;
   }
 
   public EntityDetail toEntityDetail(PipelineEntity entity) {
