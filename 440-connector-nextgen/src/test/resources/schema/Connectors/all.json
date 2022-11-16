@@ -5323,6 +5323,44 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServiceNowAuthCredentialsDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServiceNowAuthenticationDTO": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "UsernamePassword"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernamePassword"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServiceNowUserNamePasswordDTO"
+              }
+            }
+          }
+        }
+      ]
+    },
     "ServiceNowConnector": {
       "allOf": [
         {
@@ -5335,6 +5373,9 @@
             "serviceNowUrl"
           ],
           "properties": {
+            "auth": {
+              "$ref": "#/definitions/ServiceNowAuthenticationDTO"
+            },
             "delegateSelectors": {
               "type": "array",
               "uniqueItems": true,
@@ -5346,6 +5387,45 @@
               "type": "string"
             },
             "serviceNowUrl": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServiceNowUserNamePasswordDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ServiceNowAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "passwordRef"
+          ],
+          "properties": {
+            "passwordRef": {
               "type": "string"
             },
             "username": {
