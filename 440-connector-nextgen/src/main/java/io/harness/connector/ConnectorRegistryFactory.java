@@ -31,11 +31,11 @@ import io.harness.connector.heartbeat.K8sConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.NexusValidationParamsProvider;
 import io.harness.connector.heartbeat.NoOpConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.OciHelmConnectorValidationParamsProvider;
-import io.harness.connector.heartbeat.PcfConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.PhysicalDataCenterConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ScmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ServiceNowValidationParamsProvider;
 import io.harness.connector.heartbeat.SpotValidationParamsProvider;
+import io.harness.connector.heartbeat.TasConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.VaultConnectorValidationParamsProvider;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
 import io.harness.connector.mappers.ConnectorEntityToDTOMapper;
@@ -99,8 +99,6 @@ import io.harness.connector.mappers.nexusmapper.NexusDTOToEntity;
 import io.harness.connector.mappers.nexusmapper.NexusEntityToDTO;
 import io.harness.connector.mappers.pagerduty.PagerDutyDTOToEntity;
 import io.harness.connector.mappers.pagerduty.PagerDutyEntityToDTO;
-import io.harness.connector.mappers.pcfmapper.PcfDTOToEntity;
-import io.harness.connector.mappers.pcfmapper.PcfEntityToDTO;
 import io.harness.connector.mappers.pdcconnector.PhysicalDataCenterDTOToEntity;
 import io.harness.connector.mappers.pdcconnector.PhysicalDataCenterEntityToDTO;
 import io.harness.connector.mappers.prometheusmapper.PrometheusDTOToEntity;
@@ -129,6 +127,8 @@ import io.harness.connector.mappers.spotmapper.SpotDTOToEntity;
 import io.harness.connector.mappers.spotmapper.SpotEntityToDTO;
 import io.harness.connector.mappers.sumologicmapper.SumoLogicDTOToEntity;
 import io.harness.connector.mappers.sumologicmapper.SumoLogicEntityToDTO;
+import io.harness.connector.mappers.tasmapper.TasDTOToEntity;
+import io.harness.connector.mappers.tasmapper.TasEntityToDTO;
 import io.harness.connector.task.ConnectorValidationHandler;
 import io.harness.connector.task.NotSupportedValidationHandler;
 import io.harness.connector.task.artifactory.ArtifactoryValidationHandler;
@@ -166,7 +166,7 @@ import io.harness.connector.validator.scmValidators.GitConnectorValidator;
 import io.harness.connector.validator.scmValidators.GithubConnectorValidator;
 import io.harness.connector.validator.scmValidators.GitlabConnectorValidator;
 import io.harness.connector.validator.scmValidators.JenkinsConnectorValidationsParamsProvider;
-import io.harness.connector.validator.scmValidators.PcfConnectorValidator;
+import io.harness.connector.validator.scmValidators.TasConnectorValidator;
 import io.harness.delegate.beans.connector.ConnectorType;
 
 import java.util.HashMap;
@@ -348,9 +348,9 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, AzureArtifactsConnectorValidator.class,
             AzureArtifactsConnectorValidationParamsProvider.class, AzureArtifactsDTOToEntity.class,
             AzureArtifactsEntityToDTO.class, NotSupportedValidationHandler.class));
-    registrar.put(ConnectorType.PCF,
-        new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, PcfConnectorValidator.class,
-            PcfConnectorValidationParamsProvider.class, PcfDTOToEntity.class, PcfEntityToDTO.class,
+    registrar.put(ConnectorType.TAS,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, TasConnectorValidator.class,
+            TasConnectorValidationParamsProvider.class, TasDTOToEntity.class, TasEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.GCP_SECRET_MANAGER,
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,

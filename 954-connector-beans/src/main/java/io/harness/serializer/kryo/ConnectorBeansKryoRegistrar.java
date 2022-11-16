@@ -137,11 +137,6 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConstants;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.pagerduty.PagerDutyConnectorDTO;
-import io.harness.delegate.beans.connector.pcfconnector.PcfConnectorDTO;
-import io.harness.delegate.beans.connector.pcfconnector.PcfCredentialDTO;
-import io.harness.delegate.beans.connector.pcfconnector.PcfCredentialSpecDTO;
-import io.harness.delegate.beans.connector.pcfconnector.PcfCredentialType;
-import io.harness.delegate.beans.connector.pcfconnector.PcfManualDetailsDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
@@ -218,6 +213,11 @@ import io.harness.delegate.beans.connector.spotconnector.SpotCredentialSpecDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
 import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasCredentialType;
+import io.harness.delegate.beans.connector.tasconnector.TasManualDetailsDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.serializer.KryoRegistrar;
 
@@ -444,10 +444,10 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureArtifactsAuthenticationDTO.class, 10000109);
     kryo.register(AzureArtifactsTokenDTO.class, 10000111);
 
-    kryo.register(PcfConnectorDTO.class, 10000201);
-    kryo.register(PcfCredentialDTO.class, 10000202);
-    kryo.register(PcfCredentialSpecDTO.class, 10000203);
-    kryo.register(PcfCredentialType.class, 10000204);
-    kryo.register(PcfManualDetailsDTO.class, 10000205);
+    kryo.register(TasConnectorDTO.class, 10000201);
+    kryo.register(TasCredentialDTO.class, 10000202);
+    kryo.register(TasCredentialSpecDTO.class, 10000203);
+    kryo.register(TasCredentialType.class, 10000204);
+    kryo.register(TasManualDetailsDTO.class, 10000205);
   }
 }
