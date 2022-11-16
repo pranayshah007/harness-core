@@ -1,5 +1,7 @@
-package io.harness.steps.pluginstep;
+package io.harness.steps.container;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -10,13 +12,15 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.pluginstep.ContainerStepResponse;
 import io.harness.supplier.ThrowingSupplier;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class PmsPluginStep extends TaskExecutableWithRollback<PmsPluginStepResponse> {
-  public static final StepType STEP_TYPE = StepSpecTypeConstants.PLUGIN_STEP_TYPE;
+@OwnedBy(HarnessTeam.PIPELINE)
+public class ContainerStep extends TaskExecutableWithRollback<ContainerStepResponse> {
+  public static final StepType STEP_TYPE = StepSpecTypeConstants.CONTAINER_STEP_TYPE;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -37,7 +41,7 @@ public class PmsPluginStep extends TaskExecutableWithRollback<PmsPluginStepRespo
 
   @Override
   public StepResponse handleTaskResult(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<PmsPluginStepResponse> responseSupplier) throws Exception {
+      ThrowingSupplier<ContainerStepResponse> responseSupplier) throws Exception {
     // todo(abhinav): implement
     return null;
   }

@@ -25,15 +25,15 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.SHELL_SCRIPT)
-@TypeAlias("PluginStepNode")
+@TypeAlias("ContainerStepNode")
 @OwnedBy(PIPELINE)
-@RecasterAlias("io.harness.steps.plugin.PluginStepNode")
-public class PmsPluginStepNode extends PmsAbstractStepNode {
-  @JsonProperty("type") @NotNull StepType type = StepType.Plugin;
+@RecasterAlias("io.harness.steps.plugin.ContainerStepNode")
+public class ContainerStepNode extends PmsAbstractStepNode {
+  @JsonProperty("type") @NotNull StepType type = StepType.Container;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  PmsPluginStepInfo pmsPluginStepInfo;
+  ContainerStepInfo containerStepInfo;
   @Override
   public String getType() {
     return StepSpecTypeConstants.SHELL_SCRIPT;
@@ -41,11 +41,11 @@ public class PmsPluginStepNode extends PmsAbstractStepNode {
 
   @Override
   public StepSpecType getStepSpecType() {
-    return pmsPluginStepInfo;
+    return containerStepInfo;
   }
 
   enum StepType {
-    Plugin(StepSpecTypeConstants.PLUGIN_STEP);
+    Container(StepSpecTypeConstants.CONTAINER_STEP);
     @Getter String name;
     StepType(String name) {
       this.name = name;

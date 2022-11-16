@@ -8,12 +8,8 @@
 package io.harness.ngmigration.template;
 
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.JsonUtils;
 import io.harness.steps.StepSpecTypeConstants;
-import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.core.variables.NGVariableType;
-import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.template.Template;
 import software.wings.beans.template.command.ShellScriptTemplate;
@@ -23,7 +19,6 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ShellScriptTemplateService implements NgTemplateService {
   @Override
@@ -44,6 +39,13 @@ public class ShellScriptTemplateService implements NgTemplateService {
         outputVariables.add(ImmutableMap.of("name", varName, "type", "Secret", "value", varName));
       }
     }
+    List<Map<String, String>> variables = new ArrayList<>();
+    if (EmptyPredicate.isNotEmpty(template.getVariables())) {
+      template.getVariables().forEach(variable -> {
+        outputVariables.add(
+            ImmutableMap.of("name", variable.getName(), "type", "String", "value", variable.getValue()));
+      });
+    }
     Map<String, Object> templateSpec =
         ImmutableMap.<String, Object>builder()
             .put("onDelegate", true)
@@ -52,19 +54,8 @@ public class ShellScriptTemplateService implements NgTemplateService {
                     "type", "Inline", "spec", ImmutableMap.of("script", shellScriptTemplate.getScriptString())))
             .put("shell", "BASH".equals(shellScriptTemplate.getScriptType()) ? "Bash" : "PowerShell")
             .put("outputVariables", outputVariables)
+            .put("environmentVariables", variables)
             .build();
-    List<NGVariable> variables = null;
-    if (EmptyPredicate.isNotEmpty(template.getVariables())) {
-      variables = template.getVariables()
-                      .stream()
-                      .map(variable
-                          -> StringNGVariable.builder()
-                                 .name(variable.getName())
-                                 .type(NGVariableType.STRING)
-                                 .value(ParameterField.createValueField(variable.getValue()))
-                                 .build())
-                      .collect(Collectors.toList());
-    }
     return JsonUtils.asTree(templateSpec);
   }
 

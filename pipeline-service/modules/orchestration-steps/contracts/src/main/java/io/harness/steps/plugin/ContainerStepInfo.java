@@ -29,22 +29,22 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @EqualsAndHashCode
-@JsonTypeName(StepSpecTypeConstants.PLUGIN_STEP)
-@SimpleVisitorHelper(helperClass = PmsPluginStepInfoVisitorHelper.class)
-@TypeAlias("shellScriptStepInfo")
-@OwnedBy(HarnessTeam.CDC)
-@RecasterAlias("io.harness.steps.plugin.PmsPluginStepInfo")
-public class PmsPluginStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector {
+@JsonTypeName(StepSpecTypeConstants.CONTAINER_STEP)
+@SimpleVisitorHelper(helperClass = ContainerStepInfoVisitorHelper.class)
+@TypeAlias("containerStepInfo")
+@OwnedBy(HarnessTeam.PIPELINE)
+@RecasterAlias("io.harness.steps.plugin.ContainerStepInfo")
+public class ContainerStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector {
   @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
   @YamlSchemaTypes(value = {runtime}) ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Builder(builderMethodName = "infoBuilder")
-  public PmsPluginStepInfo() {}
+  public ContainerStepInfo() {}
 
   @Override
   @JsonIgnore
   public StepType getStepType() {
-    return StepSpecTypeConstants.PLUGIN_STEP_TYPE;
+    return StepSpecTypeConstants.CONTAINER_STEP_TYPE;
   }
 
   @Override

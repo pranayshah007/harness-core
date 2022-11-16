@@ -7,13 +7,14 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellScriptStepInfo;
+import io.harness.steps.shellscript.ShellScriptStepNode;
 import io.harness.steps.shellscript.ShellType;
-import io.harness.yaml.core.StepSpecType;
 
 import software.wings.yaml.workflow.StepYaml;
 
@@ -26,18 +27,22 @@ public class ShellScriptStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public StepSpecType getSpec(StepYaml stepYaml) {
+  public AbstractStepNode getSpec(StepYaml stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     // TODO: add mappers for other fields in shell script
-    return ShellScriptStepInfo.infoBuilder()
-        .onDelegate(ParameterField.createValueField((boolean) properties.get("executeOnDelegate")))
-        .shell(ShellType.Bash)
-        .source(ShellScriptSourceWrapper.builder()
-                    .type("Inline")
-                    .spec(ShellScriptInlineSource.builder()
-                              .script(ParameterField.createValueField((String) properties.get("scriptString")))
-                              .build())
-                    .build())
-        .build();
+    ShellScriptStepNode shellScriptStepNode = new ShellScriptStepNode();
+    baseSetup(stepYaml, shellScriptStepNode);
+    shellScriptStepNode.setShellScriptStepInfo(
+        ShellScriptStepInfo.infoBuilder()
+            .onDelegate(ParameterField.createValueField((boolean) properties.get("executeOnDelegate")))
+            .shell(ShellType.Bash)
+            .source(ShellScriptSourceWrapper.builder()
+                        .type("Inline")
+                        .spec(ShellScriptInlineSource.builder()
+                                  .script(ParameterField.createValueField((String) properties.get("scriptString")))
+                                  .build())
+                        .build())
+            .build());
+    return shellScriptStepNode;
   }
 }

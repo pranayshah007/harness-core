@@ -450,8 +450,16 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
         log.error("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
             changeSetId, accountId, response);
         log.error("Failure in git command execution", e);
-        yamlChangeSetService.updateStatusAndIncrementRetryCountForYamlChangeSets(accountId, Status.QUEUED,
-            Collections.singletonList(Status.RUNNING), Collections.singletonList(changeSetId));
+        YamlChangeSet yamlChangeSet = yamlChangeSetService.get(accountId, changeSetId);
+        if (yamlChangeSet != null) {
+          if (yamlChangeSet.getRetryCount() != null
+              && yamlChangeSet.getRetryCount() > YamlChangeSetServiceImpl.MAX_RETRY_COUNT) {
+            yamlChangeSetService.markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(accountId, changeSetId);
+          } else {
+            yamlChangeSetService.updateStatusAndIncrementRetryCountForYamlChangeSets(accountId, Status.QUEUED,
+                Collections.singletonList(Status.RUNNING), Collections.singletonList(changeSetId));
+          }
+        }
       }
     }
   }

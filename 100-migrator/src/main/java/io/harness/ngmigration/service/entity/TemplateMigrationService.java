@@ -165,7 +165,7 @@ public class TemplateMigrationService extends NgMigrationService {
                           NGTemplateInfoConfig.builder()
                               .type(TemplateEntityType.STEP_TEMPLATE)
                               .identifier(MigratorUtility.generateIdentifier(template.getName()))
-                              .variables(ngTemplateService.getTemplateVariables(template))
+                              //                              .variables(ngTemplateService.getTemplateVariables(template))
                               .name(template.getName())
                               .description(ParameterField.createValueField(description))
                               .projectIdentifier(projectIdentifier)
