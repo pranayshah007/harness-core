@@ -15,6 +15,7 @@ RUN microdnf update \
 
 COPY --chmod=755 engine_/engine /usr/local/bin/ci-lite-engine
 
+USER root
 RUN groupadd harness && adduser -g harness -s /bin/sh -u 1000 harness
 USER harness:harness
 
