@@ -1474,7 +1474,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(ArtifactCollectionHandler.class)
         .registerIterators(
             artifactCollectionExecutor, iteratorsConfig.getArtifactCollectionIteratorConfig().getThreadPoolSize());
-    injector.getInstance(ArtifactCleanupHandler.class).registerIterators(artifactCollectionExecutor);
+    injector.getInstance(ArtifactCleanupHandler.class).registerIterators(iteratorsConfig.getArtifactCleanupIteratorConfig().getThreadPoolSize());
     injector.getInstance(EventDeliveryHandler.class).registerIterators(eventDeliveryExecutor);
     if (!Boolean.TRUE.equals(disableInstanceSyncIterator)) {
       injector.getInstance(InstanceSyncHandler.class)

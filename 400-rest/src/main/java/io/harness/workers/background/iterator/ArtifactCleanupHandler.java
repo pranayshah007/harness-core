@@ -15,6 +15,7 @@ import static software.wings.beans.artifact.ArtifactStreamType.CUSTOM;
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.harness.exception.WingsException;
 import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistenceIterator.ProcessMode;
@@ -58,7 +59,10 @@ public class ArtifactCleanupHandler implements Handler<ArtifactStream> {
   @Inject private MorphiaPersistenceRequiredProvider<ArtifactStream> persistenceProvider;
   @Inject private SettingsService settingsService;
 
-  public void registerIterators(ScheduledThreadPoolExecutor artifactCollectionExecutor) {
+  public void registerIterators(int threadPoolSize) {
+    final ScheduledThreadPoolExecutor artifactCollectionExecutor =
+            new ScheduledThreadPoolExecutor(threadPoolSize,
+                    new ThreadFactoryBuilder().setNameFormat("Iterator-ArtifactCleanup").build());
     PersistenceIterator iterator = persistenceIteratorFactory.createIterator(ArtifactCleanupHandler.class,
         MongoPersistenceIterator.<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>builder()
             .mode(ProcessMode.PUMP)
@@ -68,7 +72,7 @@ public class ArtifactCleanupHandler implements Handler<ArtifactStream> {
             .targetInterval(ofHours(2))
             .acceptableNoAlertDelay(ofMinutes(15))
             .executorService(artifactCollectionExecutor)
-            .semaphore(new Semaphore(5))
+            .semaphore(new Semaphore(threadPoolSize))
             .handler(this)
             .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
             .filterExpander(query

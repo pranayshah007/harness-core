@@ -674,7 +674,7 @@ iteratorsConfig:
   instanceSyncIteratorConfig:
     threadPoolSize: ${INSTANCE_SYNC_ITERATOR_THREAD_COUNT:-10}
   artifactCollectionIteratorConfig:
-    threadPoolSize: ${ARTIFACT_COLLECTION_ITERATOR_THREAD_COUNT:-25}
+    threadPoolSize: ${ARTIFACT_COLLECTION_ITERATOR_THREAD_COUNT:-20}
   eventDeliveryIteratorConfig:
     threadPoolSize: ${EVENT_DELIVERY_ITERATOR_THREAD_COUNT:-25}
   workflowExecutionMonitorIteratorConfig:
@@ -691,6 +691,8 @@ iteratorsConfig:
       threadPoolSize: ${FAIL_DELEGATE_TASK_ITERATOR_THREAD_COUNT:-2}
   gitSyncPollingIteratorConfig:
       threadPoolSize: ${GIT_SYNC_POLLING_ITERATOR_THREAD_COUNT:-2}
+  artifactCleanupIteratorConfig:
+    threadPoolSize: ${ARTIFACT_CLEANUP_ITERATOR_THREAD_COUNT:-5}
 
 disableDelegateMgmtInManager: false
 

@@ -59,9 +59,11 @@ public class ArtifactCleanupHandlerTest extends WingsBaseTest {
     AccountStatusBasedEntityProcessController<ArtifactStream> accountStatusBasedEntityProcessController =
         new AccountStatusBasedEntityProcessController<>(accountService);
     // setup mock
+    ScheduledThreadPoolExecutor executor = mock(ScheduledThreadPoolExecutor.class);
     when(persistenceIteratorFactory.createIterator(any(), any()))
         .thenReturn(MongoPersistenceIterator.<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>builder()
                         .entityProcessController(accountStatusBasedEntityProcessController)
+                .executorService(executor)
                         .filterExpander(query
                             -> query.field(ArtifactStreamKeys.artifactStreamType)
                                    .in(asList(ArtifactStreamType.DOCKER.name(), ArtifactStreamType.AMI.name(),
@@ -69,9 +71,6 @@ public class ArtifactCleanupHandlerTest extends WingsBaseTest {
                                        ArtifactStreamType.GCR.name())))
                         .build());
 
-    ScheduledThreadPoolExecutor executor = mock(ScheduledThreadPoolExecutor.class);
-    artifactCleanupHandler.registerIterators(executor);
-
-    verify(executor).scheduleAtFixedRate(any(), anyLong(), anyLong(), any(TimeUnit.class));
+    artifactCleanupHandler.registerIterators(1);
   }
 }
