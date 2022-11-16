@@ -21,6 +21,9 @@ import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveCreateEvent;
+import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveDeleteEvent;
+import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveUpdateEvent;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
@@ -61,6 +64,7 @@ import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
+import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.utils.PageUtils;
 
@@ -107,6 +111,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject
   private Map<ServiceLevelObjectiveType, AbstractServiceLevelObjectiveUpdatableEntity>
       serviceLevelObjectiveTypeUpdatableEntityTransformerMap;
+  @Inject private OutboxService outboxService;
   @Inject private CompositeSLOService compositeSLOService;
   @Inject private SideKickService sideKickService;
 
@@ -155,7 +160,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             identifier));
     AbstractServiceLevelObjective serviceLevelObjective =
         checkIfSLOPresent(projectParams, serviceLevelObjectiveDTO.getIdentifier());
-
+    ServiceLevelObjectiveV2DTO existingServiceLevelObjective =
+        sloEntityToSLOResponse(serviceLevelObjective).getServiceLevelObjectiveV2DTO();
     List<String> serviceLevelIndicators = Collections.emptyList();
     if (serviceLevelObjectiveDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       validateSimpleSLO(serviceLevelObjectiveDTO, projectParams);
@@ -207,6 +213,16 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         updateSLOV2Entity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO, serviceLevelIndicators);
     sloHealthIndicatorService.upsert(serviceLevelObjective);
     sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifier);
+
+    outboxService.save(ServiceLevelObjectiveUpdateEvent.builder()
+                           .resourceName(serviceLevelObjectiveDTO.getName())
+                           .oldServiceLevelObjectiveDTO(existingServiceLevelObjective)
+                           .newServiceLevelObjectiveDTO(serviceLevelObjectiveDTO)
+                           .accountIdentifier(projectParams.getAccountIdentifier())
+                           .serviceLevelObjectiveIdentifier(serviceLevelObjectiveDTO.getIdentifier())
+                           .orgIdentifier(projectParams.getOrgIdentifier())
+                           .projectIdentifier(projectParams.getProjectIdentifier())
+                           .build());
     return getSLOResponse(serviceLevelObjectiveDTO.getIdentifier(), projectParams);
   }
 
@@ -276,7 +292,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Override
   public boolean delete(ProjectParams projectParams, String identifier) {
     AbstractServiceLevelObjective serviceLevelObjectiveV2 = checkIfSLOPresent(projectParams, identifier);
-
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO =
+        sloEntityToSLOResponse(serviceLevelObjectiveV2).getServiceLevelObjectiveV2DTO();
     if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       List<String> referencedCompositeSLOIdentifiers =
           compositeSLOService.getReferencedCompositeSLOs(projectParams, identifier)
@@ -309,6 +326,15 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             clock.instant().plus(Duration.ofMinutes(15)));
       }
     }
+
+    outboxService.save(ServiceLevelObjectiveDeleteEvent.builder()
+                           .resourceName(serviceLevelObjectiveDTO.getName())
+                           .oldServiceLevelObjectiveDTO(serviceLevelObjectiveDTO)
+                           .accountIdentifier(projectParams.getAccountIdentifier())
+                           .serviceLevelObjectiveIdentifier(serviceLevelObjectiveDTO.getIdentifier())
+                           .orgIdentifier(projectParams.getOrgIdentifier())
+                           .projectIdentifier(projectParams.getProjectIdentifier())
+                           .build());
     return hPersistence.delete(serviceLevelObjectiveV2);
   }
 
@@ -599,6 +625,14 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         serviceLevelObjectiveTypeSLOV2TransformerMap.get(serviceLevelObjectiveDTO.getType())
             .getSLOV2(projectParams, serviceLevelObjectiveDTO, isEnabled);
     hPersistence.save(serviceLevelObjectiveV2);
+    outboxService.save(ServiceLevelObjectiveCreateEvent.builder()
+                           .resourceName(serviceLevelObjectiveDTO.getName())
+                           .newServiceLevelObjectiveDTO(serviceLevelObjectiveDTO)
+                           .accountIdentifier(projectParams.getAccountIdentifier())
+                           .serviceLevelObjectiveIdentifier(serviceLevelObjectiveDTO.getIdentifier())
+                           .orgIdentifier(projectParams.getOrgIdentifier())
+                           .projectIdentifier(projectParams.getProjectIdentifier())
+                           .build());
     return serviceLevelObjectiveV2;
   }
 
