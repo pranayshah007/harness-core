@@ -81,6 +81,8 @@ public interface YamlChangeSetService {
 
   void markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(String accountId);
 
+  void markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(String accountId, String changeSetId);
+
   boolean updateStatusAndIncrementRetryCountForYamlChangeSets(
       String accountId, Status newStatus, List<Status> currentStatus, List<String> yamlChangeSetIds);
 
