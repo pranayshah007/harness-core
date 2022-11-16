@@ -127,6 +127,7 @@ public class SMPLicenseServiceImpl extends DefaultLicenseServiceImpl {
         .authenticationMechanism(AuthenticationMechanism.USER_PASSWORD)
         .isNextGenEnabled(true)
         .isProductLed(true)
+        .isSmpAccount(true)
         .build();
   }
 }

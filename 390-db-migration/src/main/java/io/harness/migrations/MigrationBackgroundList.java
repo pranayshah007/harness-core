@@ -53,6 +53,7 @@ import io.harness.migrations.all.AddEnableIteratorsToGovernanceConfig;
 import io.harness.migrations.all.AddHarnessOwnedToResourceConstraint;
 import io.harness.migrations.all.AddInfraMappingNameToInstanceData;
 import io.harness.migrations.all.AddIsDefaultFlagToUserGroup;
+import io.harness.migrations.all.AddIsSmpAccountToAccount;
 import io.harness.migrations.all.AddMisfireInstructionToQuartz;
 import io.harness.migrations.all.AddNotificationGroupReferenceToUserGroups;
 import io.harness.migrations.all.AddOrchestrationToWorkflows;
@@ -407,6 +408,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(236, CorrectingQuartzTriggerFrequency.class))
         .add(Pair.of(237, DisableArtifactCollectionForInactiveAccount.class))
         .add(Pair.of(238, AddMisfireInstructionToQuartz.class))
+        .add(Pair.of(239, AddIsSmpAccountToAccount.class))
         .build();
   }
 }

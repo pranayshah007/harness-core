@@ -136,7 +136,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter boolean isProductLed;
 
-  @Getter @Setter private boolean smpAccount;
+  @Getter @Setter private boolean isSmpAccount;
 
   /**
    * If this flag is set, all encryption/decryption activities will go through LOCAL security manager.
@@ -599,6 +599,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
     private boolean globalDelegateAccount;
+    private Boolean smpAccount;
 
     private Builder() {}
 
@@ -633,6 +634,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     public Builder withIsProductLed(boolean isProductLed) {
       this.isProductLed = isProductLed;
+      return this;
+    }
+
+    public Builder withSmpAccount(Boolean isSmpAccount) {
+      this.smpAccount = isSmpAccount;
       return this;
     }
 
@@ -804,6 +810,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
           .withDefaultExperience(defaultExperience)
           .withCreatedFromNG(createdFromNG)
           .withIsProductLed(isProductLed)
+          .withSmpAccount(smpAccount)
           .withAccountActivelyUsed(accountActivelyUsed)
           .withAccountPreferences(accountPreferences)
           .withServiceAccountConfig(serviceAccountConfig);
@@ -840,6 +847,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       account.setDefaultExperience(defaultExperience);
       account.setCreatedFromNG(createdFromNG);
       account.setProductLed(isProductLed);
+      account.setIsSmpAccount(smpAccount);
       account.setAccountActivelyUsed(accountActivelyUsed);
       account.setAccountPreferences(accountPreferences);
       account.setNextGenEnabled(nextGenEnabled);
