@@ -8,6 +8,7 @@
 package io.harness.cdng.manifest.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.ManifestType.AutoScaler;
 import static io.harness.cdng.manifest.ManifestType.EcsScalableTargetDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsServiceDefinition;
@@ -20,11 +21,14 @@ import static io.harness.cdng.manifest.ManifestType.OpenshiftParam;
 import static io.harness.cdng.manifest.ManifestType.OpenshiftTemplate;
 import static io.harness.cdng.manifest.ManifestType.ReleaseRepo;
 import static io.harness.cdng.manifest.ManifestType.ServerlessAwsLambda;
+import static io.harness.cdng.manifest.ManifestType.TasManifest;
 import static io.harness.cdng.manifest.ManifestType.VALUES;
+import static io.harness.cdng.manifest.ManifestType.Vars;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalingPolicyDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsServiceDefinitionManifestOutcome;
@@ -39,7 +43,10 @@ import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.ReleaseRepoManifestOutcome;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
+import io.harness.cdng.manifest.yaml.TasManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
+import io.harness.cdng.manifest.yaml.VarsManifestOutcome;
+import io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
@@ -52,7 +59,9 @@ import io.harness.cdng.manifest.yaml.kinds.OpenshiftManifest;
 import io.harness.cdng.manifest.yaml.kinds.OpenshiftParamManifest;
 import io.harness.cdng.manifest.yaml.kinds.ReleaseRepoManifest;
 import io.harness.cdng.manifest.yaml.kinds.ServerlessAwsLambdaManifest;
+import io.harness.cdng.manifest.yaml.kinds.TasManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
+import io.harness.cdng.manifest.yaml.kinds.VarsManifest;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -79,6 +88,12 @@ public class ManifestOutcomeMapper {
         return getK8sOutcome(manifestAttributes);
       case VALUES:
         return getValuesOutcome(manifestAttributes, order);
+      case TasManifest:
+        return getTasOutcome(manifestAttributes);
+      case AutoScaler:
+        return getAutoScalerOutcome(manifestAttributes);
+      case Vars:
+        return getVarsOutcome(manifestAttributes, order);
       case HelmChart:
         return getHelmChartOutcome(manifestAttributes);
       case Kustomize:
@@ -126,9 +141,38 @@ public class ManifestOutcomeMapper {
         .build();
   }
 
+  private TasManifestOutcome getTasOutcome(ManifestAttributes manifestAttributes) {
+    TasManifest tasManifest = (TasManifest) manifestAttributes;
+
+    return TasManifestOutcome.builder()
+        .identifier(tasManifest.getIdentifier())
+        .store(tasManifest.getStoreConfig())
+        .skipResourceVersioning(tasManifest.getSkipResourceVersioning())
+        .build();
+  }
+
+  private AutoScalerManifestOutcome getAutoScalerOutcome(ManifestAttributes manifestAttributes) {
+    AutoScalerManifest autoScalerManifest = (AutoScalerManifest) manifestAttributes;
+
+    return AutoScalerManifestOutcome.builder()
+        .identifier(autoScalerManifest.getIdentifier())
+        .store(autoScalerManifest.getStoreConfig())
+        .skipResourceVersioning(autoScalerManifest.getSkipResourceVersioning())
+        .build();
+  }
+
   private ValuesManifestOutcome getValuesOutcome(ManifestAttributes manifestAttributes, int order) {
     ValuesManifest attributes = (ValuesManifest) manifestAttributes;
     return ValuesManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .order(order)
+        .build();
+  }
+
+  private VarsManifestOutcome getVarsOutcome(ManifestAttributes manifestAttributes, int order) {
+    VarsManifest attributes = (VarsManifest) manifestAttributes;
+    return VarsManifestOutcome.builder()
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
         .order(order)

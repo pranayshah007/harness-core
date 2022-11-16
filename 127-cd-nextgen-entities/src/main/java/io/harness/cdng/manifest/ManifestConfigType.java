@@ -31,7 +31,10 @@ public enum ManifestConfigType {
   @JsonProperty(ManifestType.EcsScalableTargetDefinition)
   ECS_SCALABLE_TARGET_DEFINITION(ManifestType.EcsScalableTargetDefinition),
   @JsonProperty(ManifestType.EcsScalingPolicyDefinition)
-  ECS_SCALING_POLICY_DEFINITION(ManifestType.EcsScalingPolicyDefinition);
+  ECS_SCALING_POLICY_DEFINITION(ManifestType.EcsScalingPolicyDefinition),
+  @JsonProperty(ManifestType.TasManifest) TAS_MANIFEST(ManifestType.TasManifest),
+  @JsonProperty(ManifestType.Vars) VARS(ManifestType.Vars),
+  @JsonProperty(ManifestType.AutoScaler) AUTOSCALER(ManifestType.AutoScaler);
   private final String displayName;
 
   ManifestConfigType(String displayName) {
