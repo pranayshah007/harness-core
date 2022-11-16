@@ -147,6 +147,6 @@ io.harness.steps.wait.WaitStepInfo
 io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
 io.harness.steps.wait.WaitStepDetailsInfo
 io.harness.steps.common.pipeline.PipelineStepParameterV1
-io.harness.steps.plugin.PluginStepNode
-io.harness.steps.plugin.PmsPluginStepInfo
-io.harness.steps.plugin.PmsPluginStepOutcome
+io.harness.steps.plugin.ContainerStepNode
+io.harness.steps.plugin.ContainerStepInfo
+io.harness.steps.plugin.ContainerStepOutcome

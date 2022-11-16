@@ -43,7 +43,7 @@ import io.harness.plancreator.steps.internal.FlagConfigurationStepPlanCreator;
 import io.harness.plancreator.steps.internal.PMSStepPlanCreator;
 import io.harness.plancreator.steps.internal.PmsStepFilterJsonCreator;
 import io.harness.plancreator.steps.internal.ShellScriptStepFilterJsonCreatorV2;
-import io.harness.plancreator.steps.pluginstep.PmsPluginStepVariableCreator;
+import io.harness.plancreator.steps.pluginstep.ContainerStepVariableCreator;
 import io.harness.plancreator.steps.resourceconstraint.QueueStepPlanCreator;
 import io.harness.plancreator.steps.resourceconstraint.ResourceConstraintStepPlanCreator;
 import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
@@ -216,7 +216,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(variableCreatorClasses.contains(QueueStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(StrategyVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(PipelineStageVariableCreator.class)).isTrue();
-    assertThat(variableCreatorClasses.contains(PmsPluginStepVariableCreator.class)).isTrue();
+    assertThat(variableCreatorClasses.contains(ContainerStepVariableCreator.class)).isTrue();
   }
 
   @Test
