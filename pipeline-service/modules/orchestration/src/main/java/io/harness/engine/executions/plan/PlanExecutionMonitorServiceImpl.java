@@ -41,8 +41,6 @@ public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorServ
       PlanExecutionMetric planExecutionMetric =
           PlanExecutionMetric.builder()
               .accountId(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.accountId))
-              .orgIdentifier(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.orgIdentifier))
-              .projectId(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.projectIdentifier))
               .build();
 
       metricMap.put(planExecutionMetric, metricMap.getOrDefault(planExecutionMetric, 0) + 1);
