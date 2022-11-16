@@ -40,6 +40,7 @@ import io.harness.migrations.timescaledb.AddStorageSupportK8sUtilTable;
 import io.harness.migrations.timescaledb.AddSystemCostBillingData;
 import io.harness.migrations.timescaledb.AddingToCVDeploymentMetrics;
 import io.harness.migrations.timescaledb.AlterCEUtilizationDataTables;
+import io.harness.migrations.timescaledb.BaseTimeScaleDBMigration;
 import io.harness.migrations.timescaledb.ChangeToTimeStampTZ;
 import io.harness.migrations.timescaledb.CreateAccountTables;
 import io.harness.migrations.timescaledb.CreateAggregatedBillingTable;
@@ -165,7 +166,8 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(70, CreateInfraDefinitionTable.class))
         .add(Pair.of(71, CreateDeploymentStepTable.class))
         .add(Pair.of(72, CreateExecutionInterruptTable.class))
-        .add(Pair.of(73, AddOnDemandRollbackDetailsToDeployment.class))
+        .add(Pair.of(73, BaseTimeScaleDBMigration.class))
+        .add(Pair.of(74, AddOnDemandRollbackDetailsToDeployment.class))
         .build();
   }
 }
