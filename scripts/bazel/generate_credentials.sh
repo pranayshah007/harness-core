@@ -5,7 +5,7 @@
 
 scripts/bazel/testDistribute.sh
 
-CACHE_FILE='bazelrc.test'
+CACHE_FILE='bazelrc.cache'
 
 CONTENT="#Remote cache configuration\n
 build --google_credentials=platform-bazel-cache-read.json\n
