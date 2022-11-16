@@ -408,7 +408,8 @@ public class MigrationBackgroundList {
         .add(Pair.of(236, CorrectingQuartzTriggerFrequency.class))
         .add(Pair.of(237, DisableArtifactCollectionForInactiveAccount.class))
         .add(Pair.of(238, AddMisfireInstructionToQuartz.class))
-        .add(Pair.of(239, AddAccessNextGenPermissionMigration.class))
+        .add(Pair.of(239, BaseMigration.class))
+        .add(Pair.of(240, AddAccessNextGenPermissionMigration.class))
         .build();
   }
 }

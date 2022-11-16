@@ -41,7 +41,9 @@ public class AddAccessNextGenPermissionMigration implements Migration {
         try {
           Set<PermissionAttribute.PermissionType> accountPermissions =
               userGroup.getAccountPermissions().getPermissions();
-          accountPermissions.add(ACCESS_NEXTGEN);
+          if (accountPermissions.contains(ACCESS_NEXTGEN)) {
+            accountPermissions.remove(ACCESS_NEXTGEN);
+          }
 
           UpdateOperations<UserGroup> operations = wingsPersistence.createUpdateOperations(UserGroup.class);
           setUnset(operations, UserGroupKeys.accountPermissions,
