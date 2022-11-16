@@ -17,8 +17,8 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.pcfconnector.PcfConnectorDTO;
-import io.harness.delegate.task.pcf.response.PcfInfraConfig;
+import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
+import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -35,17 +35,17 @@ import javax.annotation.Nonnull;
 
 @Singleton
 @OwnedBy(CDP)
-public class PcfEntityHelper {
+public class TasEntityHelper {
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
   public List<EncryptedDataDetail> getEncryptionDataDetails(
       @Nonnull ConnectorInfoDTO connectorDTO, @Nonnull NGAccess ngAccess) {
-    if (connectorDTO.getConnectorType() == ConnectorType.PCF) {
-      PcfConnectorDTO pcfConnectorDTO = (PcfConnectorDTO) connectorDTO.getConnectorConfig();
-      List<DecryptableEntity> pcfDecryptableEntities = pcfConnectorDTO.getDecryptableEntities();
-      if (isNotEmpty(pcfDecryptableEntities)) {
-        return secretManagerClientService.getEncryptionDetails(ngAccess, pcfDecryptableEntities.get(0));
+    if (connectorDTO.getConnectorType() == ConnectorType.TAS) {
+      TasConnectorDTO tasConnectorDTO = (TasConnectorDTO) connectorDTO.getConnectorConfig();
+      List<DecryptableEntity> tasDecryptableEntities = tasConnectorDTO.getDecryptableEntities();
+      if (isNotEmpty(tasDecryptableEntities)) {
+        return secretManagerClientService.getEncryptionDetails(ngAccess, tasDecryptableEntities.get(0));
       } else {
         return emptyList();
       }
@@ -59,22 +59,22 @@ public class PcfEntityHelper {
         connectorId, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(identifierRef.getAccountIdentifier(),
         identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
-    if (connectorDTO.isEmpty()) {
-      throw new InvalidRequestException(format("Connector not found for identifier : [%s] ", connectorId), USER);
+    if (connectorDTO.isPresent()) {
+      return connectorDTO.get().getConnector();
     }
-    return connectorDTO.get().getConnector();
+    throw new InvalidRequestException(format("Connector not found for identifier : [%s] ", connectorId), USER);
   }
 
-  public PcfInfraConfig getPcfInfraConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
+  public TasInfraConfig getTasInfraConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
     ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
     if (InfrastructureKind.TAS.equals(infrastructureOutcome.getKind())) {
-      TanzuApplicationServiceInfrastructureOutcome pcfInfrastructureOutcome =
+      TanzuApplicationServiceInfrastructureOutcome tasInfrastructureOutcome =
           (TanzuApplicationServiceInfrastructureOutcome) infrastructureOutcome;
-      return PcfInfraConfig.builder()
+      return TasInfraConfig.builder()
           .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
-          .organization(pcfInfrastructureOutcome.getOrganization())
-          .pcfConnectorDTO((PcfConnectorDTO) connectorDTO.getConnectorConfig())
-          .space(pcfInfrastructureOutcome.getSpace())
+          .organization(tasInfrastructureOutcome.getOrganization())
+          .tasConnectorDTO((TasConnectorDTO) connectorDTO.getConnectorConfig())
+          .space(tasInfrastructureOutcome.getSpace())
           .build();
     }
     throw new UnsupportedOperationException(
