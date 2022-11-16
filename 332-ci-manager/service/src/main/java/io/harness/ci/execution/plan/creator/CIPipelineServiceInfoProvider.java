@@ -310,7 +310,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(saveCacheToGCS);
     stepInfos.add(gitCloneStepInfo);
     stepInfos.add(saveCacheToS3);
-    stepInfos.add(actionStepInfo);
+    //    stepInfos.add(actionStepInfo);
 
     return stepInfos;
   }
