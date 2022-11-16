@@ -64,6 +64,7 @@ import io.harness.graph.stepDetail.PmsGraphStepDetailsServiceImpl;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
+import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.metrics.MetricRegistryModule;
@@ -210,6 +211,7 @@ import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.serializer.HObjectMapper;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -363,7 +365,12 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     injector.getInstance(TriggerWebhookExecutionService.class)
         .registerIterators(iteratorsConfig.getTriggerWebhookConfig());
     injector.getInstance(ScheduledTriggerHandler.class).registerIterators(iteratorsConfig.getScheduleTriggerConfig());
-    injector.getInstance(TimeoutEngine.class).registerIterators(iteratorsConfig.getTimeoutEngineConfig());
+    injector.getInstance(TimeoutEngine.class)
+        .createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
+                                    .name("TimeoutEngine")
+                                    .poolSize(iteratorsConfig.getTimeoutEngineConfig().getThreadPoolCount())
+                                    .build(),
+            Duration.ofSeconds(iteratorsConfig.getTimeoutEngineConfig().getTargetIntervalInSeconds()));
     injector.getInstance(BarrierServiceImpl.class).registerIterators(iteratorsConfig.getBarrierConfig());
     injector.getInstance(ApprovalInstanceHandler.class).registerIterators();
     injector.getInstance(CustomApprovalInstanceHandler.class)

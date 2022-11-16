@@ -45,6 +45,7 @@ import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import lombok.Builder;
 import lombok.Getter;
@@ -77,7 +78,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private Duration acceptableExecutionTime;
   private Duration throttleInterval;
   private Handler<T> handler;
-  private ExecutorService executorService;
+  @Getter private ExecutorService executorService;
   private Semaphore semaphore;
   private boolean redistribute;
   private EntityProcessController<T> entityProcessController;
@@ -166,10 +167,14 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
           T finalEntity = entity;
           synchronized (finalEntity) {
-            executorService.submit(() -> processEntity(finalEntity));
-            // it might take some time until the submitted task is actually triggered.
-            // lets wait for awhile until for this to happen
-            finalEntity.wait(10000);
+            try {
+              executorService.submit(() -> processEntity(finalEntity));
+              // it might take some time until the submitted task is actually triggered.
+              // lets wait for awhile until for this to happen
+              finalEntity.wait(10000);
+            } catch (RejectedExecutionException e) {
+              log.info("The executor service has been shutdown for entity {}", finalEntity);
+            }
           }
           continue;
         }
