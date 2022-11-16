@@ -82,6 +82,7 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
         .newElastigroup(newElastigroup)
         .oldElastigroup(oldElastigroup)
         .timeout(getTimeoutInMin(stepElementParameters))
+        .isBlueGreen(elastigroupSetupOutcome.isBlueGreen())
         .build();
   }
 

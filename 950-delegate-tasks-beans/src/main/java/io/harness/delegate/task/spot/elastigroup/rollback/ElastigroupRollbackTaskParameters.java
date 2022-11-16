@@ -37,6 +37,7 @@ public class ElastigroupRollbackTaskParameters implements TaskParameters, Execut
   SpotConnectorDTO spotConnector;
   List<EncryptedDataDetail> encryptionDetails;
   int timeout;
+  boolean isBlueGreen;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
