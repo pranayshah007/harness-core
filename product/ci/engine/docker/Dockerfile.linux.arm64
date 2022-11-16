@@ -5,10 +5,6 @@
 # > docker build -t harness/ci-lite-engine:<tag> -f product/ci/engine/Dockerfile $(bazel info bazel-bin)/product/ci/engine/
 
 FROM redhat/ubi8-minimal
-
-ARG USER_ID
-ARG GROUP_ID
-
 RUN microdnf update \
     && microdnf install \
     shadow-utils \
@@ -17,11 +13,9 @@ RUN microdnf update \
     && rm -rf /var/cache/yum \
     && microdnf clean all
 
-USER ${USER_ID}
-COPY engine_/engine /usr/local/bin/ci-lite-engine
-RUN chmod +x /usr/local/bin/ci-lite-engine
+COPY --chmod=755 engine_/engine /usr/local/bin/ci-lite-engine
 
-RUN groupadd --gid $GROUP_ID harness && adduser -g harness -s /bin/sh -u 1000 harness
+RUN groupadd harness && adduser -g harness -s /bin/sh -u 1000 harness
 USER harness:harness
 
 CMD ["/usr/local/bin/ci-lite-engine"]

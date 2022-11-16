@@ -17,14 +17,11 @@ RUN microdnf update \
     && microdnf clean all
 
 # Copy ci-addon binary
-COPY ci-addon_/ci-addon /usr/local/bin/ci-addon-linux
+COPY --chmod=755 ci-addon_/ci-addon /usr/local/bin/ci-addon-linux
 COPY java-agent.jar /usr/local/bin/
-COPY split_tests /usr/local/bin/
-USER ${USER_ID}
-RUN chmod +x /usr/local/bin/ci-addon-linux \
-    && chmod +x /usr/local/bin/split_tests
+COPY --chmod=755 split_tests /usr/local/bin/
 
-RUN groupadd -gid $GROUP_ID harness && adduser -g harness -s /bin/sh -u 1000 harness
+RUN groupadd harness && adduser -g harness -s /bin/sh -u 1000 harness
 USER harness:harness
 
 CMD ["/usr/local/bin/ci-addon-linux"]
