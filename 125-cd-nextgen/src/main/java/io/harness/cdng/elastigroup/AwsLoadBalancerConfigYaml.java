@@ -36,7 +36,7 @@ public class AwsLoadBalancerConfigYaml implements LoadBalancerSpec {
   @NotEmpty
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = STRING_CLASSPATH)
-  ParameterField<String> loadBalancerArn;
+  ParameterField<String> loadBalancer;
 
   @NotEmpty
   @YamlSchemaTypes({expression})
