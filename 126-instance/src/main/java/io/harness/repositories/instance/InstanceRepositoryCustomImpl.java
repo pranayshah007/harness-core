@@ -48,6 +48,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   private final MongoTemplate mongoTemplate;
   private final MongoTemplate secondaryMongoTemplate;
+  private final String INSTANCE_NG_COLLECTION = "instanceNG";
 
   @Inject
   public InstanceRepositoryCustomImpl(
@@ -309,7 +310,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .count()
             .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
-        newAggregation(matchStage, groupClusterEnvId), "instanceNG", ActiveServiceInstanceInfo.class);
+        newAggregation(matchStage, groupClusterEnvId), INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfo.class);
   }
 
   /*
