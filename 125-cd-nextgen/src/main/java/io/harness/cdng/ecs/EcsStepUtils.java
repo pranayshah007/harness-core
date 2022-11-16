@@ -80,24 +80,14 @@ public class EcsStepUtils extends CDStepHelper {
         gitStoreConfig, connectorDTO, manifestOutcome, gitStoreConfig.getPaths().getValue(), ambiance);
   }
 
-  public boolean checkForS3Manifest(List<ManifestOutcome> ecsManifestsOutcome) {
-    AtomicBoolean isS3Manifest = new AtomicBoolean(false);
-    ecsManifestsOutcome.forEach(manifest -> {
-      if (manifest.getStore().getKind() == ManifestStoreType.S3) {
-        isS3Manifest.set(true);
-      }
-    });
-    return isS3Manifest.get();
-  }
-
-  public boolean checkForGitManifest(List<ManifestOutcome> ecsManifestsOutcomes) {
-    AtomicBoolean isGitManifest = new AtomicBoolean(false);
-    ecsManifestsOutcomes.forEach(manifest -> {
+  public boolean isAnyGitManifest(List<ManifestOutcome> ecsManifestsOutcomes) {
+    Boolean isGitManifest = false;
+    for (ManifestOutcome manifest : ecsManifestsOutcomes) {
       if (ManifestStoreType.isInGitSubset(manifest.getStore().getKind())) {
-        isGitManifest.set(true);
+        isGitManifest = true;
       }
-    });
-    return isGitManifest.get();
+    }
+    return isGitManifest;
   }
 
   public S3StoreDelegateConfig getS3StoreDelegateConfig(

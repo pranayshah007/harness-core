@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.ActivityAccess;
@@ -37,6 +38,7 @@ public class EcsS3FetchRunTaskRequest
   String executionLogName;
   String activityId;
   String accountId;
+  CommandUnitsProgress commandUnitsProgress;
 
   @NonFinal @Expression(ALLOW_SECRETS) EcsS3FetchFileConfig runTaskDefinitionS3FetchFileConfig;
   @NonFinal @Expression(ALLOW_SECRETS) EcsS3FetchFileConfig runTaskRequestDefinitionS3FetchFileConfig;

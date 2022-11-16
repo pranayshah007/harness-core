@@ -20,7 +20,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("ecsGitFetchPassThroughData")
+@TypeAlias("ecsS3FetchPassThroughData")
 @RecasterAlias("io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData")
 public class EcsS3FetchPassThroughData implements PassThroughData {
   String otherStoreTargetGroupArnKey;

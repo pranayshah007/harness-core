@@ -170,7 +170,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         getS3ManifestFileConfigs(ambiance, ecsManifestOutcomes, ecsStepHelper);
 
     TaskChainResponse taskChainResponse = null;
-    if (checkForGitManifest(ecsManifestOutcomes)) { // at least one git
+    if (isAnyGitManifest(ecsManifestOutcomes)) { // at least one git
       EcsGitFetchPassThroughData ecsGitFetchPassThroughData =
           EcsGitFetchPassThroughData.builder()
               .infrastructureOutcome(infrastructureOutcome)
@@ -407,7 +407,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         getRunTaskS3ManifestFileConfigs(ambiance, ecsRunTaskManifestOutcomes);
 
     TaskChainResponse taskChainResponse = null;
-    if (checkForGitManifest(ecsRunTaskManifestOutcomes)) {
+    if (isAnyGitManifest(ecsRunTaskManifestOutcomes)) {
       EcsGitFetchPassThroughData ecsGitFetchPassThroughData =
           EcsGitFetchPassThroughData.builder()
               .infrastructureOutcome(infrastructureOutcome)
@@ -1137,7 +1137,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       }
     }
 
-    if (CollectionUtils.isNotEmpty((ecsOtherStoreContent.getEcsScalableTargetManifestContentList()))) {
+    if (CollectionUtils.isNotEmpty(ecsOtherStoreContent.getEcsScalableTargetManifestContentList())) {
       ecsScalableTargetFileContentList.addAll(ecsOtherStoreContent.getEcsScalableTargetManifestContentList());
     }
 
@@ -1148,7 +1148,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       }
     }
 
-    if (CollectionUtils.isNotEmpty((ecsOtherStoreContent.getEcsScalingPolicyManifestContentList()))) {
+    if (CollectionUtils.isNotEmpty(ecsOtherStoreContent.getEcsScalingPolicyManifestContentList())) {
       ecsScalingPolicyFileContentList.addAll(ecsOtherStoreContent.getEcsScalingPolicyManifestContentList());
     }
     return EcsManifestsContent.builder()
@@ -1512,7 +1512,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       }
     }
 
-    if (CollectionUtils.isNotEmpty((ecsOtherStoreContent.getEcsScalableTargetManifestContentList()))) {
+    if (CollectionUtils.isNotEmpty(ecsOtherStoreContent.getEcsScalableTargetManifestContentList())) {
       ecsScalableTargetFileContentList.addAll(ecsOtherStoreContent.getEcsScalableTargetManifestContentList());
     }
 
@@ -1523,7 +1523,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       }
     }
 
-    if (CollectionUtils.isNotEmpty((ecsOtherStoreContent.getEcsScalingPolicyManifestContentList()))) {
+    if (CollectionUtils.isNotEmpty(ecsOtherStoreContent.getEcsScalingPolicyManifestContentList())) {
       ecsScalingPolicyFileContentList.addAll(ecsOtherStoreContent.getEcsScalingPolicyManifestContentList());
     }
 
