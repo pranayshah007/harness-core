@@ -15,8 +15,10 @@ import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
+import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
@@ -49,7 +51,6 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
-import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOResetRecalculationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
@@ -66,6 +67,7 @@ import io.harness.utils.PageUtils;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -83,6 +85,7 @@ import javax.ws.rs.NotFoundException;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -101,11 +104,11 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private CVNGLogService cvngLogService;
-  @Inject private CompositeSLOService compositeSLOService;
-  @Inject private CompositeSLOResetRecalculationService compositeSLOResetRecalculationService;
   @Inject
   private Map<ServiceLevelObjectiveType, AbstractServiceLevelObjectiveUpdatableEntity>
       serviceLevelObjectiveTypeUpdatableEntityTransformerMap;
+  @Inject private CompositeSLOService compositeSLOService;
+  @Inject private SideKickService sideKickService;
 
   @Override
   public ServiceLevelObjectiveV2Response create(
@@ -193,10 +196,11 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       AbstractServiceLevelObjective newCompositeServiceLevelObjective =
           serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.COMPOSITE)
               .getSLOV2(projectParams, serviceLevelObjectiveDTO, true);
-      if (compositeServiceLevelObjective.shouldReset(newCompositeServiceLevelObjective)) {
-        compositeSLOResetRecalculationService.reset(compositeServiceLevelObjective);
-      } else if (compositeServiceLevelObjective.shouldRecalculate(newCompositeServiceLevelObjective)) {
-        compositeSLOResetRecalculationService.recalculate(compositeServiceLevelObjective);
+      if (compositeSLOService.shouldReset(compositeServiceLevelObjective, newCompositeServiceLevelObjective)) {
+        compositeSLOService.reset(compositeServiceLevelObjective);
+      } else if (compositeSLOService.shouldRecalculate(
+                     compositeServiceLevelObjective, newCompositeServiceLevelObjective)) {
+        compositeSLOService.recalculate(compositeServiceLevelObjective);
       }
     }
     serviceLevelObjective =
@@ -286,7 +290,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             projectParams.getProjectIdentifier(), referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
             String.join(",", referencedCompositeSLOIdentifiers)));
       }
-
       serviceLevelIndicatorService.deleteByIdentifier(
           projectParams, ((SimpleServiceLevelObjective) serviceLevelObjectiveV2).getServiceLevelIndicators());
     }
@@ -297,6 +300,15 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .stream()
             .map(NotificationRuleRef::getNotificationRuleRef)
             .collect(Collectors.toList()));
+    if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.COMPOSITE)) {
+      String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
+          serviceLevelObjectiveV2.getAccountId(), serviceLevelObjectiveV2.getUuid());
+      if (StringUtils.isNotBlank(verificationTaskId)) {
+        sideKickService.schedule(
+            VerificationTaskCleanupSideKickData.builder().verificationTaskId(verificationTaskId).build(),
+            clock.instant().plus(Duration.ofMinutes(15)));
+      }
+    }
     return hPersistence.delete(serviceLevelObjectiveV2);
   }
 
@@ -620,8 +632,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
     if (serviceLevelObjective == null) {
       throw new InvalidRequestException(String.format(
-          "[SLOV2 Not Found] SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
-          identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present", identifier,
+          projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
     return serviceLevelObjective;
@@ -702,12 +714,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       serviceLevelObjectiveList =
           serviceLevelObjectiveList.stream()
               .filter(slo
-                  -> slo.getNotificationRuleRefs()
-                          .stream()
-                          .filter(notificationRuleRef
-                              -> notificationRuleRef.getNotificationRuleRef().equals(filter.getNotificationRuleRef()))
-                          .count()
-                      != 0)
+                  -> slo.getNotificationRuleRefs().stream().anyMatch(notificationRuleRef
+                      -> notificationRuleRef.getNotificationRuleRef().equals(filter.getNotificationRuleRef())))
               .collect(Collectors.toList());
     }
     if (isNotEmpty(filter.getErrorBudgetRisks())) {

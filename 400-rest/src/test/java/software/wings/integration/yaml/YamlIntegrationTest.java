@@ -43,7 +43,7 @@ import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
 import software.wings.service.intfc.yaml.YamlGitService;
 import software.wings.settings.SettingVariableTypes;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.google.inject.Inject;
 import java.util.Arrays;

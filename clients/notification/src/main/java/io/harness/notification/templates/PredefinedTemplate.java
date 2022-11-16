@@ -65,7 +65,8 @@ public enum PredefinedTemplate {
   FREEZE_EMAIL_ALERT("notification_templates/email_test.txt", "freeze_email_alert"),
   FREEZE_SLACK_ALERT("notification_templates/slack_test.txt", "freeze_slack_alert"),
   FREEZE_PD_ALERT("notification_templates/pd_test.txt", "freeze_pagerduty_alert"),
-  FREEZE_MSTEAMS_ALERT("notification_templates/msteams_test.txt", "freeze_msteams_alert");
+  FREEZE_MSTEAMS_ALERT("notification_templates/msteams_test.txt", "freeze_msteams_alert"),
+  EMAIL_SMP_LICENSE_ALERT("templates/email_smp_license_alert.txt", "email_smp_license_alert");
 
   private String path;
   private String identifier;

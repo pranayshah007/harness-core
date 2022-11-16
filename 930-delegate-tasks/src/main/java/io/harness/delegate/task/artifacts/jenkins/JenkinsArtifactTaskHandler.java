@@ -161,7 +161,7 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
       buildDetails = buildDetails.stream()
                          .filter(buildDetail -> buildDetail.getNumber().equals(attributesRequest.getBuildNumber()))
                          .collect(toList());
-      if (buildDetails.get(0) != null) {
+      if (isNotEmpty(buildDetails) && buildDetails.get(0) != null) {
         JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
             JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
         return getSuccessTaskExecutionResponse(

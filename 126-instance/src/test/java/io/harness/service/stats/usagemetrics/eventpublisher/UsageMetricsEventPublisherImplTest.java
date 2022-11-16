@@ -10,17 +10,17 @@ package io.harness.service.stats.usagemetrics.eventpublisher;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.InstancesTestBase;
 import io.harness.category.element.UnitTests;
-import io.harness.dtos.InstanceDTO;
+import io.harness.entities.Instance;
 import io.harness.entities.InstanceType;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.ng.core.entities.Project;
 import io.harness.rule.Owner;
+import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 
 import java.util.Arrays;
 import org.junit.Test;
@@ -30,13 +30,11 @@ import org.mockito.Mock;
 public class UsageMetricsEventPublisherImplTest extends InstancesTestBase {
   private final String ACCOUNT_ID = "acc";
   private final String ACCOUNT_ID_1 = "acc1";
-  private final String ACCOUNT_ID_2 = "acc2";
   private final String ORG_IDENTIFIER = "org";
   private final String PROJECT_IDENTIFIER = "proj";
   private final String SERVICE_IDENTIFIER = "serv";
-  private final String ENVIRONMENT_IDENTIFIER = "env";
-  private final String INFRASTRUCTURE_ID_1 = "infraid1";
-  private final String INFRASTRUCTURE_ID_2 = "infraid2";
+  private final String ENVIRONMENT_IDENTIFIER1 = "env1";
+  private final String ENVIRONMENT_IDENTIFIER2 = "env2";
   private final String CONNECTOR_REF = "conn";
   private final long TIMESTAMP = 123L;
 
@@ -47,28 +45,43 @@ public class UsageMetricsEventPublisherImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void publishInstanceStatsTimeSeriesTest() {
     UsageMetricsEventPublisherImpl usageMetricsEventPublisher = new UsageMetricsEventPublisherImpl(eventProducer);
-    InstanceDTO instanceDTO1 = InstanceDTO.builder()
-                                   .accountIdentifier(ACCOUNT_ID_1)
-                                   .orgIdentifier(ORG_IDENTIFIER)
-                                   .projectIdentifier(PROJECT_IDENTIFIER)
-                                   .serviceIdentifier(SERVICE_IDENTIFIER)
-                                   .envIdentifier(ENVIRONMENT_IDENTIFIER)
-                                   .infrastructureMappingId(INFRASTRUCTURE_ID_1)
-                                   .connectorRef(CONNECTOR_REF)
-                                   .instanceType(InstanceType.K8S_INSTANCE)
-                                   .build();
-    InstanceDTO instanceDTO2 = InstanceDTO.builder()
-                                   .accountIdentifier(ACCOUNT_ID_2)
-                                   .orgIdentifier(ORG_IDENTIFIER)
-                                   .projectIdentifier(PROJECT_IDENTIFIER)
-                                   .serviceIdentifier(SERVICE_IDENTIFIER)
-                                   .envIdentifier(ENVIRONMENT_IDENTIFIER)
-                                   .infrastructureKind(InfrastructureKind.GITOPS)
-                                   .connectorRef(CONNECTOR_REF)
-                                   .instanceType(InstanceType.K8S_INSTANCE)
-                                   .build();
+    Project project = Project.builder()
+                          .accountIdentifier(ACCOUNT_ID)
+                          .orgIdentifier(ORG_IDENTIFIER)
+                          .identifier(PROJECT_IDENTIFIER)
+                          .build();
+    Instance instance1 = Instance.builder()
+                             .accountIdentifier(ACCOUNT_ID_1)
+                             .orgIdentifier(ORG_IDENTIFIER)
+                             .projectIdentifier(PROJECT_IDENTIFIER)
+                             .serviceIdentifier(SERVICE_IDENTIFIER)
+                             .envIdentifier(ENVIRONMENT_IDENTIFIER1)
+                             .connectorRef(CONNECTOR_REF)
+                             .instanceType(InstanceType.K8S_INSTANCE)
+                             .build();
+    InstanceCountByServiceAndEnv instanceCountByServiceAndEnv1 = InstanceCountByServiceAndEnv.builder()
+                                                                     .serviceIdentifier(SERVICE_IDENTIFIER)
+                                                                     .envIdentifier(ENVIRONMENT_IDENTIFIER1)
+                                                                     .count(5)
+                                                                     .firstDocument(instance1)
+                                                                     .build();
+    Instance instance2 = Instance.builder()
+                             .accountIdentifier(ACCOUNT_ID)
+                             .orgIdentifier(ORG_IDENTIFIER)
+                             .projectIdentifier(PROJECT_IDENTIFIER)
+                             .serviceIdentifier(SERVICE_IDENTIFIER)
+                             .envIdentifier(ENVIRONMENT_IDENTIFIER2)
+                             .connectorRef(CONNECTOR_REF)
+                             .instanceType(InstanceType.K8S_INSTANCE)
+                             .build();
+    InstanceCountByServiceAndEnv instanceCountByServiceAndEnv2 = InstanceCountByServiceAndEnv.builder()
+                                                                     .serviceIdentifier(SERVICE_IDENTIFIER)
+                                                                     .envIdentifier(ENVIRONMENT_IDENTIFIER2)
+                                                                     .count(10)
+                                                                     .firstDocument(instance2)
+                                                                     .build();
     usageMetricsEventPublisher.publishInstanceStatsTimeSeries(
-        ACCOUNT_ID, TIMESTAMP, Arrays.asList(instanceDTO1, instanceDTO2));
-    verify(eventProducer, times(1)).send(any(Message.class));
+        project, TIMESTAMP, Arrays.asList(instanceCountByServiceAndEnv1, instanceCountByServiceAndEnv2));
+    verify(eventProducer).send(any(Message.class));
   }
 }

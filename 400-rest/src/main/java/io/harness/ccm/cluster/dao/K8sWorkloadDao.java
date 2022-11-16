@@ -45,6 +45,7 @@ import org.mongodb.morphia.query.Query;
 @TargetModule(HarnessModule._490_CE_COMMONS)
 public class K8sWorkloadDao {
   private static final String LABEL_FIELD = K8sWorkloadKeys.labels + ".";
+  public static final int MAX_LIMIT = 5000;
   @Inject private HPersistence persistence;
 
   public void save(K8sWorkload k8sWorkload) {
@@ -110,13 +111,14 @@ public class K8sWorkloadDao {
 
   // To get label names
   public List<String> listLabelKeys(K8sLabelFilter labelFilter) {
-    PageRequest<K8sWorkload> request = aPageRequest()
-                                           .addFilter(K8sWorkloadKeys.accountId, EQ, labelFilter.getAccountId())
-                                           .addFilter(K8sWorkloadKeys.lastUpdatedAt, GE, labelFilter.getStartTime())
-                                           .addFilter(K8sWorkloadKeys.lastUpdatedAt, LT, labelFilter.getEndTime())
-                                           .withLimit(String.valueOf(labelFilter.getLimit()))
-                                           .withOffset(String.valueOf(labelFilter.getOffset()))
-                                           .build();
+    PageRequest<K8sWorkload> request =
+        aPageRequest()
+            .addFilter(K8sWorkloadKeys.accountId, EQ, labelFilter.getAccountId())
+            .addFilter(K8sWorkloadKeys.lastUpdatedAt, GE, labelFilter.getStartTime())
+            .addFilter(K8sWorkloadKeys.lastUpdatedAt, LT, labelFilter.getEndTime())
+            .withLimit(String.valueOf(labelFilter.getLimit() > MAX_LIMIT ? MAX_LIMIT : labelFilter.getLimit()))
+            .withOffset(String.valueOf(labelFilter.getOffset()))
+            .build();
     List<K8sWorkload> workloads = fetchWorkloads(persistence.query(K8sWorkload.class, request).iterator());
     Set<String> labelNames = new HashSet<>();
     workloads.forEach(workload -> labelNames.addAll(workload.getLabels().keySet()));
@@ -125,14 +127,15 @@ public class K8sWorkloadDao {
 
   // To get label values for given label name
   public List<String> listLabelValues(K8sLabelFilter labelFilter) {
-    PageRequest<K8sWorkload> request = aPageRequest()
-                                           .addFilter(K8sWorkloadKeys.accountId, EQ, labelFilter.getAccountId())
-                                           .addFilter(K8sWorkloadKeys.lastUpdatedAt, GE, labelFilter.getStartTime())
-                                           .addFilter(K8sWorkloadKeys.lastUpdatedAt, LT, labelFilter.getEndTime())
-                                           .addFilter(LABEL_FIELD + encode(labelFilter.getLabelName()), EXISTS)
-                                           .withLimit(String.valueOf(labelFilter.getLimit()))
-                                           .withOffset(String.valueOf(labelFilter.getOffset()))
-                                           .build();
+    PageRequest<K8sWorkload> request =
+        aPageRequest()
+            .addFilter(K8sWorkloadKeys.accountId, EQ, labelFilter.getAccountId())
+            .addFilter(K8sWorkloadKeys.lastUpdatedAt, GE, labelFilter.getStartTime())
+            .addFilter(K8sWorkloadKeys.lastUpdatedAt, LT, labelFilter.getEndTime())
+            .addFilter(LABEL_FIELD + encode(labelFilter.getLabelName()), EXISTS)
+            .withLimit(String.valueOf(labelFilter.getLimit() > MAX_LIMIT ? MAX_LIMIT : labelFilter.getLimit()))
+            .withOffset(String.valueOf(labelFilter.getOffset()))
+            .build();
     if (!labelFilter.getSearchString().equals("")) {
       request.addFilter(LABEL_FIELD + labelFilter.getLabelName(), CONTAINS, labelFilter.getSearchString());
     }

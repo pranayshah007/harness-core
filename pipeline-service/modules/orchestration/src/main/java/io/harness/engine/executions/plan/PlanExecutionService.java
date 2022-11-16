@@ -35,6 +35,8 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
 
   PlanExecution save(PlanExecution planExecution);
 
+  PlanExecution getStatus(String planExecutionId);
+
   List<PlanExecution> findAllByPlanExecutionIdIn(List<String> planExecutionIds);
 
   List<PlanExecution> findPrevUnTerminatedPlanExecutionsByExecutionTag(

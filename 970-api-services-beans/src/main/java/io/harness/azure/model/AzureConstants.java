@@ -7,6 +7,7 @@
 
 package io.harness.azure.model;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -321,6 +322,7 @@ public interface AzureConstants {
   // Azure REST client settings
   int REST_CLIENT_CONNECT_TIMEOUT = 5;
   int REST_CLIENT_READ_TIMEOUT = 10;
+  Duration REST_CLIENT_RESPONSE_TIMEOUT = Duration.ofSeconds(30);
 
   String MANAGEMENT_GROUP_PROVIDERS_PREFIX = "/providers/Microsoft.Management/managementGroups/";
   String DEPLOYMENT_VALIDATION_FAILED_MSG_PATTERN = "Code: %s, Message: %s, Target: %s";
@@ -353,6 +355,8 @@ public interface AzureConstants {
   String ARTIFACT_PATH_PREFIX = "artifact/";
   String REPOSITORY_DIR_PATH = "./repository";
   String AZURE_APP_SVC_ARTIFACT_DOWNLOAD_DIR_PATH = "./repository/azureappsvcartifacts";
+  String AZURE_AUTH_CERT_DIR_PATH = "./repository/azureauthcert";
+  String DEFAULT_CERT_FILE_NAME = "azure-cert";
 
   // Azure REST API field names
   String TENANT_ID = "tenantId";

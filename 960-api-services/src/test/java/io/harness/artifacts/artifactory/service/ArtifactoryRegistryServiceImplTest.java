@@ -8,11 +8,14 @@
 package io.harness.artifacts.artifactory.service;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -23,13 +26,17 @@ import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.service.ArtifactoryRegistryServiceImpl;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.category.element.UnitTests;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.ArtifactoryServerException;
 import io.harness.exception.HintException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.rule.Owner;
 
 import software.wings.utils.RepositoryFormat;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -252,6 +259,75 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
     boolean response = artifactoryRegistryService.validateCredentials(artifactoryInternalConfig);
     assertThat(response).isNotNull();
     assertThat(response).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetLabels() throws IOException {
+    ArtifactoryConfigRequest artifactoryInternalConfig = ArtifactoryConfigRequest.builder()
+                                                             .artifactoryUrl(ARTIFACTORY_URL)
+                                                             .username(ARTIFACTORY_USERNAME)
+                                                             .password(ARTIFACTORY_PASSWORD.toCharArray())
+                                                             .artifactRepositoryUrl("test2.artifactory.harness.io")
+                                                             .build();
+
+    Map<String, String> labels = new HashMap<>();
+
+    // hashmap for labels
+    labels.put("multi.key.value", "abc");
+    labels.put("build_date", "2017-09-05");
+    labels.put("maintainer", "dev@someproject.org");
+
+    List<Map<String, String>> labelsList = new ArrayList<>();
+
+    labelsList.add(labels);
+
+    doReturn(labelsList)
+        .when(artifactoryClient)
+        .getLabels(artifactoryInternalConfig, "imageName", "RepositoryName", "buildNos");
+
+    assertThat(
+        artifactoryRegistryService.getLabels(artifactoryInternalConfig, "imageName", "RepositoryName", "buildNos"))
+        .isEqualTo(labelsList);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetLabelsException() throws IOException {
+    ArtifactoryConfigRequest artifactoryInternalConfig = ArtifactoryConfigRequest.builder()
+                                                             .artifactoryUrl(ARTIFACTORY_URL)
+                                                             .username(ARTIFACTORY_USERNAME)
+                                                             .password(ARTIFACTORY_PASSWORD.toCharArray())
+                                                             .artifactRepositoryUrl("test2.artifactory.harness.io")
+                                                             .build();
+
+    Map<String, String> labels = new HashMap<>();
+
+    // hashmap for labels
+    labels.put("multi.key.value", "abc");
+    labels.put("build_date", "2017-09-05");
+    labels.put("maintainer", "dev@someproject.org");
+
+    List<Map<String, String>> labelsList = new ArrayList<>();
+
+    labelsList.add(labels);
+
+    doThrow(
+        NestedExceptionUtils.hintWithExplanationException(
+            "Check if the URL is correct. Consider appending `/artifactory` to the connector endpoint if you have not already. Check artifact configuration (repository and artifact path field values).",
+
+            "Artifactory connector URL or artifact configuration may be incorrect or the server is down or the server is not reachable from the delegate",
+
+            new ArtifactoryServerException(
+                "Artifactory Server responded with Not Found.", ErrorCode.INVALID_ARTIFACT_SERVER, USER)))
+        .when(artifactoryClient)
+        .getLabels(artifactoryInternalConfig, "imageName", "RepositoryName", "buildNos");
+
+    assertThat(
+        artifactoryRegistryService.getLabels(artifactoryInternalConfig, "imageName", "RepositoryName", "buildNos"))
+        .isEqualTo(Collections.emptyList());
   }
 
   private BuildDetailsInternal createBuildDetails(

@@ -32,9 +32,9 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.delegatetasks.azure.arm.deployment.context.DeploymentBlueprintContext;
 
+import com.azure.resourcemanager.network.models.ResourceIdentityType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.microsoft.azure.management.network.ResourceIdentityType;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;

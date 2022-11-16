@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
@@ -26,6 +25,7 @@ import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
+import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -76,18 +76,19 @@ public class TemplateInputsRefreshHelper {
 
     // Returning the Refreshed YAML corresponding to the ResMap
     String inputsRefreshYaml = YamlPipelineUtils.writeYamlString(refreshedTemplateInputsMap);
-    if (featureFlagHelperService.isEnabled(accountId, FeatureName.CD_SERVICE_ENV_RECONCILIATION)) {
+    String resolvedTemplatesYaml = inputsRefreshYaml;
+    if (TemplateRefHelper.hasTemplateRef(yaml)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
           accountId, orgId, projectId, yamlNode, templateCacheMap, 0);
-      String resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);
-      RefreshResponseDTO ngManagerRefreshResponseDto =
-          NGRestUtils.getResponse(ngManagerReconcileClient.refreshYaml(accountId, orgId, projectId,
-              NgManagerRefreshRequestDTO.builder()
-                  .yaml(inputsRefreshYaml)
-                  .resolvedTemplatesYaml(resolvedTemplatesYaml)
-                  .build()));
-      inputsRefreshYaml = ngManagerRefreshResponseDto.getRefreshedYaml();
+      resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);
     }
+    RefreshResponseDTO ngManagerRefreshResponseDto =
+        NGRestUtils.getResponse(ngManagerReconcileClient.refreshYaml(accountId, orgId, projectId,
+            NgManagerRefreshRequestDTO.builder()
+                .yaml(inputsRefreshYaml)
+                .resolvedTemplatesYaml(resolvedTemplatesYaml)
+                .build()));
+    inputsRefreshYaml = ngManagerRefreshResponseDto.getRefreshedYaml();
     return inputsRefreshYaml;
   }
 

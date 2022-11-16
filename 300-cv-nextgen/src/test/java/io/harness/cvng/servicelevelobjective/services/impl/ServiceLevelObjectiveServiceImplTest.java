@@ -302,7 +302,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
         () -> serviceLevelObjectiveService.delete(projectParams, serviceLevelObjectiveDTO.getIdentifier()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+            "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
             serviceLevelObjectiveDTO.getIdentifier(), projectParams.getAccountIdentifier(),
             projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
   }
@@ -1201,7 +1201,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByProjectIdentifier(ServiceLevelObjective.class,
         projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier());
-    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(2)).deleteSLOV1(any(), any());
   }
 
   @Test
@@ -1217,7 +1217,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByOrgIdentifier(
         ServiceLevelObjective.class, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier());
-    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(2)).deleteSLOV1(any(), any());
   }
 
   @Test
@@ -1233,7 +1233,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.create(projectParams, sloDTO);
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(
         ServiceLevelObjective.class, projectParams.getAccountIdentifier());
-    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+    verify(mockServiceLevelObjectiveService, times(2)).deleteSLOV1(any(), any());
   }
 
   private void createSLIRecords(String sliId) {

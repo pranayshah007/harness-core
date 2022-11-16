@@ -620,20 +620,28 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   }
 
   @Override
-  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier,
+      boolean forceDelete) {
     NGEncryptedData encryptedData = get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     if (encryptedData == null) {
       return false;
     }
-    SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(
-        accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
+    SecretManagerConfigDTO secretManager = null;
+    try {
+      secretManager = getSecretManagerOrThrow(
+          accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
+    } catch (SecretManagementException e) {
+      if (!forceDelete) {
+        throw e;
+      }
+    }
 
     if (isReadOnlySecretManager(secretManager) && !Optional.ofNullable(encryptedData.getPath()).isPresent()
         && Optional.ofNullable(encryptedData.getEncryptedValue()).isPresent()) {
       throw new SecretManagementException(
           SECRET_MANAGEMENT_ERROR, "Cannot delete an Inline secret in read only secret manager", USER);
     }
-    if (!Optional.ofNullable(encryptedData.getPath()).isPresent()
+    if (secretManager != null && !Optional.ofNullable(encryptedData.getPath()).isPresent()
         && Optional.ofNullable(encryptedData.getEncryptedValue()).isPresent()) {
       deleteSecretInSecretManager(accountIdentifier, encryptedData, SecretManagerConfigMapper.fromDTO(secretManager));
     }

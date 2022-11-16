@@ -11,15 +11,17 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.AzureClientException;
 import io.harness.exception.FailureType;
 import io.harness.exception.GeneralException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.exception.ngexception.AzureAppServiceTaskException;
+import io.harness.exception.runtime.azure.AzureClientRuntimeException;
 
 import com.google.common.collect.ImmutableSet;
-import com.microsoft.aad.adal4j.AuthenticationException;
+import com.microsoft.aad.msal4j.MsalException;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -40,12 +42,15 @@ public class AzureClientExceptionHandler implements ExceptionHandler {
   private static final String AUTHENTICATION_ERROR_MESSAGE = "Failed to authenticate in azure cloud";
 
   public static Set<Class<? extends Exception>> exceptions() {
-    return ImmutableSet.<Class<? extends Exception>>builder().add(AuthenticationException.class).build();
+    return ImmutableSet.<Class<? extends Exception>>builder()
+        .add(MsalException.class)
+        .add(AzureClientRuntimeException.class)
+        .build();
   }
 
   @Override
   public WingsException handleException(Exception exception) {
-    if (exception instanceof AuthenticationException) {
+    if (exception instanceof MsalException) {
       String message = exception.getMessage();
       Matcher tenantNotFoundMatcher = TENANT_NOT_FOUND_PATTERN.matcher(message);
       if (tenantNotFoundMatcher.find()) {
@@ -61,6 +66,11 @@ public class AzureClientExceptionHandler implements ExceptionHandler {
       if (invalidSecretKeyMatcher.find()) {
         return exceptionFromAuthExceptionMatcher(message, invalidSecretKeyMatcher);
       }
+    }
+
+    if (exception instanceof AzureClientRuntimeException) {
+      return NestedExceptionUtils.hintWithExplanationException("Possible Azure permissions issues.",
+          exception.getMessage(), new AzureClientException("Request to Azure was not successful", exception));
     }
 
     return new GeneralException(exception.getMessage());

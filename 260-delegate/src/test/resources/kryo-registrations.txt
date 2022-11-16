@@ -1683,6 +1683,10 @@
 40113:com.amazonaws.services.cloudformation.model.StackStatus
 40114:software.wings.beans.CustomSecretNGManagerConfig
 40115:io.harness.delegate.utils.NexusVersion
+40116:io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskParameters
+40117:io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskResponse
+40118:io.harness.exception.TerraformSecretCleanupFailureException
+40119:io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupFailureDetails
 50002:software.wings.api.RancherClusterElement
 50004:software.wings.delegatetasks.rancher.RancherResolveClustersTaskParameters
 50005:software.wings.delegatetasks.rancher.RancherResolveClustersResponse
@@ -2313,6 +2317,11 @@
 573542:io.harness.delegate.task.ecs.request.EcsRunTaskRequest
 573543:io.harness.delegate.task.ecs.response.EcsRunTaskResponse
 573544:io.harness.delegate.beans.ecs.EcsRunTaskResult
+573545:io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest
+573546:io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse
+573547:io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest
+573548:io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse
+573549:io.harness.delegate.beans.elastigroup.ElastigroupSetupResult
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

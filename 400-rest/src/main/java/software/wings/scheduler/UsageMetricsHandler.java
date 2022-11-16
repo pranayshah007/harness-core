@@ -11,11 +11,12 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 
-import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.event.usagemetrics.UsageMetricsService;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -31,30 +32,40 @@ import software.wings.beans.AccountType;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class UsageMetricsHandler implements Handler<Account> {
+public class UsageMetricsHandler extends IteratorPumpModeHandler implements Handler<Account> {
   @Inject private UsageMetricsService usageMetricsService;
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<Account> persistenceProvider;
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PumpExecutorOptions.builder().name("UsageMetricsHandler").poolSize(2).interval(ofSeconds(30)).build(),
-        UsageMetricsHandler.class,
-        MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
-            .clazz(Account.class)
-            .fieldName(AccountKeys.usageMetricsTaskIteration)
-            .targetInterval(ofHours(24))
-            .acceptableNoAlertDelay(ofMinutes(30))
-            .acceptableExecutionTime(ofSeconds(30))
-            .handler(this)
-            .entityProcessController(new AccountLevelEntityProcessController(accountService))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Account, MorphiaFilterExpander<Account>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       UsageMetricsHandler.class,
+                       MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
+                           .clazz(Account.class)
+                           .fieldName(AccountKeys.usageMetricsTaskIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofMinutes(30))
+                           .acceptableExecutionTime(ofSeconds(30))
+                           .handler(this)
+                           .entityProcessController(new AccountLevelEntityProcessController(accountService))
+                           .schedulingType(REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "UsageMetricsHandler";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

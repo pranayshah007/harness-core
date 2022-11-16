@@ -7,6 +7,7 @@
 
 package io.harness.delegate.k8s.kustomize;
 
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,6 +21,7 @@ import io.harness.CategoryTest;
 import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.cli.CliResponse;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.kustomize.KustomizeClient;
 import io.harness.logging.CommandExecutionStatus;
@@ -176,5 +178,21 @@ public class KustomizeTaskHelperTest extends CategoryTest {
     assertThatThrownBy(() -> kustomizeTaskHelper.buildForApply(null, null, null, applyFiles, false, null, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Apply with Kustomize is supported for single file only");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldHandleEvalSymLinkFailure() throws InterruptedException, IOException, TimeoutException {
+    final String error =
+        "Error: accumulating resources: accumulating resources from '../../application': evalsymlink failure on '/application' : lstat /application: no such file or directory";
+    CliResponse cliResponse =
+        CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).error(error).build();
+    doReturn(cliResponse).when(kustomizeClient).build(error, error, error, logCallback);
+
+    assertThatThrownBy(() -> kustomizeTaskHelper.build(error, error, null, error, logCallback))
+        .isInstanceOf(HintException.class)
+        .hasMessage(
+            "All the resources that are required to compile the manifest must be present within Kustomize Base Path. Please check manifest(s) for any references to missing resources and create them.");
   }
 }

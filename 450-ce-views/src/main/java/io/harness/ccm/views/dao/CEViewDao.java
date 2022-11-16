@@ -30,9 +30,52 @@ import org.mongodb.morphia.query.UpdateOperations;
 @Singleton
 public class CEViewDao {
   @Inject private HPersistence hPersistence;
+  private static final String VIEW_VISUALIZATION_GROUP_BY_FIELD_ID = "viewVisualization.groupBy.fieldId";
+  private static final String VIEW_VISUALIZATION_GROUP_BY_FIELD_NAME = "viewVisualization.groupBy.fieldName";
+  private static final String VIEW_VISUALIZATION_GROUP_BY_IDENTIFIER = "viewVisualization.groupBy.identifier";
+  private static final String VIEW_RULES_VIEW_CONDITIONS_VIEW_FIELD_FIELD_ID =
+      "viewRules.viewConditions.viewField.fieldId";
+  private static final String VIEW_RULES_VIEW_CONDITIONS_VIEW_FIELD_FIELD_NAME =
+      "viewRules.$[].viewConditions.$[].viewField.fieldName";
+  private static final String VIEW_RULES_VIEW_CONDITIONS_VIEW_FIELD_IDENTIFIER =
+      "viewRules.viewConditions.viewField.identifier";
+  private static final String BUSINESS_MAPPING = "BUSINESS_MAPPING";
 
   public boolean save(CEView ceView) {
     return hPersistence.save(ceView) != null;
+  }
+
+  public void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName) {
+    // Checking & update on the groupBy
+    Query queryGroupBy = hPersistence.createQuery(CEView.class)
+                             .disableValidation()
+                             .field(CEViewKeys.accountId)
+                             .equal(accountId)
+                             .field(VIEW_VISUALIZATION_GROUP_BY_IDENTIFIER)
+                             .equal(BUSINESS_MAPPING)
+                             .field(VIEW_VISUALIZATION_GROUP_BY_FIELD_ID)
+                             .equal(buinessMappingUuid);
+
+    UpdateOperations<CEView> updateOperations =
+        hPersistence.createUpdateOperations(CEView.class)
+            .disableValidation()
+            .set(VIEW_VISUALIZATION_GROUP_BY_FIELD_NAME, newBusinessMappingName);
+    hPersistence.update(queryGroupBy, updateOperations);
+
+    // Checking & update on the viewRules
+    Query queryViewRules = hPersistence.createQuery(CEView.class)
+                               .disableValidation()
+                               .field(CEViewKeys.accountId)
+                               .equal(accountId)
+                               .field(VIEW_RULES_VIEW_CONDITIONS_VIEW_FIELD_IDENTIFIER)
+                               .equal(BUSINESS_MAPPING)
+                               .field(VIEW_RULES_VIEW_CONDITIONS_VIEW_FIELD_FIELD_ID)
+                               .equal(buinessMappingUuid);
+
+    updateOperations = hPersistence.createUpdateOperations(CEView.class)
+                           .disableValidation()
+                           .set(VIEW_RULES_VIEW_CONDITIONS_VIEW_FIELD_FIELD_NAME, newBusinessMappingName);
+    hPersistence.update(queryViewRules, updateOperations);
   }
 
   public CEView update(CEView ceView) {

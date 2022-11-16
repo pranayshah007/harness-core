@@ -127,9 +127,11 @@ public class ValidationUtils {
     }
 
     CIStepInfo stepInfo = (CIStepInfo) stepElement.getStepSpecType();
-    if (stepInfo.getNonYamlInfo().getStepInfoType() == CIStepInfoType.ACTION) {
+    CIStepInfoType stepType = stepInfo.getNonYamlInfo().getStepInfoType();
+    if (stepType == CIStepInfoType.ACTION || stepType == CIStepInfoType.BITRISE) {
       if (infraType != HOSTED_VM) {
-        throw new CIStageExecutionException("Action step is only applicable for builds on cloud infrastructure");
+        throw new CIStageExecutionException(
+            format("%s step is only applicable for builds on cloud infrastructure", stepType));
       }
     }
   }

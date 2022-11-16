@@ -33,7 +33,8 @@ public interface NGEncryptedDataService {
   NGEncryptedData getFromReferenceExpression(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String secretIdentifier);
 
-  boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+  boolean delete(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, boolean forceDelete);
 
   NGEncryptedData hardDelete(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);

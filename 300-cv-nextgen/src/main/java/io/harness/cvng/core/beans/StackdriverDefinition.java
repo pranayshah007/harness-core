@@ -25,6 +25,7 @@ public class StackdriverDefinition extends HealthSourceMetricDefinition {
   private String dashboardName;
   private String dashboardPath;
   private Object jsonMetricDefinition;
+  private String jsonMetricDefinitionString;
   private List<String> metricTags;
   private boolean isManualQuery;
   private String serviceInstanceField;

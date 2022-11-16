@@ -1184,8 +1184,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:etbHrY65OMp3/vjs4LHW4zNcb9av8VHJRVA4E7MZxes=",
-    version = "v1.27.1-0.20220927200245-ed290da0ed40",
+    sum = "h1:OYTRTah/I9YdJ2WidqpLu+N9KH8iyum/1yfueOePzIk=",
+    version = "v1.27.1-0.20221110140757-b29a0d2b0f30",
 )
 
 go_repository(
@@ -4501,6 +4501,7 @@ plain_artifacts = [
     "com.azure:azure-core:1.29.1",
     "com.azure:azure-identity:1.5.0",
     "com.azure:azure-core-http-netty:1.11.9",
+    "com.azure:azure-core-http-okhttp:1.10.1",
     "com.azure:azure-containers-containerregistry:1.0.3",
     "com.azure:azure-core-management:1.6.2",
     "com.azure.resourcemanager:azure-resourcemanager:2.14.0",
@@ -4650,6 +4651,7 @@ plain_artifacts = [
     "com.intellij:annotations:12.0",
     "com.j256.two-factor-auth:two-factor-auth:1.0",
     "com.jakewharton.retrofit:retrofit1-okhttp3-client:1.1.0",
+    "com.jakewharton.retrofit:retrofit2-reactor-adapter:2.1.0",
     "com.jayway.jsonpath:json-path:2.2.0",
     "com.github.mwiede:jsch:0.1.72",
     "com.jcraft:jzlib:1.1.3",
@@ -4714,10 +4716,11 @@ plain_artifacts = [
     "com.spotify:docker-client:8.16.0",
     "com.squareup.okhttp:okhttp:2.7.5",
     "com.squareup.okhttp:logging-interceptor:2.7.5",
-    "com.squareup.okhttp3:logging-interceptor:3.14.3",
-    "com.squareup.okhttp3:okhttp-urlconnection:3.12.2",
-    "com.squareup.okhttp3:okhttp:3.12.2",
-    "com.squareup.okio:okio:1.15.0",
+    "com.squareup.okhttp3:logging-interceptor:4.9.2",
+    "com.squareup.okhttp3:okhttp-urlconnection:4.9.2",
+    "com.squareup.okhttp3:okhttp:4.9.2",
+    "com.squareup.okhttp3:mockwebserver:4.9.2",
+    "com.squareup.okio:okio:2.8.0",
     "com.squareup.retrofit2:converter-protobuf:2.9.0",
     "com.squareup.retrofit2:adapter-rxjava:2.7.2",
     "com.squareup.retrofit2:converter-gson:2.3.0",
@@ -5211,7 +5214,7 @@ plain_artifacts = [
     "io.swagger.core.v3:swagger-models:2.2.0",
     "io.swagger.core.v3:swagger-integration:2.2.0",
     "io.opentelemetry:opentelemetry-api:1.18.0",
-    "io.harness:smp-license:1.0.7",
+    "io.harness:smp-license:1.0.11",
 ]
 
 amazon_artifacts = [
@@ -5389,7 +5392,7 @@ maven_install(
         ),
         maven_test_artifact("com.github.tomakehurst:wiremock-jre8-standalone:2.27.2"),
         maven_test_artifact("com.icegreen:greenmail:1.5.0"),
-        maven_test_artifact("com.squareup.okhttp3:mockwebserver:3.6.0"),
+        maven_test_artifact("com.squareup.okhttp3:mockwebserver:4.9.2"),
         maven_test_artifact("de.bwaldvogel:mongo-java-server-core:1.34.0"),
         maven_test_artifact("de.bwaldvogel:mongo-java-server-memory-backend:1.34.0"),
         maven_test_artifact("de.bwaldvogel:mongo-java-server:1.34.0"),

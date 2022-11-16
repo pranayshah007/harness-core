@@ -61,7 +61,6 @@ import io.harness.beans.PageResponse.PageResponseBuilder;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.cdlicense.impl.CgCdLicenseUsageService;
-import io.harness.configuration.DeployMode;
 import io.harness.cvng.beans.ServiceGuardLimitDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
@@ -492,10 +491,6 @@ public class AccountServiceImpl implements AccountService {
       featureFlagService.enableAccount(FeatureName.CVNG_ENABLED, account.getUuid());
     } else if (account.isCreatedFromNG()) {
       updateNextGenEnabled(account.getUuid(), true);
-    }
-
-    if (!DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-      featureFlagService.enableAccount(FeatureName.USE_IMMUTABLE_DELEGATE, account.getUuid());
     }
   }
 
@@ -2021,6 +2016,12 @@ public class AccountServiceImpl implements AccountService {
   public boolean isAccountActivelyUsed(String accountId) {
     Account account = getFromCacheWithFallback(accountId);
     return account.isAccountActivelyUsed();
+  }
+
+  @Override
+  public boolean isImmutableDelegateEnabled(String accountId) {
+    Account account = getFromCacheWithFallback(accountId);
+    return account != null && account.isImmutableDelegateEnabled();
   }
 
   @Override

@@ -48,7 +48,7 @@ public class PMSOpaServiceImpl implements PMSOpaService {
       @NotNull String action) throws IOException {
     Optional<PipelineEntity> pipelineEntity = pmsPipelineService.getAndValidatePipeline(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
-    if (!pipelineEntity.isPresent()) {
+    if (pipelineEntity.isEmpty()) {
       throw new InvalidRequestException(String.format("The given pipeline id [%s] does not exist", pipelineIdentifier));
     }
 

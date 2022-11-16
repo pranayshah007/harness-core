@@ -7,8 +7,11 @@
 
 package software.wings.scheduler;
 
+import static io.harness.beans.FeatureName.PL_LDAP_PARALLEL_GROUP_SYNC;
+import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
+import static software.wings.integration.SSO.LDAP.LdapTestHelper.buildLdapSettings;
 import static software.wings.scheduler.LdapGroupSyncJob.MAX_LDAP_SYNC_TIMEOUT;
 import static software.wings.scheduler.LdapGroupSyncJob.MIN_LDAP_SYNC_TIMEOUT;
 
@@ -34,18 +37,24 @@ import software.wings.beans.User;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.LdapUserResponse;
 import software.wings.delegatetasks.DelegateProxyFactory;
+import software.wings.features.api.PremiumFeature;
+import software.wings.service.impl.SSOServiceImpl;
 import software.wings.service.intfc.SSOSettingService;
 import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.ldap.LdapDelegateService;
+import software.wings.service.intfc.security.SecretManager;
 
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,21 +64,30 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class LdapGroupSyncJobHelperTest extends CategoryTest {
+  public static final String ACCOUNT_ID = UUIDGenerator.generateUuid();
+  public static final String SSO_ID = UUIDGenerator.generateUuid();
   @Inject HPersistence hPersistence;
   @InjectMocks private LdapGroupSyncJobHelper ldapGroupSyncJobHelper;
   @Mock private LdapDelegateService ldapDelegateService;
   @Mock private DelegateProxyFactory delegateProxyFactory;
   @Mock private SSOSettingService ssoSettingService;
+  @Mock private SSOServiceImpl ssoService;
   @Mock private UserService userService;
   @Mock private UserGroupService userGroupService;
-
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private PremiumFeature premiumFeature;
+  private LdapSettings ldapSettings;
+  @Mock private SecretManager secretManager;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     ldapGroupSyncJobHelper = spy(ldapGroupSyncJobHelper);
     when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
+    when(premiumFeature.isAvailableForAccount(any())).thenReturn(true);
+    doReturn(LdapTestResponse.builder().status(LdapTestResponse.Status.SUCCESS).build())
+        .when(ssoService)
+        .validateLdapConnectionSettings(any(), any());
   }
 
   @Test
@@ -91,6 +109,86 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     ldapGroupSyncJobHelper.syncUserGroups(
         account.getUuid(), mock(LdapSettings.class), Collections.singletonList(userGroup), ssoId);
     verify(ssoSettingService, times(1)).closeSyncFailureAlertIfOpen(account.getUuid(), ssoId);
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void shouldSyncUserGroupParallel() {
+    UserGroup userGroup = mock(UserGroup.class);
+    Account account = new Account();
+    String ssoId = UUIDGenerator.generateUuid();
+    account.setUuid(ACCOUNT_ID);
+    when(userGroup.getName()).thenReturn("userGroupName");
+    when(userGroup.getAccountId()).thenReturn(UUIDGenerator.generateUuid());
+    userGroup.setAccountId(ACCOUNT_ID);
+    doReturn(LdapGroupResponse.builder().selectable(true).build())
+        .when(ldapGroupSyncJobHelper)
+        .fetchGroupDetails(any(), any(), any());
+    doReturn(userGroup).when(ldapGroupSyncJobHelper).syncUserGroupMetadata(any(), any());
+    doReturn(true).when(ldapGroupSyncJobHelper).validateUserGroupStates(any());
+
+    ldapGroupSyncJobHelper.syncUserGroupsParallel(
+        account.getUuid(), mock(LdapSettings.class), Collections.singletonList(userGroup), ssoId);
+    verify(ssoSettingService, times(1)).closeSyncFailureAlertIfOpen(account.getUuid(), ssoId);
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void shouldCallSyncUserGroupParallelWhenFFIsON() {
+    UserGroup userGroup = mock(UserGroup.class);
+    Account account = new Account();
+    String ssoId = SSO_ID;
+    account.setUuid(ACCOUNT_ID);
+    when(userGroup.getName()).thenReturn("userGroupName");
+    when(userGroup.getAccountId()).thenReturn(UUIDGenerator.generateUuid());
+    userGroup.setAccountId(ACCOUNT_ID);
+    ldapSettings = buildLdapSettings();
+    ldapSettings.setAccountId(ACCOUNT_ID);
+    ldapSettings.setUuid(SSO_ID);
+    List<UserGroup> userGroups = Collections.singletonList(userGroup);
+
+    doReturn(LdapGroupResponse.builder().selectable(true).build())
+        .when(ldapGroupSyncJobHelper)
+        .fetchGroupDetails(any(), any(), any());
+    doReturn(userGroup).when(ldapGroupSyncJobHelper).syncUserGroupMetadata(any(), any());
+    doReturn(true).when(ldapGroupSyncJobHelper).validateUserGroupStates(any());
+    doReturn(userGroups).when(userGroupService).getUserGroupsBySsoId(any(), any());
+    doReturn(Optional.empty()).when(secretManager).getEncryptedDataDetails(any(), any(), any(), any());
+
+    when(featureFlagService.isEnabled(PL_LDAP_PARALLEL_GROUP_SYNC, ACCOUNT_ID)).thenReturn(true);
+    ldapGroupSyncJobHelper.syncJob(ldapSettings);
+    verify(ldapGroupSyncJobHelper, times(1)).syncUserGroupsParallel(ACCOUNT_ID, ldapSettings, userGroups, SSO_ID);
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void shouldNotCallSyncUserGroupParallelWhenFFIsOFF() {
+    UserGroup userGroup = mock(UserGroup.class);
+    Account account = new Account();
+    String ssoId = SSO_ID;
+    account.setUuid(ACCOUNT_ID);
+    when(userGroup.getName()).thenReturn("userGroupName");
+    when(userGroup.getAccountId()).thenReturn(UUIDGenerator.generateUuid());
+    userGroup.setAccountId(ACCOUNT_ID);
+    ldapSettings = buildLdapSettings();
+    ldapSettings.setAccountId(ACCOUNT_ID);
+    ldapSettings.setUuid(SSO_ID);
+    List<UserGroup> userGroups = Collections.singletonList(userGroup);
+
+    doReturn(LdapGroupResponse.builder().selectable(true).build())
+        .when(ldapGroupSyncJobHelper)
+        .fetchGroupDetails(any(), any(), any());
+    doReturn(userGroup).when(ldapGroupSyncJobHelper).syncUserGroupMetadata(any(), any());
+    doReturn(true).when(ldapGroupSyncJobHelper).validateUserGroupStates(any());
+    doReturn(userGroups).when(userGroupService).getUserGroupsBySsoId(any(), any());
+    doReturn(Optional.empty()).when(secretManager).getEncryptedDataDetails(any(), any(), any(), any());
+
+    when(featureFlagService.isEnabled(PL_LDAP_PARALLEL_GROUP_SYNC, ACCOUNT_ID)).thenReturn(false);
+    ldapGroupSyncJobHelper.syncJob(ldapSettings);
+    verify(ldapGroupSyncJobHelper, times(1)).syncUserGroups(ACCOUNT_ID, ldapSettings, userGroups, SSO_ID);
   }
 
   @Test
@@ -187,7 +285,7 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
       exceptionThrown = true;
     }
     assertThat(exceptionThrown).isEqualTo(false);
-    verify(userService, times(0)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
+    verify(userService, times(1)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
   }
 
   @Test
@@ -222,7 +320,7 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     }
     assertThat(exceptionThrown).isEqualTo(false);
     verify(userService).inviteUser(any(), eq(false), eq(true));
-    verify(userService, times(0)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
+    verify(userService, times(1)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
   }
 
   @Test
@@ -262,7 +360,7 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     }
     assertThat(exceptionThrown).isEqualTo(false);
     verify(userService).inviteUser(any(), eq(false), eq(true));
-    verify(userService, times(0)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
+    verify(userService, times(1)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
   }
 
   @Test
@@ -391,6 +489,6 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
 
     assertThat(exceptionThrown).isEqualTo(false);
     verify(userService, times(2)).inviteUser(any(), eq(false), eq(true));
-    verify(userService, times(0)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
+    verify(userService, times(2)).addUserToUserGroups(any(), any(), any(), eq(true), eq(true));
   }
 }

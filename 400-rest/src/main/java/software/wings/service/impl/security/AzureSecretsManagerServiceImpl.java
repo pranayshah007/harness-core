@@ -35,11 +35,11 @@ import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.azure.AzureHelperService;
 import software.wings.service.intfc.security.AzureSecretsManagerService;
 
+import com.azure.resourcemanager.keyvault.models.Vault;
+import com.azure.resourcemanager.resources.fluentcore.arm.models.HasName;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.keyvault.Vault;
-import com.microsoft.azure.management.resources.fluentcore.arm.models.HasName;
 import com.mongodb.DuplicateKeyException;
 import java.util.List;
 import java.util.stream.Collectors;

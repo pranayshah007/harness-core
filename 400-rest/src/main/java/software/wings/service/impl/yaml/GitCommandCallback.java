@@ -26,6 +26,7 @@ import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.beans.FeatureName;
+import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.eraro.ErrorCode;
@@ -62,7 +63,6 @@ import software.wings.yaml.gitSync.GitFileActivity;
 import software.wings.yaml.gitSync.GitWebhookRequestAttributes;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlChangeSet.Status;
-import software.wings.yaml.gitSync.YamlGitConfig;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -210,7 +210,8 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
     }
   }
 
-  private void addYamlChangeSetToFilesCommited(List<GitFileChange> gitFileChanges, YamlGitConfig yamlGitConfig) {
+  private void addYamlChangeSetToFilesCommited(
+      List<GitFileChange> gitFileChanges, software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig) {
     if (isEmpty(gitFileChanges)) {
       return;
     }
@@ -288,7 +289,7 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
   private void saveCommitFromHarness(GitCommitAndPushResult gitCommitAndPushResult, YamlChangeSet yamlChangeSet,
       List<String> yamlGitConfigIds, List<String> yamlSetIdsProcessed) {
     String commitId = gitCommitAndPushResult.getGitCommitResult().getCommitId();
-    YamlGitConfig yamlGitConfig = gitCommitAndPushResult.getYamlGitConfig();
+    software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig = gitCommitAndPushResult.getYamlGitConfig();
     if (yamlGitConfig == null) {
       throw new UnexpectedException(String.format(
           "Error while saving commit for commitId=[%s],yamlChangeSetId=[%s] as the yamlGitConfig is null ", commitId,
@@ -430,10 +431,11 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
       try {
         ResponseData responseData = responseDataSupplier.get();
         notify(responseData);
-      } catch (NoAvailableDelegatesException | NoInstalledDelegatesException e) {
-        log.error("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
-            changeSetId, accountId, response);
-        log.error("Delegate not available or installed, retrying.", e);
+      } catch (
+          NoAvailableDelegatesException | NoInstalledDelegatesException | NoEligibleDelegatesInAccountException e) {
+        log.error(
+            "Git request failed because of no delegate for command:[{}], changeSetId:[{}], account:[{}], response:[{}]",
+            gitCommandType, changeSetId, accountId, response, e);
         yamlGitService.raiseAlertForGitFailure(accountId, GLOBAL_APP_ID,
             GitSyncFailureAlertDetails.builder()
                 .branchName(branchName)

@@ -28,6 +28,7 @@ import static software.wings.security.PermissionAttribute.Action.EXECUTE_WORKFLO
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_WORKFLOW_ROLLBACK;
 import static software.wings.security.PermissionAttribute.Action.READ;
 import static software.wings.security.PermissionAttribute.Action.UPDATE;
+import static software.wings.security.PermissionAttribute.PermissionType.ACCESS_NEXTGEN;
 import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.ALLOW_DEPLOYMENTS_DURING_FREEZE;
 import static software.wings.security.PermissionAttribute.PermissionType.ALL_APP_ENTITIES;
@@ -228,6 +229,8 @@ public class UserGroupPermissionsController {
         return MANAGE_CUSTOM_DASHBOARDS;
       case MANAGE_RESTRICTED_ACCESS:
         return MANAGE_RESTRICTED_ACCESS;
+      case ACCESS_NEXTGEN:
+        return ACCESS_NEXTGEN;
 
       default:
         log.error("Invalid Account Permission Type {} given by the user", permissionType.toString());
@@ -616,6 +619,8 @@ public class UserGroupPermissionsController {
         return QLAccountPermissionType.CREATE_CUSTOM_DASHBOARDS;
       case MANAGE_RESTRICTED_ACCESS:
         return QLAccountPermissionType.MANAGE_RESTRICTED_ACCESS;
+      case ACCESS_NEXTGEN:
+        return QLAccountPermissionType.ACCESS_NEXTGEN;
       default:
         log.error("Invalid Account Permission Type {} given by the user", permissionType.toString());
     }
