@@ -51,6 +51,10 @@ public interface InstanceRepositoryCustom {
   AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
+  AggregationResults<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails>
+  getActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envId);
+
   AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
