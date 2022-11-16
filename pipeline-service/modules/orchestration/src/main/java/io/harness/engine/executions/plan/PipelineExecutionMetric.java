@@ -14,7 +14,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @Builder
 @EqualsAndHashCode
-public class PlanExecutionMetric {
+public class PipelineExecutionMetric {
   String accountId;
   String projectId;
   String orgIdentifier;
