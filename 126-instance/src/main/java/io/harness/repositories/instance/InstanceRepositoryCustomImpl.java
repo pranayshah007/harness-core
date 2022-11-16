@@ -18,6 +18,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.models.ActiveServiceInstanceInfo;
+import io.harness.models.ActiveServiceInstanceInfoWithoutEnvWithServiceDetails;
 import io.harness.models.CountByOrgIdProjectIdAndServiceId;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
