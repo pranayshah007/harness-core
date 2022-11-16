@@ -13,6 +13,8 @@ import lombok.Getter;
 @Getter
 @Builder
 public class ActiveServiceDeploymentsInfo {
+  private String serviceId;
+  private String serviceName;
   private String envId;
   private String envName;
   private String tag;

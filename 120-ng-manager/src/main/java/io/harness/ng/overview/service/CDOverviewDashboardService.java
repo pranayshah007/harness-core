@@ -84,6 +84,9 @@ public interface CDOverviewDashboardService {
   InstanceGroupedByArtifactList getActiveServiceDeploymentsList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
+  InstanceGroupedByServiceList getActiveServiceDeploymentsListForEnv(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envId);
+
   InstancesByBuildIdList getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, List<String> buildIds);
 

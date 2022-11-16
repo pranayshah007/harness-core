@@ -391,6 +391,20 @@ public class EnvironmentResourceV2 {
         accountIdentifier, orgIdentifier, projectIdentifier, environmentIdentifier));
   }
 
+  @GET
+  @Path("/getActiveServiceDeploymentsForEnvironment")
+  @ApiOperation(value = "Get list of active deployments grouped by service for particular environment",
+          nickname = "getActiveServiceDeploymentsForEnvironment")
+  public ResponseDTO<InstanceGroupedByServiceList>
+  getActiveServiceDeploymentsForEnvironment(
+          @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+          @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+          @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+          @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentIdentifier) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveServiceDeploymentsListForEnv(
+            accountIdentifier, orgIdentifier, projectIdentifier, environmentIdentifier));
+  }
+
   @POST
   @Path("/listV2")
   @ApiOperation(value = "Gets environment list", nickname = "getEnvironmentListV2")
