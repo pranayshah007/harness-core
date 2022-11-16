@@ -17,6 +17,7 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /pipeline-service/service/src/main/java/**/*Resource*.java vaibhav.si@harness.io archit.singla@harness.io
 **/contracts/openapi/**/v1/ mankrit.singh@harness.io vaibhav.si@harness.io ashish.sanodia@harness.io
 **/contracts/openapi/public/v1/ deepak.bolangady@harness.io rashmi.nandasahoo@harness.io
+/scripts/api mankrit.singh@harness.io vaibhav.si@harness.io ashish.sanodia@harness.io
 
 /pipeline-service/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io
 /dockerization/pipeline-service/ prashant.sharma@harness.io archit.singla@harness.io sanyasi.naidu@harness.io
