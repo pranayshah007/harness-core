@@ -15,7 +15,6 @@ import static software.wings.beans.artifact.ArtifactStreamType.CUSTOM;
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.harness.exception.WingsException;
 import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistenceIterator.ProcessMode;
@@ -39,6 +38,7 @@ import software.wings.service.intfc.ArtifactCleanupService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.utils.DelegateArtifactCollectionUtils;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Arrays;
@@ -60,9 +60,8 @@ public class ArtifactCleanupHandler implements Handler<ArtifactStream> {
   @Inject private SettingsService settingsService;
 
   public void registerIterators(int threadPoolSize) {
-    final ScheduledThreadPoolExecutor artifactCollectionExecutor =
-            new ScheduledThreadPoolExecutor(threadPoolSize,
-                    new ThreadFactoryBuilder().setNameFormat("Iterator-ArtifactCleanup").build());
+    final ScheduledThreadPoolExecutor artifactCollectionExecutor = new ScheduledThreadPoolExecutor(
+        threadPoolSize, new ThreadFactoryBuilder().setNameFormat("Iterator-ArtifactCleanup").build());
     PersistenceIterator iterator = persistenceIteratorFactory.createIterator(ArtifactCleanupHandler.class,
         MongoPersistenceIterator.<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>builder()
             .mode(ProcessMode.PUMP)
