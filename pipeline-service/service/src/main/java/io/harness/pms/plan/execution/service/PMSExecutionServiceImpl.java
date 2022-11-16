@@ -333,10 +333,9 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
                 accountId, orgId, projectId, planExecutionId, !pipelineDeleted);
     if (pipelineExecutionSummaryEntityOptional.isPresent()) {
       PipelineExecutionSummaryEntity executionSummaryEntity = pipelineExecutionSummaryEntityOptional.get();
-      String latestTemplate = validateAndMergeHelper.getPipelineTemplate(
-          accountId, orgId, projectId, executionSummaryEntity.getPipelineIdentifier(), null);
       String yaml = executionSummaryEntity.getInputSetYaml();
       String template = executionSummaryEntity.getPipelineTemplate();
+      String latestTemplate = null;
       if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
         yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(yaml, planExecutionId);
       }
@@ -348,7 +347,9 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
               executionSummaryEntity.getPipelineIdentifier(), entityGitDetails.getBranch(),
               entityGitDetails.getRepoIdentifier(), null);
         } else {
-          template = latestTemplate;
+          template = validateAndMergeHelper.getPipelineTemplate(
+              accountId, orgId, projectId, executionSummaryEntity.getPipelineIdentifier(), null);
+          latestTemplate = template;
         }
       }
       StagesExecutionMetadata stagesExecutionMetadata = executionSummaryEntity.getStagesExecutionMetadata();
