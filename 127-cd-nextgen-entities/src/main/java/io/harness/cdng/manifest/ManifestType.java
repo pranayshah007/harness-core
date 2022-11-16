@@ -41,6 +41,9 @@ public interface ManifestType {
   String EcsScalingPolicyDefinition = "EcsScalingPolicyDefinition";
   String EcsScalableTargetDefinition = "EcsScalableTargetDefinition";
   String EcsRunTaskRequestDefinition = "EcsRunTaskRequestDefinition";
+  String TasManifest = "TasManifest";
+  String Vars = "Vars";
+  String AutoScaler = "AutoScaler";
 
   static HashSet<String> getAllManifestTypes() {
     return new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES, ManifestType.OpenshiftTemplate,
