@@ -25,6 +25,7 @@ import io.harness.cd.NGServiceConstants;
 import io.harness.event.timeseries.processor.utils.DateUtils;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.models.ActiveServiceInstanceInfo;
+import io.harness.models.ActiveServiceInstanceInfoWithoutEnvWithServiceDetails;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.constants.TimescaleConstants;
@@ -43,44 +44,8 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
-import io.harness.ng.overview.dto.ActiveServiceDeploymentsInfo;
-import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
-import io.harness.ng.overview.dto.BuildIdAndInstanceCount;
-import io.harness.ng.overview.dto.DashboardWorkloadDeployment;
-import io.harness.ng.overview.dto.Deployment;
-import io.harness.ng.overview.dto.DeploymentChangeRates;
-import io.harness.ng.overview.dto.DeploymentCount;
-import io.harness.ng.overview.dto.DeploymentDateAndCount;
-import io.harness.ng.overview.dto.DeploymentInfo;
-import io.harness.ng.overview.dto.DeploymentStatusInfoList;
-import io.harness.ng.overview.dto.EntityStatusDetails;
-import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfo;
-import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
-import io.harness.ng.overview.dto.EnvIdCountPair;
-import io.harness.ng.overview.dto.EnvironmentDeploymentInfo;
-import io.harness.ng.overview.dto.EnvironmentInfoByServiceId;
-import io.harness.ng.overview.dto.ExecutionDeployment;
-import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
-import io.harness.ng.overview.dto.HealthDeploymentDashboard;
-import io.harness.ng.overview.dto.HealthDeploymentInfo;
-import io.harness.ng.overview.dto.InstanceGroupedByArtifactList;
-import io.harness.ng.overview.dto.InstancesByBuildIdList;
-import io.harness.ng.overview.dto.LastWorkloadInfo;
-import io.harness.ng.overview.dto.ServiceDeployment;
-import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
-import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
-import io.harness.ng.overview.dto.ServiceDetailsDTO;
+import io.harness.ng.overview.dto.*;
 import io.harness.ng.overview.dto.ServiceDetailsDTO.ServiceDetailsDTOBuilder;
-import io.harness.ng.overview.dto.ServiceDetailsInfoDTO;
-import io.harness.ng.overview.dto.ServiceHeaderInfo;
-import io.harness.ng.overview.dto.ServicePipelineInfo;
-import io.harness.ng.overview.dto.TimeAndStatusDeployment;
-import io.harness.ng.overview.dto.TimeValuePair;
-import io.harness.ng.overview.dto.TimeValuePairListDTO;
-import io.harness.ng.overview.dto.TotalDeploymentInfo;
-import io.harness.ng.overview.dto.WorkloadCountInfo;
-import io.harness.ng.overview.dto.WorkloadDateCountInfo;
-import io.harness.ng.overview.dto.WorkloadDeploymentInfo;
 import io.harness.ng.overview.util.GrowthTrendEvaluator;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.service.instancedashboardservice.InstanceDashboardService;
@@ -1841,6 +1806,49 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return InstanceGroupedByArtifactList.builder().instanceGroupedByArtifactList(instanceGroupedByArtifactList).build();
   }
 
+  @Override
+  public InstanceGroupedByServiceList getInstanceGroupedByServiceList(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envId) {
+    Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> serviceBuildInfraMap =
+        new HashMap<>();
+    Map<String, String> serviceIdToServiceNameMap = new HashMap<>();
+    Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
+
+    List<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails> activeServiceInstanceInfoList =
+        instanceDashboardService.getActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
+            accountIdentifier, orgIdentifier, projectIdentifier, envId);
+
+    activeServiceInstanceInfoList.forEach(activeServiceInstanceInfo -> {
+      final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
+      final String infraName = activeServiceInstanceInfo.getInfraName();
+      final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
+      final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
+      final String lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
+      final String serviceId = activeServiceInstanceInfo.getServiceIdentifier();
+      final String serviceName = activeServiceInstanceInfo.getServiceName();
+      final String buildId = activeServiceInstanceInfo.getTag();
+      final String artifactPath = getArtifactPathFromDisplayName(activeServiceInstanceInfo.getDisplayName());
+      final int count = activeServiceInstanceInfo.getCount();
+      serviceBuildInfraMap.putIfAbsent(serviceId, new HashMap<>());
+      serviceBuildInfraMap.get(serviceId).putIfAbsent(buildId, new ArrayList<>());
+
+      serviceBuildInfraMap.get(serviceId).get(buildId).add(
+          InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure.builder()
+              .infraIdentifier(infraIdentifier)
+              .infraName(infraName)
+              .count(count)
+              .lastDeployedAt(lastDeployedAt)
+              .lastPipelineExecutionId(lastPipelineExecutionId)
+              .lastPipelineExecutionName(lastPipelineExecutionName)
+              .build());
+      serviceIdToServiceNameMap.putIfAbsent(serviceId, serviceName);
+      buildIdToArtifactPathMap.putIfAbsent(buildId, artifactPath);
+    });
+    List<InstanceGroupedByServiceList.InstanceGroupedByService> instanceGroupedByServiceList =
+        groupedByServices(serviceBuildInfraMap, serviceIdToServiceNameMap, buildIdToArtifactPathMap);
+    return InstanceGroupedByServiceList.builder().instanceGroupedByServices(instanceGroupedByServiceList).build();
+  }
+
   private String getArtifactPathFromDisplayName(String displayName) {
     if (displayName != null) {
       String[] res = displayName.split(":");
@@ -1891,6 +1899,49 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     }
 
     return instanceGroupedByArtifactList;
+  }
+
+  private List<InstanceGroupedByServiceList.InstanceGroupedByService> groupedByServices(
+      Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>>
+          serviceBuildInfraMap,
+      Map<String, String> serviceIdToServiceNameMap, Map<String, String> buildIdToArtifactPathMap) {
+    List<InstanceGroupedByServiceList.InstanceGroupedByService> instanceGroupedByServiceList = new ArrayList<>();
+
+    for (Map.Entry<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> entry :
+        serviceBuildInfraMap.entrySet()) {
+      String serviceId = entry.getKey();
+      String serviceName = serviceIdToServiceNameMap.get(serviceId);
+
+      Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>> buildInfraMap = entry.getValue();
+      List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList = new ArrayList<>();
+
+      for (Map.Entry<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>> entry1 :
+          buildInfraMap.entrySet()) {
+        String build = entry1.getKey();
+        String artifactPath = buildIdToArtifactPathMap.get(build);
+
+        List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure> instanceList = entry1.getValue();
+
+        instanceGroupedByArtifactList.add(InstanceGroupedByArtifactList.InstanceGroupedByArtifact.builder()
+                                              .artifactPath(artifactPath)
+                                              .artifactVersion(build)
+                                              .instanceGroupedByEnvironmentList(Arrays.asList(
+                                                  InstanceGroupedByArtifactList.InstanceGroupedByEnvironment.builder()
+                                                      .instanceGroupedByInfraList(instanceList)
+                                                      .build()))
+                                              .build());
+      }
+      instanceGroupedByServiceList.add(
+          InstanceGroupedByServiceList.InstanceGroupedByService.builder()
+              .serviceId(serviceId)
+              .serviceName(serviceName)
+              .instanceGroupedByArtifactList(InstanceGroupedByArtifactList.builder()
+                                                 .instanceGroupedByArtifactList(instanceGroupedByArtifactList)
+                                                 .build())
+              .build());
+    }
+
+    return instanceGroupedByServiceList;
   }
 
   /*

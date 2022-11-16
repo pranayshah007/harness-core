@@ -15,12 +15,7 @@ import io.harness.dtos.InstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.mappers.InstanceDetailsMapper;
 import io.harness.mappers.InstanceMapper;
-import io.harness.models.ActiveServiceInstanceInfo;
-import io.harness.models.BuildsByEnvironment;
-import io.harness.models.EnvBuildInstanceCount;
-import io.harness.models.InstanceDTOsByBuildId;
-import io.harness.models.InstanceDetailsByBuildId;
-import io.harness.models.InstancesByBuildId;
+import io.harness.models.*;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.models.dashboard.InstanceCountDetails;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
@@ -153,6 +148,35 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
       activeServiceInstanceInfoList.add(new ActiveServiceInstanceInfo(infraIdentifier, infraName, clusterIdentifier,
           agentIdentifier, lastPipelineExecutionId, lastPipelineExecutionName, lastDeployedAt, envId, envName, buildId,
           displayName, count));
+    });
+
+    return activeServiceInstanceInfoList;
+  }
+
+  @Override
+  public List<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails>
+  getActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envId) {
+    AggregationResults<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails>
+        activeServiceInstanceInfoAggregationResults =
+            instanceService.getActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
+                accountIdentifier, orgIdentifier, projectIdentifier, envId);
+    List<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails> activeServiceInstanceInfoList = new ArrayList<>();
+
+    activeServiceInstanceInfoAggregationResults.getMappedResults().forEach(activeServiceInstanceInfo -> {
+      final String serviceIdentifier = activeServiceInstanceInfo.getServiceIdentifier();
+      final String serviceName = activeServiceInstanceInfo.getServiceName();
+      final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
+      final String infraName = activeServiceInstanceInfo.getInfraName();
+      final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
+      final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
+      final String lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
+      final String buildId = activeServiceInstanceInfo.getTag();
+      final String displayName = activeServiceInstanceInfo.getDisplayName();
+      final Integer count = activeServiceInstanceInfo.getCount();
+      activeServiceInstanceInfoList.add(new ActiveServiceInstanceInfoWithoutEnvWithServiceDetails(serviceIdentifier,
+          serviceName, infraIdentifier, infraName, lastPipelineExecutionId, lastPipelineExecutionName, lastDeployedAt,
+          buildId, displayName, count));
     });
 
     return activeServiceInstanceInfoList;

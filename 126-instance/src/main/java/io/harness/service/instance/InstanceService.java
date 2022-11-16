@@ -65,6 +65,10 @@ public interface InstanceService {
   AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
+  AggregationResults<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails>
+  getActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
   AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 

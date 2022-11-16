@@ -208,12 +208,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                            .is(accountIdentifier)
-                            .and(InstanceKeys.orgIdentifier)
-                            .is(orgIdentifier)
-                            .and(InstanceKeys.projectIdentifier)
-                            .is(projectIdentifier)
+    Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier)
                             .and(InstanceKeys.serviceIdentifier)
                             .is(serviceId)
                             .and(InstanceKeys.isDeleted)
@@ -228,6 +223,25 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                     .as(InstanceSyncConstants.COUNT);
     return secondaryMongoTemplate.aggregate(
         newAggregation(matchStage, groupEnvId), Instance.class, ActiveServiceInstanceInfo.class);
+  }
+
+  @Override
+  public AggregationResults<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails>
+  getActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envId) {
+    Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier)
+                            .and(InstanceKeys.envIdentifier)
+                            .is(envId);
+
+    MatchOperation matchStage = Aggregation.match(criteria);
+    GroupOperation groupEnvId = group(InstanceKeys.serviceIdentifier, InstanceKeys.serviceName,
+        InstanceKeys.infraIdentifier, InstanceKeys.infraName, InstanceKeys.lastPipelineExecutionId,
+        InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG,
+        InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
+                                    .count()
+                                    .as(InstanceSyncConstants.COUNT);
+    return secondaryMongoTemplate.aggregate(newAggregation(matchStage, groupEnvId), Instance.class,
+        ActiveServiceInstanceInfoWithoutEnvWithServiceDetails.class);
   }
 
   @Override
