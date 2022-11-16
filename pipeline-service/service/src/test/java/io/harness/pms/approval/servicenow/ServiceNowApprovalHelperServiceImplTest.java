@@ -30,11 +30,17 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.delegate.TaskDetails;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
+import io.harness.encryption.SecretRefData;
 import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.exception.ServiceNowException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.ng.core.NGAccessWithEncryptionConsumer;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -109,7 +115,11 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
 
     ServiceNowApprovalInstance instance = getServiceNowApprovalInstance(ambiance);
     mockStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Collections.EMPTY_LIST);
-    doReturn(ServiceNowConnectorDTO.builder().build())
+    doReturn(ServiceNowConnectorDTO.builder()
+                 .username("USERNAME")
+                 .serviceNowUrl("url")
+                 .passwordRef(SecretRefData.builder().build())
+                 .build())
         .when(serviceNowApprovalHelperService)
         .getServiceNowConnector(eq(accountId), eq(orgIdentifier), eq(projectIdentifier), any());
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn("task".getBytes());
@@ -126,6 +136,32 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
     assertThat(taskDetailsArgumentCaptor.getValue().getType().getType())
         .isEqualTo(TaskType.SERVICENOW_TASK_NG.toString());
     assertThat(taskDetailsArgumentCaptor.getValue().getKryoParameters()).isNotEmpty();
+    ArgumentCaptor<NGAccessWithEncryptionConsumer> requestArgumentCaptorForSecretService =
+        ArgumentCaptor.forClass(NGAccessWithEncryptionConsumer.class);
+    verify(secretManagerClient).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
+    assertThat(
+        requestArgumentCaptorForSecretService.getValue().getDecryptableEntity() instanceof ServiceNowConnectorDTO)
+        .isTrue();
+    // since auth object is present, then decrypt-able entity will be ServiceNowAuthCredentialsDTO
+    doReturn(ServiceNowConnectorDTO.builder()
+                 .username("username")
+                 .serviceNowUrl("url")
+                 .passwordRef(SecretRefData.builder().build())
+                 .auth(ServiceNowAuthenticationDTO.builder()
+                           .authType(ServiceNowAuthType.USER_PASSWORD)
+                           .credentials(ServiceNowUserNamePasswordDTO.builder()
+                                            .username("username")
+                                            .passwordRef(SecretRefData.builder().build())
+                                            .build())
+                           .build())
+                 .build())
+        .when(serviceNowApprovalHelperService)
+        .getServiceNowConnector(eq(accountId), eq(orgIdentifier), eq(projectIdentifier), any());
+    serviceNowApprovalHelperService.handlePollingEvent(instance);
+    verify(secretManagerClient, times(2)).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
+    assertThat(
+        requestArgumentCaptorForSecretService.getValue().getDecryptableEntity() instanceof ServiceNowAuthCredentialsDTO)
+        .isTrue();
   }
 
   @Test

@@ -5,19 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.steps.approval;
+package io.harness.delegate.beans.connector.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.dto.UserGroupDTO;
-import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
-
-import java.util.List;
 
 @OwnedBy(CDC)
-public interface ApprovalNotificationHandler {
-  void sendNotification(HarnessApprovalInstance approvalInstance, Ambiance ambiance);
-  List<UserGroupDTO> getUserGroups(HarnessApprovalInstance instance);
+public class ServiceNowConstants {
+  // auth types
+  public static final String USERNAME_PASSWORD = "UsernamePassword";
 }

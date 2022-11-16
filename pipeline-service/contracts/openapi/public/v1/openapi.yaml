@@ -379,23 +379,6 @@ components:
           created: 1234567890
           updated: 1234567890
           modules: CD
-          execution_summary:
-            errors_count:
-              - 1
-              - 2
-              - 3
-              - 4
-              - 5
-              - 6
-              - 7
-            deployments_count:
-              - 1
-              - 2
-              - 3
-              - 4
-              - 5
-              - 6
-              - 7
           recent_execution_info:
             - executor_info:
                 trigger_type: NOOP
@@ -455,8 +438,6 @@ components:
           uniqueItems: true
           items:
             type: string
-        execution_summary:
-          $ref: '#/components/schemas/ExecutionSummary'
         recent_execution_info:
           type: array
           description: Array of recent Execution information
@@ -476,43 +457,6 @@ components:
           description: Specifies whether Pipeline is a valid or not.
         git_details:
           $ref: '#/components/schemas/GitDetails'
-    ExecutionSummary:
-      title: Execution Summary
-      x-stoplight:
-        id: mxtmp0n5g1bsg
-      type: object
-      description: Execution Summary
-      x-examples:
-        example-execution-summary:
-          errors_count:
-            - 1
-            - 2
-            - 3
-            - 4
-            - 5
-            - 6
-            - 7
-          deployments_count:
-            - 1
-            - 2
-            - 3
-            - 4
-            - 5
-            - 6
-            - 7
-      properties:
-        errors_count:
-          type: array
-          description: Number of errors on each of the last 7 days.
-          items:
-            type: integer
-            format: int32
-        deployments_count:
-          type: array
-          description: Number of deployments on each of the last 7 days.
-          items:
-            type: integer
-            format: int32
     PipelineCreateRequestBody:
       title: Pipeline Create Request Body
       x-stoplight:
@@ -1275,7 +1219,7 @@ components:
             example-list-response:
               value:
                 - slug: example_pipeline
-                  name: ExamplePipeline
+                  name: Example Pipeline
                   description: This is an Example Pipeline
                   tags:
                     example-tag-1: example-tag-1-value
@@ -1284,23 +1228,6 @@ components:
                   updated: 1234567890
                   modules:
                     - CD
-                  execution_summary:
-                    errors_count:
-                      - 1
-                      - 2
-                      - 3
-                      - 4
-                      - 5
-                      - 6
-                      - 7
-                    deployments_count:
-                      - 1
-                      - 2
-                      - 3
-                      - 4
-                      - 5
-                      - 6
-                      - 7
                   recent_execution_info:
                     - executor_info:
                         trigger_type: NOOP
@@ -1341,23 +1268,6 @@ components:
                   updated: 1234567890
                   modules:
                     - CD
-                  execution_summary:
-                    errors_count:
-                      - 1
-                      - 2
-                      - 3
-                      - 4
-                      - 5
-                      - 6
-                      - 7
-                    deployments_count:
-                      - 1
-                      - 2
-                      - 3
-                      - 4
-                      - 5
-                      - 6
-                      - 7
                   recent_execution_info:
                     - executor_info:
                         trigger_type: NOOP
