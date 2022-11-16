@@ -50,8 +50,6 @@ public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorServ
       Map<String, String> metricContextMap =
           ImmutableMap.<String, String>builder()
               .put(PmsEventMonitoringConstants.ACCOUNT_ID, entry.getKey().getAccountId())
-              .put(PmsEventMonitoringConstants.ORG_ID, entry.getKey().getOrgIdentifier())
-              .put(PmsEventMonitoringConstants.PROJECT_ID, entry.getKey().getProjectId())
               .build();
 
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
