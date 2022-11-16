@@ -11,8 +11,8 @@ import io.harness.azure.model.AzureConfig;
 
 import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
 
-import com.microsoft.azure.management.graphrbac.BuiltInRole;
-import com.microsoft.azure.management.graphrbac.RoleAssignment;
+import com.azure.resourcemanager.authorization.models.BuiltInRole;
+import com.azure.resourcemanager.authorization.models.RoleAssignment;
 import java.util.List;
 
 public interface AzureAuthorizationClient {

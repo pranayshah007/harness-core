@@ -23,17 +23,6 @@ tags:
     description: This contains APIs for performing CRUD operations on Organization level Role Assignments.
   - name: Project Role Assignments
     description: This contains APIs for performing CRUD operations on Project level Role Assignments.
-x-tagGroups:
-  - name: Roles
-    tags:
-      - Account Roles
-      - Organization Roles
-      - Project Roles
-  - name: Role Assignments
-    tags:
-      - Account Role Assignments
-      - Org Role Assignments
-      - Project Role Assignments
 paths:
   /v1/roles:
     parameters: []

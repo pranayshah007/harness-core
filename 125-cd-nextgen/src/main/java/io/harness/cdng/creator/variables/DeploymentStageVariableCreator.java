@@ -481,16 +481,18 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
           for (SidecarArtifactWrapper sideCarArtifact : sidecarArtifactWrapperList) {
             SidecarArtifact sidecar = sideCarArtifact.getSidecar();
             String identifier = sidecar.getIdentifier();
-            ArtifactOutcome sideCarArtifactOutcome =
-                ArtifactResponseToOutcomeMapper.toArtifactOutcome(sidecar.getSpec(), null, false);
-            List<String> sideCarOutputExpressions =
-                VariableCreatorHelper.getExpressionsInObject(sideCarArtifactOutcome, identifier);
+            if (sidecar.getSpec() != null) {
+              ArtifactOutcome sideCarArtifactOutcome =
+                  ArtifactResponseToOutcomeMapper.toArtifactOutcome(sidecar.getSpec(), null, false);
+              List<String> sideCarOutputExpressions =
+                  VariableCreatorHelper.getExpressionsInObject(sideCarArtifactOutcome, identifier);
 
-            for (String outputExpression : sideCarOutputExpressions) {
-              outputProperties.add(YamlProperties.newBuilder()
-                                       .setLocalName(SIDECARS_PREFIX + "." + outputExpression)
-                                       .setVisible(true)
-                                       .build());
+              for (String outputExpression : sideCarOutputExpressions) {
+                outputProperties.add(YamlProperties.newBuilder()
+                                         .setLocalName(SIDECARS_PREFIX + "." + outputExpression)
+                                         .setVisible(true)
+                                         .build());
+              }
             }
           }
         }
@@ -523,16 +525,19 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
   private void populateExpressionsForArtifact(
       List<YamlProperties> outputProperties, ArtifactConfig spec, Set<String> expressions) {
-    ArtifactOutcome primaryArtifactOutcome = ArtifactResponseToOutcomeMapper.toArtifactOutcome(spec, null, false);
-    List<String> primaryArtifactExpressions =
-        VariableCreatorHelper.getExpressionsInObject(primaryArtifactOutcome, PRIMARY);
+    // in case of template source, spec will be null
+    if (spec != null) {
+      ArtifactOutcome primaryArtifactOutcome = ArtifactResponseToOutcomeMapper.toArtifactOutcome(spec, null, false);
+      List<String> primaryArtifactExpressions =
+          VariableCreatorHelper.getExpressionsInObject(primaryArtifactOutcome, PRIMARY);
 
-    for (String outputExpression : primaryArtifactExpressions) {
-      if (expressions.add(outputExpression)) {
-        outputProperties.add(YamlProperties.newBuilder()
-                                 .setLocalName(OutcomeExpressionConstants.ARTIFACTS + "." + outputExpression)
-                                 .setVisible(true)
-                                 .build());
+      for (String outputExpression : primaryArtifactExpressions) {
+        if (expressions.add(outputExpression)) {
+          outputProperties.add(YamlProperties.newBuilder()
+                                   .setLocalName(OutcomeExpressionConstants.ARTIFACTS + "." + outputExpression)
+                                   .setVisible(true)
+                                   .build());
+        }
       }
     }
   }

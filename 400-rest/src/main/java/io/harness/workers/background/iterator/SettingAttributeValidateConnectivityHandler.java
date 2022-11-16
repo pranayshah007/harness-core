@@ -18,6 +18,8 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.WingsException;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -38,44 +40,52 @@ import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class SettingAttributeValidateConnectivityHandler implements Handler<SettingAttribute> {
+public class SettingAttributeValidateConnectivityHandler
+    extends IteratorPumpModeHandler implements Handler<SettingAttribute> {
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private SettingsService settingsService;
   @Inject private SettingValidationService settingValidationService;
   @Inject private MorphiaPersistenceProvider<SettingAttribute> persistenceProvider;
 
-  public void registerIterators(int threadPoolSize) {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PumpExecutorOptions.builder()
-            .name("SettingAttributeValidateConnectivity")
-            .poolSize(threadPoolSize)
-            .interval(Duration.ofMinutes(10))
-            .build(),
-        SettingAttributeValidateConnectivityHandler.class,
-        MongoPersistenceIterator.<SettingAttribute, MorphiaFilterExpander<SettingAttribute>>builder()
-            .clazz(SettingAttribute.class)
-            .fieldName(SettingAttributeKeys.nextIteration)
-            .targetInterval(ofHours(3))
-            .acceptableNoAlertDelay(ofHours(1))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .filterExpander(query
-                -> query.field(SettingAttributeKeys.value_type)
-                       .in(asList(SettingVariableTypes.AWS.name(), SettingVariableTypes.GCP.name(),
-                           SettingVariableTypes.AZURE.name(), SettingVariableTypes.DOCKER.name(),
-                           SettingVariableTypes.ECR.name(), SettingVariableTypes.GCR.name(),
-                           SettingVariableTypes.ACR.name(), SettingVariableTypes.ARTIFACTORY.name(),
-                           SettingVariableTypes.NEXUS.name(), SettingVariableTypes.JENKINS.name(),
-                           SettingVariableTypes.BAMBOO.name(), SettingVariableTypes.GCS.name(),
-                           SettingVariableTypes.AMAZON_S3.name(), SettingVariableTypes.AZURE_ARTIFACTS_PAT.name(),
-                           SettingVariableTypes.HTTP_HELM_REPO.name(), SettingVariableTypes.AMAZON_S3_HELM_REPO.name(),
-                           SettingVariableTypes.OCI_HELM_REPO.name(), SettingVariableTypes.GCS_HELM_REPO.name(),
-                           SettingVariableTypes.SMB.name(), SettingVariableTypes.SFTP.name(),
-                           SettingVariableTypes.CUSTOM.name())))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  public void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<SettingAttribute, MorphiaFilterExpander<SettingAttribute>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       SettingAttributeValidateConnectivityHandler.class,
+                       MongoPersistenceIterator.<SettingAttribute, MorphiaFilterExpander<SettingAttribute>>builder()
+                           .clazz(SettingAttribute.class)
+                           .fieldName(SettingAttributeKeys.nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofHours(1))
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .filterExpander(query
+                               -> query.field(SettingAttributeKeys.value_type)
+                                      .in(asList(SettingVariableTypes.AWS.name(), SettingVariableTypes.GCP.name(),
+                                          SettingVariableTypes.AZURE.name(), SettingVariableTypes.DOCKER.name(),
+                                          SettingVariableTypes.ECR.name(), SettingVariableTypes.GCR.name(),
+                                          SettingVariableTypes.ACR.name(), SettingVariableTypes.ARTIFACTORY.name(),
+                                          SettingVariableTypes.NEXUS.name(), SettingVariableTypes.JENKINS.name(),
+                                          SettingVariableTypes.BAMBOO.name(), SettingVariableTypes.GCS.name(),
+                                          SettingVariableTypes.AMAZON_S3.name(),
+                                          SettingVariableTypes.AZURE_ARTIFACTS_PAT.name(),
+                                          SettingVariableTypes.HTTP_HELM_REPO.name(),
+                                          SettingVariableTypes.AMAZON_S3_HELM_REPO.name(),
+                                          SettingVariableTypes.OCI_HELM_REPO.name(),
+                                          SettingVariableTypes.GCS_HELM_REPO.name(), SettingVariableTypes.SMB.name(),
+                                          SettingVariableTypes.SFTP.name(), SettingVariableTypes.CUSTOM.name())))
+                           .schedulingType(REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "SettingAttributeValidateConnectivity";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

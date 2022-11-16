@@ -48,6 +48,7 @@ nodeExecutions {"name": "planExecutionId_status_idx", "background": true} {"ambi
 nodeExecutions {"name": "planExecutionId_status_stepCategory_createdAt_idx", "background": true} {"ambiance.planExecutionId": 1, "status": 1, "stepType.stepCategory": 1, "createdAt": 1}
 nodeExecutions {"name": "planExecutionId_stepCategory_identifier_idx", "background": true} {"ambiance.planExecutionId": 1, "stepType.stepCategory": 1, "identifier": 1}
 nodeExecutions {"name": "previous_id_idx", "background": true} {"previousId": 1}
+nodeExecutions {"name": "status_idx", "background": true} {"status": 1}
 nodeExecutions {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 nodeExecutionsInfo {"name": "nodeExecutionId_unique_idx", "unique": true} {"nodeExecutionId": 1}
 nodeExecutionsInfo {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}

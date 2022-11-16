@@ -10,7 +10,6 @@ package io.harness.delegate.task.azure.appservice.deployment.verifier;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.AzureServiceCallBack;
 import io.harness.azure.client.AzureMonitorClient;
 import io.harness.azure.client.AzureWebClient;
 import io.harness.azure.context.AzureWebClientContext;
@@ -18,12 +17,14 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.delegate.task.azure.appservice.deployment.context.SwapSlotStatusVerifierContext;
 import io.harness.logging.LogCallback;
 
-import com.microsoft.azure.management.monitor.EventData;
+import com.azure.core.http.rest.Response;
+import com.azure.resourcemanager.monitor.models.EventData;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import org.joda.time.DateTime;
+import reactor.core.publisher.Mono;
 
 @OwnedBy(CDP)
 public class SwapSlotStatusVerifier extends SlotStatusVerifier {
@@ -34,15 +35,15 @@ public class SwapSlotStatusVerifier extends SlotStatusVerifier {
 
   public SwapSlotStatusVerifier(LogCallback logCallback, String slotName, AzureWebClient azureWebClient,
       AzureMonitorClient azureMonitorClient, AzureWebClientContext azureWebClientContext,
-      AzureServiceCallBack restCallBack) {
-    super(logCallback, slotName, azureWebClient, azureWebClientContext, restCallBack);
+      Mono<Response<Void>> responseMono) {
+    super(logCallback, slotName, azureWebClient, azureWebClientContext, responseMono);
     startTime = DateTime.now().minusMinutes(1);
     this.azureMonitorClient = azureMonitorClient;
   }
 
   public SwapSlotStatusVerifier(SwapSlotStatusVerifierContext context) {
     super(context.getLogCallback(), context.getSlotName(), context.getAzureWebClient(),
-        context.getAzureWebClientContext(), context.getRestCallBack());
+        context.getAzureWebClientContext(), context.getResponseMono());
     startTime = DateTime.now().minusMinutes(1);
     this.azureMonitorClient = context.getAzureMonitorClient();
   }

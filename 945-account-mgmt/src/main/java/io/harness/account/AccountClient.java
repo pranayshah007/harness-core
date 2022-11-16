@@ -32,6 +32,9 @@ import retrofit2.http.Query;
 public interface AccountClient {
   String ACCOUNT_API = "ng/accounts";
   String FEATURE_FLAG_CHECK_API = "ng/accounts/feature-flag-enabled";
+
+  String IMMUTABLE_DELEGATE_ENABLED = "ng/accounts/immutable-delegate-enabled";
+
   String FEATURE_FLAG_ENABLED_ACCOUNTS_API = "ng/accounts/feature-flag-enabled-accounts";
   String ACCOUNT_BASEURL_API = "ng/accounts/baseUrl";
   String ACCOUNT_VANITYURL_API = "ng/accounts/vanityUrl";
@@ -113,4 +116,7 @@ public interface AccountClient {
       @Query("accountIdentifier") String accountIdentifier);
 
   @GET(ACCOUNT_VANITYURL_API) Call<RestResponse<String>> getVanityUrl(@Query("accountId") String accountIdentifier);
+
+  @GET(IMMUTABLE_DELEGATE_ENABLED)
+  Call<RestResponse<Boolean>> isImmutableDelegateEnabled(@Query("accountId") String accountId);
 }

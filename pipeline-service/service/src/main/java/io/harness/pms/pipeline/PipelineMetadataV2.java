@@ -13,6 +13,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.Trimmed;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
@@ -73,4 +74,5 @@ public class PipelineMetadataV2 {
   // the zeroth element will be the most recent execution
   List<RecentExecutionInfo> recentExecutionInfoList;
   Long lastExecutedAt;
+  EntityGitDetails entityGitDetails;
 }

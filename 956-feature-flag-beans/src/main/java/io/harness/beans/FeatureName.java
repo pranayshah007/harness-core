@@ -239,9 +239,9 @@ public enum FeatureName {
   CCM_COMMORCH("Commitment Orchestration", HarnessTeam.CE),
   CCM_SUNSETTING_CG("Sunsetting CCM CG Features", HarnessTeam.CE),
   RECOMMENDATION_EFFICIENCY_VIEW_UI("Enable efficiency view instead cost view in Recommendation", HarnessTeam.CE),
+  CLOUD_COST_GOVERNANCE_UI("Cloud Cost governance UI", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   NG_EXECUTION_INPUT,
-  HELM_CHART_VERSION_STRICT_MATCH,
   SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING,
   EXTERNAL_USERID_BASED_LOGIN,
   LDAP_SYNC_WITH_USERID,
@@ -297,6 +297,9 @@ public enum FeatureName {
   ENABLE_DEFAULT_TIMEFRAME_IN_DEPLOYMENTS,
   ADD_MANIFEST_COLLECTION_STEP,
   ACCOUNT_BASIC_ROLE,
+  CVNG_TEMPLATE_MONITORED_SERVICE,
+  CVNG_TEMPLATE_VERIFY_STEP,
+  CVNG_METRIC_THRESHOLD,
   WORKFLOW_EXECUTION_ZOMBIE_MONITOR,
   USE_PAGINATED_ENCRYPT_SERVICE, // To be only used by UI for safeguarding encrypt component changes in CG
   INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT,
@@ -304,6 +307,7 @@ public enum FeatureName {
   DEPLOYMENT_SUBFORMIK_WORKFLOW_DROPDOWN,
   TI_DOTNET,
   TG_USE_AUTO_APPROVE_FLAG,
+  CVNG_SPLUNK_METRICS,
   AUTO_FREE_MODULE_LICENSE,
   SRM_LICENSE_ENABLED,
   ACCOUNT_BASIC_ROLE_ONLY,
@@ -392,9 +396,6 @@ public enum FeatureName {
   UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
   ELK_HEALTH_SOURCE("Will enable ELK health source in SRM", HarnessTeam.CV),
   SRM_COMPOSITE_SLO("Flag to start creating composite SLOs", HarnessTeam.CV),
-  WAIT_STEP(
-      "Automatically pause a pipeline execution for a specific amount of time, after time expires the pipeline proceeds and eventually completes",
-      HarnessTeam.PIPELINE),
 
   PIPELINE_CHAINING("UI flag to enable/disable Pipeline Chaining feature", HarnessTeam.PIPELINE),
   PIPELINE_ROLLBACK("Flag to enable/disable Pipeline Rollback", HarnessTeam.PIPELINE),
@@ -462,6 +463,7 @@ public enum FeatureName {
   ECS_ROLLBACK_MAX_DESIRED_COUNT("Changes ECS Rollback Desired Count to Max(OldService, NewService)", HarnessTeam.CDP),
   CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI),
   SRM_ET_EXPERIMENTAL("Feature flag for SRM only Error Tracking development", HarnessTeam.CV),
+  SRM_CODE_ERROR_NOTIFICATIONS("Feature flag for Code Error notification condition", HarnessTeam.CV),
   SRM_ENABLE_HEALTHSOURCE_AWS_PROMETHEUS("UI FF to enable AWS Managed Prometheus healthsource", HarnessTeam.CV),
   DEL_SECRET_EVALUATION_VERBOSE_LOGGING(
       "FF to enable verbose logging for the manager process when secret gets evaluated", HarnessTeam.DEL),

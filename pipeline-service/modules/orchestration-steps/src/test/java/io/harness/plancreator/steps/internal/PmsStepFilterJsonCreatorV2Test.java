@@ -47,7 +47,7 @@ public class PmsStepFilterJsonCreatorV2Test extends CategoryTest {
         StepSpecTypeConstants.SERVICENOW_APPROVAL, StepSpecTypeConstants.BARRIER, StepSpecTypeConstants.POLICY_STEP,
         StepSpecTypeConstants.SERVICENOW_CREATE, StepSpecTypeConstants.SERVICENOW_UPDATE,
         StepSpecTypeConstants.SERVICENOW_IMPORT_SET, StepSpecTypeConstants.QUEUE, StepSpecTypeConstants.EMAIL,
-        StepSpecTypeConstants.WAIT_STEP);
+        StepSpecTypeConstants.WAIT_STEP, StepSpecTypeConstants.PLUGIN_STEP);
     assertThat(strings).isEqualTo(strings2);
     assertThat(strings).contains(StepSpecTypeConstants.JIRA_CREATE);
   }

@@ -18,14 +18,13 @@ import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureNetworkClient;
 import io.harness.azure.model.AzureConfig;
 
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.network.models.LoadBalancer;
+import com.azure.resourcemanager.network.models.LoadBalancerBackend;
+import com.azure.resourcemanager.network.models.LoadBalancerProbe;
+import com.azure.resourcemanager.network.models.LoadBalancerTcpProbe;
+import com.azure.resourcemanager.network.models.LoadBalancingRule;
 import com.google.inject.Singleton;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.network.LoadBalancer;
-import com.microsoft.azure.management.network.LoadBalancerBackend;
-import com.microsoft.azure.management.network.LoadBalancerProbe;
-import com.microsoft.azure.management.network.LoadBalancerTcpProbe;
-import com.microsoft.azure.management.network.LoadBalancingRule;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +46,7 @@ public class AzureNetworkClientImpl extends AzureClient implements AzureNetworkC
       throw new IllegalArgumentException(LOAD_BALANCER_NAME_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug("Start getting load balancer by resourceGroupName: {}, loadBalancerName: {}", resourceGroupName,
         loadBalancerName);
@@ -67,11 +66,10 @@ public class AzureNetworkClientImpl extends AzureClient implements AzureNetworkC
       throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug("Start listing load balancers by resourceGroupName {}", resourceGroupName);
-    PagedList<LoadBalancer> loadBalancers = azure.loadBalancers().listByResourceGroup(resourceGroupName);
-    return new ArrayList<>(loadBalancers);
+    return azure.loadBalancers().listByResourceGroup(resourceGroupName).stream().collect(Collectors.toList());
   }
 
   @Override
@@ -84,7 +82,7 @@ public class AzureNetworkClientImpl extends AzureClient implements AzureNetworkC
       throw new IllegalArgumentException(LOAD_BALANCER_NAME_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug("Start listing load balancer backend pools by resourceGroupName {}, loadBalancerName: {}",
         resourceGroupName, loadBalancerName);
@@ -106,7 +104,7 @@ public class AzureNetworkClientImpl extends AzureClient implements AzureNetworkC
       throw new IllegalArgumentException(LOAD_BALANCER_NAME_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug("Start listing load balancer TCP probes for loadBalancerName {}, resourceGroupName: {}", loadBalancerName,
         resourceGroupName);
@@ -165,7 +163,7 @@ public class AzureNetworkClientImpl extends AzureClient implements AzureNetworkC
       throw new IllegalArgumentException(BACKEND_POOL_NAME_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug(
         "Start getting load balancer backend pool, backendPoolName {}, loadBalancerName {}, resourceGroupName: {}",

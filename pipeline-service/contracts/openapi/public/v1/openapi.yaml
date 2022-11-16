@@ -13,10 +13,6 @@ servers:
 tags:
   - name: Pipelines
     description: This contains APIs for performing CRUD operations on Pipelines.
-x-tagGroups:
-  - name: Pipelines
-    tags:
-      - Pipelines
 paths:
   '/v1/orgs/{org}/projects/{project}/pipelines':
     parameters:

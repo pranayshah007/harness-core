@@ -37,6 +37,7 @@ public interface StepSpecTypeConstants {
   String POLICY_STEP = "Policy";
   String EMAIL = "Email";
   String WAIT_STEP = "Wait";
+  String PLUGIN_STEP = "Plugin";
 
   String APPROVAL_FACILITATOR = "APPROVAL_FACILITATOR";
   String RESOURCE_RESTRAINT_FACILITATOR_TYPE = "RESOURCE_RESTRAINT";
@@ -85,4 +86,6 @@ public interface StepSpecTypeConstants {
                                                   .setType(StepSpecTypeConstants.SERVICENOW_IMPORT_SET)
                                                   .setStepCategory(StepCategory.STEP)
                                                   .build();
+  StepType PLUGIN_STEP_TYPE =
+      StepType.newBuilder().setType(StepSpecTypeConstants.PLUGIN_STEP).setStepCategory(StepCategory.STEP).build();
 }

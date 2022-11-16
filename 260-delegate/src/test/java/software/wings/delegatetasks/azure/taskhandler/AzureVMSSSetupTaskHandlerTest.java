@@ -59,12 +59,12 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.command.ExecutionLogCallback;
 
+import com.azure.resourcemanager.compute.models.GalleryImage;
+import com.azure.resourcemanager.compute.models.GalleryImageIdentifier;
+import com.azure.resourcemanager.compute.models.OperatingSystemStateTypes;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.network.models.LoadBalancer;
 import com.google.common.util.concurrent.TimeLimiter;
-import com.microsoft.azure.management.compute.GalleryImage;
-import com.microsoft.azure.management.compute.GalleryImageIdentifier;
-import com.microsoft.azure.management.compute.OperatingSystemStateTypes;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.network.LoadBalancer;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;

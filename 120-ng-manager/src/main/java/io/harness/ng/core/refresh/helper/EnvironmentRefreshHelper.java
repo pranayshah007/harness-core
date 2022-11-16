@@ -157,6 +157,11 @@ public class EnvironmentRefreshHelper {
       log.warn("Env node in Resolved templates yaml is null");
       return;
     }
+    if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null
+        || envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF) == null) {
+      log.warn("Service ref or env ref in yaml is null. Exiting.");
+      return;
+    }
     JsonNode serviceRefInResolvedTemplatesYaml =
         serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF).getNode().getCurrJsonNode();
     JsonNode envRefInResolvedTemplatesYaml =
@@ -215,12 +220,12 @@ public class EnvironmentRefreshHelper {
       return true;
     }
     if (checkIfInfraDefsToBeValidated(infraDefsNode, infraDefsNodeInResolvedTemplatesYaml, mapper)) {
-      JsonNode envRefNode =
-          envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode();
-      if (envRefNode == null) {
+      if (envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF) == null) {
         log.warn("Skipping because couldn't find envRef value");
         return true;
       }
+      JsonNode envRefNode =
+          envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode();
       String envRefValue = envRefNode.asText();
       return validateInfraDefsInput(context, errorNodeSummary, envRefValue, mapper, infraDefsNode);
     }
@@ -348,6 +353,11 @@ public class EnvironmentRefreshHelper {
         YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.environment");
     if (envNodeInResolvedTemplatesYaml == null) {
       log.warn("Env node in Resolved templates yaml is null");
+      return;
+    }
+    if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null
+        || envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF) == null) {
+      log.warn("Service ref or env ref in yaml is null. Exiting.");
       return;
     }
     JsonNode serviceRefInResolvedTemplatesYaml =

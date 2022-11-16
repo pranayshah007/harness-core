@@ -35,8 +35,8 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 import software.wings.beans.LogWeight;
 
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.appservice.WebApp;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
+import com.azure.resourcemanager.appservice.models.WebApp;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

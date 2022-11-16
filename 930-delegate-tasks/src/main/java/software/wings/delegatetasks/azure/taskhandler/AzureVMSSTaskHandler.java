@@ -9,7 +9,6 @@ package software.wings.delegatetasks.azure.taskhandler;
 
 import static io.harness.annotations.dev.HarnessModule._930_DELEGATE_TASKS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.azure.model.AzureConstants.AUTOSCALING_REQUEST_STATUS_CHECK_INTERVAL;
 import static io.harness.azure.model.AzureConstants.CLEAR_SCALING_POLICY;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_ERROR;
 import static io.harness.azure.model.AzureConstants.VM_PROVISIONING_SPECIALIZED_STATUS;
@@ -18,10 +17,8 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
-import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
-import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -29,7 +26,6 @@ import io.harness.azure.client.AzureAutoScaleSettingsClient;
 import io.harness.azure.client.AzureComputeClient;
 import io.harness.azure.client.AzureNetworkClient;
 import io.harness.azure.model.AzureConfig;
-import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.task.azure.request.AzureVMSSTaskParameters;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.exception.InvalidRequestException;
@@ -39,20 +35,22 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.delegatetasks.DelegateLogService;
 
+import com.azure.core.exception.AzureException;
+import com.azure.resourcemanager.compute.models.InstanceViewStatus;
+import com.azure.resourcemanager.compute.models.VirtualMachineInstanceView;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
-import com.microsoft.azure.CloudException;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.compute.InstanceViewStatus;
-import com.microsoft.azure.management.compute.VirtualMachineInstanceView;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @OwnedBy(CDP)
@@ -96,8 +94,8 @@ public abstract class AzureVMSSTaskHandler {
 
   public String getErrorMessage(Exception ex) {
     String message = ex.getMessage();
-    if (ex.getCause() instanceof CloudException) {
-      CloudException cloudException = (CloudException) ex.getCause();
+    if (ex.getCause() instanceof AzureException) {
+      AzureException cloudException = (AzureException) ex.getCause();
       String cloudExMsg = cloudException.getMessage();
       message = format("%s, %nAzure Cloud Exception Message: %s", message, cloudExMsg);
     }
@@ -137,13 +135,11 @@ public abstract class AzureVMSSTaskHandler {
     VirtualMachineScaleSet vmss =
         getVirtualMachineScaleSet(azureConfig, subscriptionId, resourceGroupName, virtualMachineScaleSetName);
 
-    AzureRestCallBack<VirtualMachineScaleSet> restCallBack =
-        new AzureRestCallBack<>(logCallBack, virtualMachineScaleSetName);
-    vmss.update().withCapacity(capacity).applyAsync(restCallBack);
+    Mono<VirtualMachineScaleSet> virtualMachineScaleSetMono = vmss.update().withCapacity(capacity).applyAsync();
     logCallBack.saveExecutionLog("Successfully set desired capacity", INFO, SUCCESS);
 
     logCallBack = getLogCallBack(parameters, waitCommandUnit);
-    waitForVMSSToBeDownSized(vmss, capacity, autoScalingSteadyStateTimeout, logCallBack, restCallBack);
+    waitForVMSSToBeDownSized(vmss, capacity, autoScalingSteadyStateTimeout, logCallBack, virtualMachineScaleSetMono);
     String message =
         "All the VM instances of VMSS: [%s] are " + (capacity == 0 ? "deleted " : "provisioned ") + "successfully";
     logCallBack.saveExecutionLog(format(message, virtualMachineScaleSetName), INFO, SUCCESS);
@@ -160,26 +156,21 @@ public abstract class AzureVMSSTaskHandler {
                     virtualMachineScaleSetName, subscriptionId, resourceGroupName)));
   }
 
-  protected void waitForVMSSToBeDownSized(VirtualMachineScaleSet virtualMachineScaleSet, int capacity,
+  protected VirtualMachineScaleSet waitForVMSSToBeDownSized(VirtualMachineScaleSet virtualMachineScaleSet, int capacity,
       int autoScalingSteadyStateTimeout, ExecutionLogCallback logCallBack,
-      AzureRestCallBack<VirtualMachineScaleSet> restCallBack) {
+      Mono<VirtualMachineScaleSet> virtualMachineScaleSetMono) {
     try {
-      HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMinutes(autoScalingSteadyStateTimeout), () -> {
-        logCallBack.saveExecutionLog(
-            format("Checking the status of VMSS: [%s] VM instances", virtualMachineScaleSet.name()), INFO);
-        while (true) {
-          if (restCallBack.updateFailed()) {
-            String errorMessage = restCallBack.getErrorMessage();
-            logCallBack.saveExecutionLog(errorMessage, ERROR, FAILURE);
-            throw new InvalidRequestException(errorMessage);
-          }
-          if (checkAllVMSSInstancesProvisioned(virtualMachineScaleSet, capacity, logCallBack)) {
-            return Boolean.TRUE;
-          }
-          sleep(ofSeconds(AUTOSCALING_REQUEST_STATUS_CHECK_INTERVAL));
-        }
-      });
-    } catch (InterruptedException | UncheckedTimeoutException e) {
+      logCallBack.saveExecutionLog(
+          format("Checking the status of VMSS: [%s] VM instances", virtualMachineScaleSet.name()), INFO);
+      return virtualMachineScaleSetMono
+          .doOnError(error -> {
+            checkAllVMSSInstancesProvisioned(virtualMachineScaleSet, capacity, logCallBack);
+            logCallBack.saveExecutionLog(error.getMessage(), ERROR, FAILURE);
+            throw new InvalidRequestException(error.getMessage(), error);
+          })
+          .doOnSuccess(response -> checkAllVMSSInstancesProvisioned(virtualMachineScaleSet, capacity, logCallBack))
+          .block(Duration.ofMinutes(autoScalingSteadyStateTimeout));
+    } catch (UncheckedTimeoutException e) {
       String message = "Timed out waiting for provisioning VMSS VM instances to desired capacity. \n" + e.getMessage();
       logCallBack.saveExecutionLog(message, ERROR, FAILURE);
       throw new InvalidRequestException(message, e);
@@ -196,15 +187,15 @@ public abstract class AzureVMSSTaskHandler {
 
   private boolean checkAllVMSSInstancesProvisioned(
       VirtualMachineScaleSet newVirtualMachineScaleSet, int desiredCapacity, ExecutionLogCallback logCallBack) {
-    PagedList<VirtualMachineScaleSetVM> vmssInstanceList = newVirtualMachineScaleSet.virtualMachines().list();
+    List<VirtualMachineScaleSetVM> vmssInstanceList =
+        newVirtualMachineScaleSet.virtualMachines().list().stream().collect(Collectors.toList());
     logVMInstancesStatus(vmssInstanceList, logCallBack);
     return desiredCapacity == 0 ? vmssInstanceList.isEmpty()
                                 : desiredCapacity == vmssInstanceList.size()
             && vmssInstanceList.stream().allMatch(this::isVMInstanceProvisioned);
   }
 
-  private void logVMInstancesStatus(
-      PagedList<VirtualMachineScaleSetVM> vmssInstanceList, ExecutionLogCallback logCallBack) {
+  private void logVMInstancesStatus(List<VirtualMachineScaleSetVM> vmssInstanceList, ExecutionLogCallback logCallBack) {
     for (VirtualMachineScaleSetVM instance : vmssInstanceList) {
       String virtualMachineScaleSetVMName = instance.name();
       String provisioningDisplayStatus = getProvisioningDisplayStatus(instance);

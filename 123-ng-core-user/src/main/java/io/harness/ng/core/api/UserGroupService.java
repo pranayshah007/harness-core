@@ -17,6 +17,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ScopeSelector;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
+import io.harness.ng.core.dto.UserInfo;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
@@ -53,6 +54,12 @@ public interface UserGroupService {
   UserGroup update(UserGroupDTO userGroupDTO);
 
   UserGroup updateWithCheckThatSCIMFieldsAreNotModified(UserGroupDTO userGroupDTO);
+
+  List<UserInfo> getUserMetaData(List<String> uuids);
+
+  List<String> getUserIds(List<String> emails);
+
+  List<String> getUserEmails(List<String> uuids);
 
   Page<UserGroup> list(String accountIdentifier, String orgIdentifier, String projectIdentifier, String searchTerm,
       UserGroupFilterType filterType, Pageable pageable);

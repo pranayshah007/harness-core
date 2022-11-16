@@ -25,9 +25,6 @@ import static io.harness.rule.OwnerRule.MARKO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -36,16 +33,17 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.rule.Owner;
 
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(DEL)
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({InstallUtils.class})
 public class InstallUtilsTest extends CategoryTest {
   private static final String PWD = Paths.get(".").toAbsolutePath().normalize().toString();
@@ -68,13 +66,19 @@ public class InstallUtilsTest extends CategoryTest {
   private static final String DEFAULT_KUBECTL_1_19_PATH = PWD + "/client-tools/kubectl/v1.19.2/kubectl";
   private static final String DEFAULT_KUBECTL_1_13_PATH = PWD + "/client-tools/kubectl/v1.13.2/kubectl";
 
+  private static final Answer<Void> VOID_ANSWER = (Answer<Void>) invocation -> null;
+
+  MockedStatic<InstallUtils> installUtilsMockedStatic;
+
   @Before
   public void setUp() throws Exception {
-    mockStatic(InstallUtils.class, CALLS_REAL_METHODS);
-    doReturn(true).when(InstallUtils.class, "validateToolExists", any(), any());
-    // None of the tools are on the $PATH
-    doReturn(false).when(InstallUtils.class, "runToolCommand", any(), any());
-    doNothing().when(InstallUtils.class, "initTool", any(), any());
+    installUtilsMockedStatic = Mockito.mockStatic(InstallUtils.class, CALLS_REAL_METHODS);
+    installUtilsMockedStatic.when(() -> InstallUtils.validateToolExists(any(), any())).thenReturn(true);
+    installUtilsMockedStatic.when(() -> InstallUtils.runToolCommand(any(), any())).thenReturn(false);
+    installUtilsMockedStatic.when(() -> InstallUtils.initTool(any(), any())).thenAnswer(VOID_ANSWER);
+
+    MockedStatic<Files> filesMocked = Mockito.mockStatic(Files.class);
+    filesMocked.when(() -> Files.exists(any())).thenReturn(true);
   }
 
   @Test
@@ -186,7 +190,7 @@ public class InstallUtilsTest extends CategoryTest {
                                                    .isImmutable(true)
                                                    .build();
 
-    doReturn(true).when(InstallUtils.class, "runToolCommand", any(), any());
+    installUtilsMockedStatic.when(() -> InstallUtils.runToolCommand(any(), any())).thenReturn(true);
 
     setupClientTools(customConfig);
 
@@ -219,7 +223,7 @@ public class InstallUtilsTest extends CategoryTest {
     final DelegateConfiguration customConfig =
         DelegateConfiguration.builder().managerUrl("localhost").clientToolsDownloadDisabled(true).build();
 
-    doReturn(true).when(InstallUtils.class, "runToolCommand", any(), any());
+    installUtilsMockedStatic.when(() -> InstallUtils.runToolCommand(any(), any())).thenReturn(true);
 
     setupClientTools(customConfig);
 
