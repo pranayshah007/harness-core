@@ -91,9 +91,9 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDT
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
-import io.harness.delegate.beans.connector.pcfconnector.PcfConnectorDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
@@ -877,7 +877,7 @@ public class InfrastructureStepTest extends CategoryTest {
 
     ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
                                             .connectorConfig(AwsConnectorDTO.builder().build())
-                                            .connectorType(ConnectorType.PCF)
+                                            .connectorType(ConnectorType.TAS)
                                             .build();
 
     doReturn(Lists.newArrayList(connectorInfoDTO))
@@ -887,7 +887,7 @@ public class InfrastructureStepTest extends CategoryTest {
     assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
         .isInstanceOf(InvalidRequestException.class);
 
-    connectorInfoDTO.setConnectorConfig(PcfConnectorDTO.builder().build());
+    connectorInfoDTO.setConnectorConfig(TasConnectorDTO.builder().build());
 
     assertThatCode(() -> infrastructureStep.validateConnector(infrastructure, ambiance)).doesNotThrowAnyException();
   }
