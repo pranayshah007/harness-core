@@ -1612,6 +1612,40 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testGetCVNGLogs_ForCompositeSLO() {
+    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
+    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    ServiceLevelObjectiveV2DTO sloDTO = compositeSLODTO;
+    String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
+        projectParams.getAccountIdentifier(), compositeServiceLevelObjective.getUuid());
+    List<CVNGLogDTO> cvngLogDTOs =
+        Arrays.asList(builderFactory.executionLogDTOBuilder().traceableId(verificationTaskId).build());
+    cvngLogService.save(cvngLogDTOs);
+
+    SLILogsFilter sliLogsFilter = SLILogsFilter.builder()
+                                      .logType(CVNGLogType.EXECUTION_LOG)
+                                      .startTime(startTime.toEpochMilli())
+                                      .endTime(endTime.toEpochMilli())
+                                      .build();
+    PageResponse<CVNGLogDTO> cvngLogDTOResponse = serviceLevelObjectiveV2Service.getCVNGLogs(
+        projectParams, sloDTO.getIdentifier(), sliLogsFilter, PageParams.builder().page(0).size(10).build());
+
+    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(1);
+    assertThat(cvngLogDTOResponse.getPageIndex()).isEqualTo(0);
+    assertThat(cvngLogDTOResponse.getPageSize()).isEqualTo(10);
+
+    ExecutionLogDTO executionLogDTOS = (ExecutionLogDTO) cvngLogDTOResponse.getContent().get(0);
+    assertThat(executionLogDTOS.getAccountId()).isEqualTo(accountId);
+    assertThat(executionLogDTOS.getTraceableId()).isEqualTo(verificationTaskId);
+    assertThat(executionLogDTOS.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
+    assertThat(executionLogDTOS.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
+    assertThat(executionLogDTOS.getLogLevel()).isEqualTo(ExecutionLogDTO.LogLevel.INFO);
+    assertThat(executionLogDTOS.getLog()).isEqualTo("Data Collection successfully completed.");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testGetNotificationRules() {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();

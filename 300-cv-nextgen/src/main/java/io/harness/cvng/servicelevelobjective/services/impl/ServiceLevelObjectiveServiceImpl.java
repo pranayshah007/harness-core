@@ -383,6 +383,11 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   @Override
   public PageResponse<CVNGLogDTO> getCVNGLogs(
       ProjectParams projectParams, String identifier, SLILogsFilter sliLogsFilter, PageParams pageParams) {
+    try {
+      return serviceLevelObjectiveV2Service.getCVNGLogs(projectParams, identifier, sliLogsFilter, pageParams);
+    } catch (Exception ex) {
+      log.error("[SLO Data Mismatch]: Get CVNG Logs for V2 failed", ex);
+    }
     ServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
     if (Objects.isNull(serviceLevelObjective)) {
       throw new NotFoundException("SLO with identifier " + identifier + " not found.");
