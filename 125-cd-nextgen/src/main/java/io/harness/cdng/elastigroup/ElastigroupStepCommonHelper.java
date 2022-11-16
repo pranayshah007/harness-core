@@ -21,6 +21,8 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -39,14 +41,22 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.services.ConnectorService;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
+import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupParametersFetchRequest;
@@ -59,10 +69,13 @@ import io.harness.delegate.task.git.TaskStatus;
 import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.UnitProgress;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -85,6 +98,8 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.steps.StepHelper;
@@ -103,6 +118,7 @@ import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -110,6 +126,9 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import software.wings.sm.ExecutionContext;
+
+import javax.annotation.Nonnull;
+import javax.validation.Valid;
 
 @Slf4j
 public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
@@ -656,7 +675,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
       awsLoadBalancerConfigs.forEach(awsLoadBalancerConfig -> {
         lbMap.put(getLBKey(awsLoadBalancerConfig),
                 LoadBalancerDetailsForBGDeployment.builder()
-                        .loadBalancerArn(renderExpression(ambiance, awsLoadBalancerConfig.getLoadBalancerArn().getValue()))
+                        .loadBalancerName(renderExpression(ambiance, awsLoadBalancerConfig.getLoadBalancer().getValue()))
                         .prodListenerPort(renderExpression(ambiance, awsLoadBalancerConfig.getProdListenerPort().getValue()))
                         .stageListenerPort(renderExpression(ambiance, awsLoadBalancerConfig.getStageListenerPort().getValue()))
                         .useSpecificRules(false)
@@ -674,7 +693,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
   @NotNull
   private String getLBKey(AwsLoadBalancerConfigYaml awsLoadBalancerConfig) {
     return new StringBuilder(128)
-            .append(awsLoadBalancerConfig.getLoadBalancerName())
+            .append(awsLoadBalancerConfig.getLoadBalancer())
             .append('_')
             .append(awsLoadBalancerConfig.getProdListenerPort())
             .append('_')

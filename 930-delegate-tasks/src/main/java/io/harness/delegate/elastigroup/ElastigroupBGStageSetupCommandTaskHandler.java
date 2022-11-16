@@ -11,6 +11,7 @@ import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -68,11 +69,11 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
 
     timeoutInMillis = elastigroupSetupCommandRequest.getTimeoutIntervalInMin() * 60000;
 
-    AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
-
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
         iLogStreamingTaskClient, ElastigroupCommandUnitConstants.createSetup.toString(), true, commandUnitsProgress);
     try {
+
+      AwsInternalConfig awsInternalConfig = elastigroupCommandTaskNGHelper.getAwsInternalConfig((AwsConnectorDTO) elastigroupSetupCommandRequest.getConnectorInfoDTO().getConnectorConfig(), ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).getAwsRegion());
 
       List<LoadBalancerDetailsForBGDeployment> lbDetailList =
               elastigroupCommandTaskNGHelper.fetchAllLoadBalancerDetails(elastigroupSetupCommandRequest, awsInternalConfig, deployLogCallback);

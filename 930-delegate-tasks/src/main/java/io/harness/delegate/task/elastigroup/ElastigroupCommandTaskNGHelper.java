@@ -45,13 +45,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
 import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
 import io.harness.delegate.task.aws.AwsElbListener;
+import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.elastigroup.request.ElastigroupBGStageSetupCommandRequest;
@@ -113,6 +116,7 @@ import software.wings.service.intfc.aws.delegate.AwsElbHelperServiceDelegate;
 public class ElastigroupCommandTaskNGHelper {
   @Inject private SecretDecryptionService secretDecryptionService;
   @Inject protected ElbV2Client elbV2Client;
+  @Inject private AwsNgConfigMapper awsNgConfigMapper;
 
   public String generateFinalJson(
       ElastigroupSetupCommandRequest elastigroupSetupCommandRequest, String newElastiGroupName) {
@@ -127,6 +131,12 @@ public class ElastigroupCommandTaskNGHelper {
         elastigroupSetupCommandRequest.getStartupScript(), elastigroupSetupCommandRequest.isBlueGreen());
     Gson gson = new Gson();
     return gson.toJson(jsonConfigMap);
+  }
+
+  public AwsInternalConfig getAwsInternalConfig(AwsConnectorDTO awsConnectorDTO, String region) {
+    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
+    awsInternalConfig.setDefaultRegion(region);
+    return awsInternalConfig;
   }
 
   private void updateWithLoadBalancerAndImageConfig(List<LoadBalancerDetailsForBGDeployment> lbDetailList,

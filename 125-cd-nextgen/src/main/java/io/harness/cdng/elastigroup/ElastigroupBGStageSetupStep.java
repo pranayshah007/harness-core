@@ -24,6 +24,7 @@ import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -111,6 +112,9 @@ public class ElastigroupBGStageSetupStep
             loadBalancer -> (AwsLoadBalancerConfigYaml) loadBalancer.getSpec()
     ).collect(Collectors.toList()), ambiance);
 
+
+    ConnectorInfoDTO connectorInfoDTO = elastigroupStepCommonHelper.getConnector(elastigroupStepCommonHelper.renderExpression(ambiance, ((AwsCloudProviderBasicConfig) elastigroupBGStageSetupStepParameters.getConnectedCloudProvider().getSpec()).getConnectorRef().getValue()), ambiance);
+
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         ElastigroupSetupCommandRequest.builder()
             .blueGreen(true)
@@ -129,8 +133,10 @@ public class ElastigroupBGStageSetupStep
                 fetchCurrentRunningCountForSetupRequest(elastigroupBGStageSetupStepParameters.getInstances()))
             .useCurrentRunningInstanceCount(ElastigroupInstancesType.CURRENT_RUNNING.equals(
                 elastigroupBGStageSetupStepParameters.getInstances().getType()))
+                .awsRegion(elastigroupStepCommonHelper.renderExpression(ambiance, ((AwsCloudProviderBasicConfig)elastigroupBGStageSetupStepParameters.getConnectedCloudProvider().getSpec()).getRegion().getValue()))
             .elastigroupOriginalConfig(elastiGroupOriginalConfig)
                 .awsLoadBalancerConfigs(loadBalancerDetailsForBGDeployments)
+                .connectorInfoDTO(connectorInfoDTO)
             .build();
 
     return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSetupCommandRequest, ambiance,
