@@ -16,7 +16,6 @@ build --incompatible_strict_action_env\n"
 
 if [ `uname -s` = 'Darwin' ]; then
   echo "$CONTENT" > ${CACHE_FILE}
-
   [ `uname -m` = 'arm64' ] \
   && echo "build:macos --remote_cache=https://storage.googleapis.com/harness-bazel-cache-blr-dev-m1" >> ${CACHE_FILE} \
   || echo "build:macos --remote_cache=https://storage.googleapis.com/harness-bazel-cache-blr-dev" >> ${CACHE_FILE}
