@@ -26,6 +26,7 @@ java_library(
         "@maven//:com_google_apis_google_api_services_iam",
         "@maven//:com_google_cloud_google_cloud_bigquery",
         "@maven//:io_leangen_graphql_spqr",
+        "@maven//:com_clickhouse_clickhouse_jdbc",
     ],
 )
 
