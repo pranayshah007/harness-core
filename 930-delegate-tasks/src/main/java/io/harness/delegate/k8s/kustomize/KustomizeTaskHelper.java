@@ -9,6 +9,11 @@ package io.harness.delegate.k8s.kustomize;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.k8s.K8sExceptionConstants.ACCUMULATING_RESOURCES;
+import static io.harness.delegate.task.k8s.K8sExceptionConstants.EVALSYMLINK_ERROR_EXPLAINATION;
+import static io.harness.delegate.task.k8s.K8sExceptionConstants.EVALSYMLINK_ERROR_HINT;
+import static io.harness.delegate.task.k8s.K8sExceptionConstants.EVALSYMLINK_FAILURE;
 import static io.harness.exception.WingsException.USER;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -19,6 +24,7 @@ import io.harness.beans.FileData;
 import io.harness.cli.CliResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.kustomize.KustomizeClient;
 import io.harness.logging.CommandExecutionStatus;
@@ -68,8 +74,15 @@ public class KustomizeTaskHelper {
           FileData.builder().fileName("manifest.yaml").fileContent(cliResponse.getOutput()).build());
     } else {
       StringBuilder stringBuilder = new StringBuilder("Kustomize build failed.");
+      String cliErrorMessage = cliResponse.getError();
       if (isNotBlank(cliResponse.getOutput())) {
         stringBuilder.append(" Msg: ").append(cliResponse.getOutput());
+      }
+
+      if (isNotEmpty(cliErrorMessage) && cliErrorMessage.contains(EVALSYMLINK_FAILURE)
+          && cliErrorMessage.contains(ACCUMULATING_RESOURCES)) {
+        throw NestedExceptionUtils.hintWithExplanationException(EVALSYMLINK_ERROR_HINT, EVALSYMLINK_ERROR_EXPLAINATION,
+            new InvalidRequestException(cliErrorMessage, WingsException.USER));
       }
 
       throw new InvalidRequestException(stringBuilder.toString(), WingsException.USER);

@@ -1,0 +1,40 @@
+template:
+  name: OpenStack
+  identifier: OpenStack
+  tags: {}
+  description: ""
+  type: CustomDeployment
+  spec:
+    infrastructure:
+      variables:
+        - name:
+          type: String
+          value: <+input>
+          description: "ClusterUrl"
+        - name: port
+          type:
+          value: 23
+          description: "Port"
+        - name: pwd
+          type: Secret
+          description: "Pass"
+          value: <+input>
+          secret: <+input>
+        - name: image
+          type: Connector
+          value: account.Docker
+          description: "image"
+      fetchInstancesScript:
+        store:
+          type: Harness
+          spec:
+            files:
+              - account:/manifest.yml
+      instancesListPath: instances
+      instanceAttributes:
+        - name: hostName
+          jsonPath: <+input>
+          description: "IP address of the host"
+    execution:
+      stepTemplateRefs:
+        - org.OpenStackSetup

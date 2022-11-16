@@ -35,6 +35,8 @@ replace_key_value jwtIdentityServiceSecret $JWT_IDENTITY_SERVICE_SECRET
 replace_key_value timescaledb.timescaledbUrl "$TIMESCALEDB_URI"
 replace_key_value timescaledb.timescaledbUsername "$TIMESCALEDB_USERNAME"
 replace_key_value timescaledb.timescaledbPassword "$TIMESCALEDB_PASSWORD"
+replace_key_value timescaledb.sslMode "$TIMESCALEDB_SSL_MODE"
+replace_key_value timescaledb.sslRootCert "$TIMESCALEDB_SSL_ROOT_CERT"
 
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
 replace_key_value secretsConfiguration.gcpSecretManagerProject "$GCP_SECRET_MANAGER_PROJECT"

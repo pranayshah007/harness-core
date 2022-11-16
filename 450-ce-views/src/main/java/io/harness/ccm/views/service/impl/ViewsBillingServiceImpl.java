@@ -204,6 +204,7 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 @OwnedBy(CE)
 public class ViewsBillingServiceImpl implements ViewsBillingService {
+  private static final int MONTHS = 12;
   @Inject private ViewsQueryBuilder viewsQueryBuilder;
   @Inject private CEViewService viewService;
   @Inject private ViewsQueryHelper viewsQueryHelper;
@@ -410,12 +411,12 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     QLCEViewGridData gridData = null;
     List<QLCEViewGroupBy> groupByExcludingGroupByTime =
         groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
-    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
-      ViewQueryParams queryParamsForGrid = viewsQueryHelper.buildQueryParams(
-          queryParams.getAccountId(), false, true, queryParams.isClusterQuery(), false);
-      gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime, aggregateFunction, sort,
-          cloudProviderTableName, limit, 0, queryParamsForGrid);
-    }
+
+    ViewQueryParams queryParamsForGrid =
+        viewsQueryHelper.buildQueryParams(queryParams.getAccountId(), false, true, queryParams.isClusterQuery(), false);
+    gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime, aggregateFunction, sort,
+        cloudProviderTableName, limit, 0, queryParamsForGrid);
+
     SelectQuery query = getQuery(getModifiedFiltersForTimeSeriesStats(filters, gridData, groupByExcludingGroupByTime),
         groupBy, aggregateFunction, sort, cloudProviderTableName, queryParams);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
@@ -693,6 +694,44 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         Collections.emptyList(), cloudProviderTableName, queryParams, MAX_LIMIT_VALUE, 0, false);
     return getViewTrendStatsCostData(
         bigQuery, query, isClusterTableQuery, businessMapping, sharedCostFromFiltersAndRules);
+  }
+
+  public Double[] getActualCostGroupedByPeriod(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
+      ViewQueryParams queryParams, boolean lastPeriod) {
+    boolean isClusterTableQuery = isClusterTableQuery(filters, groupBy, queryParams);
+    List<QLCEViewFilter> idFilters = getModifiedIdFilters(getIdFilters(filters), isClusterTableQuery);
+    List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
+
+    SelectQuery query = getTrendStatsQuery(filters, idFilters, timeFilters, groupBy, aggregateFunction,
+        new ArrayList<>(), cloudProviderTableName, queryParams);
+    log.info("getActualCostGroupedByPeriod() query formed: " + query.toString());
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+    TableResult result;
+    try {
+      result = bigQuery.query(queryConfig);
+    } catch (InterruptedException e) {
+      log.error("Failed to getActualCostGroupedByPeriod() while running the bugQuery", e);
+      Thread.currentThread().interrupt();
+      return null;
+    }
+
+    Double[] monthlyCosts = new Double[MONTHS];
+    Arrays.fill(monthlyCosts, 0.0D);
+    if (lastPeriod) {
+      int startPosition = ((Long) result.getTotalRows()).intValue();
+      for (FieldValueList row : result.iterateAll()) {
+        monthlyCosts[MONTHS - startPosition] = row.get("cost").getNumericValue().doubleValue();
+        startPosition--;
+      }
+    } else {
+      int startPosition = 0;
+      for (FieldValueList row : result.iterateAll()) {
+        monthlyCosts[startPosition] = row.get("cost").getNumericValue().doubleValue();
+        startPosition++;
+      }
+    }
+    return monthlyCosts;
   }
 
   @Override

@@ -9,7 +9,7 @@ package io.harness.instancesyncmonitoring;
 
 import static io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl.DURATION_METRIC_PATTERN;
 import static io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl.NEW_DEPLOYMENT_METRIC_NAME;
-import static io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl.SUCCESS_STATUS;
+import static io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl.NG_SUFFIX_PATTERN;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.mockito.Mockito.verify;
@@ -17,7 +17,6 @@ import static org.mockito.Mockito.verify;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.instancesyncmonitoring.model.InstanceSyncMetricDetails;
 import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.rule.Owner;
@@ -34,10 +33,6 @@ import org.mockito.MockitoAnnotations;
 public class InstanceSyncMonitoringServiceImplTest {
   AutoCloseable openMocks;
   private static final String ACCOUNT_ID = "TEST_ACCOUNT_ID";
-  private static final String ORG_ID = "TEST_ACCOUNT_ID";
-  private static final String PROJECT_ID = "TEST_ACCOUNT_ID";
-  private static final String METRIC_NAME = "TEST_METRIC_NAME";
-  private static final String KUBERNETES_DEPLOYMENT_TYPE = "Kubernetes";
   @Mock private MetricService metricService;
   private io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl instanceSyncMonitoringServiceImpl;
 
@@ -57,16 +52,18 @@ public class InstanceSyncMonitoringServiceImplTest {
   @Category(UnitTests.class)
   public void testRecordMetrics() {
     long duration = 1000;
-    InstanceSyncMetricDetails instanceSyncCountMetric = InstanceSyncMetricDetails.builder()
-                                                            .accountId(ACCOUNT_ID)
-                                                            .orgId(ORG_ID)
-                                                            .projectId(PROJECT_ID)
-                                                            .isNg(true)
-                                                            .deploymentType(KUBERNETES_DEPLOYMENT_TYPE)
-                                                            .status(SUCCESS_STATUS)
-                                                            .build();
-    instanceSyncMonitoringServiceImpl.recordMetrics(instanceSyncCountMetric, true, duration);
-    verify(metricService).incCounter(NEW_DEPLOYMENT_METRIC_NAME);
+
+    // NG
+    instanceSyncMonitoringServiceImpl.recordMetrics(ACCOUNT_ID, true, true, duration);
+    verify(metricService).incCounter(String.format(NG_SUFFIX_PATTERN, NEW_DEPLOYMENT_METRIC_NAME));
+    verify(metricService)
+        .recordDuration(
+            String.format(NG_SUFFIX_PATTERN, String.format(DURATION_METRIC_PATTERN, NEW_DEPLOYMENT_METRIC_NAME)),
+            Duration.ofMillis(duration));
+
+    // CG
+    instanceSyncMonitoringServiceImpl.recordMetrics(ACCOUNT_ID, false, true, duration);
+    verify(metricService).incCounter(String.format(NG_SUFFIX_PATTERN, NEW_DEPLOYMENT_METRIC_NAME));
     verify(metricService)
         .recordDuration(
             String.format(DURATION_METRIC_PATTERN, NEW_DEPLOYMENT_METRIC_NAME), Duration.ofMillis(duration));

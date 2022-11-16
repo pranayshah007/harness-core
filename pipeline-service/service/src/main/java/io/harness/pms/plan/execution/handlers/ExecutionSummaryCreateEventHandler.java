@@ -99,7 +99,8 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
 
     ExecutionMetadata metadata = planExecution.getMetadata();
     String pipelineId = metadata.getPipelineIdentifier();
-    Optional<PipelineEntity> pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
+    Optional<PipelineEntity> pipelineEntity =
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     if (!pipelineEntity.isPresent()) {
       return;
     }
@@ -163,6 +164,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .projectIdentifier(projectId)
             .orgIdentifier(orgId)
             .executionTriggerInfo(metadata.getTriggerInfo())
+            .parentStageInfo(ambiance.getMetadata().getPipelineStageInfo())
             .entityGitDetails(pmsGitSyncHelper.getEntityGitDetailsFromBytes(metadata.getGitSyncBranchContext()))
             .tags(pipelineEntity.get().getTags())
             .modules(new ArrayList<>(modules))

@@ -397,6 +397,124 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCreateFromYaml_WithValidJsonMetricDefinationString() {
+    String yaml = "monitoredService:\n"
+        + "  template:\n"
+        + "   templateRef: templateRef123\n"
+        + "   versionLabel: versionLabel123\n"
+        + "  type: Application\n"
+        + "  description: description\n"
+        + "  identifier: testms\n"
+        + "  name: test\n"
+        + "  serviceRef: service1\n"
+        + "  environmentRef: test\n"
+        + "  sources:\n"
+        + "      changeSources: \n"
+        + "      healthSources:\n"
+        + "        - type: Stackdriver\n"
+        + "          identifier: gcp\n"
+        + "          name: gcp\n"
+        + "          spec:\n"
+        + "            connectorRef: account.Google_Cloud_Provider\n"
+        + "            feature: Cloud Metrics\n"
+        + "            metricDefinitions:\n"
+        + "              - dashboardName: \"\"\n"
+        + "                dashboardPath: \"\"\n"
+        + "                metricName: m1\n"
+        + "                metricTags:\n"
+        + "                  - m\n"
+        + "                identifier: m1\n"
+        + "                isManualQuery: true\n"
+        + "                jsonMetricDefinitionString: \"{   \\\"dataSets\\\": [     {       \\\"timeSeriesQuery\\\": {         \\\"unitOverride\\\": \\\"1\\\",         \\\"timeSeriesFilter\\\": {           \\\"filter\\\": \\\"metric.type=\\\\\\\"custom.googleapis.com/user/x_mongo_prod_instance_count\\\\\\\" resource.type=\\\\\\\"global\\\\\\\"\\\",           \\\"aggregation\\\": {             \\\"perSeriesAligner\\\": \\\"ALIGN_MEAN\\\",             \\\"alignmentPeriod\\\": \\\"60s\\\"           }         }       }     }   ] }\"\n"
+        + "                riskProfile:\n"
+        + "                  metricType: RESP_TIME\n"
+        + "                  category: Performance\n"
+        + "                  thresholdTypes:\n"
+        + "                    - ACT_WHEN_HIGHER\n"
+        + "                sli:\n"
+        + "                  enabled: true\n"
+        + "                serviceInstanceField: svc\n"
+        + "                analysis:\n"
+        + "                  riskProfile:\n"
+        + "                    category: Performance\n"
+        + "                    metricType: RESP_TIME\n"
+        + "                    thresholdTypes:\n"
+        + "                      - ACT_WHEN_HIGHER\n"
+        + "                  liveMonitoring:\n"
+        + "                    enabled: true\n"
+        + "                  deploymentVerification:\n"
+        + "                    enabled: true";
+    MonitoredServiceResponse monitoredServiceResponse =
+        monitoredServiceService.createFromYaml(builderFactory.getProjectParams(), yaml);
+    MonitoredServiceResponse monitoredServiceResponseFromDb =
+        monitoredServiceService.get(builderFactory.getProjectParams(), "service1_test");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO()).isNotNull();
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getName()).isEqualTo("service1_test");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getEnvironmentRef()).isEqualTo("test");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getTemplate().getTemplateRef())
+        .isEqualTo("templateRef123");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getTemplate().getVersionLabel())
+        .isEqualTo("versionLabel123");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCreateFromYaml_WithInvalidJsonMetricDefinationString() {
+    String yaml = "monitoredService:\n"
+        + "  template:\n"
+        + "   templateRef: templateRef123\n"
+        + "   versionLabel: versionLabel123\n"
+        + "  type: Application\n"
+        + "  description: description\n"
+        + "  identifier: testms\n"
+        + "  name: test\n"
+        + "  serviceRef: service1\n"
+        + "  environmentRef: test\n"
+        + "  sources:\n"
+        + "      changeSources: \n"
+        + "      healthSources:\n"
+        + "        - type: Stackdriver\n"
+        + "          identifier: gcp\n"
+        + "          name: gcp\n"
+        + "          spec:\n"
+        + "            connectorRef: account.Google_Cloud_Provider\n"
+        + "            feature: Cloud Metrics\n"
+        + "            metricDefinitions:\n"
+        + "              - dashboardName: \"\"\n"
+        + "                dashboardPath: \"\"\n"
+        + "                metricName: m1\n"
+        + "                metricTags:\n"
+        + "                  - m\n"
+        + "                identifier: m1\n"
+        + "                isManualQuery: true\n"
+        + "                jsonMetricDefinitionString: \"{   \\\"dataSets\\\" [     {       \\\"timeSeriesQuery\\\": {         \\\"unitOverride\\\": \\\"1\\\",         \\\"timeSeriesFilter\\\": {           \\\"filter\\\": \\\"metric.type=\\\\\\\"custom.googleapis.com/user/x_mongo_prod_instance_count\\\\\\\" resource.type=\\\\\\\"global\\\\\\\"\\\",           \\\"aggregation\\\": {             \\\"perSeriesAligner\\\": \\\"ALIGN_MEAN\\\",             \\\"alignmentPeriod\\\": \\\"60s\\\"           }         }       }     }   ] }\"\n"
+        + "                riskProfile:\n"
+        + "                  metricType: RESP_TIME\n"
+        + "                  category: Performance\n"
+        + "                  thresholdTypes:\n"
+        + "                    - ACT_WHEN_HIGHER\n"
+        + "                sli:\n"
+        + "                  enabled: true\n"
+        + "                serviceInstanceField: svc\n"
+        + "                analysis:\n"
+        + "                  riskProfile:\n"
+        + "                    category: Performance\n"
+        + "                    metricType: RESP_TIME\n"
+        + "                    thresholdTypes:\n"
+        + "                      - ACT_WHEN_HIGHER\n"
+        + "                  liveMonitoring:\n"
+        + "                    enabled: true\n"
+        + "                  deploymentVerification:\n"
+        + "                    enabled: true";
+
+    assertThatThrownBy(() -> monitoredServiceService.createFromYaml(builderFactory.getProjectParams(), yaml))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
   public void testCreateFromYaml_withoutIdentifier() {

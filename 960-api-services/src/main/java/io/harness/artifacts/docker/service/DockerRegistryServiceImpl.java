@@ -44,6 +44,7 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.network.Http;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -411,7 +412,8 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
         dockerConfig, registryRestClient, getToken, authHeader, imageName, tag);
   }
 
-  private boolean handleValidateCredentialsEndingWithSlash(
+  @VisibleForTesting
+  boolean handleValidateCredentialsEndingWithSlash(
       DockerRegistryRestClient registryRestClient, DockerInternalConfig dockerConfig) {
     try {
       // This is special case for repositories that require "/v2/" path for getting API version . Eg. Harbor docker
@@ -438,7 +440,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
     } catch (IOException ioException) {
       Exception exception = new Exception(ioException);
       throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
-          "Check if the provided credentials are correct",
+          "Check if the provided credentials, provider type are correct",
           new InvalidArtifactServerException(ExceptionUtils.getMessage(exception), USER));
     }
   }

@@ -81,17 +81,22 @@ public class RedisProducer extends AbstractProducer {
   }
 
   private String sendInternal(Message message) {
-    Map<String, String> redisData = new HashMap<>(message.getMetadataMap());
-    addTraceId(redisData);
-    redisData.put(REDIS_STREAM_INTERNAL_KEY, Base64.getEncoder().encodeToString(message.getData().toByteArray()));
-    populateOtherProducerSpecificData(redisData);
+    try {
+      Map<String, String> redisData = new HashMap<>(message.getMetadataMap());
+      addTraceId(redisData);
+      redisData.put(REDIS_STREAM_INTERNAL_KEY, Base64.getEncoder().encodeToString(message.getData().toByteArray()));
+      populateOtherProducerSpecificData(redisData);
 
-    StreamMessageId messageId = stream.addAll(redisData, maxTopicSize, false);
-    addMonitoring(message);
-    redisData.remove(REDIS_STREAM_INTERNAL_KEY);
-    log.info("Events framework message inserted - messageId: {}, metaData: {} in the topic: {}", messageId, redisData,
-        this.getTopicName());
-    return messageId.toString();
+      StreamMessageId messageId = stream.addAll(redisData, maxTopicSize, false);
+      log.info("Events framework message inserted - messageId: {}, metaData: {} in the topic: {}", messageId, redisData,
+          this.getTopicName());
+      addMonitoring(message);
+      redisData.remove(REDIS_STREAM_INTERNAL_KEY);
+      return messageId.toString();
+    } catch (Exception ex) {
+      log.error("Exception occurred in sendInternal", ex);
+      throw ex;
+    }
   }
 
   protected void populateOtherProducerSpecificData(Map<String, String> redisData) {

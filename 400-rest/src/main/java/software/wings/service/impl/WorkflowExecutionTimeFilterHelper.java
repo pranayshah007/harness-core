@@ -54,7 +54,7 @@ public class WorkflowExecutionTimeFilterHelper {
     }
     PageRequest<WorkflowExecution> copiedPageRequest = populatePageRequestFilters(pageRequest);
     Optional<SearchFilter> appIdFilterOpt =
-        pageRequest.getFilters()
+        copiedPageRequest.getFilters()
             .stream()
             .filter(filter -> WorkflowExecutionKeys.appId.equals(filter.getFieldName()))
             .findFirst();
@@ -77,64 +77,64 @@ public class WorkflowExecutionTimeFilterHelper {
 
     Map<String, Long> createdAtMap = new HashMap<>();
 
-    if (!appIdFilterOpt.isPresent()) {
-      searchFiltersForTime.forEach(filter -> {
-        switch (filter.getOp()) {
-          case GE:
-          case GT:
-            createdAtMap.put("startedAt", getTimeValueFromFilter(String.valueOf(filter.getFieldValues()[0])));
-            break;
-          case LT:
-          case LT_EQ:
-            createdAtMap.put("endAt", getTimeValueFromFilter(String.valueOf(filter.getFieldValues()[0])));
-            break;
-          default:
-            break;
-        }
-      });
+    searchFiltersForTime.forEach(filter -> {
+      switch (filter.getOp()) {
+        case GE:
+        case GT:
+          createdAtMap.put("startedAt", getTimeValueFromFilter(String.valueOf(filter.getFieldValues()[0])));
+          break;
+        case LT:
+        case LT_EQ:
+          createdAtMap.put("endAt", getTimeValueFromFilter(String.valueOf(filter.getFieldValues()[0])));
+          break;
+        default:
+          break;
+      }
+    });
 
-      Instant startedAt = null;
-      Instant endAt = null;
-      if (createdAtMap.containsKey("startedAt")) {
-        Long epochMillis = createdAtMap.get("startedAt");
-        startedAt = Instant.ofEpochMilli(epochMillis);
-      }
-      if (createdAtMap.containsKey("endAt")) {
-        Long epochMillis = createdAtMap.get("endAt");
-        endAt = Instant.ofEpochMilli(epochMillis);
-      }
+    Instant startedAt = null;
+    Instant endAt = null;
+    if (createdAtMap.containsKey("startedAt")) {
+      Long epochMillis = createdAtMap.get("startedAt");
+      startedAt = Instant.ofEpochMilli(epochMillis);
+    }
+    if (createdAtMap.containsKey("endAt")) {
+      Long epochMillis = createdAtMap.get("endAt");
+      endAt = Instant.ofEpochMilli(epochMillis);
+    }
 
-      if (createdAtMap.keySet().size() == 2) {
-        Duration duration = Duration.between(startedAt, endAt);
-        if (duration.compareTo(MAXIMUM_DURATION_WITHOUT_APPID) > 0
-            && featureFlagService.isEnabled(SPG_ENFORCE_TIME_RANGE_DEPLOYMENTS_WITHOUT_APP_ID, accountId)) {
-          throw new InvalidRequestException("Maximum time range without appId is 1 month.");
-        } else if (duration.compareTo(FOUR_MONTHS_DURATION) > 0) {
-          throw new InvalidRequestException("Time range can be maximum of three months.");
-        }
-      } else if (createdAtMap.keySet().size() == 1) {
-        if (endAt != null) {
-          startedAt = endAt.minus(MAXIMUM_DURATION_WITHOUT_APPID);
-        } else {
-          endAt = startedAt.plus(MAXIMUM_DURATION_WITHOUT_APPID);
-        }
+    if (createdAtMap.keySet().size() == 2) {
+      Duration duration = Duration.between(startedAt, endAt);
+      if (!appIdFilterOpt.isPresent() && duration.compareTo(MAXIMUM_DURATION_WITHOUT_APPID) > 0
+          && featureFlagService.isEnabled(SPG_ENFORCE_TIME_RANGE_DEPLOYMENTS_WITHOUT_APP_ID, accountId)) {
+        throw new InvalidRequestException("Maximum time range without appId is 1 month.");
+      } else if (duration.compareTo(FOUR_MONTHS_DURATION) > 0) {
+        throw new InvalidRequestException("Time range can be maximum of three months.");
       }
+    } else if (createdAtMap.keySet().size() == 1) {
+      if (endAt != null) {
+        startedAt = appIdFilterOpt.isPresent() ? endAt.minus(MAXIMUM_DURATION_WITH_APPID)
+                                               : endAt.minus(MAXIMUM_DURATION_WITHOUT_APPID);
+      } else {
+        endAt = appIdFilterOpt.isPresent() ? startedAt.plus(MAXIMUM_DURATION_WITH_APPID)
+                                           : startedAt.plus(MAXIMUM_DURATION_WITHOUT_APPID);
+      }
+    }
 
-      if (endAt != null && !createdAtMap.containsKey("endAt")) {
-        final SearchFilterBuilder startFilterBuilder = SearchFilter.builder();
-        startFilterBuilder.fieldName(WorkflowExecutionKeys.createdAt)
-            .fieldValues(new Object[] {endAt.toEpochMilli()})
-            .op(LT);
-        pageRequest.addFilter(startFilterBuilder.build());
-      }
+    if (endAt != null && !createdAtMap.containsKey("endAt")) {
+      final SearchFilterBuilder startFilterBuilder = SearchFilter.builder();
+      startFilterBuilder.fieldName(WorkflowExecutionKeys.createdAt)
+          .fieldValues(new Object[] {endAt.toEpochMilli()})
+          .op(LT);
+      pageRequest.addFilter(startFilterBuilder.build());
+    }
 
-      if (startedAt != null && !createdAtMap.containsKey("startedAt")) {
-        final SearchFilterBuilder endFilterBuilder = SearchFilter.builder();
-        endFilterBuilder.fieldName(WorkflowExecutionKeys.createdAt)
-            .fieldValues(new Object[] {startedAt.toEpochMilli()})
-            .op(GT);
-        pageRequest.addFilter(endFilterBuilder.build());
-      }
+    if (startedAt != null && !createdAtMap.containsKey("startedAt")) {
+      final SearchFilterBuilder endFilterBuilder = SearchFilter.builder();
+      endFilterBuilder.fieldName(WorkflowExecutionKeys.createdAt)
+          .fieldValues(new Object[] {startedAt.toEpochMilli()})
+          .op(GT);
+      pageRequest.addFilter(endFilterBuilder.build());
     }
   }
 

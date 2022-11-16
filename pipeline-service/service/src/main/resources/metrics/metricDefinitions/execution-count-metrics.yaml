@@ -4,5 +4,5 @@ metricGroup: execution_count_metric_group
 metrics:
   - metricName: active_execution_count
     metricDefinition: Number of active executions at a given instant
-    type: Count
+    type: LastValue
     unit: "1"

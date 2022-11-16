@@ -17,6 +17,7 @@ import static io.harness.connector.SecretSpecBuilder.getSecretName;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.ci.k8s.PodStatus.Status.RUNNING;
+import static io.harness.delegate.beans.ci.pod.CICommonConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.LITE_ENGINE;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -40,6 +41,7 @@ import io.harness.delegate.beans.ci.pod.ContainerParams;
 import io.harness.delegate.beans.ci.pod.PodParams;
 import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.delegate.beans.ci.pod.SecretVarParams;
+import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.citasks.CIInitializeTaskHandler;
@@ -61,6 +63,8 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
 import io.kubernetes.client.openapi.models.V1KeyToPath;
 import io.kubernetes.client.openapi.models.V1KeyToPathBuilder;
 import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
@@ -109,6 +113,8 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   private static final String DOCKER_CONFIG_KEY = ".dockercfg";
   private static final String HARNESS_IMAGE_SECRET = "HARNESS_IMAGE_SECRET";
   private static final String HARNESS_SECRETS_LIST = "HARNESS_SECRETS_LIST";
+  private static final String HARNESS_ADDITIONAL_CERTS_DIR = "HARNESS_ADDITIONAL_CERTS_DIR";
+  private static final String LITE_ENGINE_CERTS_DIR = "/harness-certs/";
 
   @Override
   public Type getType() {
@@ -223,7 +229,8 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
         servicePodParams.getSelectorMap(), servicePodParams.getPorts());
   }
 
-  private void createImageSecrets(CoreV1Api coreV1Api, String namespace, CIK8PodParams<CIK8ContainerParams> podParams) {
+  private void createImageSecrets(CoreV1Api coreV1Api, String namespace, CIK8PodParams<CIK8ContainerParams> podParams)
+      throws IOException {
     log.info("Creating image secrets for pod name: {}", podParams.getName());
     Stopwatch timer = Stopwatch.createStarted();
     List<CIK8ContainerParams> containerParamsList = new ArrayList<>();
@@ -256,6 +263,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   private void updatePodWithDelegateVolumes(CoreV1Api coreV1Api, String namespace, V1Pod pod) {
     List<V1Volume> podVolumes = new ArrayList<>();
     List<V1VolumeMount> containerVolumeMounts = new ArrayList<>();
+    List<V1VolumeMount> liteEngineVolumeMounts = new ArrayList<>();
 
     Map<String, List<String>> srcDestMappings = secretVolumesHelper.getSecretVolumeMappings();
     if (isEmpty(srcDestMappings)) {
@@ -292,11 +300,21 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
       List<V1KeyToPath> l = new ArrayList<>();
       destPaths.forEach(path
           -> l.add(new V1KeyToPathBuilder().withKey(secretKey).withPath(secretVolumesHelper.getName(path)).build()));
+      // All certs get mounted to the lite engine certs directory
+      String liteEnginePath = LITE_ENGINE_CERTS_DIR + secretVolumesHelper.getName(srcPath);
+      l.add(new V1KeyToPathBuilder().withKey(secretKey).withPath(secretVolumesHelper.getName(liteEnginePath)).build());
 
       V1SecretVolumeSource secretVolumeSource =
           new V1SecretVolumeSourceBuilder().withSecretName(secretKey).withItems(l).build();
 
       podVolumes.add(new V1VolumeBuilder().withSecret(secretVolumeSource).withName(secretKey).build());
+
+      liteEngineVolumeMounts.add(new V1VolumeMountBuilder()
+                                     .withName(secretKey)
+                                     .withMountPath(liteEnginePath)
+                                     .withSubPath(secretVolumesHelper.getName(liteEnginePath))
+                                     .withReadOnly(true)
+                                     .build());
 
       // Update container volume mounts with secret volume keys and destination paths.
       destPaths.forEach(path
@@ -313,7 +331,12 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
 
     // Update volume mounts for all containers in the pod (except the lite engine container)
     for (V1Container c : pod.getSpec().getContainers()) {
-      if (c.getName().equals("lite-engine")) { // TODO: Process this in ContainerParams to remove hardcoding here
+      if (c.getName().equals(LITE_ENGINE_CONTAINER_NAME)) {
+        liteEngineVolumeMounts.forEach(c::addVolumeMountsItem);
+        // Add in the certs directory to be used
+        V1EnvVar certVar =
+            new V1EnvVarBuilder().withName(HARNESS_ADDITIONAL_CERTS_DIR).withValue(LITE_ENGINE_CERTS_DIR).build();
+        c.addEnvItem(certVar);
         continue;
       }
 
@@ -342,6 +365,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     Map<String, String> gitSecretData =
         getAndUpdateGitSecretData(gitConnectorDetails, containerParamsList, k8SecretName);
 
+    Map<String, SecretVariableDTO> customSecretCache = new HashMap<>();
     Map<String, String> secretData = new HashMap<>();
     for (CIK8ContainerParams containerParams : containerParamsList) {
       log.info(
@@ -380,8 +404,8 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
       if (isNotEmpty(secretVariableDetails)) {
         log.info("Creating custom secret env variables for container {} present on pod: {}", containerParams.getName(),
             podParams.getName());
-        Map<String, String> customVarSecretData =
-            getAndUpdateCustomVariableSecretData(secretVariableDetails, containerParams, k8SecretName);
+        Map<String, String> customVarSecretData = getAndUpdateCustomVariableSecretData(
+            secretVariableDetails, containerParams, k8SecretName, customSecretCache);
         secretData.putAll(customVarSecretData);
       }
       if (isNotEmpty(plainTextSecretsByName)) {
@@ -472,10 +496,10 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     }
   }
 
-  private Map<String, String> getAndUpdateCustomVariableSecretData(
-      List<SecretVariableDetails> secretVariableDetails, CIK8ContainerParams containerParams, String secretName) {
+  private Map<String, String> getAndUpdateCustomVariableSecretData(List<SecretVariableDetails> secretVariableDetails,
+      CIK8ContainerParams containerParams, String secretName, Map<String, SecretVariableDTO> cache) {
     Map<String, SecretParams> customVarSecretData =
-        secretSpecBuilder.decryptCustomSecretVariables(secretVariableDetails);
+        secretSpecBuilder.decryptCustomSecretVariables(secretVariableDetails, cache);
     if (isNotEmpty(customVarSecretData)) {
       updateContainer(containerParams, secretName, customVarSecretData);
       return customVarSecretData.values().stream().collect(

@@ -20,9 +20,9 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.rule.Owner;
-import io.harness.spec.server.ng.model.Service;
-import io.harness.spec.server.ng.model.ServiceRequest;
-import io.harness.spec.server.ng.model.ServiceResponse;
+import io.harness.spec.server.ng.v1.model.Service;
+import io.harness.spec.server.ng.v1.model.ServiceRequest;
+import io.harness.spec.server.ng.v1.model.ServiceResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.serializer.HObjectMapper;

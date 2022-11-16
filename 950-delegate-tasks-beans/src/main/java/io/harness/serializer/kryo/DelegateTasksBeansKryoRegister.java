@@ -49,6 +49,7 @@ import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.SerializedResponseData;
 import io.harness.delegate.beans.SlackTaskParams;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchBuildsResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchRepositoriesResponse;
@@ -256,6 +257,7 @@ import io.harness.delegate.beans.ecs.EcsRollingDeployResult;
 import io.harness.delegate.beans.ecs.EcsRollingRollbackResult;
 import io.harness.delegate.beans.ecs.EcsRunTaskResult;
 import io.harness.delegate.beans.ecs.EcsTask;
+import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
@@ -297,6 +299,7 @@ import io.harness.delegate.beans.gitapi.GitApiResult;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitRepoType;
+import io.harness.delegate.beans.helm.HelmChartVersionDetails;
 import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
@@ -351,6 +354,10 @@ import io.harness.delegate.task.ListNotifyResponseData;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryBaseArtifactDelegateRequest;
@@ -458,6 +465,7 @@ import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactType;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
+import io.harness.delegate.task.azure.artifact.AzureDevOpsArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
 import io.harness.delegate.task.azure.artifact.JenkinsAzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails;
@@ -508,6 +516,8 @@ import io.harness.delegate.task.cloudformation.CloudformationCommandUnit;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGParameters;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskType;
+import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest;
+import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsGitFetchFileConfig;
 import io.harness.delegate.task.ecs.EcsGitFetchRunTaskFileConfig;
@@ -544,6 +554,10 @@ import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.delegate.task.ecs.response.EcsS3FetchResponse;
 import io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse;
+import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
+import io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest;
+import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
+import io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpListBucketsRequest;
 import io.harness.delegate.task.gcp.request.GcpListClustersRequest;
@@ -570,6 +584,8 @@ import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmCommandRequestNG;
 import io.harness.delegate.task.helm.HelmCommandResponse;
 import io.harness.delegate.task.helm.HelmCommandResponseNG;
+import io.harness.delegate.task.helm.HelmFetchChartVersionRequestNG;
+import io.harness.delegate.task.helm.HelmFetchChartVersionResponse;
 import io.harness.delegate.task.helm.HelmFetchFileConfig;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.helm.HelmInstallCmdResponseNG;
@@ -719,6 +735,7 @@ import io.harness.delegate.task.ssh.AzureInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
+import io.harness.delegate.task.ssh.EmptyHostDelegateConfig;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
@@ -751,7 +768,9 @@ import io.harness.delegate.task.stepstatus.artifact.DockerArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactMetadata;
+import io.harness.delegate.task.terraform.InlineTerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.InlineTerraformVarFileInfo;
+import io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.RemoteTerraformVarFileInfo;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformCommand;
@@ -821,6 +840,8 @@ import software.wings.beans.command.JenkinsTaskParams;
 import software.wings.beans.command.KubernetesResizeParams;
 import software.wings.beans.container.AwsAutoScalarConfig;
 import software.wings.beans.infrastructure.instance.info.EcsContainerInfo;
+import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
+import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
 import software.wings.beans.s3.FetchS3FilesCommandParams;
 import software.wings.beans.s3.FetchS3FilesExecutionResponse;
@@ -919,12 +940,14 @@ import software.wings.yaml.gitSync.YamlGitConfig;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.esotericsoftware.kryo.Kryo;
 import com.google.protobuf.UnknownFieldSet;
+import lombok.SneakyThrows;
 import org.eclipse.jgit.api.GitCommand;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 @OwnedBy(DEL)
 public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
+  @SneakyThrows
   @Override
   public void register(Kryo kryo) {
     kryo.register(SettingAttribute.class, 5008);
@@ -1092,6 +1115,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(SpotinstTrafficShiftAlbSwapRoutesParameters.class, 19043);
     kryo.register(SystemEnvCheckerCapability.class, 19022);
     kryo.register(TaskData.class, 19002);
+    kryo.register(TaskDataV2.class, 19005);
     kryo.register(YamlGitConfigDTO.class, 19087);
     kryo.register(YamlGitConfigDTO.RootFolder.class, 19095);
     kryo.register(AzureVMSSPreDeploymentData.class, 19106);
@@ -1776,6 +1800,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(SerializedResponseData.class, 55401);
     kryo.register(SerializationFormat.class, 55402);
+    kryo.register(io.harness.beans.SerializationFormat.class, 55499);
     kryo.register(SecretConfigFile.class, 55334);
     kryo.register(GitApiMergePRTaskResponse.class, 55403);
     kryo.register(CustomRemoteStoreDelegateConfig.class, 56403);
@@ -1845,11 +1870,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsRunTaskRequest.class, 573542);
     kryo.register(EcsRunTaskResponse.class, 573543);
     kryo.register(EcsRunTaskResult.class, 573544);
-    kryo.register(EcsS3FetchRequest.class, 573545);
-    kryo.register(EcsS3FetchResponse.class, 573546);
-    kryo.register(EcsS3FetchFileConfig.class, 573547);
-    kryo.register(EcsS3FetchRunTaskRequest.class, 573548);
-    kryo.register(EcsS3FetchRunTaskResponse.class, 573549);
+
+    kryo.register(EcsS3FetchRequest.class, 573555);
+    kryo.register(EcsS3FetchResponse.class, 573556);
+    kryo.register(EcsS3FetchFileConfig.class, 573557);
+    kryo.register(EcsS3FetchRunTaskRequest.class, 573558);
+    kryo.register(EcsS3FetchRunTaskResponse.class, 573559);
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);
@@ -1890,6 +1916,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureFetchArmPreDeploymentDataTaskParameters.class, 55423);
     kryo.register(AzureFetchArmPreDeploymentDataTaskResponse.class, 55424);
     kryo.register(AwsS3ArtifactDelegateConfig.class, 9800007);
+    kryo.register(InlineTerraformBackendConfigFileInfo.class, 9800008);
+    kryo.register(RemoteTerraformBackendConfigFileInfo.class, 9800009);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
     kryo.register(GcpSecretManagerValidationParams.class, 19879);
     kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
@@ -1897,13 +1925,34 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ArtifactoryFetchImagePathResponse.class, 55428);
     kryo.register(NexusArtifactDelegateConfig.class, 55429);
     kryo.register(JenkinsAzureArtifactRequestDetails.class, 55430);
+    kryo.register(AzureDevOpsArtifactRequestDetails.class, 55431);
     kryo.register(SshConnectivityExecutionCapability.class, 55435);
+    kryo.register(FetchInstanceScriptTaskNGRequest.class, 55436);
+    kryo.register(FetchInstanceScriptTaskNGResponse.class, 55437);
     kryo.register(NoInstalledDelegatesException.class, 73988);
     kryo.register(NoEligibleDelegatesInAccountException.class, 73989);
     kryo.register(NoAvailableDelegatesException.class, 73990);
     kryo.register(NoDelegatesException.class, 73991);
     kryo.register(NexusAzureArtifactRequestDetails.class, 73992);
+    kryo.register(HelmFetchChartVersionRequestNG.class, 73993);
+    kryo.register(HelmChartVersionDetails.class, 73994);
+    kryo.register(HelmFetchChartVersionResponse.class, 73995);
+
     kryo.register(DelegateTaskExpiredException.class, 980036);
+    kryo.register(K8sPodInfo.class, 980100);
+    kryo.register(K8sContainerInfo.class, 980101);
     kryo.register(S3BuildsResponse.class, 1010101);
+    kryo.register(AMIArtifactDelegateRequest.class, 60011);
+    kryo.register(AMIArtifactDelegateResponse.class, 60012);
+    kryo.register(AMITag.class, 60013);
+    kryo.register(AMIFilter.class, 60014);
+    kryo.register(EmptyHostDelegateConfig.class, 60015);
+
+    // Elastigroup
+    kryo.register(ElastigroupStartupScriptFetchRequest.class, 573545);
+    kryo.register(ElastigroupStartupScriptFetchResponse.class, 573546);
+    kryo.register(ElastigroupSetupCommandRequest.class, 573547);
+    kryo.register(ElastigroupSetupResponse.class, 573548);
+    kryo.register(ElastigroupSetupResult.class, 573549);
   }
 }

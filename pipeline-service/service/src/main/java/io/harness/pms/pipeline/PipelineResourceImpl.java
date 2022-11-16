@@ -53,7 +53,6 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
-import io.harness.pms.yaml.YamlVersion;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
 import io.harness.utils.PageUtils;
@@ -101,13 +100,13 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId, String pipelineIdentifier,
       String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml) {
-    YamlVersion pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
+    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     PipelineEntity pipelineEntity =
         PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
 
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.create(pipelineEntity);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(pipelineEntity);
 
     PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
     PipelineEntity createdEntity = pipelineCRUDResult.getPipelineEntity();
@@ -119,13 +118,13 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId, String pipelineIdentifier,
       String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml) {
-    YamlVersion pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
+    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     PipelineEntity pipelineEntity =
         PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
 
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.create(pipelineEntity);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(pipelineEntity);
 
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
@@ -144,7 +143,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       GitEntityCreateInfoDTO gitEntityCreateInfo, @NotNull ClonePipelineDTO clonePipelineDTO) {
     pipelineCloneHelper.checkAccess(clonePipelineDTO, accountId);
 
-    PipelineSaveResponse pipelineSaveResponse = pmsPipelineService.clone(clonePipelineDTO, accountId);
+    PipelineSaveResponse pipelineSaveResponse =
+        pmsPipelineService.validateAndClonePipeline(clonePipelineDTO, accountId);
 
     return ResponseDTO.newResponse(pipelineSaveResponse);
   }
@@ -185,13 +185,14 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<PMSPipelineResponseDTO> getPipelineByIdentifier(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
       @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo,
-      boolean getTemplatesResolvedPipeline) {
+      boolean getTemplatesResolvedPipeline, boolean loadFromFallbackBranch) {
     log.info(String.format("Retrieving pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity;
     try {
-      pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
+      pipelineEntity = pmsPipelineService.getAndValidatePipeline(
+          accountId, orgId, projectId, pipelineId, false, loadFromFallbackBranch);
     } catch (PolicyEvaluationFailureException pe) {
       return ResponseDTO.newResponse(
           PMSPipelineResponseDTO.builder()
@@ -249,12 +250,13 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
       @ResourceIdentifier String pipelineId, String pipelineName, String pipelineDescription, Boolean isDraft,
       GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) {
-    YamlVersion pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
+    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
         accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion);
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.updatePipelineYaml(withVersion, ChangeType.MODIFY);
+    PipelineCRUDResult pipelineCRUDResult =
+        pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY);
     PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
     PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
     return ResponseDTO.newResponse(updatedEntity.getVersion().toString(), updatedEntity.getIdentifier());
@@ -265,12 +267,13 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgId,
       @NotNull @ProjectIdentifier String projectId, @ResourceIdentifier String pipelineId, String pipelineName,
       String pipelineDescription, Boolean isDraft, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) {
-    YamlVersion pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
+    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
         accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion);
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.updatePipelineYaml(withVersion, ChangeType.MODIFY);
+    PipelineCRUDResult pipelineCRUDResult =
+        pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY);
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
       return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(governanceMetadata).build());
@@ -333,7 +336,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
             pipelineId, projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity;
-    pipelineEntity = pmsPipelineService.getPipelineWithoutPerformingValidations(
+    pipelineEntity = pmsPipelineService.getPipeline(
         accountId, orgId, projectId, pipelineId, false, Boolean.TRUE.equals(getMetadataOnly));
 
     PMSPipelineSummaryResponseDTO pipelineSummary = PMSPipelineDtoMapper.preparePipelineSummary(
@@ -438,17 +441,15 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<String> validatePipelineByIdentifier(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
       @ResourceIdentifier String pipelineId) {
-    Optional<PipelineEntity> entityOptional = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
-    if (entityOptional.isPresent()) {
-      PipelineEntity pipelineEntity = entityOptional.get();
-      log.info(String.format("Validating the pipeline with identifier %s in project %s, org %s, account %s",
-          pipelineEntity.getIdentifier(), projectId, orgId, accountId));
-      pipelineServiceHelper.validatePipelineYaml(pipelineEntity, false);
-      return ResponseDTO.newResponse(pipelineEntity.getIdentifier());
-    } else {
+    log.info(String.format("Validating the pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
+        projectId, orgId, accountId));
+    Optional<PipelineEntity> entityOptional =
+        pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+    if (entityOptional.isEmpty()) {
       throw new EntityNotFoundException(
           String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId));
     }
+    return ResponseDTO.newResponse(pipelineId);
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
@@ -460,9 +461,10 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         String.format("Retrieving templates resolved pipeline with identifier %s in project %s, org %s, account %s",
             pipelineId, projectId, orgId, accountId));
 
-    Optional<PipelineEntity> pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
+    Optional<PipelineEntity> pipelineEntity =
+        pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
 
-    if (!pipelineEntity.isPresent()) {
+    if (pipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
           String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId));
     }
@@ -483,6 +485,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   @Override
   public ResponseDTO<PMSPipelineListRepoResponse> getListRepos(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return ResponseDTO.newResponse(PMSPipelineListRepoResponse.builder().build());
+    return ResponseDTO.newResponse(
+        pmsPipelineService.getListOfRepos(accountIdentifier, orgIdentifier, projectIdentifier));
   }
 }

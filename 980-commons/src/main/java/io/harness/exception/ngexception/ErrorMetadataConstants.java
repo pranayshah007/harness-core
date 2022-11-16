@@ -17,4 +17,5 @@ public interface ErrorMetadataConstants {
   String TEMPLATE_INPUTS_VALIDATION_ERROR = "TemplateInputsErrorMetadataV2";
   String INVALID_FIELDS_ERROR = "InvalidFieldsDTO";
   String FILTER_CREATOR_ERROR = "FilterCreatorResponseError";
+  String GIT_ERROR = "GitErrorMetadataDTO";
 }

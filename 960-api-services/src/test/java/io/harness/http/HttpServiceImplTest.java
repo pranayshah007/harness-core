@@ -44,6 +44,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
+import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -113,7 +115,8 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
   @Category(UnitTests.class)
   public void executeUrl_IsUseProxy_Error() throws IOException {
     PowerMockito.mockStatic(Http.class);
-    when(Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_F_Error_T.getUrl())).thenReturn(true);
+    when(Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_F_Error_T.getUrl()))
+        .thenAnswer((Answer<Boolean>) invocation -> true);
 
     assertThatThrownBy(() -> httpService.executeUrl(httpInternalConfig_Proxy_T_CertValid_F_Error_T))
         .isInstanceOf(InvalidRequestException.class)
@@ -130,13 +133,17 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
     HttpServiceImpl spyHttpService = spy(httpService);
 
     PowerMockito.mockStatic(Http.class);
-    when(Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl())).thenReturn(false);
+    // this is a dirty fix (because we are using different MockMaker then PowerMockito is not working as expected when
+    // calling verifyStatic(...)) with this call we are registering Http class to list of mocked static classes
+    Mockito.mockStatic(Http.class);
+    when(Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl()))
+        .thenAnswer((Answer<Boolean>) invocation -> false);
 
     HttpHost myHttpHost = new HttpHost("MyHost");
-    when(Http.getHttpProxyHost()).thenReturn(myHttpHost);
+    when(Http.getHttpProxyHost()).thenAnswer((Answer<HttpHost>) invocation -> myHttpHost);
 
-    when(Http.getProxyUserName()).thenReturn("username");
-    when(Http.getProxyPassword()).thenReturn("password");
+    when(Http.getProxyUserName()).thenAnswer((Answer<String>) invocation -> "username");
+    when(Http.getProxyPassword()).thenAnswer((Answer<String>) invocation -> "password");
 
     doReturn(new HttpGet(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl()))
         .when(spyHttpService)
@@ -184,13 +191,17 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
     HttpServiceImpl spyHttpService = spy(httpService);
 
     PowerMockito.mockStatic(Http.class);
-    when(Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl())).thenReturn(false);
+    // this is a dirty fix (because we are using different MockMaker then PowerMockito is not working as expected when
+    // calling verifyStatic(...)) with this call we are registering Http class to list of mocked static classes
+    Mockito.mockStatic(Http.class);
+    when(Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl()))
+        .thenAnswer((Answer<Boolean>) invocation -> false);
 
     HttpHost myHttpHost = new HttpHost("MyHost");
-    when(Http.getHttpProxyHost()).thenReturn(myHttpHost);
+    when(Http.getHttpProxyHost()).thenAnswer((Answer<HttpHost>) invocation -> myHttpHost);
 
-    when(Http.getProxyUserName()).thenReturn("");
-    when(Http.getProxyPassword()).thenReturn("password");
+    when(Http.getProxyUserName()).thenAnswer((Answer<String>) invocation -> "");
+    when(Http.getProxyPassword()).thenAnswer((Answer<String>) invocation -> "password");
 
     doReturn(new HttpGet(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl()))
         .when(spyHttpService)
@@ -235,10 +246,15 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
   @Category(UnitTests.class)
   public void executeUrl_checkWhenProxyHostNull() throws Exception {
     HttpServiceImpl spyHttpService = spy(httpService);
-    PowerMockito.mockStatic(Http.class);
-    when(Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_F_Error_T.getUrl())).thenReturn(false);
 
-    when(Http.getHttpProxyHost()).thenReturn(null);
+    PowerMockito.mockStatic(Http.class);
+    // this is a dirty fix (because we are using different MockMaker then PowerMockito is not working as expected when
+    // calling verifyStatic(...)) with this call we are registering Http class to list of mocked static classes
+    Mockito.mockStatic(Http.class);
+    when(Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_F_Error_T.getUrl()))
+        .thenAnswer((Answer<Boolean>) invocation -> false);
+
+    when(Http.getHttpProxyHost()).thenAnswer((Answer<Void>) invocation -> null);
 
     doReturn(new HttpGet(httpInternalConfig_Proxy_T_CertValid_F_Error_T.getUrl()))
         .when(spyHttpService)
@@ -280,7 +296,7 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     PowerMockito.mockStatic(GlobalContextManager.class);
 
-    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenReturn(null);
+    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenAnswer((Answer<Void>) invocation -> null);
 
     doReturn(new HttpGet(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl()))
         .when(spyHttpService)
@@ -319,7 +335,7 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     PowerMockito.mockStatic(GlobalContextManager.class);
 
-    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenReturn(null);
+    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenAnswer((Answer<Void>) invocation -> null);
 
     doReturn(new HttpGet(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl()))
         .when(spyHttpService)
@@ -356,7 +372,7 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     PowerMockito.mockStatic(GlobalContextManager.class);
 
-    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenReturn(null);
+    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenAnswer((Answer<Void>) invocation -> null);
 
     doReturn(new HttpGet(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl()))
         .when(spyHttpService)
@@ -393,7 +409,7 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     PowerMockito.mockStatic(GlobalContextManager.class);
 
-    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenReturn(null);
+    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenAnswer((Answer<Void>) invocation -> null);
 
     doReturn(new HttpGet(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl()))
         .when(spyHttpService)

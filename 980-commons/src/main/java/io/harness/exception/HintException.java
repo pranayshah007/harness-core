@@ -49,6 +49,7 @@ public class HintException extends WingsException {
   public static final String HINT_CUSTOM_ACCESS_DENIED = "Please ensure credentials are valid";
   public static final String HINT_GITHUB_ACCESS_DENIED = "Please ensure Github credentials are valid";
   public static final String HINT_AZURE_ACCESS_DENIED = "Please ensure Azure Artifacts credentials are valid";
+  public static final String HINT_AMI_ACCESS_DENIED = "Please ensure AMI credentials are valid";
   public static final String HINT_NEXUS_IMAGE_NAME =
       "Check if the Docker image you are looking for is in the Nexus registry.";
   public static final String HINT_NEXUS_ACCESS_DENIED = "Please ensure Nexus credentials are valid";
@@ -136,6 +137,9 @@ public class HintException extends WingsException {
       "Please check user email, password entered for Ldap test/enable authentication for the configured Ldap settings";
   public static final String LDAP_ATTRIBUTES_INCORRECT =
       "Verify configuration provided in Base DN or Search Filter are correct";
+  public static final String HINT_AZURE_AUTHENTICATION_ISSUE =
+      "Please check if you Azure credentials are valid and correct";
+  public static final String HINT_AZURE_GENERIC_ISSUE = "Please check if you Azure configuration is valid and correct";
 
   public HintException(String message) {
     super(message, null, HINT, INFO, null, null);

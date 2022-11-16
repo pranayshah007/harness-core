@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Api("scim")
 @Path("/scim/account/{accountIdentifier}/")
 @Consumes({"application/scim+json", "application/json"})
-@Produces("application/scim+json")
+@Produces({"application/scim+json", "application/json"})
 @Slf4j
 @ScimAPI
 public class NGScimGroupResource extends ScimResource {

@@ -61,7 +61,7 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
   private static final String query_statement = "SELECT * FROM DEPLOYMENT WHERE EXECUTIONID=?";
   private static final String delete_statement = "DELETE FROM DEPLOYMENT WHERE EXECUTIONID=?";
   private static final String insert_statement =
-      "INSERT INTO DEPLOYMENT (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,FAILURE_DETAILS,FAILED_STEP_NAMES,FAILED_STEP_TYPES,STAGENAME,ROLLBACK_DURATION, INSTANCES_DEPLOYED, TAGS, PARENT_PIPELINE_ID, CREATED_BY_TYPE) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "INSERT INTO DEPLOYMENT (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,FAILURE_DETAILS,FAILED_STEP_NAMES,FAILED_STEP_TYPES,STAGENAME,ROLLBACK_DURATION, ON_DEMAND_ROLLBACK, ORIGINAL_EXECUTION_ID, MANUALLY_ROLLED_BACK, INSTANCES_DEPLOYED, TAGS, PARENT_PIPELINE_ID, CREATED_BY_TYPE) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
   private static final String delete_statement_migration_parent_table =
       "DELETE FROM DEPLOYMENT_PARENT WHERE EXECUTIONID=?";
@@ -507,6 +507,11 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
 
     Long rollbackDuration = getRollbackDuration(eventInfo);
     insertStatement.setLong(++index, rollbackDuration);
+    boolean onDemandRollback = getOnDemandRollback(eventInfo);
+    insertStatement.setBoolean(++index, onDemandRollback);
+    insertStatement.setString(++index, eventInfo.getStringData().get(EventProcessor.ORIGINAL_EXECUTION_ID));
+    boolean manuallyRolledBack = getManuallyRolledBack(eventInfo);
+    insertStatement.setBoolean(++index, manuallyRolledBack);
 
     Integer instancesDeployed = getInstancesDeployed(eventInfo);
     insertStatement.setInt(++index, instancesDeployed);
@@ -532,6 +537,22 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
       rollbackDuration = 0L;
     }
     return rollbackDuration;
+  }
+
+  private boolean getOnDemandRollback(TimeSeriesEventInfo eventInfo) {
+    Boolean onDemandRollback = eventInfo.getBooleanData().get(EventProcessor.ON_DEMAND_ROLLBACK);
+    if (onDemandRollback == null) {
+      onDemandRollback = false;
+    }
+    return onDemandRollback;
+  }
+
+  private boolean getManuallyRolledBack(TimeSeriesEventInfo eventInfo) {
+    Boolean manuallyRolledBack = eventInfo.getBooleanData().get(EventProcessor.MANUALLY_ROLLED_BACK);
+    if (manuallyRolledBack == null) {
+      manuallyRolledBack = false;
+    }
+    return manuallyRolledBack;
   }
 
   private Integer getInstancesDeployed(TimeSeriesEventInfo eventInfo) {

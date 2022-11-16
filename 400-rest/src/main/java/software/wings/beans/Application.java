@@ -34,7 +34,7 @@ import software.wings.beans.entityinterface.TagAware;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
@@ -109,6 +109,7 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
 
   @Getter @Setter private Boolean isManualTriggerAuthorized;
   @Getter @Setter private Boolean areWebHookSecretsMandated;
+  @Getter @Setter private Boolean disableTriggers;
 
   public boolean isSample() {
     return sample;
@@ -385,6 +386,7 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
     private boolean sample;
     private Boolean isManualTriggerAuthorized;
     private Boolean areWebHookSecretsMandated;
+    private Boolean disableTriggers;
 
     private Builder() {}
 
@@ -492,6 +494,11 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
       return this;
     }
 
+    public Builder disableTriggers(Boolean disableTriggers) {
+      this.disableTriggers = disableTriggers;
+      return this;
+    }
+
     public Builder but() {
       return anApplication()
           .name(name)
@@ -512,7 +519,8 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
           .yamlGitConfig(yamlGitConfig)
           .sample(sample)
           .isManualTriggerAuthorized(isManualTriggerAuthorized)
-          .areWebHookSecretsMandated(areWebHookSecretsMandated);
+          .areWebHookSecretsMandated(areWebHookSecretsMandated)
+          .disableTriggers(disableTriggers);
     }
 
     public Application build() {
@@ -537,6 +545,7 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
       application.setSample(sample);
       application.setIsManualTriggerAuthorized(isManualTriggerAuthorized);
       application.setAreWebHookSecretsMandated(areWebHookSecretsMandated);
+      application.setDisableTriggers(disableTriggers);
       return application;
     }
   }
@@ -555,6 +564,7 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
     private String description;
     private Boolean isManualTriggerAuthorized;
     private Boolean areWebHookSecretsMandated;
+    private Boolean disableTriggers;
     private Boolean isGitSyncEnabled;
     private String gitConnector;
     private String branchName;

@@ -162,7 +162,6 @@ public class CommonStepInfo {
           .setName(StepSpecTypeConstants.WAIT_STEP)
           .setType(StepSpecTypeConstants.WAIT_STEP)
           .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Non-Scripted").build())
-          .setFeatureFlag(FeatureName.WAIT_STEP.name())
           .build();
 
   StepInfo serviceNowImportSetStepInfo =
@@ -174,7 +173,6 @@ public class CommonStepInfo {
                                .addFolderPaths(FolderPathConstants.SERVICENOW)
                                .build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_SERVICE_NOW.name())
-          .setFeatureFlag(FeatureName.CD_SERVICENOW_IMPORT_SET_NG.name())
           .build();
 
   public List<StepInfo> getCommonSteps(String category) {

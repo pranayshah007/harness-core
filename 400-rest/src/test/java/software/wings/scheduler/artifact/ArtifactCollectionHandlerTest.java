@@ -18,7 +18,7 @@ import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,8 +46,7 @@ import software.wings.service.intfc.PermitService;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.inject.Inject;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -119,9 +118,14 @@ public class ArtifactCollectionHandlerTest extends WingsBaseTest {
     MetricRegistry metricRegistry = mock(MetricRegistry.class);
     when(harnessMetricRegistry.getThreadPoolMetricRegistry()).thenReturn(metricRegistry);
 
-    ScheduledThreadPoolExecutor executor = mock(ScheduledThreadPoolExecutor.class);
-    artifactCollectionHandler.registerIterators(executor, 1);
+    artifactCollectionHandler.createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
+                                                         .name("ArtifactCollection")
+                                                         .poolSize(20)
+                                                         .interval(Duration.ofSeconds(10))
+                                                         .build(),
+        Duration.ofMinutes(1));
 
-    verify(executor).scheduleAtFixedRate(any(), anyLong(), anyLong(), any(TimeUnit.class));
+    verify(persistenceIteratorFactory)
+        .createPumpIteratorWithDedicatedThreadPool(any(), eq(ArtifactCollectionHandler.class), any());
   }
 }

@@ -10,7 +10,10 @@ package io.harness.security;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_HEADER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
+import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.SOWMYA;
@@ -29,6 +32,7 @@ import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.B
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.dto.TokenDTO;
@@ -71,6 +75,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({NGRestUtils.class})
 public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
+  public static final String API_TOKEN_DELIMITER = ".";
   private static final String accountIdentifier = "accountIdentifier";
   private static final String incorrectAccountIdentifier = "incorrectAccountIdentifier";
   private TokenClient tokenClient;
@@ -521,5 +526,180 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Invalid accountId in token " + uuid)
         .hasMessageContaining(uuid);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testFilter_pat_invalid_for_error_codes() {
+    String uuid = generateUuid();
+    String rawPassword = generateUuid();
+    String encodedPassword = new BCryptPasswordEncoder($2A, 10).encode(rawPassword);
+    PowerMockito.mockStatic(NGRestUtils.class);
+    TokenDTO tokenDTO = TokenDTO.builder()
+                            .apiKeyType(ApiKeyType.USER)
+                            .encodedPassword(encodedPassword)
+                            .valid(true)
+                            .accountIdentifier(accountIdentifier)
+                            .parentIdentifier(generateUuid())
+                            .email("user@harness.io")
+                            .username("user")
+                            .build();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> tokenDTO);
+    when(authenticationFilter.testRequestPredicate(containerRequestContext)).thenReturn(true);
+
+    // Token length not matching for API token
+    apiKey = "pat" + API_TOKEN_DELIMITER + uuid;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    assertErrorCode(INVALID_TOKEN);
+
+    // new API token containing incorrect accountId
+    newApiKey = "pat" + API_TOKEN_DELIMITER + incorrectAccountIdentifier + API_TOKEN_DELIMITER + uuid
+        + API_TOKEN_DELIMITER + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> tokenDTO);
+    assertErrorCode(INVALID_TOKEN);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testFilter_pat_invalid_prefix_for_error_code() {
+    String uuid = generateUuid();
+    String rawPassword = generateUuid();
+    String encodedPassword = new BCryptPasswordEncoder($2A, 10).encode(rawPassword);
+    PowerMockito.mockStatic(NGRestUtils.class);
+    TokenDTO tokenDTO = TokenDTO.builder()
+                            .apiKeyType(ApiKeyType.USER)
+                            .encodedPassword(encodedPassword)
+                            .valid(true)
+                            .accountIdentifier(accountIdentifier)
+                            .parentIdentifier(generateUuid())
+                            .email("user@harness.io")
+                            .username("user")
+                            .build();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> tokenDTO);
+    when(authenticationFilter.testRequestPredicate(containerRequestContext)).thenReturn(true);
+
+    // Invalid prefix for API token
+    apiKey = "sat" + API_TOKEN_DELIMITER + uuid + API_TOKEN_DELIMITER + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    assertErrorCode(INVALID_TOKEN);
+
+    // Invalid prefix for new API token
+    newApiKey = "sat" + API_TOKEN_DELIMITER + accountIdentifier + API_TOKEN_DELIMITER + uuid + API_TOKEN_DELIMITER
+        + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
+    assertErrorCode(INVALID_TOKEN);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testFilter_pat_wrong_password_for_error_code() {
+    String uuid = generateUuid();
+    String rawPassword = generateUuid();
+    String encodedPassword = new BCryptPasswordEncoder($2A, 10).encode(rawPassword);
+    PowerMockito.mockStatic(NGRestUtils.class);
+    TokenDTO tokenDTO = TokenDTO.builder()
+                            .apiKeyType(ApiKeyType.USER)
+                            .encodedPassword(encodedPassword)
+                            .valid(true)
+                            .accountIdentifier(accountIdentifier)
+                            .parentIdentifier(generateUuid())
+                            .email("user@harness.io")
+                            .username("user")
+                            .build();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> tokenDTO);
+    when(authenticationFilter.testRequestPredicate(containerRequestContext)).thenReturn(true);
+
+    // Raw password not matching for API token
+    apiKey = "pat" + API_TOKEN_DELIMITER + uuid + API_TOKEN_DELIMITER + rawPassword + "1";
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    assertErrorCode(INVALID_TOKEN);
+
+    // Raw password not matching for new API token
+    newApiKey = "pat" + API_TOKEN_DELIMITER + accountIdentifier + API_TOKEN_DELIMITER + uuid + API_TOKEN_DELIMITER
+        + rawPassword + "2";
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
+    assertErrorCode(INVALID_TOKEN);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testFilter_pat_expired_token_for_error_code() {
+    String uuid = generateUuid();
+    String rawPassword = generateUuid();
+    String encodedPassword = new BCryptPasswordEncoder($2A, 10).encode(rawPassword);
+    PowerMockito.mockStatic(NGRestUtils.class);
+    TokenDTO tokenDTO = TokenDTO.builder()
+                            .apiKeyType(ApiKeyType.USER)
+                            .encodedPassword(encodedPassword)
+                            .valid(true)
+                            .accountIdentifier(accountIdentifier)
+                            .parentIdentifier(generateUuid())
+                            .email("user@harness.io")
+                            .username("user")
+                            .build();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> tokenDTO);
+    when(authenticationFilter.testRequestPredicate(containerRequestContext)).thenReturn(true);
+
+    // Invalid token
+    apiKey = "pat" + API_TOKEN_DELIMITER + uuid + API_TOKEN_DELIMITER + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    tokenDTO.setValid(false);
+    assertErrorCode(EXPIRED_TOKEN);
+
+    // Invalid new API token
+    newApiKey = "pat" + API_TOKEN_DELIMITER + accountIdentifier + API_TOKEN_DELIMITER + uuid + API_TOKEN_DELIMITER
+        + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
+    tokenDTO.setValid(false);
+    assertErrorCode(EXPIRED_TOKEN);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testFilter_pat_non_existing_token_for_error_code() {
+    String uuid = generateUuid();
+    String rawPassword = generateUuid();
+    String encodedPassword = new BCryptPasswordEncoder($2A, 10).encode(rawPassword);
+    PowerMockito.mockStatic(NGRestUtils.class);
+    TokenDTO tokenDTO = TokenDTO.builder()
+                            .apiKeyType(ApiKeyType.USER)
+                            .encodedPassword(encodedPassword)
+                            .valid(true)
+                            .accountIdentifier(accountIdentifier)
+                            .parentIdentifier(generateUuid())
+                            .email("user@harness.io")
+                            .username("user")
+                            .build();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> tokenDTO);
+    when(authenticationFilter.testRequestPredicate(containerRequestContext)).thenReturn(true);
+
+    // Token not found in DB
+    apiKey = "pat" + API_TOKEN_DELIMITER + uuid + API_TOKEN_DELIMITER + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> null);
+    assertErrorCode(INVALID_TOKEN);
+
+    // new API token not found in DB
+    newApiKey = "pat" + API_TOKEN_DELIMITER + accountIdentifier + API_TOKEN_DELIMITER + uuid + API_TOKEN_DELIMITER
+        + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> null);
+    assertErrorCode(INVALID_TOKEN);
+  }
+
+  private void assertErrorCode(ErrorCode errorCode) {
+    try {
+      authenticationFilter.filter(containerRequestContext);
+    } catch (Exception exception) {
+      assertThat(exception).isInstanceOf(InvalidRequestException.class);
+      InvalidRequestException invalidRequestException = (InvalidRequestException) exception;
+      assertThat(invalidRequestException.getCode()).isEqualTo(errorCode);
+    }
   }
 }

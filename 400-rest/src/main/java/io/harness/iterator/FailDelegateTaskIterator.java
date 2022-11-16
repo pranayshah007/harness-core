@@ -69,7 +69,8 @@ import org.mongodb.morphia.query.Query;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._870_ORCHESTRATION)
-public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handler<DelegateTask> {
+public class FailDelegateTaskIterator
+    extends IteratorPumpModeHandler implements MongoPersistenceIterator.Handler<DelegateTask> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<DelegateTask> persistenceProvider;
   @Inject private AssignDelegateService assignDelegateService;
@@ -87,28 +88,34 @@ public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handle
 
   private static final long DELEGATE_TASK_FAIL_TIMEOUT = 30;
 
-  public void registerIterators(int threadPoolSize) {
-    PersistenceIteratorFactory.PumpExecutorOptions options =
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .interval(Duration.ofSeconds(DELEGATE_TASK_FAIL_TIMEOUT))
-            .poolSize(threadPoolSize)
-            .name("DelegateTaskFail")
-            .build();
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(options, FailDelegateTaskIterator.class,
-        MongoPersistenceIterator.<DelegateTask, MorphiaFilterExpander<DelegateTask>>builder()
-            .clazz(DelegateTask.class)
-            .fieldName(DelegateTaskKeys.delegateTaskFailIteration)
-            .targetInterval(Duration.ofSeconds(DELEGATE_TASK_FAIL_TIMEOUT))
-            .acceptableNoAlertDelay(Duration.ofSeconds(45))
-            .acceptableExecutionTime(Duration.ofSeconds(30))
-            .filterExpander(query
-                -> query.criteria(DelegateTaskKeys.createdAt)
-                       .lessThan(currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)))
-            .handler(this)
-            .schedulingType(MongoPersistenceIterator.SchedulingType.REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .unsorted(true)
-            .redistribute(true));
+  @Override
+  public void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<DelegateTask, MorphiaFilterExpander<DelegateTask>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       FailDelegateTaskIterator.class,
+                       MongoPersistenceIterator.<DelegateTask, MorphiaFilterExpander<DelegateTask>>builder()
+                           .clazz(DelegateTask.class)
+                           .fieldName(DelegateTaskKeys.delegateTaskFailIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(Duration.ofSeconds(45))
+                           .acceptableExecutionTime(Duration.ofSeconds(30))
+                           .filterExpander(query
+                               -> query.criteria(DelegateTaskKeys.createdAt)
+                                      .lessThan(currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)))
+                           .handler(this)
+                           .schedulingType(MongoPersistenceIterator.SchedulingType.REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .unsorted(true)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "DelegateTaskFail";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

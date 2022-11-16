@@ -83,4 +83,12 @@ public class GitContextHelper {
   public boolean isNullOrDefault(String val) {
     return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
   }
+
+  public String getBranch() {
+    GitEntityInfo gitEntityInfo = getGitEntityInfo();
+    if (gitEntityInfo == null) {
+      return null;
+    }
+    return gitEntityInfo.getBranch();
+  }
 }

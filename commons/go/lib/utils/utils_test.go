@@ -6,6 +6,7 @@
 package utils
 
 import (
+	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"testing"
 	"time"
 
@@ -25,27 +26,214 @@ func Test_NoOp(t *testing.T) {
 }
 
 func Test_ParseJavaNode(t *testing.T) {
-	// Test for source code file
-	f := "320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils.java"
-
-	node1 := Node{
-		Pkg:   "io.harness.stateutils.buildstate",
-		Class: "ConnectorUtils",
-		Type:  NodeType_SOURCE,
-		Lang:  LangType_JAVA,
+	tests := []struct {
+		name     string
+		file 	 types.File
+		node     Node
+	}{
+		{
+			name:     "ParseJavaNode_JavaSourceFile",
+			file: types.File{
+				Name: "320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils.java",
+			},
+			node: Node{
+				Pkg:   "io.harness.stateutils.buildstate",
+				Class: "ConnectorUtils",
+				Type:  NodeType_SOURCE,
+				Lang:  LangType_JAVA,
+			},
+		},
+		{
+			name:     "ParseJavaNode_JavaSourceFile_BadPath",
+			file: types.File{
+				Name: "320-ci-execution/src/main/java/io/harness/stateutils/ConnectorUtils.java",
+				Package: "io.harness.stateutils.buildstate",
+			},
+			node: Node{
+				Pkg:   "io.harness.stateutils.buildstate",
+				Class: "ConnectorUtils",
+				Type:  NodeType_SOURCE,
+				Lang:  LangType_JAVA,
+			},
+		},
+		{
+			name:     "ParseJavaNode_JavaTestFile",
+			file: types.File{
+				Name: "320-ci-execution/src/test/java/io/harness/stateutils/buildstate/ConnectorUtilsTest.java",
+			},
+			node: Node{
+				Pkg:   "io.harness.stateutils.buildstate",
+				Class: "ConnectorUtilsTest",
+				Type:  NodeType_TEST,
+				Lang:  LangType_JAVA,
+			},
+		},
+		{
+			name:     "ParseJavaNode_JavaTestFile_BadPath",
+			file: types.File{
+				Name: "320-ci-execution/src/test/java/io/harness/buildstate/ConnectorUtilsTest.java",
+				Package: "io.harness.stateutils.buildstate",
+			},
+			node: Node{
+				Pkg:   "io.harness.stateutils.buildstate",
+				Class: "ConnectorUtilsTest",
+				Type:  NodeType_TEST,
+				Lang:  LangType_JAVA,
+			},
+		},
+		{
+			name:     "ParseJavaNode_JavaResourceFile",
+			file: types.File{
+				Name: "320-ci-execution/src/test/resources/all.json",
+			},
+			node: Node{
+				Type: NodeType_RESOURCE,
+				Lang: LangType_JAVA,
+				File: "all.json",
+			},
+		},
+		{
+			name:     "ParseJavaNode_ScalaSourceFile",
+			file: types.File{
+				Name: "320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils.scala",
+			},
+			node: Node{
+				Class: "ConnectorUtils",
+				Type:  NodeType_SOURCE,
+				Lang:  LangType_JAVA,
+			},
+		},
+		{
+			name:     "ParseJavaNode_ScalaSourceFile_WithPkg",
+			file: types.File{
+				Name: "320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils.scala",
+				Package: "io.harness.stateutils.buildstate",
+			},
+			node: Node{
+				Pkg: "io.harness.stateutils.buildstate",
+				Class: "ConnectorUtils",
+				Type:  NodeType_SOURCE,
+				Lang:  LangType_JAVA,
+			},
+		},
+		{
+			name:     "ParseJavaNode_ScalaTestFile_ScalaTestPath",
+			file: types.File{
+				Name: "320-ci-execution/src/test/scala/io/harness/stateutils/buildstate/ConnectorUtilsTest.scala",
+			},
+			node: Node{
+				Pkg:   "io.harness.stateutils.buildstate",
+				Class: "ConnectorUtilsTest",
+				Type:  NodeType_TEST,
+				Lang:  LangType_JAVA,
+			},
+		},
+		{
+			name:     "ParseJavaNode_ScalaTestFile_ScalaTestPath_WithPkg",
+			file: types.File{
+				Name: "320-ci-execution/src/test/scala/io/harness/stateutils/ConnectorUtilsTest.scala",
+				Package: "io.harness.stateutils.buildstate",
+			},
+			node: Node{
+				Pkg:   "io.harness.stateutils.buildstate",
+				Class: "ConnectorUtilsTest",
+				Type:  NodeType_TEST,
+				Lang:  LangType_JAVA,
+			},
+		},
+		{
+			name:     "ParseJavaNode_ScalaTestFile_JavaTestPath",
+			file: types.File{
+				Name: "320-ci-execution/src/test/java/io/harness/stateutils/buildstate/ConnectorUtilsTest.scala",
+			},
+			node: Node{
+				Pkg:   "io.harness.stateutils.buildstate",
+				Class: "ConnectorUtilsTest",
+				Type:  NodeType_TEST,
+				Lang:  LangType_JAVA,
+			},
+		},
+		{
+			name:     "ParseJavaNode_KotlinSourceFile",
+			file: types.File{
+				Name: "320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils.kt",
+			},
+			node: Node{
+				Class: "ConnectorUtils",
+				Type:  NodeType_SOURCE,
+				Lang:  LangType_JAVA,
+			},
+		},
+		{
+			name:     "ParseJavaNode_KotlinSourceFile_WithPkg",
+			file: types.File{
+				Name: "320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils.kt",
+				Package: "io.harness.stateutils.buildstate",
+			},
+			node: Node{
+				Class: "ConnectorUtils",
+				Pkg: "io.harness.stateutils.buildstate",
+				Type:  NodeType_SOURCE,
+				Lang:  LangType_JAVA,
+			},
+		},
+		{
+			name:     "ParseJavaNode_KotlinTestFile_KotlinTestPath",
+			file: types.File{
+				Name: "320-ci-execution/src/test/kotlin/io/harness/stateutils/buildstate/ConnectorUtilsTest.kt",
+			},
+			node: Node{
+				Pkg:   "io.harness.stateutils.buildstate",
+				Class: "ConnectorUtilsTest",
+				Type:  NodeType_TEST,
+				Lang:  LangType_JAVA,
+			},
+		},
+		{
+			name:     "ParseJavaNode_KotlinTestFile_JavaTestPath",
+			file: types.File{
+				Name: "320-ci-execution/src/test/java/io/harness/stateutils/buildstate/ConnectorUtilsTest.kt",
+			},
+			node: Node{
+				Pkg:   "io.harness.stateutils.buildstate",
+				Class: "ConnectorUtilsTest",
+				Type:  NodeType_TEST,
+				Lang:  LangType_JAVA,
+			},
+		},
 	}
-	node, _ := ParseJavaNode(f)
-	assert.Equal(t, node1, *node, "extracted java node does not match")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			n, _ := ParseJavaNode(tt.file)
+			assert.Equal(t, tt.node, *n, "extracted java node does not match")
+		})
+	}
 }
 
 func Test_ParseFileNames(t *testing.T) {
 
-	files := []string{
-		"320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils.java",     // Source file
-		"320-ci-execution/src/test/java/io/harness/stateutils/buildstate/TestConnectorUtils.java", // Test file
-		"810-ci-manager/src/test/resources/data/ng-trigger-config.yaml",                           // Resource file
-		"332-ci-manager/pom.xml",
-		"320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils", //.java extension is missing
+	files := []types.File{
+		{
+			Name: "320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils.java", // Source file
+		},
+		{
+			Name: "320-ci-execution/src/test/java/io/harness/stateutils/buildstate/TestConnectorUtils.java", // Test file
+		},
+		{
+			Name: "810-ci-manager/src/test/resources/data/ng-trigger-config.yaml",                           // Resource file
+		},
+		{
+			Name: "332-ci-manager/pom.xml",
+		},
+		{
+			Name:"320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils", //.java extension is missing
+		},
+		{
+			Name: "320-ci-execution/src/main/java/io/harness/stateutils/ConnectorUtils.java", // Source file with different patb
+			Package: "io.harness.stateutils.buildstate",
+		},
+
+
 	}
 	node1 := Node{
 		Pkg:   "io.harness.stateutils.buildstate",
@@ -74,7 +262,7 @@ func Test_ParseFileNames(t *testing.T) {
 
 	nodes, _ := ParseFileNames(files)
 
-	nodesExpected := []Node{node1, node2, node3, unknown, unknown}
+	nodesExpected := []Node{node1, node2, node3, unknown, unknown, node1}
 
 	assert.Equal(t, nodesExpected, nodes, "extracted nodes don't match")
 }

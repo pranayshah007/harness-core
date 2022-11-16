@@ -67,6 +67,8 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
   String relativeTimestampJsonPath = "startTimeInMillis";
   String relativeMetricValueJsonPath = "value";
   String relativeServiceInstanceValueJsonPath = "metricPath";
+
+  String timestampFormat = null;
   MetricResponseMapping responseMapping;
   @Before
   public void setup() throws IOException {
@@ -111,7 +113,30 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
     code = readDSL("300-cv-nextgen/src/main/resources/customhealth/dsl/metric-collection.datacollection");
     Instant instant = Instant.parse("2022-10-12T03:55:00.000Z");
     String index = "arpit3";
-    RuntimeParameters runtimeParameters = getELKRuntimeParams(instant, index);
+    String requestBody = "{\n"
+        + "    \"from\" : 0, \n"
+        + "    \"size\" : 100,\n"
+        + "    \"query\" : {\n"
+        + "    \"bool\": {\n"
+        + "      \"filter\": [\n"
+        + "        {\n"
+        + "          \"query_string\":{\n"
+        + "              \"query\": \"*\"\n"
+        + "          }\n"
+        + "        },\n"
+        + "        {\n"
+        + "            \"range\":{\n"
+        + "                \"metricValues.startTimeInMillis\":{\n"
+        + "                    \"gt\":start_time,\n"
+        + "                    \"lte\":end_time\n"
+        + "                }\n"
+        + "            }\n"
+        + "        }\n"
+        + "      ]\n"
+        + "    }\n"
+        + "  }\n"
+        + "}";
+    RuntimeParameters runtimeParameters = getELKRuntimeParams(instant, requestBody, index);
     List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
         code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
     Map<String, List<TimeSeriesRecord>> resultMap =
@@ -132,10 +157,89 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
     code = readDSL("300-cv-nextgen/src/main/resources/customhealth/dsl/metric-collection.datacollection");
     Instant instant = Instant.parse("2022-10-12T03:55:00.000Z");
     String index = "arpit3";
-    RuntimeParameters runtimeParameters = getELKRuntimeParams(instant, index);
+    String requestBody = "{\n"
+        + "    \"from\" : 0, \n"
+        + "    \"size\" : 100,\n"
+        + "    \"query\" : {\n"
+        + "    \"bool\": {\n"
+        + "      \"filter\": [\n"
+        + "        {\n"
+        + "          \"query_string\":{\n"
+        + "              \"query\": \"*\"\n"
+        + "          }\n"
+        + "        },\n"
+        + "        {\n"
+        + "            \"range\":{\n"
+        + "                \"metricValues.startTimeInMillis\":{\n"
+        + "                    \"gt\":start_time,\n"
+        + "                    \"lte\":end_time\n"
+        + "                }\n"
+        + "            }\n"
+        + "        }\n"
+        + "      ]\n"
+        + "    }\n"
+        + "  }\n"
+        + "}";
+    RuntimeParameters runtimeParameters = getELKRuntimeParams(instant, requestBody, index);
     List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
         code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
     assertThat(timeSeriesRecords.size()).isNotZero();
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testExecute_customELKWithAggregation() throws IOException {
+    populateELKPathsForAggregation();
+    populateResponseMapping();
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    code = readDSL("300-cv-nextgen/src/main/resources/customhealth/dsl/metric-collection.datacollection");
+    Instant instant = Instant.parse("2022-10-31T09:27:00.000Z");
+    String index = "integration-test-1";
+    String requestBody = "{\n"
+        + "    \"from\": 0,\n"
+        + "    \"size\": 100,\n"
+        + "    \"query\": {\n"
+        + "        \"bool\": {\n"
+        + "            \"must\": [\n"
+        + "                {\n"
+        + "                    \"query_string\": {\n"
+        + "                        \"query\": \"*\"\n"
+        + "                    }\n"
+        + "                },\n"
+        + "                {\n"
+        + "                    \"range\": {\n"
+        + "                        \"@timestamp\": {\n"
+        + "                            \"gt\":start_time,\n"
+        + "                            \"lte\":end_time\n"
+        + "                        }\n"
+        + "                    }\n"
+        + "                }\n"
+        + "            ]\n"
+        + "        }\n"
+        + "    },\n"
+        + "  \"aggs\":{\n"
+        + "    \"by_district\":{\n"
+        + "      \"terms\": {\n"
+        + "        \"field\": \"hostname\"\n"
+        + "      },\n"
+        + "      \"aggs\": {\n"
+        + "        \"tops\": {\n"
+        + "          \"top_hits\": {\n"
+        + "            \"size\": 10\n"
+        + "          }\n"
+        + "        }\n"
+        + "      }\n"
+        + "    }\n"
+        + "  }\n"
+        + "}";
+    RuntimeParameters runtimeParameters = getELKRuntimeParamsForAggregation(instant, requestBody, index);
+    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
+    Map<String, List<TimeSeriesRecord>> resultMap =
+        timeSeriesRecords.stream().collect(Collectors.groupingBy(TimeSeriesRecord::getHostname));
+    assertThat(resultMap.keySet().size()).isNotZero();
   }
 
   private String readDSL(String fileName) throws IOException {
@@ -152,6 +256,7 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
                           .relativeServiceInstanceValueJsonPath(relativeServiceInstanceValueJsonPath)
                           .relativeTimestampJsonPath(relativeTimestampJsonPath)
                           .serviceInstanceListJsonPath(serviceInstanceListJsonPath)
+                          .timestampFormat(timestampFormat)
                           .build();
     builderFactory = BuilderFactory.getDefault();
     executorService = Executors.newFixedThreadPool(10);
@@ -197,7 +302,7 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
         .build();
   }
 
-  private RuntimeParameters getELKRuntimeParams(Instant instant, String index) {
+  private RuntimeParameters getELKRuntimeParams(Instant instant, String requestBody, String index) {
     List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
         DataSourceType.CUSTOM_HEALTH_METRIC);
@@ -205,31 +310,7 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
         metricPack -> metricPackService.populateDataCollectionDsl(DataSourceType.CUSTOM_HEALTH_METRIC, metricPack));
     CustomHealthMetricCVConfig customHealthMetricCVConfig = builderFactory.customHealthMetricCVConfigBuilderForELK(
         "CustomHealth Metric", true, false, true, responseMapping, "g1", HealthSourceQueryType.HOST_BASED,
-        CustomHealthMethod.POST, CVMonitoringCategory.PERFORMANCE,
-        "{\n"
-            + "    \"from\" : 0, \n"
-            + "    \"size\" : 100,\n"
-            + "    \"query\" : {\n"
-            + "    \"bool\": {\n"
-            + "      \"filter\": [\n"
-            + "        {\n"
-            + "          \"query_string\":{\n"
-            + "              \"query\": \"*\"\n"
-            + "          }\n"
-            + "        },\n"
-            + "        {\n"
-            + "            \"range\":{\n"
-            + "                \"metricValues.startTimeInMillis\":{\n"
-            + "                    \"gt\":start_time,\n"
-            + "                    \"lte\":end_time\n"
-            + "                }\n"
-            + "            }\n"
-            + "        }\n"
-            + "      ]\n"
-            + "    }\n"
-            + "  }\n"
-            + "}",
-        index);
+        CustomHealthMethod.POST, CVMonitoringCategory.PERFORMANCE, requestBody, index);
     customHealthMetricCVConfig.setMetricPack(metricPacks.get(0));
     CustomHealthDataCollectionInfo customHealthDataCollectionInfo =
         dataCollectionInfoMapper.toDataCollectionInfo(customHealthMetricCVConfig, VerificationTask.TaskType.DEPLOYMENT);
@@ -267,6 +348,46 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
         .build();
   }
 
+  private RuntimeParameters getELKRuntimeParamsForAggregation(Instant instant, String requestBody, String index) {
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        DataSourceType.CUSTOM_HEALTH_METRIC);
+    metricPacks.forEach(
+        metricPack -> metricPackService.populateDataCollectionDsl(DataSourceType.CUSTOM_HEALTH_METRIC, metricPack));
+    CustomHealthMetricCVConfig customHealthMetricCVConfig = builderFactory.customHealthMetricCVConfigBuilderForELK(
+        "CustomHealth Metric", true, false, true, responseMapping, "g1", HealthSourceQueryType.HOST_BASED,
+        CustomHealthMethod.POST, CVMonitoringCategory.PERFORMANCE, requestBody, index);
+    customHealthMetricCVConfig.setMetricPack(metricPacks.get(0));
+    CustomHealthDataCollectionInfo customHealthDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(customHealthMetricCVConfig, VerificationTask.TaskType.DEPLOYMENT);
+    customHealthDataCollectionInfo.setCollectHostData(true);
+    CustomHealthConnectorDTO customHealthConnectorDTO = CustomHealthConnectorDTO.builder()
+                                                            .baseURL("http://elk6.dev.harness.io:9200/")
+                                                            .method(CustomHealthMethod.GET)
+                                                            .headers(new ArrayList<>())
+                                                            .params(new ArrayList<>())
+                                                            .validationPath("*/_search")
+                                                            .build();
+    customHealthConnectorDTO.getHeaders().add(CustomHealthKeyAndValue.builder()
+                                                  .key("Content-Type")
+                                                  .isValueEncrypted(false)
+                                                  .value("application/json")
+                                                  .build());
+
+    Map<String, Object> params = customHealthDataCollectionInfo.getDslEnvVariables(customHealthConnectorDTO);
+    Map<String, String> headers = new HashMap<>();
+    // headers.put("Authorization", "Basic ZWxhc3RpYzpFR1JoRXg5SFZHN2ZvQVB6TFpQM3lielY=");
+    //  Replace this with the actual value
+    //  when capturing the request.
+    return RuntimeParameters.builder()
+        .startTime(instant.minusSeconds(7200))
+        .endTime(instant)
+        .commonHeaders(headers)
+        .otherEnvVariables(params)
+        .baseUrl("http://elk6.dev.harness.io:9200/")
+        .build();
+  }
+
   private void populateAppdPaths() {
     metricValueJSONPath = "$.[*].metricValues.[*].value";
     serviceInstanceJsonPath = "$.[*].metricPath";
@@ -287,5 +408,17 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
     relativeTimestampJsonPath = "startTimeInMillis";
     relativeMetricValueJsonPath = "value";
     relativeServiceInstanceValueJsonPath = "_source.metricPath";
+  }
+
+  private void populateELKPathsForAggregation() {
+    metricValueJSONPath = "$.aggregations.by_district.buckets.[*].tops.hits.hits.[*]._score";
+    serviceInstanceJsonPath = "$.aggregations.by_district.buckets.[*].key";
+    timestampValueJSONPath = "$.aggregations.by_district.buckets.[*].tops.hits.hits.[*]._source.@timestamp";
+    serviceInstanceListJsonPath = "$.aggregations.by_district.buckets";
+    relativeMetricListJsonPath = "tops.hits.hits";
+    relativeTimestampJsonPath = "_source.@timestamp";
+    relativeMetricValueJsonPath = "_score";
+    relativeServiceInstanceValueJsonPath = "key";
+    timestampFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
   }
 }

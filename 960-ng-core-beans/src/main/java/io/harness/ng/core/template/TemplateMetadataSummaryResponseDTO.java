@@ -56,4 +56,5 @@ public class TemplateMetadataSummaryResponseDTO {
   Long createdAt;
   StoreType storeType;
   String connectorRef;
+  String icon;
 }

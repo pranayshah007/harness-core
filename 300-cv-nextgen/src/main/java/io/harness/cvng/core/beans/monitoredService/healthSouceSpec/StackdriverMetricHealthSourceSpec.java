@@ -11,16 +11,17 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.StackdriverDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
-import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.validators.UniqueIdentifierCheck;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,7 +49,6 @@ import org.apache.commons.lang3.StringUtils;
     description = "This is the Stackdriver Metric Health Source spec entity defined in Harness")
 public class StackdriverMetricHealthSourceSpec extends MetricHealthSourceSpec {
   @UniqueIdentifierCheck @Valid private List<StackdriverDefinition> metricDefinitions;
-  @Valid Set<TimeSeriesMetricPackDTO> metricPacks;
 
   public List<StackdriverDefinition> getMetricDefinitions() {
     if (metricDefinitions == null) {
@@ -59,14 +59,28 @@ public class StackdriverMetricHealthSourceSpec extends MetricHealthSourceSpec {
 
   @Override
   public void validate() {
-    getMetricDefinitions().forEach(metricDefinition
-        -> Preconditions.checkArgument(
-            !(Objects.nonNull(metricDefinition.getAnalysis())
-                && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification())
-                && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification().getEnabled())
-                && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
-                && StringUtils.isEmpty(metricDefinition.getServiceInstanceField())),
-            "Service instance field shouldn't be empty for Deployment verification"));
+    getMetricDefinitions().forEach(metricDefinition -> {
+      Preconditions.checkArgument(
+          !(Objects.nonNull(metricDefinition.getAnalysis())
+              && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification())
+              && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification().getEnabled())
+              && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
+              && StringUtils.isEmpty(metricDefinition.getServiceInstanceField())),
+          "Service instance field shouldn't be empty for Deployment verification");
+      Preconditions.checkArgument(Objects.isNull(metricDefinition.getJsonMetricDefinition())
+              && validateJSONMetricDefinitionString(metricDefinition.getJsonMetricDefinitionString()),
+          "jsonMetricDefinitionString should be of valid json format");
+    });
+  }
+
+  public static boolean validateJSONMetricDefinitionString(String jsonInString) {
+    try {
+      final ObjectMapper mapper = new ObjectMapper();
+      mapper.readTree(jsonInString);
+      return true;
+    } catch (IOException e) {
+      return false;
+    }
   }
 
   @Override

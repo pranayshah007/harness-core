@@ -106,6 +106,11 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_CONNECTOR_REF) String parentEntityConnectorRef,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_REPO_NAME) String parentEntityRepoName,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER) String parentEntityAccountIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
       @Body RefreshRequestDTO refreshRequest);
 
   @POST(TEMPLATE_REFRESH_ENDPOINT + "validate-template-inputs/internal")
@@ -116,6 +121,11 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_CONNECTOR_REF) String parentEntityConnectorRef,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_REPO_NAME) String parentEntityRepoName,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER) String parentEntityAccountIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
       @Body RefreshRequestDTO refreshRequest);
 
   @POST(TEMPLATE_REFRESH_ENDPOINT + "refresh-all/internal")
@@ -126,6 +136,11 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_CONNECTOR_REF) String parentEntityConnectorRef,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_REPO_NAME) String parentEntityRepoName,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER) String parentEntityAccountIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
       @Body RefreshRequestDTO refreshRequest);
 
   @Headers({"Content-Type: application/json", "Accept: application/json"})

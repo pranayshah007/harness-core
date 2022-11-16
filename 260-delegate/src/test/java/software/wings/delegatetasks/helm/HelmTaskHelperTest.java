@@ -297,9 +297,11 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .when(helmTaskHelperBase)
         .executeCommand(any(), any(), any(), any(), anyLong(), eq(HelmCliCommandType.FETCH));
 
+    doReturn(true).when(helmTaskHelperBase).checkChartVersion(anyString(), anyString(), anyString());
+
     assertThatCode(()
                        -> helmTaskHelperBase.fetchChartFromRepo("repo", "repo display", "chart", "1.0.0", "/dir", V3,
-                           HelmCommandFlag.builder().build(), 90000, false, ""))
+                           HelmCommandFlag.builder().build(), 90000, ""))
         .doesNotThrowAnyException();
 
     verify(helmTaskHelperBase, times(1))
@@ -460,6 +462,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     Path outputTemporaryDir = Files.createTempDirectory("chartFile");
     ProcessResult successfulResult = new ProcessResult(0, null);
 
+    doReturn(true).when(helmTaskHelperBase).checkChartVersion(anyString(), anyString(), anyString());
     doNothing()
         .when(helmTaskHelperBase)
         .loginOciRegistry(repoConfig.getChartRepoUrl(), repoConfig.getUsername(), repoConfig.getPassword(),
@@ -1074,7 +1077,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
             .serviceId(SERVICE_ID)
             .helmChartConfigParams(getHelmChartConfigParams(httpHelmRepoConfig))
             .build();
-    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelperBase).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelper)
@@ -1125,7 +1128,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .executeCommandWithLogOutput(any(),
             eq(V_3_HELM_SEARCH_REPO_COMMAND + " --repository-config cache/repo-repoName.yaml"), eq("dir"), any(),
             any());
-    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelperBase).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
 
     List<HelmChart> helmCharts = helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000);
     assertThat(helmCharts.size()).isEqualTo(2);
@@ -1210,7 +1213,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
                                                               .serviceId(SERVICE_ID)
                                                               .helmChartConfigParams(helmChartConfigParams)
                                                               .build();
-    doReturn("").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
+    doReturn("").when(helmTaskHelperBase).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
     doReturn("helmHomePath").when(helmTaskHelperBase).getHelmHomePath(anyString());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
@@ -1361,8 +1364,8 @@ public class HelmTaskHelperTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testGetCacheDirForManifestCollection() throws Exception {
-    assertThat(helmTaskHelper.getCacheDirForManifestCollection(V2, "repo", true)).isEmpty();
-    assertThat(helmTaskHelper.getCacheDirForManifestCollection(V3, "repo", true)).endsWith("repo/cache");
-    assertThat(helmTaskHelper.getCacheDirForManifestCollection(V380, "repo", true)).endsWith("repo/cache");
+    assertThat(helmTaskHelperBase.getCacheDirForManifestCollection(V2, "repo", true)).isEmpty();
+    assertThat(helmTaskHelperBase.getCacheDirForManifestCollection(V3, "repo", true)).endsWith("repo/cache");
+    assertThat(helmTaskHelperBase.getCacheDirForManifestCollection(V380, "repo", true)).endsWith("repo/cache");
   }
 }

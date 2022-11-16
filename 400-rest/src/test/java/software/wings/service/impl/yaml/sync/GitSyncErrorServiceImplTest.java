@@ -55,7 +55,7 @@ import software.wings.yaml.errorhandling.GitSyncError.GitSyncErrorKeys;
 import software.wings.yaml.errorhandling.GitToHarnessErrorDetails;
 import software.wings.yaml.errorhandling.HarnessToGitErrorDetails;
 import software.wings.yaml.gitSync.GitFileActivity;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.google.inject.Inject;
 import java.time.Duration;
@@ -436,7 +436,7 @@ public class GitSyncErrorServiceImplTest extends WingsBaseTest {
                                       .withFilePath(yamlFilePath)
                                       .withAccountId(accountId)
                                       .withChangeType(ADD)
-                                      .withYamlGitConfig(yamlGitConfig)
+                                      .withYamlGitConfig(yamlGitConfig.toDTO())
                                       .build();
     gitSyncErrorService.upsertGitSyncErrors(gitFileChange, errorMessage, false, false);
     GitSyncError gitSyncError =
@@ -460,7 +460,7 @@ public class GitSyncErrorServiceImplTest extends WingsBaseTest {
                                       .withFilePath(yamlFilePath)
                                       .withAccountId(accountId)
                                       .withChangeType(ADD)
-                                      .withYamlGitConfig(yamlGitConfigAccount)
+                                      .withYamlGitConfig(yamlGitConfigAccount.toDTO())
                                       .build();
     gitSyncErrorService.upsertGitSyncErrors(gitFileChange, errorMessage, false, false);
     GitSyncError gitSyncError =
@@ -495,7 +495,7 @@ public class GitSyncErrorServiceImplTest extends WingsBaseTest {
                                       .withFilePath(yamlFilePath)
                                       .withAccountId(accountId)
                                       .withChangeType(MODIFY)
-                                      .withYamlGitConfig(newYamlGitConfig)
+                                      .withYamlGitConfig(newYamlGitConfig.toDTO())
                                       .build();
     gitSyncErrorService.upsertGitSyncErrors(gitFileChange, "NewErrorMessage", true, false);
     GitSyncError updatedGitSyncError =
@@ -531,7 +531,7 @@ public class GitSyncErrorServiceImplTest extends WingsBaseTest {
                                       .withFilePath(yamlFilePath)
                                       .withAccountId(accountId)
                                       .withChangeType(MODIFY)
-                                      .withYamlGitConfig(newYamlGitConfig)
+                                      .withYamlGitConfig(newYamlGitConfig.toDTO())
                                       .build();
     gitSyncErrorService.upsertGitSyncErrors(gitFileChange, "NewErrorMessage", true, false);
     GitSyncError updatedGitSyncError =
@@ -562,7 +562,7 @@ public class GitSyncErrorServiceImplTest extends WingsBaseTest {
                                       .withFilePath(yamlFilePath)
                                       .withAccountId(accountId)
                                       .withChangeType(ADD)
-                                      .withYamlGitConfig(yamlGitConfig)
+                                      .withYamlGitConfig(yamlGitConfig.toDTO())
                                       .withFileContent(yamlContent)
                                       .withCommitId(previousCommitId)
                                       .build();
@@ -603,7 +603,7 @@ public class GitSyncErrorServiceImplTest extends WingsBaseTest {
                                       .withAccountId(accountId)
                                       .withChangeType(MODIFY)
                                       .withChangeFromAnotherCommit(false)
-                                      .withYamlGitConfig(newYamlGitConfig)
+                                      .withYamlGitConfig(newYamlGitConfig.toDTO())
                                       .build();
     gitSyncErrorService.upsertGitSyncErrors(gitFileChange, "NewErrorMessage", false, true);
     GitSyncError updatedGitSyncError =
@@ -642,7 +642,7 @@ public class GitSyncErrorServiceImplTest extends WingsBaseTest {
                                       .withAccountId(accountId)
                                       .withChangeType(MODIFY)
                                       .withChangeFromAnotherCommit(false)
-                                      .withYamlGitConfig(newYamlGitConfigAccount)
+                                      .withYamlGitConfig(newYamlGitConfigAccount.toDTO())
                                       .build();
     gitSyncErrorService.upsertGitSyncErrors(gitFileChange, "NewErrorMessage", false, true);
     GitSyncError updatedGitSyncError =

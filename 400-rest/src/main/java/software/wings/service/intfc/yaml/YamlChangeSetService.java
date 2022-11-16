@@ -13,7 +13,7 @@ import io.harness.validation.Update;
 import software.wings.beans.yaml.GitFileChange;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlChangeSet.Status;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import java.util.List;
 import javax.validation.Valid;

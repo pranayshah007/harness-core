@@ -36,7 +36,7 @@ public enum TriggerCatalogType implements EntitySubtype {
   // Manifest
   @JsonProperty("HelmChart") HELM_CHART("HelmChart", TriggerCategory.MANIFEST),
   // Scheduled
-  @JsonProperty("Scheduled") SCHEDULED("Scheduled", TriggerCategory.SCHEDULED);
+  @JsonProperty("Cron") CRON("Cron", TriggerCategory.SCHEDULED);
   private final String displayName;
   private final TriggerCategory triggerCategory;
 

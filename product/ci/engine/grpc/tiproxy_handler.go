@@ -300,7 +300,7 @@ func (h *tiProxyHandler) getEncodedData(req *pb.UploadCgRequest) ([]byte, error)
 	h.log.Infow(fmt.Sprintf("size of nodes: %d, testReln: %d, visReln %d", len(cg.Nodes), len(cg.TestRelations), len(cg.VisRelations)))
 
 	cgMap := cg.ToStringMap()
-	cgSer, err := avro.NewCgphSerialzer(cgSchemaType)
+	cgSer, err := avro.NewCgphSerialzer(cgSchemaType, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create serializer")
 	}

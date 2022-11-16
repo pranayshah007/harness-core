@@ -15,12 +15,16 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.budget.AlertThreshold;
 import io.harness.ccm.budget.AlertThresholdBase;
+import io.harness.ccm.budget.BudgetBreakdown;
+import io.harness.ccm.budget.BudgetMonthlyBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetScope;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.exception.InvalidRequestException;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -35,6 +39,10 @@ import lombok.extern.slf4j.Slf4j;
 public class BudgetUtils {
   private static final double BUDGET_AMOUNT_UPPER_LIMIT = 100000000;
   private static final String NO_BUDGET_AMOUNT_EXCEPTION = "Error in creating budget. No budget amount specified.";
+  private static final String NO_MONTHLY_BUDGET_AMOUNT_EXCEPTION =
+      "Error in creating/updating budget. Twelve budget cost entries required for monthly budget amount.";
+  private static final String BUDGET_AMOUNT_MONTHLY_BUDGET_AMOUNT_NE_EXCEPTION =
+      "Error in creating/updating budget. The budget amount not equal to total monthly budget amount.";
   private static final String BUDGET_AMOUNT_NOT_WITHIN_BOUNDS_EXCEPTION =
       "Error in creating budget. The budget amount should be positive and less than 100 million dollars.";
   private static final String BUDGET_NAME_EXISTS_EXCEPTION =
@@ -46,6 +54,7 @@ public class BudgetUtils {
       "Error in create budget operation. Start time of budget is invalid.";
   public static final String INVALID_PERSPECTIVE_ID_EXCEPTION = "Invalid perspective id";
   public static final String INVALID_BUDGET_ID_EXCEPTION = "Invalid budget id";
+  public static final String MISSING_BUDGET_DATA_EXCEPTION = "Missing Budget data exception";
   private static final String UNDEFINED_BUDGET = "undefined";
   public static final String UNDEFINED_PERSPECTIVE = "undefined";
   private static final String DEFAULT_TIMEZONE = "GMT";
@@ -53,10 +62,23 @@ public class BudgetUtils {
   public static final String DEFAULT_TIME_UNIT = "days";
   public static final String DEFAULT_TIME_SCOPE = "monthly";
   public static final long OBSERVATION_PERIOD = 29 * ONE_DAY_MILLIS;
+  public static final int MONTHS = 12;
 
   public static void validateBudget(Budget budget, List<Budget> existingBudgets) {
+    populateDefaultBudgetBreakdown(budget);
     validateBudgetAmount(budget);
     validateBudgetName(budget, existingBudgets);
+  }
+
+  private static void populateDefaultBudgetBreakdown(Budget budget) {
+    if (budget.getBudgetMonthlyBreakdown() == null) {
+      budget.setBudgetMonthlyBreakdown(
+          BudgetMonthlyBreakdown.builder().budgetBreakdown(BudgetBreakdown.YEARLY).build());
+      return;
+    }
+    if (budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == null) {
+      budget.getBudgetMonthlyBreakdown().setBudgetBreakdown(BudgetBreakdown.YEARLY);
+    }
   }
 
   private static void validateBudgetAmount(Budget budget) {
@@ -65,6 +87,23 @@ public class BudgetUtils {
     }
     if (budget.getBudgetAmount() < 0 || budget.getBudgetAmount() > BUDGET_AMOUNT_UPPER_LIMIT) {
       throw new InvalidRequestException(BUDGET_AMOUNT_NOT_WITHIN_BOUNDS_EXCEPTION);
+    }
+    if (budget.getPeriod() == BudgetPeriod.YEARLY
+        && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+      if (budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount() != null
+          && budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount().length != MONTHS) {
+        throw new InvalidRequestException(NO_MONTHLY_BUDGET_AMOUNT_EXCEPTION);
+      }
+      Double totalAmount = 0.0;
+      for (Double amount : budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount()) {
+        if (amount < 0 || amount > BUDGET_AMOUNT_UPPER_LIMIT) {
+          throw new InvalidRequestException(BUDGET_AMOUNT_NOT_WITHIN_BOUNDS_EXCEPTION);
+        }
+        totalAmount += amount;
+      }
+      if (Double.compare(totalAmount, budget.getBudgetAmount()) != 0) {
+        throw new InvalidRequestException(BUDGET_AMOUNT_MONTHLY_BUDGET_AMOUNT_NE_EXCEPTION);
+      }
     }
   }
 
@@ -115,6 +154,18 @@ public class BudgetUtils {
     c.set(Calendar.MINUTE, 0);
     c.set(Calendar.HOUR, 0);
     c.set(Calendar.HOUR_OF_DAY, 0);
+    return c.getTimeInMillis();
+  }
+
+  public static long getStartOfMonthGivenTime(long startTime) {
+    Calendar c = Calendar.getInstance();
+    c.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
+    c.setTimeInMillis(startTime);
+    c.set(Calendar.DAY_OF_MONTH, 1);
+    c.set(Calendar.HOUR_OF_DAY, 0);
+    c.set(Calendar.MINUTE, 0);
+    c.set(Calendar.SECOND, 0);
+    c.set(Calendar.MILLISECOND, 0);
     return c.getTimeInMillis();
   }
 
@@ -322,6 +373,25 @@ public class BudgetUtils {
     }
   }
 
+  public static Double[] getUpdatedBudgetAmountMonthlyCost(Budget budget) {
+    try {
+      if (budget.getType() == SPECIFIED_AMOUNT) {
+        double growthMultiplier = 1 + (budget.getGrowthRate() / 100);
+        Double[] budgetMonthlyCost = budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount();
+        for (int month = 0; month < budgetMonthlyCost.length; month++) {
+          budgetMonthlyCost[month] *= growthMultiplier;
+        }
+        return budgetMonthlyCost;
+      } else {
+        return budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost();
+      }
+    } catch (Exception e) {
+      log.error(
+          "Exception while calculating updated budget amount for budget : {}. Exception: {}", budget.getUuid(), e);
+      return budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount();
+    }
+  }
+
   public static BudgetPeriod getBudgetPeriod(Budget budget) {
     if (budget.getPeriod() != null) {
       return budget.getPeriod();
@@ -358,7 +428,16 @@ public class BudgetUtils {
     return alerts.toArray(new AlertThreshold[0]);
   }
 
-  public static boolean isAlertSentInCurrentPeriod(long crossedAt, long startOfBudgetPeriod) {
+  public static boolean isAlertSentInCurrentPeriod(Budget budget, long crossedAt, long startOfBudgetPeriod) {
+    if (budget.getBudgetMonthlyBreakdown() != null
+        && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+      int lastAlertMonth =
+          LocalDateTime.ofInstant(Instant.ofEpochMilli(crossedAt), ZoneId.of(DEFAULT_TIMEZONE)).getMonthValue();
+      int currentMonth =
+          LocalDateTime.ofInstant(Instant.ofEpochMilli(getStartOfCurrentDay()), ZoneId.of(DEFAULT_TIMEZONE))
+              .getMonthValue();
+      return lastAlertMonth == currentMonth;
+    }
     return startOfBudgetPeriod <= crossedAt;
   }
 }

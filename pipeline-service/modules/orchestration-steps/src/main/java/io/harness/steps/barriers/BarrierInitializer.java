@@ -15,6 +15,8 @@ import io.harness.distribution.barrier.Barrier;
 import io.harness.engine.observers.OrchestrationStartObserver;
 import io.harness.engine.observers.beans.OrchestrationStartInfo;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
@@ -34,37 +36,47 @@ public class BarrierInitializer implements OrchestrationStartObserver {
 
   @Override
   public void onStart(OrchestrationStartInfo orchestrationStartInfo) {
+    String version = AmbianceUtils.getPipelineVersion(orchestrationStartInfo.getAmbiance());
     String planExecutionId = orchestrationStartInfo.getPlanExecutionId();
     PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();
     try {
-      Map<String, BarrierSetupInfo> barrierIdentifierSetupInfoMap =
-          barrierService.getBarrierSetupInfoList(planExecutionMetadata.getProcessedYaml())
-              .stream()
-              .collect(Collectors.toMap(BarrierSetupInfo::getIdentifier, Function.identity()));
+      switch (version) {
+        case PipelineVersion.V1:
+          // TODO: Barrier support
+          break;
+        case PipelineVersion.V0:
+          Map<String, BarrierSetupInfo> barrierIdentifierSetupInfoMap =
+              barrierService.getBarrierSetupInfoList(planExecutionMetadata.getProcessedYaml())
+                  .stream()
+                  .collect(Collectors.toMap(BarrierSetupInfo::getIdentifier, Function.identity()));
 
-      Map<String, List<BarrierPositionInfo.BarrierPosition>> barrierPositionInfoMap =
-          barrierService.getBarrierPositionInfoList(planExecutionMetadata.getProcessedYaml());
+          Map<String, List<BarrierPositionInfo.BarrierPosition>> barrierPositionInfoMap =
+              barrierService.getBarrierPositionInfoList(planExecutionMetadata.getProcessedYaml());
 
-      List<BarrierExecutionInstance> barriers =
-          barrierPositionInfoMap.entrySet()
-              .stream()
-              .filter(entry -> !entry.getValue().isEmpty())
-              .map(entry
-                  -> BarrierExecutionInstance.builder()
-                         .uuid(generateUuid())
-                         .setupInfo(barrierIdentifierSetupInfoMap.get(entry.getKey()))
-                         .positionInfo(BarrierPositionInfo.builder()
-                                           .planExecutionId(planExecutionId)
-                                           .barrierPositionList(entry.getValue())
-                                           .build())
-                         .name(barrierIdentifierSetupInfoMap.get(entry.getKey()).getName())
-                         .barrierState(Barrier.State.STANDING)
-                         .identifier(entry.getKey())
-                         .planExecutionId(planExecutionId)
-                         .build())
-              .collect(Collectors.toList());
+          List<BarrierExecutionInstance> barriers =
+              barrierPositionInfoMap.entrySet()
+                  .stream()
+                  .filter(entry -> !entry.getValue().isEmpty())
+                  .map(entry
+                      -> BarrierExecutionInstance.builder()
+                             .uuid(generateUuid())
+                             .setupInfo(barrierIdentifierSetupInfoMap.get(entry.getKey()))
+                             .positionInfo(BarrierPositionInfo.builder()
+                                               .planExecutionId(planExecutionId)
+                                               .barrierPositionList(entry.getValue())
+                                               .build())
+                             .name(barrierIdentifierSetupInfoMap.get(entry.getKey()).getName())
+                             .barrierState(Barrier.State.STANDING)
+                             .identifier(entry.getKey())
+                             .planExecutionId(planExecutionId)
+                             .build())
+                  .collect(Collectors.toList());
 
-      barrierService.saveAll(barriers);
+          barrierService.saveAll(barriers);
+          break;
+        default:
+          throw new IllegalStateException("version not supported");
+      }
     } catch (Exception e) {
       log.error("Barrier initialization failed for planExecutionId: [{}]", planExecutionId);
       throw e;

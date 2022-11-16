@@ -46,3 +46,10 @@ message HeartbeatRequest {
 }
 
 message HeartbeatResponse {}
+
+message PerpetualTaskFailureRequest {
+  string id = 1;
+  string exception_message = 2;
+}
+
+message PerpetualTaskFailureResponse {}

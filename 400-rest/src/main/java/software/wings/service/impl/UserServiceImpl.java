@@ -1027,6 +1027,25 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public User getUserByEmail(String email, boolean loadSupportAccounts) {
+    User user = null;
+    if (isNotEmpty(email)) {
+      user = wingsPersistence.createQuery(User.class).filter(UserKeys.email, email.trim().toLowerCase()).get();
+      if (loadSupportAccounts) {
+        loadSupportAccounts(user);
+      }
+      if (user != null && isEmpty(user.getAccounts())) {
+        user.setAccounts(newArrayList());
+      }
+      if (user != null && isEmpty(user.getPendingAccounts())) {
+        user.setPendingAccounts(newArrayList());
+      }
+    }
+
+    return user;
+  }
+
+  @Override
   public User getUserByEmail(String email) {
     User user = null;
     if (isNotEmpty(email)) {
@@ -1421,6 +1440,8 @@ public class UserServiceImpl implements UserService {
     }
 
     List<UserGroup> userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
+    boolean isPLNoEmailForSamlAccountInvitesEnabled = accountService.isPLNoEmailForSamlAccountInvitesEnabled(accountId);
+
     if (isUserAssignedToAccount(user, accountId)) {
       updateUserGroupsOfUser(user.getUuid(), userGroups, accountId, true);
       return USER_ALREADY_ADDED;
@@ -1433,7 +1454,7 @@ public class UserServiceImpl implements UserService {
       user.getAccounts().add(account);
     } else {
       userInvite.setUuid(wingsPersistence.save(userInvite));
-      if (isInviteAcceptanceRequired) {
+      if (isInviteAcceptanceRequired && !isPLNoEmailForSamlAccountInvitesEnabled) {
         user.getPendingAccounts().add(account);
       } else {
         user.getAccounts().add(account);
@@ -1445,9 +1466,15 @@ public class UserServiceImpl implements UserService {
     user.setGivenName(userInvite.getGivenName());
     user.setFamilyName(userInvite.getFamilyName());
     user.setRoles(Collections.emptyList());
+
     if (!user.isEmailVerified()) {
-      user.setEmailVerified(markEmailVerified);
+      if (isPLNoEmailForSamlAccountInvitesEnabled) {
+        user.setEmailVerified(true);
+      } else {
+        user.setEmailVerified(markEmailVerified);
+      }
     }
+
     user.setAppId(GLOBAL_APP_ID);
     user.setImported(userInvite.getImportedByScim());
     user.setExternalUserId(userInvite.getExternalUserId());
@@ -1455,11 +1482,11 @@ public class UserServiceImpl implements UserService {
     user = createUser(user, accountId);
     user = checkIfTwoFactorAuthenticationIsEnabledForAccount(user, account);
 
-    if (!isInviteAcceptanceRequired) {
+    if (!isInviteAcceptanceRequired || isPLNoEmailForSamlAccountInvitesEnabled) {
       addUserToUserGroups(accountId, user, userGroups, false, true);
+      userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
     }
     boolean isAutoInviteAcceptanceEnabled = !isInviteAcceptanceRequired;
-    boolean isPLNoEmailForSamlAccountInvitesEnabled = accountService.isPLNoEmailForSamlAccountInvitesEnabled(accountId);
 
     if (!(isPLNoEmailForSamlAccountInvitesEnabled && !user.isTwoFactorAuthenticationEnabled())) {
       if (isAutoInviteAcceptanceEnabled

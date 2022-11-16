@@ -234,4 +234,31 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
                    .get("tags.value"))
         .isNotNull();
   }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFormCriteriaForRepoListing() {
+    // Project scope
+    Criteria criteria =
+        templateServiceHelper.formCriteriaForRepoListing(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    Document criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.get(TemplateEntityKeys.accountId)).isEqualTo(ACCOUNT_ID);
+    assertThat(criteriaObject.get(TemplateEntityKeys.orgIdentifier)).isEqualTo(ORG_IDENTIFIER);
+    assertThat(criteriaObject.get(TemplateEntityKeys.projectIdentifier)).isEqualTo(PROJ_IDENTIFIER);
+
+    // Org scope
+    criteria = templateServiceHelper.formCriteriaForRepoListing(ACCOUNT_ID, ORG_IDENTIFIER, "", false);
+    criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.get(TemplateEntityKeys.accountId)).isEqualTo(ACCOUNT_ID);
+    assertThat(criteriaObject.get(TemplateEntityKeys.orgIdentifier)).isEqualTo(ORG_IDENTIFIER);
+    assertThat(((Document) (criteriaObject.get("projectIdentifier"))).get("$exists").equals(false));
+
+    // Account scope
+    criteria = templateServiceHelper.formCriteriaForRepoListing(ACCOUNT_ID, "", "", false);
+    criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.get(TemplateEntityKeys.accountId)).isEqualTo(ACCOUNT_ID);
+    assertThat(((Document) (criteriaObject.get("orgIdentifier"))).get("$exists").equals(false));
+    assertThat(((Document) (criteriaObject.get("projectIdentifier"))).get("$exists").equals(false));
+  }
 }

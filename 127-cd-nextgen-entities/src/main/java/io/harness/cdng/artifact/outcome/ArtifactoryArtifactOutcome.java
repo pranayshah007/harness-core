@@ -59,6 +59,8 @@ public class ArtifactoryArtifactOutcome implements ArtifactOutcome {
 
   Map<String, String> metadata;
 
+  Map<String, String> label;
+
   @Override
   public ArtifactSummary getArtifactSummary() {
     return ArtifactoryArtifactSummary.builder().artifactPath(getArtifactPath()).tag(getTag()).build();

@@ -7,9 +7,12 @@
 
 package io.harness.pms.plan.execution;
 
+import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.rule.OwnerRule.DEVESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAMARTH;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -30,6 +33,8 @@ import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
+import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -41,7 +46,10 @@ import io.harness.rule.Owner;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,6 +76,8 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
   private final String PIPELINE_IDENTIFIER = "basichttpFail";
+
+  private final List<String> PIPELINE_IDENTIFIER_LIST = Arrays.asList(PIPELINE_IDENTIFIER);
   private final String PLAN_EXECUTION_ID = "planId";
   private final String STAGE_NODE_ID = "stageNodeId";
 
@@ -139,7 +149,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
         .getPipelineExecutionSummaryEntity(any(), any());
     doReturn(Optional.of(PipelineEntity.builder().build()))
         .when(pmsPipelineService)
-        .get(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+        .getAndValidatePipeline(anyString(), anyString(), anyString(), anyString(), anyBoolean());
 
     doReturn(null).when(pmsGitSyncHelper).getGitSyncBranchContextBytesThreadLocal();
 
@@ -192,6 +202,38 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testGetListOfExecutionsForRemotePipelines() {
+    ByteString gitSyncBranchContext = ByteString.copyFromUtf8("random byte string");
+    doReturn(gitSyncBranchContext).when(pmsGitSyncHelper).getGitSyncBranchContextBytesThreadLocal();
+
+    Criteria criteria = Criteria.where("a").is("b");
+    doReturn(criteria)
+        .when(pmsExecutionService)
+        .formCriteriaV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST);
+
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineExecutionSummaryKeys.startTs));
+    Page<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntities =
+        new PageImpl<>(Collections.singletonList(executionSummaryEntity), pageable, 1);
+    doReturn(pipelineExecutionSummaryEntities)
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(criteria, pageable);
+
+    Page<PipelineExecutionSummaryDTO> content =
+        executionDetailsResource
+            .getListOfExecutionsV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, 0, 10)
+            .getData();
+    assertThat(content).isNotEmpty();
+    assertThat(content.getNumberOfElements()).isEqualTo(1);
+
+    PipelineExecutionSummaryDTO responseDTO = content.toList().get(0);
+    assertThat(responseDTO.getPipelineIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
+    assertThat(responseDTO.getPlanExecutionId()).isEqualTo(PLAN_EXECUTION_ID);
+    assertThat(responseDTO.getRunSequence()).isEqualTo(0);
+  }
+
+  @Test
   @Owner(developers = SAMARTH)
   @Category(UnitTests.class)
   public void testGetExecutionDetail() {
@@ -231,5 +273,43 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
                            -> executionDetailsResource.getExecutionDetail(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                STAGE_NODE_ID, null, invalidPlanExecutionId))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetListOfRepos() {
+    List<String> repoList = new ArrayList<>();
+    repoList.add("testRepo");
+    repoList.add("testRepo2");
+
+    PMSPipelineListRepoResponse pmsPipelineListRepoResponse =
+        PMSPipelineListRepoResponse.builder().repositories(repoList).build();
+
+    doReturn(pmsPipelineListRepoResponse).when(pmsExecutionService).getListOfRepo(any());
+
+    PMSPipelineListRepoResponse uniqueRepos =
+        executionDetailsResource.getListOfRepos(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "").getData();
+    assertEquals(uniqueRepos.getRepositories(), repoList);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetListOfBranch() {
+    List<String> branchList = new ArrayList<>();
+    branchList.add("main");
+    branchList.add("main-patch");
+
+    PMSPipelineListBranchesResponse pmsPipelineListBranchesResponse =
+        PMSPipelineListBranchesResponse.builder().branches(branchList).build();
+
+    doReturn(pmsPipelineListBranchesResponse).when(pmsExecutionService).getListOfBranches(any());
+
+    PMSPipelineListBranchesResponse uniqueBranches =
+        executionDetailsResource
+            .getListOfBranches(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "testRepo")
+            .getData();
+    assertEquals(uniqueBranches.getBranches(), branchList);
   }
 }

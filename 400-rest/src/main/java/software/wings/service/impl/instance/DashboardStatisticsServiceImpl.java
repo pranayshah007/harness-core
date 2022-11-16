@@ -976,9 +976,8 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                      .serviceInfra(serviceInfraSummary)
                                      .onDemandRollbackAvailable(false)
                                      .build();
-      } else if (stateEI != null) {
-        // if is true, there is a rollback failed
-        boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastWE);
+      } else if (stateEI != null && ExecutionStatus.SUCCESS.equals(stateEI.getStatus())) {
+        boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastWE, false);
         Artifact artifactRollback = lastWE.getArtifacts().get(0);
         artifactSummary = getArtifactSummary(artifactRollback.getDisplayName(), artifactRollback.getUuid(),
             artifactRollback.getBuildNo(), artifactRollback.getArtifactSourceName());
@@ -1011,7 +1010,8 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                      .onDemandRollbackAvailable(rollbackAvailable)
                                      .build();
       } else {
-        boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastSuccessfulWE);
+        boolean rollbackAvailable =
+            workflowExecutionService.getOnDemandRollbackAvailable(appId, lastSuccessfulWE, false);
         EntitySummary workflowExecutionSummary = getEntitySummary(
             lastSuccessfulWE.getName(), lastSuccessfulWE.getUuid(), EntityType.WORKFLOW_EXECUTION.name());
 

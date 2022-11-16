@@ -18,6 +18,8 @@ import io.harness.beans.OrchestrationWorkflowType;
 import software.wings.sm.StateExecutionData;
 
 import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Created by anubhaw on 10/26/16.
@@ -30,6 +32,8 @@ public class EnvStateExecutionData extends StateExecutionData {
   private String envId;
   private OrchestrationWorkflowType orchestrationWorkflowType;
   private String skipAssertionResponse;
+  @Getter @Setter private String pipelineStageElementId;
+  @Getter @Setter private Integer pipelineStageParallelIndex;
 
   /**
    * Gets workflow id.
@@ -119,6 +123,8 @@ public class EnvStateExecutionData extends StateExecutionData {
     private ExecutionStatus status;
     private String errorMsg;
     private String skipAssertionResponse;
+    private String pipelineStageElementId;
+    private Integer pipelineStageParallelIndex;
 
     private Builder() {}
 
@@ -241,6 +247,16 @@ public class EnvStateExecutionData extends StateExecutionData {
       return this;
     }
 
+    public Builder withPipelineStageElementId(String pipelineStageElementId) {
+      this.pipelineStageElementId = pipelineStageElementId;
+      return this;
+    }
+
+    public Builder withPipelineStageParallelIndex(Integer pipelineStageParallelIndex) {
+      this.pipelineStageParallelIndex = pipelineStageParallelIndex;
+      return this;
+    }
+
     /**
      * But builder.
      *
@@ -257,7 +273,9 @@ public class EnvStateExecutionData extends StateExecutionData {
           .withStatus(status)
           .withErrorMsg(errorMsg)
           .withOrchestrationWorkflowType(orchestrationWorkflowType)
-          .withSkipAssertionResponse(skipAssertionResponse);
+          .withSkipAssertionResponse(skipAssertionResponse)
+          .withPipelineStageElementId(pipelineStageElementId)
+          .withPipelineStageParallelIndex(pipelineStageParallelIndex);
     }
 
     /**
@@ -277,6 +295,8 @@ public class EnvStateExecutionData extends StateExecutionData {
       envStateExecutionData.setErrorMsg(errorMsg);
       envStateExecutionData.setOrchestrationWorkflowType(orchestrationWorkflowType);
       envStateExecutionData.setSkipAssertionResponse(skipAssertionResponse);
+      envStateExecutionData.setPipelineStageElementId(pipelineStageElementId);
+      envStateExecutionData.setPipelineStageParallelIndex(pipelineStageParallelIndex);
       return envStateExecutionData;
     }
   }

@@ -8,6 +8,8 @@
 package io.harness.perpetualtask;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.AZURE_AUTH_CERT_DIR_PATH;
+import static io.harness.azure.model.AzureConstants.REPOSITORY_DIR_PATH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.network.SafeHttpCall.execute;
 
@@ -19,6 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureOSType;
+import io.harness.delegate.beans.azure.AzureConfigContext;
 import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
@@ -26,7 +29,10 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.SshWinrmInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.task.ssh.AzureInfraDelegateConfig;
+import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
@@ -38,6 +44,7 @@ import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -66,37 +73,57 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor implements Perpetual
           format("Invalid serviceType provided %s . Expected: %s", taskParams.getServiceType(), VALID_SERVICE_TYPES));
     }
 
-    return executeTask(taskId, taskParams);
+    try {
+      return executeTask(taskId, taskParams);
+    } catch (IOException ioe) {
+      throw NestedExceptionUtils.hintWithExplanationException("Failed to authenticate with Azure",
+          "Please check you Azure connector configuration or delegate filesystem permissions.",
+          new AzureAuthenticationException(ioe.getMessage()));
+    }
   }
 
   private PerpetualTaskResponse executeTask(
-      PerpetualTaskId taskId, AzureSshInstanceSyncPerpetualTaskParamsNg taskParams) {
-    Set<String> azureHosts = getAzureHosts(taskParams);
-    List<String> instanceHosts =
-        taskParams.getHostsList().stream().filter(azureHosts::contains).collect(Collectors.toList());
+      PerpetualTaskId taskId, AzureSshInstanceSyncPerpetualTaskParamsNg taskParams) throws IOException {
+    try (LazyAutoCloseableWorkingDirectory workingDirectory =
+             new LazyAutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_AUTH_CERT_DIR_PATH)) {
+      Set<String> azureHosts = getAzureHosts(taskParams, workingDirectory);
 
-    List<ServerInstanceInfo> serverInstanceInfos =
-        getServerInstanceInfoList(instanceHosts, taskParams.getServiceType(), taskParams.getInfrastructureKey());
+      List<String> instanceHosts =
+          taskParams.getHostsList().stream().filter(azureHosts::contains).collect(Collectors.toList());
 
-    log.info("Azure Instance sync Instances: {}, task id: {}",
-        isEmpty(serverInstanceInfos) ? 0 : serverInstanceInfos.size(), taskId);
+      List<ServerInstanceInfo> serverInstanceInfos =
+          getServerInstanceInfoList(instanceHosts, taskParams.getServiceType(), taskParams.getInfrastructureKey());
 
-    String instanceSyncResponseMsg =
-        publishInstanceSyncResult(taskId, taskParams.getAccountId(), serverInstanceInfos, taskParams.getServiceType());
-    return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(instanceSyncResponseMsg).build();
+      log.info("Azure Instance sync Instances: {}, task id: {}",
+          isEmpty(serverInstanceInfos) ? 0 : serverInstanceInfos.size(), taskId);
+
+      String instanceSyncResponseMsg = publishInstanceSyncResult(
+          taskId, taskParams.getAccountId(), serverInstanceInfos, taskParams.getServiceType());
+      return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(instanceSyncResponseMsg).build();
+    }
   }
 
-  private Set<String> getAzureHosts(AzureSshInstanceSyncPerpetualTaskParamsNg taskParams) {
+  private Set<String> getAzureHosts(AzureSshInstanceSyncPerpetualTaskParamsNg taskParams,
+      LazyAutoCloseableWorkingDirectory workingDir) throws IOException {
     AzureInfraDelegateConfig infraConfig = (AzureInfraDelegateConfig) kryoSerializer.asObject(
         taskParams.getAzureSshWinrmInfraDelegateConfig().toByteArray());
 
     AzureOSType azureOSType =
         ServiceSpecType.SSH.equals(taskParams.getServiceType()) ? AzureOSType.LINUX : AzureOSType.WINDOWS;
 
-    AzureHostsResponse azureHostsResponse = azureAsyncTaskHelper.listHosts(
-        infraConfig.getConnectorEncryptionDataDetails(), infraConfig.getAzureConnectorDTO(),
-        infraConfig.getSubscriptionId(), infraConfig.getResourceGroup(), azureOSType, infraConfig.getTags(),
-        AzureHostConnectionType.fromString(infraConfig.getHostConnectionType()));
+    AzureConfigContext azureConfigContext =
+        AzureConfigContext.builder()
+            .azureConnector(infraConfig.getAzureConnectorDTO())
+            .encryptedDataDetails(infraConfig.getConnectorEncryptionDataDetails())
+            .subscriptionId(infraConfig.getSubscriptionId())
+            .resourceGroup(infraConfig.getResourceGroup())
+            .azureOSType(azureOSType)
+            .tags(infraConfig.getTags())
+            .azureHostConnectionType(AzureHostConnectionType.fromString(infraConfig.getHostConnectionType()))
+            .certificateWorkingDirectory(workingDir)
+            .build();
+
+    AzureHostsResponse azureHostsResponse = azureAsyncTaskHelper.listHosts(azureConfigContext);
     return azureHostsResponse.getHosts().stream().map(AzureHostResponse::getAddress).collect(Collectors.toSet());
   }
 

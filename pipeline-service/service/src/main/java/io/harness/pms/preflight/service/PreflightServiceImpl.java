@@ -78,7 +78,7 @@ public class PreflightServiceImpl implements PreflightService {
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier, String inputSetPipelineYaml) {
     sendPreflightTelemetryEvent(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
     if (pipelineEntity.isEmpty()) {
       throw new InvalidRequestException(String.format("The given pipeline id [%s] does not exist", pipelineIdentifier));
     }

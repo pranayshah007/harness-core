@@ -22,12 +22,14 @@ import lombok.experimental.NonFinal;
 @Builder
 public class GitOpsInstance {
   @NotEmpty private String accountIdentifier;
+  @NotEmpty private String agentIdentifier;
   @NotEmpty private String orgIdentifier;
   @NotEmpty private String projectIdentifier;
   @NotEmpty private String applicationIdentifier;
   @NotEmpty private String envIdentifier;
   @NotEmpty private String serviceIdentifier;
   @NotEmpty private String serviceEnvIdentifier;
+  @NotEmpty private String clusterIdentifier;
   @NotEmpty private String buildId;
   @NotNull private long creationTimestamp;
   @NotNull private long lastDeployedAt;

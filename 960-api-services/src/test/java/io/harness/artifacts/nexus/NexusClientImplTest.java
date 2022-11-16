@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -48,15 +49,12 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({HTimeLimiter.class})
 @OwnedBy(HarnessTeam.CDP)
 public class NexusClientImplTest extends CategoryTest {
@@ -123,9 +121,9 @@ public class NexusClientImplTest extends CategoryTest {
                                     .version("2.x")
                                     .build();
 
-    try {
-      PowerMockito.mockStatic(HTimeLimiter.class);
-      PowerMockito.when(HTimeLimiter.class, "callInterruptible21", any(), any(), any()).thenReturn(mockResponse);
+    try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
+      hTimeLimiterMockedStatic.when(() -> HTimeLimiter.callInterruptible21(any(), any(), any()))
+          .thenReturn(mockResponse);
       Map<String, String> response = nexusClient.getRepositories(nexusConfig1);
       assertThat(response).isNotNull();
       assertThat(response).size().isEqualTo(3);
@@ -143,13 +141,11 @@ public class NexusClientImplTest extends CategoryTest {
                                     .version("2.x")
                                     .build();
 
-    try {
-      PowerMockito.mockStatic(HTimeLimiter.class);
-      PowerMockito
-          .doThrow(NestedExceptionUtils.hintWithExplanationException("Nexus 2.x does not support docker artifacts",
+    try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
+      hTimeLimiterMockedStatic.when(() -> HTimeLimiter.callInterruptible21(any(), any(), any()))
+          .thenThrow(NestedExceptionUtils.hintWithExplanationException("Nexus 2.x does not support docker artifacts",
               "The version for the connector should probably be 3.x and not 2.x",
-              new InvalidArtifactServerException("Nexus 2.x does not support docker artifact type", USER)))
-          .when(HTimeLimiter.class, "callInterruptible21", any(), any(), any());
+              new InvalidArtifactServerException("Nexus 2.x does not support docker artifact type", USER)));
       nexusClient.getRepositories(nexusConfig2, RepositoryFormat.docker.name());
     } catch (Exception e) {
       assertThat(e)
@@ -170,14 +166,12 @@ public class NexusClientImplTest extends CategoryTest {
                                     .version("3.x")
                                     .build();
 
-    try {
-      PowerMockito.mockStatic(HTimeLimiter.class);
-      PowerMockito
-          .doThrow(NestedExceptionUtils.hintWithExplanationException(
+    try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
+      hTimeLimiterMockedStatic.when(() -> HTimeLimiter.callInterruptible21(any(), any(), any()))
+          .thenThrow(NestedExceptionUtils.hintWithExplanationException(
               "Nexus 3.x requires that a repository format is correct",
               "Ensure that a right repository format is chosen",
-              new InvalidRequestException("Not supported for nexus 3.x", USER)))
-          .when(HTimeLimiter.class, "callInterruptible21", any(), any(), any());
+              new InvalidRequestException("Not supported for nexus 3.x", USER)));
       nexusClient.getRepositories(nexusConfig3);
     } catch (Exception e) {
       assertThat(e)
@@ -198,9 +192,9 @@ public class NexusClientImplTest extends CategoryTest {
                                     .version("3.x")
                                     .build();
 
-    try {
-      PowerMockito.mockStatic(HTimeLimiter.class);
-      PowerMockito.when(HTimeLimiter.class, "callInterruptible21", any(), any(), any()).thenReturn(mockResponse);
+    try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
+      hTimeLimiterMockedStatic.when(() -> HTimeLimiter.callInterruptible21(any(), any(), any()))
+          .thenReturn(mockResponse);
       Map<String, String> response = nexusClient.getRepositories(nexusConfig4, RepositoryFormat.docker.name());
       assertThat(response).isNotNull();
       assertThat(response).size().isEqualTo(3);

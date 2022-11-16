@@ -77,7 +77,7 @@ public class CapabilityCheckController extends AbstractDelegateValidateTask {
           ProtoCapabilityCheck protoCheck = protoCapabilityCheckFactory.obtainCapabilityCheck(parameters);
           if (CapabilityProtoConverter.shouldCompareResults(parameters)) {
             CapabilitySubjectPermission permission = protoCheck.performCapabilityCheckWithProto(parameters);
-            if (CapabilityProtoConverter.hasDivergingResults(capabilityResponse, permission)) {
+            if (hasDivergingResults(capabilityResponse, permission)) {
               log.warn("Diverging capabilities: " + delegateCapability.toString() + " -vs- " + parameters);
             } else {
               log.info("Proto/execution capability have the same result: " + parameters);
@@ -131,5 +131,11 @@ public class CapabilityCheckController extends AbstractDelegateValidateTask {
     }
 
     return delegateConnectionResults;
+  }
+
+  private static boolean hasDivergingResults(
+      CapabilityResponse capabilityResponse, CapabilitySubjectPermission capabilitySubjectPermission) {
+    return capabilityResponse.isValidated()
+        ^ (capabilitySubjectPermission.getPermissionResult() == CapabilitySubjectPermission.PermissionResult.ALLOWED);
   }
 }

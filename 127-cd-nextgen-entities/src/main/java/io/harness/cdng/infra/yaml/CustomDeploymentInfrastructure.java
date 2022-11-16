@@ -62,7 +62,6 @@ public class CustomDeploymentInfrastructure
 
   @Override
   public ParameterField<String> getConnectorReference() {
-    // TODO - need to figure out connector ref details
     return null;
   }
 
@@ -106,9 +105,6 @@ public class CustomDeploymentInfrastructure
 
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
-    //    Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
-    // TODO - need to figure out connector ref details
-    // connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return new HashMap<>();
   }
 }

@@ -22,6 +22,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -103,7 +104,8 @@ public class StagesExpressionExtractor {
     }
   }
 
-  private BasicStageInfo getBasicStageInfoWithYaml(YamlNode stageYamlNode) throws IOException {
+  @VisibleForTesting
+  BasicStageInfo getBasicStageInfoWithYaml(YamlNode stageYamlNode) throws IOException {
     String identifier = stageYamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getIdentifier();
     String name = stageYamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getName();
     String type = stageYamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getType();

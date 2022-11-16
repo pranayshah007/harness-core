@@ -30,9 +30,9 @@ import io.harness.accesscontrol.scopes.harness.HarnessScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.spec.server.accesscontrol.model.Principal;
-import io.harness.spec.server.accesscontrol.model.RoleAssignment;
-import io.harness.spec.server.accesscontrol.model.RoleAssignmentResponse;
+import io.harness.spec.server.accesscontrol.v1.model.Principal;
+import io.harness.spec.server.accesscontrol.v1.model.RoleAssignment;
+import io.harness.spec.server.accesscontrol.v1.model.RoleAssignmentResponse;
 
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;

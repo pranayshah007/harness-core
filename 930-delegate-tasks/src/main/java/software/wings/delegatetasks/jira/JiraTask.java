@@ -639,7 +639,11 @@ public class JiraTask extends AbstractDelegateRunnableTask {
           throw new InvalidRequestException(
               "Found " + userDataList.size() + " jira users with this query. Should be exactly 1.");
         }
-        userTypeFields.put(userField.getKey(), userDataList.get(0).getAccountId());
+        if (userDataList.get(0).getAccountId().startsWith("JIRAUSER")) {
+          userTypeFields.put(userField.getKey(), userDataList.get(0).getName());
+        } else {
+          userTypeFields.put(userField.getKey(), userDataList.get(0).getAccountId());
+        }
       }
     }
   }

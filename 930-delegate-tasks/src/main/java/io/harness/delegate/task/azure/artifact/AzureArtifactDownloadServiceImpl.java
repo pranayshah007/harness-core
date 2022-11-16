@@ -8,6 +8,9 @@
 package io.harness.delegate.task.azure.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionConstants.DOWNLOAD_FROM_AZURE_ARTIFACTS_EXPLANATION;
+import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionConstants.DOWNLOAD_FROM_AZURE_ARTIFACTS_FAILED;
+import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionConstants.DOWNLOAD_FROM_AZURE_ARTIFACTS_HINT;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.BLANK_ARTIFACT_PATH_EXPLANATION;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.BLANK_ARTIFACT_PATH_HINT;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.DOWNLOAD_FROM_S3_EXPLANATION;
@@ -26,27 +29,34 @@ import static software.wings.beans.LogWeight.Bold;
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
+import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
+import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
+import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
+import io.harness.delegate.task.artifacts.mappers.AzureArtifactsRequestResponseMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadResponse.AzureArtifactDownloadResponseBuilder;
 import io.harness.delegate.task.nexus.NexusMapper;
 import io.harness.delegate.utils.NexusVersion;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.AzureAppServiceTaskException;
@@ -89,6 +99,7 @@ public class AzureArtifactDownloadServiceImpl implements AzureArtifactDownloadSe
   @Inject private NexusService nexusService;
   @Inject private NexusMapper nexusMapper;
   @Inject private JenkinsUtils jenkinsUtil;
+  @Inject private AzureArtifactsRegistryService azureArtifactsRegistryService;
 
   @Override
   public AzureArtifactDownloadResponse download(ArtifactDownloadContext artifactDownloadContext) {
@@ -112,6 +123,9 @@ public class AzureArtifactDownloadServiceImpl implements AzureArtifactDownloadSe
           break;
         case JENKINS:
           artifactStream = downloadFromJenkins(artifactConfig, artifactResponseBuilder, logCallback);
+          break;
+        case AZURE_ARTIFACTS:
+          artifactStream = downloadFromAzureArtifacts(artifactConfig, artifactResponseBuilder, logCallback);
           break;
         default:
           throw NestedExceptionUtils.hintWithExplanationException("Use supported artifact registry",
@@ -199,6 +213,57 @@ public class AzureArtifactDownloadServiceImpl implements AzureArtifactDownloadSe
       jenkins = jenkinsUtil.getJenkins(jenkinsConfig);
     }
     return jenkins;
+  }
+
+  private InputStream downloadFromAzureArtifacts(AzurePackageArtifactConfig artifactConfig,
+      AzureArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
+    AzureDevOpsArtifactRequestDetails azureArtifactsRequestDetails =
+        (AzureDevOpsArtifactRequestDetails) artifactConfig.getArtifactDetails();
+
+    validateAzureDevOpsArtifact(artifactConfig, azureArtifactsRequestDetails, logCallback);
+
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig =
+        AzureArtifactsRequestResponseMapper.toAzureArtifactsInternalConfig(
+            (AzureArtifactsConnectorDTO) artifactConfig.getConnectorConfig());
+
+    String project = azureArtifactsRequestDetails.getProject();
+    String packageName = azureArtifactsRequestDetails.getPackageName();
+    String feed = azureArtifactsRequestDetails.getFeed();
+    String protocolType = azureArtifactsRequestDetails.getPackageType();
+    String version = azureArtifactsRequestDetails.getVersion();
+
+    if (isBlank(version)) {
+      throw new InvalidRequestException("Artifact version is invalid");
+    }
+
+    String errorMessageExplanation =
+        String.format(DOWNLOAD_FROM_AZURE_ARTIFACTS_EXPLANATION, packageName, protocolType, feed, version);
+    Pair<String, InputStream> pair;
+    try {
+      pair = azureArtifactsRegistryService.downloadArtifact(
+          azureArtifactsInternalConfig, project, feed, protocolType, packageName, version);
+      artifactResponseBuilder.artifactType(detectArtifactType(pair.getKey(), protocolType, logCallback));
+    } catch (Exception exception) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(exception);
+      log.error("Failure in downloading artifact from Azure Artifacts", sanitizedException);
+      throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_FROM_AZURE_ARTIFACTS_HINT,
+          errorMessageExplanation,
+          new AzureAppServiceTaskException(
+              format(DOWNLOAD_FROM_AZURE_ARTIFACTS_FAILED, azureArtifactsRequestDetails.getIdentifier()),
+              sanitizedException));
+    }
+
+    if (pair.getRight() != null) {
+      return pair.getRight();
+    } else {
+      log.error("Failure in downloading artifact from Azure Artifacts");
+      logCallback.saveExecutionLog(
+          "Failed to download artifact from Azure Artifacts.", ERROR, CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_FROM_AZURE_ARTIFACTS_HINT,
+          errorMessageExplanation,
+          new AzureAppServiceTaskException(
+              format(DOWNLOAD_FROM_AZURE_ARTIFACTS_FAILED, azureArtifactsRequestDetails.getIdentifier())));
+    }
   }
 
   private InputStream downloadFromAwsS3(AzurePackageArtifactConfig s3ArtifactConfig,
@@ -290,6 +355,34 @@ public class AzureArtifactDownloadServiceImpl implements AzureArtifactDownloadSe
           String.format(BLANK_ARTIFACT_PATH_EXPLANATION, artifactRequestDetails.getIdentifier()),
           new InvalidArgumentsException("not able to find artifact Path"));
     }
+  }
+
+  private void validateAzureDevOpsArtifact(AzurePackageArtifactConfig azureDevopsArtifactConfig,
+      AzureDevOpsArtifactRequestDetails artifactRequestDetails, LogCallback logCallback) {
+    if (!(azureDevopsArtifactConfig.getArtifactDetails() instanceof AzureDevOpsArtifactRequestDetails)) {
+      throw NestedExceptionUtils.hintWithExplanationException("Please contact harness support team",
+          format("Unexpected artifact configuration of type '%s'",
+              azureDevopsArtifactConfig.getArtifactDetails().getClass().getSimpleName()),
+          new InvalidArgumentsException(Pair.of("artifactDetails",
+              format("Invalid artifact details, expected '%s'",
+                  AzureDevOpsArtifactRequestDetails.class.getSimpleName()))));
+    }
+
+    if (EmptyPredicate.isEmpty(artifactRequestDetails.getArtifactName())) {
+      logCallback.saveExecutionLog("artifact Path is blank", ERROR, CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
+          String.format(BLANK_ARTIFACT_PATH_EXPLANATION, artifactRequestDetails.getIdentifier()),
+          new InvalidArgumentsException("not able to find artifact Path"));
+    }
+  }
+
+  private ArtifactType detectArtifactType(String artifactName, String packageType, LogCallback logCallback) {
+    if (AzureArtifactsProtocolType.nuget.name().equalsIgnoreCase(packageType)) {
+      log.info("Detected nuget artifact type for file {}", artifactName);
+      logCallback.saveExecutionLog("Detected artifact type: nuget");
+      return ArtifactType.NUGET;
+    }
+    return AzureArtifactUtils.detectArtifactType(artifactName, logCallback);
   }
 
   private InputStream downloadFromArtifactory(AzurePackageArtifactConfig artifactConfig,

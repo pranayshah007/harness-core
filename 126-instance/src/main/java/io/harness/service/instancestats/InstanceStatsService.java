@@ -7,8 +7,10 @@
 
 package io.harness.service.instancestats;
 
+import io.harness.ng.core.entities.Project;
+
 import java.time.Instant;
 
 public interface InstanceStatsService {
-  Instant getLastSnapshotTime(String accountId, String orgIdentifier, String projectIdentifier, String serviceId);
+  Instant getLastSnapshotTime(Project project) throws Exception;
 }

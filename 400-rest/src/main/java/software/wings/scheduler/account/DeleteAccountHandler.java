@@ -16,6 +16,8 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -29,32 +31,39 @@ import software.wings.beans.AccountStatus;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 
 @OwnedBy(PL)
-public class DeleteAccountHandler implements Handler<Account> {
+public class DeleteAccountHandler extends IteratorPumpModeHandler implements Handler<Account> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private AccountService accountService;
   @Inject private JobsFrequencyConfig jobsFrequencyConfig;
   @Inject private MorphiaPersistenceProvider<Account> persistenceProvider;
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .name("DeleteAccountIterator")
-            .poolSize(2)
-            .interval(ofMinutes(1))
-            .build(),
-        DeleteAccountHandler.class,
-        MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
-            .clazz(Account.class)
-            .fieldName(AccountKeys.accountDeletionIteration)
-            .targetInterval(ofMinutes(jobsFrequencyConfig.getAccountDeletionJobFrequencyInMinutes()))
-            .acceptableNoAlertDelay(ofMinutes(Integer.MAX_VALUE))
-            .acceptableExecutionTime(ofSeconds(120))
-            .persistenceProvider(persistenceProvider)
-            .handler(this)
-            .schedulingType(REGULAR)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Account, MorphiaFilterExpander<Account>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       DeleteAccountHandler.class,
+                       MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
+                           .clazz(Account.class)
+                           .fieldName(AccountKeys.accountDeletionIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofMinutes(Integer.MAX_VALUE))
+                           .acceptableExecutionTime(ofSeconds(120))
+                           .persistenceProvider(persistenceProvider)
+                           .handler(this)
+                           .schedulingType(REGULAR)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "DeleteAccountIterator";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

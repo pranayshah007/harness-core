@@ -45,7 +45,7 @@ fi
 
 if [[ "" != "$MANAGER_URL" ]]; then
   export MANAGER_URL; yq -i '.managerUrl=env(MANAGER_URL)' $CONFIG_FILE
-
+fi
 
 if [[ "" != "$SG_ITERATOR_ENABLED" ]]; then
   export SG_ITERATOR_ENABLED; yq -i '.serviceGuardIteratorConfig.enabled=env(SG_ITERATOR_ENABLED)' $CONFIG_FILE

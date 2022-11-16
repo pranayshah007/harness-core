@@ -22,7 +22,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
@@ -427,8 +426,6 @@ public class TerraformPlanStepTest extends CategoryTest {
                                          .build())
                       .build())
             .build();
-
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled("test-account", FeatureName.EXPORT_TF_PLAN_JSON_NG);
 
     TerraformTaskNGResponse ngResponse = TerraformTaskNGResponse.builder()
                                              .tfPlanJsonFileId("fileId")

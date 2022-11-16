@@ -135,6 +135,20 @@ public class InfrastructureRepositoryCustomImpl implements InfrastructureReposit
   }
 
   @Override
+  public List<InfrastructureEntity> findAllFromProjectIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria baseCriteria = Criteria.where(InfrastructureEntityKeys.accountId)
+                                .is(accountIdentifier)
+                                .and(InfrastructureEntityKeys.orgIdentifier)
+                                .is(orgIdentifier)
+                                .and(InfrastructureEntityKeys.projectIdentifier)
+                                .is(projectIdentifier);
+
+    Query query = new Query(baseCriteria);
+    return mongoTemplate.find(query, InfrastructureEntity.class);
+  }
+
+  @Override
   public UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String envIdentifier, List<String> infraIdentifierList, Update update) {
     Criteria baseCriteria = Criteria.where(InfrastructureEntityKeys.accountId)

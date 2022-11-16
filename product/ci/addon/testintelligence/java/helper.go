@@ -6,7 +6,6 @@
 package java
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
 	"github.com/harness/harness-core/commons/go/lib/utils"
@@ -14,9 +13,6 @@ import (
 	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"github.com/mattn/go-zglob"
 	"go.uber.org/zap"
-	"io"
-	"path/filepath"
-	"strings"
 )
 
 var (
@@ -34,11 +30,10 @@ func getFiles(path string) ([]string, error) {
 	return matches, err
 }
 
-// GetJavaTests returns list of RunnableTests in the workspace
+// GetJavaTests returns list of RunnableTests in the workspace with java extension.
 // In case of errors, return empty list
-func GetJavaTests(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]types.RunnableTest, error) {
+func GetJavaTests() ([]types.RunnableTest, error) {
 	tests := make([]types.RunnableTest, 0)
-	//excludeList := []string{} // exclude any instances of these packages from the package list
 	wp, err := getWorkspace()
 	if err != nil {
 		return tests, err
@@ -49,7 +44,61 @@ func GetJavaTests(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]types.Run
 		if path == "" {
 			continue
 		}
-		node, _ := utils.ParseJavaNode(path)
+		node, _ := utils.ParseJavaNodeFromPath(path)
+		if node.Type != utils.NodeType_TEST {
+			continue
+		}
+		test := types.RunnableTest{
+			Pkg:   node.Pkg,
+			Class: node.Class,
+		}
+		tests = append(tests, test)
+	}
+	return tests, nil
+}
+
+// GetScalaTests returns list of RunnableTests in the workspace with scala extension.
+// In case of errors, return empty list
+func GetScalaTests() ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	wp, err := getWorkspace()
+	if err != nil {
+		return tests, err
+	}
+
+	files, _ := getFiles(fmt.Sprintf("%s/**/*.scala", wp))
+	for _, path := range files {
+		if path == "" {
+			continue
+		}
+		node, _ := utils.ParseJavaNodeFromPath(path)
+		if node.Type != utils.NodeType_TEST {
+			continue
+		}
+		test := types.RunnableTest{
+			Pkg:   node.Pkg,
+			Class: node.Class,
+		}
+		tests = append(tests, test)
+	}
+	return tests, nil
+}
+
+// GetKotlinTests returns list of RunnableTests in the workspace with kotlin extension.
+// In case of errors, return empty list
+func GetKotlinTests() ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	wp, err := getWorkspace()
+	if err != nil {
+		return tests, err
+	}
+
+	files, _ := getFiles(fmt.Sprintf("%s/**/*.kt", wp))
+	for _, path := range files {
+		if path == "" {
+			continue
+		}
+		node, _ := utils.ParseJavaNodeFromPath(path)
 		if node.Type != utils.NodeType_TEST {
 			continue
 		}
@@ -78,80 +127,25 @@ func DetectPkgs(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]string, err
 	if err != nil {
 		return plist, err
 	}
-	// Create a list with all *.java and *.kt file paths
+	scalaFiles, err := getFiles(fmt.Sprintf("%s/**/*.scala", wp))
+	if err != nil {
+		return plist, err
+	}
+	// Create a list with all *.java, *.kt and *.scala file paths
 	files = append(files, kotlinFiles...)
+	files = append(files, scalaFiles...)
 	fmt.Println("files: ", files)
 	m := make(map[string]struct{})
 	for _, f := range files {
-		absPath, err := filepath.Abs(f)
+		pkg, err := utils.ReadJavaPkg(log, fs, f, excludeList, 2)
 		if err != nil {
-			log.Errorw("could not get absolute path", "file_name", f, err)
-			continue
+			return plist, err
 		}
-		// TODO: (Vistaar)
-		// This doesn't handle some special cases right now such as when there is a package
-		// present in a multiline comment with multiple opening and closing comments.
-		// We will require to read all the lines together to handle this.
-		err = fs.ReadFile(absPath, func(fr io.Reader) error {
-			scanner := bufio.NewScanner(fr)
-			commentOpen := false
-			for scanner.Scan() {
-				l := strings.TrimSpace(scanner.Text())
-				if strings.Contains(l, "/*") {
-					commentOpen = true
-				}
-				if strings.Contains(l, "*/") {
-					commentOpen = false
-					continue
-				}
-				if commentOpen || strings.HasPrefix(l, "//") {
-					continue
-				}
-				prev := ""
-				pkg := ""
-				for _, token := range strings.Fields(l) {
-					if prev == "package" {
-						pkg = token
-						break
-					}
-					prev = token
-				}
-				if pkg != "" {
-					pkg = strings.TrimSuffix(pkg, ";")
-					tokens := strings.Split(pkg, ".")
-					prefix := false
-					for _, exclude := range excludeList {
-						if strings.HasPrefix(pkg, exclude) {
-							log.Infow(fmt.Sprintf("Found package: %s having same package prefix as: %s. Excluding this package from the list...", pkg, exclude))
-							prefix = true
-							break
-						}
-					}
-					if !prefix {
-						pkg = tokens[0]
-						if len(tokens) > 1 {
-							pkg = pkg + "." + tokens[1]
-						}
-					}
-					if pkg == "" {
-						continue
-					}
-					if _, ok := m[pkg]; !ok {
-						plist = append(plist, pkg)
-						m[pkg] = struct{}{}
-					}
-					return nil
-				}
-			}
-			if err := scanner.Err(); err != nil {
-				log.Errorw(fmt.Sprintf("could not scan all the files. Error: %s", err))
-				return err
-			}
-			return nil
-		})
-		if err != nil {
-			log.Errorw("had issues while trying to auto detect java packages", err)
+		if _, ok := m[pkg]; !ok && pkg != "" {
+			plist = append(plist, pkg)
+			m[pkg] = struct{}{}
 		}
 	}
 	return plist, nil
 }
+

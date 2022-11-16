@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.UTSAV;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.CENGTestBase;
 import io.harness.ng.DbAliases;
@@ -42,6 +43,7 @@ public class CENGMongoIndexesTest extends CENGTestBase {
   @Test
   @Owner(developers = UTSAV)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testConfirmAllIndexesInEventsDB() throws IOException {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setObjectFactory(objectFactory);

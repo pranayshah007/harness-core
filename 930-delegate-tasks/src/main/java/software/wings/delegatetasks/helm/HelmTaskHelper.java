@@ -340,7 +340,7 @@ public class HelmTaskHelper {
       helmTaskHelperBase.fetchChartFromRepo(helmChartConfigParams.getRepoName(),
           helmChartConfigParams.getRepoDisplayName(), helmChartConfigParams.getChartName(),
           helmChartConfigParams.getChartVersion(), chartDirectory, helmChartConfigParams.getHelmVersion(),
-          helmCommandFlag, timeoutInMillis, false, cacheDir);
+          helmCommandFlag, timeoutInMillis, cacheDir);
     } finally {
       if (chartmuseumClient != null && chartMuseumServer != null) {
         chartmuseumClient.stop(chartMuseumServer);
@@ -468,8 +468,7 @@ public class HelmTaskHelper {
       String repoName = String.format(REGISTRY_URL_PREFIX, Paths.get(repoConfig.getChartRepoUrl()).normalize());
       helmTaskHelperBase.fetchChartFromRepo(repoName, helmChartConfigParams.getRepoDisplayName(),
           helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion(), chartDirectory,
-          helmChartConfigParams.getHelmVersion(), helmCommandFlag, timeoutInMillis,
-          helmChartConfigParams.isCheckIncorrectChartVersion(), cacheDir);
+          helmChartConfigParams.getHelmVersion(), helmCommandFlag, timeoutInMillis, cacheDir);
     } finally {
       if (!helmChartConfigParams.isUseCache()) {
         try {
@@ -496,17 +495,6 @@ public class HelmTaskHelper {
         .toString();
   }
 
-  public String getCacheDirForManifestCollection(HelmVersion helmVersion, String repoName, boolean useCache)
-      throws IOException {
-    if (!HelmVersion.isHelmV3(helmVersion)) {
-      return EMPTY;
-    }
-    if (useCache) {
-      return Paths.get(RESOURCE_DIR_BASE, repoName, "cache").toAbsolutePath().normalize().toString();
-    }
-    return Files.createTempDirectory("charts").toAbsolutePath().toString();
-  }
-
   private void fetchChartFromHttpServer(HelmChartConfigParams helmChartConfigParams, String chartDirectory,
       long timeoutInMillis, HelmCommandFlag helmCommandFlag) {
     HttpHelmRepoConfig httpHelmRepoConfig = (HttpHelmRepoConfig) helmChartConfigParams.getHelmRepoConfig();
@@ -520,7 +508,7 @@ public class HelmTaskHelper {
       helmTaskHelperBase.fetchChartFromRepo(helmChartConfigParams.getRepoName(),
           helmChartConfigParams.getRepoDisplayName(), helmChartConfigParams.getChartName(),
           helmChartConfigParams.getChartVersion(), chartDirectory, helmChartConfigParams.getHelmVersion(),
-          helmCommandFlag, timeoutInMillis, helmChartConfigParams.isCheckIncorrectChartVersion(), cacheDir);
+          helmCommandFlag, timeoutInMillis, cacheDir);
     } finally {
       if (isNotEmpty(cacheDir) && !helmChartConfigParams.isUseCache()) {
         try {
@@ -591,7 +579,7 @@ public class HelmTaskHelper {
             helmChartConfigParams.getHelmVersion(), helmCommandFlag);
       }
       helmTaskHelperBase.executeFetchChartFromRepo(helmChartConfigParams.getChartName(), chartDirectory,
-          helmChartConfigParams.getRepoDisplayName(), helmFetchCommand, timeoutInMillis, "", false);
+          helmChartConfigParams.getRepoDisplayName(), helmFetchCommand, timeoutInMillis, "");
 
     } finally {
       if (isNotBlank(helmChartConfigParams.getChartUrl())) {
@@ -639,7 +627,7 @@ public class HelmTaskHelper {
     HelmChartConfigParams helmChartConfigParams = helmChartCollectionParams.getHelmChartConfigParams();
     HttpHelmRepoConfig httpHelmRepoConfig = (HttpHelmRepoConfig) helmChartConfigParams.getHelmRepoConfig();
     Map<String, String> environment = new HashMap<>();
-    String cacheDir = getCacheDirForManifestCollection(helmChartConfigParams.getHelmVersion(),
+    String cacheDir = helmTaskHelperBase.getCacheDirForManifestCollection(helmChartConfigParams.getHelmVersion(),
         helmChartConfigParams.getRepoName(), helmChartConfigParams.isUseCache());
     String commandOutput;
 
@@ -675,27 +663,11 @@ public class HelmTaskHelper {
     } finally {
       deleteDirectoryAndItsContentIfExists(workingDirectory + "/helm");
       if (!helmChartConfigParams.isUseCache() && isNotEmpty(cacheDir)) {
-        deleteQuietlyWithErrorLog(cacheDir);
+        helmTaskHelperBase.deleteQuietlyWithErrorLog(cacheDir);
       }
     }
 
     return parseHelmVersionFetchOutput(commandOutput, helmChartCollectionParams);
-  }
-
-  private void deleteQuietlyWithErrorLog(String tempDir) {
-    try {
-      if (isNotEmpty(tempDir)) {
-        /*
-          adding this check as deleting an empty directory causes delegate to behave erratically
-          i.e. it deletes root folder and shuts down
-         */
-        log.info("Deleting directory at path(deleteQuietlyWithErrorLog) " + tempDir);
-        FileUtils.forceDelete(new File(tempDir));
-      }
-    } catch (IOException ie) {
-      log.error(
-          "Deletion of charts folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
-    }
   }
 
   private List<HelmChart> parseHelmVersionFetchOutput(
@@ -832,13 +804,13 @@ public class HelmTaskHelper {
       long timeoutInMillis) throws Exception {
     HelmChartConfigParams helmChartConfigParams = helmChartCollectionParams.getHelmChartConfigParams();
     String workingDirectory = Paths.get(destinationDirectory).toString();
-    String cacheDir = getCacheDirForManifestCollection(helmChartConfigParams.getHelmVersion(),
+    String cacheDir = helmTaskHelperBase.getCacheDirForManifestCollection(helmChartConfigParams.getHelmVersion(),
         helmChartConfigParams.getRepoName(), helmChartConfigParams.isUseCache());
     removeRepo(helmChartConfigParams.getRepoName(), workingDirectory, helmChartConfigParams.getHelmVersion(),
         timeoutInMillis, cacheDir);
     cleanup(workingDirectory);
     if (!helmChartConfigParams.isUseCache()) {
-      deleteQuietlyWithErrorLog(cacheDir);
+      helmTaskHelperBase.deleteQuietlyWithErrorLog(cacheDir);
     }
   }
 

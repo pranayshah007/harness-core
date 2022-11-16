@@ -7,11 +7,14 @@
 
 package io.harness.cdng.custom.deployment;
 
+import static io.harness.rule.OwnerRule.ANIL;
+
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -51,7 +54,7 @@ public class CustomDeploymentEntitySetupHelperTest extends CategoryTest {
   private static final String STABLE_VERSION = "__STABLE__";
   private static final String ERROR_FOR_INVALID_TEMPLATE =
       "Could not add the reference in entity setup usage for infraRef :[infra]"
-      + " and [Could not fetch the template reference from yaml for infraRef : [infra]] ";
+      + " and [Could not fetch the template reference from yaml for infraRef : [infra]]";
 
   @Mock private Producer eventProducer;
   @Spy @InjectMocks private CustomDeploymentEntitySetupHelper customDeploymentEntitySetupHelper;
@@ -268,6 +271,67 @@ public class CustomDeploymentEntitySetupHelperTest extends CategoryTest {
                                                     .yaml(infraYaml)
                                                     .build();
     customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(infrastructureEntity);
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testDeleteReferencesInEntitySetupUsageError() {
+    String infraYaml = readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .name(INFRA)
+                                                    .identifier(INFRA)
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .projectIdentifier(PROJECT)
+                                                    .envIdentifier(ENVIRONMENT)
+                                                    .yaml(infraYaml)
+                                                    .build();
+
+    doThrow(InvalidRequestException.class).when(eventProducer).send(any());
+    customDeploymentEntitySetupHelper.deleteReferencesInEntitySetupUsage(infrastructureEntity);
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testAddReferencesInEntityInvalidInfraDefinition() {
+    String infraYaml = readFile("infrastructureWithoutDefinition.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .name(INFRA)
+                                                    .identifier(INFRA)
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .projectIdentifier(PROJECT)
+                                                    .envIdentifier(ENVIRONMENT)
+                                                    .yaml(infraYaml)
+                                                    .build();
+
+    assertThatThrownBy(() -> customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(infrastructureEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Could not add the reference in entity setup usage for infraRef :[infra] and [Could not fetch the template reference from yaml for infraRef : [infra]]");
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testAddReferencesInEntityInvalidDeploymentRef() {
+    String infraYaml = readFile("infrastructureWithoutDTRef.yaml", INFRA_RESOURCE_PATH_PREFIX);
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .name(INFRA)
+                                                    .identifier(INFRA)
+                                                    .accountId(ACCOUNT)
+                                                    .orgIdentifier(ORG)
+                                                    .projectIdentifier(PROJECT)
+                                                    .envIdentifier(ENVIRONMENT)
+                                                    .yaml(infraYaml)
+                                                    .build();
+
+    assertThatThrownBy(() -> customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(infrastructureEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Could not add the reference in entity setup usage for infraRef :[infra] and [Could not fetch the template reference from yaml for infraRef : [infra]]");
   }
 
   private void assertRedisEvent(Message message, String action, String entityType) {

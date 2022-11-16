@@ -46,4 +46,5 @@ public class QLWorkflowExecution implements QLExecution {
   private List<QLDeploymentTag> tags;
   private String failureDetails;
   private List<QLManifest> manifests;
+  private List<QLInputVariable> inputVariables;
 }

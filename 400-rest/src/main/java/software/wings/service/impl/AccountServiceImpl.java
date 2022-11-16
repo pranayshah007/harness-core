@@ -492,10 +492,6 @@ public class AccountServiceImpl implements AccountService {
     } else if (account.isCreatedFromNG()) {
       updateNextGenEnabled(account.getUuid(), true);
     }
-    // TODO: MARKO uncomment this when immutable UI has been completely developed
-    //    if (!DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-    //      featureFlagService.enableAccount(FeatureName.USE_IMMUTABLE_DELEGATE, account.getUuid());
-    //    }
   }
 
   List<Role> createDefaultRoles(Account account) {
@@ -581,7 +577,7 @@ public class AccountServiceImpl implements AccountService {
     accountDetails.setCeLicenseInfo(account.getCeLicenseInfo());
     accountDetails.setDefaultExperience(account.getDefaultExperience());
     accountDetails.setCreatedFromNG(account.isCreatedFromNG());
-    accountDetails.setActiveServiceCount(workflowExecutionService.getActiveServiceCount(accountId));
+    accountDetails.setActiveServiceCount(cgCdLicenseUsageService.getActiveServiceInTimePeriod(accountId, 60));
     if (featureFlagService.isEnabled(CG_LICENSE_USAGE, accountId)) {
       accountDetails.setActiveServicesUsageInfo(cgCdLicenseUsageService.getActiveServiceLicenseUsage(accountId));
     }
@@ -898,7 +894,8 @@ public class AccountServiceImpl implements AccountService {
             .set(AccountKeys.cloudCostEnabled, account.isCloudCostEnabled())
             .set(AccountKeys.nextGenEnabled, account.isNextGenEnabled())
             .set(AccountKeys.ceAutoCollectK8sEvents, account.isCeAutoCollectK8sEvents())
-            .set("whitelistedDomains", account.getWhitelistedDomains());
+            .set("whitelistedDomains", account.getWhitelistedDomains())
+            .set("isProductLed", account.isProductLed());
 
     if (null != account.getLicenseInfo()) {
       updateOperations.set(AccountKeys.licenseInfo, account.getLicenseInfo());
@@ -2019,6 +2016,12 @@ public class AccountServiceImpl implements AccountService {
   public boolean isAccountActivelyUsed(String accountId) {
     Account account = getFromCacheWithFallback(accountId);
     return account.isAccountActivelyUsed();
+  }
+
+  @Override
+  public boolean isImmutableDelegateEnabled(String accountId) {
+    Account account = getFromCacheWithFallback(accountId);
+    return account != null && account.isImmutableDelegateEnabled();
   }
 
   @Override

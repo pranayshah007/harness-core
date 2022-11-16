@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 39
+version: 40
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1238,7 +1238,7 @@ permissions:
       - account
   - identifier: core_deploymentfreeze_manage
     name: Manage deployment freeze
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1246,7 +1246,7 @@ permissions:
       - project
   - identifier: core_deploymentfreeze_override
     name: Override a deployment freeze
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1254,7 +1254,7 @@ permissions:
       - project
   - identifier: core_deploymentfreeze_global
     name: Global deployment freeze
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account

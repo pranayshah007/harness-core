@@ -180,6 +180,12 @@ public class AccountResource {
   }
 
   @GET
+  @Path("{accountId}/immutable-delegate-enabled")
+  public RestResponse<Boolean> isImmutableDelegateEnabled(@PathParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse<>(accountService.isImmutableDelegateEnabled(accountId));
+  }
+
+  @GET
   @Path("services-cv-24x7")
   @Timed
   @ExceptionMetered
@@ -280,6 +286,27 @@ public class AccountResource {
   public RestResponse<Boolean> updateTechStacks(
       @PathParam("accountId") @NotEmpty String accountId, Set<TechStack> techStacks) {
     return new RestResponse<>(accountService.updateTechStacks(accountId, techStacks));
+  }
+
+  @PUT
+  @Path("{accountId}/is-product-led")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") @NotEmpty String accountId,
+      @QueryParam("isProductLed") @DefaultValue("false") boolean isProductLed) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(accountService.updateIsProductLed(accountId, isProductLed));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder().message("User not allowed to update account product-led status").build()))
+          .build();
+    }
   }
 
   @PUT

@@ -13,6 +13,7 @@ import static io.harness.beans.FeatureName.PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.encryption.SecretRefParsedData.SECRET_REFERENCE_DATA_ROOT_PREFIX;
 import static io.harness.encryption.SecretRefParsedData.SECRET_REFERENCE_EXPRESSION_DELIMITER;
 import static io.harness.eraro.ErrorCode.ENCRYPT_DECRYPT_ERROR;
@@ -403,6 +404,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .identifier(secretIdentifier)
+        .id(generateUuid())
         .name(secretIdentifier)
         .type(SettingVariableTypes.SECRET_TEXT)
         .path(secretRefParsedData.getRelativePath())
@@ -618,20 +620,28 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   }
 
   @Override
-  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier,
+      boolean forceDelete) {
     NGEncryptedData encryptedData = get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     if (encryptedData == null) {
       return false;
     }
-    SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(
-        accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
+    SecretManagerConfigDTO secretManager = null;
+    try {
+      secretManager = getSecretManagerOrThrow(
+          accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
+    } catch (SecretManagementException e) {
+      if (!forceDelete) {
+        throw e;
+      }
+    }
 
     if (isReadOnlySecretManager(secretManager) && !Optional.ofNullable(encryptedData.getPath()).isPresent()
         && Optional.ofNullable(encryptedData.getEncryptedValue()).isPresent()) {
       throw new SecretManagementException(
           SECRET_MANAGEMENT_ERROR, "Cannot delete an Inline secret in read only secret manager", USER);
     }
-    if (!Optional.ofNullable(encryptedData.getPath()).isPresent()
+    if (secretManager != null && !Optional.ofNullable(encryptedData.getPath()).isPresent()
         && Optional.ofNullable(encryptedData.getEncryptedValue()).isPresent()) {
       deleteSecretInSecretManager(accountIdentifier, encryptedData, SecretManagerConfigMapper.fromDTO(secretManager));
     }

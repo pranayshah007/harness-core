@@ -27,9 +27,9 @@ public enum AzureAppServiceConnectionStringType {
   }
 
   public static AzureAppServiceConnectionStringType fromValue(String text) {
-    for (AzureAppServiceConnectionStringType b : AzureAppServiceConnectionStringType.values()) {
-      if (String.valueOf(b.value).equals(text)) {
-        return b;
+    for (AzureAppServiceConnectionStringType connStringType : AzureAppServiceConnectionStringType.values()) {
+      if (String.valueOf(connStringType.value).equalsIgnoreCase(text)) {
+        return connStringType;
       }
     }
     return null;

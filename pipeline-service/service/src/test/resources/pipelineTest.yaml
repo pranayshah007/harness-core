@@ -1,0 +1,125 @@
+pipeline:
+  name: parallelserial
+  identifier: parallelserial
+  projectIdentifier: TcSvcOverrideTest
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - parallel:
+        - stage:
+            name: s1
+            identifier: s1
+            description: ""
+            type: Deployment
+            spec:
+              deploymentType: Kubernetes
+              service:
+                serviceRef: S1Copy
+              environment:
+                environmentRef: <+input>
+                deployToAll: false
+                environmentInputs: <+input>
+                infrastructureDefinitions: <+input>
+              execution:
+                steps:
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                        pruningEnabled: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec:
+                        pruningEnabled: false
+            tags: {}
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+        - stage:
+            name: s2
+            identifier: s2
+            description: ""
+            type: Deployment
+            spec:
+              deploymentType: Kubernetes
+              service:
+                serviceRef: S1Copy
+              environment:
+                environmentRef: <+input>
+                deployToAll: false
+                environmentInputs: <+input>
+                infrastructureDefinitions: <+input>
+              execution:
+                steps:
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                        pruningEnabled: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec:
+                        pruningEnabled: false
+            tags: {}
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+    - stage:
+        name: s3
+        identifier: s3
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: S1Copy
+          environment:
+            environmentRef: <+input>
+            deployToAll: false
+            environmentInputs: <+input>
+            infrastructureDefinitions: <+input>
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+                    pruningEnabled: false
+            rollbackSteps:
+              - step:
+                  name: Rollback Rollout Deployment
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec:
+                    pruningEnabled: false
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback

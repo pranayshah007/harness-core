@@ -15,6 +15,7 @@ import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
@@ -52,11 +53,24 @@ public class DeploymentReconRecord implements PersistentEntity, UuidAware, Accou
                  .field(DeploymentReconRecordKeys.accountId)
                  .field(DeploymentReconRecordKeys.reconciliationStatus)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_entityClass_durationEndTs_sorted")
+                 .field(DeploymentReconRecordKeys.accountId)
+                 .field(DeploymentReconRecordKeys.entityClass)
+                 .descSortField(DeploymentReconRecordKeys.durationEndTs)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_reconciliationStatus_entityClass")
+                 .field(DeploymentReconRecordKeys.accountId)
+                 .field(DeploymentReconRecordKeys.reconciliationStatus)
+                 .field(DeploymentReconRecordKeys.entityClass)
+                 .build())
         .build();
   }
 
   @Id private String uuid;
   private String accountId;
+  private String entityClass;
   private long durationStartTs;
   private long durationEndTs;
   private DetectionStatus detectionStatus;

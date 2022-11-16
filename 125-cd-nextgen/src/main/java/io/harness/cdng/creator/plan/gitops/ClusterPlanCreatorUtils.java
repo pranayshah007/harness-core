@@ -17,7 +17,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
+import io.harness.cdng.environment.bean.IndividualEnvData;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
+import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
 import io.harness.cdng.gitops.steps.ClusterStepParameters;
 import io.harness.cdng.gitops.steps.ClusterStepParameters.ClusterStepParametersBuilder;
 import io.harness.cdng.gitops.steps.EnvClusterRefs;
@@ -29,6 +31,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -60,6 +63,20 @@ public class ClusterPlanCreatorUtils {
         .identifier(PlanCreatorConstants.GITOPS_INFRA_NODE_NAME)
         .stepType(GitopsClustersStep.STEP_TYPE)
         .stepParameters(getStepParams(envGroupConfig))
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                .build());
+  }
+
+  public PlanNodeBuilder getGitopsClustersStepPlanNodeBuilder(
+      String nodeUuid, EnvironmentsPlanCreatorConfig environmentsPlanCreatorConfig) {
+    return PlanNode.builder()
+        .uuid(nodeUuid)
+        .name(PlanCreatorConstants.GITOPS_INFRA_NODE_NAME)
+        .identifier(PlanCreatorConstants.GITOPS_INFRA_NODE_NAME)
+        .stepType(GitopsClustersStep.STEP_TYPE)
+        .stepParameters(getStepParams(environmentsPlanCreatorConfig))
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
@@ -117,6 +134,26 @@ public class ClusterPlanCreatorUtils {
             .collect(Collectors.toList());
 
     return clusterStepParametersBuilder.envClusterRefs(clusterRefs).build();
+  }
+
+  private ClusterStepParameters getStepParams(EnvironmentsPlanCreatorConfig envConfig) {
+    checkNotNull(envConfig, "environments must be present");
+
+    ClusterStepParametersBuilder clusterStepParametersBuilder = ClusterStepParameters.builder();
+    List<EnvClusterRefs> envClusterRefList = new ArrayList<>();
+
+    for (IndividualEnvData envData : envConfig.getIndividualEnvDataList()) {
+      EnvClusterRefs envClusterRefs = EnvClusterRefs.builder()
+                                          .envName(envData.getEnvName())
+                                          .envRef(envData.getEnvRef())
+                                          .clusterRefs(envData.getGitOpsClusterRefs())
+                                          .deployToAll(envData.isDeployToAll())
+                                          .build();
+
+      envClusterRefList.add(envClusterRefs);
+    }
+
+    return clusterStepParametersBuilder.envClusterRefs(envClusterRefList).build();
   }
 
   private Set<String> getClusterRefs(EnvironmentPlanCreatorConfig config) {

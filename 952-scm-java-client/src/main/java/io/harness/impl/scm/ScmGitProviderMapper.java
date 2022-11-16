@@ -240,7 +240,8 @@ public class ScmGitProviderMapper {
     GithubApiAccessDTO apiAccess = githubConnector.getApiAccess();
     GithubTokenSpecDTO apiAccessDTO = (GithubTokenSpecDTO) apiAccess.getSpec();
     if (apiAccessDTO.getTokenRef() == null || apiAccessDTO.getTokenRef().getDecryptedValue() == null) {
-      throw new InvalidArgumentsException("The personal access token is not set");
+      throw new InvalidArgumentsException(
+          "The Personal Access Token is not set. Please set the Personal Access Token in the Git Connector which has permissions to use providers API's");
     }
     return String.valueOf(apiAccessDTO.getTokenRef().getDecryptedValue());
   }
@@ -249,7 +250,8 @@ public class ScmGitProviderMapper {
     GithubApiAccessDTO apiAccess = githubConnector.getApiAccess();
     GithubOauthDTO githubOauthDTO = (GithubOauthDTO) apiAccess.getSpec();
     if (githubOauthDTO.getTokenRef() == null || githubOauthDTO.getTokenRef().getDecryptedValue() == null) {
-      throw new InvalidArgumentsException("The personal access token is not set");
+      throw new InvalidArgumentsException(
+          "The Personal Access Token is not set. Please set the Personal Access Token in the Git Connector which has permissions to use providers API's");
     }
     return String.valueOf(githubOauthDTO.getTokenRef().getDecryptedValue());
   }

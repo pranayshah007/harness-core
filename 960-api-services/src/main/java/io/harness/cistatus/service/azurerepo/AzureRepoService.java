@@ -14,5 +14,5 @@ public interface AzureRepoService {
   boolean sendStatus(AzureRepoConfig azureRepoConfig, String userName, String token, String sha, String org,
       String project, String repo, Map<String, Object> bodyObjectMap);
   JSONObject mergePR(AzureRepoConfig azureRepoConfig, String token, String sha, String org, String project, String repo,
-      String prNumber, boolean deleteSourceBranch);
+      String prNumber, boolean deleteSourceBranch, Map<String, Object> apiParamOptions);
 }

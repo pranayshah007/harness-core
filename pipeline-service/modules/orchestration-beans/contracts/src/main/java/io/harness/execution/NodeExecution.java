@@ -249,6 +249,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.stepCategory)
                  .ascRangeField(NodeExecutionKeys.createdAt)
                  .build())
+        .add(CompoundMongoIndex.builder().name("status_idx").field(NodeExecutionKeys.status).build())
         .build();
   }
 

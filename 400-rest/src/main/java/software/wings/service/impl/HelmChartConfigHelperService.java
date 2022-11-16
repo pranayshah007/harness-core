@@ -139,8 +139,7 @@ public class HelmChartConfigHelperService {
     helmChartConfigParamsBuilder.useLatestChartMuseumVersion(
         featureFlagService.isEnabled(FeatureName.USE_LATEST_CHARTMUSEUM_VERSION, context.getAccountId()));
 
-    helmChartConfigParamsBuilder.checkIncorrectChartVersion(
-        featureFlagService.isEnabled(FeatureName.HELM_CHART_VERSION_STRICT_MATCH, context.getAccountId()));
+    helmChartConfigParamsBuilder.checkIncorrectChartVersion(true);
 
     if (isNotBlank(helmChartConfig.getChartName())) {
       String chartName = helmChartConfig.getChartName();

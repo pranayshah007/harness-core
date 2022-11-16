@@ -86,7 +86,7 @@ public class PerpetualTaskRecord
   String taskDescription;
   PerpetualTaskState state;
   PerpetualTaskUnassignedReason unassignedReason;
-  long lastHeartbeat;
+  @Deprecated long lastHeartbeat;
 
   @Deprecated List<Long> assignerIterations;
   long assignIteration;

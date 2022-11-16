@@ -15,6 +15,7 @@ import io.harness.NGConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
@@ -177,9 +178,9 @@ public class ArtifactUtils {
         return String.format("type: %s, build: %s", sourceType, customArtifactConfig.getVersion().getValue());
       case JENKINS:
         JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
-        return String.format(placeholder, sourceType, jenkinsArtifactConfig.getJobName().getValue(),
-            jenkinsArtifactConfig.getArtifactPath().getValue(), jenkinsArtifactConfig.getBuild().getValue(),
-            jenkinsArtifactConfig.getConnectorRef().getValue());
+        return String.format("\ntype: %s \nJobName: %s \nArtifactPath: %s \nBuild: %s \nConnectorRef: %s\n", sourceType,
+            jenkinsArtifactConfig.getJobName().getValue(), jenkinsArtifactConfig.getArtifactPath().getValue(),
+            jenkinsArtifactConfig.getBuild().getValue(), jenkinsArtifactConfig.getConnectorRef().getValue());
       case GITHUB_PACKAGES:
         GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
         return String.format(
@@ -198,6 +199,12 @@ public class ArtifactUtils {
             azureArtifactsConfig.getFeed().getValue(), azureArtifactsConfig.getPackageType().getValue(),
             azureArtifactsConfig.getPackageName().getValue(), azureArtifactsConfig.getVersion().getValue(),
             azureArtifactsConfig.getVersionRegex().getValue(), azureArtifactsConfig.getConnectorRef().getValue());
+      case AMI:
+        AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactConfig;
+
+        return String.format("\ntype: %s \nversion: %s \nversionRegex: %s \nconnectorRef: %s\n", sourceType,
+            amiArtifactConfig.getVersion().getValue(), amiArtifactConfig.getVersionRegex().getValue(),
+            amiArtifactConfig.getConnectorRef().getValue());
       case GOOGLE_ARTIFACT_REGISTRY:
         GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
         String version = googleArtifactRegistryConfig.getVersion().getValue() != null

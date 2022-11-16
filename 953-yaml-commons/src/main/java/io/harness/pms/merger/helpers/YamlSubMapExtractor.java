@@ -68,6 +68,9 @@ public class YamlSubMapExtractor {
     for (int i = 0; i < size; i++) {
       JsonNode elem =
           node.getNodeType() == FQNNode.NodeType.KEY_WITH_UUID ? curr.get(i).get(node.getKey()) : curr.get(i);
+      if (elem == null) {
+        continue;
+      }
       String identifier = elem.get(node.getUuidKey()).asText();
       if (identifier.equals(node.getUuidValue())) {
         return elem;

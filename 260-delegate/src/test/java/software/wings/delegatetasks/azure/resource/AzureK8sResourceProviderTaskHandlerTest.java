@@ -26,7 +26,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.delegatetasks.azure.resource.taskhandler.AzureK8sResourceProviderTaskHandler;
 
-import com.microsoft.azure.management.containerservice.KubernetesCluster;
+import com.azure.resourcemanager.containerservice.models.KubernetesCluster;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;

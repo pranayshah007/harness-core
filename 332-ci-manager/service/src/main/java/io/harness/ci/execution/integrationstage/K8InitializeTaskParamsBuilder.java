@@ -37,6 +37,7 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.PodCleanupDetails;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
@@ -66,6 +67,7 @@ import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.utils.IdentifierRefHelper;
@@ -150,7 +152,7 @@ public class K8InitializeTaskParamsBuilder {
 
   private CIK8PodParams<CIK8ContainerParams> getK8HostedPodParams(InitializeStepInfo initializeStepInfo,
       K8PodDetails k8PodDetails, K8sHostedInfraYaml k8sHostedInfraYaml, Ambiance ambiance, String logPrefix) {
-    String podName = k8InitializeTaskUtils.generatePodName(initializeStepInfo.getStageIdentifier());
+    String podName = getPodName(ambiance, initializeStepInfo.getStageIdentifier());
     Map<String, String> buildLabels = k8InitializeTaskUtils.getBuildLabels(ambiance, k8PodDetails);
     List<PodVolume> volumes = new ArrayList<>();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
@@ -178,7 +180,7 @@ public class K8InitializeTaskParamsBuilder {
 
   private CIK8PodParams<CIK8ContainerParams> getK8DirectPodParams(InitializeStepInfo initializeStepInfo,
       K8PodDetails k8PodDetails, K8sDirectInfraYaml k8sDirectInfraYaml, Ambiance ambiance, String logPrefix) {
-    String podName = k8InitializeTaskUtils.generatePodName(initializeStepInfo.getStageIdentifier());
+    String podName = getPodName(ambiance, initializeStepInfo.getStageIdentifier());
     Map<String, String> buildLabels = k8InitializeTaskUtils.getBuildLabels(ambiance, k8PodDetails);
 
     Map<String, String> annotations = resolveMapParameter(
@@ -436,5 +438,19 @@ public class K8InitializeTaskParamsBuilder {
             .containerNames(containerNames)
             .build(),
         STAGE_INFRA_DETAILS);
+  }
+
+  private String getPodName(Ambiance ambiance, String stageId) {
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS));
+    if (optionalSweepingOutput.isFound()) {
+      StageInfraDetails stageInfraDetails = (StageInfraDetails) optionalSweepingOutput.getOutput();
+      StageInfraDetails.Type type = stageInfraDetails.getType();
+      if (type == StageInfraDetails.Type.K8) {
+        K8StageInfraDetails k8StageInfraDetails = (K8StageInfraDetails) stageInfraDetails;
+        return k8StageInfraDetails.getPodName();
+      }
+    }
+    return k8InitializeTaskUtils.generatePodName(stageId);
   }
 }

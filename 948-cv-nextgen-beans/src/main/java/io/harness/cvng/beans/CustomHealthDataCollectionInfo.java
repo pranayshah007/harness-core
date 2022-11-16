@@ -72,6 +72,7 @@ public class CustomHealthDataCollectionInfo extends TimeSeriesDataCollectionInfo
     List<String> relativeMetricListJsonPaths = new ArrayList<>();
     List<String> relativeMetricValueJsonPaths = new ArrayList<>();
     List<String> relativeTimestampJsonPaths = new ArrayList<>();
+    List<String> timestampFormats = new ArrayList<>();
 
     getMetricInfoList().forEach(metricInfo -> {
       metricNames.add(metricInfo.getMetricName());
@@ -95,6 +96,7 @@ public class CustomHealthDataCollectionInfo extends TimeSeriesDataCollectionInfo
       relativeMetricListJsonPaths.add(responseMapping.getRelativeMetricListJsonPath());
       relativeMetricValueJsonPaths.add(responseMapping.getRelativeMetricValueJsonPath());
       relativeTimestampJsonPaths.add(responseMapping.getRelativeTimestampJsonPath());
+      timestampFormats.add(responseMapping.getTimestampFormat());
     });
 
     Map<String, Object> envVars = new HashMap<>();
@@ -116,6 +118,7 @@ public class CustomHealthDataCollectionInfo extends TimeSeriesDataCollectionInfo
     envVars.put("relativeMetricListJsonPaths", relativeMetricListJsonPaths);
     envVars.put("relativeMetricValueJsonPaths", relativeMetricValueJsonPaths);
     envVars.put("relativeTimestampJsonPaths", relativeTimestampJsonPaths);
+    envVars.put("timestampFormats", timestampFormats);
     return envVars;
   }
 

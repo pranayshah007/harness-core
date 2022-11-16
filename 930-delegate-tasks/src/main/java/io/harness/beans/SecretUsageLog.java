@@ -16,6 +16,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -65,6 +66,12 @@ public class SecretUsageLog implements PersistentEntity, UuidAware, CreatedAtAwa
                  .name("acctEncryptedDataIdx")
                  .field(SecretUsageLogKeys.accountId)
                  .field(SecretUsageLogKeys.encryptedDataId)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("acctEncryptedDataCreatedAtIdx")
+                 .field(SecretUsageLogKeys.accountId)
+                 .field(SecretUsageLogKeys.encryptedDataId)
+                 .descSortField(SecretUsageLogKeys.createdAt)
                  .build())
         .build();
   }

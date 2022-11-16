@@ -41,7 +41,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
-public class DelegateDisconnectDetectorIterator implements MongoPersistenceIterator.Handler<Delegate> {
+public class DelegateDisconnectDetectorIterator
+    extends IteratorPumpModeHandler implements MongoPersistenceIterator.Handler<Delegate> {
   private static final long DELEGATE_DISCONNECT_TIMEOUT = 5L;
   private static final long DELEGATE_EXPIRY_CHECK_MINUTES = 1L;
 
@@ -54,27 +55,32 @@ public class DelegateDisconnectDetectorIterator implements MongoPersistenceItera
 
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
-  public void registerIterators(int threadPoolSize) {
-    PersistenceIteratorFactory.PumpExecutorOptions options =
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .interval(Duration.ofMinutes(DELEGATE_EXPIRY_CHECK_MINUTES))
-            .poolSize(threadPoolSize)
-            .name("DelegateDisconnectDetector")
-            .build();
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Delegate, MorphiaFilterExpander<Delegate>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions, Delegate.class,
+                       MongoPersistenceIterator.<Delegate, MorphiaFilterExpander<Delegate>>builder()
+                           .clazz(Delegate.class)
+                           .fieldName(DelegateKeys.delegateDisconnectDetectorNextIteration)
+                           .filterExpander(q
+                               -> q.field(DelegateKeys.lastHeartBeat)
+                                      .lessThan(System.currentTimeMillis()
+                                          - TimeUnit.MINUTES.toMillis(DELEGATE_DISCONNECT_TIMEOUT)))
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(Duration.ofMinutes(DELEGATE_EXPIRY_CHECK_MINUTES + 2))
+                           .handler(this)
+                           .schedulingType(REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
 
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(options, Delegate.class,
-        MongoPersistenceIterator.<Delegate, MorphiaFilterExpander<Delegate>>builder()
-            .clazz(Delegate.class)
-            .fieldName(DelegateKeys.delegateDisconnectDetectorNextIteration)
-            .filterExpander(q
-                -> q.field(DelegateKeys.lastHeartBeat)
-                       .lessThan(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(DELEGATE_DISCONNECT_TIMEOUT)))
-            .targetInterval(Duration.ofMinutes(DELEGATE_EXPIRY_CHECK_MINUTES))
-            .acceptableNoAlertDelay(Duration.ofMinutes(DELEGATE_EXPIRY_CHECK_MINUTES + 2))
-            .handler(this)
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "DelegateDisconnectDetector";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

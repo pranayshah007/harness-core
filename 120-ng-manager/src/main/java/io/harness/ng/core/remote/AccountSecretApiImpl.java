@@ -27,9 +27,9 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.security.SecurityContextBuilder;
-import io.harness.spec.server.ng.AccountSecretApi;
-import io.harness.spec.server.ng.model.SecretRequest;
-import io.harness.spec.server.ng.model.SecretResponse;
+import io.harness.spec.server.ng.v1.AccountSecretApi;
+import io.harness.spec.server.ng.v1.model.SecretRequest;
+import io.harness.spec.server.ng.v1.model.SecretResponse;
 
 import com.google.inject.Inject;
 import java.io.InputStream;
@@ -145,7 +145,7 @@ public class AccountSecretApiImpl implements AccountSecretApi {
     secretPermissionValidator.checkForAccessOrThrow(ResourceScope.of(account, null, null),
         Resource.of(SECRET_RESOURCE_TYPE, secret), SECRET_DELETE_PERMISSION,
         secretResponseWrapper != null ? secretResponseWrapper.getSecret().getOwner() : null);
-    boolean deleted = ngSecretService.delete(account, null, null, secret);
+    boolean deleted = ngSecretService.delete(account, null, null, secret, false);
     if (deleted) {
       return Response.ok().entity(secretApiUtils.toSecretResponse(secretResponseWrapper)).build();
     }

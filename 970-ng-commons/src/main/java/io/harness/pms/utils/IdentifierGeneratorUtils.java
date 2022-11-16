@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class IdentifierGeneratorUtils {
-  public String getPipelineIdentifier(String name) {
+  public String getId(String name) {
     List<String> builder = new ArrayList<>();
     String[] pipelineNameList = name.split(" ");
     Arrays.stream(pipelineNameList).forEach(value -> {

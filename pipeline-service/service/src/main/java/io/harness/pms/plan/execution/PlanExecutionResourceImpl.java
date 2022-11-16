@@ -273,14 +273,14 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo) {
     Optional<PipelineEntity> optionalPipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
     if (!optionalPipelineEntity.isPresent()) {
       throw new InvalidRequestException(format("Pipeline [%s] under Project[%s], Organization [%s] doesn't exist.",
           pipelineIdentifier, projectIdentifier, orgIdentifier));
     }
     PipelineEntity pipelineEntity = optionalPipelineEntity.get();
     String yaml = pipelineEntity.getYaml();
-    if (Boolean.TRUE.equals(optionalPipelineEntity.get().getTemplateReference())) {
+    if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
       yaml = pipelineTemplateHelper
                  .resolveTemplateRefsInPipeline(accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml())
                  .getMergedPipelineYaml();
