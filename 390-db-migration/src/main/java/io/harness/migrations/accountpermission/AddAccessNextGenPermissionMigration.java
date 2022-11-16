@@ -10,8 +10,6 @@ package io.harness.migrations.accountpermission;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.mongo.MongoUtils.setUnset;
 
-import static software.wings.security.PermissionAttribute.PermissionType.ACCESS_NEXTGEN;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
@@ -41,9 +39,6 @@ public class AddAccessNextGenPermissionMigration implements Migration {
         try {
           Set<PermissionAttribute.PermissionType> accountPermissions =
               userGroup.getAccountPermissions().getPermissions();
-          if (accountPermissions.contains(ACCESS_NEXTGEN)) {
-            accountPermissions.remove(ACCESS_NEXTGEN);
-          }
 
           UpdateOperations<UserGroup> operations = wingsPersistence.createUpdateOperations(UserGroup.class);
           setUnset(operations, UserGroupKeys.accountPermissions,

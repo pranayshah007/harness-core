@@ -133,9 +133,9 @@ public enum QLAccountPermissionType implements QLEnum {
   MANAGE_RESTRICTED_ACCESS,
 
   /**
-   * Manage Try NextGen Access
+   * Hide NextGen Button
    */
-  ACCESS_NEXTGEN;
+  HIDE_NEXTGEN_BUTTON;
 
   @Override
   public String getStringValue() {
