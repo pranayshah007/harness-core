@@ -15,9 +15,9 @@ pipeline:
                   primary:
                     type: GoogleArtifactRegistry
                     spec:
-                      connectorRef: <+input>
-                      project: <+input>
-                      region: <+input>
-                      repository: <+input>
-                      package: <+input>
+                      connectorRef: account.conn
+                      project: cd-play
+                      region: us-south1
+                      repositoryName: vivek
+                      package: mongo
                       version: <+input>

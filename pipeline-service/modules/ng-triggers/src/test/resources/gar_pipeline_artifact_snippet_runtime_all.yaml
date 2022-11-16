@@ -13,11 +13,9 @@ pipeline:
               spec:
                 artifacts:
                   primary:
-                    type: GoogleArtifactRegistry
+                    type: Gcr
                     spec:
                       connectorRef: <+input>
-                      project: <+input>
-                      region: <+input>
-                      repository: <+input>
-                      package: <+input>
-                      version: <+input>
+                      imagePath: <+input>
+                      registryHostname: <+input>
+                      tag: <+input>
