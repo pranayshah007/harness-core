@@ -69,7 +69,12 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
     try {
-      return elastigroupRollback((ElastigroupRollbackTaskParameters) parameters, commandUnitsProgress);
+      final ElastigroupRollbackTaskParameters rollbackParameters = (ElastigroupRollbackTaskParameters) parameters;
+      if (rollbackParameters.isBlueGreen()) {
+        return executeBlueGreenRollback(rollbackParameters, commandUnitsProgress);
+      } else {
+        return executeBasicAndCanaryRollback(rollbackParameters, commandUnitsProgress);
+      }
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in elastigroup rollback", sanitizedException);
@@ -80,7 +85,23 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  private ElastigroupRollbackTaskResponse elastigroupRollback(
+  private DelegateResponseData executeBlueGreenRollback(
+      ElastigroupRollbackTaskParameters parameters, CommandUnitsProgress commandUnitsProgress) {
+    //    scaleOld();
+    //    renameOld();
+    //    restoreListeners();
+    //    downscaleNew();
+    //    renameNew();
+
+    return ElastigroupRollbackTaskResponse.builder()
+        .status(CommandExecutionStatus.SUCCESS)
+        .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+        .errorMessage(getErrorMessage(CommandExecutionStatus.SUCCESS))
+        //        .ec2InstanceIdsExisting(olderElastigroupInstanceIds)
+        .build();
+  }
+
+  private ElastigroupRollbackTaskResponse executeBasicAndCanaryRollback(
       ElastigroupRollbackTaskParameters parameters, CommandUnitsProgress commandUnitsProgress) throws Exception {
     ElastiGroup newElastigroup = parameters.getNewElastigroup();
     ElastiGroup oldElastigroup = parameters.getOldElastigroup();
