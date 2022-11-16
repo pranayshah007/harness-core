@@ -1828,6 +1828,45 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldListTaskSelectorYaml": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaskSelectorYaml"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaskSelectorYaml"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ParameterFieldString": {
       "type": "object",
       "properties": {
@@ -1899,6 +1938,50 @@
               "enum": [
                 "PipelineRollback"
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PmsPluginStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldListTaskSelectorYaml"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "outputVariables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
             }
           }
         }
@@ -3057,6 +3140,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Plugin"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/PmsPluginStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Policy"
               }
             }
@@ -3361,6 +3460,18 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TaskSelectorYaml": {
+      "type": "object",
+      "properties": {
+        "delegateSelectors": {
+          "type": "string"
+        },
+        "origin": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TransitionTo": {

@@ -169,7 +169,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .build();
     doReturn(Optional.of(pipelineEntity))
         .when(pipelineRepository)
-        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false);
+        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false);
     Optional<PipelineEntity> optionalPipelineEntity =
         pipelineService.getAndValidatePipeline(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
@@ -191,7 +191,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .build();
     doReturn(Optional.of(pipelineEntity))
         .when(pipelineRepository)
-        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false);
+        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false);
     Optional<PipelineEntity> optionalPipelineEntity =
         pipelineService.getAndValidatePipeline(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
@@ -212,7 +212,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .build();
     doReturn(Optional.of(pipelineEntity))
         .when(pipelineRepository)
-        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false);
+        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false);
     assertThatThrownBy(()
                            -> pipelineService.getAndValidatePipeline(
                                accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false))
@@ -226,7 +226,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   public void testGetNonExistentPipeline() {
     doReturn(Optional.empty())
         .when(pipelineRepository)
-        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false);
+        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false);
     assertThatThrownBy(()
                            -> pipelineService.getAndValidatePipeline(
                                accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false))

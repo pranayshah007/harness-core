@@ -32,6 +32,7 @@ import io.harness.steps.group.GroupStepV1;
 import io.harness.steps.http.HttpStep;
 import io.harness.steps.jira.create.JiraCreateStep;
 import io.harness.steps.jira.update.JiraUpdateStep;
+import io.harness.steps.pluginstep.PmsPluginStep;
 import io.harness.steps.policy.step.PolicyStep;
 import io.harness.steps.resourcerestraint.QueueStep;
 import io.harness.steps.resourcerestraint.ResourceRestraintStep;
@@ -86,6 +87,7 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     engineSteps.put(WaitStep.STEP_TYPE, WaitStep.class);
     engineSteps.put(GroupStepV1.STEP_TYPE, GroupStepV1.class);
+    engineSteps.put(PmsPluginStep.STEP_TYPE, PmsPluginStep.class);
 
     return engineSteps;
   }

@@ -43,6 +43,7 @@ import io.harness.plancreator.steps.internal.FlagConfigurationStepPlanCreator;
 import io.harness.plancreator.steps.internal.PMSStepPlanCreator;
 import io.harness.plancreator.steps.internal.PmsStepFilterJsonCreator;
 import io.harness.plancreator.steps.internal.ShellScriptStepFilterJsonCreatorV2;
+import io.harness.plancreator.steps.pluginstep.PmsPluginStepVariableCreator;
 import io.harness.plancreator.steps.resourceconstraint.QueueStepPlanCreator;
 import io.harness.plancreator.steps.resourceconstraint.ResourceConstraintStepPlanCreator;
 import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
@@ -125,7 +126,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
             .stream()
             .map(e -> e.getClass())
             .collect(Collectors.toSet());
-    assertThat(planCreatorClasses).hasSize(40);
+    assertThat(planCreatorClasses).hasSize(41);
     assertThat(planCreatorClasses.contains(CustomApprovalStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(NGPipelinePlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(StagesPlanCreator.class)).isTrue();
@@ -157,6 +158,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(planCreatorClasses.contains(PipelineStagePlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(ParallelPlanCreatorV1.class)).isTrue();
     assertThat(planCreatorClasses.contains(GroupPlanCreatorV1.class)).isTrue();
+    assertThat(planCreatorClasses.contains(PMSStepPlanCreator.class)).isTrue();
   }
 
   @Test
@@ -193,7 +195,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
             .stream()
             .map(e -> e.getClass())
             .collect(Collectors.toSet());
-    assertThat(variableCreatorClasses).hasSize(23);
+    assertThat(variableCreatorClasses).hasSize(24);
     assertThat(variableCreatorClasses.contains(CustomApprovalStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(PipelineVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(HTTPStepVariableCreator.class)).isTrue();
@@ -214,6 +216,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(variableCreatorClasses.contains(QueueStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(StrategyVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(PipelineStageVariableCreator.class)).isTrue();
+    assertThat(variableCreatorClasses.contains(PmsPluginStepVariableCreator.class)).isTrue();
   }
 
   @Test

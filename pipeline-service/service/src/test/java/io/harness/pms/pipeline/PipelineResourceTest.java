@@ -286,12 +286,12 @@ public class PipelineResourceTest extends CategoryTest {
   public void testGetPipeline() {
     doReturn(Optional.of(entityWithVersion))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
+        .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(any());
     ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false);
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getYamlPipeline()).isEqualTo(yaml);
     assertThat(responseDTO.getData().getYamlSchemaErrorWrapper()).isNull();
@@ -305,12 +305,12 @@ public class PipelineResourceTest extends CategoryTest {
   public void testGetPipelineWithUnresolvedTemplates() {
     doReturn(Optional.of(entityWithVersion))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
+        .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
     doThrow(new InvalidRequestException("random exception"))
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(any());
     ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false);
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getYamlPipeline()).isEqualTo(yaml);
     assertThat(responseDTO.getData().getYamlSchemaErrorWrapper()).isNull();
@@ -328,10 +328,10 @@ public class PipelineResourceTest extends CategoryTest {
             .build();
     doThrow(new InvalidYamlException("errorMsg", null, errorWrapper, yaml))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
+        .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
 
     ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false);
     PMSPipelineResponseDTO data = responseDTO.getData();
     assertThat(data.getEntityValidityDetails().isValid()).isFalse();
     assertThat(data.getEntityValidityDetails().getInvalidYaml()).isEqualTo(yaml);
@@ -347,10 +347,10 @@ public class PipelineResourceTest extends CategoryTest {
         GovernanceMetadata.newBuilder().setDeny(true).setAccountId(ACCOUNT_ID).build();
     doThrow(new PolicyEvaluationFailureException("errorMsg", governanceMetadata, yaml))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
+        .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
 
     ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false);
     PMSPipelineResponseDTO data = responseDTO.getData();
     assertThat(data.getEntityValidityDetails().isValid()).isFalse();
     assertThat(data.getEntityValidityDetails().getInvalidYaml()).isEqualTo(yaml);
@@ -369,8 +369,8 @@ public class PipelineResourceTest extends CategoryTest {
         .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, false);
 
     assertThatThrownBy(()
-                           -> pipelineResource.getPipelineByIdentifier(
-                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, null, true))
+                           -> pipelineResource.getPipelineByIdentifier(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               incorrectPipelineIdentifier, null, true, false))
         .isInstanceOf(EntityNotFoundException.class)
         .hasMessage(String.format(
             "Pipeline with the given ID: %s does not exist or has been deleted", incorrectPipelineIdentifier));

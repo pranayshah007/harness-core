@@ -227,6 +227,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public Optional<PipelineEntity> getAndValidatePipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted) {
+    return getAndValidatePipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false);
+  }
+
+  @Override
+  public Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier,
+      String projectIdentifier, String identifier, boolean deleted, boolean loadFromFallbackBranch) {
     Optional<PipelineEntity> optionalPipelineEntity =
         getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false);
     if (optionalPipelineEntity.isEmpty()) {
@@ -254,6 +260,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnlyIfApplicable) {
+    return getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false, false);
+  }
+
+  @Override
+  public Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch) {
     Optional<PipelineEntity> optionalPipelineEntity;
     try {
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
@@ -261,7 +273,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
             pmsPipelineRepository.findForOldGitSync(accountId, orgIdentifier, projectIdentifier, identifier, !deleted);
       } else {
         optionalPipelineEntity = pmsPipelineRepository.find(
-            accountId, orgIdentifier, projectIdentifier, identifier, !deleted, getMetadataOnlyIfApplicable);
+            accountId, orgIdentifier, projectIdentifier, identifier, !deleted, getMetadataOnly, loadFromFallbackBranch);
       }
     } catch (ExplanationException | HintException | ScmException e) {
       log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);

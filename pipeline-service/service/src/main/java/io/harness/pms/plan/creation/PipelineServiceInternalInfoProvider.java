@@ -57,6 +57,8 @@ import io.harness.plancreator.steps.internal.PMSStepPlanCreator;
 import io.harness.plancreator.steps.internal.PmsStepFilterJsonCreator;
 import io.harness.plancreator.steps.internal.PmsStepFilterJsonCreatorV2;
 import io.harness.plancreator.steps.internal.ShellScriptStepFilterJsonCreatorV2;
+import io.harness.plancreator.steps.pluginstep.PmsPluginStepPlanCreator;
+import io.harness.plancreator.steps.pluginstep.PmsPluginStepVariableCreator;
 import io.harness.plancreator.steps.resourceconstraint.QueueStepPlanCreator;
 import io.harness.plancreator.steps.resourceconstraint.ResourceConstraintStepPlanCreator;
 import io.harness.plancreator.steps.v1.StepsPlanCreatorV1;
@@ -162,6 +164,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new SpecNodePlanCreator());
     planCreators.add(new WaitStepPlanCreator());
     planCreators.add(new PipelineStagePlanCreator());
+    planCreators.add(new PmsPluginStepPlanCreator());
     planCreators.add(new GroupPlanCreatorV1());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -216,6 +219,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new EmptyVariableCreator(STAGE, ImmutableSet.of(FEATURE_FLAG_SUPPORTED_TYPE)));
     variableCreators.add(
         new EmptyVariableCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION, BARRIER, RESOURCE_CONSTRAINT, WAIT_STEP)));
+    variableCreators.add(new PmsPluginStepVariableCreator());
     injectorUtils.injectMembers(variableCreators);
     return variableCreators;
   }
