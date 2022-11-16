@@ -52,7 +52,8 @@ public class ElastigroupBGStageSetupStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public ElastigroupBGStageSetupStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<String> name, List<LoadBalancer> loadBalancers, ElastigroupInstances instances, CloudProvider connectedCloudProvider) {
+      ParameterField<String> name, List<LoadBalancer> loadBalancers, ElastigroupInstances instances,
+      CloudProvider connectedCloudProvider) {
     super(delegateSelectors, name, loadBalancers, instances, connectedCloudProvider);
   }
 
@@ -73,6 +74,7 @@ public class ElastigroupBGStageSetupStepInfo
         .name(this.getName())
         .loadBalancers(this.getLoadBalancers())
         .instances(this.getInstances())
+        .connectedCloudProvider(this.getConnectedCloudProvider())
         .build();
   }
 
