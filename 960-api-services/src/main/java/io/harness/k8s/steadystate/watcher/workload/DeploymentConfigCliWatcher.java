@@ -48,7 +48,7 @@ public class DeploymentConfigCliWatcher implements WorkloadWatcher {
     String statusFormat = k8SStatusWatchDTO.getStatusFormat();
     K8sDelegateTaskParams k8sDelegateTaskParams = k8SStatusWatchDTO.getK8sDelegateTaskParams();
 
-    try (ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream();
+    try (ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
          LogOutputStream statusErrorStream =
              new LogOutputStream() {
                @SneakyThrows
