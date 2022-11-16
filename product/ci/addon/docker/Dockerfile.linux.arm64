@@ -21,8 +21,8 @@ COPY ci-addon_/ci-addon /usr/local/bin/ci-addon-linux
 COPY java-agent.jar /usr/local/bin/
 COPY split_tests /usr/local/bin/
 USER 1001
-RUN sudo chmod +x /usr/local/bin/ci-addon-linux \
-    && sudo chmod +x /usr/local/bin/split_tests
+RUN chmod +x /usr/local/bin/ci-addon-linux \
+    && chmod +x /usr/local/bin/split_tests
 
 RUN groupadd harness && adduser -g harness -s /bin/sh -u 1000 harness
 USER harness:harness
