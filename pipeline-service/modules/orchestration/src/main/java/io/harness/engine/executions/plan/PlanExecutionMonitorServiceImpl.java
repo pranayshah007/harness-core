@@ -26,7 +26,7 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorService {
-  private static final String ACTIVE_EXECUTION_COUNT_METRIC_NAME = "active_execution_count";
+  private static final String PLAN_EXECUTION_ACTIVE_COUNT = "plan_execution_active_count";
 
   @Inject private PlanExecutionService planExecutionService;
   @Inject private MetricService metricService;
@@ -57,7 +57,7 @@ public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorServ
               .build();
 
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
-        metricService.recordMetric(ACTIVE_EXECUTION_COUNT_METRIC_NAME, entry.getValue());
+        metricService.recordMetric(PLAN_EXECUTION_ACTIVE_COUNT, entry.getValue());
       }
     }
   }
