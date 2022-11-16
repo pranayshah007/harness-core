@@ -30,6 +30,7 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetType;
+import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
@@ -51,6 +52,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.security.annotations.PublicApi;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
 
@@ -68,6 +70,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -95,7 +98,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Path("perspective")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@NextGenManagerAuth
+@PublicApi
 @Slf4j
 @Service
 @OwnedBy(CE)
@@ -121,6 +124,7 @@ public class PerspectiveResource {
   private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
   private final CCMRbacHelper rbacHelper;
+  private final ClickHouseService clickHouseService;
 
   @Inject
   public PerspectiveResource(CEViewService ceViewService, CEReportScheduleService ceReportScheduleService,
@@ -128,7 +132,7 @@ public class PerspectiveResource {
       BudgetCostService budgetCostService, BudgetService budgetService, CCMNotificationService notificationService,
       AwsAccountFieldHelper awsAccountFieldHelper, TelemetryReporter telemetryReporter,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
-      CCMRbacHelper rbacHelper) {
+      CCMRbacHelper rbacHelper, ClickHouseService clickHouseService) {
     this.ceViewService = ceViewService;
     this.ceReportScheduleService = ceReportScheduleService;
     this.viewCustomFieldService = viewCustomFieldService;
@@ -142,6 +146,30 @@ public class PerspectiveResource {
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
     this.rbacHelper = rbacHelper;
+    this.clickHouseService = clickHouseService;
+  }
+
+  @GET
+  @Path("clickHouse")
+  @Timed
+  @Hidden
+  @LogAccountIdentifier
+  @ExceptionMetered
+  @ApiOperation(value = "Get clickHouse connection", nickname = "getClickHouseConnection")
+  @Operation(operationId = "getClickHouseConnection", description = "Get clickHouse connection",
+      summary = "Get clickHouse connection",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns boolean indication status of connection establishment",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Integer>
+  getClickHouseConnection(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @QueryParam("query") String query) throws SQLException {
+    String url = "jdbc:ch:http://localhost:8123/default";
+    return ResponseDTO.newResponse(clickHouseService.getCountOfRowsOfQueryResult(query, url));
   }
 
   @GET

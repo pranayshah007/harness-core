@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
@@ -59,6 +60,7 @@ public class PerspectiveResourceTest extends CategoryTest {
   private TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
   private OutboxService outboxService = mock(OutboxService.class);
   private CCMRbacHelper rbacHelper = mock(CCMRbacHelper.class);
+  private ClickHouseService clickHouseService = mock(ClickHouseService.class);
   private PerspectiveResource perspectiveResource;
 
   private final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -91,7 +93,7 @@ public class PerspectiveResourceTest extends CategoryTest {
 
     perspectiveResource = new PerspectiveResource(ceViewService, ceReportScheduleService, viewCustomFieldService,
         bigQueryService, bigQueryHelper, budgetCostService, budgetService, notificationService, awsAccountFieldHelper,
-        telemetryReporter, transactionTemplate, outboxService, rbacHelper);
+        telemetryReporter, transactionTemplate, outboxService, rbacHelper, clickHouseService);
   }
 
   @Test

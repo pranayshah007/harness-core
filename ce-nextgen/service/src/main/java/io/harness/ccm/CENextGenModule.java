@@ -40,6 +40,8 @@ import io.harness.ccm.audittrails.eventhandler.PerspectiveFolderEventHandler;
 import io.harness.ccm.audittrails.eventhandler.ReportEventHandler;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.bigQuery.BigQueryServiceImpl;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.service.impl.ClusterRecordServiceImpl;
 import io.harness.ccm.commons.service.impl.EntityMetadataServiceImpl;
@@ -330,6 +332,7 @@ public class CENextGenModule extends AbstractModule {
     bind(OutboxEventHandler.class).to(CENextGenOutboxEventHandler.class);
     bind(CCMRbacHelper.class).to(CCMRbacHelperImpl.class);
     bind(CCMActiveSpendService.class).to(CCMActiveSpendServiceImpl.class);
+    bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
 
     registerEventsFrameworkMessageListeners();
 
