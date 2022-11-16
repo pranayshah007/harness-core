@@ -69,7 +69,7 @@ public class AccountPasswordExpirationJob implements Job {
     // the job should run daily at 12 hours 0 mins.
     Trigger trigger = TriggerBuilder.newTrigger()
                           .withIdentity(NAME, GROUP)
-                          .withSchedule(CronScheduleBuilder.cronSchedule("0 0 * ? * * *"))
+                          .withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(12, 0))
                           .build();
 
     jobScheduler.ensureJob__UnderConstruction(job, trigger);
