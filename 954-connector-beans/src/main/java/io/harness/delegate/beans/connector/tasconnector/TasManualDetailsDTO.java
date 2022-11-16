@@ -1,0 +1,28 @@
+package io.harness.delegate.beans.connector.tasconnector;
+
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretReference;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.Value;
+
+@OwnedBy(HarnessTeam.CDP)
+@Value
+@Builder
+@JsonTypeName(TasConstants.MANUAL_CONFIG)
+@ApiModel("TasManualDetails")
+@Schema(name = "TasManualDetails", description = "This contains Tas manual credentials connector details")
+public class TasManualDetailsDTO implements TasCredentialSpecDTO {
+  String username;
+  @Schema(description = "Endpoint URL of the TAS Cluster.") @JsonProperty("endpointUrl") @NotNull String endpointUrl;
+  @ApiModelProperty(dataType = "string") @SecretReference SecretRefData usernameRef;
+  @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;
+}

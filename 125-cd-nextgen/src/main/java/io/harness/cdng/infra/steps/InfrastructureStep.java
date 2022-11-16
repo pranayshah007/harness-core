@@ -61,8 +61,8 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
-import io.harness.delegate.beans.connector.pcfconnector.PcfConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
@@ -381,10 +381,10 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     }
 
     if (InfrastructureKind.TAS.equals(infrastructure.getKind())) {
-      if (!(connectorInfo.get(0).getConnectorConfig() instanceof PcfConnectorDTO)) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof TasConnectorDTO)) {
         throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
-            ConnectorType.PCF.name()));
+            ConnectorType.TAS.name()));
       }
     }
 

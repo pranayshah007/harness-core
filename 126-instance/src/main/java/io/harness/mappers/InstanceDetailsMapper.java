@@ -18,9 +18,9 @@ import io.harness.dtos.instanceinfo.EcsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
-import io.harness.dtos.instanceinfo.PcfNGInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.TasInstanceInfoDTO;
 import io.harness.models.InstanceDetailsDTO;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
@@ -89,7 +89,7 @@ public class InstanceDetailsMapper {
       return ((AwsSshWinrmInstanceInfoDTO) instanceDTO.getInstanceInfoDTO()).getServiceType();
     } else if (instanceDTO.getInstanceInfoDTO() instanceof CustomDeploymentInstanceInfoDTO) {
       return ServiceSpecType.CUSTOM_DEPLOYMENT;
-    } else if (instanceDTO.getInstanceInfoDTO() instanceof PcfNGInstanceInfoDTO) {
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof TasInstanceInfoDTO) {
       return ServiceSpecType.TAS;
     }
     return null;
