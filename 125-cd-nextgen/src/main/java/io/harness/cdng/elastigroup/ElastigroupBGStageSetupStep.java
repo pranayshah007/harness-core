@@ -28,6 +28,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
@@ -148,6 +149,7 @@ public class ElastigroupBGStageSetupStep
             .elastigroupOriginalConfig(elastiGroupOriginalConfig)
             .awsLoadBalancerConfigs(loadBalancerDetailsForBGDeployments)
             .connectorInfoDTO(connectorInfoDTO)
+            .resizeStrategy(ResizeStrategy.RESIZE_NEW_FIRST)
             .awsEncryptedDetails(elastigroupStepCommonHelper.getEncryptedDataDetail(connectorInfoDTO, ambiance))
             .build();
 
@@ -246,6 +248,7 @@ public class ElastigroupBGStageSetupStep
             .isBlueGreen(elastigroupSetupResult.isBlueGreen())
             .oldElastigroupOriginalConfig(oldElastiGroup)
             .newElastigroupOriginalConfig(elastigroupSetupResult.getElastigroupOriginalConfig())
+            .loadBalancerDetailsForBGDeployments(elastigroupSetupResult.getLoadBalancerDetailsForBGDeployments())
             .build();
     if (oldElastiGroup != null && oldElastiGroup.getCapacity() != null) {
       elastigroupSetupDataOutcome.setCurrentRunningInstanceCount(oldElastiGroup.getCapacity().getTarget());
