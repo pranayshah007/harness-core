@@ -21,7 +21,6 @@ import static java.time.Duration.ofHours;
 
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
-import software.wings.beans.MigrateSecretTask;
 import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.IteratorExecutionHandler;
 import io.harness.iterator.IteratorPumpModeHandler;
@@ -35,6 +34,7 @@ import io.harness.secrets.SecretService;
 
 import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.LocalEncryptionConfig;
+import software.wings.beans.MigrateSecretTask;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.security.GcpSecretsManagerService;
 import software.wings.service.intfc.security.LocalSecretManagerService;

@@ -77,13 +77,13 @@ public class SecretChangeLog implements PersistentEntity, UuidAware, CreatedAtAw
   private boolean external;
 
 
-  public static software.wings.beans.dto.SecretChangeLog toSecretChangeLogDto(SecretChangeLog secretChangeLog){
+  public software.wings.beans.dto.SecretChangeLog toDto(){
     return  software.wings.beans.dto.SecretChangeLog.builder()
-            .accountId(secretChangeLog.accountId)
-            .encryptedDataId(secretChangeLog.encryptedDataId)
-            .description(secretChangeLog.description)
+            .accountId(this.accountId)
+            .encryptedDataId(encryptedDataId)
+            .description(description)
             .external(true)
-            .user(secretChangeLog.user)
+            .user(user)
             .build();
   }
 }

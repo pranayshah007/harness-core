@@ -7,11 +7,11 @@
 
 package io.harness.migrations.all;
 
+import io.harness.beans.SecretUsageLog;
+import io.harness.beans.SecretUsageLog.SecretUsageLogKeys;
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 
-import io.harness.beans.SecretUsageLog;
-import io.harness.beans.SecretUsageLog.SecretUsageLogKeys;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
