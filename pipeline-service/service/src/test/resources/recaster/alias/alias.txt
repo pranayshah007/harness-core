@@ -152,3 +152,5 @@ io.harness.steps.common.pipeline.PipelineStepParameterV1
 io.harness.steps.plugin.ContainerStepNode
 io.harness.steps.plugin.ContainerStepInfo
 io.harness.steps.plugin.ContainerStepOutcome
+io.harness.beans.yaml.extended.ImagePullPolicy
+io.harness.steps.plugin.ContainerStepParameters

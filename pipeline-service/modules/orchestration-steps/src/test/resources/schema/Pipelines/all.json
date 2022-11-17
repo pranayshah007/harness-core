@@ -567,10 +567,49 @@
         {
           "type": "object",
           "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
-                  "$ref": "#/definitions/ParameterFieldListTaskSelectorYaml"
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "entrypoint": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
                 },
                 {
                   "type": "string",
@@ -582,21 +621,50 @@
             "metadata": {
               "type": "string"
             },
-            "outputVariables": {
-              "type": "array",
-              "items": {
-                "oneOf": [
-                  {
-                    "$ref": "#/definitions/NumberNGVariable"
-                  },
-                  {
-                    "$ref": "#/definitions/SecretNGVariable"
-                  },
-                  {
-                    "$ref": "#/definitions/StringNGVariable"
-                  }
-                ]
-              }
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "retry": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "type": "string"
             }
           }
         }
@@ -2104,13 +2172,13 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ParameterFieldListTaskSelectorYaml": {
+    "ParameterFieldMapStringJsonNode": {
       "type": "object",
       "properties": {
         "defaultValue": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/TaskSelectorYaml"
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/JsonNode"
           }
         },
         "executionInput": {
@@ -2135,9 +2203,9 @@
           "type": "boolean"
         },
         "value": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/TaskSelectorYaml"
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/JsonNode"
           }
         }
       },
@@ -4202,18 +4270,6 @@
           }
         }
       ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "TaskSelectorYaml": {
-      "type": "object",
-      "properties": {
-        "delegateSelectors": {
-          "type": "string"
-        },
-        "origin": {
-          "type": "string"
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TemplateLinkConfig": {
