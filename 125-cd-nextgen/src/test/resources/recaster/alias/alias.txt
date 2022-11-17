@@ -569,3 +569,9 @@ io.harness.cdng.environment.filters.AllowAllFilter
 io.harness.cdng.gitops.steps.GitOpsEnvOutCome
 io.harness.cdng.gitops.beans.FetchLinkedAppsStepInfo
 io.harness.cdng.gitops.beans.FetchLinkedAppsStepNode
+io.harness.cdng.manifest.yaml.kinds.TasManifest
+io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome
+io.harness.cdng.manifest.yaml.VarsManifestOutcome
+io.harness.cdng.manifest.yaml.TasManifestOutcome
+io.harness.cdng.manifest.yaml.kinds.VarsManifest
+io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest
