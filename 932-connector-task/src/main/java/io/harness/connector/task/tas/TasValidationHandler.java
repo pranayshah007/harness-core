@@ -49,7 +49,14 @@ public class TasValidationHandler implements ConnectorValidationHandler {
   private ConnectorValidationResult validateInternal(
       TasConnectorDTO tasConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
     CloudFoundryConfig cfConfig = ngConfigMapper.mapTasConfigWithDecryption(tasConnectorDTO, encryptedDataDetails);
+    reformatEndpointURL(cfConfig);
     return handleValidateTask(cfConfig);
+  }
+
+  private void reformatEndpointURL(CloudFoundryConfig cfConfig) {
+    String endpointUrl = cfConfig.getEndpointUrl();
+    if (endpointUrl.startsWith("https://"))
+      cfConfig.setEndpointUrl(endpointUrl.substring("https://".length()));
   }
 
   private ConnectorValidationResult handleValidateTask(CloudFoundryConfig cfConfig) {
