@@ -8,6 +8,7 @@
 package io.harness.cdng.elastigroup;
 
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -37,6 +38,7 @@ public class ElastigroupSwapRouteBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @NotNull
+  @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   ParameterField<Boolean> downsizeOldElastigroup;
 }
