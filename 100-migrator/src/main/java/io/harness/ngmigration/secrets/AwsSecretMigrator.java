@@ -25,6 +25,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
+import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -39,6 +40,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -131,6 +133,11 @@ public class AwsSecretMigrator implements SecretMigrator {
                                   .build());
     }
 
-    return SecretManagerCreatedDTO.builder().connector(connectorDTO.build()).secrets(secrets).build();
+    return SecretManagerCreatedDTO.builder()
+        .connector(connectorDTO.build())
+        .secrets(secrets.stream()
+                     .map(secretDTOV2 -> CustomSecretRequestWrapper.builder().secret(secretDTOV2).build())
+                     .collect(Collectors.toList()))
+        .build();
   }
 }

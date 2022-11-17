@@ -200,7 +200,8 @@ public class ArtifactoryArtifactResource {
           (ArtifactoryRegistryArtifactConfig) artifactSpecFromService;
 
       if (isEmpty(artifactoryConnectorIdentifier)) {
-        artifactoryConnectorIdentifier = artifactoryRegistryArtifactConfig.getConnectorRef().getValue();
+        artifactoryConnectorIdentifier =
+            artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
       }
     }
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
@@ -237,6 +238,28 @@ public class ArtifactoryArtifactResource {
         repositoryType, connectorRef, orgIdentifier, projectIdentifier, repository);
     return ResponseDTO.newResponse(artifactoryImagePathsDTO);
   }
+
+  @POST
+  @Path("imagePathsV2")
+  @ApiOperation(value = "Gets Image Paths details", nickname = "getImagePathsForArtifactoryV2")
+  public ResponseDTO<ArtifactoryImagePathsDTO> getImagePathsV2(
+      @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
+      @QueryParam("repositoryType") @DefaultValue("any") String repositoryType,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam("repository") String repository, @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, @NotNull String runtimeInputYaml,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    // Resolving parameters for service v2 compatibility
+    ArtifactoryImagePathsDTO artifactoryImagePathsDTO = artifactResourceUtils.getArtifactoryImagePath(repositoryType,
+        artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier, repository, fqnPath,
+        runtimeInputYaml, pipelineIdentifier, serviceRef, gitEntityBasicInfo);
+
+    return ResponseDTO.newResponse(artifactoryImagePathsDTO);
+  }
+
   @GET
   @Path("artifactBuildsDetails")
   @ApiOperation(value = "Gets artifacts builds details", nickname = "getArtifactsBuildsDetailsForArtifactory")

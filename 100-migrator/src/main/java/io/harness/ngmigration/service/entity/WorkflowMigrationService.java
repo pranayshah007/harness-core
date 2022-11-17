@@ -52,14 +52,12 @@ import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.StageElementWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
-import io.harness.plancreator.steps.StepElementConfig;
+import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.StepGroupElementConfig;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureType;
 import io.harness.yaml.core.failurestrategy.OnFailureConfig;
 import io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig;
-import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.GraphNode;
@@ -161,7 +159,6 @@ public class WorkflowMigrationService extends NgMigrationService {
       for (Service service : workflow.getServices()) {
         CgEntityId build = CgEntityId.builder().type(SERVICE).id(service.getUuid()).build();
         set.add(build);
-
         List<ApplicationManifest> applicationManifests =
             applicationManifestService.listAppManifests(workflow.getAppId(), service.getUuid());
         if (isNotEmpty(applicationManifests)) {
@@ -175,15 +172,14 @@ public class WorkflowMigrationService extends NgMigrationService {
 
     if (EmptyPredicate.isNotEmpty(workflow.getEnvId())) {
       children.add(CgEntityId.builder().type(ENVIRONMENT).id(workflow.getEnvId()).build());
-
       List<ApplicationManifest> applicationManifests =
           applicationManifestService.getAllByEnvId(workflow.getAppId(), workflow.getEnvId());
       if (isNotEmpty(applicationManifests)) {
+        Set<String> serviceIds = CollectionUtils.emptyIfNull(workflow.getServices())
+                                     .stream()
+                                     .map(Service::getUuid)
+                                     .collect(Collectors.toSet());
         for (ApplicationManifest applicationManifest : applicationManifests) {
-          Set<String> serviceIds = CollectionUtils.emptyIfNull(workflow.getServices())
-                                       .stream()
-                                       .map(Service::getUuid)
-                                       .collect(Collectors.toSet());
           if (applicationManifest.getServiceId() == null || serviceIds.contains(applicationManifest.getServiceId())) {
             CgEntityId build = CgEntityId.builder().id(applicationManifest.getUuid()).type(MANIFEST).build();
             children.add(build);
@@ -193,12 +189,6 @@ public class WorkflowMigrationService extends NgMigrationService {
     }
     if (EmptyPredicate.isNotEmpty(workflow.getInfraDefinitionId())) {
       children.add(CgEntityId.builder().type(INFRA).id(workflow.getInfraDefinitionId()).build());
-    }
-
-    OrchestrationWorkflowType orchestrationWorkflowType =
-        workflow.getOrchestrationWorkflow().getOrchestrationWorkflowType();
-    if (!OrchestrationWorkflowType.ROLLING.equals(orchestrationWorkflowType)) {
-      log.info("Discovered unsupported workflow type");
     }
     return DiscoveryNode.builder().children(children).entityNode(workflowNode).build();
   }
@@ -361,14 +351,8 @@ public class WorkflowMigrationService extends NgMigrationService {
         .build();
   }
 
-  private StepElementConfig getStepElementConfig(StepYaml step) {
+  private AbstractStepNode getStepElementConfig(StepYaml step) {
     StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
-    return StepElementConfig.builder()
-        .identifier(MigratorUtility.generateIdentifier(step.getName()))
-        .name(step.getName())
-        .type(stepMapper.getStepType())
-        .stepSpecType(stepMapper.getSpec(step))
-        .timeout(ParameterField.createValueField(Timeout.builder().timeoutString(stepMapper.getTimeout(step)).build()))
-        .build();
+    return stepMapper.getSpec(step);
   }
 }

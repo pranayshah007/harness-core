@@ -8,6 +8,7 @@
 package io.harness.gitsync.scm;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
@@ -123,8 +124,12 @@ public class SCMGitSyncHelper {
 
       if (isFailureResponse(getFileResponse.getStatusCode())) {
         log.error("Git SDK getFile Failure: {}", getFileResponse);
-        scmErrorHandler.processAndThrowException(
-            getFileResponse.getStatusCode(), getScmErrorDetailsFromGitProtoResponse(getFileResponse.getError()));
+        ScmGitMetaData scmGitMetaData = getScmGitMetaDataFromGitProtoResponse(getFileResponse.getGitMetaData());
+        if (isEmpty(scmGitMetaData.getBranchName())) {
+          scmGitMetaData.setRepoName(getFileRequest.getBranchName());
+        }
+        scmErrorHandler.processAndThrowException(getFileResponse.getStatusCode(),
+            getScmErrorDetailsFromGitProtoResponse(getFileResponse.getError()), scmGitMetaData);
       }
 
       return ScmGetFileResponse.builder()
@@ -160,8 +165,9 @@ public class SCMGitSyncHelper {
 
       if (isFailureResponse(createFileResponse.getStatusCode())) {
         log.error("Git SDK createFile Failure: {}", createFileResponse);
-        scmErrorHandler.processAndThrowException(
-            createFileResponse.getStatusCode(), getScmErrorDetailsFromGitProtoResponse(createFileResponse.getError()));
+        scmErrorHandler.processAndThrowException(createFileResponse.getStatusCode(),
+            getScmErrorDetailsFromGitProtoResponse(createFileResponse.getError()),
+            getScmGitMetaDataFromGitProtoResponse(createFileResponse.getGitMetaData()));
       }
 
       return ScmCreateFileGitResponse.builder()
@@ -198,8 +204,9 @@ public class SCMGitSyncHelper {
 
       if (isFailureResponse(updateFileResponse.getStatusCode())) {
         log.error("Git SDK updateFile Failure: {}", updateFileResponse);
-        scmErrorHandler.processAndThrowException(
-            updateFileResponse.getStatusCode(), getScmErrorDetailsFromGitProtoResponse(updateFileResponse.getError()));
+        scmErrorHandler.processAndThrowException(updateFileResponse.getStatusCode(),
+            getScmErrorDetailsFromGitProtoResponse(updateFileResponse.getError()),
+            getScmGitMetaDataFromGitProtoResponse(updateFileResponse.getGitMetaData()));
       }
 
       return ScmUpdateFileGitResponse.builder()
@@ -227,8 +234,8 @@ public class SCMGitSyncHelper {
 
     if (isFailureResponse(createPRResponse.getStatusCode())) {
       log.error("Git SDK createPullRequest Failure: {}", createPRResponse);
-      scmErrorHandler.processAndThrowException(
-          createPRResponse.getStatusCode(), getScmErrorDetailsFromGitProtoResponse(createPRResponse.getError()));
+      scmErrorHandler.processAndThrowException(createPRResponse.getStatusCode(),
+          getScmErrorDetailsFromGitProtoResponse(createPRResponse.getError()), ScmGitMetaData.builder().build());
     }
 
     return ScmCreatePRResponse.builder().prNumber(createPRResponse.getPrNumber()).build();
@@ -252,8 +259,8 @@ public class SCMGitSyncHelper {
 
       if (isFailureResponse(getRepoUrlResponse.getStatusCode())) {
         log.error("Git SDK getRepoUrl Failure: {}", getRepoUrlResponse);
-        scmErrorHandler.processAndThrowException(
-            getRepoUrlResponse.getStatusCode(), getScmErrorDetailsFromGitProtoResponse(getRepoUrlResponse.getError()));
+        scmErrorHandler.processAndThrowException(getRepoUrlResponse.getStatusCode(),
+            getScmErrorDetailsFromGitProtoResponse(getRepoUrlResponse.getError()), ScmGitMetaData.builder().build());
       }
 
       return ScmGetRepoUrlResponse.builder().repoUrl(getRepoUrlResponse.getRepoUrl()).build();

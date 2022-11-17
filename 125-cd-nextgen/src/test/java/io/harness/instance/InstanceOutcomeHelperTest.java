@@ -7,17 +7,21 @@
 
 package io.harness.instance;
 
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.IVAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
@@ -31,6 +35,7 @@ import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
 import io.harness.steps.OutputExpressionConstants;
@@ -38,6 +43,7 @@ import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -186,5 +192,38 @@ public class InstanceOutcomeHelperTest extends CategoryTest {
     hostName =
         instanceOutcomeHelper.mapToHostNameBasedOnHostConnectionTypeAWS(awsInfrastructureOutcome, awsEC2Instance);
     assertThat(hostName).isEqualTo("privateIp");
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testSaveAndGetInstancesOutcomeCustomDeployment() {
+    InfrastructureOutcome infraOutcome =
+        CustomDeploymentInfrastructureOutcome.builder()
+            .instanceFetchScript("echo '{\"hosts\":[{\"ip\":\"1.1\"}, {\"ip\":\"2.2\"}]}' > $INSTANCE_OUTPUT_PATH")
+            .variables(Collections.emptyMap())
+            .instancesListPath("instanceListPath")
+            .instanceAttributes(Collections.emptyMap())
+            .build();
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "ACCOUNT_IDENTIFIER")
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "ORG_IDENTIFIER")
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "PROJECT_IDENTIFIER")
+                            .setStageExecutionId("EXECUTION_ID")
+                            .build();
+
+    InstancesOutcome instancesOutcome =
+        instanceOutcomeHelper.saveAndGetInstancesOutcome(ambiance, infraOutcome, Collections.emptySet());
+
+    verify(executionSweepingOutputService, times(1))
+        .consume(eq(ambiance), eq(OutputExpressionConstants.INSTANCES), any(), eq(StepCategory.STAGE.name()));
+
+    List<InstanceOutcome> instances = instancesOutcome.getInstances();
+    assertThat(instances.size()).isEqualTo(0);
+
+    Set<String> hostNames = new HashSet<>(Arrays.asList("host1", "host2"));
+    instancesOutcome = instanceOutcomeHelper.saveAndGetInstancesOutcome(ambiance, infraOutcome, hostNames);
+    assertThat(instancesOutcome.getInstances().size()).isEqualTo(0);
   }
 }

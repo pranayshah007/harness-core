@@ -42,6 +42,7 @@ io.harness.steps.section.chain.SectionChainPassThroughData
 io.harness.steps.section.chain.SectionChainStepParameters
 io.harness.steps.common.NGSectionStepParameters
 io.harness.steps.common.steps.stepgroup.StepGroupStepParameters
+io.harness.steps.group.GroupStepParametersV1
 io.harness.steps.fork.ForkStepParameters
 io.harness.pms.expressions.ExecutionSummaryUpdateUtilsTest$TestStepParameters
 io.harness.plancreator.strategy.AxisConfig

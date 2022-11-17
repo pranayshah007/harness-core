@@ -27,6 +27,7 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
+import io.harness.perpetualtask.instancesyncv2.DirectK8sReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.serializer.KryoSerializer;
 
@@ -39,6 +40,7 @@ import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -77,6 +79,12 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
 
       return InstanceSyncData.newBuilder()
           .setTaskDetailsId(releaseDetails.getTaskDetailsId())
+          .setReleaseDetails(Any.pack(DirectK8sReleaseDetails.newBuilder()
+                                          .setReleaseName(instanceSyncTaskDetails.getReleaseName())
+                                          .setNamespace(instanceSyncTaskDetails.getNamespace())
+                                          .setIsHelm(instanceSyncTaskDetails.getIsHelm())
+                                          .setContainerServiceName(instanceSyncTaskDetails.getContainerServiceName())
+                                          .build()))
           .setExecutionStatus(
               runningK8sPods != null ? CommandExecutionStatus.SUCCESS.name() : CommandExecutionStatus.FAILURE.name())
           .addAllInstanceData(runningK8sPods != null ? runningK8sPods.parallelStream()

@@ -27,7 +27,6 @@ import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
-import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -214,14 +213,14 @@ public class SecretManagerMigrationService extends NgMigrationService {
                        .stream()
                        .map(secretDTO
                            -> NGYamlFile.builder()
-                                  .yaml(CustomSecretRequestWrapper.builder().secret(secretDTO).build())
+                                  .yaml(secretDTO)
                                   .type(SECRET)
                                   .ngEntityDetail(NgEntityDetail.builder()
-                                                      .projectIdentifier(secretDTO.getProjectIdentifier())
-                                                      .orgIdentifier(secretDTO.getOrgIdentifier())
-                                                      .identifier(secretDTO.getIdentifier())
+                                                      .projectIdentifier(secretDTO.getSecret().getProjectIdentifier())
+                                                      .orgIdentifier(secretDTO.getSecret().getOrgIdentifier())
+                                                      .identifier(secretDTO.getSecret().getIdentifier())
                                                       .build())
-                                  .filename(String.format("secret/%s.yaml", secretDTO.getName()))
+                                  .filename(String.format("secret/%s.yaml", secretDTO.getSecret().getName()))
                                   .exists(false)
                                   .cgBasicInfo(null)
                                   .build())

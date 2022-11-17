@@ -21,6 +21,13 @@ public final class K8sExceptionConstants {
   public static final String KUBERNETES_CLUSTER_CONNECTION_VALIDATION_FAILED =
       "Failed to validate kubernetes cluster connector connection";
 
+  // Kustomize exception Handling
+  public static final String ACCUMULATING_RESOURCES = "accumulating resources";
+  public static final String EVALSYMLINK_FAILURE = "evalsymlink failure";
+  public static String EVALSYMLINK_ERROR_HINT =
+      "All the resources that are required to compile the manifest must be present within Kustomize Base Path. Please check manifest(s) for any references to missing resources and create them.";
+  public static String EVALSYMLINK_ERROR_EXPLAINATION = "Manifests may contain references to some missing resource(s).";
+
   private K8sExceptionConstants() {
     throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }

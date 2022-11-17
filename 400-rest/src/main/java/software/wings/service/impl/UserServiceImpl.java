@@ -1027,6 +1027,25 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public User getUserByEmail(String email, boolean loadSupportAccounts) {
+    User user = null;
+    if (isNotEmpty(email)) {
+      user = wingsPersistence.createQuery(User.class).filter(UserKeys.email, email.trim().toLowerCase()).get();
+      if (loadSupportAccounts) {
+        loadSupportAccounts(user);
+      }
+      if (user != null && isEmpty(user.getAccounts())) {
+        user.setAccounts(newArrayList());
+      }
+      if (user != null && isEmpty(user.getPendingAccounts())) {
+        user.setPendingAccounts(newArrayList());
+      }
+    }
+
+    return user;
+  }
+
+  @Override
   public User getUserByEmail(String email) {
     User user = null;
     if (isNotEmpty(email)) {

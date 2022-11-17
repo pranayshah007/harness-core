@@ -306,6 +306,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
   }
 
+  @Override
+  public Page<NodeExecution> fetchAllNodeExecutionsByStatus(
+      EnumSet<Status> statuses, Set<String> fieldNames, Pageable pageable) {
+    Query query = query(where(NodeExecutionKeys.status).in(statuses));
+
+    for (String fieldName : fieldNames) {
+      query.fields().include(fieldName);
+    }
+    return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
+  }
+
   /**
    * This is deprecated, use below update to get only required fields
    */

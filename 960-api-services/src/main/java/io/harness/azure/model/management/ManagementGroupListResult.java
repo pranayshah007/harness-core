@@ -7,13 +7,25 @@
 
 package io.harness.azure.model.management;
 
+import com.azure.core.http.rest.Page;
+import com.azure.core.util.IterableStream;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 import lombok.Data;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ManagementGroupListResult {
+public class ManagementGroupListResult implements Page<ManagementGroupInfo> {
   private String nextLink;
   private List<ManagementGroupInfo> value;
+
+  @Override
+  public IterableStream getElements() {
+    return IterableStream.of(value);
+  }
+
+  @Override
+  public String getContinuationToken() {
+    return nextLink;
+  }
 }

@@ -32,6 +32,7 @@ import software.wings.utils.ResourceConstraintTestConstants;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import java.time.Duration;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,7 +64,12 @@ public class ResourceConstraintBackupHandlerTest extends WingsBaseTest {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testRegisterIterators() {
-    resourceConstraintBackupHandler.registerIterators(10);
+    resourceConstraintBackupHandler.createAndStartIterator(PumpExecutorOptions.builder()
+                                                               .name("ResourceConstraint-Backup")
+                                                               .poolSize(10)
+                                                               .interval(Duration.ofSeconds(60))
+                                                               .build(),
+        Duration.ofSeconds(30));
     verify(mockPersistenceIteratorFactory, times(1))
         .createPumpIteratorWithDedicatedThreadPool(any(PumpExecutorOptions.class),
             eq(ResourceConstraintBackupHandler.class), any(MongoPersistenceIteratorBuilder.class));

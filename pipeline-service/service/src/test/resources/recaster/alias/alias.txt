@@ -69,6 +69,7 @@ io.harness.steps.shellscript.HarnessFileStoreSource
 parameterField
 io.harness.steps.approval.step.harness.HarnessApprovalOutcome
 io.harness.steps.common.steps.stepgroup.StepGroupStepParameters
+io.harness.steps.group.GroupStepParametersV1
 io.harness.steps.approval.step.jira.beans.JexlCriteriaSpec
 io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters
 io.harness.pms.yaml.ParameterFieldValueWrapper
@@ -148,3 +149,6 @@ io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
 io.harness.steps.wait.WaitStepDetailsInfo
 io.harness.steps.common.pipeline.PipelineStepParameterV1
+io.harness.steps.plugin.ContainerStepNode
+io.harness.steps.plugin.ContainerStepInfo
+io.harness.steps.plugin.ContainerStepOutcome

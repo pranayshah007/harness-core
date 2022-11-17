@@ -699,7 +699,7 @@ secretsConfiguration:
   gcpSecretManagerProject: harness-playground
 
 ldapSyncJobConfig:
-  poolSize: 3
+  poolSize: 8
   syncInterval: 15
   defaultCronExpression: "0 0/15 * 1/1 * ? *"
 

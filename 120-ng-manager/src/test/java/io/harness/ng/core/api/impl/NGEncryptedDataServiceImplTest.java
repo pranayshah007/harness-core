@@ -10,6 +10,7 @@ package io.harness.ng.core.api.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.TEJAS;
@@ -24,6 +25,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -119,6 +121,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   private String orgIdentifier = randomAlphabetic(10);
   private String projectIdentifier = randomAlphabetic(10);
   private String identifier = randomAlphabetic(10);
+  private String encryptedValue = randomAlphabetic(10);
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
@@ -261,7 +264,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
     when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture())).thenReturn(true);
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
-    boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
     verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
@@ -300,7 +304,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
     when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture())).thenReturn(false);
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
-    boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
     verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
@@ -340,7 +345,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture()))
         .thenThrow(new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Delete on remote failed", USER));
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
-    boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
     verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
@@ -378,7 +384,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
     when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture())).thenReturn(true);
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
-    boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
     verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(true);
@@ -478,7 +485,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
     when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture())).thenReturn(true);
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
-    boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
     verify(ngFeatureFlagHelperService, times(0)).isEnabled(any(), any());
     SecretManagerConfig secretManagerConfig = argumentCaptor.getValue();
     assertThat(secretManagerConfig instanceof AzureVaultConfig).isEqualTo(true);
@@ -756,5 +764,46 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     assertEquals(decryptedSecretValue.getAccountIdentifier(), accountIdentifier);
     assertEquals(decryptedSecretValue.getOrgIdentifier(), orgIdentifier);
     assertEquals(decryptedSecretValue.getProjectIdentifier(), projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDeleteSecret_whenSMIsDeleted_forceDeleteFalse() {
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(accountIdentifier)
+                                           .orgIdentifier(orgIdentifier)
+                                           .projectIdentifier(projectIdentifier)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .encryptedValue(encryptedValue.toCharArray())
+                                           .secretManagerIdentifier(identifier)
+                                           .build();
+    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean())).thenReturn(null);
+    assertThatExceptionOfType(SecretManagementException.class)
+        .isThrownBy(()
+                        -> ngEncryptedDataService.delete(
+                            accountIdentifier, orgIdentifier, projectIdentifier, identifier, false));
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDeleteSecret_whenSMIsDeleted_forceDeleteTrue() {
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(accountIdentifier)
+                                           .orgIdentifier(orgIdentifier)
+                                           .projectIdentifier(projectIdentifier)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .encryptedValue(encryptedValue.toCharArray())
+                                           .secretManagerIdentifier(identifier)
+                                           .build();
+    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean())).thenReturn(null);
+    when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, true);
+    assertThat(deleted).isEqualTo(true);
   }
 }

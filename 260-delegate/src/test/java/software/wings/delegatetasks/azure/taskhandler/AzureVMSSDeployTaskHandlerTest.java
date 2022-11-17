@@ -12,6 +12,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ANIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
@@ -34,32 +35,33 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.http.rest.Response;
+import com.azure.core.http.rest.SimpleResponse;
+import com.azure.resourcemanager.compute.fluent.models.VirtualMachineScaleSetInner;
+import com.azure.resourcemanager.compute.fluent.models.VirtualMachineScaleSetVMInner;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;
+import com.azure.resourcemanager.network.fluent.models.NetworkInterfaceIpConfigurationInner;
+import com.azure.resourcemanager.network.fluent.models.PublicIpAddressInner;
+import com.azure.resourcemanager.network.models.PublicIpAddressDnsSettings;
+import com.azure.resourcemanager.network.models.VirtualMachineScaleSetNetworkInterface;
+import com.azure.resourcemanager.network.models.VirtualMachineScaleSetNicIpConfiguration;
+import com.azure.resourcemanager.resources.fluentcore.utils.PagedConverter;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
-import com.microsoft.azure.Page;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet.UpdateStages.WithApply;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
-import com.microsoft.azure.management.compute.implementation.VirtualMachineScaleSetVMInner;
-import com.microsoft.azure.management.network.PublicIPAddressDnsSettings;
-import com.microsoft.azure.management.network.VirtualMachineScaleSetNetworkInterface;
-import com.microsoft.azure.management.network.VirtualMachineScaleSetNicIPConfiguration;
-import com.microsoft.azure.management.network.implementation.NetworkInterfaceIPConfigurationInner;
-import com.microsoft.azure.management.network.implementation.PublicIPAddressInner;
-import com.microsoft.rest.RestException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
-import org.assertj.core.util.Arrays;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import rx.Observable;
+import reactor.core.publisher.Mono;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class AzureVMSSDeployTaskHandlerTest extends WingsBaseTest {
@@ -92,8 +94,8 @@ public class AzureVMSSDeployTaskHandlerTest extends WingsBaseTest {
     mockNewVirtualMachineScaleSetCapacity(newVirtualMachineScaleSet);
     mockOldVirtualMachineScaleSetCapacity(oldVirtualMachineScaleSet);
 
-    PagedList<VirtualMachineScaleSetVM> newVirtualMachineScaleSetList = buildScaleSetVMs(newInstancesSize);
-    PagedList<VirtualMachineScaleSetVM> oldVirtualMachineScaleSetList = buildScaleSetVMs(oldInstancesSize);
+    List<VirtualMachineScaleSetVM> newVirtualMachineScaleSetList = buildScaleSetVMs(newInstancesSize);
+    List<VirtualMachineScaleSetVM> oldVirtualMachineScaleSetList = buildScaleSetVMs(oldInstancesSize);
 
     doReturn(newVirtualMachineScaleSetList)
         .when(azureComputeClient)
@@ -113,21 +115,45 @@ public class AzureVMSSDeployTaskHandlerTest extends WingsBaseTest {
   }
 
   private void mockOldVirtualMachineScaleSetCapacity(VirtualMachineScaleSet oldVirtualMachineScaleSet) {
-    WithPrimaryLoadBalancer oldWithPrimaryLoadBalancer = mock(WithPrimaryLoadBalancer.class);
+    VirtualMachineScaleSetInner virtualMachineScaleSetInner = mock(VirtualMachineScaleSetInner.class);
+    doReturn(virtualMachineScaleSetInner).when(oldVirtualMachineScaleSet).innerModel();
+
+    VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer oldWithPrimaryLoadBalancer =
+        mock(VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer.class);
     doReturn(oldWithPrimaryLoadBalancer).when(oldVirtualMachineScaleSet).update();
 
-    WithApply oldVMSSWithApply = mock(WithApply.class);
+    VirtualMachineScaleSet.UpdateStages.WithApply oldVMSSWithApply =
+        mock(VirtualMachineScaleSet.UpdateStages.WithApply.class);
+    doReturn(oldVMSSWithApply).when(oldWithPrimaryLoadBalancer).withCapacity(anyLong());
     doReturn(oldVMSSWithApply).when(oldWithPrimaryLoadBalancer).withCapacity(anyInt());
-    doReturn(Observable.from(Arrays.array(oldVirtualMachineScaleSet))).when(oldVMSSWithApply).applyAsync();
+
+    Mono<VirtualMachineScaleSet> responseMono = mock(Mono.class);
+    doReturn(responseMono).when(responseMono).doOnError(any());
+    doReturn(responseMono).when(responseMono).doOnSuccess(any());
+    doReturn(oldVirtualMachineScaleSet).when(responseMono).block(any());
+
+    doReturn(responseMono).when(oldVMSSWithApply).applyAsync();
   }
 
   private void mockNewVirtualMachineScaleSetCapacity(VirtualMachineScaleSet newVirtualMachineScaleSet) {
-    WithPrimaryLoadBalancer newWithPrimaryLoadBalancer = mock(WithPrimaryLoadBalancer.class);
+    VirtualMachineScaleSetInner virtualMachineScaleSetInner = mock(VirtualMachineScaleSetInner.class);
+    doReturn(virtualMachineScaleSetInner).when(newVirtualMachineScaleSet).innerModel();
+
+    VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer newWithPrimaryLoadBalancer =
+        mock(VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer.class);
     doReturn(newWithPrimaryLoadBalancer).when(newVirtualMachineScaleSet).update();
 
-    WithApply newVMSSWithApply = mock(WithApply.class);
+    VirtualMachineScaleSet.UpdateStages.WithApply newVMSSWithApply =
+        mock(VirtualMachineScaleSet.UpdateStages.WithApply.class);
+    doReturn(newVMSSWithApply).when(newWithPrimaryLoadBalancer).withCapacity(anyLong());
     doReturn(newVMSSWithApply).when(newWithPrimaryLoadBalancer).withCapacity(anyInt());
-    doReturn(Observable.from(Arrays.array(newWithPrimaryLoadBalancer))).when(newVMSSWithApply).applyAsync();
+
+    Mono<VirtualMachineScaleSet> responseMono = mock(Mono.class);
+    doReturn(responseMono).when(responseMono).doOnError(any());
+    doReturn(responseMono).when(responseMono).doOnSuccess(any());
+    doReturn(newVirtualMachineScaleSet).when(responseMono).block(any());
+
+    doReturn(responseMono).when(newVMSSWithApply).applyAsync();
   }
 
   @Test
@@ -244,21 +270,16 @@ public class AzureVMSSDeployTaskHandlerTest extends WingsBaseTest {
         .build();
   }
 
-  private PagedList<VirtualMachineScaleSetVM> buildScaleSetVMs(int count) {
-    PagedList<VirtualMachineScaleSetVM> vmPage = new PagedList<VirtualMachineScaleSetVM>() {
-      @Override
-      public Page<VirtualMachineScaleSetVM> nextPage(String s) throws RestException {
-        return null;
-      }
-    };
+  private List<VirtualMachineScaleSetVM> buildScaleSetVMs(int count) {
+    List<VirtualMachineScaleSetVM> vmPage = new ArrayList<>();
     ArrayList<VirtualMachineScaleSetVM> vms = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       VirtualMachineScaleSetVM vm = mock(VirtualMachineScaleSetVM.class);
       VirtualMachineScaleSetVMInner vmInner = mock(VirtualMachineScaleSetVMInner.class);
-      PagedList<VirtualMachineScaleSetNetworkInterface> networkInterfacePagedList = buildNetworkInterfaces(i);
+      PagedIterable<VirtualMachineScaleSetNetworkInterface> networkInterfacePagedList = buildNetworkInterfaces(i);
       String vmId = "VirtualMachine" + i;
 
-      when(vm.inner()).thenReturn(vmInner);
+      when(vm.innerModel()).thenReturn(vmInner);
       when(vm.name()).thenReturn(vmId);
       when(vm.listNetworkInterfaces()).thenReturn(networkInterfacePagedList);
       when(vmInner.vmId()).thenReturn(vmId);
@@ -268,28 +289,27 @@ public class AzureVMSSDeployTaskHandlerTest extends WingsBaseTest {
     return vmPage;
   }
 
-  private PagedList<VirtualMachineScaleSetNetworkInterface> buildNetworkInterfaces(int count) {
-    PagedList<VirtualMachineScaleSetNetworkInterface> networkInterfacePagedList =
-        new PagedList<VirtualMachineScaleSetNetworkInterface>() {
-          @Override
-          public Page<VirtualMachineScaleSetNetworkInterface> nextPage(String s) throws RestException {
-            return null;
-          }
-        };
+  private PagedIterable<VirtualMachineScaleSetNetworkInterface> buildNetworkInterfaces(int count) {
+    List<VirtualMachineScaleSetNetworkInterface> networkInterfacePagedList = new ArrayList<>();
     VirtualMachineScaleSetNetworkInterface networkInterface = mock(VirtualMachineScaleSetNetworkInterface.class);
-    VirtualMachineScaleSetNicIPConfiguration ipConfiguration = mock(VirtualMachineScaleSetNicIPConfiguration.class);
-    NetworkInterfaceIPConfigurationInner ipConfigurationInner = mock(NetworkInterfaceIPConfigurationInner.class);
-    PublicIPAddressInner publicIPAddressInner = mock(PublicIPAddressInner.class);
-    PublicIPAddressDnsSettings ipAddressDnsSettings = mock(PublicIPAddressDnsSettings.class);
+    VirtualMachineScaleSetNicIpConfiguration ipConfiguration = mock(VirtualMachineScaleSetNicIpConfiguration.class);
+    NetworkInterfaceIpConfigurationInner ipConfigurationInner = mock(NetworkInterfaceIpConfigurationInner.class);
+    PublicIpAddressInner publicIPAddressInner = mock(PublicIpAddressInner.class);
+    PublicIpAddressDnsSettings ipAddressDnsSettings = mock(PublicIpAddressDnsSettings.class);
 
     when(networkInterface.primaryPrivateIP()).thenReturn("10.0.5." + count);
     when(networkInterface.primaryIPConfiguration()).thenReturn(ipConfiguration);
-    when(ipConfiguration.inner()).thenReturn(ipConfigurationInner);
-    when(ipConfigurationInner.publicIPAddress()).thenReturn(publicIPAddressInner);
+    doReturn(ipConfigurationInner).when(ipConfiguration).innerModel();
+    when(ipConfigurationInner.publicIpAddress()).thenReturn(publicIPAddressInner);
     when(publicIPAddressInner.dnsSettings()).thenReturn(ipAddressDnsSettings);
     when(ipAddressDnsSettings.fqdn()).thenReturn("fully-qualified-name" + count);
 
     networkInterfacePagedList.add(networkInterface);
-    return networkInterfacePagedList;
+    return getPagedIterable(new SimpleResponse<>(null, 200, null, networkInterfacePagedList));
+  }
+
+  @NotNull
+  public <T> PagedIterable<T> getPagedIterable(Response<List<T>> response) {
+    return new PagedIterable<T>(PagedConverter.convertListToPagedFlux(Mono.just(response)));
   }
 }

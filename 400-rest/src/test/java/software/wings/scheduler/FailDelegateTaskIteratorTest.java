@@ -54,6 +54,7 @@ import software.wings.service.intfc.AssignDelegateService;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import io.vavr.collection.Stream;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -88,7 +89,12 @@ public class FailDelegateTaskIteratorTest extends WingsBaseTest {
   public void testRegisterIterators() {
     ArgumentCaptor<MongoPersistenceIteratorBuilder> captor =
         ArgumentCaptor.forClass(MongoPersistenceIteratorBuilder.class);
-    failDelegateTaskIterator.registerIterators(1);
+    failDelegateTaskIterator.createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
+                                                        .name("DelegateTaskFail")
+                                                        .poolSize(2)
+                                                        .interval(Duration.ofSeconds(30))
+                                                        .build(),
+        Duration.ofSeconds(30));
     verify(persistenceIteratorFactory, times(1))
         .createPumpIteratorWithDedicatedThreadPool(any(), eq(FailDelegateTaskIterator.class), captor.capture());
     MongoPersistenceIteratorBuilder mongoPersistenceIteratorBuilder = captor.getValue();

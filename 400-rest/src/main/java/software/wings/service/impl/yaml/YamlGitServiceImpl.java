@@ -934,6 +934,14 @@ public class YamlGitServiceImpl implements YamlGitService {
   }
 
   @Override
+  public List<YamlGitConfig> getYamlGitConfigByConnector(String accountId, String connectorId) {
+    return wingsPersistence.createQuery(YamlGitConfig.class)
+        .filter(YamlGitConfigKeys.accountId, accountId)
+        .filter(GIT_CONNECTOR_ID_KEY, connectorId)
+        .asList();
+  }
+
+  @Override
   public List<String> getYamlGitConfigIds(
       String accountId, String gitConnectorId, String branchName, String repositoryName) {
     List<String> yamlGitConfigIds = new ArrayList<>();

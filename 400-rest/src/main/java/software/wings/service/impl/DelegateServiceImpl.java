@@ -10,7 +10,6 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.beans.FeatureName.DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST;
 import static io.harness.beans.FeatureName.REDUCE_DELEGATE_MEMORY_SIZE;
-import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -861,12 +860,13 @@ public class DelegateServiceImpl implements DelegateService {
           final long upgraderLastUpdated = delegateGroupMap.getOrDefault(entry.getKey(), 0L);
           final String version =
               isNotEmpty(entry.getValue()) ? entry.getValue().stream().findAny().get().getVersion() : null;
+          final String delegateType = entry.getValue().get(0).getDelegateType();
           return DelegateScalingGroup.builder()
               .groupName(entry.getKey())
               .upgraderLastUpdated(delegateGroupMap.getOrDefault(entry.getKey(), 0L))
               .immutable(isImmutable)
-              .autoUpgrade(
-                  delegateSetupService.setAutoUpgrade(upgraderLastUpdated, isImmutable, delegateCreationTime, version))
+              .autoUpgrade(delegateSetupService.setAutoUpgrade(
+                  upgraderLastUpdated, isImmutable, delegateCreationTime, version, delegateType))
               .delegateGroupExpirationTime(setDelegateScalingGroupExpiration(entry.getValue()))
               .delegates(buildInnerDelegates(accountId, entry.getValue(), activeDelegateConnections, true))
               .build();
@@ -1437,6 +1437,8 @@ public class DelegateServiceImpl implements DelegateService {
     final CdnConfig cdnConfig = mainConfiguration.getCdnConfig();
 
     final boolean useCDN = mainConfiguration.useCdnForDelegateStorage() && cdnConfig != null;
+    final boolean immutableDelegateEnabled =
+        isImmutableDelegate(templateParameters.getAccountId(), templateParameters.getDelegateType());
 
     final String delegateMetadataUrl = subdomainUrlHelper.getDelegateMetadataUrl(templateParameters.getAccountId(),
         templateParameters.getManagerHost(), mainConfiguration.getDeployMode().name());
@@ -1489,14 +1491,12 @@ public class DelegateServiceImpl implements DelegateService {
     // Ng helm delegates always use immutable image irrespective of FF
     final String delegateDockerImage = (isNgDelegate && HELM_DELEGATE.equals(templateParameters.getDelegateType()))
         ? delegateVersionService.getImmutableDelegateImageTag(templateParameters.getAccountId())
-        : delegateVersionService.getDelegateImageTag(
-            templateParameters.getAccountId(), templateParameters.getDelegateType());
+        : delegateVersionService.getDelegateImageTag(templateParameters.getAccountId(), immutableDelegateEnabled);
     ImmutableMap.Builder<String, String> params =
         ImmutableMap.<String, String>builder()
             .put("delegateDockerImage", delegateDockerImage)
             .put("upgraderDockerImage",
-                delegateVersionService.getUpgraderImageTag(
-                    templateParameters.getAccountId(), templateParameters.getDelegateType()))
+                delegateVersionService.getUpgraderImageTag(templateParameters.getAccountId(), immutableDelegateEnabled))
             .put("accountId", templateParameters.getAccountId())
             .put("delegateToken", accountSecret)
             .put("base64Secret", base64Secret)
@@ -2912,7 +2912,7 @@ public class DelegateServiceImpl implements DelegateService {
           .append("[SEQ]")
           .append(sequenceConfig.getSequenceNum());
 
-      log.info("^^^^SEQ: " + message.toString());
+      log.info("^^^^SEQ: " + message);
     }
   }
 
@@ -3116,10 +3116,7 @@ public class DelegateServiceImpl implements DelegateService {
                             .filter(DelegateKeys.accountId, accountId)
                             .filter(DelegateKeys.delegateName, delegateName)
                             .get();
-    if (delegate == null) {
-      return true;
-    }
-    return false;
+    return delegate == null;
   }
 
   @Override
@@ -3260,8 +3257,10 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   private boolean isImmutableDelegate(final String accountId, final String delegateType) {
-    return featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, accountId)
-        && (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType));
+    if (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType) || DOCKER.equals(delegateType)) {
+      return accountService.isImmutableDelegateEnabled(accountId);
+    }
+    return false;
   }
 
   @Override

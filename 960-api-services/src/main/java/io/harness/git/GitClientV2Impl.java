@@ -39,6 +39,7 @@ import static org.eclipse.jgit.transport.RemoteRefUpdate.Status.UP_TO_DATE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.GeneralException;
 import io.harness.exception.GitClientException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -378,7 +379,7 @@ public class GitClientV2Impl implements GitClientV2 {
               .build();
         }
       }
-      throw new InvalidRequestException("Access denied. Please provide valid credentials.");
+      throw new GeneralException(e.getMessage(), e);
     }
   }
 

@@ -246,7 +246,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
         delegateTaskServiceClassic.processDelegateTaskV2(task, DelegateTask.Status.PARKED);
       } else {
         if (task.getTaskDataV2().isAsync()) {
-          delegateService.queueTask(task);
+          delegateService.queueTaskV2(task);
         } else {
           delegateService.scheduleSyncTaskV2(task);
         }
