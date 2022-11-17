@@ -108,7 +108,7 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
     k8sTaskHelperBase.applyManifests(k8sApplyHandlerConfig.getClient(), k8sApplyHandlerConfig.getResources(),
         k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true,
-        isErrorFrameworkSupported());
+        isErrorFrameworkSupported(), k8sApplyRequest.getK8sCommandFlags());
     final LogCallback waitForSteadyStateLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
 

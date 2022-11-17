@@ -87,6 +87,8 @@ import io.harness.jira.JiraStatusNG;
 import io.harness.jira.JiraTimeTrackingFieldNG;
 import io.harness.jira.JiraUpdateIssueRequestNG;
 import io.harness.jira.JiraUserData;
+import io.harness.k8s.K8sCliCommandType;
+import io.harness.k8s.K8sSubCommandType;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.k8s.model.IstioDestinationWeight;
@@ -474,5 +476,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(WebhookSecretData.class, 80312);
     kryo.register(AMITagsResponse.class, 81001);
     kryo.register(NexusRepositories.class, 9000312);
+    kryo.register(K8sSubCommandType.class, 80313);
+    kryo.register(K8sCliCommandType.class, 80314);
   }
 }

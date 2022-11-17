@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -34,14 +35,18 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
+import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.k8s.K8sCommandFlag;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sSwapServiceSelectorsRequest;
 import io.harness.exception.InvalidRequestException;
+import io.harness.k8s.K8sSubCommandType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -60,6 +65,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.ImmutableMap;
+import java.util.List;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.junit.Before;
@@ -90,9 +97,16 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
   final TaskRequest createdTaskRequest = TaskRequest.newBuilder().build();
   final String bgStepFqn = "bgStep";
   final String bgSwapServicesStepFqn = "bgSwapServicesStep";
+  final K8sCommandFlag k8sCommandFlag =
+      K8sCommandFlag.builder().valueMap(ImmutableMap.of(K8sSubCommandType.APPLY, "--server-side")).build();
+  final List<K8sStepCommandFlag> commandFlags = asList(K8sStepCommandFlag.builder()
+                                                           .commandType(K8sCommandFlagType.Apply)
+                                                           .flag(ParameterField.createValueField("--server-side"))
+                                                           .build());
   final K8sBGSwapServicesStepParameters stepParameters = K8sBGSwapServicesStepParameters.infoBuilder()
                                                              .blueGreenStepFqn(bgStepFqn)
                                                              .blueGreenSwapServicesFqn(bgSwapServicesStepFqn)
+                                                             .commandFlags(commandFlags)
                                                              .build();
   final StepElementParameters stepElementParameters =
       StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("10m")).build();
@@ -116,6 +130,7 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
             RefObjectUtils.getSweepingOutputRefObject(
                 bgStepFqn + "." + OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME));
     doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
+    doReturn(k8sCommandFlag).when(k8sStepHelper).getDelegateK8sCommandFlag(commandFlags);
   }
 
   @Test
@@ -144,7 +159,7 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
     assertThat(request.getService2()).isEqualTo(stageService);
     assertThat(request.getK8sInfraDelegateConfig()).isEqualTo(infraDelegateConfig);
     assertThat(request.getCommandName()).isEqualTo(K8sBGSwapServicesStep.K8S_BG_SWAP_SERVICES_COMMAND_NAME);
-
+    assertThat(request.getK8sCommandFlag()).isEqualTo(k8sCommandFlag);
     // We need this null as K8sBGSwapServicesStep does not depend upon Manifests
     assertThat(request.getManifestDelegateConfig()).isNull();
 

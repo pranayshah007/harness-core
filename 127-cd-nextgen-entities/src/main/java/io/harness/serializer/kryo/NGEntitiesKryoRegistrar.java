@@ -96,7 +96,9 @@ import io.harness.cdng.manifest.yaml.HelmCommandFlagType;
 import io.harness.cdng.manifest.yaml.HelmManifestCommandFlag;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.InheritFromManifestStoreConfig;
+import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
@@ -325,5 +327,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(ServerlessAwsLambdaInfrastructure.class, 12579);
     kryo.register(NexusRegistryRawConfig.class, 1400171);
     kryo.register(ElastigroupServiceSpec.class, 140011);
+    kryo.register(K8sCommandFlagType.class, 1400172);
+    kryo.register(K8sStepCommandFlag.class, 1400173);
   }
 }

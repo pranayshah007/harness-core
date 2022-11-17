@@ -31,6 +31,7 @@ public class K8sSwapServiceSelectorsRequest implements K8sDeployRequest {
   CommandUnitsProgress commandUnitsProgress;
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
+  K8sCommandFlag k8sCommandFlag;
 
   @Override
   public List<String> getValuesYamlList() {

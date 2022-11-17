@@ -43,7 +43,7 @@ public class K8sApplyRequest implements K8sDeployRequest {
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
   boolean useK8sApiForSteadyStateCheck;
-
+  String k8sCommandFlags;
   @Override
   public List<String> getOpenshiftParamList() {
     return Collections.emptyList();

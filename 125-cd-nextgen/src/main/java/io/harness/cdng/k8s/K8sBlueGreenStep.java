@@ -113,6 +113,7 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
         K8sBGDeployRequest.builder()
             .skipDryRun(skipDryRun)
             .releaseName(releaseName)
+            .k8sCommandFlag(k8sStepHelper.getDelegateK8sCommandFlag(k8sBlueGreenStepParameters.getCommandFlags()))
             .commandName(K8S_BLUE_GREEN_DEPLOY_COMMAND_NAME)
             .taskType(K8sTaskType.BLUE_GREEN_DEPLOY)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))

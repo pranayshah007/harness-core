@@ -13,6 +13,8 @@ import static io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecr
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 
+import static java.util.Collections.EMPTY_MAP;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +37,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.k8s.beans.K8sRollingRollbackHandlerConfig;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.K8sCommandFlag;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -111,7 +114,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
     assertThat(rollbackHandlerConfig.getClient()).isNotNull();
     verify(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);
     verify(k8sRollingRollbackBaseHandler)
-        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), true);
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), true, null);
     verify(k8sRollingRollbackBaseHandler)
         .steadyStateCheck(rollbackHandlerConfig, k8sDelegateTaskParams, timeoutIntervalInMin, logCallback);
     verify(k8sRollingRollbackBaseHandler).postProcess(rollbackHandlerConfig, releaseName);
@@ -133,7 +136,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
     assertThat(rollbackHandlerConfig.getClient()).isNotNull();
     verify(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);
     verify(k8sRollingRollbackBaseHandler, never())
-        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), true);
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), true, null);
     verify(k8sRollingRollbackBaseHandler, never())
         .steadyStateCheck(rollbackHandlerConfig, k8sDelegateTaskParams, timeoutIntervalInMin, logCallback);
     verify(k8sRollingRollbackBaseHandler, never()).postProcess(rollbackHandlerConfig, releaseName);
@@ -146,7 +149,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
     RuntimeException thrownException = new RuntimeException("error");
     doThrow(thrownException)
         .when(k8sRollingRollbackBaseHandler)
-        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), true);
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), true, null);
 
     assertThatThrownBy(()
                            -> k8sRollingRollbackRequestHandler.executeTaskInternal(
@@ -157,7 +160,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
     assertThat(rollbackHandlerConfig.getClient()).isNotNull();
     verify(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);
     verify(k8sRollingRollbackBaseHandler)
-        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), true);
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), true, null);
     verify(k8sRollingRollbackBaseHandler, never())
         .steadyStateCheck(rollbackHandlerConfig, k8sDelegateTaskParams, timeoutIntervalInMin, logCallback);
     verify(k8sRollingRollbackBaseHandler, never()).postProcess(rollbackHandlerConfig, releaseName);
@@ -205,6 +208,8 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
   public void testPrunedResourceIdsRecreated() throws Exception {
     List<KubernetesResourceId> prunedResourceIds =
         singletonList(KubernetesResourceId.builder().name("dummy_name").build());
+    K8sCommandFlag k8sCommandFlag = K8sCommandFlag.builder().build();
+    k8sCommandFlag.setValueMap(emptyMap());
     K8sRollingRollbackDeployRequest deployRequest = K8sRollingRollbackDeployRequest.builder()
                                                         .timeoutIntervalInMin(timeoutIntervalInMin)
                                                         .releaseNumber(1)
@@ -212,6 +217,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
                                                         .k8sInfraDelegateConfig(mock(K8sInfraDelegateConfig.class))
                                                         .prunedResourceIds(prunedResourceIds)
                                                         .releaseNumber(1)
+                                                        .k8sCommandFlag(k8sCommandFlag)
                                                         .build();
     doReturn(RESOURCE_CREATION_SUCCESSFUL)
         .when(k8sRollingRollbackBaseHandler)
@@ -226,6 +232,6 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
         deployRequest, k8sDelegateTaskParams, logStreamingTaskClient, null);
     verify(k8sRollingRollbackBaseHandler)
         .rollback(any(K8sRollingRollbackHandlerConfig.class), any(K8sDelegateTaskParams.class), anyInt(),
-            any(LogCallback.class), eq(new HashSet<>(prunedResourceIds)), anyBoolean());
+            any(LogCallback.class), eq(new HashSet<>(prunedResourceIds)), anyBoolean(), eq(k8sCommandFlag));
   }
 }

@@ -110,6 +110,7 @@ public class K8sBGSwapServicesStep extends TaskExecutableWithRollbackAndRbac<K8s
             .taskType(K8sTaskType.SWAP_SERVICE_SELECTORS)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
+            .k8sCommandFlag(k8sStepHelper.getDelegateK8sCommandFlag(k8sBGSwapServicesStepParameters.getCommandFlags()))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

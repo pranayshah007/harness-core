@@ -23,11 +23,10 @@ public class ApplyCommand extends AbstractExecutable {
   private boolean record;
   private String output;
   private boolean dryRunClient;
-
+  private String commandFlags;
   public ApplyCommand(Kubectl client) {
     this.client = client;
   }
-
   public ApplyCommand filename(String filename) {
     this.filename = filename;
     return this;
@@ -58,6 +57,11 @@ public class ApplyCommand extends AbstractExecutable {
     return this;
   }
 
+  public ApplyCommand commandFlags(String commandFlags) {
+    this.commandFlags = commandFlags;
+    return this;
+  }
+
   @Override
   public String command() {
     StringBuilder command = new StringBuilder();
@@ -82,11 +86,12 @@ public class ApplyCommand extends AbstractExecutable {
     if (this.record) {
       command.append(Kubectl.flag(Flag.record));
     }
-
+    if (this.commandFlags != null) {
+      command.append(commandFlags + " ");
+    }
     if (this.output != null) {
       command.append(Kubectl.option(Option.output, output));
     }
-
     return command.toString().trim();
   }
 }

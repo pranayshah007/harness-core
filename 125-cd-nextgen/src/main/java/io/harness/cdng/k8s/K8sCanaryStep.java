@@ -107,7 +107,6 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
     List<String> manifestFilesContents =
         k8sStepHelper.renderValues(k8sManifestOutcome, ambiance, manifestOverrideContents);
     boolean isOpenshiftTemplate = ManifestType.OpenshiftTemplate.equals(k8sManifestOutcome.getType());
-
     K8sCanaryDeployRequest k8sCanaryDeployRequest =
         K8sCanaryDeployRequest.builder()
             .skipDryRun(skipDryRun)
@@ -116,6 +115,7 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
             .taskType(K8sTaskType.CANARY_DEPLOY)
             .instanceUnitType(canaryStepParameters.getInstanceSelection().getType().getInstanceUnitType())
             .instances(instancesValue)
+            .k8sCommandFlag(k8sStepHelper.getDelegateK8sCommandFlag(canaryStepParameters.getCommandFlags()))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .valuesYamlList(!isOpenshiftTemplate ? manifestFilesContents : Collections.emptyList())
             .openshiftParamList(isOpenshiftTemplate ? manifestFilesContents : Collections.emptyList())

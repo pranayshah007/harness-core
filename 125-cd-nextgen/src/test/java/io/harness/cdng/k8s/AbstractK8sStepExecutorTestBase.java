@@ -9,6 +9,7 @@ package io.harness.cdng.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -21,17 +22,23 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
+import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.k8s.K8sCommandFlag;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sManifestDelegateConfig;
+import io.harness.k8s.K8sSubCommandType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.yaml.ParameterField;
 
+import com.google.common.collect.ImmutableMap;
+import java.util.List;
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -60,11 +67,18 @@ public abstract class AbstractK8sStepExecutorTestBase extends CategoryTest {
                           .skipResourceVersioning(ParameterField.createValueField(true))
                           .store(storeConfig)
                           .build();
+    List<K8sStepCommandFlag> commandFlags = asList(K8sStepCommandFlag.builder()
+                                                       .commandType(K8sCommandFlagType.Apply)
+                                                       .flag(ParameterField.createValueField("--server-side"))
+                                                       .build());
+    K8sCommandFlag k8sCommandFlag =
+        K8sCommandFlag.builder().valueMap(ImmutableMap.of(K8sSubCommandType.APPLY, "--server-side")).build();
     doReturn(infraDelegateConfig).when(cdStepHelper).getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
     doReturn(manifestDelegateConfig)
         .when(k8sStepHelper)
         .getManifestDelegateConfigWrapper(any(), eq(manifestOutcome), eq(ambiance), any());
     doReturn(true).when(k8sStepHelper).getSkipResourceVersioning(manifestOutcome);
+    doReturn(k8sCommandFlag).when(k8sStepHelper).getDelegateK8sCommandFlag(commandFlags);
     doReturn(releaseName).when(cdStepHelper).getReleaseName(ambiance, infrastructureOutcome);
     doReturn(TaskChainResponse.builder().chainEnd(true).build())
         .when(k8sStepHelper)

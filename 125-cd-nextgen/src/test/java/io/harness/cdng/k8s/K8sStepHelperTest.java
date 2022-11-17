@@ -28,6 +28,7 @@ import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static java.util.Arrays.asList;
@@ -73,7 +74,9 @@ import io.harness.cdng.manifest.yaml.HelmManifestCommandFlag;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.InheritFromManifestStoreConfig;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
+import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
@@ -138,6 +141,7 @@ import io.harness.delegate.task.helm.HelmValuesFetchRequest;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
+import io.harness.delegate.task.k8s.K8sCommandFlag;
 import io.harness.delegate.task.k8s.K8sManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
@@ -161,6 +165,7 @@ import io.harness.filestore.utils.FileStoreNodeUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.helm.HelmSubCommandType;
+import io.harness.k8s.K8sSubCommandType;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.LogCallback;
@@ -4114,6 +4119,20 @@ public class K8sStepHelperTest extends CategoryTest {
     List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
     assertThat(valuesFilesContent).isEmpty();
     assertThat(valuesFilesContent.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testGetDelegateK8sCommandFlag() {
+    List<K8sStepCommandFlag> commandFlags = asList(K8sStepCommandFlag.builder()
+                                                       .commandType(K8sCommandFlagType.Apply)
+                                                       .flag(ParameterField.createValueField("--server-side"))
+                                                       .build());
+    K8sCommandFlag k8sCommandFlagExpected =
+        K8sCommandFlag.builder().valueMap(ImmutableMap.of(K8sSubCommandType.APPLY, "--server-side")).build();
+    K8sCommandFlag k8sCommandFlag = k8sStepHelper.getDelegateK8sCommandFlag(commandFlags);
+    assertThat(k8sCommandFlag).isEqualTo(k8sCommandFlagExpected);
   }
 
   private FileStoreNodeDTO getFileStoreNode(String path, String name) {

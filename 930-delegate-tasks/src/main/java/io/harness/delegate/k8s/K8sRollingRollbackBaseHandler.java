@@ -34,10 +34,14 @@ import static java.util.stream.Collectors.toMap;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.k8s.beans.K8sRollingRollbackHandlerConfig;
+import io.harness.delegate.task.k8s.K8sCommandFlag;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.k8s.K8sCliCommandType;
+import io.harness.k8s.K8sCommandFlagsUtils;
+import io.harness.k8s.K8sSubCommandType;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
@@ -146,7 +150,8 @@ public class K8sRollingRollbackBaseHandler {
   // parameter resourcesRecreated must be empty if FF PRUNE_KUBERNETES_RESOURCES is disabled
   public boolean rollback(K8sRollingRollbackHandlerConfig rollbackHandlerConfig,
       K8sDelegateTaskParams k8sDelegateTaskParams, Integer releaseNumber, LogCallback logCallback,
-      Set<KubernetesResourceId> resourcesRecreated, boolean isErrorFrameworkEnabled) throws Exception {
+      Set<KubernetesResourceId> resourcesRecreated, boolean isErrorFrameworkEnabled, K8sCommandFlag commandFlags)
+      throws Exception {
     K8sLegacyRelease release = rollbackHandlerConfig.getRelease();
     ReleaseHistory releaseHistory = rollbackHandlerConfig.getReleaseHistory();
     if (release == null) {
@@ -210,8 +215,8 @@ public class K8sRollingRollbackBaseHandler {
     }
     rollbackHandlerConfig.setPreviousManagedWorkloads(previousManagedWorkloads);
 
-    boolean success = rollback(
-        rollbackHandlerConfig, k8sDelegateTaskParams, logCallback, resourcesRecreated, isErrorFrameworkEnabled);
+    boolean success = rollback(rollbackHandlerConfig, k8sDelegateTaskParams, logCallback, resourcesRecreated,
+        isErrorFrameworkEnabled, commandFlags);
     if (!success) {
       logCallback.saveExecutionLog("\nFailed.", INFO, CommandExecutionStatus.FAILURE);
       return false;
@@ -251,7 +256,8 @@ public class K8sRollingRollbackBaseHandler {
 
   private boolean rollback(K8sRollingRollbackHandlerConfig rollbackHandlerConfig,
       K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback logCallback,
-      Set<KubernetesResourceId> resourcesRecreated, boolean isErrorFrameworkEnabled) throws Exception {
+      Set<KubernetesResourceId> resourcesRecreated, boolean isErrorFrameworkEnabled, K8sCommandFlag k8sCommandFlag)
+      throws Exception {
     boolean success = true;
     Exception customResourcesApplyException = null;
     K8sLegacyRelease release = rollbackHandlerConfig.getRelease();
@@ -267,7 +273,9 @@ public class K8sRollingRollbackBaseHandler {
             .stream()
             .filter(resourceIdRevision -> !resourcesRecreated.contains(resourceIdRevision.getWorkload()))
             .collect(toList());
-
+    Map<K8sSubCommandType, String> commandFlagValueMap = k8sCommandFlag != null ? k8sCommandFlag.getValueMap() : null;
+    String commandFlags =
+        K8sCommandFlagsUtils.applyK8sCommandFlags(K8sCliCommandType.APPLY.name(), commandFlagValueMap);
     if (isNotEmpty(previousCustomManagedWorkloads)) {
       if (isNotEmpty(release.getCustomWorkloads())) {
         logCallback.saveExecutionLog("\nDeleting current custom resources "
@@ -280,8 +288,8 @@ public class K8sRollingRollbackBaseHandler {
       logCallback.saveExecutionLog("\nRolling back custom resource by applying previous release manifests "
           + k8sTaskHelperBase.getResourcesInTableFormat(previousCustomManagedWorkloads));
       try {
-        success = k8sTaskHelperBase.applyManifests(
-            client, previousCustomManagedWorkloads, k8sDelegateTaskParams, logCallback, false, isErrorFrameworkEnabled);
+        success = k8sTaskHelperBase.applyManifests(client, previousCustomManagedWorkloads, k8sDelegateTaskParams,
+            logCallback, false, isErrorFrameworkEnabled, commandFlags);
       } catch (Exception e) {
         customResourcesApplyException = e;
         success = false;
@@ -485,7 +493,7 @@ public class K8sRollingRollbackBaseHandler {
     }
 
     return k8sTaskHelperBase.applyManifests(rollbackHandlerConfig.getClient(), prunedResourcesToBeRecreated,
-               k8sDelegateTaskParams, pruneLogCallback, false)
+               k8sDelegateTaskParams, pruneLogCallback, false, null)
         ? ResourceRecreationStatus.RESOURCE_CREATION_SUCCESSFUL
         : ResourceRecreationStatus.RESOURCE_CREATION_FAILED;
   }

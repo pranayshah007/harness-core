@@ -31,12 +31,16 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus;
 import io.harness.delegate.k8s.beans.K8sRollingRollbackHandlerConfig;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.K8sCommandFlag;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sRollingDeployRollbackResponse;
 import io.harness.delegate.task.k8s.K8sRollingRollbackDeployRequest;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.k8s.K8sCliCommandType;
+import io.harness.k8s.K8sCommandFlagsUtils;
+import io.harness.k8s.K8sSubCommandType;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -46,6 +50,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -74,7 +79,7 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
         (K8sRollingRollbackDeployRequest) k8sDeployRequest;
     LogCallback initLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress);
-
+    K8sCommandFlag k8sCommandFlag = k8sRollingRollbackDeployRequest.getK8sCommandFlag();
     init(k8sRollingRollbackDeployRequest, k8sDelegateTaskParams, initLogCallback);
 
     ResourceRecreationStatus resourceRecreationStatus = NO_RESOURCE_CREATED;
@@ -93,7 +98,7 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
     rollbackBaseHandler.rollback(rollbackHandlerConfig, k8sDelegateTaskParams,
         k8sRollingRollbackDeployRequest.getReleaseNumber(),
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Rollback, true, commandUnitsProgress),
-        recreatedResourceIds, true);
+        recreatedResourceIds, true, k8sCommandFlag);
 
     LogCallback waitForSteadyStateLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);

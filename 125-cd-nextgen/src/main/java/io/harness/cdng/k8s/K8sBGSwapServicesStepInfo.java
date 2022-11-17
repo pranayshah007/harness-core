@@ -13,6 +13,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -55,6 +56,7 @@ public class K8sBGSwapServicesStepInfo implements CDStepInfo, Visitable {
   @JsonIgnore String blueGreenStepFqn;
 
   @JsonIgnore String blueGreenSwapServicesStepFqn;
+  @JsonProperty("commandFlags") List<K8sStepCommandFlag> commandFlags;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
@@ -76,6 +78,7 @@ public class K8sBGSwapServicesStepInfo implements CDStepInfo, Visitable {
         .delegateSelectors(delegateSelectors)
         .blueGreenStepFqn(blueGreenStepFqn)
         .blueGreenSwapServicesFqn(blueGreenSwapServicesStepFqn)
+        .commandFlags(commandFlags)
         .build();
   }
 

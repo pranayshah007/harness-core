@@ -11,6 +11,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -28,17 +29,21 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
+import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.k8s.K8sCanaryDeployRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeployResponse;
+import io.harness.delegate.task.k8s.K8sCommandFlag;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.delegate.task.k8s.data.K8sCanaryDataException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.k8s.K8sSubCommandType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -49,7 +54,9 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.junit.Test;
@@ -72,6 +79,13 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
     instanceSelection.setCount(ParameterField.createValueField("10"));
     K8sCanaryStepParameters stepParameters = new K8sCanaryStepParameters();
     stepParameters.setSkipDryRun(ParameterField.createValueField(true));
+    K8sCommandFlag k8sCommandFlag =
+        K8sCommandFlag.builder().valueMap(ImmutableMap.of(K8sSubCommandType.APPLY, "--server-side")).build();
+    List<K8sStepCommandFlag> commandFlags = asList(K8sStepCommandFlag.builder()
+                                                       .commandType(K8sCommandFlagType.Apply)
+                                                       .flag(ParameterField.createValueField("--server-side"))
+                                                       .build());
+    stepParameters.setCommandFlags(commandFlags);
     stepParameters.setInstanceSelection(
         InstanceSelectionWrapper.builder().type(K8sInstanceUnitType.Count).spec(instanceSelection).build());
     final StepElementParameters stepElementParameters =
@@ -87,6 +101,7 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(request.isSkipDryRun()).isTrue();
     assertThat(request.getTimeoutIntervalInMin()).isEqualTo(30);
     assertThat(request.isSkipResourceVersioning()).isTrue();
+    assertThat(request.getK8sCommandFlag()).isEqualTo(k8sCommandFlag);
 
     ArgumentCaptor<String> releaseNameCaptor = ArgumentCaptor.forClass(String.class);
     verify(k8sStepHelper, times(1)).publishReleaseNameStepDetails(eq(ambiance), releaseNameCaptor.capture());

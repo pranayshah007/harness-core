@@ -131,13 +131,14 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
             K8sApplyBaseStepInfoKeys.skipSteadyStateCheck, stepElementParameters);
     boolean skipRendering = CDStepHelper.getParameterFieldBooleanValue(
         k8sApplyStepParameters.getSkipRendering(), K8sApplyBaseStepInfoKeys.skipRendering, stepElementParameters);
-
+    String k8sCommandFlag = k8sApplyStepParameters.getCommandFlags().getValue();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     K8sApplyRequest k8sApplyRequest =
         K8sApplyRequest.builder()
             .skipDryRun(skipDryRun)
             .releaseName(releaseName)
             .commandName(K8S_APPLY_COMMAND_NAME)
+            .k8sCommandFlags(k8sCommandFlag)
             .taskType(K8sTaskType.APPLY)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .valuesYamlList(k8sStepHelper.renderValues(k8sManifestOutcome, ambiance, manifestOverrideContents))

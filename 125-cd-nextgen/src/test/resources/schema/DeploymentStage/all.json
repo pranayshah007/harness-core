@@ -5131,6 +5131,24 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "K8sManifestCommandFlag": {
+      "type": "object",
+      "required": [
+        "commandType"
+      ],
+      "properties": {
+        "commandType": {
+          "type": "string",
+          "enum": [
+            "Apply"
+          ]
+        },
+        "flag": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HelmRollbackStepInfo": {
       "allOf": [
         {

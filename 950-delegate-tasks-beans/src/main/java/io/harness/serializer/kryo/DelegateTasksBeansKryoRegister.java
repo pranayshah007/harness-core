@@ -609,6 +609,7 @@ import io.harness.delegate.task.k8s.K8sBGDeployResponse;
 import io.harness.delegate.task.k8s.K8sCanaryDeleteRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeployRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeployResponse;
+import io.harness.delegate.task.k8s.K8sCommandFlag;
 import io.harness.delegate.task.k8s.K8sDeleteRequest;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
@@ -1903,8 +1904,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureFetchArmPreDeploymentDataTaskParameters.class, 55423);
     kryo.register(AzureFetchArmPreDeploymentDataTaskResponse.class, 55424);
     kryo.register(AwsS3ArtifactDelegateConfig.class, 9800007);
-    kryo.register(InlineTerraformBackendConfigFileInfo.class, 9800008);
-    kryo.register(RemoteTerraformBackendConfigFileInfo.class, 9800009);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
     kryo.register(GcpSecretManagerValidationParams.class, 19879);
     kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
@@ -1941,5 +1940,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ElastigroupSetupCommandRequest.class, 573547);
     kryo.register(ElastigroupSetupResponse.class, 573548);
     kryo.register(ElastigroupSetupResult.class, 573549);
+    kryo.register(K8sCommandFlag.class, 601234);
   }
 }

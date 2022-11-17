@@ -64,6 +64,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     stepParameters.setSkipDryRun(ParameterField.createValueField(true));
     stepParameters.setSkipSteadyStateCheck(ParameterField.createValueField(true));
     stepParameters.setFilePaths(ParameterField.createValueField(Arrays.asList("file1.yaml", "file2.yaml")));
+    stepParameters.setCommandFlags(ParameterField.createValueField("--server-side"));
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("30m")).build();
 
@@ -74,6 +75,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(request.isSkipDryRun()).isTrue();
     assertThat(request.isSkipSteadyStateCheck()).isTrue();
     assertThat(request.getTimeoutIntervalInMin()).isEqualTo(30);
+    assertThat(request.getK8sCommandFlags()).isEqualTo("--server-side");
 
     ArgumentCaptor<String> releaseNameCaptor = ArgumentCaptor.forClass(String.class);
     verify(k8sStepHelper, times(1)).publishReleaseNameStepDetails(eq(ambiance), releaseNameCaptor.capture());
@@ -88,6 +90,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     stepParameters.setSkipDryRun(ParameterField.ofNull());
     stepParameters.setSkipSteadyStateCheck(ParameterField.ofNull());
     stepParameters.setFilePaths(ParameterField.createValueField(Arrays.asList("file1.yaml", "file2.yaml")));
+    stepParameters.setCommandFlags(ParameterField.createValueField("--server-side"));
 
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.ofNull()).build();
@@ -96,6 +99,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(request.isSkipDryRun()).isFalse();
     assertThat(request.isSkipSteadyStateCheck()).isFalse();
     assertThat(request.getTimeoutIntervalInMin()).isEqualTo(CDStepHelper.getTimeoutInMin(stepElementParameters));
+    assertThat(request.getK8sCommandFlags()).isEqualTo("--server-side");
   }
 
   @Test

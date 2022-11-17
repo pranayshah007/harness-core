@@ -106,7 +106,7 @@ public class K8sRollingDeployRollbackTaskHandler extends K8sTaskHandler {
     boolean success = k8sRollingRollbackBaseHandler.rollback(rollbackHandlerConfig, k8sDelegateTaskParams,
         request.getReleaseNumber(), k8sTaskHelper.getExecutionLogCallback(request, Rollback),
         k8sRollingRollbackBaseHandler.getResourcesRecreated(request.getPrunedResourcesIds(), resourceRecreationStatus),
-        false);
+        false, null);
     if (!success) {
       return K8sTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build();
     }

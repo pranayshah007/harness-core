@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -35,11 +36,12 @@ public class K8sBGSwapServicesStepParameters extends K8sBGSwapServicesStepInfo i
   @Builder(builderMethodName = "infoBuilder")
   public K8sBGSwapServicesStepParameters(ParameterField<Boolean> skipDryRun,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String blueGreenStepFqn,
-      String blueGreenSwapServicesFqn) {
+      String blueGreenSwapServicesFqn, List<K8sStepCommandFlag> commandFlags) {
     this.skipDryRun = skipDryRun;
     this.delegateSelectors = delegateSelectors;
     this.blueGreenStepFqn = blueGreenStepFqn;
     this.blueGreenSwapServicesStepFqn = blueGreenSwapServicesFqn;
+    this.commandFlags = commandFlags;
   }
 
   @Nonnull

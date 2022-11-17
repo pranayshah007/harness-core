@@ -114,7 +114,8 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
     K8sRollingRollbackDeployRequestBuilder rollbackRequestBuilder = K8sRollingRollbackDeployRequest.builder();
     InfrastructureOutcome infrastructure = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-
+    rollbackRequestBuilder.k8sCommandFlag(
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingRollbackStepParameters.getCommandFlags()));
     if (k8sRollingOptionalOutput.isFound()) {
       K8sRollingOutcome k8sRollingOutcome = (K8sRollingOutcome) k8sRollingOptionalOutput.getOutput();
       rollbackRequestBuilder.releaseName(k8sRollingOutcome.getReleaseName())

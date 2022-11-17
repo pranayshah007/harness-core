@@ -37,8 +37,9 @@ public class K8sApplyStepParameters extends K8sApplyBaseStepInfo implements K8sS
   @Builder(builderMethodName = "infoBuilder")
   public K8sApplyStepParameters(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> skipSteadyStateCheck,
       ParameterField<List<String>> filePaths, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      List<ManifestConfigWrapper> overrides, ParameterField<Boolean> skipRendering) {
-    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering);
+      List<ManifestConfigWrapper> overrides, ParameterField<Boolean> skipRendering,
+      ParameterField<String> commandFlags) {
+    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering, commandFlags);
   }
 
   @Nonnull

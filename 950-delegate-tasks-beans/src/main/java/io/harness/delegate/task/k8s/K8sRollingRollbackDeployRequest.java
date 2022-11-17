@@ -33,6 +33,7 @@ public class K8sRollingRollbackDeployRequest implements K8sDeployRequest {
   boolean useNewKubectlVersion;
   boolean pruningEnabled;
   List<KubernetesResourceId> prunedResourceIds;
+  K8sCommandFlag k8sCommandFlag;
 
   @Override
   public List<String> getValuesYamlList() {

@@ -117,6 +117,7 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
         K8sRollingDeployRequest.builder()
             .skipDryRun(skipDryRun)
             .inCanaryWorkflow(isCanaryWorkflow)
+            .k8sCommandFlag(k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingStepParameters.getCommandFlags()))
             .releaseName(releaseName)
             .commandName(K8S_ROLLING_DEPLOY_COMMAND_NAME)
             .taskType(K8sTaskType.DEPLOYMENT_ROLLING)

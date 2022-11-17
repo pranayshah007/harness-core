@@ -42,6 +42,7 @@ import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome.HelmChartManifestOutcomeKeys;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome.K8sManifestOutcomeKeys;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome.KustomizeManifestOutcomeKeys;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
@@ -62,6 +63,7 @@ import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
+import io.harness.delegate.task.k8s.K8sCommandFlag;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
@@ -74,6 +76,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.k8s.K8sCommandUnitConstants;
+import io.harness.k8s.K8sSubCommandType;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.LogCallback;
 import io.harness.manifest.CustomSourceFile;
@@ -942,5 +945,18 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       return prunedResourceIds == null ? Collections.emptyList() : prunedResourceIds;
     }
     return Collections.emptyList();
+  }
+
+  public K8sCommandFlag getDelegateK8sCommandFlag(List<K8sStepCommandFlag> commandFlags) {
+    if (commandFlags == null) {
+      return K8sCommandFlag.builder().valueMap(new HashMap<>()).build();
+    }
+
+    Map<K8sSubCommandType, String> commandsValueMap = new HashMap<>();
+    for (K8sStepCommandFlag commandFlag : commandFlags) {
+      commandsValueMap.put(commandFlag.getCommandType().getSubCommandType(), commandFlag.getFlag().getValue());
+    }
+
+    return K8sCommandFlag.builder().valueMap(commandsValueMap).build();
   }
 }

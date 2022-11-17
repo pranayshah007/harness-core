@@ -49,4 +49,7 @@ public class K8sApplyBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonProperty("overrides") List<ManifestConfigWrapper> overrides;
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipRendering;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  ParameterField<String> commandFlags;
 }
