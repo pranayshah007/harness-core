@@ -1155,6 +1155,7 @@
 19002:io.harness.delegate.beans.TaskData
 19003:io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability
 19004:io.harness.delegate.beans.executioncapability.CapabilityType
+19005:io.harness.delegate.beans.TaskDataV2
 19007:io.harness.delegate.beans.executioncapability.ProcessExecutorCapability
 19008:io.harness.delegate.beans.executioncapability.AwsRegionCapability
 19009:io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability
@@ -1682,6 +1683,10 @@
 40113:com.amazonaws.services.cloudformation.model.StackStatus
 40114:software.wings.beans.CustomSecretNGManagerConfig
 40115:io.harness.delegate.utils.NexusVersion
+40116:io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskParameters
+40117:io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskResponse
+40118:io.harness.exception.TerraformSecretCleanupFailureException
+40119:io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupFailureDetails
 50002:software.wings.api.RancherClusterElement
 50004:software.wings.delegatetasks.rancher.RancherResolveClustersTaskParameters
 50005:software.wings.delegatetasks.rancher.RancherResolveClustersResponse
@@ -1789,6 +1794,7 @@
 55436:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest
 55437:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
+55499:io.harness.beans.SerializationFormat
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
 55503:io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo
@@ -1837,6 +1843,9 @@
 73990:io.harness.delegate.beans.NoAvailableDelegatesException
 73991:io.harness.delegate.beans.NoDelegatesException
 73992:io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails
+73993:io.harness.delegate.task.helm.HelmFetchChartVersionRequestNG
+73994:io.harness.delegate.beans.helm.HelmChartVersionDetails
+73995:io.harness.delegate.task.helm.HelmFetchChartVersionResponse
 80302:software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds
 80303:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile
 80304:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo
@@ -2308,6 +2317,11 @@
 573542:io.harness.delegate.task.ecs.request.EcsRunTaskRequest
 573543:io.harness.delegate.task.ecs.response.EcsRunTaskResponse
 573544:io.harness.delegate.beans.ecs.EcsRunTaskResult
+573545:io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest
+573546:io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse
+573547:io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest
+573548:io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse
+573549:io.harness.delegate.beans.elastigroup.ElastigroupSetupResult
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO
@@ -2443,5 +2457,4 @@
 10000208:io.harness.delegate.beans.pcf.response.TasValidateTaskResponse
 10000209:io.harness.delegate.beans.connector.tasconnector.TasValidationParams
 10000210:io.harness.delegate.beans.pcf.response.TasDelegateTaskResponse
-
 

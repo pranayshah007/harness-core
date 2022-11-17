@@ -105,6 +105,7 @@ import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
 import io.harness.connector.entities.embedded.spotconnector.SpotConfig;
 import io.harness.connector.entities.embedded.sumologic.SumoLogicConnector;
+import io.harness.connector.entities.embedded.tasconnector.TasConfig;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
@@ -131,6 +132,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(GcpConfig.class);
     set.add(AwsConfig.class);
     set.add(SpotConfig.class);
+    set.add(TasConfig.class);
     set.add(CEAwsConfig.class);
     set.add(ArtifactoryConnector.class);
     set.add(JiraConnector.class);

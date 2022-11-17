@@ -138,6 +138,7 @@ import io.harness.connector.task.docker.DockerValidationHandler;
 import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
 import io.harness.connector.task.spot.SpotValidationHandler;
+import io.harness.connector.task.tas.TasValidationHandler;
 import io.harness.connector.validator.ArtifactoryConnectionValidator;
 import io.harness.connector.validator.AwsConnectorValidator;
 import io.harness.connector.validator.AzureArtifactsConnectorValidator;
@@ -351,7 +352,7 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.TAS,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, TasConnectorValidator.class,
             TasConnectorValidationParamsProvider.class, TasDTOToEntity.class, TasEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            TasValidationHandler.class));
     registrar.put(ConnectorType.GCP_SECRET_MANAGER,
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,
             GcpSecretManagerValidationParamProvider.class, GcpSecretManagerDTOToEntity.class,

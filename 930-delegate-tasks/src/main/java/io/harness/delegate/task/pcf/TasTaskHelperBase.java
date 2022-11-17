@@ -51,7 +51,7 @@ public class TasTaskHelperBase {
 
     } catch (Exception e) {
       log.warn("Failed while collecting TAS Application Details For Application: {}, with Error: {}",
-          (deploymentReleaseData.getApplicationName()), e);
+          deploymentReleaseData.getApplicationName(), e);
       return Collections.emptyList();
     }
   }
