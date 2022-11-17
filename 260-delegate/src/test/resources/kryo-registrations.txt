@@ -2452,6 +2452,10 @@
 10000103:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType
 10000109:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO
 10000111:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
+10000112:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO
+10000113:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType
+10000114:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO
+10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
 10000201:io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO
 10000202:io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO
 10000203:io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO
@@ -2462,11 +2466,4 @@
 10000208:io.harness.delegate.beans.pcf.response.TasValidateTaskResponse
 10000209:io.harness.delegate.beans.connector.tasconnector.TasValidationParams
 10000210:io.harness.delegate.beans.pcf.response.TasDelegateTaskResponse
-
-
-
-10000112:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO
-10000113:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType
-10000114:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO
-10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
 

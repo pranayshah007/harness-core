@@ -97,7 +97,7 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
         cdngPipelineConfigurationResource.getServiceDefinitionTypes(null).getData();
 
     assertThat(serviceDefinitionTypes).isNotNull();
-    assertThat(serviceDefinitionTypes.size()).isEqualTo(9);
+    assertThat(serviceDefinitionTypes.size()).isEqualTo(10);
   }
 
   @Test
