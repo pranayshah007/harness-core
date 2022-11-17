@@ -103,7 +103,7 @@ public class CDOverviewDashboardServiceImplTest extends CategoryTest {
             .instanceGroupedByArtifactList(instanceGroupedByArtifactList)
             .build();
 
-    return (Arrays.asList(instanceGroupedByService2, instanceGroupedByService1));
+    return Arrays.asList(instanceGroupedByService2, instanceGroupedByService1);
   }
 
   List<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails>

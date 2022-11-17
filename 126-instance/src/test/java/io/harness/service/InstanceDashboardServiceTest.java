@@ -264,7 +264,7 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
       mock.get(buildId).get(lastPipelineExecutionId).get(envId).put(infraIdentifier, count);
       for (int i = 0; i < count; i++) {
         instanceRepository.save(
-            createDummyInstanceV2(buildId, lastPipelineExecutionId, envId, infraIdentifier, "svc1"));
+            createDummyInstanceV2(buildId, lastPipelineExecutionId, envId, infraIdentifier, SERVICE_IDENTIFIER));
       }
     });
 
