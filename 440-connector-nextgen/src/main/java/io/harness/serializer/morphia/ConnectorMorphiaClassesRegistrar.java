@@ -118,7 +118,6 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(Connector.class);
-    set.add(TasConfig.class);
     set.add(KubernetesClusterConfig.class);
     set.add(GitConfig.class);
     set.add(VaultConnector.class);
