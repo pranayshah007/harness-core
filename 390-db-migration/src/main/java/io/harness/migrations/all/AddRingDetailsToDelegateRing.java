@@ -31,8 +31,8 @@ public class AddRingDetailsToDelegateRing implements Migration, SeedDataMigratio
   public void migrate() {
     log.info("Starting the migration for adding ring details in delegateRing collection.");
 
-    for (String ringName : Arrays.asList(
-             DelegateRingConstants.RING_NAME_1, DelegateRingConstants.RING_NAME_2, DelegateRingConstants.RING_NAME_3)) {
+    for (String ringName : Arrays.asList(DelegateRingConstants.RING_NAME_1, DelegateRingConstants.RING_NAME_2,
+             DelegateRingConstants.RING_NAME_3, DelegateRingConstants.RING_NAME_4)) {
       checkAndInsertDelegateRing(ringName);
     }
 
