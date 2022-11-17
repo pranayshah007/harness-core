@@ -26,7 +26,7 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorService {
-  private static final String ACTIVE_EXECUTION_COUNT_METRIC_NAME = "active_execution_count";
+  private static final String PLAN_EXECUTION_ACTIVE_COUNT = "plan_execution_active_count";
 
   @Inject private PlanExecutionService planExecutionService;
   @Inject private MetricService metricService;
@@ -41,8 +41,6 @@ public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorServ
       PipelineExecutionMetric planExecutionMetric =
           PipelineExecutionMetric.builder()
               .accountId(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.accountId))
-              .orgIdentifier(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.orgIdentifier))
-              .projectId(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.projectIdentifier))
               .build();
 
       metricMap.put(planExecutionMetric, metricMap.getOrDefault(planExecutionMetric, 0) + 1);
@@ -52,12 +50,10 @@ public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorServ
       Map<String, String> metricContextMap =
           ImmutableMap.<String, String>builder()
               .put(PmsEventMonitoringConstants.ACCOUNT_ID, entry.getKey().getAccountId())
-              .put(PmsEventMonitoringConstants.ORG_ID, entry.getKey().getOrgIdentifier())
-              .put(PmsEventMonitoringConstants.PROJECT_ID, entry.getKey().getProjectId())
               .build();
 
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
-        metricService.recordMetric(ACTIVE_EXECUTION_COUNT_METRIC_NAME, entry.getValue());
+        metricService.recordMetric(PLAN_EXECUTION_ACTIVE_COUNT, entry.getValue());
       }
     }
   }
