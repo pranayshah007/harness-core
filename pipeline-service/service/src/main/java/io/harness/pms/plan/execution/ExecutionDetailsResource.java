@@ -49,7 +49,6 @@ import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.annotations.ApiOperation;
@@ -158,13 +157,9 @@ public class ExecutionDetailsResource {
       @QueryParam("status") List<ExecutionStatus> statusesList, @QueryParam("myDeployments") boolean myDeployments,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info("Get List of executions");
-    ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
-    if (EmptyPredicate.isEmpty(gitEntityBasicInfo.getBranch())) {
-      gitSyncBranchContext = null;
-    }
     Criteria criteria = pmsExecutionService.formCriteria(accountId, orgId, projectId, pipelineIdentifier,
         filterIdentifier, (PipelineExecutionFilterPropertiesDTO) filterProperties, moduleName, searchTerm, statusesList,
-        myDeployments, false, gitSyncBranchContext, true);
+        myDeployments, false, true);
     Pageable pageRequest;
     if (page < 0 || !(size > 0 && size <= 1000)) {
       throw new InvalidRequestException(

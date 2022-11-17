@@ -28,7 +28,10 @@ import io.harness.execution.StagesExecutionMetadata;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.interrupts.Interrupt;
 import io.harness.ng.core.common.beans.NGTag;
@@ -63,7 +66,6 @@ import io.harness.service.GraphGenerationService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.protobuf.ByteString;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -96,6 +98,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject private ValidateAndMergeHelper validateAndMergeHelper;
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
+  @Inject private GitSyncSdkService gitSyncSdkService;
 
   private static final int MAX_LIST_SIZE = 1000;
 
@@ -109,7 +112,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   public Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
       String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
       String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
-      ByteString gitSyncBranchContext, boolean isLatest) {
+      boolean isLatest) {
     Criteria criteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(accountId)) {
       criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
@@ -171,22 +174,25 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
 
     Criteria gitCriteria = new Criteria();
-    if (gitSyncBranchContext != null) {
-      Criteria gitCriteriaDeprecated =
-          Criteria.where(PlanExecutionSummaryKeys.gitSyncBranchContext).is(gitSyncBranchContext);
-
-      EntityGitDetails entityGitDetails = pmsGitSyncHelper.getEntityGitDetailsFromBytes(gitSyncBranchContext);
-      Criteria gitCriteriaNew =
-          Criteria.where(PlanExecutionSummaryKeys.entityGitDetailsBranch).is(entityGitDetails.getBranch());
-      if (entityGitDetails.getRepoIdentifier() != null
-          && !entityGitDetails.getRepoIdentifier().equals(GitAwareEntityHelper.DEFAULT)) {
-        gitCriteriaNew.and(PlanExecutionSummaryKeys.entityGitDetailsRepoIdentifier)
-            .is(entityGitDetails.getRepoIdentifier());
-      } else if (entityGitDetails.getRepoName() != null
-          && !entityGitDetails.getRepoName().equals(GitAwareEntityHelper.DEFAULT)) {
-        gitCriteriaNew.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is(entityGitDetails.getRepoName());
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null) {
+      //      Adding the branch filter if the branch is not null or default
+      if (gitEntityInfo.getBranch() != null && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getBranch())) {
+        gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsBranch).is(gitEntityInfo.getBranch());
       }
-      gitCriteria.orOperator(gitCriteriaDeprecated, gitCriteriaNew);
+      if (gitSyncSdkService.isGitSyncEnabled(accountId, orgId, projectId)) {
+        //     Adding the repoIdentifier for the old git sync flow
+        if (gitEntityInfo.getYamlGitConfigId() != null
+            && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getYamlGitConfigId())) {
+          gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoIdentifier)
+              .is(gitEntityInfo.getYamlGitConfigId());
+        }
+      } else {
+        //     Adding the repoName for the new git experience flow
+        if (gitEntityInfo.getRepoName() != null && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getRepoName())) {
+          gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is(gitEntityInfo.getRepoName());
+        }
+      }
     }
 
     List<Criteria> criteriaList = new LinkedList<>();

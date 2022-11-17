@@ -178,7 +178,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
     doReturn(criteria)
         .when(pmsExecutionService)
         .formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, null,
-            false, false, gitSyncBranchContext, true);
+            false, false, true);
 
     Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PlanExecutionSummaryKeys.startTs));
     Page<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntities =

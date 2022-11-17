@@ -20,6 +20,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.ModuleType;
 import io.harness.PipelineServiceTestBase;
@@ -29,6 +30,7 @@ import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -65,6 +67,7 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   @Mock private ValidateAndMergeHelper validateAndMergeHelper;
   @Mock private PlanExecutionMetadataService planExecutionMetadataService;
+  @Mock private GitSyncSdkService gitSyncSdkService;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -126,8 +129,9 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = SAMARTH)
   @Category(UnitTests.class)
   public void testFormCriteria() {
+    when(gitSyncSdkService.isGitSyncEnabled(any(), any(), any())).thenReturn(true);
     Criteria form = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
-        null, null, null, null, null, false, !PIPELINE_DELETED, null, true);
+        null, null, null, null, null, false, !PIPELINE_DELETED, true);
 
     assertThat(form.getCriteriaObject().get("accountId").toString().contentEquals(ACCOUNT_ID)).isEqualTo(true);
     assertThat(form.getCriteriaObject().get("orgIdentifier").toString().contentEquals(ORG_IDENTIFIER)).isEqualTo(true);
@@ -167,8 +171,9 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testFormCriteriaWithModuleName() {
+    when(gitSyncSdkService.isGitSyncEnabled(any(), any(), any())).thenReturn(true);
     Criteria form =
-        pmsExecutionService.formCriteria(null, null, null, null, null, null, "cd", null, null, false, true, null, true);
+        pmsExecutionService.formCriteria(null, null, null, null, null, null, "cd", null, null, false, true, true);
     Criteria criteria = new Criteria();
 
     Criteria searchCriteria = new Criteria();
