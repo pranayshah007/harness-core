@@ -33,7 +33,7 @@ import io.harness.persistence.UuidAware;
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.EntityType;
 import software.wings.beans.GitConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.jersey.JsonViews;
 import software.wings.settings.SettingVariableTypes;

@@ -164,7 +164,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
 
     winRMCommandUnitExecutorService.execute(EXEC_COMMAND_UNIT,
         commandExecutionContextBuider.but()
-            .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+            .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
             .winRmConnectionAttributes(winRmConnectionAttributes)
             .build());
 
@@ -208,7 +208,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
 
     winRMCommandUnitExecutorService.execute(EXEC_COMMAND_UNIT,
         commandExecutionContextBuider.but()
-            .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+            .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
             .winRmConnectionAttributes(winRmConnectionAttributes)
             .build());
 
@@ -249,7 +249,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
                                                           .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .winRmConnectionAttributes(winRmConnectionAttributes)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
@@ -322,7 +322,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
                                                           .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .winRmConnectionAttributes(winRmConnectionAttributes)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
@@ -372,7 +372,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
                                                           .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .winRmConnectionAttributes(winRmConnectionAttributes)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
@@ -421,7 +421,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
                                                           .timeout(10)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .winRmConnectionAttributes(winRmConnectionAttributes)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
@@ -487,7 +487,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
                                                           .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .winRmConnectionAttributes(winRmConnectionAttributes)
                                                           .build();
 
@@ -556,7 +556,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
                                                           .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .winRmConnectionAttributes(winRmConnectionAttributes)
                                                           .build();
 

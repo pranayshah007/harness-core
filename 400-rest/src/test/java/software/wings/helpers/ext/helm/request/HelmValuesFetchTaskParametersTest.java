@@ -10,8 +10,6 @@ package software.wings.helpers.ext.helm.request;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ANSHUL;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
@@ -22,6 +20,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.rule.Owner;
 
 import software.wings.beans.KubernetesClusterConfig;
+import software.wings.beans.SettingAttribute;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
 import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
@@ -68,12 +67,13 @@ public class HelmValuesFetchTaskParametersTest extends CategoryTest {
 
     ContainerServiceParams containerServiceParams =
         ContainerServiceParams.builder()
-            .settingAttribute(aSettingAttribute()
+            .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
                                   .withValue(KubernetesClusterConfig.builder()
                                                  .useKubernetesDelegate(true)
                                                  .delegateName("delegateName")
                                                  .build())
-                                  .build())
+                                  .build()
+                                  .toDTO())
             .build();
 
     taskParameters.setBindTaskFeatureSet(true);

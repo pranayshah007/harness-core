@@ -112,8 +112,9 @@ public class AwsEcsHelperServiceDelegateImplTest extends WingsBaseTest {
         .when(ecsContainerService)
         .getService(anyString(), any(), anyList(), anyString(), eq("test-service"));
     doNothing().when(mockTracker).trackECSCall(anyString());
-    boolean serviceExists = awsEcsHelperServiceDelegate.serviceExists(
-        SettingAttribute.Builder.aSettingAttribute().build(), emptyList(), "us-east-1", "cluster", "test-service");
+    boolean serviceExists =
+        awsEcsHelperServiceDelegate.serviceExists(SettingAttribute.Builder.aSettingAttribute().build().toDTO(),
+            emptyList(), "us-east-1", "cluster", "test-service");
     assertThat(serviceExists).isTrue();
   }
 }
