@@ -10,9 +10,13 @@ package io.harness.delegate.task.spot;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.RENAME_NEW_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.RENAME_OLD_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.spot.SpotConfig;
@@ -32,6 +36,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
 import io.harness.spotinst.model.ElastiGroup;
+import io.harness.spotinst.model.ElastiGroupCapacity;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -96,8 +101,7 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
 
     restoreOld(parameters, spotInstAccountId, spotInstToken, timeoutInMinutes, commandUnitsProgress);
     //    restoreListeners();
-    //    downscaleNew();
-    //    renameNew();
+    rollbackNew(parameters, spotInstAccountId, spotInstToken, timeoutInMinutes, commandUnitsProgress);
 
     return ElastigroupRollbackTaskResponse.builder()
         .status(CommandExecutionStatus.SUCCESS)
@@ -115,6 +119,25 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
 
     taskHelper.renameElastigroup(parameters.getOldElastigroup(), parameters.getElastigroupNamePrefix(),
         spotInstAccountId, spotInstToken, getLogStreamingTaskClient(), RENAME_OLD_COMMAND_UNIT, commandUnitsProgress);
+  }
+
+  private void rollbackNew(ElastigroupRollbackTaskParameters parameters, String spotInstAccountId, String spotInstToken,
+      int timeoutInMinutes, CommandUnitsProgress commandUnitsProgress) throws Exception {
+    ElastiGroup elastigroup = parameters.getNewElastigroup();
+
+    if (elastigroup != null) {
+      elastigroup = elastigroup.clone();
+      elastigroup.setCapacity(ElastiGroupCapacity.builder().minimum(0).maximum(0).target(0).build());
+    }
+
+    taskHelper.scaleElastigroup(elastigroup, spotInstToken, spotInstAccountId, timeoutInMinutes,
+        getLogStreamingTaskClient(), DOWN_SCALE_COMMAND_UNIT, DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT,
+        commandUnitsProgress);
+
+    String stageElastigroupName =
+        format("%s__%s", parameters.getElastigroupNamePrefix(), STAGE_ELASTI_GROUP_NAME_SUFFIX);
+    taskHelper.renameElastigroup(elastigroup, stageElastigroupName, spotInstAccountId, spotInstToken,
+        getLogStreamingTaskClient(), RENAME_NEW_COMMAND_UNIT, commandUnitsProgress);
   }
 
   private ElastigroupRollbackTaskResponse executeBasicAndCanaryRollback(
