@@ -14,6 +14,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -46,15 +47,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = false)
 public class CdTelemetrySentStatus implements UuidAware, PersistentEntity {
   @Id @org.mongodb.morphia.annotations.Id private String uuid;
-  private String accountId;
+  @FdUniqueIndex private String accountId;
   private long lastSent; // timestamp
-  public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("no_dup_cd")
-                 .unique(true)
-                 .field(CdTelemetrySentStatusKeys.accountId)
-                 .build())
-        .build();
-  }
 }

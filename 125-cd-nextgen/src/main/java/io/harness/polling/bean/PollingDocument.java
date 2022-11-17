@@ -12,6 +12,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
@@ -51,13 +52,12 @@ public class PollingDocument implements PersistentEntity, AccountAccess, UuidAwa
                  .field(PollingDocumentKeys.pollingInfo)
                  .field(PollingDocumentKeys.signatures)
                  .build())
-        .add(CompoundMongoIndex.builder().name("accountId").field(PollingDocumentKeys.accountId).build())
         .build();
   }
 
   @Id @org.mongodb.morphia.annotations.Id private String uuid;
 
-  @NotNull private String accountId;
+  @FdIndex @NotNull private String accountId;
   private String orgIdentifier;
   private String projectIdentifier;
   @NotNull private List<String> signatures;

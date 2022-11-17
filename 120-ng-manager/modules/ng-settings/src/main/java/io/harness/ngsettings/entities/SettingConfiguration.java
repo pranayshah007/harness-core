@@ -14,6 +14,7 @@ import io.harness.beans.ScopeLevel;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ngsettings.SettingCategory;
@@ -47,24 +48,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("NGSettingConfiguration")
 public class SettingConfiguration implements PersistentEntity {
   @Id @org.mongodb.morphia.annotations.Id String id;
-  @NotEmpty @EntityIdentifier String identifier;
+  @FdUniqueIndex @NotEmpty @EntityIdentifier String identifier;
   @NotEmpty @NGEntityName String name;
-  @NotNull SettingCategory category;
+  @FdUniqueIndex @NotNull SettingCategory category;
   String groupIdentifier;
   String defaultValue;
   @NotNull SettingValueType valueType;
   Set<String> allowedValues;
   Boolean allowOverrides;
   @NotNull Set<ScopeLevel> allowedScopes;
-
-  public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("identifier_unique_idx")
-                 .field(SettingConfigurationKeys.identifier)
-                 .unique(true)
-                 .build())
-        .add(CompoundMongoIndex.builder().name("category_idx").field(SettingConfigurationKeys.category).build())
-        .build();
-  }
 }

@@ -40,7 +40,7 @@ public interface MongoIndex {
     });
 
     if (isUnique() && !getName().startsWith("unique")) {
-      log.error("Index {} is unique indexes and its name is not prefixed with unique", getName());
+      log.warn("Index {} is unique indexes and its name is not prefixed with unique", getName());
     }
   }
 

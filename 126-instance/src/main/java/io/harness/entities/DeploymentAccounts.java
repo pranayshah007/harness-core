@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -38,18 +39,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 @OwnedBy(HarnessTeam.DX)
 public class DeploymentAccounts implements PersistentEntity, PersistentRegularIterable {
-  public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("unique_account_id")
-                 .unique(true)
-                 .field(DeploymentAccountsKeys.accountIdentifier)
-                 .build())
-        .build();
-  }
-
   @Id @org.mongodb.morphia.annotations.Id private String id;
-  private String accountIdentifier;
+  @FdUniqueIndex private String accountIdentifier;
   @FdIndex private Long instanceStatsMetricsPublisherIteration;
 
   @Override

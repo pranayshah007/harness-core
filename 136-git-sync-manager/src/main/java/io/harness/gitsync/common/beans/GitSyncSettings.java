@@ -47,7 +47,7 @@ public class GitSyncSettings {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("account_org_project_index")
+                 .name("unique_account_org_project_index")
                  .field(GitSyncSettingsKeys.accountIdentifier)
                  .field(GitSyncSettingsKeys.orgIdentifier)
                  .field(GitSyncSettingsKeys.projectIdentifier)

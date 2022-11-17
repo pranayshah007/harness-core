@@ -18,6 +18,7 @@ import io.harness.beans.Scope;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -61,16 +62,11 @@ public class UserMembershipOld implements PersistentRegularIterable, PersistentE
                  .field(UserMembershipKeys.scopes + "."
                      + "projectIdentifier")
                  .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("uniqueUserMembershipUserId")
-                 .field(UserMembershipKeys.userId)
-                 .unique(true)
-                 .build())
         .build();
   }
 
   @Id @org.mongodb.morphia.annotations.Id String uuid;
-  @NotEmpty String userId;
+  @FdUniqueIndex @NotEmpty String userId;
   @NotEmpty String emailId;
   String name;
   @Getter(NONE) @Valid @Builder.Default List<Scope> scopes = new ArrayList<>();

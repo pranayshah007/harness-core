@@ -20,6 +20,7 @@ import io.harness.mongo.CollationLocale;
 import io.harness.mongo.CollationStrength;
 import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.NGAccountAccess;
@@ -86,7 +87,7 @@ public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGO
   @NotEmpty String parentIdentifier;
   @NotEmpty String fileUuid;
   @NotEmpty String name;
-  @NotEmpty String path;
+  @FdIndex @NotEmpty String path;
   ChecksumType checksumType;
   String checksum;
   String mimeType;
@@ -107,14 +108,13 @@ public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGO
                      Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.PRIMARY).build())
                  .build(),
             CompoundMongoIndex.builder()
-                .name("list_files_idx")
+                .name("unique_list_files_idx")
                 .field(NGFiles.accountIdentifier)
                 .field(NGFiles.orgIdentifier)
                 .field(NGFiles.projectIdentifier)
                 .field(NGFiles.identifier)
                 .unique(true)
-                .build(),
-            CompoundMongoIndex.builder().name("path_idx").field(NGFiles.path).unique(false).build())
+                .build())
         .build();
   }
 

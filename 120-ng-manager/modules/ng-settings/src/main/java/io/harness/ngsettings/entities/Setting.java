@@ -61,7 +61,7 @@ public class Setting implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountIdentifier_orgIdentifier_projectIdentifier_identifier_unique_idx")
+                 .name("unique_accountIdentifier_orgIdentifier_projectIdentifier_identifier_idx")
                  .field(SettingKeys.accountIdentifier)
                  .field(SettingKeys.orgIdentifier)
                  .field(SettingKeys.projectIdentifier)

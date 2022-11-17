@@ -61,7 +61,7 @@ public abstract class Variable implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_identifier_unique_idx")
+                 .name("unique_accountId_orgId_projectId_identifier_idx")
                  .field(VariableKeys.accountIdentifier)
                  .field(VariableKeys.orgIdentifier)
                  .field(VariableKeys.projectIdentifier)

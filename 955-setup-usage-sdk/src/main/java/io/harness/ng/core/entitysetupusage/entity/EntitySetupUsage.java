@@ -70,7 +70,7 @@ public class EntitySetupUsage implements PersistentEntity, NGAccountAccess {
                  .field(EntitySetupUsageKeys.referredEntityFQN)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("EntitySetupUsage_unique_index")
+                 .name("unique_entitySetupUsage_index")
                  .field(EntitySetupUsageKeys.referredByEntityType)
                  .field(EntitySetupUsageKeys.referredByEntityFQN)
                  .field(EntitySetupUsageKeys.referredByEntityRepoIdentifier)

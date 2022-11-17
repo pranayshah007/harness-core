@@ -53,7 +53,7 @@ public class InfrastructureEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_organizationIdentifier_projectIdentifier_envIdentifier_infraIdentifier")
+                 .name("unique_accountId_organizationIdentifier_projectIdentifier_envIdentifier_infraIdentifier")
                  .unique(true)
                  .field(InfrastructureEntityKeys.accountId)
                  .field(InfrastructureEntityKeys.orgIdentifier)

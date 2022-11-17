@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -43,18 +44,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("userMetadata")
 @OwnedBy(PL)
 public class UserMetadata implements PersistentEntity {
-  public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("uniqueUserMetadataEmailId")
-                 .field(UserMetadataKeys.email)
-                 .unique(true)
-                 .build())
-        .build();
-  }
-
   @Id @org.mongodb.morphia.annotations.Id String userId;
-  @NotEmpty String email;
+  @FdUniqueIndex @NotEmpty String email;
   String name;
   @Getter(value = AccessLevel.PRIVATE) @NotEmpty Boolean locked;
   @Getter(value = AccessLevel.PRIVATE) @NotEmpty Boolean disabled;

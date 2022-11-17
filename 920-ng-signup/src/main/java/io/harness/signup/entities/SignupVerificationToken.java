@@ -9,6 +9,7 @@ package io.harness.signup.entities;
 
 import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 
@@ -35,7 +36,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("signupVerificationTokens")
 public class SignupVerificationToken {
   @Id @org.mongodb.morphia.annotations.Id String id;
-  @NotEmpty String token;
+  @FdIndex @NotEmpty String token;
   @NotEmpty String email;
   String accountIdentifier;
   String userId;
@@ -43,13 +44,4 @@ public class SignupVerificationToken {
   Long validUntil;
   @CreatedDate long createdAt;
   @LastModifiedDate long lastUpdatedAt;
-
-  public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("token_signupVerificationToken_query_index")
-                 .fields(Arrays.asList(signupVerificationTokensKeys.token))
-                 .build())
-        .build();
-  }
 }

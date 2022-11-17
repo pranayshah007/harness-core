@@ -12,6 +12,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
@@ -51,17 +52,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 public abstract class ArtifactSource
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
-  public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder().name("uniqueHash").unique(true).field(ArtifactSourceKeys.uniqueHash).build())
-        .build();
-  }
   @Id @org.mongodb.morphia.annotations.Id private String uuid;
   @NotNull private String accountId;
   /** It gives the artifact source type.*/
   @NotNull private ArtifactSourceType sourceType;
   /** This uniquely identifies one artifact stream based on its parameters.*/
-  @NotNull private String uniqueHash;
+  @FdUniqueIndex @NotNull private String uniqueHash;
 
   @SchemaIgnore @FdIndex @CreatedDate private long createdAt;
   @SchemaIgnore @NotNull @LastModifiedDate private long lastUpdatedAt;

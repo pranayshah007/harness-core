@@ -46,7 +46,7 @@ public class AccessControlMigration {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountIdentifierOrgIdentifierProjectIdentifierIdx")
+                 .name("unique_AccountIdentifier_OrgIdentifier_ProjectIdentifierIdx")
                  .field(AccessControlMigrationKeys.accountIdentifier)
                  .field(AccessControlMigrationKeys.orgIdentifier)
                  .field(AccessControlMigrationKeys.projectIdentifier)

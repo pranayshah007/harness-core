@@ -36,7 +36,7 @@ public class InfrastructureMapping {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_infrastructureKey_unique_idx")
+                 .name("unique_accountId_orgId_projectId_infrastructureKey_idx")
                  .unique(true)
                  .field(InfrastructureMappingNGKeys.accountIdentifier)
                  .field(InfrastructureMappingNGKeys.orgIdentifier)

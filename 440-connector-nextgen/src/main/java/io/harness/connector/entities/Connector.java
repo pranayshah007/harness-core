@@ -152,7 +152,7 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
                  .descSortField(ConnectorKeys.createdAt)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_identifier_repo_branch_unique_index")
+                 .name("unique_accountId_orgId_projectId_identifier_repo_branch_index")
                  .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.orgIdentifier,
                      ConnectorKeys.projectIdentifier, ConnectorKeys.identifier, ConnectorKeys.yamlGitConfigRef,
                      ConnectorKeys.branch))
@@ -174,10 +174,6 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
                  .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.projectIdentifier,
                      ConnectorKeys.orgIdentifier, ConnectorKeys.isFromDefaultBranch))
                  .descSortField(ConnectorKeys.createdAt)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("nextTokenRenewIteration")
-                 .field(VaultConnectorKeys.nextTokenRenewIteration)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("type_nextTokenRenewIteration")

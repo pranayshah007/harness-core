@@ -95,13 +95,13 @@ public class YamlGitConfig implements PersistentEntity, UuidAware, CreatedAtAwar
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_repo_unique_Index")
+                 .name("unique_accountId_orgId_projectId_repo_Index")
                  .fields(Arrays.asList(YamlGitConfigKeys.accountId, YamlGitConfigKeys.orgIdentifier,
                      YamlGitConfigKeys.projectIdentifier, YamlGitConfigKeys.repo))
                  .unique(true)
                  .build(),
             CompoundMongoIndex.builder()
-                .name("accountId_orgId_projectId_identifier_unique_Index")
+                .name("unique_accountId_orgId_projectId_identifier_Index")
                 .fields(Arrays.asList(YamlGitConfigKeys.accountId, YamlGitConfigKeys.orgIdentifier,
                     YamlGitConfigKeys.projectIdentifier, YamlGitConfigKeys.identifier))
                 .unique(true)

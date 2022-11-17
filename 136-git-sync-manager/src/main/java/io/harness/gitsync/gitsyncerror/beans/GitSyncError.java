@@ -134,7 +134,7 @@ public class GitSyncError
                  .descSortField(GitSyncErrorKeys.createdAt)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_commitId_repo_branch_errorType_filePath_unique_Index")
+                 .name("unique_accountId_commitId_repo_branch_errorType_filePath_Index")
                  .fields(Arrays.asList(GitSyncErrorKeys.accountIdentifier, GitSyncErrorKeys.gitCommitId,
                      GitSyncErrorKeys.repoUrl, GitSyncErrorKeys.branchName, GitSyncErrorKeys.errorType,
                      GitSyncErrorKeys.completeFilePath))
