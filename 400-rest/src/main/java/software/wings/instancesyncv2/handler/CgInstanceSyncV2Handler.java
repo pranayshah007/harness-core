@@ -15,7 +15,6 @@ import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.infrastructure.instance.Instance;
-import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 
@@ -38,16 +37,20 @@ public interface CgInstanceSyncV2Handler {
 
   boolean isDeploymentInfoTypeSupported(Class<? extends DeploymentInfo> deploymentInfoClazz);
 
-  List<Instance> getDeployedInstances(DeploymentSummary deploymentSummary);
+  Map<CgReleaseIdentifiers, List<Instance>> getDeployedInstances(
+      Set<CgReleaseIdentifiers> cgReleaseIdentifiers, DeploymentSummary deploymentSummary);
 
   List<Instance> difference(List<Instance> list1, List<Instance> list2);
 
-  List<Instance> getDeployedInstances(
-      List<InstanceInfo> instanceInfos, List<Instance> instancesInDb, DeploymentSummary deploymentSummary);
+  Map<CgReleaseIdentifiers, List<Instance>> getDeployedInstances(
+      Map<CgReleaseIdentifiers, DeploymentSummary> deploymentSummaries,
+      Map<CgReleaseIdentifiers, InstanceSyncData> instanceSyncDataMap,
+      Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap);
 
   List<Instance> instancesToUpdate(List<Instance> instances, List<Instance> instancesInDb);
 
-  List<Instance> fetchInstancesFromDb(CgReleaseIdentifiers cgReleaseIdentifiers, String appId, String InfraMappingId);
+  Map<CgReleaseIdentifiers, List<Instance>> fetchInstancesFromDb(
+      Set<CgReleaseIdentifiers> cgReleaseIdentifiers, String appId, String InfraMappingId);
 
   Map<CgReleaseIdentifiers, InstanceSyncData> getCgReleaseIdentifiersList(List<InstanceSyncData> instanceSyncData);
 }

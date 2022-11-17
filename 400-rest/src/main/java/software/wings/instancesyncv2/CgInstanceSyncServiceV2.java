@@ -29,7 +29,6 @@ import software.wings.api.DeploymentSummary;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.infrastructure.instance.Instance;
-import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2Handler;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
@@ -62,14 +61,14 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @Singleton
 public class CgInstanceSyncServiceV2 {
-  private final CgInstanceSyncV2HandlerFactory handlerFactory;
-  private final DelegateServiceGrpcClient delegateServiceClient;
-  private final CgInstanceSyncTaskDetailsService taskDetailsService;
-  private final InfrastructureMappingService infrastructureMappingService;
-  private final SettingsServiceImpl cloudProviderService;
-  private final KryoSerializer kryoSerializer;
-  private final InstanceService instanceService;
-  private final DeploymentService deploymentService;
+  private CgInstanceSyncV2HandlerFactory handlerFactory;
+  private DelegateServiceGrpcClient delegateServiceClient;
+  private CgInstanceSyncTaskDetailsService taskDetailsService;
+  private InfrastructureMappingService infrastructureMappingService;
+  private SettingsServiceImpl cloudProviderService;
+  private KryoSerializer kryoSerializer;
+  private InstanceService instanceService;
+  private DeploymentService deploymentService;
 
   public static final String AUTO_SCALE = "AUTO_SCALE";
   public static final int PERPETUAL_TASK_INTERVAL = 10;
@@ -118,12 +117,20 @@ public class CgInstanceSyncServiceV2 {
           }
 
           // handle current instances
-          List<Instance> deployedInstances = instanceSyncHandler.getDeployedInstances(deploymentSummary);
-          Instance newInstance = deployedInstances.get(0);
-          List<Instance> instancesInDb = instanceService.getInstancesForAppAndInframapping(
-              newInstance.getAppId(), newInstance.getInfraMappingId());
-          if (CollectionUtils.isNotEmpty(deployedInstances)) {
-            handleInstances(deployedInstances, instancesInDb, instanceSyncHandler);
+
+          // filter db instances
+          Set<CgReleaseIdentifiers> cgReleaseIdentifiers =
+              instanceSyncHandler.buildReleaseIdentifiers(deploymentSummary);
+
+          Map<CgReleaseIdentifiers, List<Instance>> deployedInstancesMap =
+              instanceSyncHandler.getDeployedInstances(cgReleaseIdentifiers, deploymentSummary);
+
+          Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap = instanceSyncHandler.fetchInstancesFromDb(
+              cgReleaseIdentifiers, deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
+
+          for (CgReleaseIdentifiers cgReleaseIdentifier : cgReleaseIdentifiers) {
+            handleInstances(deployedInstancesMap.get(cgReleaseIdentifier), instancesInDbMap.get(cgReleaseIdentifier),
+                instanceSyncHandler);
           }
         });
   }
@@ -236,7 +243,7 @@ public class CgInstanceSyncServiceV2 {
       return;
     }
 
-    Map<String, List<InstanceSyncData>> instancesPerTask = new HashMap<>();
+    Map<String, List<InstanceSyncData>> InstanceSyncDataListPerTask = new HashMap<>();
     for (InstanceSyncData instanceSyncData : result.getInstanceDataList()) {
       if (!instanceSyncData.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
         log.error("Instance Sync failed for perpetual task: [{}], for task details: [{}], with error: [{}]",
@@ -244,20 +251,20 @@ public class CgInstanceSyncServiceV2 {
         continue;
       }
 
-      if (!instancesPerTask.containsKey(instanceSyncData.getTaskDetailsId())) {
-        instancesPerTask.put(instanceSyncData.getTaskDetailsId(), new ArrayList<>());
+      if (!InstanceSyncDataListPerTask.containsKey(instanceSyncData.getTaskDetailsId())) {
+        InstanceSyncDataListPerTask.put(instanceSyncData.getTaskDetailsId(), new ArrayList<>());
       }
 
-      instancesPerTask.get(instanceSyncData.getTaskDetailsId()).add(instanceSyncData);
+      InstanceSyncDataListPerTask.get(instanceSyncData.getTaskDetailsId()).add(instanceSyncData);
     }
 
     Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
-    for (String taskDetailsId : instancesPerTask.keySet()) {
+    for (String taskDetailsId : InstanceSyncDataListPerTask.keySet()) {
       Map<CgReleaseIdentifiers, DeploymentSummary> deploymentSummaries = new HashMap<>();
       Map<CgReleaseIdentifiers, List<Instance>> deployedInstances = new HashMap<>();
       Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap = new HashMap<>();
 
-      List<InstanceSyncData> instanceSyncDataList = instancesPerTask.get(taskDetailsId);
+      List<InstanceSyncData> instanceSyncDataList = InstanceSyncDataListPerTask.get(taskDetailsId);
       InstanceSyncTaskDetails taskDetails = taskDetailsService.getForId(taskDetailsId);
       SettingAttribute cloudProvider =
           cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
@@ -269,29 +276,21 @@ public class CgInstanceSyncServiceV2 {
 
       Set<CgReleaseIdentifiers> cgReleaseIdentifiersResult =
           Sets.intersection(taskDetails.getReleaseIdentifiers(), cgReleaseIdentifiersInstanceSyncDataMap.keySet());
+
       for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersResult) {
         deploymentSummaries.put(
             cgReleaseIdentifiers, deploymentService.get(cgReleaseIdentifiers.getLastDeploymentSummaryId()));
       }
 
+      instancesInDbMap = instanceSyncHandler.fetchInstancesFromDb(
+          cgReleaseIdentifiersInstanceSyncDataMap.keySet(), taskDetails.getAppId(), taskDetails.getInfraMappingId());
+
+      deployedInstances = instanceSyncHandler.getDeployedInstances(
+          deploymentSummaries, cgReleaseIdentifiersInstanceSyncDataMap, instancesInDbMap);
+
       for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersInstanceSyncDataMap.keySet()) {
-        List<Instance> instancesInDb = instanceSyncHandler.fetchInstancesFromDb(
-            cgReleaseIdentifiers, taskDetails.getAppId(), taskDetails.getInfraMappingId());
-
-        instancesInDbMap.put(cgReleaseIdentifiers, instancesInDb);
-
-        List<InstanceInfo> instanceInfos =
-            cgReleaseIdentifiersInstanceSyncDataMap.get(cgReleaseIdentifiers)
-                .getInstanceDataList()
-                .parallelStream()
-                .map(instance -> (InstanceInfo) kryoSerializer.asObject(instance.toByteArray()))
-                .collect(Collectors.toList());
-
-        List<Instance> instances = instanceSyncHandler.getDeployedInstances(
-            instanceInfos, instancesInDb, deploymentSummaries.get(cgReleaseIdentifiers));
-
-        deployedInstances.put(cgReleaseIdentifiers, instances);
-
+        List<Instance> instances = deployedInstances.get(cgReleaseIdentifiers);
+        List<Instance> instancesInDb = instancesInDbMap.get(cgReleaseIdentifiers);
         handleInstances(instances, instancesInDb, instanceSyncHandler);
       }
       taskDetailsService.updateLastRun(taskDetailsId);

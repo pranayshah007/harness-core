@@ -13,18 +13,24 @@ import static io.harness.seeddata.SampleDataProviderConstants.HARNESS_SAMPLE_APP
 
 import static software.wings.beans.infrastructure.instance.InstanceType.KUBERNETES_CONTAINER_INSTANCE;
 
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
+import io.harness.k8s.model.K8sContainer;
+import io.harness.k8s.model.K8sPod;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -56,12 +62,16 @@ import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.ServiceResourceService;
+import software.wings.sm.states.k8s.K8sStateHelper;
 
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -81,6 +91,7 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
   @Mock private ServiceResourceService serviceResourceService;
   @Mock private EnvironmentService environmentService;
   @Mock private AppService appService;
+  @Mock private K8sStateHelper k8sStateHelper;
   @Mock private WingsMongoPersistence wingsPersistence;
   @Mock private ContainerSync containerSync;
 
@@ -108,24 +119,22 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void mergeReleaseIdentifiers() {
-    Set<CgReleaseIdentifiers> existingIdentifiers =
-        Collections.singleton(CgK8sReleaseIdentifier.builder()
-                                  .releaseName("releaseName")
-                                  .clusterName("clusterName")
-                                  .namespaces(new HashSet<>(Arrays.asList("namespace1")))
-                                  .isHelmDeployment(false)
-                                  .build());
-    Set<CgReleaseIdentifiers> newIdentifiers =
-        Collections.singleton(CgK8sReleaseIdentifier.builder()
-                                  .releaseName("releaseName")
-                                  .clusterName("clusterName")
-                                  .namespaces(new HashSet<>(Arrays.asList("namespace")))
-                                  .isHelmDeployment(false)
-                                  .build());
+    Set<CgReleaseIdentifiers> existingIdentifiers = Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                                              .releaseName("releaseName")
+                                                                              .clusterName("clusterName")
+                                                                              .namespace("namespace1")
+                                                                              .isHelmDeployment(false)
+                                                                              .build());
+    Set<CgReleaseIdentifiers> newIdentifiers = Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                                         .releaseName("releaseName")
+                                                                         .clusterName("clusterName")
+                                                                         .namespace("namespace")
+                                                                         .isHelmDeployment(false)
+                                                                         .build());
     Set<CgReleaseIdentifiers> result =
         k8sInstanceSyncV2HandlerCg.mergeReleaseIdentifiers(existingIdentifiers, newIdentifiers);
     assertThat(result).isNotNull();
-    assertThat(result.size()).isEqualTo(1);
+    assertThat(result.size()).isEqualTo(2);
   }
 
   @Test
@@ -157,12 +166,14 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
     DeploymentInfo deploymentInfo = K8sDeploymentInfo.builder()
                                         .releaseName("releaseName")
                                         .namespace("namespace")
+                                        .namespaces(Set.of("namespace1", "namespace2"))
                                         .clusterName("clusterName")
                                         .build();
     DeploymentSummary deploymentSummary = DeploymentSummary.builder().deploymentInfo(deploymentInfo).build();
     Set<CgReleaseIdentifiers> releaseIdentifiers =
         k8sInstanceSyncV2HandlerCg.buildReleaseIdentifiers(deploymentSummary);
     assertThat(releaseIdentifiers).isNotNull();
+    assertThat(releaseIdentifiers.size()).isEqualTo(3);
     assertThat(releaseIdentifiers.stream().findAny().get().getClass()).isEqualTo(CgK8sReleaseIdentifier.class);
 
     deploymentInfo = ContainerDeploymentInfoWithLabels.builder()
@@ -172,7 +183,8 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
                          .containerInfoList(
                              new ArrayList<>(Arrays.asList(ContainerInfo.builder().containerId("containerId").build())))
                          .build();
-    Set<CgReleaseIdentifiers> newIdentifiers = k8sInstanceSyncV2HandlerCg.buildReleaseIdentifiers(deploymentSummary);
+    DeploymentSummary deploymentSummary1 = DeploymentSummary.builder().deploymentInfo(deploymentInfo).build();
+    Set<CgReleaseIdentifiers> newIdentifiers = k8sInstanceSyncV2HandlerCg.buildReleaseIdentifiers(deploymentSummary1);
     assertThat(newIdentifiers).isNotNull();
     CgK8sReleaseIdentifier identifier = (CgK8sReleaseIdentifier) newIdentifiers.stream().findFirst().get();
     assertThat(identifier.getReleaseName()).isEqualTo("releaseName");
@@ -194,7 +206,7 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
             .releaseIdentifiers(Collections.singleton(CgK8sReleaseIdentifier.builder()
                                                           .releaseName("releaseName")
                                                           .clusterName("clusterName")
-                                                          .namespaces(new HashSet<>(Arrays.asList("namespace1")))
+                                                          .namespace("namespace1")
                                                           .isHelmDeployment(false)
                                                           .build()))
             .build();
@@ -221,7 +233,7 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void testGetDeployedInstances() {
+  public void testGetDeployedInstances() throws InterruptedException {
     DeploymentSummary deploymentSummary =
         DeploymentSummary.builder()
             .appId("appId")
@@ -281,11 +293,37 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
         .when(serviceResourceService)
         .getWithDetails(anyString(), anyString());
 
-    List<Instance> instances = k8sInstanceSyncV2HandlerCg.getDeployedInstances(deploymentSummary);
-    assertThat(instances).isNotNull();
+    doReturn(Collections.singletonList(
+                 K8sPod.builder()
+                     .name("podName")
+                     .namespace("namespace")
+                     .releaseName("releaseName")
+                     .containerList(Collections.singletonList(
+                         K8sContainer.builder().containerId("containerId").image("image").name("nginx").build()))
+                     .build()))
+        .when(k8sStateHelper)
+        .fetchPodListForCluster(any(), any(), anyString(), anyString());
+
+    CgK8sReleaseIdentifier cgK8sReleaseIdentifier = CgK8sReleaseIdentifier.builder()
+                                                        .releaseName("releaseName")
+                                                        .clusterName("clusterName")
+                                                        .namespace("namespace1")
+                                                        .isHelmDeployment(false)
+                                                        .build();
+
+    Set<CgReleaseIdentifiers> cgReleaseIdentifiers = new HashSet<>();
+    cgReleaseIdentifiers.add(cgK8sReleaseIdentifier);
+
+    Map<CgReleaseIdentifiers, List<Instance>> instancesMap =
+        k8sInstanceSyncV2HandlerCg.getDeployedInstances(cgReleaseIdentifiers, deploymentSummary);
+    assertThat(instancesMap).isNotNull();
+    assertThat(instancesMap.size()).isEqualTo(1);
+    List<Instance> instances = instancesMap.get(cgK8sReleaseIdentifier);
     assertThat(instances.size()).isEqualTo(1);
+    K8sPodInfo k8sPodInfo = (K8sPodInfo) instances.get(0).getInstanceInfo();
     assertThat(instances.get(0).getEnvId()).isEqualTo("envId");
     assertThat(instances.get(0).getServiceId()).isEqualTo("serviceId");
+    assertThat(k8sPodInfo.getClusterName()).isEqualTo("clusterName");
   }
 
   @Test
@@ -358,11 +396,63 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
         .when(serviceResourceService)
         .getWithDetails(anyString(), anyString());
 
-    List<Instance> instancesInDb = new ArrayList<>();
-    List<Instance> instances = k8sInstanceSyncV2HandlerCg.getDeployedInstances(instanceInfos, instancesInDb, instance);
-    assertThat(instances).isNotNull();
-    assertThat(instances.size()).isEqualTo(1);
+    CgK8sReleaseIdentifier cgK8sReleaseIdentifier = CgK8sReleaseIdentifier.builder()
+                                                        .releaseName("releaseName")
+                                                        .clusterName("clusterName")
+                                                        .namespace("namespace")
+                                                        .isHelmDeployment(false)
+                                                        .build();
+
+    doAnswer(invocation -> {
+      String podId = String.valueOf((byte[]) invocation.getArgument(0));
+      return createK8sPod(podId, "releaseName", "namespace");
+    })
+        .when(kryoSerializer)
+        .asObject((byte[]) any());
+    List<String> podIds = Arrays.asList("instance1", "instance2", "instance3");
+    InstanceSyncData instanceSyncData =
+        InstanceSyncData.newBuilder()
+            .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+            .addAllInstanceData(podIds.stream().map(pod -> ByteString.copyFrom(pod.getBytes())).collect(toList()))
+            .setTaskDetailsId("taskId")
+            .build();
+
+    DeploymentSummary deploymentSummary = DeploymentSummary.builder()
+                                              .appId("appId")
+                                              .infraMappingId("infraMappingId")
+                                              .accountId("accountId")
+                                              .deploymentInfo(K8sDeploymentInfo.builder()
+                                                                  .releaseName("releaseName")
+                                                                  .namespace("namespace")
+                                                                  .clusterName("clusterName")
+                                                                  .build())
+                                              .build();
+
+    Map<CgReleaseIdentifiers, DeploymentSummary> deploymentSummaryMap = new HashMap<>();
+
+    Map<CgReleaseIdentifiers, InstanceSyncData> instanceSyncDataMap = new HashMap<>();
+    Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap = new HashMap<>();
+    instanceSyncDataMap.put(cgK8sReleaseIdentifier, instanceSyncData);
+    instancesInDbMap.put(cgK8sReleaseIdentifier, Collections.singletonList(instance));
+    List<Instance> instancesInDb = Collections.singletonList(instance);
+    deploymentSummaryMap.put(cgK8sReleaseIdentifier, deploymentSummary);
+    instancesInDbMap.put(cgK8sReleaseIdentifier, instancesInDb);
+    Map<CgReleaseIdentifiers, List<Instance>> instancesMap =
+        k8sInstanceSyncV2HandlerCg.getDeployedInstances(deploymentSummaryMap, instanceSyncDataMap, instancesInDbMap);
+    assertThat(instancesMap).isNotNull();
+    assertThat(instancesMap.size()).isEqualTo(1);
+    List<Instance> instances = instancesMap.get(cgK8sReleaseIdentifier);
+    assertThat(instances.size()).isEqualTo(3);
     assertThat(instances.get(0).getEnvId()).isEqualTo("envId");
-    assertThat(instances.get(0).getServiceId()).isEqualTo("serviceId");
+  }
+  private K8sPodInfo createK8sPod(String id, String releaseName, String namespace) {
+    return K8sPodInfo.builder()
+        .ip(id)
+        .podName(id)
+        .releaseName(releaseName)
+        .namespace(namespace)
+        .containers(
+            Collections.singletonList(K8sContainerInfo.builder().name(id).image("test").containerId(id).build()))
+        .build();
   }
 }

@@ -43,5 +43,4 @@ public class K8sExecutionSummary extends StepExecutionSummary {
   private List<KubernetesResourceId> prunedResourcesIds;
   private boolean exportManifests;
   private String clusterName;
-  private List<K8sPodInfo> pods;
 }

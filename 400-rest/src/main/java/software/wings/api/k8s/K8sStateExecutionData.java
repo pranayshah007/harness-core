@@ -121,35 +121,6 @@ public class K8sStateExecutionData extends StateExecutionData implements Delegat
         .prunedResourcesIds(prunedResourcesIds)
         .exportManifests(exportManifests)
         .clusterName(clusterName)
-        .pods(getPods())
         .build();
-  }
-
-  @NotNull
-  private List<K8sPodInfo> getPods() {
-    if (CollectionUtils.isEmpty(podsList)) {
-      return Collections.emptyList();
-    }
-
-    return podsList.parallelStream()
-        .map(pod
-            -> K8sPodInfo.builder()
-                   .releaseName(pod.getReleaseName())
-                   .podName(pod.getName())
-                   .ip(pod.getPodIP())
-                   .namespace(pod.getNamespace())
-                   .helmChartInfo(helmChartInfo)
-                   .blueGreenColor(pod.getColor())
-                   .containers(pod.getContainerList()
-                                   .parallelStream()
-                                   .map(container
-                                       -> K8sContainerInfo.builder()
-                                              .containerId(container.getContainerId())
-                                              .name(container.getName())
-                                              .image(container.getImage())
-                                              .build())
-                                   .collect(Collectors.toList()))
-                   .build())
-        .collect(Collectors.toList());
   }
 }

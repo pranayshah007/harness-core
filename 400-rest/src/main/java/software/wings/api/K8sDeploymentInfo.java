@@ -38,7 +38,6 @@ public class K8sDeploymentInfo extends DeploymentInfo {
   private HelmChartInfo helmChartInfo;
   private String blueGreenStageColor;
   private String clusterName;
-  private List<K8sPodInfo> k8sPods = new ArrayList<>();
 
   @Builder
   public K8sDeploymentInfo(String namespace, String releaseName, Integer releaseNumber, Set<String> namespaces,
@@ -50,6 +49,5 @@ public class K8sDeploymentInfo extends DeploymentInfo {
     this.helmChartInfo = helmChartInfo;
     this.blueGreenStageColor = blueGreenStageColor;
     this.clusterName = clusterName;
-    this.k8sPods = k8sPods;
   }
 }

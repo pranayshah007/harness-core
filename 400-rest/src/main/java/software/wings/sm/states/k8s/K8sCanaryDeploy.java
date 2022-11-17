@@ -9,7 +9,6 @@ package software.wings.sm.states.k8s;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -265,9 +264,6 @@ public class K8sCanaryDeploy extends AbstractK8sState {
 
     stateExecutionData.setNewInstanceStatusSummaries(
         fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
-    if (featureFlagService.isEnabled(INSTANCE_SYNC_V2_CG, context.getAccountId())) {
-      stateExecutionData.setPodsList(newPods);
-    }
 
     if (shouldSaveManifest(context)) {
       if (null != k8sCanaryDeployResponse.getGitFetchFilesConfig()) {
