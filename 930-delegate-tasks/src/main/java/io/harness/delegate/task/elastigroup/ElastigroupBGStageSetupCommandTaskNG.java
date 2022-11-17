@@ -14,7 +14,6 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.elastigroup.ElastigroupBGStageSetupCommandTaskHandler;
-import io.harness.delegate.elastigroup.ElastigroupSetupCommandTaskHandler;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;

@@ -104,8 +104,7 @@ public class ElastigroupBGStageSetupStep
                 infrastructureOutcome.getEnvironment().getName()))
         : Misc.normalizeExpression(elastigroupNamePrefix);
 
-    ElastiGroup elastiGroupOriginalConfig = null;
-    generateOriginalConfigFromJson(elastigroupStepExecutorParams.getElastigroupParameters(),
+    ElastiGroup elastiGroupOriginalConfig = generateOriginalConfigFromJson(elastigroupStepExecutorParams.getElastigroupParameters(),
         elastigroupBGStageSetupStepParameters.getInstances(), ambiance);
 
     List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments = elastigroupStepCommonHelper.addLoadBalancerConfigAfterExpressionEvaluation(elastigroupBGStageSetupStepParameters.getLoadBalancers().stream().map(
@@ -137,10 +136,11 @@ public class ElastigroupBGStageSetupStep
             .elastigroupOriginalConfig(elastiGroupOriginalConfig)
                 .awsLoadBalancerConfigs(loadBalancerDetailsForBGDeployments)
                 .connectorInfoDTO(connectorInfoDTO)
+                .awsEncryptedDetails(elastigroupStepCommonHelper.getEncryptedDataDetail(connectorInfoDTO, ambiance))
             .build();
 
     return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSetupCommandRequest, ambiance,
-        executionPassThroughData, true, TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG);
+        executionPassThroughData, true, TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG);
   }
 
   private Integer fetchCurrentRunningCountForSetupRequest(ElastigroupInstances elastigroupInstances) {

@@ -73,6 +73,7 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
         iLogStreamingTaskClient, ElastigroupCommandUnitConstants.createSetup.toString(), true, commandUnitsProgress);
     try {
 
+      elastigroupCommandTaskNGHelper.decryptAwsCredentialDTO(elastigroupSetupCommandRequest.getConnectorInfoDTO().getConnectorConfig(), ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).getAwsEncryptedDetails());
       AwsInternalConfig awsInternalConfig = elastigroupCommandTaskNGHelper.getAwsInternalConfig((AwsConnectorDTO) elastigroupSetupCommandRequest.getConnectorInfoDTO().getConnectorConfig(), ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).getAwsRegion());
 
       List<LoadBalancerDetailsForBGDeployment> lbDetailList =
@@ -82,10 +83,11 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
       String stageElastiGroupName =
               format("%s__%s", elastigroupSetupCommandRequest.getElastigroupNamePrefix(), STAGE_ELASTI_GROUP_NAME_SUFFIX);
 
-      // Generate final json by substituting name, capacity and LBConfig
-      String finalJson = elastigroupCommandTaskNGHelper.generateFinalJson(elastigroupSetupCommandRequest, stageElastiGroupName);
       // Update lbDetails with fetched details, as they have more data field in
       elastigroupSetupCommandRequest.setAwsLoadBalancerConfigs(lbDetailList);
+
+      // Generate final json by substituting name, capacity and LBConfig
+      String finalJson = elastigroupCommandTaskNGHelper.generateFinalJson(elastigroupSetupCommandRequest, stageElastiGroupName);
 
       SpotInstConfig spotInstConfig = elastigroupSetupCommandRequest.getSpotInstConfig();
       elastigroupCommandTaskNGHelper.decryptSpotInstConfig(spotInstConfig);

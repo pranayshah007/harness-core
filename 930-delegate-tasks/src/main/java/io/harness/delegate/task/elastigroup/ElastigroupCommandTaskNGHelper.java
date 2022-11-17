@@ -44,8 +44,11 @@ import com.amazonaws.services.elasticloadbalancingv2.model.TargetGroup;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
 import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
@@ -54,6 +57,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
 import io.harness.delegate.task.aws.AwsElbListener;
+import io.harness.delegate.task.aws.AwsLoadBalancerDetails;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
@@ -124,10 +128,13 @@ public class ElastigroupCommandTaskNGHelper {
         getJsonConfigMapFromElastigroupJson(elastigroupSetupCommandRequest.getElastigroupJson());
     Map<String, Object> elastiGroupConfigMap = (Map<String, Object>) jsonConfigMap.get(GROUP_CONFIG_ELEMENT);
 
+    List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments = elastigroupSetupCommandRequest.getAwsLoadBalancerConfigs() != null ?
+            elastigroupSetupCommandRequest.getAwsLoadBalancerConfigs() : Arrays.asList();
+
     removeUnsupportedFieldsForCreatingNewGroup(elastiGroupConfigMap);
     updateName(elastiGroupConfigMap, newElastiGroupName);
     updateInitialCapacity(elastiGroupConfigMap);
-    updateWithLoadBalancerAndImageConfig(Arrays.asList(), elastiGroupConfigMap, elastigroupSetupCommandRequest.getImage(),
+    updateWithLoadBalancerAndImageConfig(loadBalancerDetailsForBGDeployments, elastiGroupConfigMap, elastigroupSetupCommandRequest.getImage(),
         elastigroupSetupCommandRequest.getStartupScript(), elastigroupSetupCommandRequest.isBlueGreen());
     Gson gson = new Gson();
     return gson.toJson(jsonConfigMap);
@@ -359,6 +366,12 @@ public class ElastigroupCommandTaskNGHelper {
         spotInstConfig.getSpotConnectorDTO(), spotInstConfig.getEncryptionDataDetails());
   }
 
+  public void decryptAwsCredentialDTO(ConnectorConfigDTO connectorConfigDTO, List<EncryptedDataDetail> encryptedDataDetails) {
+    secretDecryptionService.decrypt(((AwsConnectorDTO)connectorConfigDTO).getCredential().getConfig(), encryptedDataDetails);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+            connectorConfigDTO, encryptedDataDetails);
+  }
+
   private void decryptSpotInstConfig(
       SpotConnectorDTO spotConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
     if (spotConnectorDTO.getCredential().getSpotCredentialType() == SpotCredentialType.PERMANENT_TOKEN) {
@@ -371,16 +384,16 @@ public class ElastigroupCommandTaskNGHelper {
 
   //------------------
 
-  private software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener getListenerByArn(String listenerArn,List<software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener> listeners, String loadBalancer) {
+  private software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener getListenerByPort(String listenerPort,List<software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener> listeners, String loadBalancer) {
     if (EmptyPredicate.isNotEmpty(listeners)) {
       for (software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener listener : listeners) {
-        if (isListenerArnMatching(listenerArn, listener)) {
+        if (isListenerPortMatching(listenerPort, listener)) {
           return listener;
         }
       }
     }
     throw new InvalidRequestException(
-            "listener with arn:" + listenerArn + "is not present in load balancer: " + loadBalancer);
+            "listener with port:" + listenerPort + "is not present in load balancer: " + loadBalancer);
   }
 
   private String getFirstTargetGroupFromListener(
@@ -408,12 +421,12 @@ public class ElastigroupCommandTaskNGHelper {
   }
 
   private String getTargetGroupName(
-          AwsInternalConfig awsInternalConfig, String region, String targetGroupArn, String loadBalancerArn) {
+          AwsInternalConfig awsInternalConfig, String region, String targetGroupArn) {
     List<software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroup> targetGroups = newArrayList();
     String nextToken = null;
     do {
       DescribeTargetGroupsRequest describeTargetGroupsRequest =
-              DescribeTargetGroupsRequest.builder().targetGroupArns(targetGroupArn).loadBalancerArn(loadBalancerArn).marker(nextToken).pageSize(10).build();
+              DescribeTargetGroupsRequest.builder().targetGroupArns(targetGroupArn).marker(nextToken).pageSize(10).build();
       DescribeTargetGroupsResponse describeTargetGroupsResponse =
               elbV2Client.describeTargetGroups(awsInternalConfig, describeTargetGroupsRequest, region);
       targetGroups.addAll(describeTargetGroupsResponse.targetGroups());
@@ -465,6 +478,13 @@ public class ElastigroupCommandTaskNGHelper {
     return false;
   }
 
+  private boolean isListenerPortMatching(String listenerPort, software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener listener) {
+    if (EmptyPredicate.isNotEmpty(listener.port().toString()) && listenerPort.equalsIgnoreCase(listener.port().toString())) {
+      return true;
+    }
+    return false;
+  }
+
   //*------
 
   public List<LoadBalancerDetailsForBGDeployment> fetchAllLoadBalancerDetails(
@@ -505,13 +525,13 @@ public class ElastigroupCommandTaskNGHelper {
     List<software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener> listeners = getElbListenersForLoadBalancer(originalDetails.getLoadBalancerName(),
             awsConfig, region);
 
-    software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener prodListener = getListenerByArn(originalDetails.getProdListenerArn(), listeners, loadBalancerName);
-    String prodTargetGroupArn = getFirstTargetGroupFromListener(awsConfig, region, originalDetails.getProdListenerArn(), originalDetails.getProdRuleArn());
-    String prodTargetGroupName = getTargetGroupName(awsConfig, region, prodTargetGroupArn, prodListener.loadBalancerArn());
+    software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener prodListener = getListenerByPort(originalDetails.getProdListenerPort(), listeners, loadBalancerName);
+    String prodTargetGroupArn = getFirstTargetGroupFromListener(awsConfig, region, prodListener.listenerArn(), originalDetails.getProdRuleArn());
+    String prodTargetGroupName = getTargetGroupName(awsConfig, region, prodTargetGroupArn);
 
-    software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener stageListener = getListenerByArn(originalDetails.getStageListenerArn(), listeners, loadBalancerName);
-    String stageTargetGroupArn = getFirstTargetGroupFromListener(awsConfig, region, originalDetails.getStageListenerArn(), originalDetails.getStageRuleArn());
-    String stageTargetGroupName = getTargetGroupName(awsConfig, region, stageTargetGroupArn, stageListener.loadBalancerArn());
+    software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener stageListener = getListenerByPort(originalDetails.getStageListenerPort(), listeners, loadBalancerName);
+    String stageTargetGroupArn = getFirstTargetGroupFromListener(awsConfig, region, stageListener.listenerArn(), originalDetails.getStageRuleArn());
+    String stageTargetGroupName = getTargetGroupName(awsConfig, region, stageTargetGroupArn);
 
     return LoadBalancerDetailsForBGDeployment.builder()
             .loadBalancerArn(prodListener.loadBalancerArn())

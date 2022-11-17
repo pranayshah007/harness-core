@@ -449,6 +449,11 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return elastigroupEntityHelper.getSpotInstConfig(infrastructureOutcome, ngAccess);
   }
 
+  public List<EncryptedDataDetail> getEncryptedDataDetail(ConnectorInfoDTO connectorInfoDTO, Ambiance ambiance) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    return elastigroupEntityHelper.getEncryptionDataDetails(connectorInfoDTO, ngAccess);
+  }
+
   private TaskChainResponse handleElastigroupStartupScriptFetchFilesResponse(
       ElastigroupStartupScriptFetchResponse elastigroupStartupScriptFetchResponse,
       ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
