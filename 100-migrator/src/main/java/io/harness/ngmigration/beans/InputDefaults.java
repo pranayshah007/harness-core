@@ -13,5 +13,6 @@ import lombok.Data;
 
 @Data
 public class InputDefaults {
+  private boolean skipMigration;
   private Scope scope;
 }

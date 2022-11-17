@@ -7,11 +7,19 @@
 
 package software.wings.service.impl.yaml;
 
+import static io.harness.beans.FeatureName.SPG_DELETE_ENVIRONMENTS_ON_SERVICE_RENAME_GIT_SYNC;
+
+import static software.wings.beans.yaml.YamlConstants.APPLICATIONS_FOLDER;
+import static software.wings.beans.yaml.YamlConstants.ENVIRONMENTS_FOLDER;
+import static software.wings.beans.yaml.YamlConstants.SETUP_FOLDER;
+
+import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.yaml.BaseYaml;
 
 import software.wings.beans.Application;
 import software.wings.beans.ConfigFile;
+import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ManifestFile;
@@ -47,6 +55,7 @@ public class YamlChangeSetHelper {
   @Inject private YamlHandlerFactory yamlHandlerFactory;
   @Inject private YamlHelper yamlHelper;
   @Inject private YamlHandlerFromBeanFactory yamlHandlerFromBeanFactory;
+  @Inject private FeatureFlagService featureFlagService;
 
   public List<GitFileChange> getConfigFileGitChangeSet(ConfigFile configFile, ChangeType changeType) {
     return entityUpdateService.obtainEntityGitSyncFileChangeSet(
@@ -142,6 +151,9 @@ public class YamlChangeSetHelper {
         yamlGitService.obtainChangeSetFromFullSyncDryRun(accountId, true, isAppLevelRename);
     if (isAppLevelRename) {
       final YamlChangeSet appYamlChangeSet = yamlGitService.obtainAppYamlChangeSet(accountId, false, app);
+      if (newEntity instanceof Service) {
+        handleSpecialCaseForServices(appYamlChangeSet, app);
+      }
       yamlChangeSets.add(appYamlChangeSet);
     }
     for (YamlChangeSet yamlChangeSet : yamlChangeSets) {
@@ -156,6 +168,19 @@ public class YamlChangeSetHelper {
       // field to say that full sync is queued just after the rename
       yamlChangeSet.setQueuedOn(timeOfRename);
       yamlChangeSetService.save(yamlChangeSet);
+    }
+  }
+
+  private void handleSpecialCaseForServices(YamlChangeSet appYamlChangeSet, Application app) {
+    // Services have folders inside environment which we need to recreate.
+    if (featureFlagService.isEnabled(SPG_DELETE_ENVIRONMENTS_ON_SERVICE_RENAME_GIT_SYNC, app.getAccountId())) {
+      GitFileChange deleteEnvironmentGitFileChange =
+          GitFileChange.Builder.aGitFileChange()
+              .withAccountId(app.getAccountId())
+              .withChangeType(ChangeType.DELETE)
+              .withFilePath(SETUP_FOLDER + "/" + APPLICATIONS_FOLDER + "/" + app.getName() + "/" + ENVIRONMENTS_FOLDER)
+              .build();
+      appYamlChangeSet.getGitFileChanges().add(0, deleteEnvironmentGitFileChange);
     }
   }
 

@@ -66,8 +66,9 @@ public class UsageMetricsEventPublisher {
     sdf.setTimeZone(TimeZone.getTimeZone(TimeZone.getTimeZone("Etc/UTC").toZoneId()));
   }
 
-  public void publishDeploymentTimeSeriesEvent(String accountId, WorkflowExecution workflowExecution) {
-    DeploymentTimeSeriesEvent event = constructDeploymentTimeSeriesEvent(accountId, workflowExecution);
+  public void publishDeploymentTimeSeriesEvent(
+      String accountId, WorkflowExecution workflowExecution, Map<String, Object> metadata) {
+    DeploymentTimeSeriesEvent event = constructDeploymentTimeSeriesEvent(accountId, workflowExecution, metadata);
     executorService.submit(() -> {
       try {
         deploymentTimeSeriesEventQueue.send(event);
@@ -237,13 +238,14 @@ public class UsageMetricsEventPublisher {
   }
 
   public DeploymentTimeSeriesEvent constructDeploymentTimeSeriesEvent(
-      String accountId, WorkflowExecution workflowExecution) {
+      String accountId, WorkflowExecution workflowExecution, Map<String, Object> metadata) {
     log.info("Reporting execution");
     Map<String, String> stringData = new HashMap<>();
     Map<String, List<String>> listData = new HashMap<>();
     Map<String, Long> longData = new HashMap<>();
     Map<String, Integer> integerData = new HashMap<>();
     Map<String, Object> objectData = new HashMap<>();
+    Map<String, Boolean> booleanData = new HashMap<>();
     stringData.put(EventProcessor.EXECUTIONID, workflowExecution.getUuid());
     stringData.put(EventProcessor.STATUS, workflowExecution.getStatus().name());
     if (workflowExecution.getPipelineExecution() != null) {
@@ -319,6 +321,18 @@ public class UsageMetricsEventPublisher {
     }
 
     stringData.put(EventProcessor.CREATED_BY_TYPE, WorkflowExecutionServiceHelper.getCause(workflowExecution));
+    booleanData.put(EventProcessor.ON_DEMAND_ROLLBACK, workflowExecution.isOnDemandRollback());
+
+    if (workflowExecution.isOnDemandRollback() && workflowExecution.getOriginalExecution() != null
+        && workflowExecution.getOriginalExecution().getExecutionId() != null) {
+      stringData.put(EventProcessor.ORIGINAL_EXECUTION_ID, workflowExecution.getOriginalExecution().getExecutionId());
+    }
+
+    if (metadata.isEmpty()) {
+      booleanData.put(EventProcessor.MANUALLY_ROLLED_BACK, false);
+    } else {
+      booleanData.put(EventProcessor.MANUALLY_ROLLED_BACK, (boolean) metadata.get("manuallyRolledBack"));
+    }
 
     if (!Lists.isNullOrEmpty(workflowExecution.getWorkflowIds())) {
       listData.put(EventProcessor.WORKFLOWS, workflowExecution.getWorkflowIds());
@@ -338,6 +352,7 @@ public class UsageMetricsEventPublisher {
                                         .listData(listData)
                                         .longData(longData)
                                         .integerData(integerData)
+                                        .booleanData(booleanData)
                                         .data(objectData)
                                         .build();
     if (isEmpty(eventInfo.getListData())) {

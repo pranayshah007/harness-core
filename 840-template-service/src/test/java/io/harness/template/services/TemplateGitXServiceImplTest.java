@@ -8,6 +8,7 @@
 package io.harness.template.services;
 
 import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.rule.OwnerRule.YOGESH;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -215,6 +216,20 @@ public class TemplateGitXServiceImplTest {
     });
 
     assertEquals(thrownException.getMessage(), exception.getMessage());
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testImportTemplateFromRemoteValidations() {
+    TemplateImportRequestDTO templateImportRequestDTO = TemplateImportRequestDTO.builder()
+                                                            .templateName("importT7")
+                                                            .templateVersion("v2")
+                                                            .templateDescription("foobar")
+                                                            .build();
+
+    templateGitXService.performImportFlowYamlValidations(
+        "default", "GitX_Remote", "importT7", templateImportRequestDTO, IMPORTED_YAML);
   }
 
   @Test

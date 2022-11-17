@@ -25,11 +25,11 @@ import io.harness.delegate.beans.connector.azureconnector.AzureContainerRegistry
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 
+import com.azure.resourcemanager.containerregistry.models.AccessKeyType;
+import com.azure.resourcemanager.containerregistry.models.Registry;
+import com.azure.resourcemanager.containerregistry.models.RegistryCredentials;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.containerregistry.AccessKeyType;
-import com.microsoft.azure.management.containerregistry.Registry;
-import com.microsoft.azure.management.containerregistry.RegistryCredentials;
 import java.util.Map;
 import java.util.Optional;
 import lombok.NoArgsConstructor;

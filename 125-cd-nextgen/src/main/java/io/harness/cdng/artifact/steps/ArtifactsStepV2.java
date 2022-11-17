@@ -66,8 +66,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.YamlUtils;
@@ -75,6 +73,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
@@ -101,7 +100,7 @@ import lombok.extern.slf4j.Slf4j;
  * Fetch all artifacts ( primary + sidecars using async strategy and produce artifact outcome )
  */
 @Slf4j
-public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
+public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.ARTIFACTS_V2.getName())
                                                .setStepCategory(StepCategory.STEP)
@@ -125,8 +124,13 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   }
 
   @Override
-  public AsyncExecutableResponse executeAsync(Ambiance ambiance, EmptyStepParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
+  public void validateResources(Ambiance ambiance, EmptyStepParameters stepParameters) {
+    // nothing to validate here
+  }
+
+  @Override
+  public AsyncExecutableResponse executeAsyncAfterRbac(
+      Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage) {
     NGServiceConfig ngServiceConfig = null;
     try {
       // get service merged with service inputs

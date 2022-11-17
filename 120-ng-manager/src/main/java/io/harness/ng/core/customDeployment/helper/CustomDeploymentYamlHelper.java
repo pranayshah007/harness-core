@@ -52,7 +52,6 @@ import com.google.inject.Singleton;
 import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -304,13 +303,7 @@ public class CustomDeploymentYamlHelper {
   private static void populateUuidToFQNMapForLeafNodesInObject(
       Map<String, CustomDeploymentVariableProperties> uuidToFQNMap, YamlNode yamlNode, Stack<String> path) {
     for (YamlField field : yamlNode.fields()) {
-      if (field.getNode().getCurrJsonNode().isValueNode()) {
-        if (Arrays.asList(YamlNode.IDENTIFIER_FIELD_NAME, YamlNode.UUID_FIELD_NAME, YamlNode.TYPE_FIELD_NAME)
-                .contains(field.getName())) {
-          continue;
-        }
-        uuidToFQNMap.put(field.getNode().asText(), getFQNFromPath(path, field.getName()));
-      } else {
+      if (!field.getNode().getCurrJsonNode().isValueNode()) {
         populateUuidToFQNMapForLeafNodes(uuidToFQNMap, field, path);
       }
     }

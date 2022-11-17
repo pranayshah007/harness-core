@@ -101,7 +101,7 @@ public class CustomDeploymentYamlHelperTest extends CategoryTest {
         customDeploymentYamlHelper.getVariablesFromYaml(customDeploymentYamlRequestDTO);
 
     YamlField uuidInjectedYaml = YamlUtils.readTree(customDeploymentVariableResponseDTO.getYaml());
-    assertThat(customDeploymentVariableResponseDTO.getMetadataMap()).hasSize(4);
+    assertThat(customDeploymentVariableResponseDTO.getMetadataMap()).hasSize(2);
     List<YamlNode> variablesNode = uuidInjectedYaml.getNode()
                                        .getField("customDeployment")
                                        .getNode()
@@ -126,21 +126,6 @@ public class CustomDeploymentYamlHelperTest extends CategoryTest {
         .isEqualTo("infra.variables.image");
     assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(imageUUID).getVariableName())
         .isEqualTo("image");
-
-    String instancesListPathUUID = uuidInjectedYaml.getNode()
-                                       .getField("customDeployment")
-                                       .getNode()
-                                       .getField("infrastructure")
-                                       .getNode()
-                                       .getField("instancesListPath")
-                                       .getNode()
-                                       .asText();
-    assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(instancesListPathUUID).getFqn())
-        .isEqualTo("stage.spec.infrastructure.output.instancesListPath");
-    assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(instancesListPathUUID).getLocalName())
-        .isEqualTo("infra.instancesListPath");
-    assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(instancesListPathUUID).getVariableName())
-        .isEqualTo("instancesListPath");
   }
 
   @Test

@@ -106,7 +106,7 @@ public class CIStageVariableCreator extends AbstractStageVariableCreator<Integra
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(
-        YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.CI_STAGE));
+        YAMLFieldNameConstants.STAGE, Set.of(StepSpecTypeConstants.CI_STAGE, StepSpecTypeConstants.CI_STAGE_V2));
   }
 
   @Override

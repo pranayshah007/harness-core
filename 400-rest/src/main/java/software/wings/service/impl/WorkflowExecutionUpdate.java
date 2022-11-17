@@ -300,7 +300,22 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
            * the callBack says it is finalStatus (Check with Srinivas)
            */
           if (ExecutionStatus.isFinalStatus(workflowExecution.getStatus())) {
-            usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(accountID, workflowExecution);
+            usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(
+                accountID, workflowExecution, Collections.emptyMap());
+            if (workflowExecution.isOnDemandRollback() && workflowExecution.getOriginalExecution() != null
+                && workflowExecution.getOriginalExecution().getExecutionId() != null
+                && workflowExecution.getStatus() == SUCCESS) {
+              WorkflowExecution originalExecution = workflowExecutionService.getUpdatedWorkflowExecution(
+                  appId, workflowExecution.getOriginalExecution().getExecutionId());
+              originalExecution.setRollbackDuration(workflowExecution.getDuration());
+              try {
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("manuallyRolledBack", true);
+                usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(accountID, originalExecution, metadata);
+              } catch (Exception e) {
+                log.error("Exception while syncing the data for original workflow execution", e);
+              }
+            }
           } else {
             log.warn("Workflow [{}] has executionStatus:[{}], different status:[{}]", workflowExecutionId,
                 workflowExecution.getStatus(), status);
@@ -447,7 +462,8 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
     updateDeploymentInformation(workflowExecution);
     WorkflowExecution updatedWorkflowExecution =
         workflowExecutionService.getUpdatedWorkflowExecution(workflowExecution.getAppId(), workflowExecution.getUuid());
-    usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(accountID, updatedWorkflowExecution);
+    usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(
+        accountID, updatedWorkflowExecution, Collections.emptyMap());
     reportDeploymentEventToSegment(updatedWorkflowExecution);
   }
 

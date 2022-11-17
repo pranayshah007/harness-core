@@ -153,8 +153,8 @@ public class RuntimeInputFormHelper {
       }
     });
     // Updating the executionInput field to expression in jsonNode.
-    JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap())).getYamlMap());
-    return (new YamlConfig(templateMap, yamlConfig.getYamlMap())).getYaml();
+    JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap(), false, true)).getYamlMap());
+    return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
   }
 
   public String createExecutionInputFormAndUpdateYamlFieldForStage(JsonNode jsonNode) {
@@ -178,7 +178,7 @@ public class RuntimeInputFormHelper {
     });
 
     // Updating the executionInput field to expression in jsonNode.
-    JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap())).getYamlMap());
-    return (new YamlConfig(templateMap, yamlConfig.getYamlMap())).getYaml();
+    JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap(), false, true)).getYamlMap());
+    return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
   }
 }

@@ -1336,14 +1336,14 @@ public class UserGroupServiceImpl implements UserGroupService {
   public void pruneByApplication(String appId) {
     Set<String> deletedIds = new HashSet<>();
     deletedIds.add(appId);
-
-    try (HIterator<UserGroup> userGroupIterator =
-             new HIterator<>(wingsPersistence.createQuery(UserGroup.class, excludeAuthority)
-                                 .project(UserGroup.ID_KEY2, true)
-                                 .project(UserGroupKeys.accountId, true)
-                                 .project(UserGroupKeys.appPermissions, true)
-                                 .project(UserGroupKeys.memberIds, true)
-                                 .fetch())) {
+    String accountId = appService.getAccountIdByAppId(appId);
+    try (HIterator<UserGroup> userGroupIterator = new HIterator<>(wingsPersistence.createQuery(UserGroup.class)
+                                                                      .filter(UserGroupKeys.accountId, accountId)
+                                                                      .project(UserGroup.ID_KEY2, true)
+                                                                      .project(UserGroupKeys.accountId, true)
+                                                                      .project(UserGroupKeys.appPermissions, true)
+                                                                      .project(UserGroupKeys.memberIds, true)
+                                                                      .fetch())) {
       while (userGroupIterator.hasNext()) {
         final UserGroup userGroup = userGroupIterator.next();
         removeAppIdsFromAppPermissions(userGroup, deletedIds);

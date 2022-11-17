@@ -18,7 +18,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyMap;
@@ -35,6 +34,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
+import io.harness.delegate.beans.azure.AzureConfigContext;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
@@ -66,6 +66,7 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.extensions.DaemonSet;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -355,7 +356,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testGetAdminKubeconfigFileContentAzureK8sInfraDelegateConfig() {
+  public void testGetAdminKubeconfigFileContentAzureK8sInfraDelegateConfig() throws IOException {
     final List<EncryptedDataDetail> encryptionDataDetails = emptyList();
     final AzureConnectorDTO azureConnectorDTO = AzureConnectorDTO.builder().build();
     final AzureK8sInfraDelegateConfig azureK8sInfraDelegateConfig = AzureK8sInfraDelegateConfig.builder()
@@ -369,8 +370,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                                                                         .build();
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
 
-    when(azureAsyncTaskHelper.getClusterConfig(any(), any(), any(), any(), any(), any(), anyBoolean()))
-        .thenReturn(kubernetesConfig);
+    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class))).thenReturn(kubernetesConfig);
 
     containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(azureK8sInfraDelegateConfig);
     verify(kubernetesContainerService).getConfigFileContent(kubernetesConfig);
@@ -379,7 +379,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testGetUserKubeconfigFileContentAzureK8sInfraDelegateConfig() {
+  public void testGetUserKubeconfigFileContentAzureK8sInfraDelegateConfig() throws IOException {
     final List<EncryptedDataDetail> encryptionDataDetails = emptyList();
     final AzureConnectorDTO azureConnectorDTO = AzureConnectorDTO.builder().build();
     final AzureK8sInfraDelegateConfig azureK8sInfraDelegateConfig = AzureK8sInfraDelegateConfig.builder()
@@ -393,8 +393,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                                                                         .build();
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
 
-    when(azureAsyncTaskHelper.getClusterConfig(any(), any(), any(), any(), any(), any(), anyBoolean()))
-        .thenReturn(kubernetesConfig);
+    when(azureAsyncTaskHelper.getClusterConfig(any(AzureConfigContext.class))).thenReturn(kubernetesConfig);
 
     containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(azureK8sInfraDelegateConfig);
     verify(kubernetesContainerService).getConfigFileContent(kubernetesConfig);

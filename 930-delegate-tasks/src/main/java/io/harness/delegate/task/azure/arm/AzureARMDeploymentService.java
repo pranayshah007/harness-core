@@ -44,10 +44,14 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.delegatetasks.azure.arm.deployment.context.DeploymentContext;
 
+import com.azure.core.management.exception.ManagementError;
+import com.azure.core.management.polling.PollResult;
+import com.azure.core.util.polling.SyncPoller;
+import com.azure.resourcemanager.resources.fluent.models.DeploymentExtendedInner;
+import com.azure.resourcemanager.resources.fluent.models.DeploymentValidateResultInner;
+import com.azure.resourcemanager.resources.models.Deployment;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.resources.ErrorResponse;
-import com.microsoft.azure.management.resources.implementation.DeploymentValidateResultInner;
 import java.util.Objects;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -74,12 +78,13 @@ public class AzureARMDeploymentService {
         "Starting ARM %s at Resource Group scope ... %nResource Group - [%s]%nMode - [%s]%nDeployment Name - [%s]",
         context.isRollback() ? "Rollback" : "Deployment", azureClientContext.getResourceGroupName(),
         azureARMTemplate.getDeploymentMode().name(), azureARMTemplate.getDeploymentName()));
-    azureManagementClient.deployAtResourceGroupScope(azureClientContext, azureARMTemplate);
+    SyncPoller<Void, Deployment> syncPoller =
+        azureManagementClient.deployAtResourceGroupScope(azureClientContext, azureARMTemplate);
     logCallback.saveExecutionLog(
         String.format("ARM %s request send successfully", context.isRollback() ? "Rollback" : "Deployment"),
         LogLevel.INFO, SUCCESS);
 
-    return performSteadyStateCheckResourceGroupScope(context);
+    return performSteadyStateCheckResourceGroupScope(context, syncPoller);
   }
 
   public void validateTemplate(DeploymentResourceGroupContext context) {
@@ -94,7 +99,7 @@ public class AzureARMDeploymentService {
     logCallback.saveExecutionLog("Starting template validation");
     DeploymentValidateResultInner deploymentValidateResultInner =
         azureManagementClient.validateDeploymentAtResourceGroupScope(azureClientContext, azureARMTemplate);
-    ErrorResponse errorResponse = deploymentValidateResultInner.error();
+    ManagementError errorResponse = deploymentValidateResultInner.error();
     if (errorResponse != null) {
       logCallback.saveExecutionLog("Template validation failed", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new AzureARMValidationException(
@@ -111,7 +116,8 @@ public class AzureARMDeploymentService {
         azureClientContext, AzureARMRGTemplateExportOptions.INCLUDE_PARAMETER_DEFAULT_VALUE);
   }
 
-  private String performSteadyStateCheckResourceGroupScope(DeploymentResourceGroupContext context) {
+  private String performSteadyStateCheckResourceGroupScope(
+      DeploymentResourceGroupContext context, SyncPoller<Void, Deployment> syncPoller) {
     ARMDeploymentSteadyStateContext steadyStateContext =
         ARMDeploymentSteadyStateContext.builder()
             .azureConfig(context.getAzureClientContext().getAzureConfig())
@@ -124,7 +130,7 @@ public class AzureARMDeploymentService {
             .build();
 
     deploymentSteadyStateChecker.waitUntilCompleteWithTimeout(
-        steadyStateContext, azureManagementClient, getARMDeploymentSteadyStateLogCallback(context));
+        steadyStateContext, azureManagementClient, getARMDeploymentSteadyStateLogCallback(context), syncPoller);
 
     return getARMDeploymentOutputs(context, steadyStateContext);
   }
@@ -144,10 +150,10 @@ public class AzureARMDeploymentService {
     logCallback.saveExecutionLog("Starting template validation");
     DeploymentValidateResultInner deploymentValidateResultInner =
         azureManagementClient.validateDeploymentAtSubscriptionScope(azureConfig, subscriptionId, azureARMTemplate);
-    ErrorResponse errorResponse = deploymentValidateResultInner.error();
+    ManagementError errorResponse = deploymentValidateResultInner.error();
     if (errorResponse != null) {
       logCallback.saveExecutionLog("Template validation failed", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      if (Objects.equals(errorResponse.code(), ERROR_CODE_LOCATION_NOT_FOUND)) {
+      if (Objects.equals(errorResponse.getCode(), ERROR_CODE_LOCATION_NOT_FOUND)) {
         throw new AzureARMSubscriptionScopeException(
             format(ERROR_LOCATION_NOT_FOUND, context.getDeploymentDataLocation()));
       }
@@ -158,12 +164,14 @@ public class AzureARMDeploymentService {
 
     logCallback.saveExecutionLog(String.format(
         "Starting ARM Deployment at Subscription scope. Deployment Name - [%s]", azureARMTemplate.getDeploymentName()));
-    azureManagementClient.deployAtSubscriptionScope(azureConfig, subscriptionId, azureARMTemplate);
+    SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPoller =
+        azureManagementClient.deployAtSubscriptionScope(azureConfig, subscriptionId, azureARMTemplate);
     logCallback.saveExecutionLog("ARM Deployment request send successfully", LogLevel.INFO, SUCCESS);
-    return performSteadyStateCheckSubscriptionScope(context);
+    return performSteadyStateCheckSubscriptionScope(context, syncPoller);
   }
 
-  private String performSteadyStateCheckSubscriptionScope(DeploymentSubscriptionContext context) {
+  private String performSteadyStateCheckSubscriptionScope(DeploymentSubscriptionContext context,
+      SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPoller) {
     ARMDeploymentSteadyStateContext steadyStateContext =
         ARMDeploymentSteadyStateContext.builder()
             .azureConfig(context.getAzureConfig())
@@ -175,7 +183,7 @@ public class AzureARMDeploymentService {
             .build();
 
     deploymentSteadyStateChecker.waitUntilCompleteWithTimeout(
-        steadyStateContext, azureManagementClient, getARMDeploymentSteadyStateLogCallback(context));
+        steadyStateContext, azureManagementClient, getARMDeploymentSteadyStateLogCallback(context), syncPoller);
 
     return getARMDeploymentOutputs(context, steadyStateContext);
   }
@@ -197,10 +205,10 @@ public class AzureARMDeploymentService {
       DeploymentValidateResultInner deploymentValidateResultInner =
           azureManagementClient.validateDeploymentAtManagementGroupScope(
               azureConfig, managementGroupId, azureARMTemplate);
-      ErrorResponse errorResponse = deploymentValidateResultInner.error();
+      ManagementError errorResponse = deploymentValidateResultInner.error();
       if (errorResponse != null) {
         logCallback.saveExecutionLog("Template validation failed", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-        if (Objects.equals(errorResponse.code(), ERROR_CODE_LOCATION_NOT_FOUND)) {
+        if (Objects.equals(errorResponse.getCode(), ERROR_CODE_LOCATION_NOT_FOUND)) {
           throw new AzureARMManagementScopeException(
               format(ERROR_LOCATION_NOT_FOUND, context.getDeploymentDataLocation()));
         }
@@ -211,9 +219,10 @@ public class AzureARMDeploymentService {
 
       logCallback.saveExecutionLog(String.format(
           "Starting ARM Deployment at Management scope. Deployment Name - [%s]", azureARMTemplate.getDeploymentName()));
-      azureManagementClient.deployAtManagementGroupScope(azureConfig, managementGroupId, azureARMTemplate);
+      SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPoller =
+          azureManagementClient.deployAtManagementGroupScope(azureConfig, managementGroupId, azureARMTemplate);
       logCallback.saveExecutionLog("ARM Deployment request send successfully", LogLevel.INFO, SUCCESS);
-      return performSteadyStateCheckManagementGroupScope(context);
+      return performSteadyStateCheckManagementGroupScope(context, syncPoller);
     } catch (Exception ex) {
       if (ex.getMessage() != null && ex.getMessage().contains(AUTHORIZATION_ERROR)) {
         throw new AzureARMManagementScopeException(ERROR_INVALID_MANAGEMENT_GROUP_ID);
@@ -222,7 +231,8 @@ public class AzureARMDeploymentService {
     }
   }
 
-  private String performSteadyStateCheckManagementGroupScope(DeploymentManagementGroupContext context) {
+  private String performSteadyStateCheckManagementGroupScope(DeploymentManagementGroupContext context,
+      SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPoller) {
     ARMDeploymentSteadyStateContext steadyStateContext =
         ARMDeploymentSteadyStateContext.builder()
             .azureConfig(context.getAzureConfig())
@@ -234,7 +244,7 @@ public class AzureARMDeploymentService {
             .build();
 
     deploymentSteadyStateChecker.waitUntilCompleteWithTimeout(
-        steadyStateContext, azureManagementClient, getARMDeploymentSteadyStateLogCallback(context));
+        steadyStateContext, azureManagementClient, getARMDeploymentSteadyStateLogCallback(context), syncPoller);
     return getARMDeploymentOutputs(context, steadyStateContext);
   }
 
@@ -253,10 +263,10 @@ public class AzureARMDeploymentService {
     try {
       DeploymentValidateResultInner deploymentValidateResultInner =
           azureManagementClient.validateDeploymentAtTenantScope(azureConfig, azureARMTemplate);
-      ErrorResponse errorResponse = deploymentValidateResultInner.error();
+      ManagementError errorResponse = deploymentValidateResultInner.error();
       if (errorResponse != null) {
         logCallback.saveExecutionLog("Template validation failed", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-        if (Objects.equals(errorResponse.code(), ERROR_CODE_LOCATION_NOT_FOUND)) {
+        if (Objects.equals(errorResponse.getCode(), ERROR_CODE_LOCATION_NOT_FOUND)) {
           throw new AzureARMTenantScopeException(format(ERROR_LOCATION_NOT_FOUND, context.getDeploymentDataLocation()));
         }
         throw new AzureARMTenantScopeException(
@@ -266,9 +276,10 @@ public class AzureARMDeploymentService {
 
       logCallback.saveExecutionLog(String.format(
           "Starting ARM Deployment at Tenant scope. Deployment Name - [%s]", azureARMTemplate.getDeploymentName()));
-      azureManagementClient.deployAtTenantScope(azureConfig, azureARMTemplate);
+      SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPoller =
+          azureManagementClient.deployAtTenantScope(azureConfig, azureARMTemplate);
       logCallback.saveExecutionLog("ARM Deployment request send successfully", LogLevel.INFO, SUCCESS);
-      return performSteadyStateCheckTenantScope(context);
+      return performSteadyStateCheckTenantScope(context, syncPoller);
     } catch (Exception ex) {
       if (ex.getMessage() != null && ex.getMessage().contains(AUTHORIZATION_ERROR)) {
         throw new AzureARMTenantScopeException(ERROR_INVALID_TENANT_CREDENTIALS);
@@ -277,7 +288,8 @@ public class AzureARMDeploymentService {
     }
   }
 
-  private String performSteadyStateCheckTenantScope(DeploymentTenantContext context) {
+  private String performSteadyStateCheckTenantScope(DeploymentTenantContext context,
+      SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPoller) {
     ARMDeploymentSteadyStateContext steadyStateContext =
         ARMDeploymentSteadyStateContext.builder()
             .azureConfig(context.getAzureConfig())
@@ -289,26 +301,26 @@ public class AzureARMDeploymentService {
             .build();
 
     deploymentSteadyStateChecker.waitUntilCompleteWithTimeout(
-        steadyStateContext, azureManagementClient, getARMDeploymentSteadyStateLogCallback(context));
+        steadyStateContext, azureManagementClient, getARMDeploymentSteadyStateLogCallback(context), syncPoller);
     return getARMDeploymentOutputs(context, steadyStateContext);
   }
 
-  private String getValidationErrorMsg(ErrorResponse errorResponse) {
+  private String getValidationErrorMsg(ManagementError errorResponse) {
     StringBuilder errorMessageBuilder = new StringBuilder("");
     buildErrorMessage(errorResponse, errorMessageBuilder);
     return errorMessageBuilder.toString();
   }
 
-  private void buildErrorMessage(ErrorResponse errorResponse, StringBuilder parentErrorBuilder) {
+  private void buildErrorMessage(ManagementError errorResponse, StringBuilder parentErrorBuilder) {
     if (errorResponse == null) {
       return;
     }
-    String errorMessage = format(DEPLOYMENT_VALIDATION_FAILED_MSG_PATTERN, errorResponse.code(),
-        errorResponse.message(), errorResponse.target());
+    String errorMessage = format(DEPLOYMENT_VALIDATION_FAILED_MSG_PATTERN, errorResponse.getCode(),
+        errorResponse.getMessage(), errorResponse.getTarget());
     parentErrorBuilder.append(errorMessage).append('\n');
 
-    if (isNotEmpty(errorResponse.details())) {
-      for (ErrorResponse error : errorResponse.details()) {
+    if (isNotEmpty(errorResponse.getDetails())) {
+      for (ManagementError error : errorResponse.getDetails()) {
         buildErrorMessage(error, parentErrorBuilder);
       }
     }

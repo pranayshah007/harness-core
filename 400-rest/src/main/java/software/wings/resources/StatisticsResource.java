@@ -10,6 +10,9 @@ package software.wings.resources;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
+import io.harness.logging.AccountLogContext;
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.AutoLogContext.OverrideBehavior;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.stats.DeploymentStatistics;
@@ -70,8 +73,10 @@ public class StatisticsResource {
     DeploymentStatistics deploymentStatisticsNew =
         statisticsService.getDeploymentStatisticsNew(accountId, appIds, numOfDays);
     if (finalDeploymentStatistics != null && !finalDeploymentStatistics.equals(deploymentStatisticsNew)) {
-      log.error("DEBUG LOG: old way deployment stats: [{}], new way deployment stats:[{}]", finalDeploymentStatistics,
-          deploymentStatisticsNew);
+      try (AutoLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_NESTS)) {
+        log.error("DEBUG LOG: old way deployment stats: [{}], new way deployment stats:[{}]", finalDeploymentStatistics,
+            deploymentStatisticsNew);
+      }
     }
   }
 
@@ -97,21 +102,23 @@ public class StatisticsResource {
       String accountId, Integer numOfDays, List<String> appIds, ServiceInstanceStatistics finalDeploymentStatistics) {
     ServiceInstanceStatistics serviceInstanceStatistics =
         statisticsService.getServiceInstanceStatisticsNew(accountId, appIds, numOfDays);
-    if (finalDeploymentStatistics != null && !finalDeploymentStatistics.equals(serviceInstanceStatistics)) {
-      serviceInstanceStatistics.getStatsMap().get(EnvironmentType.ALL).forEach(s -> {
-        Optional<TopConsumer> first = finalDeploymentStatistics.getStatsMap()
-                                          .get(EnvironmentType.ALL)
-                                          .stream()
-                                          .filter(t -> t.equals(s))
-                                          .findFirst();
-        if (!first.isPresent()) {
-          log.error("DEBUG LOG: first unmatching {}", s);
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_NESTS)) {
+      if (finalDeploymentStatistics != null && !finalDeploymentStatistics.equals(serviceInstanceStatistics)) {
+        serviceInstanceStatistics.getStatsMap().get(EnvironmentType.ALL).forEach(s -> {
+          Optional<TopConsumer> first = finalDeploymentStatistics.getStatsMap()
+                                            .get(EnvironmentType.ALL)
+                                            .stream()
+                                            .filter(t -> t.equals(s))
+                                            .findFirst();
+          if (!first.isPresent()) {
+            log.error("DEBUG LOG: first unmatching {}", s);
+          }
+        });
+        if (finalDeploymentStatistics.getStatsMap().get(EnvironmentType.ALL).size()
+            != serviceInstanceStatistics.getStatsMap().get(EnvironmentType.ALL).size()) {
+          log.error("DEBUG LOG: size doesnt match: oldway {}, new way{}", finalDeploymentStatistics,
+              serviceInstanceStatistics);
         }
-      });
-      if (finalDeploymentStatistics.getStatsMap().get(EnvironmentType.ALL).size()
-          != serviceInstanceStatistics.getStatsMap().get(EnvironmentType.ALL).size()) {
-        log.error(
-            "DEBUG LOG: size doesnt match: oldway {}, new way{}", finalDeploymentStatistics, serviceInstanceStatistics);
       }
     }
   }

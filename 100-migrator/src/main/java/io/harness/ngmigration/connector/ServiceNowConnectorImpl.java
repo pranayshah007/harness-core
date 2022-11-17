@@ -11,7 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 
@@ -45,6 +48,14 @@ public class ServiceNowConnectorImpl implements BaseConnector {
         .delegateSelectors(toSet(serviceNowConfig.getDelegateSelectors()))
         .username(serviceNowConfig.getUsername())
         .passwordRef(MigratorUtility.getSecretRef(migratedEntities, serviceNowConfig.getEncryptedPassword()))
+        .auth(ServiceNowAuthenticationDTO.builder()
+                  .authType(ServiceNowAuthType.USER_PASSWORD)
+                  .credentials(ServiceNowUserNamePasswordDTO.builder()
+                                   .username(serviceNowConfig.getUsername())
+                                   .passwordRef(MigratorUtility.getSecretRef(
+                                       migratedEntities, serviceNowConfig.getEncryptedPassword()))
+                                   .build())
+                  .build())
         .build();
   }
 }

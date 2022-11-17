@@ -25,6 +25,7 @@ import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -88,8 +89,10 @@ public class NotificationRuleResource {
   @ExceptionMetered
   @ApiOperation(value = "get notificationRule data", nickname = "getNotificationRuleData")
   public ResponseDTO<PageResponse<NotificationRuleResponse>> getNotificationRuleData(
-      @BeanParam ProjectParams projectParams, @QueryParam("pageNumber") @NotNull Integer pageNumber,
-      @QueryParam("pageSize") @NotNull Integer pageSize) {
-    return ResponseDTO.newResponse(notificationRuleService.get(projectParams, pageNumber, pageSize));
+      @BeanParam ProjectParams projectParams,
+      @QueryParam("notificationRuleIdentifiers") List<String> notificationRuleIdentifiers,
+      @QueryParam("pageNumber") @NotNull Integer pageNumber, @QueryParam("pageSize") @NotNull Integer pageSize) {
+    return ResponseDTO.newResponse(
+        notificationRuleService.get(projectParams, notificationRuleIdentifiers, pageNumber, pageSize));
   }
 }

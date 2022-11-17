@@ -7,7 +7,7 @@
 
 package io.harness.notification.functor;
 
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 
 import lombok.Value;
 

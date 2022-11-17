@@ -230,7 +230,8 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
         String planJsonOutputName =
             helper.saveTerraformPlanJsonOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
 
-        helper.saveTerraformPlanExecutionDetails(ambiance, terraformTaskNGResponse, provisionerIdentifier);
+        helper.saveTerraformPlanExecutionDetails(
+            ambiance, terraformTaskNGResponse, provisionerIdentifier, planStepParameters);
 
         if (planJsonOutputName != null) {
           tfPlanOutcomeBuilder.jsonFilePath(

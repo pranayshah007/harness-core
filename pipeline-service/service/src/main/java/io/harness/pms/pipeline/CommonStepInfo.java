@@ -162,7 +162,6 @@ public class CommonStepInfo {
           .setName(StepSpecTypeConstants.WAIT_STEP)
           .setType(StepSpecTypeConstants.WAIT_STEP)
           .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Non-Scripted").build())
-          .setFeatureFlag(FeatureName.WAIT_STEP.name())
           .build();
 
   StepInfo serviceNowImportSetStepInfo =

@@ -724,7 +724,7 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private String generateOtpUrl(String companyName, String userEmailAddress, String secret) {
-    return format(TOTP_URL_PREFIX, companyName.replace(" ", "-"), userEmailAddress, secret);
+    return format(TOTP_URL_PREFIX, "Harness_" + companyName.replace(" ", "-"), userEmailAddress, secret);
   }
 
   private void ngAuditUserInviteCreateEvent(Invite invite) {

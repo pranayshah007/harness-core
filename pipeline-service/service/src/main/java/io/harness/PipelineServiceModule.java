@@ -103,6 +103,8 @@ import io.harness.pms.outbox.PipelineOutboxEventHandler;
 import io.harness.pms.pipeline.PipelineResource;
 import io.harness.pms.pipeline.PipelineResourceImpl;
 import io.harness.pms.pipeline.api.PipelinesApiImpl;
+import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
+import io.harness.pms.pipeline.governance.service.PipelineGovernanceServiceImpl;
 import io.harness.pms.pipeline.mappers.PipelineFilterPropertiesMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceImpl;
@@ -124,6 +126,8 @@ import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlSer
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlServiceImpl;
 import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaServiceImpl;
+import io.harness.pms.pipeline.validation.service.PipelineValidationService;
+import io.harness.pms.pipeline.validation.service.PipelineValidationServiceImpl;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
 import io.harness.pms.plan.creation.NodeTypeLookupServiceImpl;
 import io.harness.pms.plan.execution.PlanExecutionResource;
@@ -362,6 +366,8 @@ public class PipelineServiceModule extends AbstractModule {
 
     bind(PMSPipelineService.class).to(PMSPipelineServiceImpl.class);
     bind(PmsExecutionSummaryService.class).to(PmsExecutionSummaryServiceImpl.class);
+    bind(PipelineGovernanceService.class).to(PipelineGovernanceServiceImpl.class);
+    bind(PipelineValidationService.class).to(PipelineValidationServiceImpl.class);
 
     bind(PreflightService.class).to(PreflightServiceImpl.class);
     bind(PipelineRbacService.class).to(PipelineRbacServiceImpl.class);

@@ -8,13 +8,18 @@
 package io.harness.repositories.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -23,16 +28,20 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
+import io.harness.exception.ScmBadRequestException;
+import io.harness.exception.ScmConflictException;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.manage.GlobalContextManager;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.rule.Owner;
@@ -68,6 +77,8 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   String pipelineId = "pipeline";
   String pipelineYaml = "pipeline: yaml";
   String repoURL = "repoURL";
+
+  String scmBadRequest = "SCM bad request";
 
   Criteria criteria = Criteria.where(PipelineEntityKeys.deleted)
                           .is(false)
@@ -207,7 +218,7 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
     Query query = new Query(criteria);
     doReturn(inlinePipelineEntity).when(mongoTemplate).findOne(query, PipelineEntity.class);
     Optional<PipelineEntity> optionalPipelineEntity =
-        pipelineRepository.find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false);
+        pipelineRepository.find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(inlinePipelineEntity);
     verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -231,7 +242,7 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
     doReturn(remotePipelineFromDB).when(mongoTemplate).findOne(query, PipelineEntity.class);
     doReturn(remotePipelineWithYAML).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
     Optional<PipelineEntity> optionalPipelineEntity =
-        pipelineRepository.find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false);
+        pipelineRepository.find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(remotePipelineWithYAML);
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -411,5 +422,109 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
     doReturn(17L).when(mongoTemplate).count(query, PipelineEntity.class);
     assertThat(pipelineRepository.countFileInstances(accountIdentifier, repoURL, filePath)).isEqualTo(17L);
     verify(mongoTemplate, times(1)).count(query, PipelineEntity.class);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFetchRemoteEntityWithRetryWhenDefaultFailsAndCreatedBranchNotPresent() {
+    PipelineEntity pipelineEntity = PipelineEntity.builder().build();
+    doThrow(new ScmBadRequestException(scmBadRequest))
+        .when(gitAwareEntityHelper)
+        .fetchEntityFromRemote(any(), any(), any(), any());
+    assertThrows(ScmBadRequestException.class,
+        ()
+            -> pipelineRepository.fetchRemoteEntityWithFallBackBranch(
+                accountIdentifier, orgIdentifier, projectIdentifier, pipelineEntity, branch));
+    verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFetchRemoteEntityWithRetryWhenDefaultFailsAndCreatedBranchNameIsSameDefaultBranch() {
+    PipelineEntity pipelineEntity = PipelineEntity.builder().build();
+    doThrow(new ScmBadRequestException(scmBadRequest))
+        .when(gitAwareEntityHelper)
+        .fetchEntityFromRemote(any(), any(), any(), any());
+    assertThrows(ScmBadRequestException.class,
+        ()
+            -> pipelineRepository.fetchRemoteEntityWithFallBackBranch(
+                accountIdentifier, orgIdentifier, projectIdentifier, pipelineEntity, branch));
+    verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFetchRemoteEntityWithRetryWhenDefaultFailsAndCreatedBranchNameIsDifferentDefaultBranch() {
+    // when fetch from the default branch fails and branch present in metadata are different from fetched branch
+    PipelineEntity remotePipelineFromDB = PipelineEntity.builder()
+                                              .accountId(accountIdentifier)
+                                              .orgIdentifier(orgIdentifier)
+                                              .projectIdentifier(projectIdentifier)
+                                              .identifier(pipelineId)
+                                              .branch(branch)
+                                              .storeType(StoreType.REMOTE)
+                                              .connectorRef(connectorRef)
+                                              .repo(repoName)
+                                              .filePath(filePath)
+                                              .build();
+    PipelineEntity remotePipelineWithYAML = remotePipelineFromDB.withYaml(pipelineYaml);
+
+    String fallBackBranch = "main-patch1";
+    PipelineMetadataV2 pipelineMetadataV2 =
+        PipelineMetadataV2.builder()
+            .entityGitDetails(EntityGitDetails.builder().branch(fallBackBranch).build())
+            .build();
+    Optional<PipelineMetadataV2> pipelineMetadataV2Mock = Optional.of(pipelineMetadataV2);
+    doReturn(pipelineMetadataV2Mock).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
+
+    PipelineEntity pipelineEntity = PipelineEntity.builder().build();
+    doThrow(new ScmBadRequestException(scmBadRequest))
+        .doReturn(remotePipelineWithYAML)
+        .when(gitAwareEntityHelper)
+        .fetchEntityFromRemote(any(), any(), any(), any());
+    pipelineRepository.fetchRemoteEntityWithFallBackBranch(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineEntity, branch);
+    verify(gitAwareEntityHelper, times(2)).fetchEntityFromRemote(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFetchRemoteEntityWithRetryWhenDefaultFailsAndNonDefaultFails() {
+    // when fetch from default fails and branch present in metadata also fails
+    PipelineEntity pipelineEntity = PipelineEntity.builder().build();
+    String fallBackBranch = "main-patch1";
+    PipelineMetadataV2 pipelineMetadataV2 =
+        PipelineMetadataV2.builder()
+            .entityGitDetails(EntityGitDetails.builder().branch(fallBackBranch).build())
+            .build();
+    Optional<PipelineMetadataV2> pipelineMetadataV2Mock = Optional.of(pipelineMetadataV2);
+    doReturn(pipelineMetadataV2Mock).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
+    doThrow(new ScmBadRequestException(scmBadRequest))
+        .doThrow(new ScmBadRequestException(scmBadRequest))
+        .when(gitAwareEntityHelper)
+        .fetchEntityFromRemote(any(), any(), any(), any());
+    assertThrows(ScmBadRequestException.class,
+        ()
+            -> pipelineRepository.fetchRemoteEntityWithFallBackBranch(
+                accountIdentifier, orgIdentifier, projectIdentifier, pipelineEntity, branch));
+    verify(gitAwareEntityHelper, times(2)).fetchEntityFromRemote(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testShouldRetryWithNonDefaultBranch() {
+    assertTrue(pipelineRepository.shouldRetryWithFallBackBranch(
+        new ScmBadRequestException(scmBadRequest), branch, "main-patch"));
+
+    assertFalse(
+        pipelineRepository.shouldRetryWithFallBackBranch(new ScmBadRequestException(scmBadRequest), branch, branch));
+
+    assertFalse(
+        pipelineRepository.shouldRetryWithFallBackBranch(new ScmConflictException(scmBadRequest), branch, branch));
   }
 }

@@ -75,6 +75,8 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject private CILicenseService ciLicenseService;
   @Inject private CITaskDetailsRepository ciTaskDetailsRepository;
   @Inject private CIAccountExecutionMetadataRepository ciAccountExecutionMetadataRepository;
+  @Inject private QueueExecutionUtils queueExecutionUtils;
+
   private final String SERVICE_NAME_CI = "ci";
   private final int MAX_ATTEMPTS = 3;
   private final int WAIT_TIME_IN_SECOND = 30;
@@ -91,6 +93,11 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     Status status = event.getStatus();
     ciRatelimitHandlerExecutor.submit(() -> { updateDailyBuildCount(level, status, serviceName, accountId); });
     executorService.submit(() -> {
+      try {
+        queueExecutionUtils.addActiveExecutionBuild(event, accountId, level.getRuntimeId());
+      } catch (Exception ex) {
+        log.error("Failed to add Execution record for {}", level.getRuntimeId(), ex);
+      }
       sendGitStatus(level, ambiance, status, event, accountId);
       sendCleanupRequest(level, ambiance, status, accountId);
     });
@@ -126,6 +133,9 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           // If there are any leftover logs still in the stream (this might be possible in specific cases
           // like in k8s node pressure evictions) - then this is where we move all of them to blob storage.
           ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), logKey, true, true);
+          // Now Delete the build from db while cleanup is happening. \
+          // TODO: Once Robust Cleanup implementation is done shift this after response from delegate is received.
+          queueExecutionUtils.deleteActiveExecutionRecord(level.getRuntimeId());
         }
       });
     } catch (Exception ex) {

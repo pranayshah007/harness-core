@@ -28,7 +28,10 @@ import io.harness.execution.StagesExecutionMetadata;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.interrupts.Interrupt;
 import io.harness.ng.core.common.beans.NGTag;
@@ -47,6 +50,7 @@ import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.plan.execution.ModuleInfoOperators;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
@@ -62,7 +66,6 @@ import io.harness.service.GraphGenerationService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.protobuf.ByteString;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -95,6 +98,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject private ValidateAndMergeHelper validateAndMergeHelper;
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
+  @Inject private GitSyncSdkService gitSyncSdkService;
 
   private static final int MAX_LIST_SIZE = 1000;
 
@@ -102,11 +106,13 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
   private static final String BRANCH_LIST_SIZE_EXCEPTION = "The size of unique branches list is greater than [%d]";
 
+  private static final String PARENT_PATH_MODULE_INFO = "moduleInfo";
+
   @Override
   public Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
       String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
       String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
-      ByteString gitSyncBranchContext, boolean isLatest) {
+      boolean isLatest) {
     Criteria criteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(accountId)) {
       criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
@@ -130,9 +136,9 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties != null) {
       throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
     } else if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties == null) {
-      populatePipelineFilterUsingIdentifier(filterCriteria, accountId, orgId, projectId, filterIdentifier);
+      populatePipelineFilterUsingIdentifierANDOperator(filterCriteria, accountId, orgId, projectId, filterIdentifier);
     } else if (EmptyPredicate.isEmpty(filterIdentifier) && filterProperties != null) {
-      populatePipelineFilter(filterCriteria, filterProperties);
+      populatePipelineFilterANDOperator(filterCriteria, filterProperties);
     }
 
     if (myDeployments) {
@@ -168,22 +174,25 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
 
     Criteria gitCriteria = new Criteria();
-    if (gitSyncBranchContext != null) {
-      Criteria gitCriteriaDeprecated =
-          Criteria.where(PlanExecutionSummaryKeys.gitSyncBranchContext).is(gitSyncBranchContext);
-
-      EntityGitDetails entityGitDetails = pmsGitSyncHelper.getEntityGitDetailsFromBytes(gitSyncBranchContext);
-      Criteria gitCriteriaNew =
-          Criteria.where(PlanExecutionSummaryKeys.entityGitDetailsBranch).is(entityGitDetails.getBranch());
-      if (entityGitDetails.getRepoIdentifier() != null
-          && !entityGitDetails.getRepoIdentifier().equals(GitAwareEntityHelper.DEFAULT)) {
-        gitCriteriaNew.and(PlanExecutionSummaryKeys.entityGitDetailsRepoIdentifier)
-            .is(entityGitDetails.getRepoIdentifier());
-      } else if (entityGitDetails.getRepoName() != null
-          && !entityGitDetails.getRepoName().equals(GitAwareEntityHelper.DEFAULT)) {
-        gitCriteriaNew.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is(entityGitDetails.getRepoName());
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null) {
+      //      Adding the branch filter if the branch is not null or default
+      if (gitEntityInfo.getBranch() != null && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getBranch())) {
+        gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsBranch).is(gitEntityInfo.getBranch());
       }
-      gitCriteria.orOperator(gitCriteriaDeprecated, gitCriteriaNew);
+      if (gitSyncSdkService.isGitSyncEnabled(accountId, orgId, projectId)) {
+        //     Adding the repoIdentifier for the old git sync flow
+        if (gitEntityInfo.getYamlGitConfigId() != null
+            && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getYamlGitConfigId())) {
+          gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoIdentifier)
+              .is(gitEntityInfo.getYamlGitConfigId());
+        }
+      } else {
+        //     Adding the repoName for the new git experience flow
+        if (gitEntityInfo.getRepoName() != null && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getRepoName())) {
+          gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is(gitEntityInfo.getRepoName());
+        }
+      }
     }
 
     List<Criteria> criteriaList = new LinkedList<>();
@@ -246,7 +255,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   }
 
   @Override
-  public Criteria formCriteriaV2(String accountId, String orgId, String projectId, List<String> pipelineIdentifier) {
+  public Criteria formCriteriaOROperatorOnModules(String accountId, String orgId, String projectId,
+      List<String> pipelineIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String filterIdentifier) {
     Criteria criteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(accountId)) {
       criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
@@ -257,24 +267,76 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     if (EmptyPredicate.isNotEmpty(projectId)) {
       criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectId);
     }
+    Criteria pipelineCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
-      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
+      pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
     }
-    return criteria;
+
+    Criteria filterCriteria = new Criteria();
+    List<Criteria> filterCriteriaList = new LinkedList<>();
+    if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties != null) {
+      throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
+    } else if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties == null) {
+      populatePipelineFilterUsingIdentifierOROperator(
+          filterCriteria, accountId, orgId, projectId, filterIdentifier, filterCriteriaList);
+    } else if (EmptyPredicate.isEmpty(filterIdentifier) && filterProperties != null) {
+      populatePipelineFilterOROperator(filterCriteria, filterProperties, filterCriteriaList);
+    }
+
+    List<Criteria> criteriaList = new LinkedList<>();
+    if (!pipelineCriteria.equals(new Criteria())) {
+      criteriaList.add(pipelineCriteria);
+    }
+
+    if (!filterCriteria.equals(new Criteria())) {
+      criteria.andOperator(filterCriteria);
+    }
+
+    if (!filterCriteriaList.isEmpty()) {
+      criteriaList.addAll(filterCriteriaList);
+    }
+
+    if (criteriaList.isEmpty()) {
+      return criteria;
+    }
+
+    return criteria.orOperator(criteriaList.toArray(new Criteria[criteriaList.size()]));
   }
 
-  private void populatePipelineFilterUsingIdentifier(Criteria criteria, String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, @NotNull String filterIdentifier) {
+  private void populatePipelineFilterUsingIdentifierANDOperator(Criteria criteria, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier) {
+    populatePipelineFilterUsingIdentifierParametrisedOperatorOnModules(
+        criteria, accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, ModuleInfoOperators.AND, null);
+  }
+
+  private void populatePipelineFilterUsingIdentifierOROperator(Criteria criteria, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier, List<Criteria> criteriaList) {
+    populatePipelineFilterUsingIdentifierParametrisedOperatorOnModules(criteria, accountIdentifier, orgIdentifier,
+        projectIdentifier, filterIdentifier, ModuleInfoOperators.OR, criteriaList);
+  }
+
+  private void populatePipelineFilterUsingIdentifierParametrisedOperatorOnModules(Criteria criteria,
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier,
+      ModuleInfoOperators operatorOnModules, List<Criteria> criteriaList) {
     FilterDTO pipelineFilterDTO = this.filterService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINEEXECUTION);
     if (pipelineFilterDTO == null) {
       throw new InvalidRequestException("Could not find a pipeline filter with the identifier ");
     }
-    this.populatePipelineFilter(
-        criteria, (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties());
+    if (operatorOnModules.name().equals(ModuleInfoOperators.Operators.OR)) {
+      this.populatePipelineFilterOROperator(
+          criteria, (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties(), criteriaList);
+    } else {
+      this.populatePipelineFilterANDOperator(
+          criteria, (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties());
+    }
   }
 
-  private void populatePipelineFilter(Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter) {
+  // This is the function created and parametrized on operator to apply on modules in filterProperties to obtain the
+  // criteria.
+  private void populatePipelineFilterParametrisedOperatorOnModules(Criteria criteria,
+      @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter, ModuleInfoOperators operatorOnModules,
+      List<Criteria> criteriaList) {
     if (pipelineFilter.getTimeRange() != null) {
       TimeRange timeRange = pipelineFilter.getTimeRange();
       // Apply filter to criteria if StartTime and EndTime both are not null.
@@ -307,9 +369,24 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
 
     if (pipelineFilter.getModuleProperties() != null) {
-      ModuleInfoFilterUtils.processNode(
-          JsonUtils.readTree(pipelineFilter.getModuleProperties().toJson()), "moduleInfo", criteria);
+      if (operatorOnModules.name().equals(ModuleInfoOperators.Operators.OR)) {
+        ModuleInfoFilterUtils.processNodeOROperator(
+            JsonUtils.readTree(pipelineFilter.getModuleProperties().toJson()), PARENT_PATH_MODULE_INFO, criteriaList);
+      } else {
+        ModuleInfoFilterUtils.processNode(
+            JsonUtils.readTree(pipelineFilter.getModuleProperties().toJson()), PARENT_PATH_MODULE_INFO, criteria);
+      }
     }
+  }
+
+  private void populatePipelineFilterANDOperator(
+      Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter) {
+    populatePipelineFilterParametrisedOperatorOnModules(criteria, pipelineFilter, ModuleInfoOperators.AND, null);
+  }
+
+  private void populatePipelineFilterOROperator(
+      Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter, List<Criteria> criteriaList) {
+    populatePipelineFilterParametrisedOperatorOnModules(criteria, pipelineFilter, ModuleInfoOperators.OR, criteriaList);
   }
 
   private void addPipelineTagsCriteria(Criteria criteria, List<NGTag> pipelineTags) {

@@ -66,6 +66,7 @@ public class NGCommonEntityConstants {
   public static final String PREVIOUS_REL = "previous";
   public static final String NEXT_REL = "next";
   public static final String SIZE = "size";
+  public static final String OPERATOR = "criteriaOperator";
   public static final String MASK_SECRETS = "maskSecrets";
   public static final String CONNECTOR_IDENTIFIER_REF = "connectorIdentifierRef";
   public static final String CONNECTOR_TYPE = "connectorType";
@@ -122,6 +123,7 @@ public class NGCommonEntityConstants {
   public static final String INTERNAL_SERVER_ERROR_CODE = "500";
   public static final String APPLICATION_JSON_MEDIA_TYPE = "application/json";
   public static final String APPLICATION_YAML_MEDIA_TYPE = "application/yaml";
+  public static final String OPERATOR_PARAM_MESSAGE = "Operator Criteria for Criterias ";
 
   // Environment Group
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";

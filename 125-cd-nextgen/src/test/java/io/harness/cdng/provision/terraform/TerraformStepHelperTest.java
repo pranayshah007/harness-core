@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -95,9 +96,15 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
+import io.harness.secretmanagerclient.NGSecretManagerMetadata;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
+import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.encryption.EncryptedRecordData;
+import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
+
+import software.wings.beans.VaultConfig;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
@@ -867,6 +874,15 @@ public class TerraformStepHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testCreateTFPlanExecutionDetailsKey() {
+    TFPlanExecutionDetailsKey tfPlanExecutionDetailsKey = helper.createTFPlanExecutionDetailsKey(getAmbiance());
+    assertThat(tfPlanExecutionDetailsKey.getScope()).isNotNull();
+    assertThat(tfPlanExecutionDetailsKey.getPipelineExecutionId()).isEqualTo("exec_id");
+  }
+
+  @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testToTerraformVarFileConfigEmpty() {
@@ -1372,6 +1388,9 @@ public class TerraformStepHelperTest extends CategoryTest {
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
     String stageExecutionId = ambiance.getStageExecutionId();
+
+    List<EncryptedRecordData> encryptedRecordData = List.of(EncryptedRecordData.builder().build());
+
     TerraformPlanExecutionDetails terraformPlanExecutionDetails =
         TerraformPlanExecutionDetails.builder()
             .accountIdentifier(accountId)
@@ -1382,11 +1401,23 @@ public class TerraformStepHelperTest extends CategoryTest {
             .provisionerId("provisioner1")
             .tfPlanJsonFieldId("testId")
             .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .encryptedTfPlan(encryptedRecordData)
             .build();
 
-    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder().tfPlanJsonFileId("testId").build();
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder()
+                                           .tfPlanJsonFileId("testId")
+                                           .encryptedTfPlan(EncryptedRecordData.builder().build())
+                                           .build();
 
-    helper.saveTerraformPlanExecutionDetails(ambiance, response, "provisioner1");
+    TerraformPlanStepParameters terraformPlanStepParameters =
+        TerraformPlanStepParameters.infoBuilder()
+            .configuration(TerraformPlanExecutionDataParameters.builder()
+                               .secretManagerRef(ParameterField.createValueField("secretManagerRefTest"))
+                               .build())
+
+            .build();
+
+    helper.saveTerraformPlanExecutionDetails(ambiance, response, "provisioner1", terraformPlanStepParameters);
 
     ArgumentCaptor<TerraformPlanExecutionDetails> outputCaptor =
         ArgumentCaptor.forClass(TerraformPlanExecutionDetails.class);
@@ -1405,6 +1436,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
     String stageExecutionId = ambiance.getStageExecutionId();
+    List<EncryptedRecordData> encryptedRecordData = List.of(EncryptedRecordData.builder().build());
     TerraformPlanExecutionDetails terraformPlanExecutionDetails =
         TerraformPlanExecutionDetails.builder()
             .accountIdentifier(accountId)
@@ -1415,17 +1447,155 @@ public class TerraformStepHelperTest extends CategoryTest {
             .provisionerId("provisioner1")
             .tfPlanJsonFieldId("testId")
             .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .encryptedTfPlan(encryptedRecordData)
+            .encryptionConfig(VaultConfig.builder()
+                                  .basePath("testBasePath")
+                                  .renewAppRoleToken(false)
+                                  .encryptionType(EncryptionType.VAULT)
+                                  .build())
             .build();
 
     doReturn(Collections.singletonList(terraformPlanExecutionDetails))
         .when(terraformPlanExectionDetailsService)
         .listAllPipelineTFPlanExecutionDetails(any(TFPlanExecutionDetailsKey.class));
-    helper.cleanupTfPlanJson(ambiance);
+    helper.cleanupTfPlanJson(List.of(terraformPlanExecutionDetails));
 
     ArgumentCaptor<String> outputCaptor = ArgumentCaptor.forClass(String.class);
     doReturn(mockFileService).when(mockFileServiceFactory).get();
     verify(mockFileService).deleteFile(outputCaptor.capture(), any(FileBucket.class));
     String output = outputCaptor.getValue();
     assertThat(output).isEqualTo("testId");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testSaveTfPlanExecutionDetailsWithEncryptionConfigAndTfPlan() {
+    final Ambiance ambiance = getAmbiance();
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+
+    List<EncryptedRecordData> encryptedRecordData = List.of(EncryptedRecordData.builder().build());
+
+    TerraformPlanExecutionDetails terraformPlanExecutionDetails =
+        TerraformPlanExecutionDetails.builder()
+            .accountIdentifier(accountId)
+            .orgIdentifier(orgId)
+            .projectIdentifier(projectId)
+            .pipelineExecutionId(planExecutionId)
+            .stageExecutionId(stageExecutionId)
+            .provisionerId("provisioner1")
+            .tfPlanJsonFieldId("testId")
+            .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .encryptedTfPlan(encryptedRecordData)
+            .encryptionConfig(VaultConfig.builder()
+                                  .basePath("testBasePath")
+                                  .renewAppRoleToken(false)
+                                  .encryptionType(EncryptionType.VAULT)
+                                  .build())
+            .build();
+
+    doReturn(VaultConfigDTO.builder()
+                 .basePath("testBasePath")
+                 .renewAppRoleToken(false)
+                 .encryptionType(EncryptionType.VAULT)
+                 .build())
+        .when(mockSecretManagerClientService)
+        .getSecretManager(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder()
+                                           .tfPlanJsonFileId("testId")
+                                           .encryptedTfPlan(EncryptedRecordData.builder().build())
+                                           .build();
+
+    TerraformPlanStepParameters terraformPlanStepParameters =
+        TerraformPlanStepParameters.infoBuilder()
+            .configuration(TerraformPlanExecutionDataParameters.builder()
+                               .secretManagerRef(ParameterField.createValueField("secretManagerRefTest"))
+                               .build())
+
+            .build();
+
+    helper.saveTerraformPlanExecutionDetails(ambiance, response, "provisioner1", terraformPlanStepParameters);
+
+    ArgumentCaptor<TerraformPlanExecutionDetails> outputCaptor =
+        ArgumentCaptor.forClass(TerraformPlanExecutionDetails.class);
+    verify(terraformPlanExectionDetailsService).save(outputCaptor.capture());
+    TerraformPlanExecutionDetails output = outputCaptor.getValue();
+
+    assertThat(((VaultConfig) output.getEncryptionConfig()).getBasePath())
+        .isEqualTo(((VaultConfig) terraformPlanExecutionDetails.getEncryptionConfig()).getBasePath());
+    assertThat(output.getEncryptedTfPlan()).isEqualTo(terraformPlanExecutionDetails.getEncryptedTfPlan());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testEncryptedTfPlanWithConfig() {
+    TerraformPlanExecutionDetails tfPlanExecutionDetails_1 = createTfPlanExecutionDetails("encryption-config-1",
+        "test-identifier-id-1", "test-project-id-1", "test-account-id-1", "test-org-id-1", "test-encrypted-tf-plan-1");
+
+    TerraformPlanExecutionDetails tfPlanExecutionDetails_2 = createTfPlanExecutionDetails("encryption-config-1",
+        "test-identifier-id-1", "test-project-id-1", "test-account-id-1", "test-org-id-1", "test-encrypted-tf-plan-2");
+
+    TerraformPlanExecutionDetails tfPlanExecutionDetails_3 = createTfPlanExecutionDetails("encryption-config-2",
+        "test-identifier-id-2", "test-project-id-2", "test-account-id-2", "test-org-id-2", "test-encrypted-tf-plan-3");
+
+    Map<EncryptionConfig, List<EncryptedRecordData>> result = helper.getEncryptedTfPlanWithConfig(
+        List.of(tfPlanExecutionDetails_1, tfPlanExecutionDetails_2, tfPlanExecutionDetails_3));
+    assertThat(result.size()).isEqualTo(2);
+
+    result.forEach((key, value) -> {
+      if (key.getName().equalsIgnoreCase("encryption-config-1")) {
+        assertThat(value.size()).isEqualTo(2);
+        assertThat(value.get(0).getName()).isEqualTo("test-encrypted-tf-plan-1");
+        assertThat(value.get(1).getName()).isEqualTo("test-encrypted-tf-plan-2");
+      }
+
+      if (key.getName().equalsIgnoreCase("encryption-config-2")) {
+        assertThat(value.size()).isEqualTo(1);
+        assertThat(value.get(0).getName()).isEqualTo("test-encrypted-tf-plan-3");
+      }
+    });
+  }
+
+  private TerraformPlanExecutionDetails createTfPlanExecutionDetails(String encryptionConfigName, String configId,
+      String configProjId, String configOrgId, String configAccountId, String encryptedRecordDataName) {
+    final Ambiance ambiance = getAmbiance();
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+
+    List<EncryptedRecordData> encryptedRecordData =
+        List.of(EncryptedRecordData.builder().name(encryptedRecordDataName).build());
+
+    return TerraformPlanExecutionDetails.builder()
+        .accountIdentifier(accountId)
+        .orgIdentifier(orgId)
+        .projectIdentifier(projectId)
+        .pipelineExecutionId(planExecutionId)
+        .stageExecutionId(stageExecutionId)
+        .provisionerId("provisionerId")
+        .tfPlanJsonFieldId("testId")
+        .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+        .encryptedTfPlan(encryptedRecordData)
+        .encryptionConfig(VaultConfig.builder()
+                              .name(encryptionConfigName)
+                              .basePath("testBasePath")
+                              .renewAppRoleToken(false)
+                              .encryptionType(EncryptionType.VAULT)
+                              .ngMetadata(NGSecretManagerMetadata.builder()
+                                              .identifier(configId)
+                                              .projectIdentifier(configProjId)
+                                              .accountIdentifier(configAccountId)
+                                              .orgIdentifier(configOrgId)
+                                              .build())
+                              .build())
+        .build();
   }
 }

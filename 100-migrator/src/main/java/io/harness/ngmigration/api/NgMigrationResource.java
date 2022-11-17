@@ -21,7 +21,6 @@ import io.harness.beans.MigrationAsyncTracker;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.MigrationInputResult;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
@@ -199,16 +198,5 @@ public class NgMigrationResource {
     return Response.ok(migrationResourceService.exportYaml(auth, importDTO))
         .header("content-disposition", format("attachment; filename = %s_%s.zip", accountId, filename))
         .build();
-  }
-
-  @GET
-  @Path("/input")
-  @Timed
-  @ExceptionMetered
-  public RestResponse<MigrationInputResult> getInputs(@QueryParam("entityId") String entityId,
-      @QueryParam("appId") String appId, @QueryParam("accountId") String accountId,
-      @QueryParam("entityType") NGMigrationEntityType entityType) {
-    DiscoveryResult result = discoveryService.discover(accountId, appId, entityId, entityType, null);
-    return new RestResponse<>(discoveryService.migrationInput(result));
   }
 }

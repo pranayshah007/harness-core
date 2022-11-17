@@ -10,6 +10,7 @@ package io.harness.delegate.service.impl;
 import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_1;
 import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_2;
 import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_3;
+import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_4;
 
 import static java.util.Collections.singletonList;
 
@@ -55,7 +56,7 @@ public class DelegateRingServiceImpl implements DelegateRingService {
 
   @Override
   public Map<String, List<String>> getDelegateVersionsForAllRings(boolean skipCache) {
-    return Arrays.asList(RING_NAME_1, RING_NAME_2, RING_NAME_3)
+    return Arrays.asList(RING_NAME_1, RING_NAME_2, RING_NAME_3, RING_NAME_4)
         .stream()
         .collect(Collectors.toMap(ringName
             -> ringName,
@@ -86,7 +87,7 @@ public class DelegateRingServiceImpl implements DelegateRingService {
 
   @Override
   public Map<String, String> getWatcherVersionsAllRings(boolean skipCache) {
-    return Arrays.asList(RING_NAME_1, RING_NAME_2, RING_NAME_3)
+    return Arrays.asList(RING_NAME_1, RING_NAME_2, RING_NAME_3, RING_NAME_4)
         .stream()
         .collect(Collectors.toMap(ringName
             -> ringName,

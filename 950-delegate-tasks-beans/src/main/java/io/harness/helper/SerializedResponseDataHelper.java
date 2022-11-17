@@ -7,11 +7,15 @@
 
 package io.harness.helper;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.SerializedResponseData;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.SerializationFormat;
+import software.wings.beans.TaskType;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,9 +32,15 @@ public class SerializedResponseDataHelper {
       SerializedResponseData serializedResponseData = (SerializedResponseData) responseData;
       if (serializedResponseData.getSerializationFormat().equals(SerializationFormat.JSON)) {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        Class<? extends DelegateResponseData> responseClass;
+        if (!isEmpty(serializedResponseData.getTaskTypeAsString())) {
+          TaskType taskType = TaskType.valueOf(serializedResponseData.getTaskTypeAsString());
+          responseClass = taskType.getResponse();
+        } else {
+          responseClass = serializedResponseData.getTaskType().getResponse();
+        }
         try {
-          return objectMapper.readValue(
-              serializedResponseData.serialize(), serializedResponseData.getTaskType().getResponse());
+          return objectMapper.readValue(serializedResponseData.serialize(), responseClass);
         } catch (Exception e) {
           log.error("Could not deserialize bytes to object", e);
           return null;
