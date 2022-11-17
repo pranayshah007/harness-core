@@ -61,7 +61,6 @@ import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.UnitProgress;
-import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -473,17 +472,17 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
           amiArtifactOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
       image = amiArtifactOutcome.getAmiId();
     }
-    if(isEmpty(image)) {
-      return stepFailureTaskResponseWithMessage(unitProgressData, "AMI not available. Please specify the AMI artifact in the pipeline.");
+    if (isEmpty(image)) {
+      return stepFailureTaskResponseWithMessage(
+          unitProgressData, "AMI not available. Please specify the AMI artifact in the pipeline.");
     }
 
-    ElastigroupStepExecutorParams elastigroupStepExecutorParams =
-            ElastigroupStepExecutorParams.builder()
-                    .shouldOpenFetchFilesLogStream(false)
-                    .startupScript(startupScript)
-                    .image(image)
-                    .elastigroupParameters(elastigroupParameters)
-                    .build();
+    ElastigroupStepExecutorParams elastigroupStepExecutorParams = ElastigroupStepExecutorParams.builder()
+                                                                      .shouldOpenFetchFilesLogStream(false)
+                                                                      .startupScript(startupScript)
+                                                                      .image(image)
+                                                                      .elastigroupParameters(elastigroupParameters)
+                                                                      .build();
 
     return elastigroupStepExecutor.executeElastigroupTask(ambiance, stepElementParameters,
         elastigroupExecutionPassThroughData, unitProgressData, elastigroupStepExecutorParams);
@@ -491,14 +490,8 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
   public TaskChainResponse stepFailureTaskResponseWithMessage(UnitProgressData unitProgressData, String msg) {
     ElastigroupStepExceptionPassThroughData elastigroupStepExceptionPassThroughData =
-            ElastigroupStepExceptionPassThroughData.builder()
-                    .errorMessage(msg)
-                    .unitProgressData(unitProgressData)
-                    .build();
-    return TaskChainResponse.builder()
-            .passThroughData(elastigroupStepExceptionPassThroughData)
-            .chainEnd(true)
-            .build();
+        ElastigroupStepExceptionPassThroughData.builder().errorMessage(msg).unitProgressData(unitProgressData).build();
+    return TaskChainResponse.builder().passThroughData(elastigroupStepExceptionPassThroughData).chainEnd(true).build();
   }
 
   private TaskChainResponse handleFailureStartupScriptFetchTask(

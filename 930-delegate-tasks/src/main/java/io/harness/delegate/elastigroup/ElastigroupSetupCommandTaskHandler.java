@@ -8,8 +8,6 @@
 package io.harness.delegate.elastigroup;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.CommandExecutionStatus.FAILURE;
-import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.spotinst.model.SpotInstConstants.elastiGroupsToKeep;
 
 import static software.wings.beans.LogHelper.color;
@@ -145,8 +143,8 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
       }
       //------------
 
-      deployLogCallback.saveExecutionLog(color("Setup Successful.", LogColor.Green, LogWeight.Bold),
-          LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      deployLogCallback.saveExecutionLog(
+          color("Setup Successful.", LogColor.Green, LogWeight.Bold), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
       ElastigroupSetupResult elastigroupSetupResult =
           ElastigroupSetupResult.builder()
@@ -171,8 +169,8 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       deployLogCallback.saveExecutionLog(sanitizedException.getMessage());
-      deployLogCallback.saveExecutionLog(color("Deployment Failed.", LogColor.Red, LogWeight.Bold),
-          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      deployLogCallback.saveExecutionLog(
+          color("Deployment Failed.", LogColor.Red, LogWeight.Bold), LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new ElastigroupNGException(sanitizedException);
     }
   }
