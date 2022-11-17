@@ -190,13 +190,17 @@ public class ExecutionDetailsResource {
     return ResponseDTO.newResponse(planExecutionSummaryDTOS);
   }
 
+  // This API is used only for internal purpose currently to support IDP plugin to fetch the executions based on
+  // Parametrised Operator on modules in filterProperties. This API only supports multiple accountId,orgId,
+  // projectId,pipelineIdentifier (As list to support multiple pipeline identifiers) and filterProperties as filter
+  // criteria to obtain the executions.
   @POST
   @Path("/v2/summary")
   @ApiModelProperty(hidden = true)
   @Hidden
-  @ApiOperation(value = "Gets Executions list for multiple pipeline filters",
-      nickname = "getListOfExecutionsForMultiplePipelinesIdentifiers")
-  @Operation(operationId = "getListOfExecutionsForMultiplePipelinesIdentifiers",
+  @ApiOperation(value = "Gets Executions list for multiple pipeline filters with OR operator",
+      nickname = "getListOfExecutionsForMultiplePipelinesIdentifiersWithOrOperators")
+  @Operation(operationId = "getListOfExecutionsForMultiplePipelinesIdentifiersWithOrOperators",
       description = "Returns a List of Pipeline Executions with Specific Filters", summary = "List Executions",
       responses =
       {
@@ -205,8 +209,9 @@ public class ExecutionDetailsResource {
       })
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<Page<PipelineExecutionSummaryDTO>>
-  getListOfExecutionsV2(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
-                        @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+  getListOfExecutionsWithOrOperator(
+      @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
@@ -215,10 +220,17 @@ public class ExecutionDetailsResource {
           NGCommonEntityConstants.PIPELINE_KEY) @Size(max = 20) List<String> pipelineIdentifier,
       @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
-      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.SIZE) @DefaultValue("10") int size) {
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.SIZE)
+      @DefaultValue("10") int size, @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
+      @RequestBody(description = "Returns a List of Pipeline Executions with Specific Filters", content = {
+        @Content(mediaType = "application/json",
+            examples = @ExampleObject(name = "List", summary = "Sample List Pipeline Executions",
+                value = PipelineAPIConstants.LIST_EXECUTIONS,
+                description = "Sample List Pipeline Executions JSON Payload"))
+      }) FilterPropertiesDTO filterProperties) {
     log.info("Get List of executions");
-    Criteria criteria = pmsExecutionService.formCriteriaV2(accountId, orgId, projectId, pipelineIdentifier);
+    Criteria criteria = pmsExecutionService.formCriteriaOROperatorOnModules(accountId, orgId, projectId,
+        pipelineIdentifier, (PipelineExecutionFilterPropertiesDTO) filterProperties, filterIdentifier);
     Pageable pageRequest;
     pageRequest = PageRequest.of(page, size, Sort.by(Direction.DESC, PlanExecutionSummaryKeys.startTs));
     if (page < 0 || !(size > 0 && size <= 1000)) {

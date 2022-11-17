@@ -61,7 +61,12 @@ public interface PMSExecutionService {
 
   PMSPipelineListRepoResponse getListOfRepo(Criteria criteria);
   PMSPipelineListBranchesResponse getListOfBranches(Criteria criteria);
-  Criteria formCriteriaV2(String accountId, String orgId, String projectId, List<String> pipelineIdentifier);
+
+  // This is created only for internal purpose to support IDP plugin. It creates criteria using account ID, project ID,
+  // pipeline IDs(As List to support multiple pipeline Identifiers) and filterProperties Operator(AND or OR) is
+  // parameterized for modules in filterProperties.
+  Criteria formCriteriaOROperatorOnModules(String accountId, String orgId, String projectId,
+      List<String> pipelineIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String filterIdentifier);
 
   void deleteExecutionsOnPipelineDeletion(PipelineEntity pipelineEntity);
 

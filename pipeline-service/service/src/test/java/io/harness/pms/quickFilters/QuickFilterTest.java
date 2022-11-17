@@ -10,6 +10,7 @@ package io.harness.pms.quickFilters;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.filter.FilterType.PIPELINEEXECUTION;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.DEVESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
@@ -35,6 +36,7 @@ import io.harness.rule.Owner;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,6 +57,7 @@ public class QuickFilterTest extends CategoryTest {
   String orgId = "org";
   String projId = "pro";
   String pipelineId = "pip";
+  private final List<String> pipelineIdList = Arrays.asList(pipelineId);
   String moduleName = "mod";
   String searchTerm = "sear";
 
@@ -142,6 +145,38 @@ public class QuickFilterTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testFormCriteriaOROperatorOnModulesFilterProperties() {
+    // making a filterProperties object with a status value
+    Criteria form = pmsExecutionServiceImpl.formCriteriaOROperatorOnModules(null, null, null, null,
+        PipelineExecutionFilterPropertiesDTO.builder()
+            .status(Collections.singletonList(ExecutionStatus.ABORTED))
+            .build(),
+        null);
+    String documentString = "[Document{{status=Document{{$in=[ABORTED]}}}}]";
+    assertThat(form.getCriteriaObject().get("$and").toString()).isEqualTo(documentString);
+
+    // filterProperties and filterIdentifier as not null
+    assertThatThrownBy(
+        ()
+            -> pmsExecutionServiceImpl.formCriteriaOROperatorOnModules(accountId, orgId, projId, pipelineIdList,
+                PipelineExecutionFilterPropertiesDTO.builder()
+                    .status(Collections.singletonList(ExecutionStatus.ABORTED))
+                    .build(),
+                "filterIdentifierDummy"))
+        .isInstanceOf(InvalidRequestException.class);
+
+    // giving random name to filterIdentifier and filterProperties as null
+    String randomFilterIdentifier = RandomStringUtils.randomAlphabetic(10);
+    when(filterService.get(accountId, orgId, projId, randomFilterIdentifier, PIPELINEEXECUTION)).thenReturn(null);
+    assertThatThrownBy(()
+                           -> pmsExecutionServiceImpl.formCriteriaOROperatorOnModules(
+                               accountId, orgId, projId, pipelineIdList, null, randomFilterIdentifier))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testFormCriteriaTimeRangeFilter() {
@@ -182,6 +217,53 @@ public class QuickFilterTest extends CategoryTest {
     form = pmsExecutionServiceImpl.formCriteria(accountId, orgId, projId, pipelineId, null,
         PipelineExecutionFilterPropertiesDTO.builder().timeRange(TimeRange.builder().build()).build(), null, null, null,
         false, false, null, true);
+
+    // TimeRange Filter should not be present in Criteria.
+    assertNull(form.getCriteriaObject().get("$and"));
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testFormCriteriaOROperatorOnModulesTimeRangeFilter() {
+    // Testing the execution in Time Range.
+    Criteria form = pmsExecutionServiceImpl.formCriteriaOROperatorOnModules(accountId, orgId, projId, pipelineIdList,
+        PipelineExecutionFilterPropertiesDTO.builder()
+            .timeRange(TimeRange.builder().startTime(1651480019931L).endTime(1651480019931L).build())
+            .build(),
+        null);
+
+    // Verify that the time range is present in criteria.
+    assertEquals(form.getCriteriaObject().get("$and").toString(),
+        "[Document{{startTs=Document{{$gte=1651480019931, $lte=1651480019931}}}}]");
+
+    // ENdTime not provided in filter. Should throw exception.
+
+    assertThatThrownBy(
+        ()
+            -> pmsExecutionServiceImpl.formCriteriaOROperatorOnModules(accountId, orgId, projId, pipelineIdList,
+                PipelineExecutionFilterPropertiesDTO.builder()
+                    .timeRange(TimeRange.builder().startTime(1651480019931L).build())
+                    .build(),
+                null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "startTime or endTime is not provided in TimeRange filter. Either add the missing field or remove the timeRange filter.");
+
+    // StartTime not provided in filter. Should throw exception.
+    assertThatThrownBy(
+        ()
+            -> pmsExecutionServiceImpl.formCriteriaOROperatorOnModules(accountId, orgId, projId, pipelineIdList,
+                PipelineExecutionFilterPropertiesDTO.builder()
+                    .timeRange(TimeRange.builder().endTime(1651480019931L).build())
+                    .build(),
+                null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "startTime or endTime is not provided in TimeRange filter. Either add the missing field or remove the timeRange filter.");
+
+    form = pmsExecutionServiceImpl.formCriteriaOROperatorOnModules(accountId, orgId, projId, pipelineIdList,
+        PipelineExecutionFilterPropertiesDTO.builder().timeRange(TimeRange.builder().build()).build(), null);
 
     // TimeRange Filter should not be present in Criteria.
     assertNull(form.getCriteriaObject().get("$and"));

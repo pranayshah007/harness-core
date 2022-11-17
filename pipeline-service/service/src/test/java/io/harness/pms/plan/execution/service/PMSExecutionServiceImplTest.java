@@ -8,6 +8,7 @@
 package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.DEVESH;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAMARTH;
@@ -37,12 +38,16 @@ import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
+import com.mongodb.BasicDBList;
 import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -66,6 +71,7 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
   private final String PROJ_IDENTIFIER = "projId";
   private final String PIPELINE_IDENTIFIER = "basichttpFail";
   private final String PLAN_EXECUTION_ID = "planId";
+  private final List<String> PIPELINE_IDENTIFIER_LIST = Arrays.asList(PIPELINE_IDENTIFIER);
   private final String INVALID_PLAN_EXECUTION_ID = "InvalidPlanId";
   private final Boolean PIPELINE_DELETED = Boolean.FALSE;
   private String inputSetYaml;
@@ -130,6 +136,28 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
     assertThat(form.getCriteriaObject().get("pipelineIdentifier").toString().contentEquals(PIPELINE_IDENTIFIER))
         .isEqualTo(true);
     assertThat(form.getCriteriaObject().containsKey("status")).isEqualTo(false);
+    assertThat(form.getCriteriaObject().get("pipelineDeleted")).isNotEqualTo(true);
+    assertThat(form.getCriteriaObject().containsKey("executionTriggerInfo")).isEqualTo(false);
+    assertThat(form.getCriteriaObject().get("isLatestExecution")).isNotEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testFormCriteriaOROperatorOnModules() {
+    Criteria form = pmsExecutionService.formCriteriaOROperatorOnModules(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, null, null);
+    BasicDBList orList = (BasicDBList) form.getCriteriaObject().get("$or");
+    Document scopeCriteria = (Document) orList.get(0);
+    Document pipelineIdentifierCriteria = (Document) scopeCriteria.get("pipelineIdentifier");
+    List<String> pipelineList = (List<String>) pipelineIdentifierCriteria.get("$in");
+
+    assertThat(form.getCriteriaObject().get("accountId").toString().contentEquals(ACCOUNT_ID)).isEqualTo(true);
+    assertThat(form.getCriteriaObject().get("orgIdentifier").toString().contentEquals(ORG_IDENTIFIER)).isEqualTo(true);
+    assertThat(form.getCriteriaObject().get("projectIdentifier").toString().contentEquals(PROJ_IDENTIFIER))
+        .isEqualTo(true);
+    assertThat(pipelineList.equals(PIPELINE_IDENTIFIER_LIST)).isEqualTo(true);
+    assertThat(form.getCriteriaObject().containsKey("pipelineIdentifier")).isEqualTo(false);
     assertThat(form.getCriteriaObject().get("pipelineDeleted")).isNotEqualTo(true);
     assertThat(form.getCriteriaObject().containsKey("executionTriggerInfo")).isEqualTo(false);
     assertThat(form.getCriteriaObject().get("isLatestExecution")).isNotEqualTo(false);

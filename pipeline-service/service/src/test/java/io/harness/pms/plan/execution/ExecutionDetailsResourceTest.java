@@ -211,7 +211,8 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
     Criteria criteria = Criteria.where("a").is("b");
     doReturn(criteria)
         .when(pmsExecutionService)
-        .formCriteriaV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST);
+        .formCriteriaOROperatorOnModules(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, null, null);
 
     Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineExecutionSummaryKeys.startTs));
     Page<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntities =
@@ -220,10 +221,10 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
         .when(pmsExecutionService)
         .getPipelineExecutionSummaryEntity(criteria, pageable);
 
-    Page<PipelineExecutionSummaryDTO> content =
-        executionDetailsResource
-            .getListOfExecutionsV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, 0, 10)
-            .getData();
+    Page<PipelineExecutionSummaryDTO> content = executionDetailsResource
+                                                    .getListOfExecutionsWithOrOperator(ACCOUNT_ID, ORG_IDENTIFIER,
+                                                        PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, 0, 10, null, null)
+                                                    .getData();
     assertThat(content).isNotEmpty();
     assertThat(content.getNumberOfElements()).isEqualTo(1);
 
