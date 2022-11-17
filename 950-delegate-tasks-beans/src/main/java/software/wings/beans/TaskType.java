@@ -392,7 +392,6 @@ public enum TaskType {
   SHELL_SCRIPT_PROVISION(TaskGroup.SHELL_SCRIPT_PROVISION_NG, "Shell Script Provision Task"),
   ECS_GIT_FETCH_RUN_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Run Task"),
   TRIGGER_AUTHENTICATION_TASK(TaskGroup.TRIGGER),
-  VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task"),
   SPOT_TASK_NG(TaskGroup.SPOTINST, "Spot NG Task"),
   FETCH_INSTANCE_SCRIPT_TASK_NG(TaskGroup.CUSTOM_DEPLOYMENT_NG, "Fetch Instance Script Task"),
   AZURE_WEB_APP_TASK_NG_V2(TaskGroup.AZURE, "Azure Web App Task V2", false),
@@ -404,7 +403,8 @@ public enum TaskType {
   TERRAGRUNT_PLAN_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Plan Task", true),
   TERRAGRUNT_APPLY_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Apply Task", true),
   TERRAGRUNT_DESTROY_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task", true),
-  TERRAGRUNT_ROLLBACK_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Rollback Task", true);
+  TERRAGRUNT_ROLLBACK_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Rollback Task", true),
+  VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task");
 
   private final TaskGroup taskGroup;
   private final String displayName;
