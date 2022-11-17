@@ -200,7 +200,11 @@ public class PMSPipelineServiceHelper {
   }
 
   public void validatePipelineFromRemote(PipelineEntity pipelineEntity) {
+    long start = System.currentTimeMillis();
     GovernanceMetadata governanceMetadata = validatePipelineYaml(pipelineEntity);
+    log.info("[PMS_PipelineService] validating pipeline took {}ms for projectId {}, orgId {}, accountId {}",
+        System.currentTimeMillis() - start, pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier(),
+        pipelineEntity.getAccountIdentifier());
     if (governanceMetadata.getDeny()) {
       List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
                                              .stream()
