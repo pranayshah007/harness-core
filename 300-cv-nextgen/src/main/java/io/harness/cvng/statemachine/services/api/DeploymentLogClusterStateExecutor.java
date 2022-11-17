@@ -14,6 +14,7 @@ import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.DeploymentLogAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogClusterState;
+import io.harness.cvng.statemachine.entities.DeploymentMetricHostSamplingState;
 import io.harness.cvng.statemachine.entities.LogClusterState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 
@@ -46,10 +47,11 @@ public class DeploymentLogClusterStateExecutor extends LogClusterStateExecutor<D
         deploymentLogClusterState.setStatus(AnalysisStatus.CREATED);
         return deploymentLogClusterState;
       case L2:
-        DeploymentLogAnalysisState deploymentLogAnalysisState = DeploymentLogAnalysisState.builder().build();
-        deploymentLogAnalysisState.setInputs(analysisState.getInputs());
-        deploymentLogAnalysisState.setStatus(AnalysisStatus.CREATED);
-        return deploymentLogAnalysisState;
+        DeploymentMetricHostSamplingState deploymentMetricHostSamplingState =
+            DeploymentMetricHostSamplingState.builder().build();
+        deploymentMetricHostSamplingState.setInputs(analysisState.getInputs());
+        deploymentMetricHostSamplingState.setStatus(AnalysisStatus.CREATED);
+        return deploymentMetricHostSamplingState;
       default:
         throw new AnalysisStateMachineException("Unknown cluster level in handleTransition "
             + "of ServiceGuardLogClusterState: " + analysisState.getClusterLevel());
