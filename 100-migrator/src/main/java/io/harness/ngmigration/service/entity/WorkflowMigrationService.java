@@ -10,10 +10,6 @@ package io.harness.ngmigration.service.entity;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
-import static software.wings.ngmigration.NGMigrationEntityType.INFRA;
-import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
-import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
 import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 import static software.wings.sm.StepType.K8S_DEPLOYMENT_ROLLING;
 import static software.wings.sm.StepType.SHELL_SCRIPT;
@@ -25,47 +21,35 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.beans.OrchestrationWorkflowType;
-import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
-import io.harness.cdng.environment.yaml.EnvironmentYaml;
-import io.harness.cdng.infra.InfrastructureDef;
-import io.harness.cdng.pipeline.PipelineInfrastructure;
-import io.harness.cdng.service.beans.ServiceConfig;
-import io.harness.data.structure.CollectionUtils;
+import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
-import io.harness.ngmigration.beans.BaseEntityInput;
-import io.harness.ngmigration.beans.BaseInputDefinition;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.WorkflowSummary;
+import io.harness.ngmigration.client.NGClient;
+import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
+import io.harness.ngmigration.dto.ImportError;
+import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 import io.harness.ngmigration.service.workflow.WorkflowHandler;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
-import io.harness.plancreator.execution.ExecutionElementConfig;
-import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.StageElementWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
-import io.harness.plancreator.steps.AbstractStepNode;
-import io.harness.plancreator.steps.StepGroupElementConfig;
-import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
-import io.harness.yaml.core.failurestrategy.NGFailureType;
-import io.harness.yaml.core.failurestrategy.OnFailureConfig;
-import io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig;
-import io.harness.yaml.utils.JsonPipelineUtils;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.template.beans.yaml.NGTemplateConfig;
+import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 
 import software.wings.beans.GraphNode;
-import software.wings.beans.PhaseStep;
-import software.wings.beans.Service;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
-import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -78,8 +62,10 @@ import software.wings.sm.StepType;
 import software.wings.yaml.workflow.RollingWorkflowYaml;
 import software.wings.yaml.workflow.StepYaml;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import io.fabric8.utils.Lists;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -88,6 +74,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+import org.apache.commons.lang3.StringUtils;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
@@ -109,7 +99,8 @@ public class WorkflowMigrationService extends NgMigrationService {
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
-    throw new IllegalAccessError("Mapping not allowed for Workflow entities");
+    // TODO: @deepak
+    return null;
   }
 
   @Override
@@ -154,42 +145,44 @@ public class WorkflowMigrationService extends NgMigrationService {
                                     .build();
 
     Set<CgEntityId> children = new HashSet<>();
-    if (EmptyPredicate.isNotEmpty(workflow.getServices())) {
-      Set<CgEntityId> set = new HashSet<>();
-      for (Service service : workflow.getServices()) {
-        CgEntityId build = CgEntityId.builder().type(SERVICE).id(service.getUuid()).build();
-        set.add(build);
-        List<ApplicationManifest> applicationManifests =
-            applicationManifestService.listAppManifests(workflow.getAppId(), service.getUuid());
-        if (isNotEmpty(applicationManifests)) {
-          applicationManifests.stream()
-              .map(applicationManifest -> CgEntityId.builder().id(applicationManifest.getUuid()).type(MANIFEST).build())
-              .forEach(children::add);
-        }
-      }
-      children.addAll(set);
-    }
-
-    if (EmptyPredicate.isNotEmpty(workflow.getEnvId())) {
-      children.add(CgEntityId.builder().type(ENVIRONMENT).id(workflow.getEnvId()).build());
-      List<ApplicationManifest> applicationManifests =
-          applicationManifestService.getAllByEnvId(workflow.getAppId(), workflow.getEnvId());
-      if (isNotEmpty(applicationManifests)) {
-        Set<String> serviceIds = CollectionUtils.emptyIfNull(workflow.getServices())
-                                     .stream()
-                                     .map(Service::getUuid)
-                                     .collect(Collectors.toSet());
-        for (ApplicationManifest applicationManifest : applicationManifests) {
-          if (applicationManifest.getServiceId() == null || serviceIds.contains(applicationManifest.getServiceId())) {
-            CgEntityId build = CgEntityId.builder().id(applicationManifest.getUuid()).type(MANIFEST).build();
-            children.add(build);
-          }
-        }
-      }
-    }
-    if (EmptyPredicate.isNotEmpty(workflow.getInfraDefinitionId())) {
-      children.add(CgEntityId.builder().type(INFRA).id(workflow.getInfraDefinitionId()).build());
-    }
+    //    if (EmptyPredicate.isNotEmpty(workflow.getServices())) {
+    //      Set<CgEntityId> set = new HashSet<>();
+    //      for (Service service : workflow.getServices()) {
+    //        CgEntityId build = CgEntityId.builder().type(SERVICE).id(service.getUuid()).build();
+    //        set.add(build);
+    //        List<ApplicationManifest> applicationManifests =
+    //            applicationManifestService.listAppManifests(workflow.getAppId(), service.getUuid());
+    //        if (isNotEmpty(applicationManifests)) {
+    //          applicationManifests.stream()
+    //              .map(applicationManifest ->
+    //              CgEntityId.builder().id(applicationManifest.getUuid()).type(MANIFEST).build())
+    //              .forEach(children::add);
+    //        }
+    //      }
+    //      children.addAll(set);
+    //    }
+    //
+    //    if (EmptyPredicate.isNotEmpty(workflow.getEnvId())) {
+    //      children.add(CgEntityId.builder().type(ENVIRONMENT).id(workflow.getEnvId()).build());
+    //      List<ApplicationManifest> applicationManifests =
+    //          applicationManifestService.getAllByEnvId(workflow.getAppId(), workflow.getEnvId());
+    //      if (isNotEmpty(applicationManifests)) {
+    //        Set<String> serviceIds = CollectionUtils.emptyIfNull(workflow.getServices())
+    //                                     .stream()
+    //                                     .map(Service::getUuid)
+    //                                     .collect(Collectors.toSet());
+    //        for (ApplicationManifest applicationManifest : applicationManifests) {
+    //          if (applicationManifest.getServiceId() == null ||
+    //          serviceIds.contains(applicationManifest.getServiceId())) {
+    //            CgEntityId build = CgEntityId.builder().id(applicationManifest.getUuid()).type(MANIFEST).build();
+    //            children.add(build);
+    //          }
+    //        }
+    //      }
+    //    }
+    //    if (EmptyPredicate.isNotEmpty(workflow.getInfraDefinitionId())) {
+    //      children.add(CgEntityId.builder().type(INFRA).id(workflow.getInfraDefinitionId()).build());
+    //    }
     return DiscoveryNode.builder().children(children).entityNode(workflowNode).build();
   }
 
@@ -240,93 +233,77 @@ public class WorkflowMigrationService extends NgMigrationService {
         .build();
   }
 
-  public StageElementWrapperConfig getNgStage(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    Workflow workflow = (Workflow) entities.get(entityId).getEntity();
-    migratorExpressionUtils.render(workflow, inputDTO.getCustomExpressions());
-    WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
-    List<ExecutionWrapperConfig> steps = new ArrayList<>();
-    List<ExecutionWrapperConfig> rollingSteps = new ArrayList<>();
-    List<WorkflowPhase.Yaml> phases = workflowHandler.getPhases(workflow);
-    if (EmptyPredicate.isNotEmpty(phases)) {
-      steps.addAll(phases.stream()
-                       .map(phase -> {
-                         List<PhaseStep.Yaml> phaseSteps = phase.getPhaseSteps();
-                         List<ExecutionWrapperConfig> currSteps = new ArrayList<>();
-                         if (EmptyPredicate.isNotEmpty(phaseSteps)) {
-                           currSteps = phaseSteps.stream()
-                                           .filter(phaseStep -> EmptyPredicate.isNotEmpty(phaseStep.getSteps()))
-                                           .flatMap(phaseStep -> phaseStep.getSteps().stream())
-                                           .map(phaseStep -> {
-                                             return ExecutionWrapperConfig.builder()
-                                                 .step(JsonPipelineUtils.asTree(getStepElementConfig(phaseStep)))
-                                                 .build();
-                                           })
-                                           .collect(Collectors.toList());
-                         }
-                         return ExecutionWrapperConfig.builder()
-                             .stepGroup(JsonPipelineUtils.asTree(
-                                 StepGroupElementConfig.builder()
-                                     .identifier(MigratorUtility.generateIdentifier(phase.getName()))
-                                     .name(phase.getName())
-                                     .steps(currSteps)
-                                     .skipCondition(null)
-                                     .when(null)
-                                     .failureStrategies(null)
-                                     .build()))
-                             .build();
-                       })
-                       .collect(Collectors.toList()));
-    }
-
-    ServiceConfig serviceConfig = null;
-    if (EmptyPredicate.isNotEmpty(workflow.getOrchestration().getServiceIds())) {
-      String serviceId = workflow.getOrchestration().getServiceIds().get(0);
-
-      serviceConfig = serviceMigrationService.getServiceConfig(
-          inputDTO, entities, graph, CgEntityId.builder().type(SERVICE).id(serviceId).build(), migratedEntities);
-    }
-    EnvironmentYaml environmentYaml = environmentMigrationService.getEnvironmentYaml(
-        inputDTO, entities, graph, CgEntityId.builder().type(ENVIRONMENT).id(workflow.getEnvId()).build());
-
-    InfrastructureDef infrastructureDef = null;
-    if (EmptyPredicate.isNotEmpty(workflow.getOrchestration().getInfraDefinitionIds())) {
-      String infraId = workflow.getOrchestration().getInfraDefinitionIds().get(0);
-      infrastructureDef = infraMigrationService.getInfraDef(
-          inputDTO, entities, graph, CgEntityId.builder().type(INFRA).id(infraId).build(), migratedEntities);
-    }
-
-    return StageElementWrapperConfig.builder()
-        .stage(JsonPipelineUtils.asTree(
-            StageElementConfig.builder()
-                .name(workflow.getName())
-                .identifier(MigratorUtility.generateIdentifier(workflow.getName()))
-                .type("Deployment")
-                .failureStrategies(Collections.singletonList(
-                    FailureStrategyConfig.builder()
-                        .onFailure(OnFailureConfig.builder()
-                                       .errors(Collections.singletonList(NGFailureType.ALL_ERRORS))
-                                       .action(StageRollbackFailureActionConfig.builder().build())
-                                       .build())
-                        .build()))
-                .stageType(
-                    DeploymentStageConfig.builder()
-                        .serviceConfig(serviceConfig)
-                        .infrastructure(PipelineInfrastructure.builder()
-                                            .environment(environmentYaml)
-                                            .infrastructureDefinition(infrastructureDef)
-                                            .build())
-                        .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollingSteps).build())
-                        .build())
-                .build()))
-        .parallel(null)
-        .build();
-  }
-
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    return new ArrayList<>();
+    if (EmptyPredicate.isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(WORKFLOW)
+        && inputDTO.getDefaults().get(WORKFLOW).isSkipMigration()) {
+      return Collections.emptyList();
+    }
+    Workflow workflow = (Workflow) entities.get(entityId).getEntity();
+    String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, workflow.getName());
+    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
+    String description = StringUtils.isBlank(workflow.getDescription()) ? "" : workflow.getDescription();
+
+    WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
+
+    JsonNode templateSpec = workflowHandler.getTemplateSpec(workflow);
+    if (templateSpec == null) {
+      return Collections.emptyList();
+    }
+
+    List<NGYamlFile> files = new ArrayList<>();
+    NGYamlFile ngYamlFile =
+        NGYamlFile.builder()
+            .type(WORKFLOW)
+            .filename("workflows/" + name + ".yaml")
+            .yaml(NGTemplateConfig.builder()
+                      .templateInfoConfig(NGTemplateInfoConfig.builder()
+                                              .type(workflowHandler.getTemplateType(workflow))
+                                              .identifier(identifier)
+                                              .variables(workflowHandler.getVariables(workflow))
+                                              .name(name)
+                                              .description(ParameterField.createValueField(description))
+                                              .projectIdentifier(projectIdentifier)
+                                              .orgIdentifier(orgIdentifier)
+                                              .versionLabel("v1")
+                                              .spec(templateSpec)
+                                              .build())
+                      .build())
+            .ngEntityDetail(NgEntityDetail.builder()
+                                .identifier(identifier)
+                                .orgIdentifier(orgIdentifier)
+                                .projectIdentifier(projectIdentifier)
+                                .build())
+            .cgBasicInfo(workflow.getCgBasicInfo())
+            .build();
+    files.add(ngYamlFile);
+    migratedEntities.putIfAbsent(entityId, ngYamlFile);
+    return files;
+  }
+
+  @Override
+  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
+      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    if (yamlFile.isExists()) {
+      return MigrationImportSummaryDTO.builder()
+          .errors(Collections.singletonList(ImportError.builder()
+                                                .message("Workflow was not migrated as it was already imported before")
+                                                .entity(yamlFile.getCgBasicInfo())
+                                                .build()))
+          .build();
+    }
+    Response<ResponseDTO<ConnectorResponseDTO>> resp =
+        templateClient
+            .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
+                inputDTO.getProjectIdentifier(),
+                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
+            .execute();
+    log.info("Workflow creation Response details {} {}", resp.code(), resp.message());
+    return handleResp(yamlFile, resp);
   }
 
   @Override
@@ -336,23 +313,6 @@ public class WorkflowMigrationService extends NgMigrationService {
 
   @Override
   protected boolean isNGEntityExists() {
-    return false;
-  }
-
-  @Override
-  public BaseEntityInput generateInput(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    Workflow workflow = (Workflow) entities.get(entityId).getEntity();
-    return BaseEntityInput.builder()
-        .migrationStatus(MigratorInputType.CREATE_NEW)
-        .identifier(BaseInputDefinition.buildIdentifier(MigratorUtility.generateIdentifier(workflow.getName())))
-        .name(BaseInputDefinition.buildName(workflow.getName()))
-        .spec(null)
-        .build();
-  }
-
-  private AbstractStepNode getStepElementConfig(StepYaml step) {
-    StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
-    return stepMapper.getSpec(step);
+    return true;
   }
 }
