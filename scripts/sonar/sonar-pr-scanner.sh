@@ -113,7 +113,7 @@ check_cmd_status "$?" "Failed to build harness core modules."
 
 for module in $PR_MODULES
   do
-     [ -d ${module} ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
+     [ -d ${module} ] && [ ${module} != 'project' ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
      && echo "$module is present in the bazel modules list." \
      && get_javac_path ${JAVA_CLASSES_PATH}/${module} >> $PR_MODULES_JAVAC_FILE \
      && echo "${JAVA_CLASSES_PATH}/${module}/${JAVA_LIBS}" >> $PR_MODULES_LIB_FILE \
