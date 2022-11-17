@@ -628,12 +628,12 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     }
     SecretManagerConfigDTO secretManager = null;
     try {
-      secretManager = getSecretManagerOrThrow(
+      secretManager = getSecretManager(
           accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
-    } catch (SecretManagementException e) {
-      if (!forceDelete) {
-        throw e;
-      }
+    } catch (Exception e) {
+      log.warn(
+          "Secret Manager with identifier {} not found while deleting secret with identifier {} in org {}, project {} not found ",
+          encryptedData.getSecretManagerIdentifier(), identifier, orgIdentifier, projectIdentifier);
     }
 
     if (isReadOnlySecretManager(secretManager) && !Optional.ofNullable(encryptedData.getPath()).isPresent()
