@@ -34,6 +34,7 @@ import org.json.JSONObject;
 @Singleton
 public class KubernetesApiExceptionHandler implements ExceptionHandler {
   private static final String API_CALL_FAIL_MESSAGE = "Kubernetes API call failed with message: %s";
+  private static final String API_CALL_FAIL_MESSAGE_WITH_CODE = "Kubernetes API call failed with message: %s, code: %s";
   private static final String UNAUTHORIZED_ERROR_REGEX =
       ".* forbidden: User \"(.*?)\".* resource \"(.*?)\" in API group \"(.*?)\".* namespace \"(.*?)\"";
   private static final Pattern UNAUTHORIZED_ERROR_PATTERN =
@@ -88,7 +89,8 @@ public class KubernetesApiExceptionHandler implements ExceptionHandler {
                   format(API_CALL_FAIL_MESSAGE, apiException.getMessage()), FailureType.AUTHENTICATION));
 
         default:
-          return new KubernetesApiTaskException(format(API_CALL_FAIL_MESSAGE, apiException.getMessage()));
+          return new KubernetesApiTaskException(
+              format(API_CALL_FAIL_MESSAGE_WITH_CODE, apiException.getMessage(), apiException.getCode()));
       }
 
     } else {
