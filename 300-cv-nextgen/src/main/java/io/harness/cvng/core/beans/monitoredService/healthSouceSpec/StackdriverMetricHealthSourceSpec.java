@@ -67,8 +67,8 @@ public class StackdriverMetricHealthSourceSpec extends MetricHealthSourceSpec {
               && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
               && StringUtils.isEmpty(metricDefinition.getServiceInstanceField())),
           "Service instance field shouldn't be empty for Deployment verification");
-      Preconditions.checkArgument(Objects.isNull(metricDefinition.getJsonMetricDefinition())
-              && validateJSONMetricDefinitionString(metricDefinition.getJsonMetricDefinitionString()),
+      Preconditions.checkArgument(Objects.nonNull(metricDefinition.getJsonMetricDefinition())
+              || validateJSONMetricDefinitionString(metricDefinition.getJsonMetricDefinitionString()),
           "jsonMetricDefinitionString should be of valid json format");
     });
   }

@@ -445,6 +445,7 @@ public class FeatureNameTest extends WingsBaseTest {
     featureNameOrdinalMapping.put(411, "PL_HIDE_LAUNCH_NEXTGEN");
     featureNameOrdinalMapping.put(412, "PL_LDAP_PARALLEL_GROUP_SYNC");
     featureNameOrdinalMapping.put(413, "TAS_NG");
+    featureNameOrdinalMapping.put(413, "CDS_OrgAccountLevelServiceEnvEnvGroup");
 
     featureNameConstantMapping =
         featureNameOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

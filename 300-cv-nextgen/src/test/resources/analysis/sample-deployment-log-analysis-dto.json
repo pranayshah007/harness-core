@@ -1,0 +1,45 @@
+{
+  "clusters": [
+    {
+      "text": "some error",
+      "label": 0
+    }
+  ],
+  "clusterCoordinates": [
+    {
+      "x": 1.0,
+      "y": 1.0,
+      "label": 0,
+      "host": "host1"
+    }
+  ],
+  "resultSummary": {
+    "risk": 1,
+    "score": 0.0,
+    "controlClusterSummaries": [
+      {
+        "label": 0,
+        "controlFrequencyData": [
+          1.0
+        ]
+      }
+    ],
+    "controlClusterHostFrequencies": null,
+    "testClusterSummaries": [
+      {
+        "label": 0,
+        "clusterType": "UNEXPECTED_FREQUENCY",
+        "risk": 0,
+        "score": 0.0,
+        "count": 1,
+        "testFrequencyData": [
+          10.0
+        ],
+        "frequencyData": null,
+        "riskLevel": "HEALTHY"
+      }
+    ],
+    "riskLevel": "UNHEALTHY"
+  },
+  "hostSummaries": []
+}

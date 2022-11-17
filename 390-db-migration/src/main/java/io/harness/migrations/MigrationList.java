@@ -455,13 +455,14 @@ public class MigrationList {
         .add(Pair.of(370, ManageAccountDefaultsPermissionMigration.class))
         .add(Pair.of(371, BaseMigration.class))
         .add(Pair.of(372, BaseMigration.class))
-        .add(Pair.of(373, AddRingDetailsToDelegateRing.class))
+        .add(Pair.of(373, BaseMigration.class))
         .add(Pair.of(374, AddIsProductLedToAccount.class))
         .add(Pair.of(376, UpdateRebalanceStateToTaskUnAssigned.class))
         .add(Pair.of(377, BaseMigration.class))
         .add(Pair.of(378, SetPropertiesToCloudformationRollbackStackSteps.class))
         .add(Pair.of(379, AddNGFieldToDelegateMigration.class))
         .add(Pair.of(380, AddImmutableDelegateEnabledFieldToAccountCollection.class))
+        .add(Pair.of(381, AddRingDetailsToDelegateRing.class))
         .build();
   }
 }

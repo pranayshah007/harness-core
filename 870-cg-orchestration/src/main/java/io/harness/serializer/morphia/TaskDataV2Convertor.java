@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.persistence.converters;
+package io.harness.serializer.morphia;
 
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.serializer.KryoSerializer;

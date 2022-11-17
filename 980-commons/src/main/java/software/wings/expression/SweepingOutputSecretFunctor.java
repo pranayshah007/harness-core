@@ -16,7 +16,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.security.SimpleEncryption;
 
 import java.util.Base64;

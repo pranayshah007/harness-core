@@ -8,7 +8,7 @@
 package io.harness.delegate.expression;
 
 import io.harness.exception.FunctorException;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 
 import java.util.Map;
 import lombok.Builder;
